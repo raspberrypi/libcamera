@@ -831,6 +831,11 @@ void Vc4CameraData::unicamBufferDequeue(FrameBuffer *buffer)
 		 * DelayedControl and queue them along with the frame buffer.
 		 */
 		auto [ctrl, delayContext] = delayedCtrls_->get(buffer->metadata().sequence);
+
+		LOG(RPI, Info) << "bayer buffer deque " << buffer->metadata().sequence << " context " << delayContext;
+		LOG(RPI, Info) << "bayer buffer deque gain " << ctrl.get(V4L2_CID_ANALOGUE_GAIN).get<int32_t>() << " exp " << ctrl.get(V4L2_CID_EXPOSURE).get<int32_t>();
+
+
 		/*
 		 * Add the frame timestamp to the ControlList for the IPA to use
 		 * as it does not receive the FrameBuffer object. Also derive a
@@ -843,6 +848,7 @@ void Vc4CameraData::unicamBufferDequeue(FrameBuffer *buffer)
 		ctrl.set(controls::SensorTimestamp, sensorTimestamp);
 		ctrl.set(controls::FrameWallClock, wallClockTimestamp);
 		bayerQueue_.push({ buffer, std::move(ctrl), delayContext });
+
 	} else {
 		embeddedQueue_.push(buffer);
 	}
@@ -1047,6 +1053,8 @@ void Vc4CameraData::tryRunPipeline()
 		requestQueue_.pop_front();
 	}
 
+	LOG(RPI, Info) << "tryrunpipeline context " << currentRequest_->sequence() << " bayer seq " << bayerFrame.buffer->metadata().sequence << " delay context " << bayerFrame.delayContext << " gain " << bayerFrame.controls.get(V4L2_CID_ANALOGUE_GAIN).get<int32_t>() << " exposure " << bayerFrame.controls.get(V4L2_CID_EXPOSURE).get<int32_t>();
+
 	/* See if a new ScalerCrop value needs to be applied. */
 	applyScalerCrop(currentRequest_->controls());
 
@@ -1058,6 +1066,8 @@ void Vc4CameraData::tryRunPipeline()
 	currentRequest_->metadata().clear();
 	fillRequestMetadata(bayerFrame.controls, currentRequest_);
 
+
+	LOG(RPI, Info) << "tryrunpipeline adding sync entry context " << currentRequest_->sequence() << " control id " << currentRequest_->controlListId;
 	/*
 	 * Record which control list corresponds to this ipaCookie. Because setDelayedControls
 	 * now gets called by the IPA from the start of the following frame, we must record
@@ -1073,6 +1083,7 @@ void Vc4CameraData::tryRunPipeline()
 	 */
 	while (!syncTable_.empty() &&
 	       syncTable_.front().ipaCookie != bayerFrame.delayContext) {
+		LOG(RPI, Info) << "tryrunpipeline popping sync entry context " << syncTable_.front().ipaCookie << " control id " << syncTable_.front().controlListId;
 		//LOG(RPI, Error) << "tryRunPipeline: discard sync table entry " << syncTable_.front().ipaCookie;
 		syncTable_.pop();
 	}
@@ -1080,6 +1091,8 @@ void Vc4CameraData::tryRunPipeline()
 	if (syncTable_.empty())
 		LOG(RPI, Warning) << "Unable to find ipa cookie for PFC";
 
+
+	LOG(RPI, Info) << "tryrunpipeline using sync control id " << syncTable_.front().controlListId;
 	currentRequest_->syncId = syncTable_.front().controlListId;
 
 	/*

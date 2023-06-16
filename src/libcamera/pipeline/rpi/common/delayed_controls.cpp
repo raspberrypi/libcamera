@@ -153,7 +153,8 @@ void DelayedControls::reset(unsigned int cookie)
 bool DelayedControls::push(const ControlList &controls, const unsigned int cookie)
 {
 	LOG(RPiDelayedControls, Debug)
-		<< "Push with write index " << writeCount_;
+		<< "Push with write index " << writeCount_
+		<< " and cookie " << cookie;
 
 	/* Copy state from previous frame. */
 	for (auto &ctrl : values_) {
@@ -213,7 +214,8 @@ std::pair<ControlList, unsigned int> DelayedControls::get(uint32_t sequence)
 
 	LOG(RPiDelayedControls, Debug)
 		<< "Sequence " << sequence
-		<< " get with write index " << writeCount_;
+		<< " get with write index " << writeCount_
+		<< " cookie " << cookies_[index]; 
 
 	ControlList out(device_->controls());
 	for (const auto &ctrl : values_) {
@@ -274,7 +276,7 @@ void DelayedControls::applyControls(uint32_t sequence)
 				out.set(id->id(), info);
 			}
 
-			LOG(RPiDelayedControls, Info)
+			LOG(RPiDelayedControls, Debug)
 				<< "Setting " << id->name()
 				<< " to " << info.toString()
 				<< " at index " << index;
@@ -287,7 +289,8 @@ void DelayedControls::applyControls(uint32_t sequence)
 	while (writeCount_ < sequence + 1) {
 		writeCount_++;
 		LOG(RPiDelayedControls, Debug)
-			<< "Pushing noop with for index " << writeCount_;
+			<< "Pushing noop with for index " << writeCount_
+			<< " with cookie " << cookies_[writeCount_ - 1];
 		push({}, cookies_[writeCount_ - 1]);
 	}
 

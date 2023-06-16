@@ -443,6 +443,8 @@ void IpaBase::prepareIsp(const PrepareParams &params)
 		hdrStatus_ = agcStatus.hdr;
 	}
 
+	LOG(IPARPI, Info) << "IPA prepare context " << params.ipaContext << " delayed context " << params.delayContext;
+
 	/*
 	 * This may overwrite the DeviceStatus using values from the sensor
 	 * metadata, and may also do additional custom processing.
@@ -534,14 +536,12 @@ void IpaBase::processStats(const ProcessParams &params)
 
 		struct AgcStatus agcStatus;
 		if (rpiMetadata.get("agc.status", agcStatus) == 0) {
+
+			LOG(IPARPI, Info) << "IPA process stats context " << params.ipaContext;
+
 			ControlList ctrls(sensorCtrls_);
-<<<<<<< HEAD
-			applyAGC(&agcStatus, ctrls, offset);
-			setDelayedControls.emit(ctrls, ipaContext);
-=======
 			applyAGC(&agcStatus, ctrls);
 			setDelayedControls.emit(ctrls, params.ipaContext);
->>>>>>> 4c7bd08f6bcc (Don't pass modulo ipa context values)
 			setCameraTimeoutValue();
 		}
 	}
@@ -864,7 +864,7 @@ void IpaBase::applyControls(const ControlList &controls)
 			/* The control provides units of microseconds. */
 			agc->setFixedExposureTime(0, ctrl.second.get<int32_t>() * 1.0us);
 
-			libcameraMetadata_.set(controls::ExposureTime, ctrl.second.get<int32_t>());
+			//libcameraMetadata_.set(controls::ExposureTime, ctrl.second.get<int32_t>());
 			break;
 		}
 
@@ -889,8 +889,8 @@ void IpaBase::applyControls(const ControlList &controls)
 
 			agc->setFixedAnalogueGain(0, ctrl.second.get<float>());
 
-			libcameraMetadata_.set(controls::AnalogueGain,
-					       ctrl.second.get<float>());
+			//libcameraMetadata_.set(controls::AnalogueGain,
+			//		       ctrl.second.get<float>());
 			break;
 		}
 
@@ -1433,7 +1433,7 @@ void IpaBase::fillDeviceStatus(const ControlList &sensorControls, unsigned int i
 	if (af)
 		deviceStatus.lensPosition = af->getLensPosition();
 
-	LOG(IPARPI, Debug) << "Metadata - " << deviceStatus;
+	LOG(IPARPI, Info) << "Metadata - " << deviceStatus;
 
 	rpiMetadata_[ipaContext].set("device.status", deviceStatus);
 }
@@ -1709,9 +1709,15 @@ void IpaBase::applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls, Du
 	int32_t exposureLines = helper_->exposureLines(exposure,
 						       helper_->hblankToLineLength(hblank));
 
+<<<<<<< HEAD
 	LOG(IPARPI, Debug) << "Applying AGC Exposure: " << exposure
 			   << " (Exposure lines: " << exposureLines << ", AGC requested "
 			   << agcStatus->exposureTime << ") Gain: "
+=======
+	LOG(IPARPI, Info) << "Applying AGC Exposure: " << exposure
+			   << " (Shutter lines: " << exposureLines << ", AGC requested "
+			   << agcStatus->shutterTime << ") Gain: "
+>>>>>>> 0d9e15966aac (logging for pfc)
 			   << agcStatus->analogueGain << " (Gain Code: "
 			   << gainCode << ")";
 

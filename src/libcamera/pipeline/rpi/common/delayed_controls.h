@@ -76,7 +76,6 @@ private:
 	std::unordered_map<const ControlId *, ControlParams> controlParams_;
 	unsigned int maxDelay_;
 
-	uint32_t queueCount_;
 	uint32_t writeCount_;
 	std::unordered_map<const ControlId *, RingBuffer<Info>> values_;
 	RingBuffer<unsigned int> cookies_;

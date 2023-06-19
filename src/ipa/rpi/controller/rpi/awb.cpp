@@ -12,6 +12,7 @@
 
 #include "../lux_status.h"
 
+#include "alsc_status.h"
 #include "awb.h"
 
 using namespace RPiController;
@@ -398,18 +399,28 @@ void Awb::asyncFunc()
 }
 
 static void generateStats(std::vector<Awb::RGB> &zones,
-			  RgbyRegions &stats, double minPixels,
-			  double minG)
+			  StatisticsPtr &stats, double minPixels,
+			  double minG, Metadata &globalMetadata)
 {
-	for (auto const &region : stats) {
+	std::scoped_lock<RPiController::Metadata> l(globalMetadata);
+
+	for (unsigned int i = 0; i < stats->awbRegions.numRegions(); i++) {
 		Awb::RGB zone;
+		auto &region = stats->awbRegions.get(i);
 		if (region.counted >= minPixels) {
 			zone.G = region.val.gSum / region.counted;
-			if (zone.G >= minG) {
-				zone.R = region.val.rSum / region.counted;
-				zone.B = region.val.bSum / region.counted;
-				zones.push_back(zone);
+			if (zone.G < minG)
+				continue;
+			zone.R = region.val.rSum / region.counted;
+			zone.B = region.val.bSum / region.counted;
+			/* Factor in the ALSC applied colour shading correction if required. */
+			const AlscStatus *alscStatus = globalMetadata.getLocked<AlscStatus>("alsc.status");
+			if (stats->colourStatsPos == Statistics::ColourStatsPos::PreLsc && alscStatus) {
+				zone.R *= alscStatus->r[i];
+				zone.G *= alscStatus->g[i];
+				zone.B *= alscStatus->b[i];
 			}
+			zones.push_back(zone);
 		}
 	}
 }
@@ -421,8 +432,8 @@ void Awb::prepareStats()
 	 * LSC has already been applied to the stats in this pipeline, so stop
 	 * any LSC compensation.  We also ignore config_.fast in this version.
 	 */
-	generateStats(zones_, statistics_->awbRegions, config_.minPixels,
-		      config_.minG);
+	generateStats(zones_, statistics_, config_.minPixels,
+		      config_.minG, getGlobalMetadata());
 	/*
 	 * apply sensitivities, so values appear to come from our "canonical"
 	 * sensor.

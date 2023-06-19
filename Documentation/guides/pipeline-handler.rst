@@ -183,7 +183,7 @@ to the libcamera build options in the top level ``meson_options.txt``.
 
    option('pipelines',
            type : 'array',
-           choices : ['ipu3', 'rkisp1', 'rpi/vc4', 'simple', 'uvcvideo', 'vimc', 'vivid'],
+           choices : ['ipu3', 'rkisp1', 'rpi/pisp', 'rpi/vc4', 'simple', 'uvcvideo', 'vimc', 'vivid'],
            description : 'Select which pipeline handlers to include')
 
 

@@ -1043,15 +1043,6 @@ void Vc4CameraData::tryRunPipeline()
 	/* Take the first request from the queue and action the IPA. */
 	Request *request = requestQueue_.front();
 
-	/* Do not pop this request if we're not going to return it to the user. */
-	if (!dropFrameCount_) {
-		const int behaviour = 1;
-		if (behaviour == 1)
-			jumpQueueBehaviour2(requestQueue_);
-		else if (behaviour == 2)
-			androidQueueBehaviour2(requestQueue_, maxDelay_ + 2);
-	}
-
 	LOG(RPI, Info) << "tryrunpipeline context " << request->sequence() << " bayer seq " << bayerFrame.buffer->metadata().sequence << " delay context " << bayerFrame.delayContext << " gain " << bayerFrame.controls.get(V4L2_CID_ANALOGUE_GAIN).get<int32_t>() << " exposure " << bayerFrame.controls.get(V4L2_CID_EXPOSURE).get<int32_t>();
 
 	/* See if a new ScalerCrop value needs to be applied. */
@@ -1065,8 +1056,17 @@ void Vc4CameraData::tryRunPipeline()
 	request->metadata().clear();
 	fillRequestMetadata(bayerFrame.controls, request);
 
-
 	LOG(RPI, Info) << "tryrunpipeline adding sync entry context " << request->sequence() << " control id " << request->controlListId;
+
+	/* Do not pop this request if we're not going to return it to the user. */
+	if (!dropFrameCount_) {
+		const int behaviour = 1;
+		if (behaviour == 1)
+			jumpQueueBehaviour2(requestQueue_);
+		else if (behaviour == 2)
+			androidQueueBehaviour2(requestQueue_, maxDelay_ + 2);
+	}
+
 	/*
 	 * Record which control list corresponds to this ipaCookie. Because setDelayedControls
 	 * now gets called by the IPA from the start of the following frame, we must record

@@ -199,6 +199,7 @@ pipelines_support = {
     'imx8-isi':     arch_arm,
     'ipu3':         arch_x86,
     'rkisp1':       arch_arm,
+    'rpi/pisp':     arch_arm,
     'rpi/vc4':      arch_arm,
     'simple':       arch_arm,
     'uvcvideo':     ['any'],

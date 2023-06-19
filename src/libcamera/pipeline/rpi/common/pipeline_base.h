@@ -50,7 +50,7 @@ class CameraData : public Camera::Private
 public:
 	CameraData(PipelineHandler *pipe)
 		: Camera::Private(pipe), state_(State::Stopped),
-		  dropFrameCount_(0), buffersAllocated_(false),  currentRequest_(nullptr),
+		  dropFrameCount_(0), buffersAllocated_(false),
 		  ispOutputCount_(0), ispOutputTotal_(0)
 	{
 	}
@@ -133,8 +133,6 @@ public:
 	}
 
 	std::deque<Request *> requestQueue_;
-	Request *currentRequest_;
-	uint64_t previousControlListId_;
 
 	/* For handling digital zoom. */
 	IPACameraSensorInfo sensorInfo_;

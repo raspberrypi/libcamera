@@ -900,7 +900,7 @@ void Vc4CameraData::ispOutputDequeue(FrameBuffer *buffer)
 	if (stream == &isp_[Isp::Stats]) {
 		ipa::RPi::ProcessParams params;
 		params.buffers.stats = index | RPi::MaskStats;
-		params.ipaContext = currentRequest_->sequence();
+		params.ipaContext = requestQueue_.front()->sequence();
 		ipa_->processStats(params);
 	} else {
 		/* Any other ISP output can be handed back to the application now. */
@@ -1041,7 +1041,7 @@ void Vc4CameraData::tryRunPipeline()
 		return;
 
 	/* Take the first request from the queue and action the IPA. */
-	currentRequest_ = requestQueue_.front();
+	Request *request = requestQueue_.front();
 
 	/* Do not pop this request if we're not going to return it to the user. */
 	if (!dropFrameCount_) {
@@ -1050,30 +1050,29 @@ void Vc4CameraData::tryRunPipeline()
 			jumpQueueBehaviour2(requestQueue_);
 		else if (behaviour == 2)
 			androidQueueBehaviour2(requestQueue_, maxDelay_ + 2);
-		requestQueue_.pop_front();
 	}
 
-	LOG(RPI, Info) << "tryrunpipeline context " << currentRequest_->sequence() << " bayer seq " << bayerFrame.buffer->metadata().sequence << " delay context " << bayerFrame.delayContext << " gain " << bayerFrame.controls.get(V4L2_CID_ANALOGUE_GAIN).get<int32_t>() << " exposure " << bayerFrame.controls.get(V4L2_CID_EXPOSURE).get<int32_t>();
+	LOG(RPI, Info) << "tryrunpipeline context " << request->sequence() << " bayer seq " << bayerFrame.buffer->metadata().sequence << " delay context " << bayerFrame.delayContext << " gain " << bayerFrame.controls.get(V4L2_CID_ANALOGUE_GAIN).get<int32_t>() << " exposure " << bayerFrame.controls.get(V4L2_CID_EXPOSURE).get<int32_t>();
 
 	/* See if a new ScalerCrop value needs to be applied. */
-	applyScalerCrop(currentRequest_->controls());
+	applyScalerCrop(request->controls());
 
 	/*
 	 * Clear the request metadata and fill it with some initial non-IPA
 	 * related controls. We clear it first because the request metadata
 	 * may have been populated if we have dropped the previous frame.
 	 */
-	currentRequest_->metadata().clear();
-	fillRequestMetadata(bayerFrame.controls, currentRequest_);
+	request->metadata().clear();
+	fillRequestMetadata(bayerFrame.controls, request);
 
 
-	LOG(RPI, Info) << "tryrunpipeline adding sync entry context " << currentRequest_->sequence() << " control id " << currentRequest_->controlListId;
+	LOG(RPI, Info) << "tryrunpipeline adding sync entry context " << request->sequence() << " control id " << request->controlListId;
 	/*
 	 * Record which control list corresponds to this ipaCookie. Because setDelayedControls
 	 * now gets called by the IPA from the start of the following frame, we must record
 	 * the previous control list id.
 	 */
-	syncTable_.emplace(SyncTableEntry{ currentRequest_->sequence(), currentRequest_->controlListId });
+	syncTable_.emplace(SyncTableEntry{ request->sequence(), request->controlListId });
 
 	/*
 	 * We know we that we added an entry for every delayContext, so we can
@@ -1093,7 +1092,7 @@ void Vc4CameraData::tryRunPipeline()
 
 
 	LOG(RPI, Info) << "tryrunpipeline using sync control id " << syncTable_.front().controlListId;
-	currentRequest_->syncId = syncTable_.front().controlListId;
+	request->syncId = syncTable_.front().controlListId;
 
 	/*
 	 * Controls that take effect immediately (typically ISP controls) have to be
@@ -1101,18 +1100,18 @@ void Vc4CameraData::tryRunPipeline()
 	 * must remove them from the current request, and push them onto a queue so
 	 * that they can be used later.
 	 */
-	ControlList controls = std::move(currentRequest_->controls());
-	immediateControls_.push({ currentRequest_->controlListId, currentRequest_->controls() });
+	ControlList controls = std::move(request->controls());
+	immediateControls_.push({ request->controlListId, request->controls() });
 	for (const auto &ctrl : controls) {
 		if (isControlDelayed(ctrl.first))
-			currentRequest_->controls().set(ctrl.first, ctrl.second);
+			request->controls().set(ctrl.first, ctrl.second);
 		else
 			immediateControls_.back().controls.set(ctrl.first, ctrl.second);
 	}
 	/* "Immediate" controls that have become due are now merged back into this request. */
 	while (!immediateControls_.empty() &&
-	       immediateControls_.front().controlListId <= currentRequest_->syncId) {
-		currentRequest_->controls().merge(immediateControls_.front().controls, true);
+	       immediateControls_.front().controlListId <= request->syncId) {
+		request->controls().merge(immediateControls_.front().controls, true);
 		immediateControls_.pop();
 	}
 
@@ -1127,8 +1126,8 @@ void Vc4CameraData::tryRunPipeline()
 	ipa::RPi::PrepareParams params;
 	params.buffers.bayer = RPi::MaskBayerData | bayer;
 	params.sensorControls = std::move(bayerFrame.controls);
-	params.requestControls = currentRequest_->controls();
-	params.ipaContext = currentRequest_->sequence();
+	params.requestControls = request->controls();
+	params.ipaContext = request->sequence();
 	params.delayContext = bayerFrame.delayContext;
 	params.buffers.embedded = 0;
 

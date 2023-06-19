@@ -701,7 +701,6 @@ int PipelineHandlerBase::start(Camera *camera, const ControlList *controls)
 	 * the first entry by hand.
 	 */
 	data->syncTable_ = std::queue<RPi::CameraData::SyncTableEntry>();
-	data->previousControlListId_ = 0;
 
 	/* Enable SOF event generation. */
 	data->frontendDevice()->setFrameStartEnabled(true);
@@ -1268,9 +1267,9 @@ void CameraData::metadataReady(const ControlList &metadata)
 
 	/* Add to the Request metadata buffer what the IPA has provided. */
 	/* Last thing to do is to fill up the request metadata. */
-	currentRequest_->metadata().merge(metadata);
+	requestQueue_.front()->metadata().merge(metadata);
 
-	LOG(RPI, Info) << "metadata ready context " << currentRequest_->sequence() << " gain " << *metadata.get(libcamera::controls::AnalogueGain) <<  " exposure " << *metadata.get(libcamera::controls::ExposureTime);
+	LOG(RPI, Info) << "metadata ready context " << requestQueue_.front()->sequence() << " gain " << *metadata.get(libcamera::controls::AnalogueGain) <<  " exposure " << *metadata.get(libcamera::controls::ExposureTime);
 
 	/*
 	 * Inform the sensor of the latest colour gains if it has the
@@ -1434,10 +1433,6 @@ void CameraData::clearIncompleteRequests()
 	 * All outstanding requests (and associated buffers) must be returned
 	 * back to the application.
 	 */
-	if (currentRequest_) {
-		requestQueue_.push_front(currentRequest_);
-		currentRequest_ = nullptr;
-	}
 	while (!requestQueue_.empty()) {
 		Request *request = requestQueue_.front();
 
@@ -1465,14 +1460,13 @@ void CameraData::handleStreamBuffer(FrameBuffer *buffer, RPi::Stream *stream)
 	 * that we actually have one to action, otherwise we just return
 	 * buffer back to the stream.
 	 */
-	if (!dropFrameCount_ && currentRequest_ && currentRequest_->findBuffer(stream) == buffer) {
+	Request *request = requestQueue_.front();
+	if (!dropFrameCount_ && request && request->findBuffer(stream) == buffer) {
 		/*
 		 * Tag the buffer as completed, returning it to the
 		 * application.
 		 */
-		LOG(RPI, Debug) << "Completing request buffer for stream "
-				<< stream->name();
-		pipe()->completeBuffer(currentRequest_, buffer);
+		pipe()->completeBuffer(request, buffer);
 	} else {
 		/*
 		 * This buffer was not part of the Request (which happens if an
@@ -1517,18 +1511,16 @@ void CameraData::checkRequestCompleted()
 	 * change the state to IDLE when ready.
 	 */
 	if (!dropFrameCount_) {
-		if (currentRequest_->hasPendingBuffers())
+		Request *request = requestQueue_.front();
+		if (request->hasPendingBuffers())
 			return;
 
 		/* Must wait for metadata to be filled in before completing. */
 		if (state_ != State::IpaComplete)
 			return;
 
-		LOG(RPI, Debug) << "Completing request sequence: "
-				<< currentRequest_->sequence();
-
-		pipe()->completeRequest(currentRequest_);
-		currentRequest_ = nullptr;
+		pipe()->completeRequest(request);
+		requestQueue_.pop_front();
 		requestCompleted = true;
 	}
 

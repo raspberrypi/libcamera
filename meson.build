@@ -200,6 +200,7 @@ pipelines_support = {
     'ipu3':         arch_x86,
     'mali-c55':     arch_arm,
     'rkisp1':       arch_arm,
+    'rpi/pisp':     arch_arm,
     'rpi/vc4':      arch_arm,
     'simple':       arch_arm,
     'uvcvideo':     ['any'],

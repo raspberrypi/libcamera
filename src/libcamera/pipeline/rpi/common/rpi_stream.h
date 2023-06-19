@@ -82,6 +82,11 @@ public:
 		 * to be applied after ISP processing.
 		 */
 		Needs32bitConv	= (1 << 4),
+		/*
+		 * Indicates that the input stream needs a software 16-bit endian
+		 * conversion to be applied before ISP processing.
+		 */
+		Needs16bitEndianSwap = (1 << 5),
 	};
 
 	using StreamFlags = Flags<StreamFlag>;

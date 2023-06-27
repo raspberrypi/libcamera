@@ -32,8 +32,6 @@
 #include <queue>
 #include <vector>
 
-#include <libcamera/base/mutex.h>
-
 #include <libcamera/camera.h>
 #include <libcamera/camera_manager.h>
 #include <libcamera/control_ids.h>
@@ -125,11 +123,9 @@ struct GstLibcameraSrcState {
 	 * be held while calling into other graph elements (e.g. when calling
 	 * gst_pad_query()).
 	 */
-	Mutex lock_;
-	std::queue<std::unique_ptr<RequestWrap>> queuedRequests_
-		LIBCAMERA_TSA_GUARDED_BY(lock_);
-	std::queue<std::unique_ptr<RequestWrap>> completedRequests_
-		LIBCAMERA_TSA_GUARDED_BY(lock_);
+	GMutex lock_;
+	std::queue<std::unique_ptr<RequestWrap>> queuedRequests_;
+	std::queue<std::unique_ptr<RequestWrap>> completedRequests_;
 
 	ControlList initControls_;
 	guint group_id_;
@@ -208,7 +204,7 @@ int GstLibcameraSrcState::queueRequest()
 	cam_->queueRequest(wrap->request_.get());
 
 	{
-		MutexLocker locker(lock_);
+		GLibLocker locker(&lock_);
 		queuedRequests_.push(std::move(wrap));
 	}
 
@@ -224,7 +220,7 @@ GstLibcameraSrcState::requestCompleted(Request *request)
 	std::unique_ptr<RequestWrap> wrap;
 
 	{
-		MutexLocker locker(lock_);
+		GLibLocker locker(&lock_);
 		wrap = std::move(queuedRequests_.front());
 		queuedRequests_.pop();
 	}
@@ -251,7 +247,7 @@ GstLibcameraSrcState::requestCompleted(Request *request)
 	}
 
 	{
-		MutexLocker locker(lock_);
+		GLibLocker locker(&lock_);
 		completedRequests_.push(std::move(wrap));
 	}
 
@@ -265,7 +261,7 @@ int GstLibcameraSrcState::processRequest()
 	int err = 0;
 
 	{
-		MutexLocker locker(lock_);
+		GLibLocker locker(&lock_);
 
 		if (!completedRequests_.empty()) {
 			wrap = std::move(completedRequests_.front());
@@ -625,7 +621,7 @@ gst_libcamera_src_task_leave([[maybe_unused]] GstTask *task,
 	state->cam_->stop();
 
 	{
-		MutexLocker locker(state->lock_);
+		GLibLocker locker(&state->lock_);
 		state->completedRequests_ = {};
 	}
 
@@ -759,6 +755,7 @@ gst_libcamera_src_finalize(GObject *object)
 
 	g_rec_mutex_clear(&self->stream_lock);
 	g_clear_object(&self->task);
+	g_mutex_clear(&self->state->lock_);
 	g_free(self->camera_name);
 	delete self->state;
 
@@ -776,6 +773,8 @@ gst_libcamera_src_init(GstLibcameraSrc *self)
 	gst_task_set_enter_callback(self->task, gst_libcamera_src_task_enter, self, nullptr);
 	gst_task_set_leave_callback(self->task, gst_libcamera_src_task_leave, self, nullptr);
 	gst_task_set_lock(self->task, &self->stream_lock);
+
+	g_mutex_init(&state->lock_);
 
 	state->srcpads_.push_back(gst_pad_new_from_template(templ, "src"));
 	gst_element_add_pad(GST_ELEMENT(self), state->srcpads_.back());

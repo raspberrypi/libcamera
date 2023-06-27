@@ -21,6 +21,8 @@ using namespace RPiController;
 using namespace libcamera;
 using libcamera::utils::Duration;
 
+using namespace std::literals::chrono_literals;
+
 namespace libcamera {
 LOG_DECLARE_CATEGORY(IPARPI)
 }
@@ -56,7 +58,8 @@ public:
 		       int &vblankDelay, int &hblankDelay) const override;
 	bool sensorEmbeddedDataPresent() const override;
 	double getModeSensitivity(const CameraMode &mode) const override;
-	unsigned int hideFramesModeSwitch() const override { return 1; } // seems to be required for HDR
+	unsigned int hideFramesModeSwitch() const override;
+	unsigned int hideFramesStartup() const override;
 
 private:
 	/*
@@ -223,6 +226,26 @@ double CamHelperImx708::getModeSensitivity(const CameraMode &mode) const
 {
 	/* In binned modes, sensitivity increases by a factor of 2 */
 	return (mode.width > 2304) ? 1.0 : 2.0;
+}
+
+unsigned int CamHelperImx708::hideFramesModeSwitch() const
+{
+	/*
+	 * We need to drop the first startup frame in HDR mode.
+	 * Unfortunately the only way to currently determine if the sensor is in
+	 * the HDR mode is to match with the resolution and framerate - the HDR
+	 * mode only runs upto 30fps.
+	 */
+	if (mode_.width == 2304 && mode_.height == 1296 &&
+	    mode_.minFrameDuration > 1.0s / 32)
+		return 1;
+	else
+		return 0;
+}
+
+unsigned int CamHelperImx708::hideFramesStartup() const
+{
+	return hideFramesModeSwitch();
 }
 
 void CamHelperImx708::populateMetadata(const MdParser::RegisterMap &registers,

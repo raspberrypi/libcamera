@@ -288,8 +288,8 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 		unsigned int bitDepth = info.isValid() ? info.bitsPerPixel : defaultRawBitDepth;
 		V4L2SubdeviceFormat sensorFormat = findBestFormat(data_->sensorFormats_, cfg.size, bitDepth);
 
-		rawFormat.size = sensorFormat.size;
-		rawFormat.fourcc = raw.dev->toV4L2PixelFormat(cfg.pixelFormat);
+		BayerFormat::Packing packing = BayerFormat::fromPixelFormat(cfg.pixelFormat).packing;
+		rawFormat = PipelineHandlerBase::toV4L2DeviceFormat(raw.dev, sensorFormat, packing);
 
 		int ret = raw.dev->tryFormat(&rawFormat);
 		if (ret)

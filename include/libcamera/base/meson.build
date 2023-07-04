@@ -2,31 +2,39 @@
 
 libcamera_base_include_dir = libcamera_include_dir / 'base'
 
-libcamera_base_headers = files([
-    'backtrace.h',
+libcamera_base_public_headers = files([
     'bound_method.h',
     'class.h',
     'compiler.h',
+    'flags.h',
+    'object.h',
+    'shared_fd.h',
+    'signal.h',
+    'span.h',
+    'unique_fd.h',
+])
+
+libcamera_base_private_headers = files([
+    'backtrace.h',
     'event_dispatcher.h',
     'event_dispatcher_poll.h',
     'event_notifier.h',
     'file.h',
-    'flags.h',
     'log.h',
     'message.h',
     'mutex.h',
-    'object.h',
     'private.h',
     'semaphore.h',
-    'shared_fd.h',
-    'signal.h',
-    'span.h',
     'thread.h',
     'thread_annotations.h',
     'timer.h',
-    'unique_fd.h',
     'utils.h',
 ])
 
-install_headers(libcamera_base_headers,
+libcamera_base_headers = [
+    libcamera_base_public_headers,
+    libcamera_base_private_headers,
+]
+
+install_headers(libcamera_base_public_headers,
                 subdir: libcamera_base_include_dir)

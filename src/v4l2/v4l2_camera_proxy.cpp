@@ -778,9 +778,19 @@ const std::set<unsigned long> V4L2CameraProxy::supportedIoctls_ = {
 	VIDIOC_STREAMOFF,
 };
 
-int V4L2CameraProxy::ioctl(V4L2CameraFile *file, unsigned long request, void *arg)
+int V4L2CameraProxy::ioctl(V4L2CameraFile *file, unsigned long longRequest, void *arg)
 {
 	MutexLocker locker(proxyMutex_);
+
+	/*
+	 * The Linux Kernel only processes 32 bits of an IOCTL.
+	 *
+	 * Prevent unexpected sign-extensions that could occur if applications
+	 * use a signed int for the ioctl request, which would sign-extend to
+	 * an incorrect value for unsigned longs on 64 bit architectures by
+	 * explicitly casting as an unsigned int here.
+	 */
+	unsigned int request = longRequest;
 
 	if (!arg && (_IOC_DIR(request) & _IOC_WRITE)) {
 		errno = EFAULT;

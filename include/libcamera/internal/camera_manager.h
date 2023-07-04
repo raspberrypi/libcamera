@@ -50,11 +50,10 @@ private:
 	 * This mutex protects
 	 *
 	 * - initialized_ and status_ during initialization
-	 * - cameras_ and camerasByDevnum_ after initialization
+	 * - cameras_ after initialization
 	 */
 	mutable Mutex mutex_;
 	std::vector<std::shared_ptr<Camera>> cameras_ LIBCAMERA_TSA_GUARDED_BY(mutex_);
-	std::map<dev_t, std::weak_ptr<Camera>> camerasByDevnum_ LIBCAMERA_TSA_GUARDED_BY(mutex_);
 
 	ConditionVariable cv_;
 	bool initialized_ LIBCAMERA_TSA_GUARDED_BY(mutex_);

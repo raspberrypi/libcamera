@@ -32,7 +32,6 @@ public:
 
 	std::vector<std::shared_ptr<Camera>> cameras() const;
 	std::shared_ptr<Camera> get(const std::string &id);
-	std::shared_ptr<Camera> get(dev_t devnum);
 
 	static const std::string &version() { return version_; }
 

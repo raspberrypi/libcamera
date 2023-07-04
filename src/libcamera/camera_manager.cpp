@@ -178,15 +178,9 @@ void CameraManager::Private::addCamera(std::shared_ptr<Camera> camera)
 		}
 	}
 
-	auto devnums = camera->properties()
-			       .get(properties::SystemDevices)
-			       .value_or(Span<int64_t>{});
-
 	cameras_.push_back(std::move(camera));
 
 	unsigned int index = cameras_.size() - 1;
-	for (dev_t devnum : devnums)
-		camerasByDevnum_[devnum] = cameras_[index];
 
 	/* Report the addition to the public signal */
 	CameraManager *const o = LIBCAMERA_O_PTR();
@@ -218,13 +212,6 @@ void CameraManager::Private::removeCamera(std::shared_ptr<Camera> camera)
 
 	LOG(Camera, Debug)
 		<< "Unregistering camera '" << camera->id() << "'";
-
-	auto iter_d = std::find_if(camerasByDevnum_.begin(), camerasByDevnum_.end(),
-				   [camera](const std::pair<dev_t, std::weak_ptr<Camera>> &p) {
-					   return p.second.lock().get() == camera.get();
-				   });
-	if (iter_d != camerasByDevnum_.end())
-		camerasByDevnum_.erase(iter_d);
 
 	cameras_.erase(iter);
 
@@ -364,35 +351,6 @@ std::shared_ptr<Camera> CameraManager::get(const std::string &id)
 	}
 
 	return nullptr;
-}
-
-/**
- * \brief Retrieve a camera based on device number
- * \param[in] devnum Device number of camera to get
- *
- * This function is meant solely for the use of the V4L2 compatibility
- * layer, to map device nodes to Camera instances. Applications shall
- * not use it and shall instead retrieve cameras by name.
- *
- * Before calling this function the caller is responsible for ensuring that
- * the camera manager is running.
- *
- * \context This function is \threadsafe.
- *
- * \return Shared pointer to Camera object, which is empty if the camera is
- * not found
- */
-std::shared_ptr<Camera> CameraManager::get(dev_t devnum)
-{
-	Private *const d = _d();
-
-	MutexLocker locker(d->mutex_);
-
-	auto iter = d->camerasByDevnum_.find(devnum);
-	if (iter == d->camerasByDevnum_.end())
-		return nullptr;
-
-	return iter->second.lock();
 }
 
 /**

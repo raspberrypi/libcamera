@@ -24,6 +24,7 @@
 
 #include <libcamera/camera.h>
 #include <libcamera/camera_manager.h>
+#include <libcamera/property_ids.h>
 
 #include "v4l2_camera_file.h"
 
@@ -113,14 +114,35 @@ int V4L2CompatManager::getCameraIndex(int fd)
 	if (ret < 0)
 		return -1;
 
-	std::shared_ptr<Camera> target = cm_->get(statbuf.st_rdev);
-	if (!target)
-		return -1;
+	const dev_t devnum = statbuf.st_rdev;
 
+	/*
+	 * Iterate each known camera and identify if it reports this nodes
+	 * device number in its list of SystemDevices.
+	 */
 	auto cameras = cm_->cameras();
 	for (auto [index, camera] : utils::enumerate(cameras)) {
-		if (camera == target)
-			return index;
+		Span<const int64_t> devices = camera->properties()
+						      .get(properties::SystemDevices)
+						      .value_or(Span<int64_t>{});
+
+		/*
+		 * While there may be multiple cameras that could reference the
+		 * same device node, we take a first match as a best effort for
+		 * now.
+		 *
+		 * \todo Each camera can be accessed through any of the video
+		 * device nodes that it uses. This may confuse applications.
+		 * Consider reworking the V4L2 adaptation layer to instead
+		 * expose each Camera instance through a single video device
+		 * node (with a consistent and stable mapping). The other
+		 * device nodes could possibly be hidden from the application
+		 * by intercepting additional calls to the C library.
+		 */
+		for (const int64_t dev : devices) {
+			if (dev == static_cast<int64_t>(devnum))
+				return index;
+		}
 	}
 
 	return -1;

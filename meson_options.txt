@@ -66,6 +66,11 @@ option('tracing',
         value : 'auto',
         description : 'Enable tracing (based on lttng)')
 
+option('udev',
+       type : 'feature',
+       value : 'auto',
+       description : 'Enable udev support for hotplug')
+
 option('v4l2',
         type : 'boolean',
         value : false,

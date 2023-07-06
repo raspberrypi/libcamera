@@ -76,7 +76,7 @@ libdl = null_dep
 if not cc.has_function('dlopen')
     libdl = cc.find_library('dl')
 endif
-libudev = dependency('libudev', required : false)
+libudev = dependency('libudev', required : get_option('udev'))
 libyaml = dependency('yaml-0.1', required : false)
 
 # Use one of gnutls or libcrypto (provided by OpenSSL), trying gnutls first.

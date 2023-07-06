@@ -57,9 +57,9 @@ if ((cc.get_id() == 'gcc' and cc.version().version_compare('>=9.0') and
     qt5_cpp_args += ['-Wno-deprecated-copy']
 endif
 
-resources = qt5.preprocess(moc_headers: qcam_moc_headers,
+resources = qt5.preprocess(moc_headers : qcam_moc_headers,
                            qresources : qcam_resources,
-                           dependencies: qt5_dep)
+                           dependencies : qt5_dep)
 
 qcam  = executable('qcam', qcam_sources, resources,
                    install : true,

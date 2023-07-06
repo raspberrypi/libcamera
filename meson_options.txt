@@ -59,12 +59,12 @@ option('qcam',
 option('test',
         type : 'boolean',
         value : false,
-        description: 'Compile and include the tests')
+        description : 'Compile and include the tests')
 
 option('tracing',
         type : 'feature',
         value : 'auto',
-        description: 'Enable tracing (based on lttng)')
+        description : 'Enable tracing (based on lttng)')
 
 option('v4l2',
         type : 'boolean',

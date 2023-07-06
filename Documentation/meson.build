@@ -92,8 +92,8 @@ if sphinx.found()
                   install_dir : doc_install_dir)
 
     custom_target('documentation-linkcheck',
-                  command: [sphinx, '-W', '-b', 'linkcheck', meson.current_source_dir(), '@OUTPUT@'],
-                  build_always_stale: true,
-                  input: docs_sources,
-                  output: 'linkcheck')
+                  command : [sphinx, '-W', '-b', 'linkcheck', meson.current_source_dir(), '@OUTPUT@'],
+                  build_always_stale : true,
+                  input : docs_sources,
+                  output : 'linkcheck')
 endif

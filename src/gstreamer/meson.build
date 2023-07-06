@@ -43,6 +43,6 @@ libcamera_gst = shared_library('gstlibcamera',
     libcamera_gst_sources,
     cpp_args : libcamera_gst_cpp_args,
     dependencies : [libcamera_public, gstvideo_dep, gstallocator_dep],
-    install: true,
+    install : true,
     install_dir : '@0@/gstreamer-1.0'.format(get_option('libdir')),
 )

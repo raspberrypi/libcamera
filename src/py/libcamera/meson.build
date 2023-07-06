@@ -93,11 +93,11 @@ pycamera = shared_module('_libcamera',
 
 run_command('ln', '-fsrT', files('__init__.py'),
             meson.current_build_dir() / '__init__.py',
-            check: true)
+            check : true)
 
 run_command('ln', '-fsrT', meson.current_source_dir() / 'utils',
             meson.current_build_dir() / 'utils',
-            check: true)
+            check : true)
 
 install_data(['__init__.py'], install_dir : destdir)
 

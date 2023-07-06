@@ -9,7 +9,7 @@ libcamera_ipa_headers = files([
 ])
 
 install_headers(libcamera_ipa_headers,
-                subdir: libcamera_ipa_include_dir)
+                subdir : libcamera_ipa_include_dir)
 
 libcamera_generated_ipa_headers = []
 

@@ -37,4 +37,4 @@ libcamera_base_headers = [
 ]
 
 install_headers(libcamera_base_public_headers,
-                subdir: libcamera_base_include_dir)
+                subdir : libcamera_base_include_dir)

@@ -93,9 +93,9 @@ endif
 if not libcrypto.found()
     warning('Neither gnutls nor libcrypto found, all IPA modules will be isolated')
     summary({'IPA modules signed with': 'None (modules will run isolated)'},
-            section: 'Configuration')
+            section : 'Configuration')
 else
-    summary({'IPA modules signed with': libcrypto.name()}, section: 'Configuration')
+    summary({'IPA modules signed with' : libcrypto.name()}, section : 'Configuration')
 endif
 
 if liblttng.found()

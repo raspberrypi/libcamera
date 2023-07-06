@@ -10,5 +10,5 @@ foreach test : stream_tests
                      dependencies : libcamera_public,
                      link_with : test_libraries,
                      include_directories : test_includes_internal)
-    test(test['name'], exe, suite: 'stream')
+    test(test['name'], exe, suite : 'stream')
 endforeach

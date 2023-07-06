@@ -192,6 +192,7 @@ namespace {
 static const SimplePipelineInfo supportedDevices[] = {
 	{ "dcmipp", {} },
 	{ "imx7-csi", { { "pxp", 1 } } },
+	{ "j721e-csi2rx", {} },
 	{ "mxc-isi", {} },
 	{ "qcom-camss", {} },
 	{ "sun6i-csi", {} },

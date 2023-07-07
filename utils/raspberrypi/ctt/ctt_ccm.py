@@ -47,11 +47,8 @@ def degamma(x):
 
 
 def gamma(x):
-    # return (x *  * (1 / 2.4)  *  1.055 - 0.055)
-    e = []
-    for i in range(len(x)):
-        e.append(((x[i] / 255) ** (1 / 2.4) * 1.055 - 0.055) * 255)
-    return e
+    # Take 3 long array of color values and gamma them
+    return [((colour / 255) ** (1 / 2.4) * 1.055 - 0.055) * 255 for colour in x]
 
 
 """
@@ -96,10 +93,8 @@ def ccm(Cam, cal_cr_list, cal_cb_list):
     """
     m_srgb = degamma(m_rgb)  # now in 16 bit color.
 
-    m_lab = []
-    for col in m_srgb:
-        m_lab.append(colors.RGB_to_LAB(col / 256))
-    # This produces matrix of LAB values for ideal color chart)
+    # Produce array of LAB values for ideal color chart
+    m_lab = [colors.RGB_to_LAB(color / 256) for color in m_srgb]
 
     """
     reorder reference values to match how patches are ordered
@@ -168,7 +163,7 @@ def ccm(Cam, cal_cr_list, cal_cb_list):
         sumde = 0
         ccm = do_ccm(r, g, b, m_srgb)
         # This is the initial guess that our optimisation code works with.
-
+        original_ccm = ccm
         r1 = ccm[0]
         r2 = ccm[1]
         g1 = ccm[3]
@@ -188,7 +183,7 @@ def ccm(Cam, cal_cr_list, cal_cb_list):
         We use our old CCM as the initial guess for the program to find the
         optimised matrix
         '''
-        result = minimize(guess, x0, args=(r, g, b, m_lab), tol=0.0000000001)
+        result = minimize(guess, x0, args=(r, g, b, m_lab), tol=0.01)
         '''
         This produces a color matrix which has the lowest delta E possible,
         based off the input data. Note it is impossible for this to reach
@@ -199,12 +194,13 @@ def ccm(Cam, cal_cr_list, cal_cb_list):
         [r1, r2, g1, g2, b1, b2] = result.x
         # The new, optimised color correction matrix values
         optimised_ccm = [r1, r2, (1 - r1 - r2), g1, g2, (1 - g1 - g2), b1, b2, (1 - b1 - b2)]
+
         # This is the optimised Color Matrix (preserving greys by summing rows up to 1)
         Cam.log += str(optimised_ccm)
         Cam.log += "\n Old Color Correction Matrix Below \n"
         Cam.log += str(ccm)
 
-        formatted_ccm = np.array(ccm).reshape((3, 3))
+        formatted_ccm = np.array(original_ccm).reshape((3, 3))
 
         '''
         below is a whole load of code that then applies the latest color
@@ -213,22 +209,21 @@ def ccm(Cam, cal_cr_list, cal_cb_list):
         '''
         optimised_ccm_rgb = []  # Original Color Corrected Matrix RGB / LAB
         optimised_ccm_lab = []
-        for w in range(24):
-            RGB = np.array([r[w], g[w], b[w]])
-            ccm_applied_rgb = np.dot(formatted_ccm, (RGB / 256))
+
+        formatted_optimised_ccm = np.array(optimised_ccm).reshape((3, 3))
+        after_gamma_rgb = []
+        after_gamma_lab = []
+
+        for RGB in zip(r, g, b):
+            ccm_applied_rgb = np.dot(formatted_ccm, (np.array(RGB) / 256))
             optimised_ccm_rgb.append(gamma(ccm_applied_rgb))
             optimised_ccm_lab.append(colors.RGB_to_LAB(ccm_applied_rgb))
 
-        formatted_optimised_ccm = np.array(ccm).reshape((3, 3))
-        after_gamma_rgb = []
-        after_gamma_lab = []
-        for w in range(24):
-            RGB = np.array([r[w], g[w], b[w]])
-            optimised_ccm_applied_rgb = np.dot(formatted_optimised_ccm, RGB / 256)
+            optimised_ccm_applied_rgb = np.dot(formatted_optimised_ccm, np.array(RGB) / 256)
             after_gamma_rgb.append(gamma(optimised_ccm_applied_rgb))
             after_gamma_lab.append(colors.RGB_to_LAB(optimised_ccm_applied_rgb))
         '''
-        Gamma After RGB / LAB
+        Gamma After RGB / LAB - not used in calculations, only used for visualisation
         We now want to spit out some data that shows
         how the optimisation has improved the color matrices
         '''
@@ -303,9 +298,8 @@ def guess(x0, r, g, b, m_lab):       # provides a method of numerical feedback f
 def transform_and_evaluate(ccm, r, g, b, m_lab):  # Transforms colors to LAB and applies the correction matrix
     # create list of matrix changed colors
     realrgb = []
-    for i in range(len(r)):
-        RGB = np.array([r[i], g[i], b[i]])
-        rgb_post_ccm = np.dot(ccm, RGB)  # This is RGB values after the color correction matrix has been applied
+    for RGB in zip(r, g, b):
+        rgb_post_ccm = np.dot(ccm, np.array(RGB) / 256)  # This is RGB values after the color correction matrix has been applied
         realrgb.append(colors.RGB_to_LAB(rgb_post_ccm))
     # now compare that with m_lab and return numeric result, averaged for each patch
     return (sumde(realrgb, m_lab) / 24)  # returns an average result of delta E
@@ -315,12 +309,12 @@ def sumde(listA, listB):
     global typenum, test_patches
     sumde = 0
     maxde = 0
-    patchde = []
-    for i in range(len(listA)):
-        if maxde < (deltae(listA[i], listB[i])):
-            maxde = deltae(listA[i], listB[i])
-        patchde.append(deltae(listA[i], listB[i]))
-        sumde += deltae(listA[i], listB[i])
+    patchde = []  # Create array of the delta E values for each patch. useful for optimisation of certain patches
+    for listA_item, listB_item in zip(listA, listB):
+        if maxde < (deltae(listA_item, listB_item)):
+            maxde = deltae(listA_item, listB_item)
+        patchde.append(deltae(listA_item, listB_item))
+        sumde += deltae(listA_item, listB_item)
     '''
     The different options specified at the start allow for
     the maximum to be returned, average or specific patches
@@ -330,9 +324,8 @@ def sumde(listA, listB):
     if typenum == 1:
         return maxde
     if typenum == 2:
-        output = 0
-        for y in range(len(test_patches)):
-            output += patchde[test_patches[y]]   # grabs the specific patches (no need for averaging here)
+        output = sum([patchde[test_patch] for test_patch in test_patches])
+        # Selects only certain patches and returns the output for them
         return output
 
 

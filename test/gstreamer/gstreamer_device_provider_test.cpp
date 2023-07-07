@@ -34,7 +34,7 @@ protected:
 
 	int run() override
 	{
-		g_autoptr(GstDeviceProvider) provider;
+		g_autoptr(GstDeviceProvider) provider = NULL;
 		GList *devices, *l;
 		std::vector<std::string> cameraNames;
 		std::unique_ptr<libcamera::CameraManager> cm;

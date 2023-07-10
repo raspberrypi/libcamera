@@ -253,6 +253,9 @@ class StagedChanges(Commit):
     def __init__(self):
         Commit.__init__(self, '')
 
+        # There are no trailers to parse on a Staged Change.
+        self._trailers = []
+
     def _parse(self):
         ret = subprocess.run(['git', 'diff', '--staged', '--name-status'],
                              stdout=subprocess.PIPE).stdout.decode('utf-8')

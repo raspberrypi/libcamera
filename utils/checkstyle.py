@@ -479,7 +479,8 @@ class TrailersChecker(CommitChecker):
         for trailer in commit.trailers:
             match = TrailersChecker.trailer_regex.fullmatch(trailer)
             if not match:
-                raise RuntimeError(f"Malformed commit trailer '{trailer}'")
+                issues.append(CommitIssue(f"Malformed commit trailer '{trailer}'"))
+                continue
 
             key, value = match.groups()
 

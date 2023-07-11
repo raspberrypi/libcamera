@@ -269,9 +269,9 @@ class StagedChanges(Commit):
         return parse_diff(diff.splitlines(True))
 
 
-class Amendment(StagedChanges):
+class Amendment(Commit):
     def __init__(self):
-        StagedChanges.__init__(self)
+        Commit.__init__(self, '')
 
     def _parse(self):
         # Create a title using HEAD commit

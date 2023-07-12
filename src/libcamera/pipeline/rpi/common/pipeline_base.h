@@ -81,6 +81,9 @@ public:
 	virtual void platformStart() = 0;
 	virtual void platformStop() = 0;
 
+	double scoreFormat(double desired, double actual) const;
+	V4L2SubdeviceFormat findBestFormat(const Size &req, unsigned int bitDepth) const;
+
 	void freeBuffers();
 	virtual void platformFreeBuffers() = 0;
 

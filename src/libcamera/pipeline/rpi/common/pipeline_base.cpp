@@ -74,63 +74,6 @@ bool isMonoSensor(std::unique_ptr<CameraSensor> &sensor)
 	return bayer.order == BayerFormat::Order::MONO;
 }
 
-double scoreFormat(double desired, double actual)
-{
-	double score = desired - actual;
-	/* Smaller desired dimensions are preferred. */
-	if (score < 0.0)
-		score = (-score) / 8;
-	/* Penalise non-exact matches. */
-	if (actual != desired)
-		score *= 2;
-
-	return score;
-}
-
-V4L2SubdeviceFormat findBestFormat(const SensorFormats &formatsMap, const Size &req, unsigned int bitDepth)
-{
-	double bestScore = std::numeric_limits<double>::max(), score;
-	V4L2SubdeviceFormat bestFormat;
-	bestFormat.colorSpace = ColorSpace::Raw;
-
-	constexpr float penaltyAr = 1500.0;
-	constexpr float penaltyBitDepth = 500.0;
-
-	/* Calculate the closest/best mode from the user requested size. */
-	for (const auto &iter : formatsMap) {
-		const unsigned int mbusCode = iter.first;
-		const PixelFormat format = mbusCodeToPixelFormat(mbusCode,
-								 BayerFormat::Packing::None);
-		const PixelFormatInfo &info = PixelFormatInfo::info(format);
-
-		for (const Size &size : iter.second) {
-			double reqAr = static_cast<double>(req.width) / req.height;
-			double fmtAr = static_cast<double>(size.width) / size.height;
-
-			/* Score the dimensions for closeness. */
-			score = scoreFormat(req.width, size.width);
-			score += scoreFormat(req.height, size.height);
-			score += penaltyAr * scoreFormat(reqAr, fmtAr);
-
-			/* Add any penalties... this is not an exact science! */
-			score += utils::abs_diff(info.bitsPerPixel, bitDepth) * penaltyBitDepth;
-
-			if (score <= bestScore) {
-				bestScore = score;
-				bestFormat.mbus_code = mbusCode;
-				bestFormat.size = size;
-			}
-
-			LOG(RPI, Debug) << "Format: " << size
-					<< " fmt " << format
-					<< " Score: " << score
-					<< " (best " << bestScore << ")";
-		}
-	}
-
-	return bestFormat;
-}
-
 const std::vector<ColorSpace> validColorSpaces = {
 	ColorSpace::Sycc,
 	ColorSpace::Smpte170m,
@@ -276,7 +219,7 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 
 		const PixelFormatInfo &info = PixelFormatInfo::info(cfg.pixelFormat);
 		unsigned int bitDepth = info.isValid() ? info.bitsPerPixel : defaultRawBitDepth;
-		V4L2SubdeviceFormat sensorFormat = findBestFormat(data_->sensorFormats_, cfg.size, bitDepth);
+		V4L2SubdeviceFormat sensorFormat = data_->findBestFormat(cfg.size, bitDepth);
 
 		BayerFormat::Packing packing = BayerFormat::fromPixelFormat(cfg.pixelFormat).packing;
 		rawFormat = PipelineHandlerBase::toV4L2DeviceFormat(raw.dev, sensorFormat, packing);
@@ -391,7 +334,7 @@ PipelineHandlerBase::generateConfiguration(Camera *camera, Span<const StreamRole
 		switch (role) {
 		case StreamRole::Raw:
 			size = sensorSize;
-			sensorFormat = findBestFormat(data->sensorFormats_, size, defaultRawBitDepth);
+			sensorFormat = data->findBestFormat(size, defaultRawBitDepth);
 			pixelFormat = mbusCodeToPixelFormat(sensorFormat.mbus_code,
 							    BayerFormat::Packing::CSI2);
 			ASSERT(pixelFormat.isValid());
@@ -531,10 +474,11 @@ int PipelineHandlerBase::configure(Camera *camera, CameraConfiguration *config)
 		bitDepth = bayerFormat.bitDepth;
 	}
 
-	V4L2SubdeviceFormat sensorFormat = findBestFormat(data->sensorFormats_,
-							  rawStreams.empty() ? ispStreams[0].cfg->size
-									     : rawStreams[0].cfg->size,
-							  bitDepth);
+	V4L2SubdeviceFormat sensorFormat =
+		data->findBestFormat(rawStreams.empty() ? ispStreams[0].cfg->size
+							: rawStreams[0].cfg->size,
+				     bitDepth);
+
 	/* Apply any cached transform. */
 	const RPiCameraConfiguration *rpiConfig = static_cast<const RPiCameraConfiguration *>(config);
 
@@ -952,6 +896,63 @@ int PipelineHandlerBase::queueAllBuffers(Camera *camera)
 	}
 
 	return 0;
+}
+
+double CameraData::scoreFormat(double desired, double actual) const
+{
+	double score = desired - actual;
+	/* Smaller desired dimensions are preferred. */
+	if (score < 0.0)
+		score = (-score) / 8;
+	/* Penalise non-exact matches. */
+	if (actual != desired)
+		score *= 2;
+
+	return score;
+}
+
+V4L2SubdeviceFormat CameraData::findBestFormat(const Size &req, unsigned int bitDepth) const
+{
+	double bestScore = std::numeric_limits<double>::max(), score;
+	V4L2SubdeviceFormat bestFormat;
+	bestFormat.colorSpace = ColorSpace::Raw;
+
+	constexpr float penaltyAr = 1500.0;
+	constexpr float penaltyBitDepth = 500.0;
+
+	/* Calculate the closest/best mode from the user requested size. */
+	for (const auto &iter : sensorFormats_) {
+		const unsigned int mbusCode = iter.first;
+		const PixelFormat format = mbusCodeToPixelFormat(mbusCode,
+								 BayerFormat::Packing::None);
+		const PixelFormatInfo &info = PixelFormatInfo::info(format);
+
+		for (const Size &size : iter.second) {
+			double reqAr = static_cast<double>(req.width) / req.height;
+			double fmtAr = static_cast<double>(size.width) / size.height;
+
+			/* Score the dimensions for closeness. */
+			score = scoreFormat(req.width, size.width);
+			score += scoreFormat(req.height, size.height);
+			score += penaltyAr * scoreFormat(reqAr, fmtAr);
+
+			/* Add any penalties... this is not an exact science! */
+			score += utils::abs_diff(info.bitsPerPixel, bitDepth) * penaltyBitDepth;
+
+			if (score <= bestScore) {
+				bestScore = score;
+				bestFormat.mbus_code = mbusCode;
+				bestFormat.size = size;
+			}
+
+			LOG(RPI, Debug) << "Format: " << size
+					<< " fmt " << format
+					<< " Score: " << score
+					<< " (best " << bestScore << ")";
+		}
+	}
+
+	return bestFormat;
 }
 
 void CameraData::freeBuffers()

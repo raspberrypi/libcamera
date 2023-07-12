@@ -207,6 +207,17 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 	std::sort(outStreams.begin(), outStreams.end(),
 		  [](auto &l, auto &r) { return l.cfg->size > r.cfg->size; });
 
+	/* Compute the sensor configuration. */
+	unsigned int bitDepth = defaultRawBitDepth;
+	if (!rawStreams.empty()) {
+		BayerFormat bayerFormat = BayerFormat::fromPixelFormat(rawStreams[0].cfg->pixelFormat);
+		bitDepth = bayerFormat.bitDepth;
+	}
+
+	sensorFormat_ = data_->findBestFormat(rawStreams.empty() ? outStreams[0].cfg->size
+								 : rawStreams[0].cfg->size,
+					      bitDepth);
+
 	/* Do any platform specific fixups. */
 	status = data_->platformValidate(rawStreams, outStreams);
 	if (status == Invalid)
@@ -217,12 +228,8 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 		StreamConfiguration &cfg = config_.at(raw.index);
 		V4L2DeviceFormat rawFormat;
 
-		const PixelFormatInfo &info = PixelFormatInfo::info(cfg.pixelFormat);
-		unsigned int bitDepth = info.isValid() ? info.bitsPerPixel : defaultRawBitDepth;
-		V4L2SubdeviceFormat sensorFormat = data_->findBestFormat(cfg.size, bitDepth);
-
 		BayerFormat::Packing packing = BayerFormat::fromPixelFormat(cfg.pixelFormat).packing;
-		rawFormat = PipelineHandlerBase::toV4L2DeviceFormat(raw.dev, sensorFormat, packing);
+		rawFormat = PipelineHandlerBase::toV4L2DeviceFormat(raw.dev, sensorFormat_, packing);
 
 		int ret = raw.dev->tryFormat(&rawFormat);
 		if (ret)
@@ -442,8 +449,6 @@ int PipelineHandlerBase::configure(Camera *camera, CameraConfiguration *config)
 		stream->clearFlags(StreamFlag::External);
 
 	std::vector<CameraData::StreamParams> rawStreams, ispStreams;
-	std::optional<BayerFormat::Packing> packing;
-	unsigned int bitDepth = defaultRawBitDepth;
 
 	for (unsigned i = 0; i < config->size(); i++) {
 		StreamConfiguration *cfg = &config->at(i);
@@ -461,31 +466,22 @@ int PipelineHandlerBase::configure(Camera *camera, CameraConfiguration *config)
 	std::sort(ispStreams.begin(), ispStreams.end(),
 		  [](auto &l, auto &r) { return l.cfg->size > r.cfg->size; });
 
-	/*
-	 * Calculate the best sensor mode we can use based on the user's request,
-	 * and apply it to the sensor with the cached tranform, if any.
-	 *
-	 * If we have been given a RAW stream, use that size for setting up the sensor.
-	 */
-	if (!rawStreams.empty()) {
-		BayerFormat bayerFormat = BayerFormat::fromPixelFormat(rawStreams[0].cfg->pixelFormat);
-		/* Replace the user requested packing/bit-depth. */
-		packing = bayerFormat.packing;
-		bitDepth = bayerFormat.bitDepth;
-	}
+	/* Apply the format on the sensor with any cached transform. */
+	const RPiCameraConfiguration *rpiConfig =
+				static_cast<const RPiCameraConfiguration *>(config);
+	V4L2SubdeviceFormat sensorFormat = rpiConfig->sensorFormat_;
 
-	V4L2SubdeviceFormat sensorFormat =
-		data->findBestFormat(rawStreams.empty() ? ispStreams[0].cfg->size
-							: rawStreams[0].cfg->size,
-				     bitDepth);
-
-	/* Apply any cached transform. */
-	const RPiCameraConfiguration *rpiConfig = static_cast<const RPiCameraConfiguration *>(config);
-
-	/* Then apply the format on the sensor. */
 	ret = data->sensor_->setFormat(&sensorFormat, rpiConfig->combinedTransform_);
 	if (ret)
 		return ret;
+
+	/* Use the user requested packing/bit-depth. */
+	std::optional<BayerFormat::Packing> packing;
+	if (!rawStreams.empty()) {
+		BayerFormat bayerFormat =
+			BayerFormat::fromPixelFormat(rawStreams[0].cfg->pixelFormat);
+		packing = bayerFormat.packing;
+	}
 
 	/*
 	 * Platform specific internal stream configuration. This also assigns

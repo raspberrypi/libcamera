@@ -262,6 +262,8 @@ public:
 
 	/* Cache the combinedTransform_ that will be applied to the sensor */
 	Transform combinedTransform_;
+	/* The sensor format computed in validate() */
+	V4L2SubdeviceFormat sensorFormat_;
 
 private:
 	const CameraData *data_;

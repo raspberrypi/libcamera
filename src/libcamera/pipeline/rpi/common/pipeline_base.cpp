@@ -66,16 +66,6 @@ PixelFormat mbusCodeToPixelFormat(unsigned int mbus_code,
 	return pix;
 }
 
-SensorFormats populateSensorFormats(std::unique_ptr<CameraSensor> &sensor)
-{
-	SensorFormats formats;
-
-	for (auto const mbusCode : sensor->mbusCodes())
-		formats.emplace(mbusCode, sensor->sizes(mbusCode));
-
-	return formats;
-}
-
 bool isMonoSensor(std::unique_ptr<CameraSensor> &sensor)
 {
 	unsigned int mbusCode = sensor->mbusCodes()[0];
@@ -804,7 +794,10 @@ int PipelineHandlerBase::registerCamera(std::unique_ptr<RPi::CameraData> &camera
 	if (data->sensor_->init())
 		return -EINVAL;
 
-	data->sensorFormats_ = populateSensorFormats(data->sensor_);
+	/* Populate the map of sensor supported formats and sizes. */
+	for (auto const mbusCode : data->sensor_->mbusCodes())
+		data->sensorFormats_.emplace(mbusCode,
+					     data->sensor_->sizes(mbusCode));
 
 	/*
 	 * Enumerate all the Video Mux/Bridge devices across the sensor -> Fr

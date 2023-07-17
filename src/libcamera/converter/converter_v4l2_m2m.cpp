@@ -445,6 +445,7 @@ int V4L2M2MConverter::queueBuffers(FrameBuffer *input,
 }
 
 static std::initializer_list<std::string> compatibles = {
+	"mtk-mdp",
 	"pxp",
 };
 

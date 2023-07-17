@@ -193,6 +193,7 @@ static const SimplePipelineInfo supportedDevices[] = {
 	{ "dcmipp", {} },
 	{ "imx7-csi", { { "pxp", 1 } } },
 	{ "j721e-csi2rx", {} },
+	{ "mtk-seninf", { { "mtk-mdp", 3 } } },
 	{ "mxc-isi", {} },
 	{ "qcom-camss", {} },
 	{ "sun6i-csi", {} },

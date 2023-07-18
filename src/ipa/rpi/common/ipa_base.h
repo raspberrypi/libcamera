@@ -116,6 +116,12 @@ private:
 	/* Frame duration (1/fps) limits. */
 	utils::Duration minFrameDuration_;
 	utils::Duration maxFrameDuration_;
+
+	/* The current state of flicker avoidance. */
+	struct FlickerState {
+		int32_t mode;
+		utils::Duration manualPeriod;
+	} flickerState_;
 };
 
 } /* namespace ipa::RPi */

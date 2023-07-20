@@ -462,6 +462,9 @@ void IpaBase::processStats(const ProcessParams &params)
 
 		RPiController::StatisticsPtr statistics = platformProcessStats(it->second.planes()[0]);
 
+		/* reportMetadata() will pick this up and set the FocusFoM metadata */
+		rpiMetadata.set("focus.status", statistics->focusRegions);
+
 		helper_->process(statistics, rpiMetadata);
 		controller_.process(statistics, &rpiMetadata);
 
@@ -1259,7 +1262,7 @@ void IpaBase::reportMetadata(unsigned int ipaContext)
 			}
 		}
 
-		uint32_t focusFoM = (sum / numRegions) >> 16;
+		uint32_t focusFoM = sum / numRegions;
 		libcameraMetadata_.set(controls::FocusFoM, focusFoM);
 	}
 

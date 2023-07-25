@@ -48,9 +48,6 @@ def generate_py(controls, mode):
             # Adjustments for controls
             if name == 'LensShadingMapMode':
                 prefix = 'LensShadingMapMode'
-            elif name == 'SceneFlicker':
-                # If we strip the prefix, we would get '50Hz', which is illegal name
-                prefix = ''
             else:
                 prefix = find_common_prefix([e['name'] for e in enum])
         else:

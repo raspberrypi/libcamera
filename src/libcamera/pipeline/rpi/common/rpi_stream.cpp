@@ -79,7 +79,7 @@ unsigned int Stream::getBufferId(FrameBuffer *buffer) const
 	return it->first;
 }
 
-void Stream::setExternalBuffer(FrameBuffer *buffer)
+void Stream::setExportedBuffer(FrameBuffer *buffer)
 {
 	bufferMap_.emplace(id_.get(), buffer);
 }

@@ -695,7 +695,7 @@ int PipelineHandlerBase::queueRequestDevice(Camera *camera, Request *request)
 			 * outside the v4l2 device. Store it in the stream buffer list
 			 * so we can track it.
 			 */
-			stream->setExternalBuffer(buffer);
+			stream->setExportedBuffer(buffer);
 		}
 
 		/*

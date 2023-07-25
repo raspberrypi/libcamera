@@ -76,7 +76,7 @@ public:
 	const BufferMap &getBuffers() const;
 	unsigned int getBufferId(FrameBuffer *buffer) const;
 
-	void setExternalBuffer(FrameBuffer *buffer);
+	void setExportedBuffer(FrameBuffer *buffer);
 
 	int prepareBuffers(unsigned int count);
 	int queueBuffer(FrameBuffer *buffer);

@@ -56,7 +56,7 @@ void Stream::resetBuffers()
 void Stream::setExportedBuffers(std::vector<std::unique_ptr<FrameBuffer>> *buffers)
 {
 	for (auto const &buffer : *buffers)
-		bufferMap_.emplace(id_.get(), buffer.get());
+		bufferMap_.emplace(++id_, buffer.get());
 }
 
 const BufferMap &Stream::getBuffers() const
@@ -81,7 +81,7 @@ unsigned int Stream::getBufferId(FrameBuffer *buffer) const
 
 void Stream::setExportedBuffer(FrameBuffer *buffer)
 {
-	bufferMap_.emplace(id_.get(), buffer);
+	bufferMap_.emplace(++id_, buffer);
 }
 
 int Stream::prepareBuffers(unsigned int count)
@@ -152,9 +152,6 @@ void Stream::returnBuffer(FrameBuffer *buffer)
 	/* Push this buffer back into the queue to be used again. */
 	availableBuffers_.push(buffer);
 
-	/* Allow the buffer id to be reused. */
-	id_.release(getBufferId(buffer));
-
 	/*
 	 * Do we have any Request buffers that are waiting to be queued?
 	 * If so, do it now as availableBuffers_ will not be empty.
@@ -213,7 +210,7 @@ void Stream::clearBuffers()
 	requestBuffers_ = std::queue<FrameBuffer *>{};
 	internalBuffers_.clear();
 	bufferMap_.clear();
-	id_.reset();
+	id_ = 0;
 }
 
 int Stream::queueToDevice(FrameBuffer *buffer)

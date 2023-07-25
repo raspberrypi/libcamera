@@ -81,16 +81,7 @@ unsigned int Stream::getBufferId(FrameBuffer *buffer) const
 
 void Stream::setExternalBuffer(FrameBuffer *buffer)
 {
-	bufferMap_.emplace(BufferMask::MaskExternalBuffer | id_.get(), buffer);
-}
-
-void Stream::removeExternalBuffer(FrameBuffer *buffer)
-{
-	unsigned int id = getBufferId(buffer);
-
-	/* Ensure we have this buffer in the stream, and it is marked external. */
-	ASSERT(id & BufferMask::MaskExternalBuffer);
-	bufferMap_.erase(id);
+	bufferMap_.emplace(id_.get(), buffer);
 }
 
 int Stream::prepareBuffers(unsigned int count)

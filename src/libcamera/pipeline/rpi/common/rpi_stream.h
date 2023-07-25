@@ -28,7 +28,6 @@ enum BufferMask {
 	MaskStats		= 0x010000,
 	MaskEmbeddedData	= 0x020000,
 	MaskBayerData		= 0x040000,
-	MaskExternalBuffer	= 0x100000,
 };
 
 /*
@@ -78,7 +77,6 @@ public:
 	unsigned int getBufferId(FrameBuffer *buffer) const;
 
 	void setExternalBuffer(FrameBuffer *buffer);
-	void removeExternalBuffer(FrameBuffer *buffer);
 
 	int prepareBuffers(unsigned int count);
 	int queueBuffer(FrameBuffer *buffer);

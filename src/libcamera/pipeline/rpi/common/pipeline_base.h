@@ -196,7 +196,6 @@ protected:
 	unsigned int ispOutputTotal_;
 
 private:
-	void handleExternalBuffer(FrameBuffer *buffer, Stream *stream);
 	void checkRequestCompleted();
 };
 

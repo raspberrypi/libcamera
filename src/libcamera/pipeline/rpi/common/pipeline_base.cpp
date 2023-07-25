@@ -1383,11 +1383,6 @@ void CameraData::handleStreamBuffer(FrameBuffer *buffer, RPi::Stream *stream)
 	Request *request = requestQueue_.empty() ? nullptr : requestQueue_.front();
 	if (!dropFrameCount_ && request && request->findBuffer(stream) == buffer) {
 		/*
-		 * Check if this is an externally provided buffer, and if
-		 * so, we must stop tracking it in the pipeline handler.
-		 */
-		handleExternalBuffer(buffer, stream);
-		/*
 		 * Tag the buffer as completed, returning it to the
 		 * application.
 		 */
@@ -1424,17 +1419,6 @@ void CameraData::handleState()
 		tryRunPipeline();
 		break;
 	}
-}
-
-void CameraData::handleExternalBuffer(FrameBuffer *buffer, RPi::Stream *stream)
-{
-	unsigned int id = stream->getBufferId(buffer);
-
-	if (!(id & MaskExternalBuffer))
-		return;
-
-	/* Stop the Stream object from tracking the buffer. */
-	stream->removeExternalBuffer(buffer);
 }
 
 void CameraData::checkRequestCompleted()

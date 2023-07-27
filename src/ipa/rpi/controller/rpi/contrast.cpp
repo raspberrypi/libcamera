@@ -42,6 +42,7 @@ int Contrast::read(const libcamera::YamlObject &params)
 {
 	// enable adaptive enhancement by default
 	config_.ceEnable = params["ce_enable"].get<int>(1);
+	ceEnable_ = config_.ceEnable;
 	// the point near the bottom of the histogram to move
 	config_.loHistogram = params["lo_histogram"].get<double>(0.01);
 	// where in the range to try and move it to
@@ -63,6 +64,16 @@ void Contrast::setBrightness(double brightness)
 void Contrast::setContrast(double contrast)
 {
 	contrast_ = contrast;
+}
+
+void Contrast::enableCe(bool enable)
+{
+	ceEnable_ = enable;
+}
+
+void Contrast::restoreCe()
+{
+	ceEnable_ = config_.ceEnable;
 }
 
 void Contrast::initialise()
@@ -150,7 +161,7 @@ void Contrast::process(StatisticsPtr &stats,
 	 * histogram down, and possibly push the end up.
 	 */
 	Pwl gammaCurve = config_.gammaCurve;
-	if (config_.ceEnable) {
+	if (ceEnable_) {
 		if (config_.loMax != 0 || config_.hiMax != 0)
 			gammaCurve = computeStretchCurve(histogram, config_).compose(gammaCurve);
 		/*

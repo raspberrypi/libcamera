@@ -37,6 +37,8 @@ public:
 	int read(const libcamera::YamlObject &params) override;
 	void setBrightness(double brightness) override;
 	void setContrast(double contrast) override;
+	void enableCe(bool enable) override;
+	void restoreCe() override;
 	void initialise() override;
 	void prepare(Metadata *imageMetadata) override;
 	void process(StatisticsPtr &stats, Metadata *imageMetadata) override;
@@ -46,6 +48,7 @@ private:
 	double brightness_;
 	double contrast_;
 	ContrastStatus status_;
+	double ceEnable_;
 };
 
 } /* namespace RPiController */

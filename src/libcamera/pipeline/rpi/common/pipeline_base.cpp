@@ -226,10 +226,11 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 	/* Further fixups on the RAW streams. */
 	for (auto &raw : rawStreams) {
 		StreamConfiguration &cfg = config_.at(raw.index);
-		V4L2DeviceFormat rawFormat;
 
-		BayerFormat::Packing packing = BayerFormat::fromPixelFormat(cfg.pixelFormat).packing;
-		rawFormat = PipelineHandlerBase::toV4L2DeviceFormat(raw.dev, sensorFormat_, packing);
+		V4L2DeviceFormat rawFormat;
+		rawFormat.fourcc = raw.dev->toV4L2PixelFormat(cfg.pixelFormat);
+		rawFormat.size = cfg.size;
+		rawFormat.colorSpace = cfg.colorSpace;
 
 		int ret = raw.dev->tryFormat(&rawFormat);
 		if (ret)

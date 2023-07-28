@@ -424,7 +424,6 @@ void Agc::prepare(Metadata *imageMetadata)
 		totalExposureValue = delayedStatus.totalExposureValue;
 
 	status_.digitalGain = 1.0;
-	fetchAwbStatus(imageMetadata); /* always fetch it so that Process knows it's been done */
 
 	if (status_.totalExposureValue) {
 		/* Process has run, so we have meaningful values. */
@@ -461,6 +460,8 @@ void Agc::process(StatisticsPtr &stats, Metadata *imageMetadata)
 	 * configuration, that kind of thing.
 	 */
 	housekeepConfig();
+	/* Fetch the AWB status immediately, so that we can assume it's there. */
+	fetchAwbStatus(imageMetadata);
 	/* Get the current exposure values for the frame that's just arrived. */
 	fetchCurrentExposure(imageMetadata);
 	/* Compute the total gain we require relative to the current exposure. */

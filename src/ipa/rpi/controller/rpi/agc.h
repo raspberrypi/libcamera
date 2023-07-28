@@ -93,8 +93,8 @@ private:
 	void computeGain(StatisticsPtr &statistics, Metadata *imageMetadata,
 			 double &gain, double &targetY);
 	void computeTargetExposure(double gain);
+	void filterExposure();
 	bool applyDigitalGain(double gain, double targetY);
-	void filterExposure(bool desaturate);
 	void divideUpExposure();
 	void writeAndFinish(Metadata *imageMetadata, bool desaturate);
 	libcamera::utils::Duration limitShutter(libcamera::utils::Duration shutter);

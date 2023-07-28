@@ -469,14 +469,14 @@ void Agc::process(StatisticsPtr &stats, Metadata *imageMetadata)
 	computeGain(stats, imageMetadata, gain, targetY);
 	/* Now compute the target (final) exposure which we think we want. */
 	computeTargetExposure(gain);
+	/* The results have to be filtered so as not to change too rapidly. */
+	filterExposure();
 	/*
 	 * Some of the exposure has to be applied as digital gain, so work out
 	 * what that is. This function also tells us whether it's decided to
 	 * "desaturate" the image more quickly.
 	 */
 	bool desaturate = applyDigitalGain(gain, targetY);
-	/* The results have to be filtered so as not to change too rapidly. */
-	filterExposure(desaturate);
 	/*
 	 * The last thing is to divide up the exposure value into a shutter time
 	 * and analogue gain, according to the current exposure mode.
@@ -757,12 +757,12 @@ bool Agc::applyDigitalGain(double gain, double targetY)
 	if (desaturate)
 		dg /= config_.fastReduceThreshold;
 	LOG(RPiAgc, Debug) << "Digital gain " << dg << " desaturate? " << desaturate;
-	target_.totalExposureNoDG = target_.totalExposure / dg;
-	LOG(RPiAgc, Debug) << "Target totalExposureNoDG " << target_.totalExposureNoDG;
+	filtered_.totalExposureNoDG = filtered_.totalExposure / dg;
+	LOG(RPiAgc, Debug) << "Target totalExposureNoDG " << filtered_.totalExposureNoDG;
 	return desaturate;
 }
 
-void Agc::filterExposure(bool desaturate)
+void Agc::filterExposure()
 {
 	double speed = config_.speed;
 	/*
@@ -774,7 +774,6 @@ void Agc::filterExposure(bool desaturate)
 		speed = 1.0;
 	if (!filtered_.totalExposure) {
 		filtered_.totalExposure = target_.totalExposure;
-		filtered_.totalExposureNoDG = target_.totalExposureNoDG;
 	} else {
 		/*
 		 * If close to the result go faster, to save making so many
@@ -785,26 +784,7 @@ void Agc::filterExposure(bool desaturate)
 			speed = sqrt(speed);
 		filtered_.totalExposure = speed * target_.totalExposure +
 					  filtered_.totalExposure * (1.0 - speed);
-		/*
-		 * When desaturing, take a big jump down in totalExposureNoDG,
-		 * which we'll hide with digital gain.
-		 */
-		if (desaturate)
-			filtered_.totalExposureNoDG =
-				target_.totalExposureNoDG;
-		else
-			filtered_.totalExposureNoDG =
-				speed * target_.totalExposureNoDG +
-				filtered_.totalExposureNoDG * (1.0 - speed);
 	}
-	/*
-	 * We can't let the totalExposureNoDG exposure deviate too far below the
-	 * total exposure, as there might not be enough digital gain available
-	 * in the ISP to hide it (which will cause nasty oscillation).
-	 */
-	if (filtered_.totalExposureNoDG <
-	    filtered_.totalExposure * config_.fastReduceThreshold)
-		filtered_.totalExposureNoDG = filtered_.totalExposure * config_.fastReduceThreshold;
 	LOG(RPiAgc, Debug) << "After filtering, totalExposure " << filtered_.totalExposure
 			   << " no dg " << filtered_.totalExposureNoDG;
 }

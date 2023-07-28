@@ -191,7 +191,7 @@ RPiController::StatisticsPtr IpaVc4::platformProcessStats(Span<uint8_t> mem)
 	using namespace RPiController;
 
 	const bcm2835_isp_stats *stats = reinterpret_cast<bcm2835_isp_stats *>(mem.data());
-	StatisticsPtr statistics = std::make_unique<Statistics>(Statistics::AgcStatsPos::PreWb,
+	StatisticsPtr statistics = std::make_shared<Statistics>(Statistics::AgcStatsPos::PreWb,
 								Statistics::ColourStatsPos::PostLsc);
 	const Controller::HardwareConfig &hw = controller_.getHardwareConfig();
 	unsigned int i;

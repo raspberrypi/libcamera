@@ -1216,10 +1216,10 @@ void IpaBase::reportMetadata(unsigned int ipaContext)
 			libcameraMetadata_.set(controls::LensPosition, *deviceStatus->lensPosition);
 	}
 
-	AgcStatus *agcStatus = rpiMetadata.getLocked<AgcStatus>("agc.status");
-	if (agcStatus) {
-		libcameraMetadata_.set(controls::AeLocked, agcStatus->locked);
-		libcameraMetadata_.set(controls::DigitalGain, agcStatus->digitalGain);
+	AgcPrepareStatus *agcPrepareStatus = rpiMetadata.getLocked<AgcPrepareStatus>("agc.prepare_status");
+	if (agcPrepareStatus) {
+		libcameraMetadata_.set(controls::AeLocked, agcPrepareStatus->locked);
+		libcameraMetadata_.set(controls::DigitalGain, agcPrepareStatus->digitalGain);
 	}
 
 	LuxStatus *luxStatus = rpiMetadata.getLocked<LuxStatus>("lux.status");

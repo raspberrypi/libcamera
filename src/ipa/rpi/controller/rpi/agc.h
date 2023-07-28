@@ -85,7 +85,7 @@ public:
 	void process(StatisticsPtr &stats, Metadata *imageMetadata) override;
 
 private:
-	void updateLockStatus(DeviceStatus const &deviceStatus);
+	bool updateLockStatus(DeviceStatus const &deviceStatus);
 	AgcConfig config_;
 	void housekeepConfig();
 	void fetchCurrentExposure(Metadata *imageMetadata);

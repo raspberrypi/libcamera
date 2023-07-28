@@ -60,7 +60,7 @@ private:
 	bool validateIspControls();
 
 	void applyAWB(const struct AwbStatus *awbStatus, ControlList &ctrls);
-	void applyDG(const struct AgcStatus *dgStatus, ControlList &ctrls);
+	void applyDG(const struct AgcPrepareStatus *dgStatus, ControlList &ctrls);
 	void applyCCM(const struct CcmStatus *ccmStatus, ControlList &ctrls);
 	void applyBlackLevel(const struct BlackLevelStatus *blackLevelStatus, ControlList &ctrls);
 	void applyGamma(const struct ContrastStatus *contrastStatus, ControlList &ctrls);
@@ -142,7 +142,7 @@ void IpaVc4::platformPrepareIsp([[maybe_unused]] const PrepareParams &params,
 	if (ccmStatus)
 		applyCCM(ccmStatus, ctrls);
 
-	AgcStatus *dgStatus = rpiMetadata.getLocked<AgcStatus>("agc.status");
+	AgcPrepareStatus *dgStatus = rpiMetadata.getLocked<AgcPrepareStatus>("agc.prepare_status");
 	if (dgStatus)
 		applyDG(dgStatus, ctrls);
 
@@ -284,7 +284,7 @@ void IpaVc4::applyAWB(const struct AwbStatus *awbStatus, ControlList &ctrls)
 		  static_cast<int32_t>(awbStatus->gainB * 1000));
 }
 
-void IpaVc4::applyDG(const struct AgcStatus *dgStatus, ControlList &ctrls)
+void IpaVc4::applyDG(const struct AgcPrepareStatus *dgStatus, ControlList &ctrls)
 {
 	ctrls.set(V4L2_CID_DIGITAL_GAIN,
 		  static_cast<int32_t>(dgStatus->digitalGain * 1000));

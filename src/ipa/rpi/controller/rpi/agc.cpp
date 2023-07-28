@@ -419,11 +419,13 @@ void Agc::prepare(Metadata *imageMetadata)
 {
 	Duration totalExposureValue = status_.totalExposureValue;
 	AgcStatus delayedStatus;
+	AgcPrepareStatus prepareStatus;
 
 	if (!imageMetadata->get("agc.delayed_status", delayedStatus))
 		totalExposureValue = delayedStatus.totalExposureValue;
 
-	status_.digitalGain = 1.0;
+	prepareStatus.digitalGain = 1.0;
+	prepareStatus.locked = false;
 
 	if (status_.totalExposureValue) {
 		/* Process has run, so we have meaningful values. */
@@ -432,23 +434,23 @@ void Agc::prepare(Metadata *imageMetadata)
 			Duration actualExposure = deviceStatus.shutterSpeed *
 						  deviceStatus.analogueGain;
 			if (actualExposure) {
-				status_.digitalGain = totalExposureValue / actualExposure;
+				double digitalGain = totalExposureValue / actualExposure;
 				LOG(RPiAgc, Debug) << "Want total exposure " << totalExposureValue;
 				/*
 				 * Never ask for a gain < 1.0, and also impose
 				 * some upper limit. Make it customisable?
 				 */
-				status_.digitalGain = std::max(1.0, std::min(status_.digitalGain, 4.0));
+				prepareStatus.digitalGain = std::max(1.0, std::min(digitalGain, 4.0));
 				LOG(RPiAgc, Debug) << "Actual exposure " << actualExposure;
-				LOG(RPiAgc, Debug) << "Use digitalGain " << status_.digitalGain;
+				LOG(RPiAgc, Debug) << "Use digitalGain " << prepareStatus.digitalGain;
 				LOG(RPiAgc, Debug) << "Effective exposure "
-						   << actualExposure * status_.digitalGain;
+						   << actualExposure * prepareStatus.digitalGain;
 				/* Decide whether AEC/AGC has converged. */
-				updateLockStatus(deviceStatus);
+				prepareStatus.locked = updateLockStatus(deviceStatus);
 			}
 		} else
 			LOG(RPiAgc, Warning) << name() << ": no device metadata";
-		imageMetadata->set("agc.status", status_);
+		imageMetadata->set("agc.prepare_status", prepareStatus);
 	}
 }
 
@@ -486,7 +488,7 @@ void Agc::process(StatisticsPtr &stats, Metadata *imageMetadata)
 	writeAndFinish(imageMetadata, desaturate);
 }
 
-void Agc::updateLockStatus(DeviceStatus const &deviceStatus)
+bool Agc::updateLockStatus(DeviceStatus const &deviceStatus)
 {
 	const double errorFactor = 0.10; /* make these customisable? */
 	const int maxLockCount = 5;
@@ -522,7 +524,7 @@ void Agc::updateLockStatus(DeviceStatus const &deviceStatus)
 	lastTargetExposure_ = status_.targetExposureValue;
 
 	LOG(RPiAgc, Debug) << "Lock count updated to " << lockCount_;
-	status_.locked = lockCount_ == maxLockCount;
+	return lockCount_ == maxLockCount;
 }
 
 void Agc::housekeepConfig()

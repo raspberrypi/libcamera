@@ -357,24 +357,19 @@ int PipelineHandlerVc4::platformRegister(std::unique_ptr<RPi::CameraData> &camer
 		return -ENOMEM;
 
 	MediaEntity *unicamImage = unicam->getEntityByName("unicam-image");
+	MediaEntity *unicamEmbedded = unicam->getEntityByName("unicam-embedded");
 	MediaEntity *ispOutput0 = isp->getEntityByName("bcm2835-isp0-output0");
 	MediaEntity *ispCapture1 = isp->getEntityByName("bcm2835-isp0-capture1");
 	MediaEntity *ispCapture2 = isp->getEntityByName("bcm2835-isp0-capture2");
 	MediaEntity *ispCapture3 = isp->getEntityByName("bcm2835-isp0-capture3");
 
-	if (!unicamImage || !ispOutput0 || !ispCapture1 || !ispCapture2 || !ispCapture3)
+	if (!unicamImage || !unicamEmbedded ||
+	    !ispOutput0 || !ispCapture1 || !ispCapture2 || !ispCapture3)
 		return -ENOENT;
 
-	/* Locate and open the unicam video streams. */
+	/* Create the unicam video streams. */
 	data->unicam_[Unicam::Image] = RPi::Stream("Unicam Image", unicamImage);
-
-	/* An embedded data node will not be present if the sensor does not support it. */
-	MediaEntity *unicamEmbedded = unicam->getEntityByName("unicam-embedded");
-	if (unicamEmbedded) {
-		data->unicam_[Unicam::Embedded] = RPi::Stream("Unicam Embedded", unicamEmbedded);
-		data->unicam_[Unicam::Embedded].dev()->bufferReady.connect(data,
-									   &Vc4CameraData::unicamBufferDequeue);
-	}
+	data->unicam_[Unicam::Embedded] = RPi::Stream("Unicam Embedded", unicamEmbedded);
 
 	/* Tag the ISP input stream as an import stream. */
 	data->isp_[Isp::Input] = RPi::Stream("ISP Input", ispOutput0, StreamFlag::ImportOnly);
@@ -384,17 +379,14 @@ int PipelineHandlerVc4::platformRegister(std::unique_ptr<RPi::CameraData> &camer
 
 	/* Wire up all the buffer connections. */
 	data->unicam_[Unicam::Image].dev()->bufferReady.connect(data, &Vc4CameraData::unicamBufferDequeue);
+	if (data->sensorMetadata_)
+		data->unicam_[Unicam::Embedded].dev()->bufferReady.connect(data,
+									   &Vc4CameraData::unicamBufferDequeue);
+
 	data->isp_[Isp::Input].dev()->bufferReady.connect(data, &Vc4CameraData::ispInputDequeue);
 	data->isp_[Isp::Output0].dev()->bufferReady.connect(data, &Vc4CameraData::ispOutputDequeue);
 	data->isp_[Isp::Output1].dev()->bufferReady.connect(data, &Vc4CameraData::ispOutputDequeue);
 	data->isp_[Isp::Stats].dev()->bufferReady.connect(data, &Vc4CameraData::ispOutputDequeue);
-
-	if (data->sensorMetadata_ ^ !!data->unicam_[Unicam::Embedded].dev()) {
-		LOG(RPI, Warning) << "Mismatch between Unicam and CamHelper for embedded data usage!";
-		data->sensorMetadata_ = false;
-		if (data->unicam_[Unicam::Embedded].dev())
-			data->unicam_[Unicam::Embedded].dev()->bufferReady.disconnect();
-	}
 
 	/*
 	 * Open all Unicam and ISP streams. The exception is the embedded data

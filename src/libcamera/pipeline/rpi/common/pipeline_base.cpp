@@ -242,20 +242,6 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 		if (ret)
 			return Invalid;
 
-		/*
-		 * Some sensors change their Bayer order when they are h-flipped
-		 * or v-flipped, according to the transform. If this one does, we
-		 * must advertise the transformed Bayer order in the raw stream.
-		 * Note how we must fetch the "native" (i.e. untransformed) Bayer
-		 * order, because the sensor may currently be flipped!
-		 */
-		BayerFormat bayer = BayerFormat::fromPixelFormat(raw.cfg->pixelFormat);
-		if (data_->flipsAlterBayerOrder_) {
-			bayer.order = data_->nativeBayerOrder_;
-			bayer = bayer.transform(combinedTransform_);
-		}
-		raw.cfg->pixelFormat = bayer.toPixelFormat();
-
 		if (RPi::PipelineHandlerBase::updateStreamConfig(raw.cfg, raw.format))
 			status = Adjusted;
 	}

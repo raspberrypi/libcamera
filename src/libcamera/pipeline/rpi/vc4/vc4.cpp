@@ -411,9 +411,17 @@ CameraConfiguration::Status Vc4CameraData::platformValidate(RPi::RPiCameraConfig
 		StreamConfiguration *rawStream = rawStreams[0].cfg;
 		BayerFormat rawBayer = BayerFormat::fromMbusCode(rpiConfig->sensorFormat_.mbus_code);
 
-		/* Handle flips to make sure to match the RAW stream format. */
-		if (flipsAlterBayerOrder_)
+		/*
+		 * Some sensors change their Bayer order when they are h-flipped
+		 * or v-flipped, according to the transform. If this one does, we
+		 * must advertise the transformed Bayer order in the raw stream.
+		 * Note how we must fetch the "native" (i.e. untransformed) Bayer
+		 * order, because the sensor may currently be flipped!
+		 */
+		if (flipsAlterBayerOrder_) {
+			rawBayer.order = nativeBayerOrder_;
 			rawBayer = rawBayer.transform(rpiConfig->combinedTransform_);
+		}
 
 		/* Apply the user requested packing. */
 		rawBayer.packing = BayerFormat::fromPixelFormat(rawStream->pixelFormat).packing;

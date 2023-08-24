@@ -19,6 +19,7 @@ public:
 	double gain(uint32_t gainCode) const override;
 	void getDelays(int &exposureDelay, int &gainDelay,
 		       int &vblankDelay, int &hblankDelay) const override;
+	unsigned int hideFramesStartup() const override;
 	unsigned int hideFramesModeSwitch() const override;
 
 private:
@@ -52,6 +53,12 @@ void CamHelperImx290::getDelays(int &exposureDelay, int &gainDelay,
 	gainDelay = 2;
 	vblankDelay = 2;
 	hblankDelay = 2;
+}
+
+unsigned int CamHelperImx290::hideFramesStartup() const
+{
+	/* On startup, we seem to get 1 bad frame. */
+	return 1;
 }
 
 unsigned int CamHelperImx290::hideFramesModeSwitch() const

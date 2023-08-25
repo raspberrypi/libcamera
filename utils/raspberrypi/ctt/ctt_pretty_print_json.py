@@ -24,6 +24,10 @@ class Encoder(json.JSONEncoder):
             'luminance_lut': 16,
             'ct_curve': 3,
             'ccm': 3,
+            'lut_rx': 9,
+            'lut_bx': 9,
+            'lut_by': 9,
+            'lut_ry': 9,
             'gamma_curve': 2,
             'y_target': 2,
             'prior': 2

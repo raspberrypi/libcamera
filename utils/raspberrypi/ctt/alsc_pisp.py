@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: BSD-2-Clause
 #
-# Copyright (C) 2022, Raspberry Pi (Trading) Limited
+# Copyright (C) 2022, Raspberry Pi Ltd
 #
 # alsc_only.py - alsc tuning tool
 

@@ -1,0 +1,31 @@
+Log created : Fri Aug 25 17:02:58 2023
+
+----------------------------------------------------------------------
+User Arguments
+----------------------------------------------------------------------
+
+Json file output: output.json
+Calibration images directory: ../ctt/
+No configuration file input... using default options
+No log file path input... using default: ctt_log.txt
+
+----------------------------------------------------------------------
+Image Loading
+----------------------------------------------------------------------
+
+Directory: ../ctt/
+Files found: 1
+
+Image: alsc_3000k_0.dng
+Identified as an ALSC image
+Colour temperature: 3000 K
+
+Images found:
+Macbeth : 0
+ALSC : 1 
+CAC: 0 
+
+Camera metadata
+ERROR: No usable macbeth chart images found
+
+----------------------------------------------------------------------

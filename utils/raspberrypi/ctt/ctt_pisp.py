@@ -197,6 +197,8 @@ json_template = {
     },
     "rpi.ccm": {
     },
+    "rpi.cac": {
+    },
     "rpi.sharpen": {
 	"threshold": 0.25,
 	"limit": 1.0,

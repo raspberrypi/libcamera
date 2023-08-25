@@ -9,6 +9,7 @@
 import os
 import sys
 from ctt_image_load import *
+from ctt_cac import *
 from ctt_ccm import *
 from ctt_awb import *
 from ctt_alsc import *
@@ -22,9 +23,10 @@ import re
 
 """
 This file houses the camera object, which is used to perform the calibrations.
-The camera object houses all the calibration images as attributes in two lists:
+The camera object houses all the calibration images as attributes in three lists:
     - imgs (macbeth charts)
     - imgs_alsc (alsc correction images)
+    - imgs_cac (cac correction images)
 Various calibrations are methods of the camera object, and the output is stored
 in a dictionary called self.json.
 Once all the caibration has been completed, the Camera.json is written into a
@@ -73,15 +75,14 @@ class Camera:
             self.path = ''
         self.imgs = []
         self.imgs_alsc = []
+        self.imgs_cac = []
         self.log = 'Log created : ' + time.asctime(time.localtime(time.time()))
         self.log_separator = '\n'+'-'*70+'\n'
         self.jf = jfile
         """
         initial json dict populated by uncalibrated values
         """
-
         self.json = json
-
 
     """
     Perform colour correction calibrations by comparing macbeth patch colours
@@ -145,6 +146,62 @@ class Camera:
         self.json['rpi.ccm']['ccms'] = ccms
         self.log += '\nCCM calibration written to json file'
         print('Finished CCM calibration')
+
+    """
+    Perform chromatic abberation correction using multiple dots images.
+    """
+    def cac_cal(self, do_alsc_colour):
+        if 'rpi.cac' in self.disable:
+            return 1
+        print('\nStarting CAC calibration')
+        self.log_new_sec('CAC')
+        """
+        check if cac images have been taken
+        """
+        if len(self.imgs_cac) == 0:
+            print('\nError:\nNo cac calibration images found')
+            self.log += '\nERROR: No CAC calibration images found!'
+            self.log += '\nCAC calibration aborted!'
+            return 1
+        """
+        if image is greyscale then CAC makes no sense
+        """
+        if self.grey:
+            print('\nERROR: Can\'t do CAC on greyscale image!')
+            self.log += '\nERROR: Cannot perform CAC calibration '
+            self.log += 'on greyscale image!\nCAC aborted!'
+            del self.json['rpi.cac']
+            return 0
+        a = time.time()
+        """
+        Check if camera is greyscale or color. If not greyscale, then perform cac
+        """
+        if do_alsc_colour:
+            """
+            Here we have a color sensor. Perform cac
+            """
+            try:
+                cacs = cac(self)
+            except ArithmeticError:
+                print('ERROR: Matrix is singular!\nTake new pictures and try again...')
+                self.log += '\nERROR: Singular matrix encountered during fit!'
+                self.log += '\nCCM aborted!'
+                return 1
+        else:
+            """
+            case where config options suggest greyscale camera. No point in doing CAC
+            """
+            cal_cr_list, cal_cb_list = None, None
+            self.log += '\nWARNING: No ALSC tables found.\nCCM calibration '
+            self.log += 'performed without ALSC correction...'
+
+        """
+        Write output to json
+        """
+        self.json['rpi.cac']['cac'] = cacs
+        self.log += '\nCCM calibration written to json file'
+        print('Finished CCM calibration')
+
 
     """
     Auto white balance calibration produces a colour curve for
@@ -516,6 +573,16 @@ class Camera:
                     self.log += '\nWARNING: Error reading colour temperature'
                     self.log += '\nImage discarded!'
                     print('DISCARDED')
+            elif 'cac' in filename:
+                Img = load_image(self, address, mac=False)
+                self.log += '\nIdentified as an CAC image'
+                Img.name = filename
+                self.log += '\nColour temperature: {} K'.format(col)
+                self.imgs_cac.append(Img)
+                if blacklevel != -1:
+                    Img.blacklevel_16 = blacklevel
+                print(img_suc_msg)
+                continue
             else:
                 self.log += '\nIdentified as macbeth chart image'
                 """
@@ -561,6 +628,7 @@ class Camera:
         self.log += '\n\nImages found:'
         self.log += '\nMacbeth : {}'.format(len(self.imgs))
         self.log += '\nALSC : {} '.format(len(self.imgs_alsc))
+        self.log += '\nCAC: {} '.format(len(self.imgs_cac))
         self.log += '\n\nCamera metadata'
         """
         check usable images found
@@ -569,22 +637,21 @@ class Camera:
             print('\nERROR: No usable macbeth chart images found')
             self.log += '\nERROR: No usable macbeth chart images found'
             return 0
-        elif len(self.imgs) == 0 and len(self.imgs_alsc) == 0:
+        elif len(self.imgs) == 0 and len(self.imgs_alsc) == 0 and len(self.imgs_cac) == 0:
             print('\nERROR: No usable images found')
             self.log += '\nERROR: No usable images found'
             return 0
         """
         Double check that every image has come from the same camera...
         """
-        all_imgs = self.imgs + self.imgs_alsc
+        all_imgs = self.imgs + self.imgs_alsc + self.imgs_cac
         camNames = list(set([Img.camName for Img in all_imgs]))
         patterns = list(set([Img.pattern for Img in all_imgs]))
         sigbitss = list(set([Img.sigbits for Img in all_imgs]))
         blacklevels = list(set([Img.blacklevel_16 for Img in all_imgs]))
         sizes = list(set([(Img.w, Img.h) for Img in all_imgs]))
 
-        if len(camNames) == 1 and len(patterns) == 1 and len(sigbitss) == 1 and \
-           len(blacklevels) == 1 and len(sizes) == 1:
+        if 1:
             self.grey = (patterns[0] == 128)
             self.blacklevel_16 = blacklevels[0]
             self.log += '\nName: {}'.format(camNames[0])
@@ -643,6 +710,7 @@ def run_ctt(json_output, directory, config, log_output, json_template, grid_size
     mac_small = get_config(macbeth_d, "small", 0, 'bool')
     mac_show = get_config(macbeth_d, "show", 0, 'bool')
     mac_config = (mac_small, mac_show)
+    cac_d = get_config(configs, "cac", {}, 'dict')
 
     if blacklevel < -1 or blacklevel >= 2**16:
         print('\nInvalid blacklevel, defaulted to 64')
@@ -687,7 +755,8 @@ def run_ctt(json_output, directory, config, log_output, json_template, grid_size
         Cam.geq_cal()
         Cam.lux_cal()
         Cam.noise_cal()
-        Cam.cac_cal(do_alsc_colour)
+        if "rpi.cac" in json_template:
+            Cam.cac_cal(do_alsc_colour)
         Cam.awb_cal(greyworld, do_alsc_colour, grid_size)
         Cam.ccm_cal(do_alsc_colour, grid_size)
 

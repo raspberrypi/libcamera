@@ -65,11 +65,12 @@ def parse_input():
     directory = get_config(args_dict, '-i', None, 'string')
     config = get_config(args_dict, '-c', None, 'string')
     log_path = get_config(args_dict, '-l', None, 'string')
+    target = get_config(args_dict, '-t', "vc4", 'string')
     if directory is None:
         raise ArgError('\n\nERROR! No input directory given.')
     if json_output is None:
         raise ArgError('\n\nERROR! No output json given.')
-    return json_output, directory, config, log_path
+    return json_output, directory, config, log_path, target
 
 
 """

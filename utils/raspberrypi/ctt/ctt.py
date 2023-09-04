@@ -185,22 +185,22 @@ class Camera:
             except ArithmeticError:
                 print('ERROR: Matrix is singular!\nTake new pictures and try again...')
                 self.log += '\nERROR: Singular matrix encountered during fit!'
-                self.log += '\nCCM aborted!'
+                self.log += '\nCAC aborted!'
                 return 1
         else:
             """
             case where config options suggest greyscale camera. No point in doing CAC
             """
             cal_cr_list, cal_cb_list = None, None
-            self.log += '\nWARNING: No ALSC tables found.\nCCM calibration '
+            self.log += '\nWARNING: No ALSC tables found.\nCAC calibration '
             self.log += 'performed without ALSC correction...'
 
         """
         Write output to json
         """
         self.json['rpi.cac']['cac'] = cacs
-        self.log += '\nCCM calibration written to json file'
-        print('Finished CCM calibration')
+        self.log += '\nCAC calibration written to json file'
+        print('Finished CAC calibration')
 
 
     """
@@ -710,7 +710,6 @@ def run_ctt(json_output, directory, config, log_output, json_template, grid_size
     mac_small = get_config(macbeth_d, "small", 0, 'bool')
     mac_show = get_config(macbeth_d, "show", 0, 'bool')
     mac_config = (mac_small, mac_show)
-    cac_d = get_config(configs, "cac", {}, 'dict')
 
     if blacklevel < -1 or blacklevel >= 2**16:
         print('\nInvalid blacklevel, defaulted to 64')
@@ -770,3 +769,32 @@ def run_ctt(json_output, directory, config, log_output, json_template, grid_size
         pass
     else:
         Cam.write_log(log_output)
+
+if __name__ == '__main__':
+    """
+    initialise calibration
+    """
+    if len(sys.argv) == 1:
+        print("""
+    PiSP Tuning Tool version 1.0
+    Required Arguments:
+    '-i' : Calibration image directory.
+    '-o' : Name of output json file.
+
+    Optional Arguments:
+    '-t' : Target platform - 'pisp' or 'vc4'. Default 'vc4'
+    '-c' : Config file for the CTT. If not passed, default parameters used.
+    '-l' : Name of output log file. If not passed, 'ctt_log.txt' used.
+              """)
+        quit(0)
+    else:
+        """
+        parse input arguments
+        """
+        json_output, directory, config, log_output, target = parse_input()
+        if target == 'pisp':
+            from ctt_pisp import json_template, grid_size
+        elif target == 'vc4':
+            from ctt_vc4 import json_template, grid_size
+
+        run_ctt(json_output, directory, config, log_output, json_template, grid_size, target)

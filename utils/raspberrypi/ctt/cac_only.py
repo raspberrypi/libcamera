@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: BSD-2-Clause
 #
-# Copyright (C) 2023, Raspberry Pi (Trading) Limited
+# Copyright (C) 2023, Raspberry Pi (Trading) Ltd.
 #
 # cac_only.py - cac tuning tool
 
@@ -102,11 +102,11 @@ def cac(filelist, output_filepath, plot_results=False):
     sample = sample.replace("ry_vals", pprint_array(rx * -1))
     sample = sample.replace("bx_vals", pprint_array(by * -1))
     sample = sample.replace("by_vals", pprint_array(bx * -1))
-    print("Successfully converted to YAML")
+    print("Successfully converted to JSON")
     f = open(str(output_filepath), "w+")
     f.write(sample)
     f.close()
-    print("Successfully written to yaml file")
+    print("Successfully written to json file")
     '''
     If you wish to see a plot of the colour channel shifts, add the -p or --plots option
     Can be a quick way of validating if the data/dots you've got are good, or if you need to
@@ -139,5 +139,4 @@ if __name__ == "__main__":
             plot_results = True
 
     arg_output = argv[output_location + 1]
-    logfile = open("log.txt", "a+")
-    cac(filelist, arg_output, plot_results, logfile)
+    cac(filelist, arg_output, plot_results)

@@ -99,12 +99,26 @@ if cc.get_id() == 'clang'
         error('clang version is too old, libcamera requires 9.0 or newer')
     endif
 
-    # Turn _FORTIFY_SOURCE by default on optimised builds (as it requires -O1
-    # or higher). This is needed on clang only as gcc enables it by default.
+    # Turn _FORTIFY_SOURCE by default on. This is needed on clang only as gcc
+    # enables it by default. FORTIFY will not work properly with `-O0`, and may
+    # result in macro redefinition errors if the user already has a setting for
+    # `-D_FORTIFY_SOURCE`. Do not enable FORTIFY in either of those cases.
     if get_option('optimization') != '0'
-        common_arguments += [
-            '-D_FORTIFY_SOURCE=2',
-        ]
+        has_fortify_define = false
+        # Assume that if the user requests a FORTIFY level in cpp_args, they
+        # do the same for c_args.
+        foreach flag : get_option('cpp_args')
+            if flag == '-U_FORTIFY_SOURCE'
+                has_fortify_define = false
+            elif flag.startswith('-D_FORTIFY_SOURCE=')
+                has_fortify_define = true
+            endif
+        endforeach
+        if not has_fortify_define
+            common_arguments += [
+                '-D_FORTIFY_SOURCE=2',
+            ]
+        endif
     endif
 
     # Use libc++ by default if available instead of libstdc++ when compiling

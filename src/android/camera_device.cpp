@@ -1077,7 +1077,7 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 		descriptor->request_->addBuffer(sourceStream->stream(),
 						frameBuffer, nullptr);
 
-		requestedStreams.erase(sourceStream);
+		requestedStreams.insert(sourceStream);
 	}
 
 	/*

@@ -56,6 +56,9 @@ int Controller::read(char const *filename)
 	}
 
 	std::unique_ptr<YamlObject> root = YamlParser::parse(file);
+	if (!root)
+		return -EINVAL;
+
 	double version = (*root)["version"].get<double>(1.0);
 	target_ = (*root)["target"].get<std::string>("bcm2835");
 

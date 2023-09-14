@@ -198,6 +198,7 @@ arch_x86 = ['x86', 'x86_64']
 pipelines_support = {
     'imx8-isi':     arch_arm,
     'ipu3':         arch_x86,
+    'mali-c55':     arch_arm,
     'rkisp1':       arch_arm,
     'rpi/vc4':      arch_arm,
     'simple':       arch_arm,

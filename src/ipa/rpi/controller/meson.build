@@ -8,6 +8,7 @@ rpi_ipa_controller_sources = files([
     'pwl.cpp',
     'rpi/af.cpp',
     'rpi/agc.cpp',
+    'rpi/agc_channel.cpp',
     'rpi/alsc.cpp',
     'rpi/awb.cpp',
     'rpi/black_level.cpp',

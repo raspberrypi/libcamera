@@ -699,9 +699,9 @@ void IpaBase::applyControls(const ControlList &controls)
 			}
 
 			if (ctrl.second.get<bool>() == false)
-				agc->disableAuto();
+				agc->disableAuto(0);
 			else
-				agc->enableAuto();
+				agc->enableAuto(0);
 
 			libcameraMetadata_.set(controls::AeEnable, ctrl.second.get<bool>());
 			break;
@@ -717,7 +717,7 @@ void IpaBase::applyControls(const ControlList &controls)
 			}
 
 			/* The control provides units of microseconds. */
-			agc->setFixedShutter(ctrl.second.get<int32_t>() * 1.0us);
+			agc->setFixedShutter(0, ctrl.second.get<int32_t>() * 1.0us);
 
 			libcameraMetadata_.set(controls::ExposureTime, ctrl.second.get<int32_t>());
 			break;
@@ -732,7 +732,7 @@ void IpaBase::applyControls(const ControlList &controls)
 				break;
 			}
 
-			agc->setFixedAnalogueGain(ctrl.second.get<float>());
+			agc->setFixedAnalogueGain(0, ctrl.second.get<float>());
 
 			libcameraMetadata_.set(controls::AnalogueGain,
 					       ctrl.second.get<float>());
@@ -770,7 +770,7 @@ void IpaBase::applyControls(const ControlList &controls)
 
 			int32_t idx = ctrl.second.get<int32_t>();
 			if (ConstraintModeTable.count(idx)) {
-				agc->setConstraintMode(ConstraintModeTable.at(idx));
+				agc->setConstraintMode(0, ConstraintModeTable.at(idx));
 				libcameraMetadata_.set(controls::AeConstraintMode, idx);
 			} else {
 				LOG(IPARPI, Error) << "Constraint mode " << idx
@@ -790,7 +790,7 @@ void IpaBase::applyControls(const ControlList &controls)
 
 			int32_t idx = ctrl.second.get<int32_t>();
 			if (ExposureModeTable.count(idx)) {
-				agc->setExposureMode(ExposureModeTable.at(idx));
+				agc->setExposureMode(0, ExposureModeTable.at(idx));
 				libcameraMetadata_.set(controls::AeExposureMode, idx);
 			} else {
 				LOG(IPARPI, Error) << "Exposure mode " << idx
@@ -813,7 +813,7 @@ void IpaBase::applyControls(const ControlList &controls)
 			 * So convert to 2^EV
 			 */
 			double ev = pow(2.0, ctrl.second.get<float>());
-			agc->setEv(ev);
+			agc->setEv(0, ev);
 			libcameraMetadata_.set(controls::ExposureValue,
 					       ctrl.second.get<float>());
 			break;
@@ -833,12 +833,12 @@ void IpaBase::applyControls(const ControlList &controls)
 
 			switch (mode) {
 			case controls::FlickerOff:
-				agc->setFlickerPeriod(0us);
+				agc->setFlickerPeriod(0, 0us);
 
 				break;
 
 			case controls::FlickerManual:
-				agc->setFlickerPeriod(flickerState_.manualPeriod);
+				agc->setFlickerPeriod(0, flickerState_.manualPeriod);
 
 				break;
 
@@ -872,7 +872,7 @@ void IpaBase::applyControls(const ControlList &controls)
 			 * first, and the period updated after, or vice versa.
 			 */
 			if (flickerState_.mode == controls::FlickerManual)
-				agc->setFlickerPeriod(flickerState_.manualPeriod);
+				agc->setFlickerPeriod(0, flickerState_.manualPeriod);
 
 			break;
 		}

@@ -22,7 +22,7 @@ LOG_DEFINE_CATEGORY(RPiAgc)
 
 Agc::Agc(Controller *controller)
 	: AgcAlgorithm(controller),
-	  activeChannels_({ 0 })
+	  activeChannels_({ 0 }), index_(0)
 {
 }
 
@@ -205,20 +205,116 @@ void Agc::setActiveChannels(const std::vector<unsigned int> &activeChannels)
 void Agc::switchMode(CameraMode const &cameraMode,
 		     Metadata *metadata)
 {
-	LOG(RPiAgc, Debug) << "switchMode for channel 0";
-	channelData_[0].channel.switchMode(cameraMode, metadata);
+	/*
+	 * We run switchMode on every channel, and then we're going to start over
+	 * with the first active channel again which means that this channel's
+	 * status needs to be the one we leave in the metadata.
+	 */
+	AgcStatus status;
+
+	for (unsigned int channelIndex = 0; channelIndex < channelData_.size(); channelIndex++) {
+		LOG(RPiAgc, Debug) << "switchMode for channel " << channelIndex;
+		channelData_[channelIndex].channel.switchMode(cameraMode, metadata);
+		if (channelIndex == activeChannels_[0])
+			metadata->get("agc.status", status);
+	}
+
+	status.channel = activeChannels_[0];
+	metadata->set("agc.status", status);
+	index_ = 0;
+}
+
+static void getDelayedChannelIndex(Metadata *metadata, const char *message, unsigned int &channelIndex)
+{
+	std::unique_lock<RPiController::Metadata> lock(*metadata);
+	AgcStatus *status = metadata->getLocked<AgcStatus>("agc.delayed_status");
+	if (status)
+		channelIndex = status->channel;
+	else {
+		/* This does happen at startup, otherwise it would be a Warning or Error. */
+		LOG(RPiAgc, Debug) << message;
+	}
+}
+
+static void setCurrentChannelIndex(Metadata *metadata, const char *message, unsigned int channelIndex)
+{
+	std::unique_lock<RPiController::Metadata> lock(*metadata);
+	AgcStatus *status = metadata->getLocked<AgcStatus>("agc.status");
+	if (status)
+		status->channel = channelIndex;
+	else {
+		/* This does happen at startup, otherwise it would be a Warning or Error. */
+		LOG(RPiAgc, Debug) << message;
+	}
 }
 
 void Agc::prepare(Metadata *imageMetadata)
 {
-	LOG(RPiAgc, Debug) << "prepare for channel 0";
-	channelData_[0].channel.prepare(imageMetadata);
+	/*
+	 * The DeviceStatus in the metadata should be correct for the image we
+	 * are processing. The delayed status should tell us what channel this frame
+	 * was from, so we will use that channel's prepare method.
+	 *
+	 * \todo To be honest, there's not much that's stateful in the prepare methods
+	 * so we should perhaps re-evaluate whether prepare even needs to be done
+	 * "per channel".
+	 */
+	unsigned int channelIndex = activeChannels_[0];
+	getDelayedChannelIndex(imageMetadata, "prepare: no delayed status", channelIndex);
+
+	LOG(RPiAgc, Debug) << "prepare for channel " << channelIndex;
+	channelData_[channelIndex].channel.prepare(imageMetadata);
 }
 
 void Agc::process(StatisticsPtr &stats, Metadata *imageMetadata)
 {
-	LOG(RPiAgc, Debug) << "process for channel 0";
-	channelData_[0].channel.process(stats, imageMetadata);
+	/*
+	 * We want to generate values for the next channel in round robin fashion
+	 * (i.e. the channel at location index_ in the activeChannel list), even though
+	 * the statistics we have will be for a different channel (which we find
+	 * again from the delayed status).
+	 */
+
+	/* Generate updated AGC values for channel for new channel that we are requesting. */
+	unsigned int channelIndex = activeChannels_[index_];
+	AgcChannelData &channelData = channelData_[channelIndex];
+	/* The stats that arrived with this image correspond to the following channel. */
+	unsigned int statsIndex = 0;
+	getDelayedChannelIndex(imageMetadata, "process: no delayed status for stats", statsIndex);
+	LOG(RPiAgc, Debug) << "process for channel " << channelIndex;
+
+	/*
+	 * We keep a cache of the most recent DeviceStatus and stats for each channel,
+	 * so that we can invoke the next channel's process method with the most up to date
+	 * values.
+	 */
+	LOG(RPiAgc, Debug) << "Save DeviceStatus and stats for channel " << statsIndex;
+	DeviceStatus deviceStatus;
+	if (imageMetadata->get<DeviceStatus>("device.status", deviceStatus) == 0)
+		channelData_[statsIndex].deviceStatus = deviceStatus;
+	else
+		/* Every frame should have a DeviceStatus. */
+		LOG(RPiAgc, Error) << "process: no device status found";
+	channelData_[statsIndex].statistics = stats;
+
+	/*
+	 * Finally fetch the most recent DeviceStatus and stats for the new channel, if both
+	 * exist, and call process(). We must make the agc.status metadata record correctly
+	 * which channel this is.
+	 */
+	if (channelData.statistics && channelData.deviceStatus) {
+		deviceStatus = *channelData.deviceStatus;
+		stats = channelData.statistics;
+	} else {
+		/* Can also happen when new channels start. */
+		LOG(RPiAgc, Debug) << "process: channel " << channelIndex << " not seen yet";
+	}
+
+	channelData.channel.process(stats, deviceStatus, imageMetadata);
+	setCurrentChannelIndex(imageMetadata, "process: no AGC status found", channelIndex);
+
+	/* And onto the next channel for the next call. */
+	index_ = (index_ + 1) % activeChannels_.size();
 }
 
 /* Register algorithm with the system. */

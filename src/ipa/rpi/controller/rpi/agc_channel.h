@@ -85,13 +85,13 @@ public:
 	void disableAuto();
 	void switchMode(CameraMode const &cameraMode, Metadata *metadata);
 	void prepare(Metadata *imageMetadata);
-	void process(StatisticsPtr &stats, Metadata *imageMetadata);
+	void process(StatisticsPtr &stats, DeviceStatus const &deviceStatus, Metadata *imageMetadata);
 
 private:
 	bool updateLockStatus(DeviceStatus const &deviceStatus);
 	AgcConfig config_;
 	void housekeepConfig();
-	void fetchCurrentExposure(Metadata *imageMetadata);
+	void fetchCurrentExposure(DeviceStatus const &deviceStatus);
 	void fetchAwbStatus(Metadata *imageMetadata);
 	void computeGain(StatisticsPtr &statistics, Metadata *imageMetadata,
 			 double &gain, double &targetY);

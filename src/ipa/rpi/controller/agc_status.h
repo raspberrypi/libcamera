@@ -36,6 +36,7 @@ struct AgcStatus {
 	int floatingRegionEnable;
 	libcamera::utils::Duration fixedShutter;
 	double fixedAnalogueGain;
+	unsigned int channel;
 };
 
 struct AgcPrepareStatus {

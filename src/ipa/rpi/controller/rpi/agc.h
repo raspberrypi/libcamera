@@ -6,6 +6,7 @@
  */
 #pragma once
 
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -17,6 +18,8 @@ namespace RPiController {
 
 struct AgcChannelData {
 	AgcChannel channel;
+	std::optional<DeviceStatus> deviceStatus;
+	StatisticsPtr statistics;
 };
 
 class Agc : public AgcAlgorithm
@@ -51,6 +54,7 @@ private:
 	int checkChannel(unsigned int channel) const;
 	std::vector<AgcChannelData> channelData_;
 	std::vector<unsigned int> activeChannels_;
+	unsigned int index_; /* index into the activeChannels_ */
 };
 
 } /* namespace RPiController */

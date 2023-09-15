@@ -444,7 +444,7 @@ void AgcChannel::prepare(Metadata *imageMetadata)
 	}
 }
 
-void AgcChannel::process(StatisticsPtr &stats, Metadata *imageMetadata)
+void AgcChannel::process(StatisticsPtr &stats, DeviceStatus const &deviceStatus, Metadata *imageMetadata)
 {
 	frameCount_++;
 	/*
@@ -455,7 +455,7 @@ void AgcChannel::process(StatisticsPtr &stats, Metadata *imageMetadata)
 	/* Fetch the AWB status immediately, so that we can assume it's there. */
 	fetchAwbStatus(imageMetadata);
 	/* Get the current exposure values for the frame that's just arrived. */
-	fetchCurrentExposure(imageMetadata);
+	fetchCurrentExposure(deviceStatus);
 	/* Compute the total gain we require relative to the current exposure. */
 	double gain, targetY;
 	computeGain(stats, imageMetadata, gain, targetY);
@@ -567,18 +567,11 @@ void AgcChannel::housekeepConfig()
 			   << meteringModeName_;
 }
 
-void AgcChannel::fetchCurrentExposure(Metadata *imageMetadata)
+void AgcChannel::fetchCurrentExposure(DeviceStatus const &deviceStatus)
 {
-	std::unique_lock<Metadata> lock(*imageMetadata);
-	DeviceStatus *deviceStatus =
-		imageMetadata->getLocked<DeviceStatus>("device.status");
-	if (!deviceStatus)
-		LOG(RPiAgc, Fatal) << "No device metadata";
-	current_.shutter = deviceStatus->shutterSpeed;
-	current_.analogueGain = deviceStatus->analogueGain;
-	AgcStatus *agcStatus =
-		imageMetadata->getLocked<AgcStatus>("agc.status");
-	current_.totalExposure = agcStatus ? agcStatus->totalExposureValue : 0s;
+	current_.shutter = deviceStatus.shutterSpeed;
+	current_.analogueGain = deviceStatus.analogueGain;
+	current_.totalExposure = 0s; /* this value is unused */
 	current_.totalExposureNoDG = current_.shutter * current_.analogueGain;
 }
 

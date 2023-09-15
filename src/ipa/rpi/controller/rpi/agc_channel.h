@@ -21,6 +21,8 @@
 
 namespace RPiController {
 
+using AgcChannelTotalExposures = std::vector<libcamera::utils::Duration>;
+
 struct AgcMeteringMode {
 	std::vector<double> weights;
 	int read(const libcamera::YamlObject &params);
@@ -95,7 +97,8 @@ public:
 	void disableAuto();
 	void switchMode(CameraMode const &cameraMode, Metadata *metadata);
 	void prepare(Metadata *imageMetadata);
-	void process(StatisticsPtr &stats, DeviceStatus const &deviceStatus, Metadata *imageMetadata);
+	void process(StatisticsPtr &stats, DeviceStatus const &deviceStatus, Metadata *imageMetadata,
+		     const AgcChannelTotalExposures &channelTotalExposures);
 
 private:
 	bool updateLockStatus(DeviceStatus const &deviceStatus);
@@ -107,7 +110,8 @@ private:
 			 double &gain, double &targetY);
 	void computeTargetExposure(double gain);
 	void filterExposure();
-	bool applyDigitalGain(double gain, double targetY);
+	bool applyChannelConstraints(const AgcChannelTotalExposures &channelTotalExposures);
+	bool applyDigitalGain(double gain, double targetY, bool channelBound);
 	void divideUpExposure();
 	void writeAndFinish(Metadata *imageMetadata, bool desaturate);
 	libcamera::utils::Duration limitShutter(libcamera::utils::Duration shutter);

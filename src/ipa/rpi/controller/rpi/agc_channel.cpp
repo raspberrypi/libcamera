@@ -493,7 +493,9 @@ void AgcChannel::prepare(Metadata *imageMetadata)
 	}
 }
 
-void AgcChannel::process(StatisticsPtr &stats, DeviceStatus const &deviceStatus, Metadata *imageMetadata)
+void AgcChannel::process(StatisticsPtr &stats, DeviceStatus const &deviceStatus,
+			 Metadata *imageMetadata,
+			 const AgcChannelTotalExposures &channelTotalExposures)
 {
 	frameCount_++;
 	/*
@@ -513,11 +515,16 @@ void AgcChannel::process(StatisticsPtr &stats, DeviceStatus const &deviceStatus,
 	/* The results have to be filtered so as not to change too rapidly. */
 	filterExposure();
 	/*
-	 * Some of the exposure has to be applied as digital gain, so work out
-	 * what that is. This function also tells us whether it's decided to
-	 * "desaturate" the image more quickly.
+	 * We may be asked to limit the exposure using other channels. If another channel
+	 * determines our upper bound we may want to know this later.
 	 */
-	bool desaturate = applyDigitalGain(gain, targetY);
+	bool channelBound = applyChannelConstraints(channelTotalExposures);
+	/*
+	 * Some of the exposure has to be applied as digital gain, so work out
+	 * what that is. It also tells us whether it's trying to desaturate the image
+	 * more quickly, which can only happen when another channel is not limiting us.
+	 */
+	bool desaturate = applyDigitalGain(gain, targetY, channelBound);
 	/*
 	 * The last thing is to divide up the exposure value into a shutter time
 	 * and analogue gain, according to the current exposure mode.
@@ -794,7 +801,44 @@ void AgcChannel::computeTargetExposure(double gain)
 	LOG(RPiAgc, Debug) << "Target totalExposure " << target_.totalExposure;
 }
 
-bool AgcChannel::applyDigitalGain(double gain, double targetY)
+bool AgcChannel::applyChannelConstraints(const AgcChannelTotalExposures &channelTotalExposures)
+{
+	bool channelBound = false;
+	LOG(RPiAgc, Debug)
+		<< "Total exposure before channel constraints " << filtered_.totalExposure;
+
+	for (const auto &constraint : config_.channelConstraints) {
+		LOG(RPiAgc, Debug)
+			<< "Check constraint: channel " << constraint.channel << " bound "
+			<< (constraint.bound == AgcChannelConstraint::Bound::UPPER ? "UPPER" : "LOWER")
+			<< " factor " << constraint.factor;
+		if (constraint.channel >= channelTotalExposures.size() ||
+		    !channelTotalExposures[constraint.channel]) {
+			LOG(RPiAgc, Debug) << "no such channel or no exposure available- skipped";
+			continue;
+		}
+
+		libcamera::utils::Duration limitExposure =
+			channelTotalExposures[constraint.channel] * constraint.factor;
+		LOG(RPiAgc, Debug) << "Limit exposure " << limitExposure;
+		if ((constraint.bound == AgcChannelConstraint::Bound::UPPER &&
+		     filtered_.totalExposure > limitExposure) ||
+		    (constraint.bound == AgcChannelConstraint::Bound::LOWER &&
+		     filtered_.totalExposure < limitExposure)) {
+			filtered_.totalExposure = limitExposure;
+			LOG(RPiAgc, Debug) << "Constraint applies";
+			channelBound = true;
+		} else
+			LOG(RPiAgc, Debug) << "Constraint does not apply";
+	}
+
+	LOG(RPiAgc, Debug)
+		<< "Total exposure after channel constraints " << filtered_.totalExposure;
+
+	return channelBound;
+}
+
+bool AgcChannel::applyDigitalGain(double gain, double targetY, bool channelBound)
 {
 	double minColourGain = std::min({ awb_.gainR, awb_.gainG, awb_.gainB, 1.0 });
 	ASSERT(minColourGain != 0.0);
@@ -814,8 +858,8 @@ bool AgcChannel::applyDigitalGain(double gain, double targetY)
 	 * quickly (and we then approach the correct value more quickly from
 	 * below).
 	 */
-	bool desaturate = targetY > config_.fastReduceThreshold &&
-			  gain < sqrt(targetY);
+	bool desaturate = !channelBound &&
+			  targetY > config_.fastReduceThreshold && gain < sqrt(targetY);
 	if (desaturate)
 		dg /= config_.fastReduceThreshold;
 	LOG(RPiAgc, Debug) << "Digital gain " << dg << " desaturate? " << desaturate;

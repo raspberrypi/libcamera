@@ -55,6 +55,7 @@ private:
 	std::vector<AgcChannelData> channelData_;
 	std::vector<unsigned int> activeChannels_;
 	unsigned int index_; /* index into the activeChannels_ */
+	AgcChannelTotalExposures channelTotalExposures_;
 };
 
 } /* namespace RPiController */

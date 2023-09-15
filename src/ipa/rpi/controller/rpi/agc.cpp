@@ -39,6 +39,7 @@ int Agc::read(const libcamera::YamlObject &params)
 	 */
 	if (!params.contains("channels")) {
 		LOG(RPiAgc, Debug) << "Single channel only";
+		channelTotalExposures_.resize(1, 0s);
 		channelData_.emplace_back();
 		return channelData_.back().channel.read(params, getHardwareConfig());
 	}
@@ -57,6 +58,8 @@ int Agc::read(const libcamera::YamlObject &params)
 		LOG(RPiAgc, Error) << "No AGC channels provided";
 		return -1;
 	}
+
+	channelTotalExposures_.resize(channelData_.size(), 0s);
 
 	return 0;
 }
@@ -236,16 +239,22 @@ static void getDelayedChannelIndex(Metadata *metadata, const char *message, unsi
 	}
 }
 
-static void setCurrentChannelIndex(Metadata *metadata, const char *message, unsigned int channelIndex)
+static libcamera::utils::Duration
+setCurrentChannelIndexGetExposure(Metadata *metadata, const char *message, unsigned int channelIndex)
 {
 	std::unique_lock<RPiController::Metadata> lock(*metadata);
 	AgcStatus *status = metadata->getLocked<AgcStatus>("agc.status");
-	if (status)
+	libcamera::utils::Duration dur = 0s;
+
+	if (status) {
 		status->channel = channelIndex;
-	else {
+		dur = status->totalExposureValue;
+	} else {
 		/* This does happen at startup, otherwise it would be a Warning or Error. */
 		LOG(RPiAgc, Debug) << message;
 	}
+
+	return dur;
 }
 
 void Agc::prepare(Metadata *imageMetadata)
@@ -310,8 +319,11 @@ void Agc::process(StatisticsPtr &stats, Metadata *imageMetadata)
 		LOG(RPiAgc, Debug) << "process: channel " << channelIndex << " not seen yet";
 	}
 
-	channelData.channel.process(stats, deviceStatus, imageMetadata);
-	setCurrentChannelIndex(imageMetadata, "process: no AGC status found", channelIndex);
+	channelData.channel.process(stats, deviceStatus, imageMetadata, channelTotalExposures_);
+	auto dur = setCurrentChannelIndexGetExposure(imageMetadata, "process: no AGC status found",
+						     channelIndex);
+	if (dur)
+		channelTotalExposures_[channelIndex] = dur;
 
 	/* And onto the next channel for the next call. */
 	index_ = (index_ + 1) % activeChannels_.size();

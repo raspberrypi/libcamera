@@ -44,11 +44,21 @@ struct AgcConstraint {
 
 typedef std::vector<AgcConstraint> AgcConstraintMode;
 
+struct AgcChannelConstraint {
+	enum class Bound { LOWER = 0,
+			   UPPER = 1 };
+	Bound bound;
+	unsigned int channel;
+	double factor;
+	int read(const libcamera::YamlObject &params);
+};
+
 struct AgcConfig {
 	int read(const libcamera::YamlObject &params);
 	std::map<std::string, AgcMeteringMode> meteringModes;
 	std::map<std::string, AgcExposureMode> exposureModes;
 	std::map<std::string, AgcConstraintMode> constraintModes;
+	std::vector<AgcChannelConstraint> channelConstraints;
 	Pwl yTarget;
 	double speed;
 	uint16_t startupFrames;

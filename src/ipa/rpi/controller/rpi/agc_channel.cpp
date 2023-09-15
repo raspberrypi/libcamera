@@ -170,6 +170,49 @@ readConstraintModes(std::map<std::string, AgcConstraintMode> &constraintModes,
 	return { 0, first };
 }
 
+int AgcChannelConstraint::read(const libcamera::YamlObject &params)
+{
+	auto channelValue = params["channel"].get<unsigned int>();
+	if (!channelValue) {
+		LOG(RPiAgc, Error) << "AGC channel constraint must have a channel";
+		return -EINVAL;
+	}
+	channel = *channelValue;
+
+	std::string boundString = params["bound"].get<std::string>("");
+	transform(boundString.begin(), boundString.end(),
+		  boundString.begin(), ::toupper);
+	if (boundString != "UPPER" && boundString != "LOWER") {
+		LOG(RPiAgc, Error) << "AGC channel constraint type should be UPPER or LOWER";
+		return -EINVAL;
+	}
+	bound = boundString == "UPPER" ? Bound::UPPER : Bound::LOWER;
+
+	auto factorValue = params["factor"].get<double>();
+	if (!factorValue) {
+		LOG(RPiAgc, Error) << "AGC channel constraint must have a factor";
+		return -EINVAL;
+	}
+	factor = *factorValue;
+
+	return 0;
+}
+
+static int readChannelConstraints(std::vector<AgcChannelConstraint> &channelConstraints,
+				  const libcamera::YamlObject &params)
+{
+	for (const auto &p : params.asList()) {
+		AgcChannelConstraint constraint;
+		int ret = constraint.read(p);
+		if (ret)
+			return ret;
+
+		channelConstraints.push_back(constraint);
+	}
+
+	return 0;
+}
+
 int AgcConfig::read(const libcamera::YamlObject &params)
 {
 	LOG(RPiAgc, Debug) << "AgcConfig";
@@ -187,6 +230,12 @@ int AgcConfig::read(const libcamera::YamlObject &params)
 		readConstraintModes(constraintModes, params["constraint_modes"]);
 	if (ret)
 		return ret;
+
+	if (params.contains("channel_constraints")) {
+		ret = readChannelConstraints(channelConstraints, params["channel_constraints"]);
+		if (ret)
+			return ret;
+	}
 
 	ret = yTarget.read(params["y_target"]);
 	if (ret)

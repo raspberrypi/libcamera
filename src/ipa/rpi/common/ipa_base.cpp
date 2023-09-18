@@ -100,8 +100,8 @@ LOG_DEFINE_CATEGORY(IPARPI)
 namespace ipa::RPi {
 
 IpaBase::IpaBase()
-	: controller_(), frameCount_(0), mistrustCount_(0), lastRunTimestamp_(0),
-	  firstStart_(true), flickerState_({ 0, 0s })
+	: controller_(), frameLengths_(FrameLengthsQueueSize, 0s), frameCount_(0),
+	  mistrustCount_(0), lastRunTimestamp_(0), firstStart_(true), flickerState_({ 0, 0s })
 {
 }
 

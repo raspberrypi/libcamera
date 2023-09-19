@@ -104,17 +104,9 @@ if cc.get_id() == 'clang'
     # result in macro redefinition errors if the user already has a setting for
     # `-D_FORTIFY_SOURCE`. Do not enable FORTIFY in either of those cases.
     if get_option('optimization') != '0'
-        has_fortify_define = false
-        # Assume that if the user requests a FORTIFY level in cpp_args, they
-        # do the same for c_args.
-        foreach flag : get_option('cpp_args')
-            if flag == '-U_FORTIFY_SOURCE'
-                has_fortify_define = false
-            elif flag.startswith('-D_FORTIFY_SOURCE=')
-                has_fortify_define = true
-            endif
-        endforeach
-        if not has_fortify_define
+        fortify = cc.get_define('_FORTIFY_SOURCE')
+        if fortify == ''
+            message('Adding _FORTIFY_SOURCE')
             common_arguments += [
                 '-D_FORTIFY_SOURCE=2',
             ]

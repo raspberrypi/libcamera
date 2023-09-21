@@ -37,12 +37,6 @@ namespace {
 
 constexpr unsigned int defaultRawBitDepth = 12;
 
-bool isRaw(const PixelFormat &pixFmt)
-{
-	/* This test works for both Bayer and raw mono formats. */
-	return BayerFormat::fromPixelFormat(pixFmt).isValid();
-}
-
 PixelFormat mbusCodeToPixelFormat(unsigned int mbus_code,
 				  BayerFormat::Packing packingReq)
 {
@@ -91,22 +85,6 @@ std::optional<ColorSpace> findValidColorSpace(const ColorSpace &colourSpace)
 	return std::nullopt;
 }
 
-bool isRgb(const PixelFormat &pixFmt)
-{
-	const PixelFormatInfo &info = PixelFormatInfo::info(pixFmt);
-	return info.colourEncoding == PixelFormatInfo::ColourEncodingRGB;
-}
-
-bool isYuv(const PixelFormat &pixFmt)
-{
-	/* The code below would return true for raw mono streams, so weed those out first. */
-	if (isRaw(pixFmt))
-		return false;
-
-	const PixelFormatInfo &info = PixelFormatInfo::info(pixFmt);
-	return info.colourEncoding == PixelFormatInfo::ColourEncodingYUV;
-}
-
 } /* namespace */
 
 /*
@@ -129,7 +107,7 @@ CameraConfiguration::Status RPiCameraConfiguration::validateColorSpaces([[maybe_
 
 	for (auto cfg : config_) {
 		/* First fix up raw streams to have the "raw" colour space. */
-		if (isRaw(cfg.pixelFormat)) {
+		if (PipelineHandlerBase::isRaw(cfg.pixelFormat)) {
 			/* If there was no value here, that doesn't count as "adjusted". */
 			if (cfg.colorSpace && cfg.colorSpace != ColorSpace::Raw)
 				status = Adjusted;
@@ -156,13 +134,13 @@ CameraConfiguration::Status RPiCameraConfiguration::validateColorSpaces([[maybe_
 		if (cfg.colorSpace == ColorSpace::Raw)
 			continue;
 
-		if (isYuv(cfg.pixelFormat) && cfg.colorSpace != yuvColorSpace_) {
+		if (PipelineHandlerBase::isYuv(cfg.pixelFormat) && cfg.colorSpace != yuvColorSpace_) {
 			/* Again, no value means "not adjusted". */
 			if (cfg.colorSpace)
 				status = Adjusted;
 			cfg.colorSpace = yuvColorSpace_;
 		}
-		if (isRgb(cfg.pixelFormat) && cfg.colorSpace != rgbColorSpace_) {
+		if (PipelineHandlerBase::isRgb(cfg.pixelFormat) && cfg.colorSpace != rgbColorSpace_) {
 			/* Be nice, and let the YUV version count as non-adjusted too. */
 			if (cfg.colorSpace && cfg.colorSpace != yuvColorSpace_)
 				status = Adjusted;
@@ -203,7 +181,7 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 
 	std::vector<CameraData::StreamParams> rawStreams, outStreams;
 	for (const auto &[index, cfg] : utils::enumerate(config_)) {
-		if (isRaw(cfg.pixelFormat))
+		if (PipelineHandlerBase::isRaw(cfg.pixelFormat))
 			rawStreams.emplace_back(index, &cfg);
 		else
 			outStreams.emplace_back(index, &cfg);
@@ -349,6 +327,28 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 	}
 
 	return status;
+}
+
+bool PipelineHandlerBase::isRgb(const PixelFormat &pixFmt)
+{
+	const PixelFormatInfo &info = PixelFormatInfo::info(pixFmt);
+	return info.colourEncoding == PixelFormatInfo::ColourEncodingRGB;
+}
+
+bool PipelineHandlerBase::isYuv(const PixelFormat &pixFmt)
+{
+	/* The code below would return true for raw mono streams, so weed those out first. */
+	if (PipelineHandlerBase::isRaw(pixFmt))
+		return false;
+
+	const PixelFormatInfo &info = PixelFormatInfo::info(pixFmt);
+	return info.colourEncoding == PixelFormatInfo::ColourEncodingYUV;
+}
+
+bool PipelineHandlerBase::isRaw(const PixelFormat &pixFmt)
+{
+	/* This test works for both Bayer and raw mono formats. */
+	return BayerFormat::fromPixelFormat(pixFmt).isValid();
 }
 
 V4L2DeviceFormat PipelineHandlerBase::toV4L2DeviceFormat(const V4L2VideoDevice *dev,

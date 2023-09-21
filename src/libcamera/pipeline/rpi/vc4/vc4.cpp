@@ -460,6 +460,8 @@ CameraConfiguration::Status Vc4CameraData::platformValidate(RPi::RPiCameraConfig
 		 * have that fixed up in the code above.
 		 */
 		outStreams[i].dev = isp_[i == 0 ? Isp::Output0 : Isp::Output1].dev();
+
+		outStreams[i].format = RPi::PipelineHandlerBase::toV4L2DeviceFormat(outStreams[i].dev, outStreams[i].cfg);
 	}
 
 	return status;
@@ -552,11 +554,7 @@ int Vc4CameraData::platformConfigure(const RPi::RPiCameraConfiguration *rpiConfi
 
 		/* The largest resolution gets routed to the ISP Output 0 node. */
 		RPi::Stream *stream = i == 0 ? &isp_[Isp::Output0] : &isp_[Isp::Output1];
-
-		V4L2PixelFormat fourcc = stream->dev()->toV4L2PixelFormat(cfg->pixelFormat);
-		format.size = cfg->size;
-		format.fourcc = fourcc;
-		format.colorSpace = cfg->colorSpace;
+		format = outStreams[i].format;
 
 		LOG(RPI, Debug) << "Setting " << stream->name() << " to "
 				<< format;
@@ -564,13 +562,6 @@ int Vc4CameraData::platformConfigure(const RPi::RPiCameraConfiguration *rpiConfi
 		ret = stream->dev()->setFormat(&format);
 		if (ret)
 			return -EINVAL;
-
-		if (format.size != cfg->size || format.fourcc != fourcc) {
-			LOG(RPI, Error)
-				<< "Failed to set requested format on " << stream->name()
-				<< ", returned " << format;
-			return -EINVAL;
-		}
 
 		LOG(RPI, Debug)
 			<< "Stream " << stream->name() << " has color space "

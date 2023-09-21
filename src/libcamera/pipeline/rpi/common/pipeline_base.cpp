@@ -262,56 +262,25 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 
 	/* Further fixups on the ISP output streams. */
 	for (auto &out : outStreams_) {
-		StreamConfiguration &cfg = config_.at(out.index);
-		PixelFormat &cfgPixFmt = cfg.pixelFormat;
-		V4L2VideoDevice::Formats fmts = out.dev->formats();
-
-		if (fmts.find(out.dev->toV4L2PixelFormat(cfgPixFmt)) == fmts.end()) {
-			/* If we cannot find a native format, use a default one. */
-			cfgPixFmt = formats::YUV420;
-			status = Adjusted;
-		}
-
-		V4L2DeviceFormat format;
-		format.fourcc = out.dev->toV4L2PixelFormat(cfg.pixelFormat);
-		format.size = cfg.size;
 
 		/*
-		 * platformValidate may have worked out the correct stride so we
-		 * must pass it in. This also needs the planesCount to be set
-		 * correctly or the stride will be ignored.
-		 */
-		const PixelFormat &pixFormat = format.fourcc.toPixelFormat();
-		const PixelFormatInfo &info = PixelFormatInfo::info(pixFormat);
-		format.planesCount = info.numPlanes();
-		format.planes[0].bpl = cfg.stride;
-
-		/* We want to send the associated YCbCr info through to the driver. */
-		format.colorSpace = yuvColorSpace_;
-
-		LOG(RPI, Debug)
-			<< "Try color space " << ColorSpace::toString(cfg.colorSpace);
-
-		int ret = out.dev->tryFormat(&format);
-		if (ret)
-			return Invalid;
-
-		/*
+		 * We want to send the associated YCbCr info through to the driver.
+		 *
 		 * But for RGB streams, the YCbCr info gets overwritten on the way back
 		 * so we must check against what the stream cfg says, not what we actually
 		 * requested (which carefully included the YCbCr info)!
 		 */
-		if (cfg.colorSpace != format.colorSpace) {
-			status = Adjusted;
-			LOG(RPI, Debug)
-				<< "Color space changed from "
-				<< ColorSpace::toString(cfg.colorSpace) << " to "
-				<< ColorSpace::toString(format.colorSpace);
-		}
+		out.format.colorSpace = yuvColorSpace_;
 
-		cfg.colorSpace = format.colorSpace;
-		cfg.stride = format.planes[0].bpl;
-		cfg.frameSize = format.planes[0].size;
+		LOG(RPI, Debug)
+			<< "Try color space " << ColorSpace::toString(out.cfg->colorSpace);
+
+		int ret = out.dev->tryFormat(&out.format);
+		if (ret)
+			return Invalid;
+
+		if (RPi::PipelineHandlerBase::updateStreamConfig(out.cfg, out.format))
+			status = Adjusted;
 	}
 
 	return status;

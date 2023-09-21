@@ -15,6 +15,7 @@
 #include <math.h>
 #include <string.h>
 
+#include <libcamera/camera.h>
 #include <libcamera/property_ids.h>
 
 #include <libcamera/base/utils.h>
@@ -820,6 +821,90 @@ int CameraSensor::tryFormat(V4L2SubdeviceFormat *format) const
 {
 	return subdev_->setFormat(pad_, format,
 				  V4L2Subdevice::Whence::TryFormat);
+}
+
+/**
+ * \brief Apply a sensor configuration to the camera sensor
+ * \param[in] config The sensor configuration
+ * \param[in] transform The transform to be applied on the sensor.
+ * Defaults to Identity
+ * \param[out] sensorFormat Format applied to the sensor (optional)
+ *
+ * Apply to the camera sensor the configuration \a config.
+ *
+ * \todo The configuration shall be fully populated and if any of the fields
+ * specified cannot be applied exactly, an error code is returned.
+ *
+ * \return 0 if \a config is applied correctly to the camera sensor, a negative
+ * error code otherwise
+ */
+int CameraSensor::applyConfiguration(const SensorConfiguration &config,
+				     Transform transform,
+				     V4L2SubdeviceFormat *sensorFormat)
+{
+	if (!config.isValid()) {
+		LOG(CameraSensor, Error) << "Invalid sensor configuration";
+		return -EINVAL;
+	}
+
+	std::vector<unsigned int> filteredCodes;
+	std::copy_if(mbusCodes_.begin(), mbusCodes_.end(),
+		     std::back_inserter(filteredCodes),
+		     [&config](unsigned int mbusCode) {
+			     BayerFormat bayer = BayerFormat::fromMbusCode(mbusCode);
+			     if (bayer.bitDepth == config.bitDepth)
+				     return true;
+			     return false;
+		     });
+	if (filteredCodes.empty()) {
+		LOG(CameraSensor, Error)
+			<< "Cannot find any format with bit depth "
+			<< config.bitDepth;
+		return -EINVAL;
+	}
+
+	/*
+	 * Compute the sensor's data frame size by applying the cropping
+	 * rectangle, subsampling and output crop to the sensor's pixel array
+	 * size.
+	 *
+	 * \todo The actual size computation is for now ignored and only the
+	 * output size is considered. This implies that resolutions obtained
+	 * with two different cropping/subsampling will look identical and
+	 * only the first found one will be considered.
+	 */
+	V4L2SubdeviceFormat subdevFormat = {};
+	for (unsigned int code : filteredCodes) {
+		for (const Size &size : sizes(code)) {
+			if (size.width != config.outputSize.width ||
+			    size.height != config.outputSize.height)
+				continue;
+
+			subdevFormat.mbus_code = code;
+			subdevFormat.size = size;
+			break;
+		}
+	}
+	if (!subdevFormat.mbus_code) {
+		LOG(CameraSensor, Error) << "Invalid output size in sensor configuration";
+		return -EINVAL;
+	}
+
+	int ret = setFormat(&subdevFormat, transform);
+	if (ret)
+		return ret;
+
+	/*
+	 * Return to the caller the format actually applied to the sensor.
+	 * This is relevant if transform has changed the bayer pattern order.
+	 */
+	if (sensorFormat)
+		*sensorFormat = subdevFormat;
+
+	/* \todo Handle AnalogCrop. Most sensors do not support set_selection */
+	/* \todo Handle scaling in the digital domain. */
+
+	return 0;
 }
 
 /**

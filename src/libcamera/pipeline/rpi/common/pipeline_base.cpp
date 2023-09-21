@@ -309,6 +309,17 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 		V4L2DeviceFormat format;
 		format.fourcc = out.dev->toV4L2PixelFormat(cfg.pixelFormat);
 		format.size = cfg.size;
+
+		/*
+		 * platformValidate may have worked out the correct stride so we
+		 * must pass it in. This also needs the planesCount to be set
+		 * correctly or the stride will be ignored.
+		 */
+		const PixelFormat &pixFormat = format.fourcc.toPixelFormat();
+		const PixelFormatInfo &info = PixelFormatInfo::info(pixFormat);
+		format.planesCount = info.numPlanes();
+		format.planes[0].bpl = cfg.stride;
+
 		/* We want to send the associated YCbCr info through to the driver. */
 		format.colorSpace = yuvColorSpace_;
 

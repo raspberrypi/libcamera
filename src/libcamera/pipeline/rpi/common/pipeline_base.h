@@ -273,7 +273,7 @@ private:
 	 * Store the colour spaces that all our streams will have. RGB format streams
 	 * will have the same colorspace as YUV streams, with YCbCr field cleared and
 	 * range set to full.
-         */
+	 */
 	std::optional<ColorSpace> yuvColorSpace_;
 	std::optional<ColorSpace> rgbColorSpace_;
 };

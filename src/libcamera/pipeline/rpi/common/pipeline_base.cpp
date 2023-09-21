@@ -180,6 +180,15 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 	if (config_.empty())
 		return Invalid;
 
+	/*
+	 * Make sure that if a sensor configuration has been requested it
+	 * is valid.
+	 */
+	if (sensorConfig && !sensorConfig->isValid()) {
+		LOG(RPI, Error) << "Invalid sensor configuration request";
+		return Invalid;
+	}
+
 	status = validateColorSpaces(ColorSpaceFlag::StreamsShareColorSpace);
 
 	/*
@@ -207,19 +216,43 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 	std::sort(outStreams.begin(), outStreams.end(),
 		  [](auto &l, auto &r) { return l.cfg->size > r.cfg->size; });
 
-	/* Compute the sensor configuration. */
-	unsigned int bitDepth = defaultRawBitDepth;
-	if (!rawStreams.empty()) {
+	/* Compute the sensor's format then do any platform specific fixups. */
+	unsigned int bitDepth;
+	Size sensorSize;
+
+	if (sensorConfig) {
+		/* Use the application provided sensor configuration. */
+		bitDepth = sensorConfig->bitDepth;
+		sensorSize = sensorConfig->outputSize;
+	} else if (!rawStreams.empty()) {
+		/* Use the RAW stream format and size. */
 		BayerFormat bayerFormat = BayerFormat::fromPixelFormat(rawStreams[0].cfg->pixelFormat);
 		bitDepth = bayerFormat.bitDepth;
+		sensorSize = rawStreams[0].cfg->size;
+	} else {
+		bitDepth = defaultRawBitDepth;
+		sensorSize = outStreams[0].cfg->size;
 	}
 
-	sensorFormat_ = data_->findBestFormat(rawStreams.empty() ? outStreams[0].cfg->size
-								 : rawStreams[0].cfg->size,
-					      bitDepth);
+	sensorFormat_ = data_->findBestFormat(sensorSize, bitDepth);
+
+	/*
+	 * If a sensor configuration has been requested, it should apply
+	 * without modifications.
+	 */
+	if (sensorConfig) {
+		BayerFormat bayer = BayerFormat::fromMbusCode(sensorFormat_.mbus_code);
+
+		if (bayer.bitDepth != sensorConfig->bitDepth ||
+		    sensorFormat_.size != sensorConfig->outputSize) {
+			LOG(RPI, Error) << "Invalid sensor configuration: "
+					<< "bitDepth/size mismatch";
+			return Invalid;
+		}
+	}
 
 	/* Do any platform specific fixups. */
-	status = data_->platformValidate(rawStreams, outStreams);
+	status = data_->platformValidate(this, rawStreams, outStreams);
 	if (status == Invalid)
 		return Invalid;
 
@@ -467,12 +500,25 @@ int PipelineHandlerBase::configure(Camera *camera, CameraConfiguration *config)
 	std::sort(ispStreams.begin(), ispStreams.end(),
 		  [](auto &l, auto &r) { return l.cfg->size > r.cfg->size; });
 
-	/* Apply the format on the sensor with any cached transform. */
+	/*
+	 * Apply the format on the sensor with any cached transform.
+	 *
+	 * If the application has provided a sensor configuration apply it
+	 * instead of just applying a format.
+	 */
 	const RPiCameraConfiguration *rpiConfig =
 				static_cast<const RPiCameraConfiguration *>(config);
-	V4L2SubdeviceFormat sensorFormat = rpiConfig->sensorFormat_;
+	V4L2SubdeviceFormat sensorFormat;
 
-	ret = data->sensor_->setFormat(&sensorFormat, rpiConfig->combinedTransform_);
+	if (rpiConfig->sensorConfig) {
+		ret = data->sensor_->applyConfiguration(*rpiConfig->sensorConfig,
+							rpiConfig->combinedTransform_,
+							&sensorFormat);
+	} else {
+		sensorFormat = rpiConfig->sensorFormat_;
+		ret = data->sensor_->setFormat(&sensorFormat,
+					       rpiConfig->combinedTransform_);
+	}
 	if (ret)
 		return ret;
 

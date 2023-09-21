@@ -65,7 +65,8 @@ public:
 	{
 	}
 
-	CameraConfiguration::Status platformValidate(std::vector<StreamParams> &rawStreams,
+	CameraConfiguration::Status platformValidate(RPi::RPiCameraConfiguration *rpiConfig,
+						     std::vector<StreamParams> &rawStreams,
 						     std::vector<StreamParams> &outStreams) const override;
 
 	int platformPipelineConfigure(const std::unique_ptr<YamlObject> &root) override;
@@ -394,7 +395,8 @@ int PipelineHandlerVc4::platformRegister(std::unique_ptr<RPi::CameraData> &camer
 	return 0;
 }
 
-CameraConfiguration::Status Vc4CameraData::platformValidate(std::vector<StreamParams> &rawStreams,
+CameraConfiguration::Status Vc4CameraData::platformValidate(RPi::RPiCameraConfiguration *rpiConfig,
+							    std::vector<StreamParams> &rawStreams,
 							    std::vector<StreamParams> &outStreams) const
 {
 	CameraConfiguration::Status status = CameraConfiguration::Status::Valid;
@@ -405,8 +407,26 @@ CameraConfiguration::Status Vc4CameraData::platformValidate(std::vector<StreamPa
 		return CameraConfiguration::Status::Invalid;
 	}
 
-	if (!rawStreams.empty())
+	if (!rawStreams.empty()) {
 		rawStreams[0].dev = unicam_[Unicam::Image].dev();
+
+		/* Adjust the RAW stream to match the computed sensor format. */
+		StreamConfiguration *rawStream = rawStreams[0].cfg;
+		BayerFormat rawBayer = BayerFormat::fromMbusCode(rpiConfig->sensorFormat_.mbus_code);
+
+		/* Handle flips to make sure to match the RAW stream format. */
+		if (flipsAlterBayerOrder_)
+			rawBayer = rawBayer.transform(rpiConfig->combinedTransform_);
+		PixelFormat rawFormat = rawBayer.toPixelFormat();
+
+		if (rawStream->pixelFormat != rawFormat ||
+		    rawStream->size != rpiConfig->sensorFormat_.size) {
+			rawStream->pixelFormat = rawFormat;
+			rawStream->size = rpiConfig->sensorFormat_.size;
+
+			status = CameraConfiguration::Adjusted;
+		}
+	}
 
 	/*
 	 * For the two ISP outputs, one stream must be equal or smaller than the
@@ -416,6 +436,11 @@ CameraConfiguration::Status Vc4CameraData::platformValidate(std::vector<StreamPa
 	 */
 	for (unsigned int i = 0; i < outStreams.size(); i++) {
 		Size size;
+
+		/*
+		 * \todo Should we warn if upscaling, as it reduces the image
+		 * quality and is usually undesired ?
+		 */
 
 		size.width = std::min(outStreams[i].cfg->size.width,
 				      outStreams[0].cfg->size.width);

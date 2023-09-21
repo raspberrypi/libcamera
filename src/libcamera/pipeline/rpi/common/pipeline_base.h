@@ -42,6 +42,7 @@ namespace RPi {
 /* Map of mbus codes to supported sizes reported by the sensor. */
 using SensorFormats = std::map<unsigned int, std::vector<Size>>;
 
+class RPiCameraConfiguration;
 class CameraData : public Camera::Private
 {
 public:
@@ -72,7 +73,8 @@ public:
 		V4L2VideoDevice *dev;
 	};
 
-	virtual CameraConfiguration::Status platformValidate(std::vector<StreamParams> &rawStreams,
+	virtual CameraConfiguration::Status platformValidate(RPiCameraConfiguration *rpiConfig,
+							     std::vector<StreamParams> &rawStreams,
 							     std::vector<StreamParams> &outStreams) const = 0;
 	virtual int platformConfigure(const V4L2SubdeviceFormat &sensorFormat,
 				      std::optional<BayerFormat::Packing> packing,

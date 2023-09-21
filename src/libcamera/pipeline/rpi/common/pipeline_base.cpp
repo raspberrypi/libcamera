@@ -353,6 +353,53 @@ bool PipelineHandlerBase::isRaw(const PixelFormat &pixFmt)
 	return BayerFormat::fromPixelFormat(pixFmt).isValid();
 }
 
+/*
+ * Adjust a StreamConfiguration fields to match a video device format.
+ * Returns true if the StreamConfiguration has been adjusted.
+ */
+bool PipelineHandlerBase::updateStreamConfig(StreamConfiguration *stream,
+					     const V4L2DeviceFormat &format)
+{
+	const PixelFormat &pixFormat = format.fourcc.toPixelFormat();
+	bool adjusted = false;
+
+	if (stream->pixelFormat != pixFormat || stream->size != format.size) {
+		stream->pixelFormat = pixFormat;
+		stream->size = format.size;
+		adjusted = true;
+	}
+
+	if (stream->colorSpace != format.colorSpace) {
+		stream->colorSpace = format.colorSpace;
+		adjusted = true;
+		LOG(RPI, Debug)
+			<< "Color space changed from "
+			<< ColorSpace::toString(stream->colorSpace) << " to "
+			<< ColorSpace::toString(format.colorSpace);
+	}
+
+	stream->stride = format.planes[0].bpl;
+	stream->frameSize = format.planes[0].size;
+
+	return adjusted;
+}
+
+/*
+ * Populate and return a video device format using a StreamConfiguration. */
+V4L2DeviceFormat PipelineHandlerBase::toV4L2DeviceFormat(const V4L2VideoDevice *dev,
+							 const StreamConfiguration *stream)
+{
+	V4L2DeviceFormat deviceFormat;
+
+	const PixelFormatInfo &info = PixelFormatInfo::info(stream->pixelFormat);
+	deviceFormat.planesCount = info.numPlanes();
+	deviceFormat.fourcc = dev->toV4L2PixelFormat(stream->pixelFormat);
+	deviceFormat.size = stream->size;
+	deviceFormat.colorSpace = stream->colorSpace;
+
+	return deviceFormat;
+}
+
 V4L2DeviceFormat PipelineHandlerBase::toV4L2DeviceFormat(const V4L2VideoDevice *dev,
 							 const V4L2SubdeviceFormat &format,
 							 BayerFormat::Packing packingReq)

@@ -57,29 +57,10 @@ public:
 	{
 	}
 
-	struct StreamParams {
-		StreamParams()
-			: index(0), cfg(nullptr), dev(nullptr)
-		{
-		}
-
-		StreamParams(unsigned int index_, StreamConfiguration *cfg_)
-			: index(index_), cfg(cfg_), dev(nullptr)
-		{
-		}
-
-		unsigned int index;
-		StreamConfiguration *cfg;
-		V4L2VideoDevice *dev;
-	};
-
-	virtual CameraConfiguration::Status platformValidate(RPiCameraConfiguration *rpiConfig,
-							     std::vector<StreamParams> &rawStreams,
-							     std::vector<StreamParams> &outStreams) const = 0;
+	virtual CameraConfiguration::Status platformValidate(RPiCameraConfiguration *rpiConfig) const = 0;
 	virtual int platformConfigure(const V4L2SubdeviceFormat &sensorFormat,
 				      std::optional<BayerFormat::Packing> packing,
-				      std::vector<StreamParams> &rawStreams,
-				      std::vector<StreamParams> &outStreams) = 0;
+				      const RPiCameraConfiguration *rpiConfig) = 0;
 	virtual void platformStart() = 0;
 	virtual void platformStop() = 0;
 
@@ -269,6 +250,25 @@ public:
 	Transform combinedTransform_;
 	/* The sensor format computed in validate() */
 	V4L2SubdeviceFormat sensorFormat_;
+
+	struct StreamParams {
+		StreamParams()
+			: index(0), cfg(nullptr), dev(nullptr)
+		{
+		}
+
+		StreamParams(unsigned int index_, StreamConfiguration *cfg_)
+			: index(index_), cfg(cfg_), dev(nullptr)
+		{
+		}
+
+		unsigned int index;
+		StreamConfiguration *cfg;
+		V4L2VideoDevice *dev;
+	};
+
+	std::vector<StreamParams> rawStreams_;
+	std::vector<StreamParams> outStreams_;
 
 private:
 	const CameraData *data_;

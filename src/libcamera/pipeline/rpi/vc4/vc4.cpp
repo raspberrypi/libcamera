@@ -25,6 +25,7 @@ namespace libcamera {
 LOG_DECLARE_CATEGORY(RPI)
 
 using StreamFlag = RPi::Stream::StreamFlag;
+using StreamParams = RPi::RPiCameraConfiguration::StreamParams;
 
 namespace {
 
@@ -65,9 +66,7 @@ public:
 	{
 	}
 
-	CameraConfiguration::Status platformValidate(RPi::RPiCameraConfiguration *rpiConfig,
-						     std::vector<StreamParams> &rawStreams,
-						     std::vector<StreamParams> &outStreams) const override;
+	CameraConfiguration::Status platformValidate(RPi::RPiCameraConfiguration *rpiConfig) const override;
 
 	int platformPipelineConfigure(const std::unique_ptr<YamlObject> &root) override;
 
@@ -118,8 +117,7 @@ private:
 
 	int platformConfigure(const V4L2SubdeviceFormat &sensorFormat,
 			      std::optional<BayerFormat::Packing> packing,
-			      std::vector<StreamParams> &rawStreams,
-			      std::vector<StreamParams> &outStreams) override;
+			      const RPi::RPiCameraConfiguration *rpiConfig) override;
 	int platformConfigureIpa(ipa::RPi::ConfigParams &params) override;
 
 	int platformInitIpa([[maybe_unused]] ipa::RPi::InitParams &params) override
@@ -395,10 +393,11 @@ int PipelineHandlerVc4::platformRegister(std::unique_ptr<RPi::CameraData> &camer
 	return 0;
 }
 
-CameraConfiguration::Status Vc4CameraData::platformValidate(RPi::RPiCameraConfiguration *rpiConfig,
-							    std::vector<StreamParams> &rawStreams,
-							    std::vector<StreamParams> &outStreams) const
+CameraConfiguration::Status Vc4CameraData::platformValidate(RPi::RPiCameraConfiguration *rpiConfig) const
 {
+	std::vector<StreamParams> &rawStreams = rpiConfig->rawStreams_;
+	std::vector<StreamParams> &outStreams = rpiConfig->outStreams_;
+
 	CameraConfiguration::Status status = CameraConfiguration::Status::Valid;
 
 	/* Can only output 1 RAW stream, or 2 YUV/RGB streams. */
@@ -506,9 +505,10 @@ int Vc4CameraData::platformPipelineConfigure(const std::unique_ptr<YamlObject> &
 
 int Vc4CameraData::platformConfigure(const V4L2SubdeviceFormat &sensorFormat,
 				     std::optional<BayerFormat::Packing> packing,
-				     std::vector<StreamParams> &rawStreams,
-				     std::vector<StreamParams> &outStreams)
+				     const RPi::RPiCameraConfiguration *rpiConfig)
 {
+	const std::vector<StreamParams> &rawStreams = rpiConfig->rawStreams_;
+	const std::vector<StreamParams> &outStreams = rpiConfig->outStreams_;
 	int ret;
 
 	if (!packing)

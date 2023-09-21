@@ -115,9 +115,7 @@ private:
 		isp_[Isp::Input].dev()->setSelection(V4L2_SEL_TGT_CROP, &ispCrop_);
 	}
 
-	int platformConfigure(const V4L2SubdeviceFormat &sensorFormat,
-			      std::optional<BayerFormat::Packing> packing,
-			      const RPi::RPiCameraConfiguration *rpiConfig) override;
+	int platformConfigure(const RPi::RPiCameraConfiguration *rpiConfig) override;
 	int platformConfigureIpa(ipa::RPi::ConfigParams &params) override;
 
 	int platformInitIpa([[maybe_unused]] ipa::RPi::InitParams &params) override
@@ -416,6 +414,9 @@ CameraConfiguration::Status Vc4CameraData::platformValidate(RPi::RPiCameraConfig
 		/* Handle flips to make sure to match the RAW stream format. */
 		if (flipsAlterBayerOrder_)
 			rawBayer = rawBayer.transform(rpiConfig->combinedTransform_);
+
+		/* Apply the user requested packing. */
+		rawBayer.packing = BayerFormat::fromPixelFormat(rawStream->pixelFormat).packing;
 		PixelFormat rawFormat = rawBayer.toPixelFormat();
 
 		if (rawStream->pixelFormat != rawFormat ||
@@ -425,6 +426,9 @@ CameraConfiguration::Status Vc4CameraData::platformValidate(RPi::RPiCameraConfig
 
 			status = CameraConfiguration::Adjusted;
 		}
+
+		rawStreams[0].format =
+			RPi::PipelineHandlerBase::toV4L2DeviceFormat(unicam_[Unicam::Image].dev(), rawStream);
 	}
 
 	/*
@@ -503,23 +507,14 @@ int Vc4CameraData::platformPipelineConfigure(const std::unique_ptr<YamlObject> &
 	return 0;
 }
 
-int Vc4CameraData::platformConfigure(const V4L2SubdeviceFormat &sensorFormat,
-				     std::optional<BayerFormat::Packing> packing,
-				     const RPi::RPiCameraConfiguration *rpiConfig)
+int Vc4CameraData::platformConfigure(const RPi::RPiCameraConfiguration *rpiConfig)
 {
 	const std::vector<StreamParams> &rawStreams = rpiConfig->rawStreams_;
 	const std::vector<StreamParams> &outStreams = rpiConfig->outStreams_;
 	int ret;
 
-	if (!packing)
-		packing = BayerFormat::Packing::CSI2;
-
 	V4L2VideoDevice *unicam = unicam_[Unicam::Image].dev();
-	V4L2DeviceFormat unicamFormat = RPi::PipelineHandlerBase::toV4L2DeviceFormat(unicam, sensorFormat, *packing);
-
-	ret = unicam->setFormat(&unicamFormat);
-	if (ret)
-		return ret;
+	V4L2DeviceFormat unicamFormat;
 
 	/*
 	 * See which streams are requested, and route the user
@@ -528,14 +523,24 @@ int Vc4CameraData::platformConfigure(const V4L2SubdeviceFormat &sensorFormat,
 	if (!rawStreams.empty()) {
 		rawStreams[0].cfg->setStream(&unicam_[Unicam::Image]);
 		unicam_[Unicam::Image].setFlags(StreamFlag::External);
+		unicamFormat = rawStreams[0].format;
+	} else {
+		unicamFormat =
+			RPi::PipelineHandlerBase::toV4L2DeviceFormat(unicam,
+								     rpiConfig->sensorFormat_,
+								     BayerFormat::Packing::CSI2);
 	}
+
+	ret = unicam->setFormat(&unicamFormat);
+	if (ret)
+		return ret;
 
 	ret = isp_[Isp::Input].dev()->setFormat(&unicamFormat);
 	if (ret)
 		return ret;
 
 	LOG(RPI, Info) << "Sensor: " << sensor_->id()
-		       << " - Selected sensor format: " << sensorFormat
+		       << " - Selected sensor format: " << rpiConfig->sensorFormat_
 		       << " - Selected unicam format: " << unicamFormat;
 
 	/* Use a sensible small default size if no output streams are configured. */

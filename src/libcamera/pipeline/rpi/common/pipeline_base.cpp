@@ -238,16 +238,10 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 
 	/* Further fixups on the RAW streams. */
 	for (auto &raw : rawStreams_) {
-		StreamConfiguration &cfg = config_.at(raw.index);
-
-		V4L2DeviceFormat rawFormat;
-		rawFormat.fourcc = raw.dev->toV4L2PixelFormat(cfg.pixelFormat);
-		rawFormat.size = cfg.size;
-		rawFormat.colorSpace = cfg.colorSpace;
-
-		int ret = raw.dev->tryFormat(&rawFormat);
+		int ret = raw.dev->tryFormat(&raw.format);
 		if (ret)
 			return Invalid;
+
 		/*
 		 * Some sensors change their Bayer order when they are h-flipped
 		 * or v-flipped, according to the transform. If this one does, we
@@ -255,23 +249,15 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 		 * Note how we must fetch the "native" (i.e. untransformed) Bayer
 		 * order, because the sensor may currently be flipped!
 		 */
-		V4L2PixelFormat fourcc = rawFormat.fourcc;
+		BayerFormat bayer = BayerFormat::fromPixelFormat(raw.cfg->pixelFormat);
 		if (data_->flipsAlterBayerOrder_) {
-			BayerFormat bayer = BayerFormat::fromV4L2PixelFormat(fourcc);
 			bayer.order = data_->nativeBayerOrder_;
 			bayer = bayer.transform(combinedTransform_);
-			fourcc = bayer.toV4L2PixelFormat();
 		}
+		raw.cfg->pixelFormat = bayer.toPixelFormat();
 
-		PixelFormat inputPixFormat = fourcc.toPixelFormat();
-		if (raw.cfg->size != rawFormat.size || raw.cfg->pixelFormat != inputPixFormat) {
-			raw.cfg->size = rawFormat.size;
-			raw.cfg->pixelFormat = inputPixFormat;
+		if (RPi::PipelineHandlerBase::updateStreamConfig(raw.cfg, raw.format))
 			status = Adjusted;
-		}
-
-		raw.cfg->stride = rawFormat.planes[0].bpl;
-		raw.cfg->frameSize = rawFormat.planes[0].size;
 	}
 
 	/* Further fixups on the ISP output streams. */
@@ -548,35 +534,25 @@ int PipelineHandlerBase::configure(Camera *camera, CameraConfiguration *config)
 	 * If the application has provided a sensor configuration apply it
 	 * instead of just applying a format.
 	 */
-	const RPiCameraConfiguration *rpiConfig =
-				static_cast<const RPiCameraConfiguration *>(config);
-	V4L2SubdeviceFormat sensorFormat;
+	RPiCameraConfiguration *rpiConfig = static_cast<RPiCameraConfiguration *>(config);
+	V4L2SubdeviceFormat *sensorFormat = &rpiConfig->sensorFormat_;
 
 	if (rpiConfig->sensorConfig) {
 		ret = data->sensor_->applyConfiguration(*rpiConfig->sensorConfig,
 							rpiConfig->combinedTransform_,
-							&sensorFormat);
+							sensorFormat);
 	} else {
-		sensorFormat = rpiConfig->sensorFormat_;
-		ret = data->sensor_->setFormat(&sensorFormat,
+		ret = data->sensor_->setFormat(sensorFormat,
 					       rpiConfig->combinedTransform_);
 	}
 	if (ret)
 		return ret;
 
-	/* Use the user requested packing/bit-depth. */
-	std::optional<BayerFormat::Packing> packing;
-	if (!rpiConfig->rawStreams_.empty()) {
-		BayerFormat bayerFormat =
-			BayerFormat::fromPixelFormat(rpiConfig->rawStreams_[0].cfg->pixelFormat);
-		packing = bayerFormat.packing;
-	}
-
 	/*
 	 * Platform specific internal stream configuration. This also assigns
 	 * external streams which get configured below.
 	 */
-	ret = data->platformConfigure(sensorFormat, packing, rpiConfig);
+	ret = data->platformConfigure(rpiConfig);
 	if (ret)
 		return ret;
 
@@ -640,11 +616,11 @@ int PipelineHandlerBase::configure(Camera *camera, CameraConfiguration *config)
 		 */
 		link->setEnabled(true);
 		const MediaPad *sinkPad = link->sink();
-		ret = device->setFormat(sinkPad->index(), &sensorFormat);
+		ret = device->setFormat(sinkPad->index(), sensorFormat);
 		if (ret) {
 			LOG(RPI, Error) << "Failed to set format on " << device->entity()->name()
 					<< " pad " << sinkPad->index()
-					<< " with format  " << sensorFormat
+					<< " with format  " << *sensorFormat
 					<< ": " << ret;
 			return ret;
 		}

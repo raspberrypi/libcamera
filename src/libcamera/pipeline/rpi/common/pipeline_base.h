@@ -58,9 +58,7 @@ public:
 	}
 
 	virtual CameraConfiguration::Status platformValidate(RPiCameraConfiguration *rpiConfig) const = 0;
-	virtual int platformConfigure(const V4L2SubdeviceFormat &sensorFormat,
-				      std::optional<BayerFormat::Packing> packing,
-				      const RPiCameraConfiguration *rpiConfig) = 0;
+	virtual int platformConfigure(const RPiCameraConfiguration *rpiConfig) = 0;
 	virtual void platformStart() = 0;
 	virtual void platformStop() = 0;
 
@@ -269,6 +267,7 @@ public:
 		unsigned int index;
 		StreamConfiguration *cfg;
 		V4L2VideoDevice *dev;
+		V4L2DeviceFormat format;
 	};
 
 	std::vector<StreamParams> rawStreams_;

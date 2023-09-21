@@ -23,3 +23,4 @@
    Sensor driver requirements <sensor_driver_requirements>
    Lens driver requirements <lens_driver_requirements>
    Python Bindings <python-bindings>
+   Camera Sensor Model <camera-sensor-model>

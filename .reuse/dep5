@@ -3,6 +3,12 @@ Upstream-Name: libcamera
 Upstream-Contact: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 Source: https://git.libcamera.org/libcamera/libcamera.git/
 
+Files: Documentation/binning.svg
+       Documentation/camera-sensor-model.rst
+       Documentation/sensor_model.svg
+Copyright: Copyright 2023 Ideas On Board Oy
+License: CC-BY-SA-4.0
+
 Files: Documentation/theme/static/search.png
 Copyright: 2022 Fonticons, Inc.
 License: CC-BY-4.0

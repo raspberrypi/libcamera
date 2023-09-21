@@ -63,6 +63,7 @@ endif
 
 if sphinx.found()
     docs_sources = [
+        'camera-sensor-model.rst',
         'coding-style.rst',
         'conf.py',
         'contributing.rst',

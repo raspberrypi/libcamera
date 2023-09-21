@@ -268,7 +268,7 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 
 		if (fmts.find(out.dev->toV4L2PixelFormat(cfgPixFmt)) == fmts.end()) {
 			/* If we cannot find a native format, use a default one. */
-			cfgPixFmt = formats::NV12;
+			cfgPixFmt = formats::YUV420;
 			status = Adjusted;
 		}
 
@@ -431,7 +431,7 @@ PipelineHandlerBase::generateConfiguration(Camera *camera, Span<const StreamRole
 
 		case StreamRole::StillCapture:
 			fmts = data->ispFormats();
-			pixelFormat = formats::NV12;
+			pixelFormat = formats::YUV420;
 			/*
 			 * Still image codecs usually expect the sYCC color space.
 			 * Even RGB codecs will be fine as the RGB we get with the
@@ -465,7 +465,7 @@ PipelineHandlerBase::generateConfiguration(Camera *camera, Span<const StreamRole
 
 		case StreamRole::Viewfinder:
 			fmts = data->ispFormats();
-			pixelFormat = formats::ARGB8888;
+			pixelFormat = formats::XRGB8888;
 			colorSpace = ColorSpace::Sycc;
 			size = { 800, 600 };
 			bufferCount = 4;

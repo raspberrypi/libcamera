@@ -774,6 +774,81 @@ controls:
             Continuous AF is paused. No further state changes or lens movements
             will occur until the AfPauseResume control is sent.
 
+  - HdrMode:
+      type: int32_t
+      description: |
+        Control to set the mode to be used for High Dynamic Range (HDR)
+        imaging. HDR techniques typically include multiple exposure, image
+        fusion and tone mapping techniques to improve the dynamic range of the
+        resulting images.
+
+        When using an HDR mode, images are tagged to indicate which HDR channel
+        (long, medium or short) they come from.
+
+        \sa HdrChannel
+
+      enum:
+        - name: HdrModeOff
+          value: 0
+          description: |
+            HDR is disabled. The HDR channel, if present, will report
+            HdrChannelNone.
+        - name: HdrModeMultiExposureUnmerged
+          value: 1
+          description: |
+            Multiple exposures will be generated in an alternating fashion.
+            However, they will not be merged together and will be returned to
+            the application as they are. Each image will be tagged with the
+            correct HDR channel, indicating what kind of exposure (long, medium
+            or short) it is.  The expectation is that, if necessary, the
+            application can merge them to create HDR images for itself.
+        - name: HdrModeMultiExposure
+          value: 2
+          description: |
+            Multiple exposures will be generated and merged to create HDR
+            images. Each image will be tagged with the HDR channel (long, medium
+            or short) that arrived and which caused this image to be output.
+        - name: HdrModeSingleExposure
+          value: 3
+          description: |
+            Multiple frames all at a single exposure will be used to create HDR
+            images. These images should be reported as all corresponding to the
+            HDR short channel.
+        - name: HdrModeNight
+          value: 4
+          description: |
+            Multiple frames will be combined to produce "night mode"
+            images. Images will be tagged as belonging either to the long,
+            medium or short HDR channel according to the implementation.
+
+  - HdrChannel:
+      type: int32_t
+      description: |
+        This value is reported back to the application so that it can discover
+        whether this capture corresponds to the short or long exposure image (or
+        any other image used by the HDR procedure). An application can monitor
+        the HDR channel to discover when the differently exposed images have
+        arrived.
+
+      enum:
+        - name: HdrChannelNone
+          value: 0
+          description: |
+            This image does not correspond to any of the captures used to create
+            an HDR image.
+        - name: HdrChannelShort
+          value: 1
+          description: |
+            This is a short exposure image.
+        - name: HdrChannelMedium
+          value: 2
+          description: |
+            This is a medium exposure image.
+        - name: HdrChannelLong
+          value: 3
+          description: |
+            This is a long exposure image.
+
   # ----------------------------------------------------------------------------
   # Draft controls section
 

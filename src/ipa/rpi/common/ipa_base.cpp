@@ -409,7 +409,7 @@ void IpaBase::prepareIsp(const PrepareParams &params)
 
 	/* Allow a 10% margin on the comparison below. */
 	Duration delta = (frameTimestamp - lastRunTimestamp_) * 1.0ns;
-	if (lastRunTimestamp_ && frameCount_ > dropFrameCount_ &&
+	if (lastRunTimestamp_ && frameCount_ >= dropFrameCount_ &&
 	    delta < controllerMinFrameDuration * 0.9) {
 		/*
 		 * Ensure we merge the previous frame's metadata with the current
@@ -451,7 +451,7 @@ void IpaBase::processStats(const ProcessParams &params)
 {
 	unsigned int ipaContext = params.ipaContext % rpiMetadata_.size();
 
-	if (processPending_ && frameCount_ > mistrustCount_) {
+	if (processPending_ && frameCount_ >= mistrustCount_) {
 		RPiController::Metadata &rpiMetadata = rpiMetadata_[ipaContext];
 
 		auto it = buffers_.find(params.buffers.stats);

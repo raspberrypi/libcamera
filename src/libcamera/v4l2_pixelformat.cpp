@@ -123,7 +123,7 @@ const std::map<V4L2PixelFormat, V4L2PixelFormat::Info> vpf2pf{
 		{ formats::YVU422, "Planar YVU 4:2:2 (N-C)" } },
 	{ V4L2PixelFormat(V4L2_PIX_FMT_YUV444M),
 		{ formats::YUV444, "Planar YUV 4:4:4 (N-C)" } },
-	{ V4L2PixelFormat(V4L2_PIX_FMT_YUV444M),
+	{ V4L2PixelFormat(V4L2_PIX_FMT_YVU444M),
 		{ formats::YVU444, "Planar YVU 4:4:4 (N-C)" } },
 
 	/* Greyscale formats. */

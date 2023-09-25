@@ -774,6 +774,69 @@ controls:
             Continuous AF is paused. No further state changes or lens movements
             will occur until the AfPauseResume control is sent.
 
+  - HdrMode:
+      type: int32_t
+      description: |
+        Control to set the mode to be used for High Dynamic Range (HDR)
+        imaging.
+
+      enum:
+        - name: HdrModeOff
+          value: 0
+          description: |
+            HDR is not enabled.
+        - name: HdrModeMultiExposureUnmerged
+          value: 1
+          description: |
+            Multiple exposures will be generated in an alternating fashion.
+            However, they will not be merged together and will be returned to
+            the application as they are. The expectation is that, if necessary,
+            the application can merge them to create HDR images for itself.
+        - name: HdrModeMultiExposure
+          value: 2
+          description: |
+            Multiple exposures will be generated and merged to create HDR
+            images.
+        - name: HdrModeSingleExposure
+          value: 3
+          description: |
+            Multiple frames all at a single exposure will be used to create HDR
+            images.
+        - name: HdrModeNight
+          value: 4
+          description: |
+            Multiple frames will be combined to produce "night mode" images.
+
+  - HdrChannel:
+      type: int32_t
+      description: |
+        This value is reported back to the application so that it can discover
+        whether this capture corresponds to the short or long exposure image (or
+        any other image used by the HDR procedure).
+
+      enum:
+        - name: HdrChannelNone
+          value: 0
+          description: |
+            This image does not correspond to any of the captures used to create
+            an HDR image.
+        - name: HdrChannelShort
+          value: 1
+          description: |
+            This is a short exposure image.
+        - name: HdrChannelMedium
+          value: 2
+          description: |
+            This is a medium exposure image.
+        - name: HdrChannelLong
+          value: 3
+          description: |
+            This is a long exposure image.
+        - name: HdrChannelNight
+          value: 4
+          description: |
+            This frame has been used to produce a "night mode" image.
+
   # ----------------------------------------------------------------------------
   # Draft controls section
 

@@ -36,7 +36,7 @@ struct V4L2SubdeviceCapability final : v4l2_subdev_capability {
 	}
 	bool hasStreams() const
 	{
-		return capabilities & V4L2_SUBDEV_CAP_MPLEXED;
+		return capabilities & V4L2_SUBDEV_CAP_STREAMS;
 	}
 };
 

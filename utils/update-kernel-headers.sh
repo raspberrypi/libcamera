@@ -18,7 +18,7 @@ if [ "$line" != "# Kbuild for top-level directory of the kernel" ] ; then
 	exit 1
 fi
 
-if [ ! -d "${kernel_dir}/.git" ] ; then
+if [ ! -e "${kernel_dir}/.git" ] ; then
 	echo "Directory ${kernel_dir} doesn't contain a git tree"
 	exit 1
 fi

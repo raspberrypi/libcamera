@@ -88,7 +88,7 @@ public:
 	}
 
 private:
-	std::unique_ptr<CameraSensorHelper> createInstance() const
+	std::unique_ptr<CameraSensorHelper> createInstance() const override
 	{
 		return std::make_unique<_Helper>();
 	}

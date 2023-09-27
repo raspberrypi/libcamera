@@ -273,9 +273,6 @@ public:
 	std::vector<StreamParams> rawStreams_;
 	std::vector<StreamParams> outStreams_;
 
-private:
-	const CameraData *data_;
-
 	/*
 	 * Store the colour spaces that all our streams will have. RGB format streams
 	 * will have the same colorspace as YUV streams, with YCbCr field cleared and
@@ -283,6 +280,9 @@ private:
 	 */
 	std::optional<ColorSpace> yuvColorSpace_;
 	std::optional<ColorSpace> rgbColorSpace_;
+
+private:
+	const CameraData *data_;
 };
 
 } /* namespace RPi */

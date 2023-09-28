@@ -251,6 +251,8 @@ int AgcConfig::read(const libcamera::YamlObject &params)
 	defaultExposureTime = params["default_exposure_time"].get<double>(1000) * 1us;
 	defaultAnalogueGain = params["default_analogue_gain"].get<double>(1.0);
 
+	stableRegion = params["stable_region"].get<double>(0.02);
+
 	return 0;
 }
 
@@ -871,6 +873,8 @@ bool AgcChannel::applyDigitalGain(double gain, double targetY, bool channelBound
 void AgcChannel::filterExposure()
 {
 	double speed = config_.speed;
+	double stableRegion = config_.stableRegion;
+
 	/*
 	 * AGC adapts instantly if both shutter and gain are directly specified
 	 * or we're in the startup phase.
@@ -880,6 +884,9 @@ void AgcChannel::filterExposure()
 		speed = 1.0;
 	if (!filtered_.totalExposure) {
 		filtered_.totalExposure = target_.totalExposure;
+	} else if (filtered_.totalExposure * (1.0 - stableRegion) < target_.totalExposure &&
+		   filtered_.totalExposure * (1.0 + stableRegion) > target_.totalExposure) {
+		/* Total exposure must change by more than this or we leave it alone. */
 	} else {
 		/*
 		 * If close to the result go faster, to save making so many

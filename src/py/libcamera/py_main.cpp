@@ -112,6 +112,7 @@ PYBIND11_MODULE(_libcamera, m)
 
 	auto pyCameraManager = py::class_<PyCameraManager, std::shared_ptr<PyCameraManager>>(m, "CameraManager");
 	auto pyCamera = py::class_<Camera, PyCameraSmartPtr<Camera>>(m, "Camera");
+	auto pySensorConfiguration = py::class_<SensorConfiguration>(m, "SensorConfiguration");
 	auto pyCameraConfiguration = py::class_<CameraConfiguration>(m, "CameraConfiguration");
 	auto pyCameraConfigurationStatus = py::enum_<CameraConfiguration::Status>(pyCameraConfiguration, "Status");
 	auto pyStreamConfiguration = py::class_<StreamConfiguration>(m, "StreamConfiguration");
@@ -281,6 +282,11 @@ PYBIND11_MODULE(_libcamera, m)
 			return ret;
 		});
 
+	pySensorConfiguration
+		.def(py::init<>())
+		.def_readwrite("bit_depth", &SensorConfiguration::bitDepth)
+		.def_readwrite("output_size", &SensorConfiguration::outputSize);
+
 	pyCameraConfiguration
 		.def("__iter__", [](CameraConfiguration &self) {
 			return py::make_iterator<py::return_value_policy::reference_internal>(self);
@@ -293,6 +299,7 @@ PYBIND11_MODULE(_libcamera, m)
 		     py::return_value_policy::reference_internal)
 		.def_property_readonly("size", &CameraConfiguration::size)
 		.def_property_readonly("empty", &CameraConfiguration::empty)
+		.def_readwrite("sensor_config", &CameraConfiguration::sensorConfig)
 		.def_readwrite("transform", &CameraConfiguration::transform);
 
 	pyCameraConfigurationStatus

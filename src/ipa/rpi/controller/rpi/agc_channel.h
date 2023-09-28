@@ -75,6 +75,7 @@ struct AgcConfig {
 	double baseEv;
 	libcamera::utils::Duration defaultExposureTime;
 	double defaultAnalogueGain;
+	double stableRegion;
 };
 
 class AgcChannel

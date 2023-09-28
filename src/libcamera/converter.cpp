@@ -13,8 +13,6 @@
 
 #include "libcamera/internal/media_device.h"
 
-#include "linux/media.h"
-
 /**
  * \file internal/converter.h
  * \brief Abstract converter

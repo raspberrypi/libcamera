@@ -720,6 +720,13 @@ void PipelineHandler::disconnect()
  */
 
 /**
+ * \fn PipelineHandler::cameraManager() const
+ * \brief Retrieve the CameraManager that this pipeline handler belongs to
+ * \context This function is \threadsafe.
+ * \return The CameraManager for this pipeline handler
+ */
+
+/**
  * \class PipelineHandlerFactoryBase
  * \brief Base class for pipeline handler factories
  *

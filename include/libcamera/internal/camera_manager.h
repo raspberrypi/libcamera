@@ -19,13 +19,14 @@
 #include <libcamera/base/thread.h>
 #include <libcamera/base/thread_annotations.h>
 
-#include "libcamera/internal/ipa_manager.h"
 #include "libcamera/internal/process.h"
 
 namespace libcamera {
 
 class Camera;
 class DeviceEnumerator;
+class IPAManager;
+class PipelineHandlerFactoryBase;
 
 class CameraManager::Private : public Extensible::Private, public Thread
 {
@@ -37,6 +38,8 @@ public:
 	int start();
 	void addCamera(std::shared_ptr<Camera> camera) LIBCAMERA_TSA_EXCLUDES(mutex_);
 	void removeCamera(std::shared_ptr<Camera> camera) LIBCAMERA_TSA_EXCLUDES(mutex_);
+
+	IPAManager *ipaManager() const { return ipaManager_.get(); }
 
 protected:
 	void run() override;
@@ -62,7 +65,7 @@ private:
 
 	std::unique_ptr<DeviceEnumerator> enumerator_;
 
-	IPAManager ipaManager_;
+	std::unique_ptr<IPAManager> ipaManager_;
 	ProcessManager processManager_;
 };
 

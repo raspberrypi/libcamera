@@ -15,6 +15,7 @@
 #include <libcamera/ipa/ipa_interface.h>
 #include <libcamera/ipa/ipa_module_info.h>
 
+#include "libcamera/internal/camera_manager.h"
 #include "libcamera/internal/ipa_module.h"
 #include "libcamera/internal/pipeline_handler.h"
 #include "libcamera/internal/pub_key.h"
@@ -34,11 +35,13 @@ public:
 					    uint32_t minVersion,
 					    uint32_t maxVersion)
 	{
-		IPAModule *m = self_->module(pipe, minVersion, maxVersion);
+		CameraManager *cm = pipe->cameraManager();
+		IPAManager *self = cm->_d()->ipaManager();
+		IPAModule *m = self->module(pipe, minVersion, maxVersion);
 		if (!m)
 			return nullptr;
 
-		std::unique_ptr<T> proxy = std::make_unique<T>(m, !self_->isSignatureValid(m));
+		std::unique_ptr<T> proxy = std::make_unique<T>(m, !self->isSignatureValid(m));
 		if (!proxy->isValid()) {
 			LOG(IPAManager, Error) << "Failed to load proxy";
 			return nullptr;
@@ -55,8 +58,6 @@ public:
 #endif
 
 private:
-	static IPAManager *self_;
-
 	void parseDir(const char *libDir, unsigned int maxDepth,
 		      std::vector<std::string> &files);
 	unsigned int addDir(const char *libDir, unsigned int maxDepth = 0);

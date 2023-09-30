@@ -70,6 +70,8 @@ public:
 
 	const char *name() const { return name_; }
 
+	CameraManager *cameraManager() const { return manager_; }
+
 protected:
 	void registerCamera(std::shared_ptr<Camera> camera);
 	void hotplugMediaDevice(MediaDevice *media);

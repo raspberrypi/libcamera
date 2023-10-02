@@ -6,12 +6,32 @@
  */
 #pragma once
 
+#include <map>
+#include <string>
+
 #include "algorithm.h"
 #include "denoise_algorithm.h"
 
 namespace RPiController {
 
 // Algorithm to calculate correct denoise settings.
+
+struct DenoiseConfig {
+	double sdnDeviation;
+	double sdnStrength;
+	double sdnDeviation2;
+	double sdnDeviationNoTdn;
+	double sdnStrengthNoTdn;
+	double sdnTdnBackoff;
+	double cdnDeviation;
+	double cdnStrength;
+	double tdnDeviation;
+	double tdnThreshold;
+	bool tdnEnable;
+	bool sdnEnable;
+	bool cdnEnable;
+	int read(const libcamera::YamlObject &params);
+};
 
 class Denoise : public DenoiseAlgorithm
 {
@@ -23,22 +43,12 @@ public:
 	void switchMode(CameraMode const &cameraMode, Metadata *metadata) override;
 	void prepare(Metadata *imageMetadata) override;
 	void setMode(DenoiseMode mode) override;
+	void setConfig(std::string const &name) override;
 
 private:
-	double sdnDeviation_;
-	double sdnStrength_;
-	double sdnDeviation2_;
-	double sdnDeviationNoTdn_;
-	double sdnStrengthNoTdn_;
-	double sdnTdnBackoff_;
-	double cdnDeviation_;
-	double cdnStrength_;
-	double tdnDeviation_;
-	double tdnThreshold_;
+	std::map<std::string, DenoiseConfig> configs_;
+	DenoiseConfig *currentConfig_;
 	DenoiseMode mode_;
-	bool tdnEnable_;
-	bool sdnEnable_;
-	bool cdnEnable_;
 
 	/* SDN parameters attenuate over time if TDN is running. */
 	double currentSdnDeviation_;

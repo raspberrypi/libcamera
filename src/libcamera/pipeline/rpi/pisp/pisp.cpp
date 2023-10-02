@@ -18,6 +18,8 @@
 
 #include <linux/v4l2-controls.h>
 #include <linux/videodev2.h>
+#include <linux/dma-buf.h>
+#include <sys/ioctl.h>
 
 #include <libcamera/formats.h>
 
@@ -1698,6 +1700,17 @@ void PiSPCameraData::beOutputDequeue(FrameBuffer *buffer)
 	/* The buffer must belong to one of our ISP output streams. */
 	ASSERT(stream);
 
+	{
+		struct dma_buf_sync dma_sync {};
+		dma_sync.flags = DMA_BUF_SYNC_START | DMA_BUF_SYNC_RW;
+
+		int ret = ::ioctl(buffer->planes()[0].fd.get(), DMA_BUF_IOCTL_SYNC, &dma_sync);
+		if (ret)
+		{
+			LOG(RPI, Error) << "failed to lock-sync-write dma buf";
+		}
+	}
+
 	LOG(RPI, Debug) << "Stream " << stream->name() << " buffer complete"
 			<< ", buffer id " << index
 			<< ", timestamp: " << buffer->metadata().timestamp;
@@ -1718,6 +1731,18 @@ void PiSPCameraData::beOutputDequeue(FrameBuffer *buffer)
 		ASSERT(b.mapped);
 		void *mem = b.mapped->planes()[0].data();
 		do32BitConversion(mem, width, height, stride);
+	}
+
+	{
+		struct dma_buf_sync dma_sync {};
+		dma_sync.flags = DMA_BUF_SYNC_END | DMA_BUF_SYNC_RW;
+
+		int ret = ::ioctl(buffer->planes()[0].fd.get(), DMA_BUF_IOCTL_SYNC, &dma_sync);
+
+		if (ret)
+		{
+			LOG(RPI, Error) << "failed to unlock-sync-write dma buf";
+		}
 	}
 
 	handleStreamBuffer(buffer, stream);

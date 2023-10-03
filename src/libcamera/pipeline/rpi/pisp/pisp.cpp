@@ -2021,13 +2021,20 @@ int PiSPCameraData::configureEntities(V4L2SubdeviceFormat sensorFormat,
 {
 	int ret = 0;
 
-	constexpr unsigned int csiFeLinkPad = 4;
-	constexpr unsigned int csiMetadataPad = 5;
+	constexpr unsigned int csiVideoSinkPad = 0;
+	constexpr unsigned int csiVideoSourcePad = 4;
+	constexpr unsigned int csiMetaSourcePad = 5;
+
+	constexpr unsigned int feVideoSinkPad = 0;
+	constexpr unsigned int feConfigSinkPad = 1;
+	constexpr unsigned int feVideo0SourcePad = 2;
+	constexpr unsigned int feVideo1SourcePad = 3;
+	constexpr unsigned int feStatsSourcePad = 4;
 
 	const MediaEntity *csi2 = csi2Subdev_->entity();
 	const MediaEntity *fe = feSubdev_->entity();
 
-	for (MediaLink *link : csi2->pads()[csiFeLinkPad]->links()) {
+	for (MediaLink *link : csi2->pads()[csiVideoSourcePad]->links()) {
 		if (link->sink()->entity()->name() == "rp1-cfe-csi2_ch0")
 			link->setEnabled(false);
 		else if (link->sink()->entity()->name() == "pisp-fe")
@@ -2035,29 +2042,29 @@ int PiSPCameraData::configureEntities(V4L2SubdeviceFormat sensorFormat,
 	}
 
 	if (sensorMetadata_) {
-		csi2->pads()[csiMetadataPad]->links()[0]->setEnabled(true);
-		ret = csi2Subdev_->setFormat(csiMetadataPad, &embeddedFormat);
+		csi2->pads()[csiMetaSourcePad]->links()[0]->setEnabled(true);
+		ret = csi2Subdev_->setFormat(csiMetaSourcePad, &embeddedFormat);
 		if (ret)
 			return ret;
 	} else
-		csi2->pads()[csiMetadataPad]->links()[0]->setEnabled(false);
+		csi2->pads()[csiMetaSourcePad]->links()[0]->setEnabled(false);
 
-	fe->pads()[1]->links()[0]->setEnabled(true);
-	fe->pads()[2]->links()[0]->setEnabled(true);
-	fe->pads()[3]->links()[0]->setEnabled(false);
-	fe->pads()[4]->links()[0]->setEnabled(true);
+	fe->pads()[feConfigSinkPad]->links()[0]->setEnabled(true);
+	fe->pads()[feVideo0SourcePad]->links()[0]->setEnabled(true);
+	fe->pads()[feVideo1SourcePad]->links()[0]->setEnabled(false);
+	fe->pads()[feStatsSourcePad]->links()[0]->setEnabled(true);
 
-	ret = csi2Subdev_->setFormat(0, &sensorFormat);
+	ret = csi2Subdev_->setFormat(csiVideoSinkPad, &sensorFormat);
 	if (ret)
 		return ret;
 
 	V4L2SubdeviceFormat feFormat = sensorFormat;
 	feFormat.mbus_code = mbusCodeUnpacked16(sensorFormat.mbus_code);
-	ret = feSubdev_->setFormat(0, &feFormat);
+	ret = feSubdev_->setFormat(feVideoSinkPad, &feFormat);
 	if (ret)
 		return ret;
 
-	ret = csi2Subdev_->setFormat(csiFeLinkPad, &feFormat);
+	ret = csi2Subdev_->setFormat(csiVideoSourcePad, &feFormat);
 	if (ret)
 		return ret;
 
@@ -2066,7 +2073,7 @@ int PiSPCameraData::configureEntities(V4L2SubdeviceFormat sensorFormat,
 	BayerFormat feOutputBayer = BayerFormat::fromV4L2PixelFormat(feOutputFormat.fourcc);
 
 	feFormat.mbus_code = bayerToMbusCode(feOutputBayer);
-	ret = feSubdev_->setFormat(2, &feFormat);
+	ret = feSubdev_->setFormat(feVideo0SourcePad, &feFormat);
 
 	return ret;
 }

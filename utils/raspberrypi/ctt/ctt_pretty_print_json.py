@@ -30,7 +30,8 @@ class Encoder(json.JSONEncoder):
             'lut_ry': 9,
             'gamma_curve': 2,
             'y_target': 2,
-            'prior': 2
+            'prior': 2,
+            'tonemap': 2
         }
 
     def encode(self, o, node_key=None):

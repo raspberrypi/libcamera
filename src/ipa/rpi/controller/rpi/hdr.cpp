@@ -7,6 +7,8 @@
 
 #include "hdr.h"
 
+#include <cmath>
+
 #include <libcamera/base/log.h>
 
 #include "../agc_status.h"
@@ -39,25 +41,46 @@ void HdrConfig::read(const libcamera::YamlObject &params, const std::string &mod
 		channelMap[v.get<unsigned int>().value()] = k;
 
 	/* Lens shading related parameters. */
-	if (params.contains("spatial_gain")) {
-		spatialGain.read(params["spatial_gain"]);
-		diffusion = params["diffusion"].get<unsigned int>(3);
-		/* Clip to an arbitrary limit just to stop typos from killing the system! */
-		const unsigned int MAX_DIFFUSION = 15;
-		if (diffusion > MAX_DIFFUSION) {
-			diffusion = MAX_DIFFUSION;
-			LOG(RPiHdr, Warning) << "Diffusion value clipped to " << MAX_DIFFUSION;
-		}
+	if (params.contains("spatial_gain_curve")) {
+		spatialGainCurve.read(params["spatial_gain_curve"]);
+	} else if (params.contains("spatial_gain")) {
+		double spatialGain = params["spatial_gain"].get<double>(2.0);
+		spatialGainCurve.append(0.0, spatialGain);
+		spatialGainCurve.append(0.01, spatialGain);
+		spatialGainCurve.append(0.06, 1.0); /* maybe make this programmable? */
+		spatialGainCurve.append(1.0, 1.0);
+	}
+
+	diffusion = params["diffusion"].get<unsigned int>(3);
+	/* Clip to an arbitrary limit just to stop typos from killing the system! */
+	const unsigned int MAX_DIFFUSION = 15;
+	if (diffusion > MAX_DIFFUSION) {
+		diffusion = MAX_DIFFUSION;
+		LOG(RPiHdr, Warning) << "Diffusion value clipped to " << MAX_DIFFUSION;
 	}
 
 	/* Read any tonemap parameters. */
 	tonemapEnable = params["tonemap_enable"].get<int>(0);
-	detailConstant = params["detail_constant"].get<uint16_t>(50);
-	detailSlope = params["detail_slope"].get<double>(8.0);
+	detailConstant = params["detail_constant"].get<uint16_t>(0);
+	detailSlope = params["detail_slope"].get<double>(0.0);
 	iirStrength = params["iir_strength"].get<double>(8.0);
 	strength = params["strength"].get<double>(1.5);
 	if (tonemapEnable)
 		tonemap.read(params["tonemap"]);
+	speed = params["speed"].get<double>(1.0);
+
+	if (params.contains("quantile_targets")) {
+		quantileTargets = params["quantile_targets"].getList<double>().value();
+		if (quantileTargets.empty() || quantileTargets.size() % 2)
+			LOG(RPiHdr, Fatal) << "quantile_targets much be even and non-empty";
+	} else
+		quantileTargets = { 0.5, 0.04, 1.0, 0.15 };
+	powerMin = params["power_min"].get<double>(0.65);
+	powerMax = params["power_max"].get<double>(1.0);
+	if (params.contains("contrast_adjustments")) {
+		contrastAdjustments = params["contrast_adjustments"].getList<double>().value();
+	} else
+		contrastAdjustments = { 0.5, 0.75 };
 
 	/* Read any stitch parameters. */
 	stitchEnable = params["stitch_enable"].get<int>(0);
@@ -159,7 +182,7 @@ void Hdr::prepare(Metadata *imageMetadata)
 	}
 
 	HdrConfig &config = it->second;
-	if (config.spatialGain.empty())
+	if (config.spatialGainCurve.empty())
 		return;
 
 	AlscStatus alscStatus{}; /* some compilers seem to require the braces */
@@ -205,9 +228,37 @@ bool Hdr::updateTonemap([[maybe_unused]] StatisticsPtr &stats, HdrConfig &config
 		return true;
 
 	/*
-	 * If we wanted to build or adjust tonemaps dynamically, this would be the place
-	 * to do it. But for now we seem to be getting by without.
+	 * Create a tonemap dynamically. We have a list of quantile/target pairs giving
+	 * the target value for each quantile we compute from the bottom of the histogram.
+	 * Go with the pair that implies the greatest gain.
+	 *
+	 * We also have some optional contrast adjustments for the bottom of this curve,
+	 * because we know that power curves can start quite steeply and cause wash out.
 	 */
+
+	double min_power = 2; /* arbitrary, but config.powerMax will clamp it later */
+	for (unsigned int i = 0; i < config.quantileTargets.size(); i += 2) {
+		double quantile = config.quantileTargets[i];
+		double target = config.quantileTargets[i + 1];
+		double value = stats->yHist.interQuantileMean(0, quantile) / 1024.0;
+		double power = log(target + 1e-6) / log(value + 1e-6);
+		min_power = std::min(min_power, power);
+	}
+	double power = std::clamp(min_power, config.powerMin, config.powerMax);
+
+	Pwl tonemap;
+	tonemap.append(0, 0);
+	for (unsigned int i = 0; i <= 6; i++) {
+		double x = 1 << (i + 9); /* x loops from 512 to 32768 inclusive */
+		double y = pow(x / 65536.0, power) * 65536;
+		if (i < config.contrastAdjustments.size())
+			y *= config.contrastAdjustments[i];
+		if (!tonemap_.empty())
+			y = y * config.speed + tonemap_.eval(x) * (1 - config.speed);
+		tonemap.append(x, y);
+	}
+	tonemap.append(65535, 65535);
+	tonemap_ = tonemap;
 
 	return true;
 }
@@ -255,7 +306,7 @@ static void averageGains(std::vector<double> &src, std::vector<double> &dst, con
 
 void Hdr::updateGains(StatisticsPtr &stats, HdrConfig &config)
 {
-	if (config.spatialGain.empty())
+	if (config.spatialGainCurve.empty())
 		return;
 
 	/* When alternating exposures, only compute these gains for the short frame. */
@@ -270,7 +321,7 @@ void Hdr::updateGains(StatisticsPtr &stats, HdrConfig &config)
 		double g = region.val.gSum / counted;
 		double b = region.val.bSum / counted;
 		double brightness = std::max({ r, g, b }) / 65535;
-		gains_[0][i] = config.spatialGain.eval(brightness);
+		gains_[0][i] = config.spatialGainCurve.eval(brightness);
 	}
 
 	/* Ping-pong between the two gains_ buffers. */

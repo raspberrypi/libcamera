@@ -26,7 +26,7 @@ struct HdrConfig {
 	std::map<unsigned int, std::string> channelMap;
 
 	/* Lens shading related parameters. */
-	Pwl spatialGain; /* Brightness to gain curve for different image regions. */
+	Pwl spatialGainCurve; /* Brightness to gain curve for different image regions. */
 	unsigned int diffusion; /* How much to diffuse the gain spatially. */
 
 	/* Tonemap related parameters. */
@@ -36,6 +36,12 @@ struct HdrConfig {
 	double iirStrength;
 	double strength;
 	Pwl tonemap;
+	/* These relate to adaptive tonemap calculation. */
+	double speed;
+	std::vector<double> quantileTargets; /* target values for histogram quantiles */
+	double powerMin; /* minimum tonemap power */
+	double powerMax; /* maximum tonemap power */
+	std::vector<double> contrastAdjustments; /* any contrast adjustment factors */
 
 	/* Stitch related parameters. */
 	bool stitchEnable;

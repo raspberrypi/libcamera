@@ -10,6 +10,7 @@
 #include <libcamera/base/log.h>
 
 #include "../agc_status.h"
+#include "../alsc_status.h"
 #include "../stitch_status.h"
 #include "../tonemap_status.h"
 
@@ -37,29 +38,26 @@ void HdrConfig::read(const libcamera::YamlObject &params, const std::string &mod
 	for (const auto &[k, v] : params["channel_map"].asDict())
 		channelMap[v.get<unsigned int>().value()] = k;
 
+	/* Lens shading related parameters. */
+	if (params.contains("spatial_gain")) {
+		spatialGain.read(params["spatial_gain"]);
+		diffusion = params["diffusion"].get<unsigned int>(3);
+		/* Clip to an arbitrary limit just to stop typos from killing the system! */
+		const unsigned int MAX_DIFFUSION = 15;
+		if (diffusion > MAX_DIFFUSION) {
+			diffusion = MAX_DIFFUSION;
+			LOG(RPiHdr, Warning) << "Diffusion value clipped to " << MAX_DIFFUSION;
+		}
+	}
+
 	/* Read any tonemap parameters. */
 	tonemapEnable = params["tonemap_enable"].get<int>(0);
 	detailConstant = params["detail_constant"].get<uint16_t>(50);
 	detailSlope = params["detail_slope"].get<double>(8.0);
 	iirStrength = params["iir_strength"].get<double>(8.0);
 	strength = params["strength"].get<double>(1.5);
-
-	if (tonemapEnable) {
-		/* We need either an explicit tonemap, or the information to build them dynamically. */
-		if (params.contains("tonemap")) {
-			if (tonemap.read(params["tonemap"]))
-				LOG(RPiHdr, Fatal) << "Failed to read tonemap in HDR mode " << name;
-		} else {
-			if (target.read(params["target"]))
-				LOG(RPiHdr, Fatal) << "Failed to read target in HDR mode " << name;
-			if (maxSlope.read(params["max_slope"]))
-				LOG(RPiHdr, Fatal) << "Failed to read max_slope in HDR mode " << name;
-			minSlope = params["min_slope"].get<double>(1.0);
-			maxGain = params["max_gain"].get<double>(64.0);
-			step = params["step"].get<double>(0.05);
-			speed = params["speed"].get<double>(0.5);
-		}
-	}
+	if (tonemapEnable)
+		tonemap.read(params["tonemap"]);
 
 	/* Read any stitch parameters. */
 	stitchEnable = params["stitch_enable"].get<int>(0);
@@ -73,6 +71,10 @@ void HdrConfig::read(const libcamera::YamlObject &params, const std::string &mod
 Hdr::Hdr(Controller *controller)
 	: HdrAlgorithm(controller)
 {
+	regions_ = controller->getHardwareConfig().awbRegions;
+	numRegions_ = regions_.width * regions_.height;
+	gains_[0].resize(numRegions_, 1.0);
+	gains_[1].resize(numRegions_, 1.0);
 }
 
 char const *Hdr::name() const
@@ -143,7 +145,40 @@ void Hdr::switchMode([[maybe_unused]] CameraMode const &cameraMode, Metadata *me
 	delayedStatus_ = status_;
 }
 
-bool Hdr::updateTonemap(StatisticsPtr &stats, HdrConfig &config)
+void Hdr::prepare(Metadata *imageMetadata)
+{
+	AgcStatus agcStatus;
+	if (!imageMetadata->get<AgcStatus>("agc.delayed_status", agcStatus))
+		delayedStatus_ = agcStatus.hdr;
+
+	auto it = config_.find(delayedStatus_.mode);
+	if (it == config_.end()) {
+		/* Shouldn't be possible. There would be nothing we could do. */
+		LOG(RPiHdr, Warning) << "Unexpected HDR mode " << delayedStatus_.mode;
+		return;
+	}
+
+	HdrConfig &config = it->second;
+	if (config.spatialGain.empty())
+		return;
+
+	AlscStatus alscStatus{}; /* some compilers seem to require the braces */
+	if (imageMetadata->get<AlscStatus>("alsc.status", alscStatus)) {
+		LOG(RPiHdr, Warning) << "No ALSC status";
+		return;
+	}
+
+	/* The final gains ended up in the odd or even array, according to diffusion. */
+	std::vector<double> &gains = gains_[config.diffusion & 1];
+	for (unsigned int i = 0; i < numRegions_; i++) {
+		alscStatus.r[i] *= gains[i];
+		alscStatus.g[i] *= gains[i];
+		alscStatus.b[i] *= gains[i];
+	}
+	imageMetadata->set("alsc.status", alscStatus);
+}
+
+bool Hdr::updateTonemap([[maybe_unused]] StatisticsPtr &stats, HdrConfig &config)
 {
 	/* When there's a change of HDR mode we start over with a new tonemap curve. */
 	if (delayedStatus_.mode != previousMode_) {
@@ -162,56 +197,85 @@ bool Hdr::updateTonemap(StatisticsPtr &stats, HdrConfig &config)
 	}
 
 	/*
-	 * We only update the tonemap on short frames when in multi-exposure mode. But
+	 * We wouldn't update the tonemap on short frames when in multi-exposure mode. But
 	 * we still need to output the most recent tonemap. Possibly we should make the
 	 * config indicate the channels for which we should update the tonemap?
 	 */
 	if (delayedStatus_.mode == "MultiExposure" && delayedStatus_.channel != "short")
 		return true;
 
-	/* Build the tonemap dynamically using the image histogram. */
-	Pwl tonemap;
-	tonemap.append(0, 0);
-
-	double prev_input_val = 0;
-	double prev_output_val = 0;
-	const double step2 = config.step / 2;
-	for (double q = config.step; q < 1.0 - step2; q += config.step) {
-		double q_lo = std::max(0.0, q - step2);
-		double q_hi = std::min(1.0, q + step2);
-		double iqm = stats->yHist.interQuantileMean(q_lo, q_hi);
-		double input_val = std::min(iqm * 64, 65535.0);
-
-		if (input_val > prev_input_val + 1) {
-			/* We're going to calcualte a Pwl to map input_val to this output_val. */
-			double want_output_val = config.target.eval(q) * 65535;
-			/* But we must ensure we aren't applying too small or too great a local gain. */
-			double want_slope = (want_output_val - prev_output_val) / (input_val - prev_input_val);
-			double slope = std::clamp(want_slope, config.minSlope,
-						  config.maxSlope.eval(q));
-			double output_val = prev_output_val + slope * (input_val - prev_input_val);
-			output_val = std::min(output_val, config.maxGain * input_val);
-			output_val = std::clamp(output_val, 0.0, 65535.0);
-			/* Let the tonemap adapte slightly more gently from frame to frame. */
-			if (!tonemap_.empty()) {
-				double old_output_val = tonemap_.eval(input_val);
-				output_val = config.speed * output_val +
-					     (1 - config.speed) * old_output_val;
-			}
-			LOG(RPiHdr, Debug) << "q " << q << " input " << input_val
-					   << " output " << want_output_val << " slope " << want_slope
-					   << " slope " << slope << " output " << output_val;
-			tonemap.append(input_val, output_val);
-			prev_input_val = input_val;
-			prev_output_val = output_val;
-		}
-	}
-
-	tonemap.append(65535, 65535);
-	/* tonemap.debug(); */
-	tonemap_ = tonemap;
+	/*
+	 * If we wanted to build or adjust tonemaps dynamically, this would be the place
+	 * to do it. But for now we seem to be getting by without.
+	 */
 
 	return true;
+}
+
+static void averageGains(std::vector<double> &src, std::vector<double> &dst, const Size &size)
+{
+#define IDX(y, x) ((y)*size.width + (x))
+	unsigned int lastCol = size.width - 1; /* index of last column */
+	unsigned int preLastCol = lastCol - 1; /* and the column before that */
+	unsigned int lastRow = size.height - 1; /* index of last row */
+	unsigned int preLastRow = lastRow - 1; /* and the row before that */
+
+	/* Corners first. */
+	dst[IDX(0, 0)] = (src[IDX(0, 0)] + src[IDX(0, 1)] + src[IDX(1, 0)]) / 3;
+	dst[IDX(0, lastCol)] = (src[IDX(0, lastCol)] + src[IDX(0, preLastCol)] + src[IDX(1, lastCol)]) / 3;
+	dst[IDX(lastRow, 0)] = (src[IDX(lastRow, 0)] + src[IDX(lastRow, 1)] + src[IDX(preLastRow, 0)]) / 3;
+	dst[IDX(lastRow, lastCol)] = (src[IDX(lastRow, lastCol)] + src[IDX(lastRow, preLastCol)] +
+				      src[IDX(preLastRow, lastCol)]) /
+				     3;
+
+	/* Now the edges. */
+	for (unsigned int i = 1; i < lastCol; i++) {
+		dst[IDX(0, i)] = (src[IDX(0, i - 1)] + src[IDX(0, i)] + src[IDX(0, i + 1)] + src[IDX(1, i)]) / 4;
+		dst[IDX(lastRow, i)] = (src[IDX(lastRow, i - 1)] + src[IDX(lastRow, i)] +
+					src[IDX(lastRow, i + 1)] + src[IDX(preLastRow, i)]) /
+				       4;
+	}
+
+	for (unsigned int i = 1; i < lastRow; i++) {
+		dst[IDX(i, 0)] = (src[IDX(i - 1, 0)] + src[IDX(i, 0)] + src[IDX(i + 1, 0)] + src[IDX(i, 1)]) / 4;
+		dst[IDX(i, 31)] = (src[IDX(i - 1, lastCol)] + src[IDX(i, lastCol)] +
+				   src[IDX(i + 1, lastCol)] + src[IDX(i, preLastCol)]) /
+				  4;
+	}
+
+	/* Finally the interior. */
+	for (unsigned int j = 1; j < lastRow; j++) {
+		for (unsigned int i = 1; i < lastCol; i++) {
+			dst[IDX(j, i)] = (src[IDX(j - 1, i)] + src[IDX(j, i - 1)] + src[IDX(j, i)] +
+					  src[IDX(j, i + 1)] + src[IDX(j + 1, i)]) /
+					 5;
+		}
+	}
+}
+
+void Hdr::updateGains(StatisticsPtr &stats, HdrConfig &config)
+{
+	if (config.spatialGain.empty())
+		return;
+
+	/* When alternating exposures, only compute these gains for the short frame. */
+	if (delayedStatus_.mode == "MultiExposure" && delayedStatus_.channel != "short")
+		return;
+
+	for (unsigned int i = 0; i < numRegions_; i++) {
+		auto &region = stats->awbRegions.get(i);
+		unsigned int counted = region.counted;
+		counted += (counted == 0); /* avoid div by zero */
+		double r = region.val.rSum / counted;
+		double g = region.val.gSum / counted;
+		double b = region.val.bSum / counted;
+		double brightness = std::max({ r, g, b }) / 65535;
+		gains_[0][i] = config.spatialGain.eval(brightness);
+	}
+
+	/* Ping-pong between the two gains_ buffers. */
+	for (unsigned int i = 0; i < config.diffusion; i++)
+		averageGains(gains_[i & 1], gains_[(i & 1) ^ 1], regions_);
 }
 
 void Hdr::process(StatisticsPtr &stats, Metadata *imageMetadata)
@@ -236,6 +300,9 @@ void Hdr::process(StatisticsPtr &stats, Metadata *imageMetadata)
 	}
 
 	HdrConfig &config = it->second;
+
+	/* Update the spatially varying gains. They get written in prepare(). */
+	updateGains(stats, config);
 
 	if (updateTonemap(stats, config)) {
 		/* Add tonemap.status metadata. */

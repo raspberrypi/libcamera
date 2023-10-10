@@ -10,6 +10,8 @@
 #include <string>
 #include <vector>
 
+#include <libcamera/geometry.h>
+
 #include "../hdr_algorithm.h"
 #include "../hdr_status.h"
 #include "../pwl.h"
@@ -23,20 +25,17 @@ struct HdrConfig {
 	std::vector<unsigned int> cadence;
 	std::map<unsigned int, std::string> channelMap;
 
+	/* Lens shading related parameters. */
+	Pwl spatialGain; /* Brightness to gain curve for different image regions. */
+	unsigned int diffusion; /* How much to diffuse the gain spatially. */
+
 	/* Tonemap related parameters. */
 	bool tonemapEnable;
 	uint16_t detailConstant;
 	double detailSlope;
 	double iirStrength;
 	double strength;
-	/* We must have either an explicit tonemap curve, or the other parameters. */
 	Pwl tonemap;
-	Pwl target; /* maps histogram quatile to desired target output value */
-	Pwl maxSlope; /* the maximum slope allowed at each point in the mapping */
-	double minSlope; /* the minimum allowed slope */
-	double maxGain; /* limit to the max absolute gain */
-	double step; /* the histogram granularity for building the mapping */
-	double speed; /* rate at which tonemap is updated */
 
 	/* Stitch related parameters. */
 	bool stitchEnable;
@@ -54,12 +53,14 @@ public:
 	char const *name() const override;
 	void switchMode(CameraMode const &cameraMode, Metadata *metadata) override;
 	int read(const libcamera::YamlObject &params) override;
+	void prepare(Metadata *imageMetadata) override;
 	void process(StatisticsPtr &stats, Metadata *imageMetadata) override;
 	int setMode(std::string const &mode) override;
 	std::vector<unsigned int> getChannels() const override;
 
 private:
 	void updateAgcStatus(Metadata *metadata);
+	void updateGains(StatisticsPtr &stats, HdrConfig &config);
 	bool updateTonemap(StatisticsPtr &stats, HdrConfig &config);
 
 	std::map<std::string, HdrConfig> config_;
@@ -67,6 +68,9 @@ private:
 	HdrStatus delayedStatus_; /* track the delayed HDR mode and channel */
 	std::string previousMode_;
 	Pwl tonemap_;
+	libcamera::Size regions_; /* stats regions */
+	unsigned int numRegions_; /* total number of stats regions */
+	std::vector<double> gains_[2];
 };
 
 } /* namespace RPiController */

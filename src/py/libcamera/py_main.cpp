@@ -112,6 +112,7 @@ PYBIND11_MODULE(_libcamera, m)
 
 	auto pyCameraManager = py::class_<PyCameraManager, std::shared_ptr<PyCameraManager>>(m, "CameraManager");
 	auto pyCamera = py::class_<Camera, PyCameraSmartPtr<Camera>>(m, "Camera");
+	auto pySensorConfiguration = py::class_<SensorConfiguration>(m, "SensorConfiguration");
 	auto pyCameraConfiguration = py::class_<CameraConfiguration>(m, "CameraConfiguration");
 	auto pyCameraConfigurationStatus = py::enum_<CameraConfiguration::Status>(pyCameraConfiguration, "Status");
 	auto pyStreamConfiguration = py::class_<StreamConfiguration>(m, "StreamConfiguration");
@@ -281,6 +282,40 @@ PYBIND11_MODULE(_libcamera, m)
 			return ret;
 		});
 
+	pySensorConfiguration
+		.def(py::init<>())
+		.def_readwrite("bit_depth", &SensorConfiguration::bitDepth)
+		.def_readwrite("analog_crop", &SensorConfiguration::analogCrop)
+		.def_property(
+			"binning",
+			[](SensorConfiguration &self) {
+				return py::make_tuple(self.binning.binX, self.binning.binY);
+			},
+			[](SensorConfiguration &self, py::object value) {
+				auto vec = value.cast<std::vector<unsigned int>>();
+				if (vec.size() != 2)
+					throw std::runtime_error("binning requires iterable of 2 values");
+				self.binning.binX = vec[0];
+				self.binning.binY = vec[1];
+			})
+		.def_property(
+			"skipping",
+			[](SensorConfiguration &self) {
+				return py::make_tuple(self.skipping.xOddInc, self.skipping.xEvenInc,
+						      self.skipping.yOddInc, self.skipping.yEvenInc);
+			},
+			[](SensorConfiguration &self, py::object value) {
+				auto vec = value.cast<std::vector<unsigned int>>();
+				if (vec.size() != 4)
+					throw std::runtime_error("skipping requires iterable of 4 values");
+				self.skipping.xOddInc = vec[0];
+				self.skipping.xEvenInc = vec[1];
+				self.skipping.yOddInc = vec[2];
+				self.skipping.yEvenInc = vec[3];
+			})
+		.def_readwrite("output_size", &SensorConfiguration::outputSize)
+		.def("is_valid", &SensorConfiguration::isValid);
+
 	pyCameraConfiguration
 		.def("__iter__", [](CameraConfiguration &self) {
 			return py::make_iterator<py::return_value_policy::reference_internal>(self);
@@ -293,6 +328,7 @@ PYBIND11_MODULE(_libcamera, m)
 		     py::return_value_policy::reference_internal)
 		.def_property_readonly("size", &CameraConfiguration::size)
 		.def_property_readonly("empty", &CameraConfiguration::empty)
+		.def_readwrite("sensor_config", &CameraConfiguration::sensorConfig)
 		.def_readwrite("transform", &CameraConfiguration::transform);
 
 	pyCameraConfigurationStatus

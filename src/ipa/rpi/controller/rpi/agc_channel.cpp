@@ -253,6 +253,8 @@ int AgcConfig::read(const libcamera::YamlObject &params)
 
 	stableRegion = params["stable_region"].get<double>(0.02);
 
+	desaturate = params["desaturate"].get<int>(1);
+
 	return 0;
 }
 
@@ -860,8 +862,10 @@ bool AgcChannel::applyDigitalGain(double gain, double targetY, bool channelBound
 	 * quickly (and we then approach the correct value more quickly from
 	 * below).
 	 */
-	bool desaturate = !channelBound &&
-			  targetY > config_.fastReduceThreshold && gain < sqrt(targetY);
+	bool desaturate = false;
+	if (config_.desaturate)
+		desaturate = !channelBound &&
+			     targetY > config_.fastReduceThreshold && gain < sqrt(targetY);
 	if (desaturate)
 		dg /= config_.fastReduceThreshold;
 	LOG(RPiAgc, Debug) << "Digital gain " << dg << " desaturate? " << desaturate;

@@ -22,6 +22,9 @@ struct SensorConfig {
 struct InitParams {
 	bool lensPresent;
 	libcamera.IPACameraSensorInfo sensorInfo;
+	/* PISP specific */
+	libcamera.SharedFD fe;
+	libcamera.SharedFD be;
 };
 
 struct InitResult {
@@ -219,13 +222,14 @@ interface IPARPiEventInterface {
 	 * \fn prepareIspComplete()
 	 * \brief Signal completion of \a prepareIsp
 	 * \param[in] buffers Bayer and embedded buffers actioned.
+	 * \param[in] stitchSwapBuffers Whether the stitch block buffers need to be swapped.
 	 *
 	 * This asynchronous event is signalled to the pipeline handler once
 	 * the \a prepareIsp signal has completed, and the ISP is ready to start
 	 * processing the frame. The embedded data buffer may be recycled after
 	 * this event.
 	 */
-	prepareIspComplete(BufferIds buffers);
+	prepareIspComplete(BufferIds buffers, bool stitchSwapBuffers);
 
 	/**
 	 * \fn processStatsComplete()

@@ -409,16 +409,17 @@ CameraConfiguration::Status Vc4CameraData::platformValidate(RPi::RPiCameraConfig
 
 		/* Adjust the RAW stream to match the computed sensor format. */
 		StreamConfiguration *rawStream = rawStreams[0].cfg;
-		BayerFormat rawBayer = BayerFormat::fromMbusCode(rpiConfig->sensorFormat_.mbus_code);
+		BayerFormat rawBayer = BayerFormat::fromPixelFormat(rawStream->pixelFormat);
 
-		/* Handle flips to make sure to match the RAW stream format. */
-		if (flipsAlterBayerOrder_)
-			rawBayer = rawBayer.transform(rpiConfig->combinedTransform_);
+		/* Apply the sensor bitdepth. */
+		rawBayer.bitDepth = BayerFormat::fromMbusCode(rpiConfig->sensorFormat_.mbus_code).bitDepth;
 
-		/* Apply the user requested packing. */
-		rawBayer.packing = BayerFormat::fromPixelFormat(rawStream->pixelFormat).packing;
+		/* Default to CSI2 packing if the user request is unsupported. */
+		if (rawBayer.packing != BayerFormat::Packing::CSI2 &&
+		    rawBayer.packing != BayerFormat::Packing::None)
+			rawBayer.packing = BayerFormat::Packing::CSI2;
+
 		PixelFormat rawFormat = rawBayer.toPixelFormat();
-
 		if (rawStream->pixelFormat != rawFormat ||
 		    rawStream->size != rpiConfig->sensorFormat_.size) {
 			rawStream->pixelFormat = rawFormat;

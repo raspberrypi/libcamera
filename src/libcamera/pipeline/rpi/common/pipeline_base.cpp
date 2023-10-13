@@ -231,16 +231,12 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 		}
 	}
 
-	/* Do any platform specific fixups. */
-	status = data_->platformValidate(this);
-	if (status == Invalid)
-		return Invalid;
-
-	/* Further fixups on the RAW streams. */
+	/* Start with some initial generic RAW stream adjustments. */
 	for (auto &raw : rawStreams_) {
-		int ret = raw.dev->tryFormat(&raw.format);
-		if (ret)
-			return Invalid;
+		StreamConfiguration *rawStream = raw.cfg;
+
+		/* Adjust the RAW stream to match the computed sensor format. */
+		BayerFormat sensorBayer = BayerFormat::fromMbusCode(sensorFormat_.mbus_code);
 
 		/*
 		 * Some sensors change their Bayer order when they are h-flipped
@@ -249,12 +245,33 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 		 * Note how we must fetch the "native" (i.e. untransformed) Bayer
 		 * order, because the sensor may currently be flipped!
 		 */
-		BayerFormat bayer = BayerFormat::fromPixelFormat(raw.cfg->pixelFormat);
 		if (data_->flipsAlterBayerOrder_) {
-			bayer.order = data_->nativeBayerOrder_;
-			bayer = bayer.transform(combinedTransform_);
+			sensorBayer.order = data_->nativeBayerOrder_;
+			sensorBayer = sensorBayer.transform(combinedTransform_);
 		}
-		raw.cfg->pixelFormat = bayer.toPixelFormat();
+
+		/* Apply the sensor adjusted Bayer order to the user request. */
+		BayerFormat cfgBayer = BayerFormat::fromPixelFormat(rawStream->pixelFormat);
+		cfgBayer.order = sensorBayer.order;
+
+		if (rawStream->pixelFormat != cfgBayer.toPixelFormat()) {
+			rawStream->pixelFormat = cfgBayer.toPixelFormat();
+			status = Adjusted;
+		}
+	}
+
+	/* Do any platform specific fixups. */
+	Status st = data_->platformValidate(this);
+	if (st == Invalid)
+		return Invalid;
+	else if (st == Adjusted)
+		status = Adjusted;
+
+	/* Further fixups on the RAW streams. */
+	for (auto &raw : rawStreams_) {
+		int ret = raw.dev->tryFormat(&raw.format);
+		if (ret)
+			return Invalid;
 
 		if (RPi::PipelineHandlerBase::updateStreamConfig(raw.cfg, raw.format))
 			status = Adjusted;

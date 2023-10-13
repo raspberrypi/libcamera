@@ -311,15 +311,16 @@ void Agc::process(StatisticsPtr &stats, Metadata *imageMetadata)
 	 * exist, and call process(). We must make the agc.status metadata record correctly
 	 * which channel this is.
 	 */
+	StatisticsPtr *statsPtr = &stats;
 	if (channelData.statistics && channelData.deviceStatus) {
 		deviceStatus = *channelData.deviceStatus;
-		stats = channelData.statistics;
+		statsPtr = &channelData.statistics;
 	} else {
 		/* Can also happen when new channels start. */
 		LOG(RPiAgc, Debug) << "process: channel " << channelIndex << " not seen yet";
 	}
 
-	channelData.channel.process(stats, deviceStatus, imageMetadata, channelTotalExposures_);
+	channelData.channel.process(*statsPtr, deviceStatus, imageMetadata, channelTotalExposures_);
 	auto dur = setCurrentChannelIndexGetExposure(imageMetadata, "process: no AGC status found",
 						     channelIndex);
 	if (dur)

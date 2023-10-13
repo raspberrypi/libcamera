@@ -70,6 +70,17 @@ public:
 		 * to the pipeline handler when requested.
 		 */
 		RequiresMmap	= (1 << 2),
+		/*
+		 * Indicates a stream that needs buffers recycled every frame internally
+		 * in the pipeline handler, e.g. stitch, TDN, config. All buffer
+		 * management will be handled by the pipeline handler.
+		 */
+		Recurrent	= (1 << 3),
+		/*
+		 * Indicates that the output stream needs a software format conversion
+		 * to be applied after ISP processing.
+		 */
+		Needs32bitConv	= (1 << 4),
 	};
 
 	using StreamFlags = Flags<StreamFlag>;

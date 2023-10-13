@@ -203,6 +203,7 @@ void Agc::setActiveChannels(const std::vector<unsigned int> &activeChannels)
 
 	LOG(RPiAgc, Debug) << "setActiveChannels " << activeChannels;
 	activeChannels_ = activeChannels;
+	index_ = 0;
 }
 
 void Agc::switchMode(CameraMode const &cameraMode,

@@ -643,14 +643,6 @@ static const std::map<int32_t, std::string> AwbModeTable = {
 	{ controls::AwbCustom, "custom" },
 };
 
-static const std::map<int32_t, RPiController::DenoiseMode> DenoiseModeTable = {
-	{ controls::draft::NoiseReductionModeOff, RPiController::DenoiseMode::Off },
-	{ controls::draft::NoiseReductionModeFast, RPiController::DenoiseMode::ColourFast },
-	{ controls::draft::NoiseReductionModeHighQuality, RPiController::DenoiseMode::ColourHighQuality },
-	{ controls::draft::NoiseReductionModeMinimal, RPiController::DenoiseMode::ColourOff },
-	{ controls::draft::NoiseReductionModeZSL, RPiController::DenoiseMode::ColourHighQuality },
-};
-
 static const std::map<int32_t, RPiController::AfAlgorithm::AfMode> AfModeTable = {
 	{ controls::AfModeManual, RPiController::AfAlgorithm::AfModeManual },
 	{ controls::AfModeAuto, RPiController::AfAlgorithm::AfModeAuto },
@@ -1032,36 +1024,11 @@ void IpaBase::applyControls(const ControlList &controls)
 			break;
 		}
 
-		case controls::NOISE_REDUCTION_MODE: {
-			RPiController::DenoiseAlgorithm *sdn = dynamic_cast<RPiController::DenoiseAlgorithm *>(
-				controller_.getAlgorithm("SDN"));
-			/* Some platforms may have a combined "denoise" algorithm instead. */
-			if (!sdn)
-				sdn = dynamic_cast<RPiController::DenoiseAlgorithm *>(
-				controller_.getAlgorithm("denoise"));
-			if (!sdn) {
-				LOG(IPARPI, Warning)
-					<< "Could not set NOISE_REDUCTION_MODE - no SDN algorithm";
-				break;
-			}
-
-			int32_t idx = ctrl.second.get<int32_t>();
-			auto mode = DenoiseModeTable.find(idx);
-			if (mode != DenoiseModeTable.end()) {
-				sdn->setMode(mode->second);
-
-				/*
-				 * \todo If the colour denoise is not going to run due to an
-				 * analysis image resolution or format mismatch, we should
-				 * report the status correctly in the metadata.
-				 */
-				libcameraMetadata_.set(controls::draft::NoiseReductionMode, idx);
-			} else {
-				LOG(IPARPI, Error) << "Noise reduction mode " << idx
-						   << " not recognised";
-			}
+		case controls::NOISE_REDUCTION_MODE:
+			/* Handled below in handleControls() */
+			libcameraMetadata_.set(controls::draft::NoiseReductionMode,
+					       ctrl.second.get<int32_t>());
 			break;
-		}
 
 		case controls::AF_MODE:
 			break; /* We already handled this one above */

@@ -11,6 +11,7 @@
 #include <linux/bcm2835-isp.h>
 
 #include <libcamera/base/log.h>
+#include <libcamera/control_ids.h>
 #include <libcamera/ipa/ipa_module_info.h>
 
 #include "common/ipa_base.h"
@@ -247,9 +248,39 @@ RPiController::StatisticsPtr IpaVc4::platformProcessStats(Span<uint8_t> mem)
 	return statistics;
 }
 
-void IpaVc4::handleControls([[maybe_unused]] const ControlList &controls)
+void IpaVc4::handleControls(const ControlList &controls)
 {
-	/* No controls require any special updates to the hardware configuration. */
+	static const std::map<int32_t, RPiController::DenoiseMode> DenoiseModeTable = {
+		{ controls::draft::NoiseReductionModeOff, RPiController::DenoiseMode::Off },
+		{ controls::draft::NoiseReductionModeFast, RPiController::DenoiseMode::ColourFast },
+		{ controls::draft::NoiseReductionModeHighQuality, RPiController::DenoiseMode::ColourHighQuality },
+		{ controls::draft::NoiseReductionModeMinimal, RPiController::DenoiseMode::ColourOff },
+		{ controls::draft::NoiseReductionModeZSL, RPiController::DenoiseMode::ColourHighQuality },
+	};
+
+	for (auto const &ctrl : controls) {
+		switch (ctrl.first) {
+		case controls::NOISE_REDUCTION_MODE: {
+			RPiController::DenoiseAlgorithm *sdn = dynamic_cast<RPiController::DenoiseAlgorithm *>(
+				controller_.getAlgorithm("SDN"));
+			/* Some platforms may have a combined "denoise" algorithm instead. */
+			if (!sdn)
+				sdn = dynamic_cast<RPiController::DenoiseAlgorithm *>(
+					controller_.getAlgorithm("denoise"));
+			if (!sdn) {
+				LOG(IPARPI, Warning)
+					<< "Could not set NOISE_REDUCTION_MODE - no SDN algorithm";
+				return;
+			}
+
+			int32_t idx = ctrl.second.get<int32_t>();
+			auto mode = DenoiseModeTable.find(idx);
+			if (mode != DenoiseModeTable.end())
+				sdn->setMode(mode->second);
+			break;
+		}
+		}
+	}
 }
 
 bool IpaVc4::validateIspControls()

@@ -17,6 +17,7 @@ conf_files = files([
     'imx708_wide_noir.json',
     'ov5647.json',
     'ov5647_noir.json',
+    'ov64a40.json',
     'ov9281_mono.json',
     'se327m12.json',
     'uncalibrated.json',

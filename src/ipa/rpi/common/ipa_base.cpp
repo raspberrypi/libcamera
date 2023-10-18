@@ -702,9 +702,9 @@ void IpaBase::applyControls(const ControlList &controls)
 			}
 
 			if (ctrl.second.get<bool>() == false)
-				agc->disableAuto(0);
+				agc->disableAuto();
 			else
-				agc->enableAuto(0);
+				agc->enableAuto();
 
 			libcameraMetadata_.set(controls::AeEnable, ctrl.second.get<bool>());
 			break;
@@ -773,7 +773,7 @@ void IpaBase::applyControls(const ControlList &controls)
 
 			int32_t idx = ctrl.second.get<int32_t>();
 			if (ConstraintModeTable.count(idx)) {
-				agc->setConstraintMode(0, ConstraintModeTable.at(idx));
+				agc->setConstraintMode(ConstraintModeTable.at(idx));
 				libcameraMetadata_.set(controls::AeConstraintMode, idx);
 			} else {
 				LOG(IPARPI, Error) << "Constraint mode " << idx
@@ -793,7 +793,7 @@ void IpaBase::applyControls(const ControlList &controls)
 
 			int32_t idx = ctrl.second.get<int32_t>();
 			if (ExposureModeTable.count(idx)) {
-				agc->setExposureMode(0, ExposureModeTable.at(idx));
+				agc->setExposureMode(ExposureModeTable.at(idx));
 				libcameraMetadata_.set(controls::AeExposureMode, idx);
 			} else {
 				LOG(IPARPI, Error) << "Exposure mode " << idx
@@ -836,12 +836,12 @@ void IpaBase::applyControls(const ControlList &controls)
 
 			switch (mode) {
 			case controls::FlickerOff:
-				agc->setFlickerPeriod(0, 0us);
+				agc->setFlickerPeriod(0us);
 
 				break;
 
 			case controls::FlickerManual:
-				agc->setFlickerPeriod(0, flickerState_.manualPeriod);
+				agc->setFlickerPeriod(flickerState_.manualPeriod);
 
 				break;
 
@@ -875,7 +875,7 @@ void IpaBase::applyControls(const ControlList &controls)
 			 * first, and the period updated after, or vice versa.
 			 */
 			if (flickerState_.mode == controls::FlickerManual)
-				agc->setFlickerPeriod(0, flickerState_.manualPeriod);
+				agc->setFlickerPeriod(flickerState_.manualPeriod);
 
 			break;
 		}

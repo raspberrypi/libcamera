@@ -31,20 +31,17 @@ public:
 	unsigned int getConvergenceFrames() const override;
 	std::vector<double> const &getWeights() const override;
 	void setEv(unsigned int channel, double ev) override;
-	void setFlickerPeriod(unsigned int channelIndex,
-			      libcamera::utils::Duration flickerPeriod) override;
+	void setFlickerPeriod(libcamera::utils::Duration flickerPeriod) override;
 	void setMaxShutter(libcamera::utils::Duration maxShutter) override;
 	void setFixedShutter(unsigned int channelIndex,
 			     libcamera::utils::Duration fixedShutter) override;
 	void setFixedAnalogueGain(unsigned int channelIndex,
 				  double fixedAnalogueGain) override;
 	void setMeteringMode(std::string const &meteringModeName) override;
-	void setExposureMode(unsigned int channelIndex,
-			     std::string const &exposureModeName) override;
-	void setConstraintMode(unsigned int channelIndex,
-			       std::string const &contraintModeName) override;
-	void enableAuto(unsigned int channelIndex) override;
-	void disableAuto(unsigned int channelIndex) override;
+	void setExposureMode(std::string const &exposureModeName) override;
+	void setConstraintMode(std::string const &contraintModeName) override;
+	void enableAuto() override;
+	void disableAuto() override;
 	void switchMode(CameraMode const &cameraMode, Metadata *metadata) override;
 	void prepare(Metadata *imageMetadata) override;
 	void process(StatisticsPtr &stats, Metadata *imageMetadata) override;

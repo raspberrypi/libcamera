@@ -258,10 +258,21 @@ int PipelineHandlerVc4::prepareBuffers(Camera *camera)
 
 		} else if (stream == &data->unicam_[Unicam::Embedded]) {
 			/*
-			 * Embedded data buffers are (currently) for internal use,
-			 * so allocate the minimum required to avoid frame drops.
+			 * Embedded data buffers are (currently) for internal use, and
+			 * are small enough (typically 1-2KB) that we can
+			 * allocate them generously to avoid causing problems in the
+			 * IPA when we cannot supply the metadata.
+			 *
+			 * 12 are allocated as a typical application will have 8-10
+			 * input buffers, so allocating more embedded buffers than that
+			 * is a sensible choice.
+			 *
+			 * The lifetimes of these buffers are smaller than those of the
+			 * raw buffers, so allocating a fixed number will still suffice
+			 * if the application requests a greater number of raw
+			 * buffers, as these will be recycled quicker.
 			 */
-			numBuffers = minBuffers;
+			numBuffers = 12;
 		} else {
 			/*
 			 * Since the ISP runs synchronous with the IPA and requests,

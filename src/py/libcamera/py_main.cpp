@@ -330,6 +330,7 @@ PYBIND11_MODULE(_libcamera, m)
 		.def_property_readonly("empty", &CameraConfiguration::empty)
 		.def_readwrite("sensor_config", &CameraConfiguration::sensorConfig)
 		.def_readwrite("transform", &CameraConfiguration::transform);
+		.def_readwrite("orientation", &CameraConfiguration::orientation);
 
 	pyCameraConfigurationStatus
 		.value("Valid", CameraConfiguration::Valid)

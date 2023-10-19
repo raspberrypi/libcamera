@@ -133,6 +133,11 @@ int CamApp::parseOptions(int argc, char *argv[])
 			 "Capture until interrupted by user or until <count> frames captured",
 			 "capture", ArgumentOptional, "count", false,
 			 OptCamera);
+
+	parser.addOption(OptOrientation, OptionString,
+			 "Desired image orientation (rot0, rot180, mirror, flip)",
+			 "orientation", ArgumentRequired, "orientation", false,
+			 OptCamera);
 #ifdef HAVE_KMS
 	parser.addOption(OptDisplay, OptionString,
 			 "Display viewfinder through DRM/KMS on specified connector",

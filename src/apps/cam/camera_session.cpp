@@ -65,6 +65,24 @@ CameraSession::CameraSession(CameraManager *cm,
 		return;
 	}
 
+	if (options_.isSet(OptOrientation)) {
+		std::string orientOpt = options_[OptOrientation].toString();
+		static const std::map<std::string, libcamera::Orientation> orientations{
+			{ "rot0", libcamera::Orientation::Rotate0 },
+			{ "rot180", libcamera::Orientation::Rotate180 },
+			{ "mirror", libcamera::Orientation::Rotate0Mirror },
+			{ "flip", libcamera::Orientation::Rotate180Mirror },
+		};
+
+		auto orientation = orientations.find(orientOpt);
+		if (orientation == orientations.end()) {
+			std::cerr << "Invalid orientation " << orientOpt << std::endl;
+			return;
+		}
+
+		config->orientation = orientation->second;
+	}
+
 	/* Apply configuration if explicitly requested. */
 	if (StreamKeyValueParser::updateConfiguration(config.get(),
 						      options_[OptStream])) {

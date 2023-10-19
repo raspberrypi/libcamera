@@ -360,6 +360,39 @@ Orientation transformToOrientation(const Transform &transform)
 }
 
 /**
+ * \brief Return the Transform that applied to \a o2 gives \a o1
+ * \param o1 The Orientation to obtain
+ * \param o2 The base Orientation
+ *
+ * This operation can be used to easily compute the Transform to apply to a
+ * base orientation \a o2 to get the desired orientation \a o1.
+ *
+ * \return A Transform that applied to \a o2 gives \a o1
+ */
+Transform operator/(const Orientation &o1, const Orientation &o2)
+{
+	Transform t1 = transformFromOrientation(o1);
+	Transform t2 = transformFromOrientation(o2);
+
+	return -t2 * t1;
+}
+
+/**
+ * \brief Apply the Transform \a t on the orientation \a o
+ * \param o The orientation
+ * \param t The transform to apply on \a o
+ * \return The Orientation resulting from applying \a t on \a o
+ */
+Orientation operator*(const Orientation &o, const Transform &t)
+{
+	/*
+	 * Apply a Transform corresponding to the orientation first and
+	 * then apply \a t to it.
+	 */
+	return transformToOrientation(transformFromOrientation(o) * t);
+}
+
+/**
  * \brief Return a character string describing the transform
  * \param[in] t The transform to be described.
  */

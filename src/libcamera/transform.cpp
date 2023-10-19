@@ -7,6 +7,8 @@
 
 #include <libcamera/transform.h>
 
+#include <libcamera/orientation.h>
+
 /**
  * \file transform.h
  * \brief Enum to represent and manipulate 2D plane transforms
@@ -297,6 +299,64 @@ Transform transformFromRotation(int angle, bool *success)
 		*success = false;
 
 	return Transform::Identity;
+}
+
+/**
+ * \brief Return the transform representing \a orientation
+ * \param[in] orientation The orientation to convert
+ * \return The transform corresponding to \a orientation
+ */
+Transform transformFromOrientation(const Orientation &orientation)
+{
+	switch (orientation) {
+	case Orientation::Rotate0:
+		return Transform::Identity;
+	case Orientation::Rotate0Mirror:
+		return Transform::HFlip;
+	case Orientation::Rotate180:
+		return Transform::Rot180;
+	case Orientation::Rotate180Mirror:
+		return Transform::VFlip;
+	case Orientation::Rotate90Mirror:
+		return Transform::Transpose;
+	case Orientation::Rotate90:
+		return Transform::Rot90;
+	case Orientation::Rotate270Mirror:
+		return Transform::Rot180Transpose;
+	case Orientation::Rotate270:
+		return Transform::Rot270;
+	}
+
+	return Transform::Identity;
+}
+
+/**
+ * \brief Return the Orientation representing \a transform
+ * \param[in] transform The transform to convert
+ * \return The Orientation corresponding to \a transform
+ */
+Orientation transformToOrientation(const Transform &transform)
+{
+	switch (transform) {
+	case Transform::Identity:
+		return Orientation::Rotate0;
+	case Transform::HFlip:
+		return Orientation::Rotate0Mirror;
+	case Transform::VFlip:
+		return Orientation::Rotate180Mirror;
+	case Transform::Rot180:
+		return Orientation::Rotate180;
+	case Transform::Transpose:
+		return Orientation::Rotate90Mirror;
+	case Transform::Rot270:
+		return Orientation::Rotate270;
+	case Transform::Rot90:
+		return Orientation::Rotate90;
+	case Transform::Rot180Transpose:
+		return Orientation::Rotate270Mirror;
+	}
+
+	return Orientation::Rotate0;
 }
 
 /**

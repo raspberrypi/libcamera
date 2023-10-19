@@ -433,11 +433,11 @@ int CameraSensor::initProperties()
 
 	/* Retrieve and register properties from the kernel interface. */
 	const ControlInfoMap &controls = subdev_->controls();
-	int32_t propertyValue;
 
 	const auto &orientation = controls.find(V4L2_CID_CAMERA_ORIENTATION);
 	if (orientation != controls.end()) {
 		int32_t v4l2Orientation = orientation->second.def().get<int32_t>();
+		int32_t propertyValue;
 
 		switch (v4l2Orientation) {
 		default:
@@ -462,7 +462,7 @@ int CameraSensor::initProperties()
 
 	const auto &rotationControl = controls.find(V4L2_CID_CAMERA_SENSOR_ROTATION);
 	if (rotationControl != controls.end()) {
-		propertyValue = rotationControl->second.def().get<int32_t>();
+		int32_t propertyValue = rotationControl->second.def().get<int32_t>();
 
 		/*
 		 * Cache the Transform associated with the camera mounting
@@ -477,20 +477,11 @@ int CameraSensor::initProperties()
 			rotationTransform_ = Transform::Identity;
 		}
 
-		/*
-		 * Adjust property::Rotation as validateTransform() compensates
-		 * for the mounting rotation. However, as a camera sensor can
-		 * only compensate rotations by applying H/VFlips, only rotation
-		 * of 180 degrees are automatically compensated. The other valid
-		 * rotations (Rot90 and Rot270) require transposition, which the
-		 * camera sensor cannot perform, so leave them untouched.
-		 */
-		if (propertyValue == 180 && supportFlips_)
-			propertyValue = 0;
 		properties_.set(properties::Rotation, propertyValue);
 	} else {
 		LOG(CameraSensor, Warning)
 			<< "Rotation control not available, default to 0 degrees";
+		properties_.set(properties::Rotation, 0);
 		rotationTransform_ = Transform::Identity;
 	}
 

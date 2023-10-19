@@ -23,6 +23,7 @@ class CameraContext:
     opt_metadata: bool
     opt_save_frames: bool
     opt_capture: int
+    opt_orientation: str
 
     stream_names: dict[libcam.Stream, str]
     streams: list[libcam.Stream]
@@ -145,6 +146,21 @@ class CameraContext:
 
             if 'pixelformat' in stream_opts:
                 stream_config.pixel_format = libcam.PixelFormat(stream_opts['pixelformat'])
+
+        if self.opt_orientation is not None:
+            orientation_map = {
+                'rot0': libcam.Orientation.Rotate0,
+                'rot180': libcam.Orientation.Rotate180,
+                'mirror': libcam.Orientation.Rotate0Mirror,
+                'flip': libcam.Orientation.Rotate180Mirror,
+            }
+
+            orient = orientation_map.get(self.opt_orientation, None)
+            if orient is None:
+                print('Bad orientation: ', self.opt_orientation)
+                sys.exit(-1)
+
+            camconfig.orientation = orient
 
         stat = camconfig.validate()
 
@@ -385,6 +401,7 @@ def main():
     parser.add_argument('--metadata', nargs=0, type=bool, action=CustomAction, help='Print the metadata for completed requests')
     parser.add_argument('--strict-formats', type=bool, nargs=0, action=CustomAction, help='Do not allow requested stream format(s) to be adjusted')
     parser.add_argument('-s', '--stream', nargs='+', action=CustomAction)
+    parser.add_argument('-o', '--orientation', help='Desired image orientation (rot0, rot180, mirror, flip)')
     args = parser.parse_args()
 
     cm = libcam.CameraManager.singleton()
@@ -408,6 +425,7 @@ def main():
         ctx.opt_metadata = args.metadata.get(cam_idx, False)
         ctx.opt_strict_formats = args.strict_formats.get(cam_idx, False)
         ctx.opt_stream = args.stream.get(cam_idx, ['role=viewfinder'])
+        ctx.opt_orientation = args.orientation
         contexts.append(ctx)
 
     for ctx in contexts:

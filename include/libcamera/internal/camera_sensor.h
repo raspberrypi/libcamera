@@ -112,6 +112,7 @@ private:
 	Rectangle activeArea_;
 	const BayerFormat *bayerFormat_;
 	bool supportFlips_;
+	Transform rotationTransform_;
 
 	ControlList properties_;
 

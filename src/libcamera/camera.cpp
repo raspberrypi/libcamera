@@ -291,7 +291,8 @@ bool SensorConfiguration::isValid() const
  * \brief Create an empty camera configuration
  */
 CameraConfiguration::CameraConfiguration()
-	: transform(Transform::Identity), config_({})
+	: transform(Transform::Identity), orientation(Orientation::Rotate0),
+	  config_({})
 {
 }
 
@@ -550,6 +551,21 @@ CameraConfiguration::Status CameraConfiguration::validateColorSpaces(ColorSpaceF
  * The usual 2D plane transforms are allowed here (horizontal/vertical
  * flips, multiple of 90-degree rotations etc.), but the validate() function
  * may adjust this field at its discretion if the selection is not supported.
+ */
+
+/**
+ * \var CameraConfiguration::orientation
+ * \brief The desired orientation of the images produced by the camera
+ *
+ * The orientation field is a user-specified 2D plane transformation that
+ * specifies how the application wants the camera images to be rotated in
+ * the memory buffers.
+ *
+ * If the orientation requested by the application cannot be obtained, the
+ * camera will not rotate or flip the images, and the validate() function will
+ * Adjust this value to the native image orientation produced by the camera.
+ *
+ * By default the orientation field is set to Orientation::Rotate0.
  */
 
 /**

@@ -21,6 +21,7 @@
 
 #include <libcamera/controls.h>
 #include <libcamera/geometry.h>
+#include <libcamera/orientation.h>
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
 #include <libcamera/transform.h>
@@ -94,6 +95,7 @@ public:
 
 	std::optional<SensorConfiguration> sensorConfig;
 	Transform transform;
+	Orientation orientation;
 
 protected:
 	CameraConfiguration();

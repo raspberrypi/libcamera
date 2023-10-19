@@ -12,6 +12,7 @@ libcamera_public_headers = files([
     'framebuffer_allocator.h',
     'geometry.h',
     'logging.h',
+    'orientation.h',
     'pixel_format.h',
     'request.h',
     'stream.h',

@@ -189,24 +189,24 @@ Input image   | |   goes to output image   | |
  */
 
 /**
- * \brief Compose two transforms together
- * \param[in] t1 The second transform
- * \param[in] t0 The first transform
+ * \brief Compose two transforms by applying \a t0 first then \a t1
+ * \param[in] t0 The first transform to apply
+ * \param[in] t1 The second transform to apply
  *
- * Composing transforms follows the usual mathematical convention for
- * composing functions. That is, when performing `t1 * t0`, \a t0 is applied
- * first, and then \a t1.
- * For example, `Transpose * HFlip` performs `HFlip` first and then the
- * `Transpose` yielding `Rot270`, as shown below.
+ * Compose two transforms into a transform that is equivalent to first applying
+ * \a t0 and then applying \a t1. For example, `HFlip * Transpose` performs
+ * `HFlip` first and then the `Transpose` yielding `Rot270`, as shown below.
 ~~~
              A-B                 B-A                     B-D
 Input image  | |   -> HFLip ->   | |   -> Transpose ->   | |   = Rot270
              C-D                 D-C                     A-C
 ~~~
- * Note that composition is generally non-commutative for Transforms,
- * and not the same as XOR-ing the underlying bit representations.
+ * Note that composition is generally non-commutative for Transforms, and not
+ * the same as XOR-ing the underlying bit representations.
+ *
+ * \return A Transform equivalent to applying \a t0 and then \a t1
  */
-Transform operator*(Transform t1, Transform t0)
+Transform operator*(Transform t0, Transform t1)
 {
 	/*
 	 * Reorder the operations so that we imagine doing t0's transpose

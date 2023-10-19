@@ -1136,7 +1136,7 @@ Transform CameraSensor::validateTransform(Transform *transform) const
 	 * Combine the requested transform to compensate the sensor mounting
 	 * rotation.
 	 */
-	Transform combined = *transform * rotationTransform_;
+	Transform combined = rotationTransform_ * *transform;
 
 	/*
 	 * We combine the platform and user transform, but must "adjust away"
@@ -1165,7 +1165,7 @@ Transform CameraSensor::validateTransform(Transform *transform) const
 		 * If the sensor can do no transforms, then combined must be
 		 * changed to the identity. The only user transform that gives
 		 * rise to this is the inverse of the rotation. (Recall that
-		 * combined = transform * rotationTransform.)
+		 * combined = rotationTransform * transform.)
 		 */
 		*transform = -rotationTransform_;
 		combined = Transform::Identity;

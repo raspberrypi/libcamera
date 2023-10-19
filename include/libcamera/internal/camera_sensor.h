@@ -33,6 +33,8 @@ class SensorConfiguration;
 
 struct CameraSensorProperties;
 
+enum class Orientation;
+
 class CameraSensor : protected Loggable
 {
 public:
@@ -76,7 +78,7 @@ public:
 
 	CameraLens *focusLens() { return focusLens_.get(); }
 
-	Transform validateTransform(Transform *transform) const;
+	Transform computeTransform(Orientation *orientation) const;
 
 protected:
 	std::string logPrefix() const override;

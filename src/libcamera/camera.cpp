@@ -291,8 +291,7 @@ bool SensorConfiguration::isValid() const
  * \brief Create an empty camera configuration
  */
 CameraConfiguration::CameraConfiguration()
-	: transform(Transform::Identity), orientation(Orientation::Rotate0),
-	  config_({})
+	: orientation(Orientation::Rotate0), config_({})
 {
 }
 
@@ -538,19 +537,6 @@ CameraConfiguration::Status CameraConfiguration::validateColorSpaces(ColorSpaceF
  *
  * The camera sensor configuration applies to all streams produced by a camera
  * from the same image source.
- */
-
-/**
- * \var CameraConfiguration::transform
- * \brief User-specified transform to be applied to the image
- *
- * The transform is a user-specified 2D plane transform that will be applied
- * to the camera images by the processing pipeline before being handed to
- * the application.
- *
- * The usual 2D plane transforms are allowed here (horizontal/vertical
- * flips, multiple of 90-degree rotations etc.), but the validate() function
- * may adjust this field at its discretion if the selection is not supported.
  */
 
 /**

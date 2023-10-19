@@ -174,9 +174,9 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 	 * rotation and store the final combined transform that configure() will
 	 * need to apply to the sensor to save us working it out again.
 	 */
-	Transform requestedTransform = transform;
-	combinedTransform_ = data_->sensor_->validateTransform(&transform);
-	if (transform != requestedTransform)
+	Orientation requestedOrientation = orientation;
+	combinedTransform_ = data_->sensor_->computeTransform(&orientation);
+	if (orientation != requestedOrientation)
 		status = Adjusted;
 
 	rawStreams_.clear();
@@ -1234,7 +1234,8 @@ int CameraData::configureIPA(const CameraConfiguration *config, ipa::RPi::Config
 	}
 
 	/* Always send the user transform to the IPA. */
-	params.transform = static_cast<unsigned int>(config->transform);
+	Transform transform = config->orientation / Orientation::Rotate0;
+	params.transform = static_cast<unsigned int>(transform);
 
 	/* Ready the IPA - it must know about the sensor resolution. */
 	ret = ipa_->configure(sensorInfo_, params, result);

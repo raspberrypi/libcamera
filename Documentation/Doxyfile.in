@@ -78,6 +78,8 @@ EXPAND_ONLY_PREDEF     = YES
 INCLUDE_PATH           = "@TOP_SRCDIR@/include/libcamera"
 INCLUDE_FILE_PATTERNS  = *.h
 
+IMAGE_PATH             = "@TOP_SRCDIR@/Documentation/images"
+
 PREDEFINED             = __DOXYGEN__ \
                          __cplusplus \
                          __attribute__(x)= \

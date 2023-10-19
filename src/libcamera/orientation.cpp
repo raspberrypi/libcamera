@@ -37,6 +37,23 @@ namespace libcamera {
  * For example, Orientation::Rotate90Mirror describes the orientation obtained
  * by rotating the image 90 degrees clockwise first and then applying a
  * horizontal mirroring.
+ *
+ * \var CameraConfiguration::Rotate0
+ * \image html rotation/rotate0.svg
+ * \var CameraConfiguration::Rotate0Mirror
+ * \image html rotation/rotate0Mirror.svg
+ * \var CameraConfiguration::Rotate180
+ * \image html rotation/rotate180.svg
+ * \var CameraConfiguration::Rotate180Mirror
+ * \image html rotation/rotate180Mirror.svg
+ * \var CameraConfiguration::Rotate90Mirror
+ * \image html rotation/rotate90Mirror.svg
+ * \var CameraConfiguration::Rotate270
+ * \image html rotation/rotate270.svg
+ * \var CameraConfiguration::Rotate270Mirror
+ * \image html rotation/rotate270Mirror.svg
+ * \var CameraConfiguration::Rotate90
+ * \image html rotation/rotate90.svg
  */
 
 /**

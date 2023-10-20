@@ -331,35 +331,6 @@ Transform transformFromOrientation(const Orientation &orientation)
 }
 
 /**
- * \brief Return the Orientation representing \a transform
- * \param[in] transform The transform to convert
- * \return The Orientation corresponding to \a transform
- */
-Orientation transformToOrientation(const Transform &transform)
-{
-	switch (transform) {
-	case Transform::Identity:
-		return Orientation::Rotate0;
-	case Transform::HFlip:
-		return Orientation::Rotate0Mirror;
-	case Transform::VFlip:
-		return Orientation::Rotate180Mirror;
-	case Transform::Rot180:
-		return Orientation::Rotate180;
-	case Transform::Transpose:
-		return Orientation::Rotate90Mirror;
-	case Transform::Rot270:
-		return Orientation::Rotate270;
-	case Transform::Rot90:
-		return Orientation::Rotate90;
-	case Transform::Rot180Transpose:
-		return Orientation::Rotate270Mirror;
-	}
-
-	return Orientation::Rotate0;
-}
-
-/**
  * \brief Return the Transform that applied to \a o2 gives \a o1
  * \param o1 The Orientation to obtain
  * \param o2 The base Orientation
@@ -389,7 +360,26 @@ Orientation operator*(const Orientation &o, const Transform &t)
 	 * Apply a Transform corresponding to the orientation first and
 	 * then apply \a t to it.
 	 */
-	return transformToOrientation(transformFromOrientation(o) * t);
+	switch (transformFromOrientation(o) * t) {
+	case Transform::Identity:
+		return Orientation::Rotate0;
+	case Transform::HFlip:
+		return Orientation::Rotate0Mirror;
+	case Transform::VFlip:
+		return Orientation::Rotate180Mirror;
+	case Transform::Rot180:
+		return Orientation::Rotate180;
+	case Transform::Transpose:
+		return Orientation::Rotate90Mirror;
+	case Transform::Rot270:
+		return Orientation::Rotate270;
+	case Transform::Rot90:
+		return Orientation::Rotate90;
+	case Transform::Rot180Transpose:
+		return Orientation::Rotate270Mirror;
+	}
+
+	return Orientation::Rotate0;
 }
 
 /**

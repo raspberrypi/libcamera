@@ -72,7 +72,6 @@ constexpr Transform operator~(Transform t)
 
 Transform transformFromRotation(int angle, bool *success = nullptr);
 Transform transformFromOrientation(const Orientation &orientation);
-Orientation transformToOrientation(const Transform &transform);
 
 Transform operator/(const Orientation &o1, const Orientation &o2);
 Orientation operator*(const Orientation &o, const Transform &t);

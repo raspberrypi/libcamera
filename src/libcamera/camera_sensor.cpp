@@ -470,12 +470,12 @@ int CameraSensor::initProperties()
 		 * rotation for later use in computeTransform().
 		 */
 		bool success;
-		rotationTransform_ = transformFromRotation(propertyValue, &success);
+		mountingOrientation_ = orientationFromRotation(propertyValue, &success);
 		if (!success) {
 			LOG(CameraSensor, Warning)
 				<< "Invalid rotation of " << propertyValue
 				<< " degrees - ignoring";
-			rotationTransform_ = Transform::Identity;
+			mountingOrientation_ = Orientation::Rotate0;
 		}
 
 		properties_.set(properties::Rotation, propertyValue);
@@ -483,7 +483,7 @@ int CameraSensor::initProperties()
 		LOG(CameraSensor, Warning)
 			<< "Rotation control not available, default to 0 degrees";
 		properties_.set(properties::Rotation, 0);
-		rotationTransform_ = Transform::Identity;
+		mountingOrientation_ = Orientation::Rotate0;
 	}
 
 	properties_.set(properties::PixelArraySize, pixelArraySize_);
@@ -1137,14 +1137,12 @@ void CameraSensor::updateControlInfo()
  */
 Transform CameraSensor::computeTransform(Orientation *orientation) const
 {
-	Orientation mountingOrientation = transformToOrientation(rotationTransform_);
-
 	/*
 	 * If we cannot do any flips we cannot change the native camera mounting
 	 * orientation.
 	 */
 	if (!supportFlips_) {
-		*orientation = mountingOrientation;
+		*orientation = mountingOrientation_;
 		return Transform::Identity;
 	}
 
@@ -1153,17 +1151,17 @@ Transform CameraSensor::computeTransform(Orientation *orientation) const
 	 * from the mounting rotation.
 	 *
 	 * As a note:
-	 * 	orientation / mountingOrientation = transform
-	 * 	mountingOrientation * transform = orientation
+	 * 	orientation / mountingOrientation_ = transform
+	 * 	mountingOrientation_ * transform = orientation
 	 */
-	Transform transform = *orientation / mountingOrientation;
+	Transform transform = *orientation / mountingOrientation_;
 
 	/*
 	 * If transform contains any Transpose we cannot do it, so adjust
 	 * 'orientation' to report the image native orientation and return Identity.
 	 */
 	if (!!(transform & Transform::Transpose)) {
-		*orientation = mountingOrientation;
+		*orientation = mountingOrientation_;
 		return Transform::Identity;
 	}
 

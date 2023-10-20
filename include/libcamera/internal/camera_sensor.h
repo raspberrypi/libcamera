@@ -17,6 +17,7 @@
 #include <libcamera/control_ids.h>
 #include <libcamera/controls.h>
 #include <libcamera/geometry.h>
+#include <libcamera/orientation.h>
 #include <libcamera/transform.h>
 
 #include <libcamera/ipa/core_ipa_interface.h>
@@ -114,7 +115,7 @@ private:
 	Rectangle activeArea_;
 	const BayerFormat *bayerFormat_;
 	bool supportFlips_;
-	Transform rotationTransform_;
+	Orientation mountingOrientation_;
 
 	ControlList properties_;
 

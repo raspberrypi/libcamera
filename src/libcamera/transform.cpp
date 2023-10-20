@@ -301,6 +301,8 @@ Transform transformFromRotation(int angle, bool *success)
 	return Transform::Identity;
 }
 
+namespace {
+
 /**
  * \brief Return the transform representing \a orientation
  * \param[in] orientation The orientation to convert
@@ -329,6 +331,8 @@ Transform transformFromOrientation(const Orientation &orientation)
 
 	return Transform::Identity;
 }
+
+} /* namespace */
 
 /**
  * \brief Return the Transform that applied to \a o2 gives \a o1

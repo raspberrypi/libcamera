@@ -628,7 +628,7 @@ int Vc4CameraData::platformConfigure(const RPi::RPiCameraConfiguration *rpiConfi
 	 * \todo If Output 1 format is not YUV420, Output 1 ought to be disabled as
 	 * colour denoise will not run.
 	 */
-	if (outStreams.size() == 1) {
+	if (outStreams.size() <= 1) {
 		V4L2VideoDevice *dev = isp_[Isp::Output1].dev();
 
 		V4L2DeviceFormat output1Format;

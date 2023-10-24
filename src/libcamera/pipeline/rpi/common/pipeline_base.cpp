@@ -1214,7 +1214,6 @@ int CameraData::loadIPA(ipa::RPi::InitResult *result)
 
 int CameraData::configureIPA(const CameraConfiguration *config, ipa::RPi::ConfigResult *result)
 {
-	std::map<unsigned int, ControlInfoMap> entityControls;
 	ipa::RPi::ConfigParams params;
 	int ret;
 

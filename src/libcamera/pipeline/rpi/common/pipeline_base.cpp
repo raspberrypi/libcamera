@@ -731,7 +731,8 @@ int PipelineHandlerBase::queueRequestDevice(Camera *camera, Request *request)
 	if (!data->isRunning())
 		return -EINVAL;
 
-	LOG(RPI, Debug) << "queueRequestDevice: New request.";
+	LOG(RPI, Debug) << "queueRequestDevice: New request sequence: "
+			<< request->sequence();
 
 	/* Push all buffers supplied in the Request to the respective streams. */
 	for (auto stream : data->streams_) {
@@ -1436,6 +1437,8 @@ void CameraData::handleStreamBuffer(FrameBuffer *buffer, RPi::Stream *stream)
 		 * Tag the buffer as completed, returning it to the
 		 * application.
 		 */
+		LOG(RPI, Debug) << "Completing request buffer for stream "
+				<< stream->name();
 		pipe()->completeBuffer(request, buffer);
 	} else {
 		/*
@@ -1444,6 +1447,8 @@ void CameraData::handleStreamBuffer(FrameBuffer *buffer, RPi::Stream *stream)
 		 * unconditionally for internal streams), or there is no pending
 		 * request, so we can recycle it.
 		 */
+		LOG(RPI, Debug) << "Returning buffer to stream "
+				<< stream->name();
 		stream->returnBuffer(buffer);
 	}
 }
@@ -1487,6 +1492,9 @@ void CameraData::checkRequestCompleted()
 		if (state_ != State::IpaComplete)
 			return;
 
+		LOG(RPI, Debug) << "Completing request sequence: "
+				<< request->sequence();
+
 		pipe()->completeRequest(request);
 		requestQueue_.pop();
 		requestCompleted = true;
@@ -1499,6 +1507,7 @@ void CameraData::checkRequestCompleted()
 	if (state_ == State::IpaComplete &&
 	    ((ispOutputCount_ == ispOutputTotal_ && dropFrameCount_) ||
 	     requestCompleted)) {
+		LOG(RPI, Debug) << "Going into Idle state";
 		state_ = State::Idle;
 		if (dropFrameCount_) {
 			dropFrameCount_--;

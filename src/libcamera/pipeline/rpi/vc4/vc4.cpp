@@ -283,6 +283,9 @@ int PipelineHandlerVc4::prepareBuffers(Camera *camera)
 			numBuffers = 1;
 		}
 
+		LOG(RPI, Debug) << "Preparing " << numBuffers
+				<< " buffers for stream " << stream->name();
+
 		ret = stream->prepareBuffers(numBuffers);
 		if (ret < 0)
 			return ret;

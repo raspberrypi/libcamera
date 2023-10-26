@@ -774,6 +774,96 @@ controls:
             Continuous AF is paused. No further state changes or lens movements
             will occur until the AfPauseResume control is sent.
 
+  - HdrMode:
+      type: int32_t
+      description: |
+        Control to set the mode to be used for High Dynamic Range (HDR)
+        imaging. HDR techniques typically include multiple exposure, image
+        fusion and tone mapping techniques to improve the dynamic range of the
+        resulting images.
+
+        When using an HDR mode, images are captured with different sets of AGC
+        settings called HDR channels. Channels indicate in particular the type
+        of exposure (short, medium or long) used to capture the raw image,
+        before fusion. Each HDR image is tagged with the corresponding channel
+        using the HdrChannel control.
+
+        \sa HdrChannel
+
+      enum:
+        - name: HdrModeOff
+          value: 0
+          description: |
+            HDR is disabled. Metadata for this frame will not include the
+            HdrChannel control.
+        - name: HdrModeMultiExposureUnmerged
+          value: 1
+          description: |
+            Multiple exposures will be generated in an alternating fashion.
+            However, they will not be merged together and will be returned to
+            the application as they are. Each image will be tagged with the
+            correct HDR channel, indicating what kind of exposure it is. The
+            tag should be the same as in the HdrModeMultiExposure case.
+
+            The expectation is that an application using this mode would merge
+            the frames to create HDR images for itself if it requires them.
+        - name: HdrModeMultiExposure
+          value: 2
+          description: |
+            Multiple exposures will be generated and merged to create HDR
+            images. Each image will be tagged with the HDR channel (long, medium
+            or short) that arrived and which caused this image to be output.
+
+            Systems that use two channels for HDR will return images tagged
+            alternately as the short and long channel. Systems that use three
+            channels for HDR will cycle through the short, medium and long
+            channel before repeating.
+        - name: HdrModeSingleExposure
+          value: 3
+          description: |
+            Multiple frames all at a single exposure will be used to create HDR
+            images. These images should be reported as all corresponding to the
+            HDR short channel.
+        - name: HdrModeNight
+          value: 4
+          description: |
+            Multiple frames will be combined to produce "night mode" images. It
+            is up to the implementation exactly which HDR channels it uses, and
+            the images will all be tagged accordingly with the correct HDR
+            channel information.
+
+  - HdrChannel:
+      type: int32_t
+      description: |
+        This value is reported back to the application so that it can discover
+        whether this capture corresponds to the short or long exposure image (or
+        any other image used by the HDR procedure). An application can monitor
+        the HDR channel to discover when the differently exposed images have
+        arrived.
+
+        This metadata is only available when an HDR mode has been enabled.
+
+        \sa HdrMode
+
+      enum:
+        - name: HdrChannelNone
+          value: 0
+          description: |
+            This image does not correspond to any of the captures used to create
+            an HDR image.
+        - name: HdrChannelShort
+          value: 1
+          description: |
+            This is a short exposure image.
+        - name: HdrChannelMedium
+          value: 2
+          description: |
+            This is a medium exposure image.
+        - name: HdrChannelLong
+          value: 3
+          description: |
+            This is a long exposure image.
+
   # ----------------------------------------------------------------------------
   # Draft controls section
 

@@ -57,16 +57,35 @@ pycamera_args = [
     '-DPYBIND11_USE_SMART_HOLDER_AS_DEFAULT',
 ]
 
-destdir = get_option('libdir') / ('python' + py3_dep.version()) / 'site-packages' / 'libcamera'
+if meson.is_cross_build()
+    # Meson doesn't correctly support cross-compilation through the python
+    # module. There's work in progress to fix this, based on PEP 739
+    # (https://github.com/mesonbuild/meson/pull/14657). While waiting for this
+    # to become available, work around the issue by using shared_module().
+    destdir = get_option('libdir') / ('python' + py3_dep.version()) / 'site-packages' / 'libcamera'
 
-pycamera = shared_module('_libcamera',
-                         pycamera_sources,
-                         install : true,
-                         install_dir : destdir,
-                         install_tag : 'python-runtime',
-                         name_prefix : '',
-                         dependencies : pycamera_deps,
-                         cpp_args : pycamera_args)
+    pycamera = shared_module('_libcamera',
+                             pycamera_sources,
+                             install : true,
+                             install_dir : destdir,
+                             install_tag : 'python-runtime',
+                             name_prefix : '',
+                             dependencies : pycamera_deps,
+                             cpp_args : pycamera_args)
+    install_data(['__init__.py'],
+                 install_dir : destdir,
+                 install_tag : 'python-runtime')
+else
+    pycamera = py3.extension_module('_libcamera',
+                                    pycamera_sources,
+                                    install : true,
+                                    subdir : 'libcamera',
+                                    dependencies : pycamera_deps,
+                                    cpp_args : pycamera_args)
+    py3.install_sources(['__init__.py'],
+                        subdir : 'libcamera',
+                        pure : false)
+endif
 
 # Create symlinks from the build dir to the source dir so that we can use the
 # Python module directly from the build dir.
@@ -78,10 +97,6 @@ run_command('ln', '-fsrT', files('__init__.py'),
 run_command('ln', '-fsrT', meson.current_source_dir() / 'utils',
             meson.current_build_dir() / 'utils',
             check : true)
-
-install_data(['__init__.py'],
-             install_dir : destdir,
-             install_tag : 'python-runtime')
 
 # \todo Generate stubs when building. See https://peps.python.org/pep-0484/#stub-files
 # Note: Depends on pybind11-stubgen. To generate pylibcamera stubs:

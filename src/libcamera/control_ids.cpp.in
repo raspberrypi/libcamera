@@ -33,6 +33,8 @@ ${draft_controls_doc}
 
 } /* namespace draft */
 
+${vendor_controls_doc}
+
 #ifndef __DOXYGEN__
 /*
  * Keep the controls definitions hidden from doxygen as it incorrectly parses
@@ -45,6 +47,9 @@ namespace draft {
 ${draft_controls_def}
 
 } /* namespace draft */
+
+${vendor_controls_def}
+
 #endif
 
 /**

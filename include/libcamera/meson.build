@@ -32,20 +32,21 @@ install_headers(libcamera_public_headers,
 
 libcamera_headers_install_dir = get_option('includedir') / libcamera_include_dir
 
-# control_ids.h and property_ids.h
-control_source_files = [
-    'control_ids',
-    'property_ids',
-]
+# control_ids.h and property_ids.h and associated modes
+control_source_files = {
+    'control_ids': 'controls',
+    'property_ids': 'properties',
+}
 
 control_headers = []
 
-foreach header : control_source_files
+foreach header, mode : control_source_files
     input_files = files('../../src/libcamera/' + header +'.yaml', header + '.h.in')
     control_headers += custom_target(header + '_h',
                                      input : input_files,
                                      output : header + '.h',
-                                     command : [gen_controls, '-o', '@OUTPUT@', '@INPUT@'],
+                                     command : [gen_controls, '-o', '@OUTPUT@', '@INPUT@',
+                                                '--mode', mode],
                                      install : true,
                                      install_dir : libcamera_headers_install_dir)
 endforeach

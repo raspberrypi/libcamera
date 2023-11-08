@@ -32,6 +32,8 @@ ${draft_controls}
 
 } /* namespace draft */
 
+${vendor_controls}
+
 } /* namespace controls */
 
 } /* namespace libcamera */

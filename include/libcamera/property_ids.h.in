@@ -31,6 +31,8 @@ ${draft_controls}
 
 extern const ControlIdMap properties;
 
+${vendor_controls}
+
 } /* namespace properties */
 
 } /* namespace libcamera */

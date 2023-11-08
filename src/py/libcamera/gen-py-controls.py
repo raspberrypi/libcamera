@@ -24,45 +24,59 @@ def find_common_prefix(strings):
 def generate_py(controls, mode):
     out = ''
 
-    for ctrl in controls:
-        name, ctrl = ctrl.popitem()
+    vendors_class_def = []
+    vendor_defs = []
+    vendors = []
+    for vendor, ctrl_list in controls.items():
+        for ctrls in ctrl_list:
+            name, ctrl = ctrls.popitem()
 
-        if ctrl.get('draft'):
-            ns = 'libcamera::{}::draft::'.format(mode)
-            container = 'draft'
-        else:
-            ns = 'libcamera::{}::'.format(mode)
-            container = 'controls'
+            if vendor not in vendors and vendor != 'libcamera':
+                vendors_class_def.append('class Py{}Controls\n{{\n}};\n'.format(vendor))
+                vendor_defs.append('\tauto {} = py::class_<Py{}Controls>(controls, \"{}\");'.format(vendor, vendor, vendor))
+                vendors.append(vendor)
 
-        out += f'\t{container}.def_readonly_static("{name}", static_cast<const libcamera::ControlId *>(&{ns}{name}));\n\n'
-
-        enum = ctrl.get('enum')
-        if not enum:
-            continue
-
-        cpp_enum = name + 'Enum'
-
-        out += '\tpy::enum_<{}{}>({}, \"{}\")\n'.format(ns, cpp_enum, container, cpp_enum)
-
-        if mode == 'controls':
-            # Adjustments for controls
-            if name == 'LensShadingMapMode':
-                prefix = 'LensShadingMapMode'
+            if ctrl.get('draft'):
+                ns = 'libcamera::{}::draft::'.format(mode)
+                container = 'draft'
+            elif vendor != 'libcamera':
+                ns = 'libcamera::{}::{}::'.format(mode, vendor)
+                container = vendor
             else:
+                ns = 'libcamera::{}::'.format(mode)
+                container = 'controls'
+
+            out += f'\t{container}.def_readonly_static("{name}", static_cast<const libcamera::ControlId *>(&{ns}{name}));\n\n'
+
+            enum = ctrl.get('enum')
+            if not enum:
+                continue
+
+            cpp_enum = name + 'Enum'
+
+            out += '\tpy::enum_<{}{}>({}, \"{}\")\n'.format(ns, cpp_enum, container, cpp_enum)
+
+            if mode == 'controls':
+                # Adjustments for controls
+                if name == 'LensShadingMapMode':
+                    prefix = 'LensShadingMapMode'
+                else:
+                    prefix = find_common_prefix([e['name'] for e in enum])
+            else:
+                # Adjustments for properties
                 prefix = find_common_prefix([e['name'] for e in enum])
-        else:
-            # Adjustments for properties
-            prefix = find_common_prefix([e['name'] for e in enum])
 
-        for entry in enum:
-            cpp_enum = entry['name']
-            py_enum = entry['name'][len(prefix):]
+            for entry in enum:
+                cpp_enum = entry['name']
+                py_enum = entry['name'][len(prefix):]
 
-            out += '\t\t.value(\"{}\", {}{})\n'.format(py_enum, ns, cpp_enum)
+                out += '\t\t.value(\"{}\", {}{})\n'.format(py_enum, ns, cpp_enum)
 
-        out += '\t;\n\n'
+            out += '\t;\n\n'
 
-    return {'controls': out}
+    return {'controls': out,
+            'vendors_class_def': '\n'.join(vendors_class_def),
+            'vendors_defs': '\n'.join(vendor_defs)}
 
 
 def fill_template(template, data):
@@ -75,14 +89,14 @@ def fill_template(template, data):
 def main(argv):
     # Parse command line arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument('-o', dest='output', metavar='file', type=str,
+    parser.add_argument('--mode', '-m', type=str, required=True,
+                        help='Mode is either "controls" or "properties"')
+    parser.add_argument('--output', '-o', metavar='file', type=str,
                         help='Output file name. Defaults to standard output if not specified.')
     parser.add_argument('input', type=str,
                         help='Input file name.')
     parser.add_argument('template', type=str,
                         help='Template file name.')
-    parser.add_argument('--mode', type=str, required=True,
-                        help='Mode is either "controls" or "properties"')
     args = parser.parse_args(argv[1:])
 
     if args.mode not in ['controls', 'properties']:
@@ -90,7 +104,10 @@ def main(argv):
         return -1
 
     data = open(args.input, 'rb').read()
-    controls = yaml.safe_load(data)['controls']
+
+    controls = {}
+    vendor = yaml.safe_load(data)['vendor']
+    controls[vendor] = yaml.safe_load(data)['controls']
 
     data = generate_py(controls, args.mode)
 

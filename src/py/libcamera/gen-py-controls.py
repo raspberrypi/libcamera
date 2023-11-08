@@ -95,7 +95,7 @@ def main(argv):
                         help='Output file name. Defaults to standard output if not specified.')
     parser.add_argument('--template', '-t', type=str, required=True,
                         help='Template file name.')
-    parser.add_argument('input', type=str,
+    parser.add_argument('input', type=str, nargs='+',
                         help='Input file name.')
     args = parser.parse_args(argv[1:])
 
@@ -103,11 +103,11 @@ def main(argv):
         print(f'Invalid mode option "{args.mode}"', file=sys.stderr)
         return -1
 
-    data = open(args.input, 'rb').read()
-
     controls = {}
-    vendor = yaml.safe_load(data)['vendor']
-    controls[vendor] = yaml.safe_load(data)['controls']
+    for input in args.input:
+        data = open(input, 'rb').read()
+        vendor = yaml.safe_load(data)['vendor']
+        controls[vendor] = yaml.safe_load(data)['controls']
 
     data = generate_py(controls, args.mode)
 

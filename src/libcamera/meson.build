@@ -127,12 +127,23 @@ endif
 
 control_sources = []
 
-foreach source, mode : control_source_files
-    input_files = files(source +'.yaml')
-    template_file = files(source + '.cpp.in')
-    control_sources += custom_target(source + '_cpp',
+controls_mode_files = {
+    'controls' : controls_files,
+    'properties' : properties_files,
+}
+
+foreach mode, input_files : controls_mode_files
+    input_files = files(input_files)
+
+    if mode == 'controls'
+        template_file = files('control_ids.cpp.in')
+    else
+        template_file = files('property_ids.cpp.in')
+    endif
+
+    control_sources += custom_target(mode + '_cpp',
                                      input : input_files,
-                                     output : source + '.cpp',
+                                     output : mode + '_ids.cpp',
                                      command : [gen_controls, '-o', '@OUTPUT@',
                                                 '--mode', mode, '-t', template_file, '@INPUT@'])
 endforeach

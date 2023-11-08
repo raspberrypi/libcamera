@@ -32,22 +32,54 @@ install_headers(libcamera_public_headers,
 
 libcamera_headers_install_dir = get_option('includedir') / libcamera_include_dir
 
-# control_ids.h and property_ids.h and associated modes
-control_source_files = {
-    'control_ids': 'controls',
-    'property_ids': 'properties',
+controls_map = {
+    'controls': {
+        'core': 'control_ids_core.yaml',
+    },
+
+    'properties': {
+        'core': 'property_ids_core.yaml',
+    }
 }
 
 control_headers = []
+controls_files = []
+properties_files = []
 
-foreach header, mode : control_source_files
-    input_files = files('../../src/libcamera/' + header +'.yaml')
-    template_file = files(header + '.h.in')
+foreach mode, entry : controls_map
+    files_list = []
+    input_files = []
+    foreach vendor, header : entry
+        if vendor != 'core' and vendor != 'draft'
+            if vendor not in pipelines
+                continue
+            endif
+        endif
+
+        if header in files_list
+            continue
+        endif
+
+        files_list += header
+        input_files += files('../../src/libcamera/' + header)
+    endforeach
+
+    outfile = ''
+    if mode == 'controls'
+        outfile = 'control_ids.h'
+        controls_files += files_list
+    else
+        outfile = 'property_ids.h'
+        properties_files += files_list
+    endif
+
+    template_file = files(outfile + '.in')
     control_headers += custom_target(header + '_h',
                                      input : input_files,
-                                     output : header + '.h',
+                                     output : outfile,
                                      command : [gen_controls, '-o', '@OUTPUT@',
-                                                '--mode', mode, '-t', template_file, '@INPUT@'],
+                                                '--mode', mode, '-t', template_file,
+                                                '@INPUT@'],
                                      install : true,
                                      install_dir : libcamera_headers_install_dir)
 endforeach

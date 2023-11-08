@@ -587,12 +587,12 @@ immutable properties of the ``Camera`` device.
 
 The libcamera controls and properties are defined in YAML form which is
 processed to automatically generate documentation and interfaces. Controls are
-defined by the src/libcamera/`control_ids.yaml`_ file and camera properties
-are defined by src/libcamera/`properties_ids.yaml`_.
+defined by the src/libcamera/`control_ids_core.yaml`_ file and camera properties
+are defined by src/libcamera/`properties_ids_core.yaml`_.
 
 .. _controls framework: https://libcamera.org/api-html/controls_8h.html
-.. _control_ids.yaml: https://libcamera.org/api-html/control__ids_8h.html
-.. _properties_ids.yaml: https://libcamera.org/api-html/property__ids_8h.html
+.. _control_ids_core.yaml: https://libcamera.org/api-html/control__ids_8h.html
+.. _properties_ids_core.yaml: https://libcamera.org/api-html/property__ids_8h.html
 
 Pipeline handlers can optionally register the list of controls an application
 can set as well as a list of immutable camera properties. Being both

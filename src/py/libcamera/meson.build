@@ -28,10 +28,14 @@ pycamera_sources = files([
 
 # Generate controls
 
-gen_py_controls_input_files = files('../../libcamera/control_ids.yaml')
+gen_py_controls_input_files = []
 gen_py_controls_template = files('py_controls_generated.cpp.in')
 
 gen_py_controls = files('gen-py-controls.py')
+
+foreach file : controls_files
+    gen_py_controls_input_files += files('../../libcamera/' + file)
+endforeach
 
 pycamera_sources += custom_target('py_gen_controls',
                                   input : gen_py_controls_input_files,
@@ -41,8 +45,12 @@ pycamera_sources += custom_target('py_gen_controls',
 
 # Generate properties
 
-gen_py_property_enums_input_files = files('../../libcamera/property_ids.yaml')
+gen_py_property_enums_input_files = []
 gen_py_properties_template = files('py_properties_generated.cpp.in')
+
+foreach file : properties_files
+    gen_py_property_enums_input_files += files('../../libcamera/' + file)
+endforeach
 
 pycamera_sources += custom_target('py_gen_properties',
                                   input : gen_py_property_enums_input_files,

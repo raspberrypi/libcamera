@@ -12,6 +12,7 @@ import operator
 import string
 import sys
 import yaml
+import os
 
 
 class ControlEnum(object):
@@ -342,15 +343,18 @@ def main(argv):
                         help='Output file name. Defaults to standard output if not specified.')
     parser.add_argument('--template', '-t', dest='template', type=str, required=True,
                         help='Template file name.')
-    parser.add_argument('input', type=str,
+    parser.add_argument('input', type=str, nargs='+',
                         help='Input file name.')
 
     args = parser.parse_args(argv[1:])
 
-    data = open(args.input, 'rb').read()
-    vendor = yaml.safe_load(data)['vendor']
-    controls = yaml.safe_load(data)['controls']
-    controls = [Control(*ctrl.popitem(), vendor) for ctrl in controls]
+    controls = []
+    for input in args.input:
+        with open(input, 'rb') as f:
+            data = f.read()
+            vendor = yaml.safe_load(data)['vendor']
+            ctrls = yaml.safe_load(data)['controls']
+            controls = controls + [Control(*ctrl.popitem(), vendor) for ctrl in ctrls]
 
     if args.template.endswith('.cpp.in'):
         data = generate_cpp(controls)

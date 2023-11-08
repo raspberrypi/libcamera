@@ -672,6 +672,58 @@ handling controls:
    #include <libcamera/controls.h>
    #include <libcamera/control_ids.h>
 
+Vendor-specific controls and properties
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Vendor-specific controls and properties must be defined in a separate YAML file
+and included in the build by defining the pipeline handler to file mapping in
+include/libcamera/meson.build. These YAML files live in the src/libcamera
+directory.
+
+For example, adding a Raspberry Pi vendor control file for the PiSP pipeline
+handler is done with the following mapping:
+
+.. code-block:: meson
+
+   controls_map = {
+      'controls': {
+         'draft': 'control_ids_draft.yaml',
+         'libcamera': 'control_ids_core.yaml',
+         'rpi/pisp': 'control_ids_rpi.yaml',
+      },
+
+      'properties': {
+         'draft': 'property_ids_draft.yaml',
+         'libcamera': 'property_ids_core.yaml',
+      }
+   }
+
+The pipeline handler named above must match the pipeline handler option string
+specified in the meson build configuration.
+
+Vendor-specific controls and properties must contain a `vendor: <vendor_string>`
+tag in the YAML file. Every unique vendor tag must define a unique and
+non-overlapping range of reserved control IDs in src/libcamera/control_ranges.yaml.
+
+For example, the following block defines a vendor-specific control with the
+`rpi` vendor tag:
+
+.. code-block:: yaml
+
+    vendor: rpi
+    controls:
+      - PispConfigDumpFile:
+          type: string
+          description: |
+            Triggers the Raspberry Pi PiSP pipeline handler to generate a JSON
+            formatted dump of the Backend configuration to the filename given by the
+            value of the control.
+
+The controls will be generated in the vendor-specific namespace
+`libcamera::controls::rpi`. Additionally a `#define
+LIBCAMERA_HAS_RPI_VENDOR_CONTROLS` will be available to allow applications to
+test for the availability of these controls.
+
 Generating a default configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

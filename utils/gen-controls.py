@@ -87,11 +87,6 @@ class Control(object):
         return self.__enum_values is not None
 
     @property
-    def is_draft(self):
-        """Is the control a draft control"""
-        return self.__data.get('draft') is not None
-
-    @property
     def vendor(self):
         """The vendor string, or None"""
         return self.__vendor
@@ -100,12 +95,6 @@ class Control(object):
     def name(self):
         """The control name (CamelCase)"""
         return self.__name
-
-    @property
-    def q_name(self):
-        """The control name, qualified with a namespace"""
-        ns = 'draft::' if self.is_draft else ''
-        return ns + self.__name
 
     @property
     def type(self):
@@ -159,7 +148,7 @@ ${description}
     for ctrl in controls:
         id_name = snake_case(ctrl.name).upper()
 
-        vendor = 'draft' if ctrl.is_draft else ctrl.vendor
+        vendor = ctrl.vendor
         if vendor not in ctrls_doc:
             ctrls_doc[vendor] = []
             ctrls_def[vendor] = []
@@ -208,7 +197,8 @@ ${description}
         target_doc.append(doc_template.substitute(info))
         target_def.append(def_template.substitute(info))
 
-        ctrls_map.append('\t{ ' + id_name + ', &' + ctrl.q_name + ' },')
+        vendor_ns = vendor + '::' if vendor != "libcamera" else ''
+        ctrls_map.append('\t{ ' + vendor_ns + id_name + ', &' + vendor_ns + ctrl.name + ' },')
 
     vendor_ctrl_doc_sub = []
     vendor_ctrl_template = string.Template('''
@@ -221,18 +211,16 @@ ${vendor_controls_str}
 
 } /* namespace ${vendor} */''')
 
-    for vendor in [v for v in ctrls_doc.keys() if v not in ['libcamera', 'draft']]:
+    for vendor in [v for v in ctrls_doc.keys() if v not in ['libcamera']]:
         vendor_ctrl_doc_sub.append(vendor_ctrl_template.substitute({'vendor': vendor, 'vendor_controls_str': '\n\n'.join(ctrls_doc[vendor])}))
 
     vendor_ctrl_def_sub = []
-    for vendor in [v for v in ctrls_def.keys() if v not in ['libcamera', 'draft']]:
+    for vendor in [v for v in ctrls_def.keys() if v not in ['libcamera']]:
         vendor_ctrl_def_sub.append(vendor_ctrl_template.substitute({'vendor': vendor, 'vendor_controls_str': '\n'.join(ctrls_def[vendor])}))
 
     return {
         'controls_doc': '\n\n'.join(ctrls_doc['libcamera']),
         'controls_def': '\n'.join(ctrls_def['libcamera']),
-        'draft_controls_doc': '\n\n'.join(ctrls_doc['draft']),
-        'draft_controls_def': '\n\n'.join(ctrls_def['draft']),
         'controls_map': '\n'.join(ctrls_map),
         'vendor_controls_doc': '\n'.join(vendor_ctrl_doc_sub),
         'vendor_controls_def': '\n'.join(vendor_ctrl_def_sub),
@@ -252,7 +240,7 @@ def generate_h(controls, mode, ranges):
     for ctrl in controls:
         id_name = snake_case(ctrl.name).upper()
 
-        vendor = 'draft' if ctrl.is_draft else ctrl.vendor
+        vendor = ctrl.vendor
         if vendor not in ctrls:
             if vendor not in ranges.keys():
                 raise RuntimeError(f'Control id range is not defined for vendor {vendor}')
@@ -260,8 +248,7 @@ def generate_h(controls, mode, ranges):
             ids[vendor] = []
             ctrls[vendor] = []
 
-        # Core and draft controls use the same ID value
-        target_ids = ids['libcamera'] if vendor in ['libcamera', 'draft'] else ids[vendor]
+        target_ids = ids[vendor]
         target_ids.append('\t' + id_name + ' = ' + str(id_value[vendor]) + ',')
 
         info = {
@@ -269,11 +256,7 @@ def generate_h(controls, mode, ranges):
             'type': ctrl.type,
         }
 
-        target_ctrls = ctrls['libcamera']
-        if ctrl.is_draft:
-            target_ctrls = ctrls['draft']
-        elif vendor != 'libcamera':
-            target_ctrls = ctrls[vendor]
+        target_ctrls = ctrls[vendor]
 
         if ctrl.is_enum:
             target_ctrls.append(enum_template_start.substitute(info))
@@ -312,7 +295,7 @@ ${vendor_controls}
 ''')
 
     vendor_sub = []
-    for vendor in [v for v in ctrls.keys() if v not in ['libcamera', 'draft']]:
+    for vendor in [v for v in ctrls.keys() if v != 'libcamera']:
         vendor_sub.append(vendor_template.substitute({'mode': mode.upper(),
                                                       'vendor': vendor,
                                                       'vendor_def': vendor.upper(),
@@ -322,7 +305,6 @@ ${vendor_controls}
     return {
         'ids': '\n'.join(ids['libcamera']),
         'controls': '\n'.join(ctrls['libcamera']),
-        'draft_controls': '\n'.join(ctrls['draft']),
         'vendor_controls': '\n'.join(vendor_sub)
     }
 

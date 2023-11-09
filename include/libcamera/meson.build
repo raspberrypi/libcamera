@@ -34,10 +34,12 @@ libcamera_headers_install_dir = get_option('includedir') / libcamera_include_dir
 
 controls_map = {
     'controls': {
+        'draft': 'control_ids_draft.yaml',
         'core': 'control_ids_core.yaml',
     },
 
     'properties': {
+        'draft': 'property_ids_draft.yaml',
         'core': 'property_ids_core.yaml',
     }
 }

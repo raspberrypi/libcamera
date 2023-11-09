@@ -32,14 +32,12 @@ def generate_py(controls, mode):
             name, ctrl = ctrls.popitem()
 
             if vendor not in vendors and vendor != 'libcamera':
-                vendors_class_def.append('class Py{}Controls\n{{\n}};\n'.format(vendor))
-                vendor_defs.append('\tauto {} = py::class_<Py{}Controls>(controls, \"{}\");'.format(vendor, vendor, vendor))
+                vendor_mode_str = f'{vendor.capitalize()}{mode.capitalize()}'
+                vendors_class_def.append('class Py{}\n{{\n}};\n'.format(vendor_mode_str))
+                vendor_defs.append('\tauto {} = py::class_<Py{}>(controls, \"{}\");'.format(vendor, vendor_mode_str, vendor))
                 vendors.append(vendor)
 
-            if ctrl.get('draft'):
-                ns = 'libcamera::{}::draft::'.format(mode)
-                container = 'draft'
-            elif vendor != 'libcamera':
+            if vendor != 'libcamera':
                 ns = 'libcamera::{}::{}::'.format(mode, vendor)
                 container = vendor
             else:

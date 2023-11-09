@@ -1024,7 +1024,7 @@ void IpaBase::applyControls(const ControlList &controls)
 			break;
 		}
 
-		case controls::NOISE_REDUCTION_MODE:
+		case controls::draft::NOISE_REDUCTION_MODE:
 			/* Handled below in handleControls() */
 			libcameraMetadata_.set(controls::draft::NoiseReductionMode,
 					       ctrl.second.get<int32_t>());

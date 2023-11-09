@@ -1,0 +1,39 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+#
+# Copyright (C) 2019, Google Inc.
+#
+%YAML 1.1
+---
+vendor: draft
+controls:
+  - ColorFilterArrangement:
+      type: int32_t
+      vendor: draft
+      description: |
+        The arrangement of color filters on sensor; represents the colors in the
+        top-left 2x2 section of the sensor, in reading order. Currently
+        identical to ANDROID_SENSOR_INFO_COLOR_FILTER_ARRANGEMENT.
+      enum:
+        - name: RGGB
+          value: 0
+          description: RGGB Bayer pattern
+        - name: GRBG
+          value: 1
+          description: GRBG Bayer pattern
+        - name: GBRG
+          value: 2
+          description: GBRG Bayer pattern
+        - name: BGGR
+          value: 3
+          description: BGGR Bayer pattern
+        - name: RGB
+          value: 4
+          description: |
+            Sensor is not Bayer; output has 3 16-bit values for each pixel,
+            instead of just 1 16-bit value per pixel.
+        - name: MONO
+          value: 5
+          description: |
+            Sensor is not Bayer; output consists of a single colour channel.
+
+...

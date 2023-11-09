@@ -1,0 +1,230 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+#
+# Copyright (C) 2019, Google Inc.
+#
+%YAML 1.1
+---
+# Unless otherwise stated, all controls are bi-directional, i.e. they can be
+# set through Request::controls() and returned out through Request::metadata().
+vendor: draft
+controls:
+  - AePrecaptureTrigger:
+      type: int32_t
+      description: |
+        Control for AE metering trigger. Currently identical to
+        ANDROID_CONTROL_AE_PRECAPTURE_TRIGGER.
+
+        Whether the camera device will trigger a precapture metering sequence
+        when it processes this request.
+      enum:
+        - name: AePrecaptureTriggerIdle
+          value: 0
+          description: The trigger is idle.
+        - name: AePrecaptureTriggerStart
+          value: 1
+          description: The pre-capture AE metering is started by the camera.
+        - name: AePrecaptureTriggerCancel
+          value: 2
+          description: |
+            The camera will cancel any active or completed metering sequence.
+            The AE algorithm is reset to its initial state.
+
+  - NoiseReductionMode:
+      type: int32_t
+      description: |
+       Control to select the noise reduction algorithm mode. Currently
+       identical to ANDROID_NOISE_REDUCTION_MODE.
+
+        Mode of operation for the noise reduction algorithm.
+      enum:
+        - name: NoiseReductionModeOff
+          value: 0
+          description: No noise reduction is applied
+        - name: NoiseReductionModeFast
+          value: 1
+          description: |
+            Noise reduction is applied without reducing the frame rate.
+        - name: NoiseReductionModeHighQuality
+          value: 2
+          description: |
+            High quality noise reduction at the expense of frame rate.
+        - name: NoiseReductionModeMinimal
+          value: 3
+          description: |
+            Minimal noise reduction is applied without reducing the frame rate.
+        - name: NoiseReductionModeZSL
+          value: 4
+          description: |
+            Noise reduction is applied at different levels to different streams.
+
+  - ColorCorrectionAberrationMode:
+      type: int32_t
+      description: |
+       Control to select the color correction aberration mode. Currently
+       identical to ANDROID_COLOR_CORRECTION_ABERRATION_MODE.
+
+        Mode of operation for the chromatic aberration correction algorithm.
+      enum:
+        - name: ColorCorrectionAberrationOff
+          value: 0
+          description: No aberration correction is applied.
+        - name: ColorCorrectionAberrationFast
+          value: 1
+          description: Aberration correction will not slow down the frame rate.
+        - name: ColorCorrectionAberrationHighQuality
+          value: 2
+          description: |
+            High quality aberration correction which might reduce the frame
+            rate.
+
+  - AeState:
+      type: int32_t
+      description: |
+       Control to report the current AE algorithm state. Currently identical to
+       ANDROID_CONTROL_AE_STATE.
+
+        Current state of the AE algorithm.
+      enum:
+        - name: AeStateInactive
+          value: 0
+          description: The AE algorithm is inactive.
+        - name: AeStateSearching
+          value: 1
+          description: The AE algorithm has not converged yet.
+        - name: AeStateConverged
+          value: 2
+          description: The AE algorithm has converged.
+        - name: AeStateLocked
+          value: 3
+          description: The AE algorithm is locked.
+        - name: AeStateFlashRequired
+          value: 4
+          description: The AE algorithm would need a flash for good results
+        - name: AeStatePrecapture
+          value: 5
+          description: |
+            The AE algorithm has started a pre-capture metering session.
+            \sa AePrecaptureTrigger
+
+  - AwbState:
+      type: int32_t
+      description: |
+       Control to report the current AWB algorithm state. Currently identical
+       to ANDROID_CONTROL_AWB_STATE.
+
+        Current state of the AWB algorithm.
+      enum:
+        - name: AwbStateInactive
+          value: 0
+          description: The AWB algorithm is inactive.
+        - name: AwbStateSearching
+          value: 1
+          description: The AWB algorithm has not converged yet.
+        - name: AwbConverged
+          value: 2
+          description: The AWB algorithm has converged.
+        - name: AwbLocked
+          value: 3
+          description: The AWB algorithm is locked.
+
+  - SensorRollingShutterSkew:
+      type: int64_t
+      description: |
+       Control to report the time between the start of exposure of the first
+       row and the start of exposure of the last row. Currently identical to
+       ANDROID_SENSOR_ROLLING_SHUTTER_SKEW
+
+  - LensShadingMapMode:
+      type: int32_t
+      description: |
+       Control to report if the lens shading map is available. Currently
+       identical to ANDROID_STATISTICS_LENS_SHADING_MAP_MODE.
+      enum:
+        - name: LensShadingMapModeOff
+          value: 0
+          description: No lens shading map mode is available.
+        - name: LensShadingMapModeOn
+          value: 1
+          description: The lens shading map mode is available.
+
+  - PipelineDepth:
+      type: int32_t
+      description: |
+        Specifies the number of pipeline stages the frame went through from when
+        it was exposed to when the final completed result was available to the
+        framework. Always less than or equal to PipelineMaxDepth. Currently
+        identical to ANDROID_REQUEST_PIPELINE_DEPTH.
+
+        The typical value for this control is 3 as a frame is first exposed,
+        captured and then processed in a single pass through the ISP. Any
+        additional processing step performed after the ISP pass (in example face
+        detection, additional format conversions etc) count as an additional
+        pipeline stage.
+
+  - MaxLatency:
+      type: int32_t
+      description: |
+        The maximum number of frames that can occur after a request (different
+        than the previous) has been submitted, and before the result's state
+        becomes synchronized. A value of -1 indicates unknown latency, and 0
+        indicates per-frame control. Currently identical to
+        ANDROID_SYNC_MAX_LATENCY.
+
+  - TestPatternMode:
+      type: int32_t
+      description: |
+        Control to select the test pattern mode. Currently identical to
+        ANDROID_SENSOR_TEST_PATTERN_MODE.
+      enum:
+        - name: TestPatternModeOff
+          value: 0
+          description: |
+            No test pattern mode is used. The camera device returns frames from
+            the image sensor.
+        - name: TestPatternModeSolidColor
+          value: 1
+          description: |
+            Each pixel in [R, G_even, G_odd, B] is replaced by its respective
+            color channel provided in test pattern data.
+            \todo Add control for test pattern data.
+        - name: TestPatternModeColorBars
+          value: 2
+          description: |
+            All pixel data is replaced with an 8-bar color pattern. The vertical
+            bars (left-to-right) are as follows; white, yellow, cyan, green,
+            magenta, red, blue and black. Each bar should take up 1/8 of the
+            sensor pixel array width. When this is not possible, the bar size
+            should be rounded down to the nearest integer and the pattern can
+            repeat on the right side. Each bar's height must always take up the
+            full sensor pixel array height.
+        - name: TestPatternModeColorBarsFadeToGray
+          value: 3
+          description: |
+            The test pattern is similar to TestPatternModeColorBars,
+            except that each bar should start at its specified color at the top
+            and fade to gray at the bottom. Furthermore each bar is further
+            subdevided into a left and right half. The left half should have a
+            smooth gradient, and the right half should have a quantized
+            gradient. In particular, the right half's should consist of blocks
+            of the same color for 1/16th active sensor pixel array width. The
+            least significant bits in the quantized gradient should be copied
+            from the most significant bits of the smooth gradient. The height of
+            each bar should always be a multiple of 128. When this is not the
+            case, the pattern should repeat at the bottom of the image.
+        - name: TestPatternModePn9
+          value: 4
+          description: |
+            All pixel data is replaced by a pseudo-random sequence generated
+            from a PN9 512-bit sequence (typically implemented in hardware with
+            a linear feedback shift register). The generator should be reset at
+            the beginning of each frame, and thus each subsequent raw frame with
+            this test pattern should be exactly the same as the last.
+        - name: TestPatternModeCustom1
+          value: 256
+          description: |
+            The first custom test pattern. All custom patterns that are
+            available only on this camera device are at least this numeric
+            value. All of the custom test patterns will be static (that is the
+            raw image must not vary from frame to frame).
+
+...

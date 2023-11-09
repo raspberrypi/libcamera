@@ -74,12 +74,13 @@ foreach mode, entry : controls_map
     endif
 
     template_file = files(outfile + '.in')
+    ranges_file = files('../../src/libcamera/control_ranges.yaml')
     control_headers += custom_target(header + '_h',
                                      input : input_files,
                                      output : outfile,
                                      command : [gen_controls, '-o', '@OUTPUT@',
                                                 '--mode', mode, '-t', template_file,
-                                                '@INPUT@'],
+                                                '-r', ranges_file, '@INPUT@'],
                                      install : true,
                                      install_dir : libcamera_headers_install_dir)
 endforeach

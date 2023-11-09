@@ -239,7 +239,7 @@ ${vendor_controls_str}
     }
 
 
-def generate_h(controls, mode):
+def generate_h(controls, mode, ranges):
     enum_template_start = string.Template('''enum ${name}Enum {''')
     enum_value_template = string.Template('''\t${name} = ${value},''')
     enum_values_template = string.Template('''extern const std::array<const ControlValue, ${size}> ${name}Values;''')
@@ -254,8 +254,10 @@ def generate_h(controls, mode):
 
         vendor = 'draft' if ctrl.is_draft else ctrl.vendor
         if vendor not in ctrls:
+            if vendor not in ranges.keys():
+                raise RuntimeError(f'Control id range is not defined for vendor {vendor}')
+            id_value[vendor] = ranges[vendor] + 1
             ids[vendor] = []
-            id_value[vendor] = 1
             ctrls[vendor] = []
 
         # Core and draft controls use the same ID value
@@ -341,12 +343,19 @@ def main(argv):
                         help='Mode of operation')
     parser.add_argument('--output', '-o', metavar='file', type=str,
                         help='Output file name. Defaults to standard output if not specified.')
+    parser.add_argument('--ranges', '-r', type=str, required=True,
+                        help='Control id range reservation file.')
     parser.add_argument('--template', '-t', dest='template', type=str, required=True,
                         help='Template file name.')
     parser.add_argument('input', type=str, nargs='+',
                         help='Input file name.')
 
     args = parser.parse_args(argv[1:])
+
+    ranges = {}
+    with open(args.ranges, 'rb') as f:
+        data = open(args.ranges, 'rb').read()
+        ranges = yaml.safe_load(data)['ranges']
 
     controls = []
     for input in args.input:
@@ -359,7 +368,7 @@ def main(argv):
     if args.template.endswith('.cpp.in'):
         data = generate_cpp(controls)
     elif args.template.endswith('.h.in'):
-        data = generate_h(controls, args.mode)
+        data = generate_h(controls, args.mode, ranges)
     else:
         raise RuntimeError('Unknown template type')
 

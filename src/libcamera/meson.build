@@ -141,11 +141,13 @@ foreach mode, input_files : controls_mode_files
         template_file = files('property_ids.cpp.in')
     endif
 
+    ranges_file = files('control_ranges.yaml')
     control_sources += custom_target(mode + '_cpp',
                                      input : input_files,
                                      output : mode + '_ids.cpp',
                                      command : [gen_controls, '-o', '@OUTPUT@',
-                                                '--mode', mode, '-t', template_file, '@INPUT@'])
+                                                '--mode', mode, '-t', template_file,
+                                                '-r', ranges_file, '@INPUT@'])
 endforeach
 
 libcamera_sources += control_sources

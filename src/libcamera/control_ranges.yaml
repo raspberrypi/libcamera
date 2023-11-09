@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+#
+# Copyright (C) 2023, Raspberry Pi Ltd
+#
+%YAML 1.1
+---
+# Specifies the control id ranges/offsets for core/draft libcamera and vendor
+# controls and properties.
+ranges:
+  # Core libcamera controls
+  libcamera: 0
+  # Draft designated libcamera controls
+  draft: 10000
+  # Raspberry Pi vendor controls
+  rpi: 20000
+  # Next range starts at 30000
+
+...

@@ -977,7 +977,7 @@ void AgcChannel::divideUpExposure()
 void AgcChannel::writeAndFinish(Metadata *imageMetadata, bool desaturate)
 {
 	status_.totalExposureValue = filtered_.totalExposure;
-	status_.targetExposureValue = desaturate ? 0s : target_.totalExposureNoDG;
+	status_.targetExposureValue = desaturate ? 0s : target_.totalExposure;
 	status_.shutterTime = filtered_.shutter;
 	status_.analogueGain = filtered_.analogueGain;
 	/*

@@ -8,6 +8,10 @@ Whether you would like to help with coding, documentation, testing, proposing
 new features, or just discussing the project with the community, you can join
 our official public communication channels, or simply check out the code.
 
+The project adheres to a :ref:`code of conduct <code-of-conduct>` that
+maintainers, contributors and community members are expected to follow in all
+online and offline communication.
+
 Mailing List
 ------------
 
@@ -134,4 +138,5 @@ By making a contribution to this project, I certify that:
 .. toctree::
    :hidden:
 
+   Code of Conduct <code-of-conduct>
    Coding Style <coding-style>

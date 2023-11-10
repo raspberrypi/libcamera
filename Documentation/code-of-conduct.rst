@@ -1,5 +1,7 @@
 .. SPDX-License-Identifier: CC-BY-4.0
 
+.. _code-of-conduct:
+
 Contributor Covenant Code of Conduct
 ====================================
 

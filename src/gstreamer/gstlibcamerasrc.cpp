@@ -9,7 +9,6 @@
 /**
  * \todo The following is a list of items that needs implementation in the GStreamer plugin
  *  - Implement GstElement::send_event
- *    + Allowing application to send EOS
  *    + Allowing application to use FLUSH/FLUSH_STOP
  *    + Prevent the main thread from accessing streaming thread
  *  - Implement renegotiation (even if slow)
@@ -29,6 +28,7 @@
 
 #include "gstlibcamerasrc.h"
 
+#include <atomic>
 #include <queue>
 #include <vector>
 
@@ -143,6 +143,8 @@ struct _GstLibcameraSrc {
 
 	gchar *camera_name;
 	controls::AfModeEnum auto_focus_mode = controls::AfModeManual;
+
+	std::atomic<GstEvent *> pending_eos;
 
 	GstLibcameraSrcState *state;
 	GstLibcameraAllocator *allocator;
@@ -396,6 +398,14 @@ gst_libcamera_src_task_run(gpointer user_data)
 	gst_task_pause(self->task);
 
 	bool doResume = false;
+
+	g_autoptr(GstEvent) event = self->pending_eos.exchange(nullptr);
+	if (event) {
+		for (GstPad *srcpad : state->srcpads_)
+			gst_pad_push_event(srcpad, gst_event_ref(event));
+
+		return;
+	}
 
 	/*
 	 * Create and queue one request. If no buffers are available the
@@ -747,6 +757,27 @@ gst_libcamera_src_change_state(GstElement *element, GstStateChange transition)
 	return ret;
 }
 
+static gboolean
+gst_libcamera_src_send_event(GstElement *element, GstEvent *event)
+{
+	GstLibcameraSrc *self = GST_LIBCAMERA_SRC(element);
+	gboolean ret = FALSE;
+
+	switch (GST_EVENT_TYPE(event)) {
+	case GST_EVENT_EOS: {
+		g_autoptr(GstEvent) oldEvent = self->pending_eos.exchange(event);
+
+		ret = TRUE;
+		break;
+	}
+	default:
+		gst_event_unref(event);
+		break;
+	}
+
+	return ret;
+}
+
 static void
 gst_libcamera_src_finalize(GObject *object)
 {
@@ -778,6 +809,8 @@ gst_libcamera_src_init(GstLibcameraSrc *self)
 
 	state->srcpads_.push_back(gst_pad_new_from_template(templ, "src"));
 	gst_element_add_pad(GST_ELEMENT(self), state->srcpads_.back());
+
+	GST_OBJECT_FLAG_SET(self, GST_ELEMENT_FLAG_SOURCE);
 
 	/* C-style friend. */
 	state->src_ = self;
@@ -844,6 +877,7 @@ gst_libcamera_src_class_init(GstLibcameraSrcClass *klass)
 	element_class->request_new_pad = gst_libcamera_src_request_new_pad;
 	element_class->release_pad = gst_libcamera_src_release_pad;
 	element_class->change_state = gst_libcamera_src_change_state;
+	element_class->send_event = gst_libcamera_src_send_event;
 
 	gst_element_class_set_metadata(element_class,
 				       "libcamera Source", "Source/Video",

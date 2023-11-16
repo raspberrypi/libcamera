@@ -11,6 +11,8 @@ formats:
       fourcc: DRM_FORMAT_R10
   - R12:
       fourcc: DRM_FORMAT_R12
+  - R16:
+      fourcc: DRM_FORMAT_R16
 
   - RGB565:
       fourcc: DRM_FORMAT_RGB565

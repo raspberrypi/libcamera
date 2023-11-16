@@ -170,6 +170,8 @@ const std::map<BayerFormat, Formats, BayerFormatComparator> bayerToFormat{
 		{ formats::R10, V4L2PixelFormat(V4L2_PIX_FMT_Y10) } },
 	{ { BayerFormat::MONO, 10, BayerFormat::Packing::CSI2 },
 		{ formats::R10_CSI2P, V4L2PixelFormat(V4L2_PIX_FMT_Y10P) } },
+	{ { BayerFormat::MONO, 16, BayerFormat::Packing::None },
+		{ formats::R16, V4L2PixelFormat(V4L2_PIX_FMT_Y16) } },
 };
 
 const std::unordered_map<unsigned int, BayerFormat> mbusCodeToBayer{
@@ -208,6 +210,7 @@ const std::unordered_map<unsigned int, BayerFormat> mbusCodeToBayer{
 	{ MEDIA_BUS_FMT_Y8_1X8, { BayerFormat::MONO, 8, BayerFormat::Packing::None } },
 	{ MEDIA_BUS_FMT_Y10_1X10, { BayerFormat::MONO, 10, BayerFormat::Packing::None } },
 	{ MEDIA_BUS_FMT_Y12_1X12, { BayerFormat::MONO, 12, BayerFormat::Packing::None } },
+	{ MEDIA_BUS_FMT_Y16_1X16, { BayerFormat::MONO, 16, BayerFormat::Packing::None } },
 };
 
 } /* namespace */

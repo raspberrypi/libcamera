@@ -43,6 +43,11 @@ formats:
   - BGRA8888:
       fourcc: DRM_FORMAT_BGRA8888
 
+  - RGB161616:
+      fourcc: DRM_FORMAT_RGB161616
+  - BGR161616:
+      fourcc: DRM_FORMAT_BGR161616
+
   - YUYV:
       fourcc: DRM_FORMAT_YUYV
   - YVYU:

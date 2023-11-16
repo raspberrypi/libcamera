@@ -88,9 +88,6 @@ private:
 
 	std::map<unsigned int, MappedFrameBuffer> buffers_;
 
-	bool lensPresent_;
-	bool monoSensor_;
-	ControlList libcameraMetadata_;
 
 	std::array<RPiController::Metadata, numMetadataContexts> rpiMetadata_;
 
@@ -131,6 +128,9 @@ protected:
 
 	/* Whether the stitch block (if available) needs to swap buffers. */
 	bool stitchSwapBuffers_;
+	bool monoSensor_;
+	bool lensPresent_;
+	ControlList libcameraMetadata_;
 };
 
 } /* namespace ipa::RPi */

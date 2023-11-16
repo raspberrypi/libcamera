@@ -1,0 +1,33 @@
+name: Generate source release tarball
+run-name: Generating source release tarball
+on:
+  push:
+    tags: # vX.Y.Z+rptYYYMMDD
+      - 'v[0-9]+.[0-9]+.[0-9]+\+rpt[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]'
+  workflow_dispatch:
+jobs:
+  publish_tarball:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install dependencies
+        run: | # Local cmake needs to be removed for pybind11 to be detected
+          sudo rm -rf /usr/local/bin/cmake
+          sudo apt-get update
+          sudo apt-get install -y meson pkgconf cmake libgtest-dev libyaml-dev python3 python3-dev pybind11-dev python3-jinja2 python3-ply python3-yaml
+      - name: Check out repository code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Required for 'git describe' to work
+      - name: Generate tarball
+        run: |
+          meson setup build -Dpycamera=enabled
+          meson dist --no-tests --include-subprojects -C build
+          mv build/meson-dist/*.tar.xz "build/meson-dist/libcamera-${GITHUB_REF_NAME:1}.tar.xz"
+      - name: Release tarball
+        uses: softprops/action-gh-release@v1
+        with:
+          files: build/meson-dist/*.tar.xz
+      - if: failure()
+        run: cat build/meson-logs/meson-log.txt

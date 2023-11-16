@@ -88,6 +88,7 @@ const std::map<uint32_t, V4L2SubdeviceFormatInfo> formatInfoMap = {
 	{ MEDIA_BUS_FMT_YUYV10_2X10, { 20, "YUYV10_2X10", PixelFormatInfo::ColourEncodingYUV } },
 	{ MEDIA_BUS_FMT_YVYU10_2X10, { 20, "YVYU10_2X10", PixelFormatInfo::ColourEncodingYUV } },
 	{ MEDIA_BUS_FMT_Y12_1X12, { 12, "Y12_1X12", PixelFormatInfo::ColourEncodingYUV } },
+	{ MEDIA_BUS_FMT_Y16_1X16, { 16, "Y16_1X16", PixelFormatInfo::ColourEncodingYUV } },
 	{ MEDIA_BUS_FMT_UYVY8_1X16, { 16, "UYVY8_1X16", PixelFormatInfo::ColourEncodingYUV } },
 	{ MEDIA_BUS_FMT_VYUY8_1X16, { 16, "VYUY8_1X16", PixelFormatInfo::ColourEncodingYUV } },
 	{ MEDIA_BUS_FMT_YUYV8_1X16, { 16, "YUYV8_1X16", PixelFormatInfo::ColourEncodingYUV } },

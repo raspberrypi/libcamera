@@ -168,8 +168,11 @@ const std::map<BayerFormat, Formats, BayerFormatComparator> bayerToFormat{
 		{ formats::R8, V4L2PixelFormat(V4L2_PIX_FMT_GREY) } },
 	{ { BayerFormat::MONO, 10, BayerFormat::Packing::None },
 		{ formats::R10, V4L2PixelFormat(V4L2_PIX_FMT_Y10) } },
+	{ { BayerFormat::MONO, 16, BayerFormat::Packing::None },
+		{ formats::R16, V4L2PixelFormat(V4L2_PIX_FMT_Y16) } },
 	{ { BayerFormat::MONO, 10, BayerFormat::Packing::CSI2 },
 		{ formats::R10_CSI2P, V4L2PixelFormat(V4L2_PIX_FMT_Y10P) } },
+
 };
 
 const std::unordered_map<unsigned int, BayerFormat> mbusCodeToBayer{

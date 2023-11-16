@@ -270,6 +270,26 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.pixelsPerGroup = 1,
 		.planes = {{ { 4, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
+	{ formats::BGR161616, {
+		.name = "BGR161616",
+		.format = formats::BGR161616,
+		.v4l2Formats = { V4L2PixelFormat(V4L2_PIX_FMT_RGB48), },
+		.bitsPerPixel = 48,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
+		.packed = false,
+		.pixelsPerGroup = 1,
+		.planes = {{ { 3, 1 }, { 0, 0 }, { 0, 0 } }},
+	} },
+	{ formats::RGB161616, {
+		.name = "RGB161616",
+		.format = formats::RGB161616,
+		.v4l2Formats = { V4L2PixelFormat(V4L2_PIX_FMT_BGR48), },
+		.bitsPerPixel = 48,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
+		.packed = false,
+		.pixelsPerGroup = 1,
+		.planes = {{ { 3, 1 }, { 0, 0 }, { 0, 0 } }},
+	} },
 
 	/* YUV packed formats. */
 	{ formats::YUYV, {

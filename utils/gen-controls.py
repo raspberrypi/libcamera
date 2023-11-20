@@ -340,10 +340,10 @@ def main(argv):
                         help='Mode of operation')
     parser.add_argument('--output', '-o', metavar='file', type=str,
                         help='Output file name. Defaults to standard output if not specified.')
+    parser.add_argument('--template', '-t', dest='template', type=str, required=True,
+                        help='Template file name.')
     parser.add_argument('input', type=str,
                         help='Input file name.')
-    parser.add_argument('template', type=str,
-                        help='Template file name.')
 
     args = parser.parse_args(argv[1:])
 

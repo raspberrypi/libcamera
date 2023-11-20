@@ -93,10 +93,10 @@ def main(argv):
                         help='Mode is either "controls" or "properties"')
     parser.add_argument('--output', '-o', metavar='file', type=str,
                         help='Output file name. Defaults to standard output if not specified.')
+    parser.add_argument('--template', '-t', type=str, required=True,
+                        help='Template file name.')
     parser.add_argument('input', type=str,
                         help='Input file name.')
-    parser.add_argument('template', type=str,
-                        help='Template file name.')
     args = parser.parse_args(argv[1:])
 
     if args.mode not in ['controls', 'properties']:

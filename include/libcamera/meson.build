@@ -41,12 +41,13 @@ control_source_files = {
 control_headers = []
 
 foreach header, mode : control_source_files
-    input_files = files('../../src/libcamera/' + header +'.yaml', header + '.h.in')
+    input_files = files('../../src/libcamera/' + header +'.yaml')
+    template_file = files(header + '.h.in')
     control_headers += custom_target(header + '_h',
                                      input : input_files,
                                      output : header + '.h',
-                                     command : [gen_controls, '-o', '@OUTPUT@', '@INPUT@',
-                                                '--mode', mode],
+                                     command : [gen_controls, '-o', '@OUTPUT@',
+                                                '--mode', mode, '-t', template_file, '@INPUT@'],
                                      install : true,
                                      install_dir : libcamera_headers_install_dir)
 endforeach

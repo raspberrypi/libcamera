@@ -128,12 +128,13 @@ endif
 control_sources = []
 
 foreach source, mode : control_source_files
-    input_files = files(source +'.yaml', source + '.cpp.in')
+    input_files = files(source +'.yaml')
+    template_file = files(source + '.cpp.in')
     control_sources += custom_target(source + '_cpp',
                                      input : input_files,
                                      output : source + '.cpp',
-                                     command : [gen_controls, '-o', '@OUTPUT@', '@INPUT@',
-                                                '--mode', mode])
+                                     command : [gen_controls, '-o', '@OUTPUT@',
+                                                '--mode', mode, '-t', template_file, '@INPUT@'])
 endforeach
 
 libcamera_sources += control_sources

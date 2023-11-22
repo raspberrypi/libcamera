@@ -548,7 +548,9 @@ static void calculateCrCb(const RgbyRegions &awbRegion, Array2D<double> &cr,
 	for (unsigned int i = 0; i < cr.size(); i++) {
 		auto s = awbRegion.get(i);
 
-		if (s.counted <= minCount || s.val.gSum / s.counted <= minG) {
+		/* Do not return unreliable, or zero, colour ratio statistics. */
+		if (s.counted <= minCount || s.val.gSum / s.counted <= minG ||
+		    s.val.rSum / s.counted <= minG || s.val.bSum / s.counted <= minG) {
 			cr[i] = cb[i] = InsufficientData;
 			continue;
 		}

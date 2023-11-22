@@ -765,8 +765,8 @@ gst_libcamera_src_send_event(GstElement *element, GstEvent *event)
 
 	switch (GST_EVENT_TYPE(event)) {
 	case GST_EVENT_EOS: {
-		g_autoptr(GstEvent) oldEvent = self->pending_eos.exchange(event);
-
+		GstEvent *oldEvent = self->pending_eos.exchange(event);
+		gst_clear_event(&oldEvent);
 		ret = TRUE;
 		break;
 	}

@@ -1,0 +1,49 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+#
+# Copyright (C) 2023, Raspberry Pi Ltd
+#
+%YAML 1.1
+---
+# Raspberry Pi (VC4 and PiSP) specific vendor controls
+vendor: rpi
+controls:
+  - PispConfigDumpFile:
+      type: string
+      description: |
+        Triggers the Raspberry Pi PiSP pipeline handler to generate a JSON
+        formatted dump of the Backend configuration to the filename given by the
+        value of the control.
+
+  - StatsOutputEnable:
+      type: bool
+      description: |
+        Toggles the IPA to output a binary dump of the Frontend statistics
+        through Request metadata control PispStatsOutput (for Pi 5) or 
+        BCM2835StatsOutput (for Pi 4 and lower).
+
+        \sa PispStatsOutput BCM2835StatsOutput
+
+  - PispStatsOutput:
+      type: uint8_t
+      description: |
+        Span of the PiSP statistics for the current frame. This is sent in the
+        Request metadata if the StatsOutputEnable is set to true. The
+        statistics struct definition can be found in
+        https://github.com/raspberrypi/libpisp/blob/main/src/libpisp/frontend/pisp_statistics.h
+
+        \sa StatsOutputEnable
+
+      size: [n]
+
+  - BCM2835StatsOutput:
+      type: uint8_t
+      description: |
+        Span of the BCM2835 statistics for the current frame. This is sent in
+        the Request metadata if the StatsOutputEnable is set to true. The
+        statistics struct definition can be found in include/linux/bcm2835-isp.h.
+
+        \sa StatsOutputEnable
+
+      size: [n]
+
+...

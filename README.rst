@@ -30,7 +30,7 @@ Getting Started
 
 To fetch the sources, build and install:
 
-::
+.. code::
 
   git clone https://git.libcamera.org/libcamera/libcamera.git
   cd libcamera
@@ -119,6 +119,8 @@ Using GStreamer plugin
 
 To use GStreamer plugin from source tree, set the following environment so that
 GStreamer can find it. This isn't necessary when libcamera is installed.
+
+.. code::
 
   export GST_PLUGIN_PATH=$(pwd)/build/src/gstreamer
 

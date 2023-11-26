@@ -188,8 +188,8 @@ the build.ninja module. This is a snippet of the error message.
 
 This can be solved in two ways:
 
-1) Don't install meson again if it is already installed system-wide.
+1. Don't install meson again if it is already installed system-wide.
 
-2) If a version of meson which is different from the system-wide version is
-already installed, uninstall that meson using pip3, and install again without
-the --user argument.
+2. If a version of meson which is different from the system-wide version is
+   already installed, uninstall that meson using pip3, and install again without
+   the --user argument.

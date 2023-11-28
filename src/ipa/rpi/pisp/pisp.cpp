@@ -336,8 +336,8 @@ void IpaPiSP::platformPrepareIsp([[maybe_unused]] const PrepareParams &params,
 				  PISP_BE_BAYER_ENABLE_TDN_OUTPUT + PISP_BE_BAYER_ENABLE_TDN_INPUT +
 				  PISP_BE_BAYER_ENABLE_STITCH_INPUT + PISP_BE_BAYER_ENABLE_STITCH_OUTPUT +
 				  PISP_BE_BAYER_ENABLE_STITCH + PISP_BE_BAYER_ENABLE_TONEMAP);
+	/* We leave the YCbCr and inverse conversion enabled in case of false colour or sharpening. */
 	global.rgb_enables &= ~(PISP_BE_RGB_ENABLE_GAMMA + PISP_BE_RGB_ENABLE_CCM +
-				PISP_BE_RGB_ENABLE_YCBCR + PISP_BE_RGB_ENABLE_YCBCR_INVERSE +
 				PISP_BE_RGB_ENABLE_SHARPEN + PISP_BE_RGB_ENABLE_SAT_CONTROL);
 
 	NoiseStatus *noiseStatus = rpiMetadata.getLocked<NoiseStatus>("noise.status");
@@ -783,9 +783,8 @@ void IpaPiSP::applySharpen(const SharpenStatus *sharpenStatus,
 	sharpen.negative_limit = clampField(sharpen.negative_limit * sharpenStatus->limit, 16);
 
 	be_->SetSharpen(sharpen);
-	/* Sharpen needs a RGB -> YCbCr and inverse transform after the block. */
-	global.rgb_enables |= PISP_BE_RGB_ENABLE_YCBCR + PISP_BE_RGB_ENABLE_SHARPEN +
-			      PISP_BE_RGB_ENABLE_YCBCR_INVERSE;
+	/* The conversion to YCbCr and back is always enabled. */
+	global.rgb_enables |= PISP_BE_RGB_ENABLE_SHARPEN;
 }
 
 bool IpaPiSP::applyStitch(const StitchStatus *stitchStatus, const DeviceStatus *deviceStatus,
@@ -888,12 +887,19 @@ void IpaPiSP::setDefaultConfig()
 
 	pisp_be_global_config beGlobal;
 
+	be_->GetGlobal(beGlobal);
+	/*
+	 * Always go to YCbCr and back. We need them if the false colour block is enabled,
+	 * and even for mono sensors if sharpening is enabled. So we're better off enabling
+	 * them all the time.
+	 */
+	beGlobal.rgb_enables |= PISP_BE_RGB_ENABLE_YCBCR + PISP_BE_RGB_ENABLE_YCBCR_INVERSE;
+
 	if (!monoSensor_) {
-		be_->GetGlobal(beGlobal);
 		beGlobal.bayer_enables |= PISP_BE_BAYER_ENABLE_DEMOSAIC;
 		beGlobal.rgb_enables |= PISP_BE_RGB_ENABLE_FALSE_COLOUR;
-		be_->SetGlobal(beGlobal);
 	}
+	be_->SetGlobal(beGlobal);
 
 	pisp_fe_rgby_config rgby = {};
 	rgby.gain_r = rgby.gain_b = clampField(1.0, 14, 10);

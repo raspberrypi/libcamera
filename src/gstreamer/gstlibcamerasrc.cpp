@@ -379,6 +379,87 @@ gst_libcamera_src_open(GstLibcameraSrc *self)
 	return true;
 }
 
+/* Must be called with stream_lock held. */
+static bool
+gst_libcamera_src_negotiate(GstLibcameraSrc *self)
+{
+	GstLibcameraSrcState *state = self->state;
+
+	g_autoptr(GstStructure) element_caps = gst_structure_new_empty("caps");
+
+	for (gsize i = 0; i < state->srcpads_.size(); i++) {
+		GstPad *srcpad = state->srcpads_[i];
+		StreamConfiguration &stream_cfg = state->config_->at(i);
+
+		/* Retrieve the supported caps. */
+		g_autoptr(GstCaps) filter = gst_libcamera_stream_formats_to_caps(stream_cfg.formats());
+		g_autoptr(GstCaps) caps = gst_pad_peer_query_caps(srcpad, filter);
+		if (gst_caps_is_empty(caps))
+			return false;
+
+		/* Fixate caps and configure the stream. */
+		caps = gst_caps_make_writable(caps);
+		gst_libcamera_configure_stream_from_caps(stream_cfg, caps);
+		gst_libcamera_get_framerate_from_caps(caps, element_caps);
+	}
+
+	/* Validate the configuration. */
+	if (state->config_->validate() == CameraConfiguration::Invalid)
+		return false;
+
+	int ret = state->cam_->configure(state->config_.get());
+	if (ret) {
+		GST_ELEMENT_ERROR(self, RESOURCE, SETTINGS,
+				  ("Failed to configure camera: %s", g_strerror(-ret)),
+				  ("Camera::configure() failed with error code %i", ret));
+		return false;
+	}
+
+	/* Check frame duration bounds within controls::FrameDurationLimits */
+	gst_libcamera_clamp_and_set_frameduration(state->initControls_,
+						  state->cam_->controls(), element_caps);
+
+	/*
+	 * Regardless if it has been modified, create clean caps and push the
+	 * caps event. Downstream will decide if the caps are acceptable.
+	 */
+	for (gsize i = 0; i < state->srcpads_.size(); i++) {
+		GstPad *srcpad = state->srcpads_[i];
+		const StreamConfiguration &stream_cfg = state->config_->at(i);
+
+		g_autoptr(GstCaps) caps = gst_libcamera_stream_configuration_to_caps(stream_cfg);
+		gst_libcamera_framerate_to_caps(caps, element_caps);
+
+		if (!gst_pad_push_event(srcpad, gst_event_new_caps(caps)))
+			return false;
+	}
+
+	if (self->allocator)
+		g_clear_object(&self->allocator);
+
+	self->allocator = gst_libcamera_allocator_new(state->cam_, state->config_.get());
+	if (!self->allocator) {
+		GST_ELEMENT_ERROR(self, RESOURCE, NO_SPACE_LEFT,
+				  ("Failed to allocate memory"),
+				  ("gst_libcamera_allocator_new() failed."));
+		return false;
+	}
+
+	for (gsize i = 0; i < state->srcpads_.size(); i++) {
+		GstPad *srcpad = state->srcpads_[i];
+		const StreamConfiguration &stream_cfg = state->config_->at(i);
+
+		GstLibcameraPool *pool = gst_libcamera_pool_new(self->allocator,
+								stream_cfg.stream());
+		g_signal_connect_swapped(pool, "buffer-notify",
+					 G_CALLBACK(gst_task_resume), self->task);
+
+		gst_libcamera_pad_set_pool(srcpad, pool);
+	}
+
+	return true;
+}
+
 static void
 gst_libcamera_src_task_run(gpointer user_data)
 {
@@ -468,10 +549,7 @@ gst_libcamera_src_task_enter(GstTask *task, [[maybe_unused]] GThread *thread,
 	GstLibcameraSrc *self = GST_LIBCAMERA_SRC(user_data);
 	GLibRecLocker lock(&self->stream_lock);
 	GstLibcameraSrcState *state = self->state;
-	GstFlowReturn flow_ret = GST_FLOW_OK;
 	gint ret;
-
-	g_autoptr(GstStructure) element_caps = gst_structure_new_empty("caps");
 
 	GST_DEBUG_OBJECT(self, "Streaming thread has started");
 
@@ -500,89 +578,21 @@ gst_libcamera_src_task_enter(GstTask *task, [[maybe_unused]] GThread *thread,
 	}
 	g_assert(state->config_->size() == state->srcpads_.size());
 
-	for (gsize i = 0; i < state->srcpads_.size(); i++) {
-		GstPad *srcpad = state->srcpads_[i];
-		StreamConfiguration &stream_cfg = state->config_->at(i);
-
-		/* Retrieve the supported caps. */
-		g_autoptr(GstCaps) filter = gst_libcamera_stream_formats_to_caps(stream_cfg.formats());
-		g_autoptr(GstCaps) caps = gst_pad_peer_query_caps(srcpad, filter);
-		if (gst_caps_is_empty(caps)) {
-			flow_ret = GST_FLOW_NOT_NEGOTIATED;
-			break;
-		}
-
-		/* Fixate caps and configure the stream. */
-		caps = gst_caps_make_writable(caps);
-		gst_libcamera_configure_stream_from_caps(stream_cfg, caps);
-		gst_libcamera_get_framerate_from_caps(caps, element_caps);
-	}
-
-	if (flow_ret != GST_FLOW_OK)
-		goto done;
-
-	/* Validate the configuration. */
-	if (state->config_->validate() == CameraConfiguration::Invalid) {
-		flow_ret = GST_FLOW_NOT_NEGOTIATED;
-		goto done;
-	}
-
-	ret = state->cam_->configure(state->config_.get());
-	if (ret) {
-		GST_ELEMENT_ERROR(self, RESOURCE, SETTINGS,
-				  ("Failed to configure camera: %s", g_strerror(-ret)),
-				  ("Camera::configure() failed with error code %i", ret));
-		gst_task_stop(task);
-		flow_ret = GST_FLOW_NOT_NEGOTIATED;
-		goto done;
-	}
-
-	/* Check frame duration bounds within controls::FrameDurationLimits */
-	gst_libcamera_clamp_and_set_frameduration(state->initControls_,
-						  state->cam_->controls(), element_caps);
-
-	/*
-	 * Regardless if it has been modified, create clean caps and push the
-	 * caps event. Downstream will decide if the caps are acceptable.
-	 */
-	for (gsize i = 0; i < state->srcpads_.size(); i++) {
-		GstPad *srcpad = state->srcpads_[i];
-		const StreamConfiguration &stream_cfg = state->config_->at(i);
-
-		g_autoptr(GstCaps) caps = gst_libcamera_stream_configuration_to_caps(stream_cfg);
-		gst_libcamera_framerate_to_caps(caps, element_caps);
-
-		if (!gst_pad_push_event(srcpad, gst_event_new_caps(caps))) {
-			flow_ret = GST_FLOW_NOT_NEGOTIATED;
-			break;
-		}
-
-		/* Send an open segment event with time format. */
-		GstSegment segment;
-		gst_segment_init(&segment, GST_FORMAT_TIME);
-		gst_pad_push_event(srcpad, gst_event_new_segment(&segment));
-	}
-
-	self->allocator = gst_libcamera_allocator_new(state->cam_, state->config_.get());
-	if (!self->allocator) {
-		GST_ELEMENT_ERROR(self, RESOURCE, NO_SPACE_LEFT,
-				  ("Failed to allocate memory"),
-				  ("gst_libcamera_allocator_new() failed."));
+	if (!gst_libcamera_src_negotiate(self)) {
+		state->initControls_.clear();
+		GST_ELEMENT_FLOW_ERROR(self, GST_FLOW_NOT_NEGOTIATED);
 		gst_task_stop(task);
 		return;
 	}
 
 	self->flow_combiner = gst_flow_combiner_new();
-	for (gsize i = 0; i < state->srcpads_.size(); i++) {
-		GstPad *srcpad = state->srcpads_[i];
-		const StreamConfiguration &stream_cfg = state->config_->at(i);
-		GstLibcameraPool *pool = gst_libcamera_pool_new(self->allocator,
-								stream_cfg.stream());
-		g_signal_connect_swapped(pool, "buffer-notify",
-					 G_CALLBACK(gst_task_resume), task);
-
-		gst_libcamera_pad_set_pool(srcpad, pool);
+	for (GstPad *srcpad : state->srcpads_) {
 		gst_flow_combiner_add_pad(self->flow_combiner, srcpad);
+
+		/* Send an open segment event with time format. */
+		GstSegment segment;
+		gst_segment_init(&segment, GST_FORMAT_TIME);
+		gst_pad_push_event(srcpad, gst_event_new_segment(&segment));
 	}
 
 	if (self->auto_focus_mode != controls::AfModeManual) {
@@ -604,17 +614,6 @@ gst_libcamera_src_task_enter(GstTask *task, [[maybe_unused]] GThread *thread,
 				  ("Camera.start() failed with error code %i", ret));
 		gst_task_stop(task);
 		return;
-	}
-
-done:
-	state->initControls_.clear();
-	switch (flow_ret) {
-	case GST_FLOW_NOT_NEGOTIATED:
-		GST_ELEMENT_FLOW_ERROR(self, flow_ret);
-		gst_task_stop(task);
-		break;
-	default:
-		break;
 	}
 }
 

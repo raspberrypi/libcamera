@@ -133,6 +133,7 @@ struct GstLibcameraSrcState {
 	int queueRequest();
 	void requestCompleted(Request *request);
 	int processRequest();
+	void clearRequests();
 };
 
 struct _GstLibcameraSrc {
@@ -316,6 +317,12 @@ int GstLibcameraSrcState::processRequest()
 	}
 
 	return err;
+}
+
+void GstLibcameraSrcState::clearRequests()
+{
+	GLibLocker locker(&lock_);
+	completedRequests_ = {};
 }
 
 static bool
@@ -628,11 +635,7 @@ gst_libcamera_src_task_leave([[maybe_unused]] GstTask *task,
 	GST_DEBUG_OBJECT(self, "Streaming thread is about to stop");
 
 	state->cam_->stop();
-
-	{
-		GLibLocker locker(&state->lock_);
-		state->completedRequests_ = {};
-	}
+	state->clearRequests();
 
 	{
 		GLibRecLocker locker(&self->stream_lock);

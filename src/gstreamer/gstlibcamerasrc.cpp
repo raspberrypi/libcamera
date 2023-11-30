@@ -11,7 +11,6 @@
  *  - Implement GstElement::send_event
  *    + Allowing application to use FLUSH/FLUSH_STOP
  *    + Prevent the main thread from accessing streaming thread
- *  - Implement renegotiation (even if slow)
  *  - Implement GstElement::request-new-pad (multi stream)
  *    + Evaluate if a single streaming thread is fine
  *  - Add application driven request (snapshot)
@@ -302,18 +301,46 @@ int GstLibcameraSrcState::processRequest()
 							srcpad, ret);
 	}
 
-	if (ret != GST_FLOW_OK) {
-		if (ret == GST_FLOW_EOS) {
-			g_autoptr(GstEvent) eos = gst_event_new_eos();
-			guint32 seqnum = gst_util_seqnum_next();
-			gst_event_set_seqnum(eos, seqnum);
-			for (GstPad *srcpad : srcpads_)
-				gst_pad_push_event(srcpad, gst_event_ref(eos));
-		} else if (ret != GST_FLOW_FLUSHING) {
-			GST_ELEMENT_FLOW_ERROR(src_, ret);
+	switch (ret) {
+	case GST_FLOW_OK:
+		break;
+
+	case GST_FLOW_NOT_NEGOTIATED: {
+		bool reconfigure = false;
+		for (GstPad *srcpad : srcpads_) {
+			if (gst_pad_needs_reconfigure(srcpad)) {
+				reconfigure = true;
+				break;
+			}
 		}
 
-		return -EPIPE;
+		/* If no pads need a reconfiguration something went wrong. */
+		if (!reconfigure)
+			err = -EPIPE;
+
+		break;
+	}
+
+	case GST_FLOW_EOS: {
+		g_autoptr(GstEvent) eos = gst_event_new_eos();
+		guint32 seqnum = gst_util_seqnum_next();
+		gst_event_set_seqnum(eos, seqnum);
+		for (GstPad *srcpad : srcpads_)
+			gst_pad_push_event(srcpad, gst_event_ref(eos));
+
+		err = -EPIPE;
+		break;
+	}
+
+	case GST_FLOW_FLUSHING:
+		err = -EPIPE;
+		break;
+
+	default:
+		GST_ELEMENT_FLOW_ERROR(src_, ret);
+
+		err = -EPIPE;
+		break;
 	}
 
 	return err;
@@ -462,6 +489,9 @@ gst_libcamera_src_negotiate(GstLibcameraSrc *self)
 					 G_CALLBACK(gst_task_resume), self->task);
 
 		gst_libcamera_pad_set_pool(srcpad, pool);
+
+		/* Clear all reconfigure flags. */
+		gst_pad_check_reconfigure(srcpad);
 	}
 
 	return true;
@@ -493,6 +523,31 @@ gst_libcamera_src_task_run(gpointer user_data)
 			gst_pad_push_event(srcpad, gst_event_ref(event));
 
 		return;
+	}
+
+	/* Check if a srcpad requested a renegotiation. */
+	bool reconfigure = false;
+	for (GstPad *srcpad : state->srcpads_) {
+		if (gst_pad_check_reconfigure(srcpad)) {
+			/* Check if the caps even need changing. */
+			g_autoptr(GstCaps) caps = gst_pad_get_current_caps(srcpad);
+			if (!gst_pad_peer_query_accept_caps(srcpad, caps)) {
+				reconfigure = true;
+				break;
+			}
+		}
+	}
+
+	if (reconfigure) {
+		state->cam_->stop();
+		state->clearRequests();
+
+		if (!gst_libcamera_src_negotiate(self)) {
+			GST_ELEMENT_FLOW_ERROR(self, GST_FLOW_NOT_NEGOTIATED);
+			gst_task_stop(self->task);
+		}
+
+		state->cam_->start(&state->initControls_);
 	}
 
 	/*

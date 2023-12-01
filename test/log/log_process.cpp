@@ -115,8 +115,11 @@ protected:
 		close(fd);
 
 		string str(buf);
-		if (str.find(message) == string::npos)
+		if (str.find(message) == string::npos) {
+			cerr << "Received message is not correct (received "
+			     << str.length() << " bytes)" << endl;
 			return TestFail;
+		}
 
 		return TestPass;
 	}

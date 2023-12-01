@@ -104,7 +104,7 @@ namespace ipa::RPi {
 IpaBase::IpaBase()
 	: controller_(), frameLengths_(FrameLengthsQueueSize, 0s), frameCount_(0),
 	  mistrustCount_(0), lastRunTimestamp_(0), firstStart_(true), flickerState_({ 0, 0s }),
-	  stitchSwapBuffers_(false)
+	  stitchSwapBuffers_(false), statsMetadataOutput_(false)
 {
 }
 
@@ -1206,6 +1206,11 @@ void IpaBase::applyControls(const ControlList &controls)
 				LOG(IPARPI, Warning)
 					<< "HDR mode " << mode->second << " not supported";
 
+			break;
+		}
+
+		case controls::rpi::STATS_OUTPUT_ENABLE: {
+			statsMetadataOutput_ = ctrl.second.get<bool>();
 			break;
 		}
 

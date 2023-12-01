@@ -782,8 +782,6 @@ private:
 		       (!sensorMetadata_ ||
 				job.buffers.count(&cfe_[Cfe::Embedded]));
 	}
-
-	std::string last_dump_file_;
 };
 
 class PipelineHandlerPiSP : public RPi::PipelineHandlerBase
@@ -1580,9 +1578,6 @@ void PiSPCameraData::platformStart()
 
 	for (unsigned int i = 0; i < config_.numCfeConfigQueue; i++)
 		prepareCfe();
-
-	/* Clear the debug dump file history. */
-	last_dump_file_.clear();
 }
 
 void PiSPCameraData::platformStop()
@@ -2150,22 +2145,14 @@ void PiSPCameraData::prepareBe(uint32_t bufferId, bool stitchSwapBuffers)
 	be_->Prepare(configBuffer);
 
 	/*
-	 * If the LIBCAMERA_RPI_PISP_CONFIG_DUMP environment variable is set,
-	 * dump the Backend config to the given file. This is a one-shot
-	 * operation, so log the filename that was provided and allow the
-	 * application to change the filename for multiple dumps in a single
-	 * run.
-	 *
-	 * \todo Using an environment variable is only a temporary solution
-	 * until we have support for vendor specific controls in libcamera.
+	 * If the PispConfigDumpFile control is set, dump the Backend config to
+	 * the given file for this request.
 	 */
-	const char *config_dump = utils::secure_getenv("LIBCAMERA_RPI_PISP_CONFIG_DUMP");
-	if (config_dump && last_dump_file_ != config_dump) {
-		std::ofstream of(config_dump);
-		if (of.is_open()) {
+	auto configDump = requestQueue_.front()->controls().get(controls::rpi::PispConfigDumpFile);
+	if (configDump && !configDump->empty()) {
+		std::ofstream of(*configDump);
+		if (of.is_open())
 			of << be_->GetJsonConfig(configBuffer);
-			last_dump_file_ = config_dump;
-		}
 	}
 
 	isp_[Isp::Config].queueBuffer(config.buffer);

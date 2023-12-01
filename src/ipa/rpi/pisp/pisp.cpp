@@ -13,6 +13,7 @@
 #include <vector>
 
 #include <libcamera/base/log.h>
+#include <libcamera/base/span.h>
 
 #include <libcamera/control_ids.h>
 
@@ -475,6 +476,11 @@ RPiController::StatisticsPtr IpaPiSP::platformProcessStats(Span<uint8_t> mem)
 	statistics->focusRegions.init({ PISP_CDAF_STATS_SIZE, PISP_CDAF_STATS_SIZE });
 	for (i = 0; i < statistics->focusRegions.numRegions(); i++)
 		statistics->focusRegions.set(i, { stats->cdaf.foms[i] >> 20, 0, 0 });
+
+	if (statsMetadataOutput_) {
+		Span<uint8_t> statsSpan((uint8_t *)(stats), sizeof(pisp_statistics));
+		libcameraMetadata_.set(controls::rpi::PispStatsOutput, statsSpan);
+	}
 
 	return statistics;
 }

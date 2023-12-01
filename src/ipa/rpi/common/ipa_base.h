@@ -130,6 +130,7 @@ protected:
 	bool stitchSwapBuffers_;
 	bool monoSensor_;
 	bool lensPresent_;
+	bool statsMetadataOutput_;
 	ControlList libcameraMetadata_;
 };
 

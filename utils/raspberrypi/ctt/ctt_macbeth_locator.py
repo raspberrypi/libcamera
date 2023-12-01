@@ -57,6 +57,10 @@ def find_macbeth(Cam, img, mac_config=(0, 0)):
     """
     cor, mac, coords, msg = get_macbeth_chart(img, ref_data)
 
+    # Keep a list that will include this and any brightened up versions of
+    # the image for reuse.
+    all_images = [img]
+
     """
     following bits of code tries to fix common problems with simple
     techniques.
@@ -71,6 +75,7 @@ def find_macbeth(Cam, img, mac_config=(0, 0)):
     if cor < 0.75:
         a = 2
         img_br = cv2.convertScaleAbs(img, alpha=a, beta=0)
+        all_images.append(img_br)
         cor_b, mac_b, coords_b, msg_b = get_macbeth_chart(img_br, ref_data)
         if cor_b > cor:
             cor, mac, coords, msg = cor_b, mac_b, coords_b, msg_b
@@ -81,6 +86,7 @@ def find_macbeth(Cam, img, mac_config=(0, 0)):
     if cor < 0.75:
         a = 4
         img_br = cv2.convertScaleAbs(img, alpha=a, beta=0)
+        all_images.append(img_br)
         cor_b, mac_b, coords_b, msg_b = get_macbeth_chart(img_br, ref_data)
         if cor_b > cor:
             cor, mac, coords, msg = cor_b, mac_b, coords_b, msg_b
@@ -128,23 +134,26 @@ def find_macbeth(Cam, img, mac_config=(0, 0)):
         h_inc = int(h/6)
         """
         for each subselection, look for a macbeth chart
+        loop over this and any brightened up images that we made to increase the
+        likelihood of success
         """
-        for i in range(3):
-            for j in range(3):
-                w_s, h_s = i*w_inc, j*h_inc
-                img_sel = img[w_s:w_s+w_sel, h_s:h_s+h_sel]
-                cor_ij, mac_ij, coords_ij, msg_ij = get_macbeth_chart(img_sel, ref_data)
-                """
-                if the correlation is better than the best then record the
-                scale and current subselection at which macbeth chart was
-                found. Also record the coordinates, macbeth chart and message.
-                """
-                if cor_ij > cor:
-                    cor = cor_ij
-                    mac, coords, msg = mac_ij, coords_ij, msg_ij
-                    ii, jj = i, j
-                    w_best, h_best = w_inc, h_inc
-                    d_best = 1
+        for img_br in all_images:
+            for i in range(3):
+                for j in range(3):
+                    w_s, h_s = i*w_inc, j*h_inc
+                    img_sel = img_br[w_s:w_s+w_sel, h_s:h_s+h_sel]
+                    cor_ij, mac_ij, coords_ij, msg_ij = get_macbeth_chart(img_sel, ref_data)
+                    """
+                    if the correlation is better than the best then record the
+                    scale and current subselection at which macbeth chart was
+                    found. Also record the coordinates, macbeth chart and message.
+                    """
+                    if cor_ij > cor:
+                        cor = cor_ij
+                        mac, coords, msg = mac_ij, coords_ij, msg_ij
+                        ii, jj = i, j
+                        w_best, h_best = w_inc, h_inc
+                        d_best = 1
 
     """
     scale 2
@@ -157,17 +166,19 @@ def find_macbeth(Cam, img, mac_config=(0, 0)):
         h_sel = int(h/2)
         w_inc = int(w/8)
         h_inc = int(h/8)
-        for i in range(5):
-            for j in range(5):
-                w_s, h_s = i*w_inc, j*h_inc
-                img_sel = img[w_s:w_s+w_sel, h_s:h_s+h_sel]
-                cor_ij, mac_ij, coords_ij, msg_ij = get_macbeth_chart(img_sel, ref_data)
-                if cor_ij > cor:
-                    cor = cor_ij
-                    mac, coords, msg = mac_ij, coords_ij, msg_ij
-                    ii, jj = i, j
-                    w_best, h_best = w_inc, h_inc
-                    d_best = 2
+        # Again, loop over any brightened up images as well
+        for img_br in all_images:
+            for i in range(5):
+                for j in range(5):
+                    w_s, h_s = i*w_inc, j*h_inc
+                    img_sel = img_br[w_s:w_s+w_sel, h_s:h_s+h_sel]
+                    cor_ij, mac_ij, coords_ij, msg_ij = get_macbeth_chart(img_sel, ref_data)
+                    if cor_ij > cor:
+                        cor = cor_ij
+                        mac, coords, msg = mac_ij, coords_ij, msg_ij
+                        ii, jj = i, j
+                        w_best, h_best = w_inc, h_inc
+                        d_best = 2
 
     """
     The following code checks for macbeth charts at even smaller scales. This
@@ -238,7 +249,7 @@ def find_macbeth(Cam, img, mac_config=(0, 0)):
     print error or success message
     """
     print(msg)
-    Cam.log += '\n' + msg
+    Cam.log += '\n' + str(msg)
     if msg == success_msg:
         coords_fit = coords
         Cam.log += '\nMacbeth chart vertices:\n'
@@ -606,7 +617,7 @@ def get_macbeth_chart(img, ref_data):
                     '\nNot enough squares found'
                     '\nPossible problems:\n'
                     '- Macbeth chart is occluded\n'
-                    '- Macbeth chart is too dark of bright\n'
+                    '- Macbeth chart is too dark or bright\n'
                 )
 
             ref_cents = np.array(ref_cents)

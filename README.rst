@@ -75,6 +75,9 @@ for documentation: [optional]
 for gstreamer: [optional]
         libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
 
+for Python bindings: [optional]
+        libpython3-dev pybind11-dev
+
 for cam: [optional]
         libevent-dev is required to support cam, however the following
         optional dependencies bring more functionality to the cam test

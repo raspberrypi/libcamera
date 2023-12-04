@@ -51,6 +51,11 @@ option('pipelines',
         ],
         description : 'Select which pipeline handlers to build. If this is set to "auto", all the pipelines applicable to the target architecture will be built. If this is set to "all", all the pipelines will be built. If both are selected then "all" will take precedence.')
 
+option('pycamera',
+        type : 'feature',
+        value : 'disabled',
+        description : 'Enable libcamera Python bindings (experimental)')
+
 option('qcam',
         type : 'feature',
         value : 'auto',
@@ -75,8 +80,3 @@ option('v4l2',
         type : 'boolean',
         value : false,
         description : 'Compile the V4L2 compatibility layer')
-
-option('pycamera',
-        type : 'feature',
-        value : 'disabled',
-        description : 'Enable libcamera Python bindings (experimental)')

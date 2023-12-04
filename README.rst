@@ -97,7 +97,7 @@ for android: [optional]
         libexif-dev libjpeg-dev
 
 for lc-compliance: [optional]
-        libevent-dev
+        libevent-dev libgtest-dev
 
 for abi-compat.sh: [optional]
         abi-compliance-checker

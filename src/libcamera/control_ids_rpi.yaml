@@ -1,0 +1,29 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+#
+# Copyright (C) 2023, Raspberry Pi Ltd
+#
+%YAML 1.1
+---
+# Raspberry Pi (VC4 and PiSP) specific vendor controls
+vendor: rpi
+controls:
+  - StatsOutputEnable:
+      type: bool
+      description: |
+        Toggles the Raspberry Pi IPA to output a binary dump of the hardware
+        generated statistics through the Request metadata in the Bcm2835StatsOutput
+        control.
+
+        \sa Bcm2835StatsOutput
+
+  - Bcm2835StatsOutput:
+      type: uint8_t
+      size: [n]
+      description: |
+        Span of the BCM2835 ISP generated statistics for the current frame. This
+        is sent in the Request metadata if the StatsOutputEnable is set to true.
+        The statistics struct definition can be found in include/linux/bcm2835-isp.h.
+
+        \sa StatsOutputEnable
+
+...

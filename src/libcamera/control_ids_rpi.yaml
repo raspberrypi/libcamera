@@ -37,4 +37,18 @@ controls:
 
         \sa StatsOutputEnable
 
+  # Un-upstreamed controls go here.
+  # Some of these will likely never be upstreamed.
+  - Imx500OutputTensor:
+      type: uint8_t
+      size: [n]
+      description: |
+        Output tensor from the IMX500.
+
+  - Imx500InputTensor:
+      type: uint8_t
+      size: [n]
+      description: |
+        Input tensor from the IMX500.
+
 ...

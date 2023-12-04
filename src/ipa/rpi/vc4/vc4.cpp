@@ -11,6 +11,7 @@
 #include <linux/bcm2835-isp.h>
 
 #include <libcamera/base/log.h>
+#include <libcamera/base/span.h>
 #include <libcamera/control_ids.h>
 #include <libcamera/ipa/ipa_module_info.h>
 
@@ -244,6 +245,12 @@ RPiController::StatisticsPtr IpaVc4::platformProcessStats(Span<uint8_t> mem)
 		statistics->focusRegions.set(i, { stats->focus_stats[i].contrast_val[1][1] / 1000,
 						  stats->focus_stats[i].contrast_val_num[1][1],
 						  stats->focus_stats[i].contrast_val_num[1][0] });
+
+	if (statsMetadataOutput_) {
+		Span<const uint8_t> statsSpan(reinterpret_cast<const uint8_t *>(stats),
+					      sizeof(bcm2835_isp_stats));
+		libcameraMetadata_.set(controls::rpi::Bcm2835StatsOutput, statsSpan);
+	}
 
 	return statistics;
 }

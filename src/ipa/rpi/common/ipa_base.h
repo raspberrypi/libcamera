@@ -61,6 +61,8 @@ protected:
 	/* Track the frame length times over FrameLengthsQueueSize frames. */
 	std::deque<utils::Duration> frameLengths_;
 	utils::Duration lastTimeout_;
+	ControlList libcameraMetadata_;
+	bool statsMetadataOutput_;
 
 private:
 	/* Number of metadata objects available in the context list. */
@@ -89,7 +91,6 @@ private:
 
 	bool lensPresent_;
 	bool monoSensor_;
-	ControlList libcameraMetadata_;
 
 	std::array<RPiController::Metadata, numMetadataContexts> rpiMetadata_;
 

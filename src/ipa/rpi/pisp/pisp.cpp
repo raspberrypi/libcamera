@@ -26,7 +26,9 @@
 #include "controller/af_status.h"
 #include "controller/agc_algorithm.h"
 #include "controller/alsc_status.h"
+#include "controller/awb_algorithm.h"
 #include "controller/awb_status.h"
+#include "controller/black_level_algorithm.h"
 #include "controller/black_level_status.h"
 #include "controller/cac_status.h"
 #include "controller/ccm_status.h"
@@ -907,10 +909,41 @@ void IpaPiSP::setDefaultConfig()
 	}
 	be_->SetGlobal(beGlobal);
 
+	/*
+	 * Ask the AWB algorithm for reasonable gain values so that we can program the
+	 * front end stats sensibly. We must also factor in the conversion to luminance.
+	 */
 	pisp_fe_rgby_config rgby = {};
-	rgby.gain_r = rgby.gain_b = clampField(1.0, 14, 10);
-	rgby.gain_g = clampField(1.0, 14, 10);
+	double gainR = 1.5, gainB = 1.5;
+	RPiController::AwbAlgorithm *awb = dynamic_cast<RPiController::AwbAlgorithm *>(
+		controller_.getAlgorithm("awb"));
+	if (awb)
+		awb->initialValues(gainR, gainB);
+	/* The BT.601 RGB -> Y coefficients will do. The precise values are not critical. */
+	rgby.gain_r = clampField(gainR * 0.299, 14, 10);
+	rgby.gain_g = clampField(1.0 * .587, 14, 10);
+	rgby.gain_b = clampField(gainB * .114, 14, 10);
 	fe_->SetRGBY(rgby);
+
+	/* Also get sensible front end black level defaults, for the same reason. */
+	uint16_t blackLevelR = 4096, blackLevelG = 4096, blackLevelB = 4096;
+	RPiController::BlackLevelAlgorithm *blackLevel = dynamic_cast<RPiController::BlackLevelAlgorithm *>(
+		controller_.getAlgorithm("black_level"));
+	if (blackLevel)
+		blackLevel->initialValues(blackLevelR, blackLevelG, blackLevelB);
+	/* The front end first equalises all the black levels to the same as green. */
+	pisp_bla_config bla;
+	bla.black_level_r = blackLevelR;
+	bla.black_level_gr = blackLevelG;
+	bla.black_level_gb = blackLevelG;
+	bla.black_level_b = blackLevelB;
+	bla.output_black_level = blackLevelG;
+	fe_->SetBla(bla);
+	/* But for the statistics it removes the G black level from everything. */
+	bla.black_level_r = blackLevelG;
+	bla.black_level_b = blackLevelG;
+	bla.output_black_level = 0;
+	fe_->SetBlc(bla);
 
 	pisp_fe_global_config feGlobal;
 	fe_->GetGlobal(feGlobal);

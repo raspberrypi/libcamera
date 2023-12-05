@@ -31,15 +31,14 @@ GstreamerTest::GstreamerTest(unsigned int numStreams)
 	: pipeline_(nullptr), libcameraSrc_(nullptr)
 {
 	/*
-	* GStreamer by default spawns a process to run the
-	* gst-plugin-scanner helper. If libcamera is compiled with ASan
-	* enabled, and as GStreamer is most likely not, this causes the
-	* ASan link order check to fail when gst-plugin-scanner
-	* dlopen()s the plugin as many libraries will have already been
-	* loaded by then. Fix this issue by disabling spawning of a
-	* child helper process when scanning the build directory for
-	* plugins.
-	*/
+	 * GStreamer by default spawns a process to run the gst-plugin-scanner
+	 * helper. If libcamera is compiled with ASan enabled, and as GStreamer
+	 * is most likely not, this causes the ASan link order check to fail
+	 * when gst-plugin-scanner dlopen()s the plugin as many libraries will
+	 * have already been loaded by then. Fix this issue by disabling
+	 * spawning of a child helper process when scanning the build directory
+	 * for plugins.
+	 */
 	gst_registry_fork_set_enabled(false);
 
 	/* Initialize GStreamer */
@@ -53,9 +52,9 @@ GstreamerTest::GstreamerTest(unsigned int numStreams)
 	}
 
 	/*
-	* Remove the system libcamera plugin, if any, and add the
-	* plugin from the build directory.
-	*/
+	 * Remove the system libcamera plugin, if any, and add the plugin from
+	 * the build directory.
+	 */
 	GstRegistry *registry = gst_registry_get();
 	g_autoptr(GstPlugin) plugin = gst_registry_lookup(registry, "libgstlibcamera.so");
 	if (plugin)

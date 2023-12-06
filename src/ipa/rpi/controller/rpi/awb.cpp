@@ -220,6 +220,12 @@ void Awb::initialise()
 	asyncResults_ = syncResults_;
 }
 
+void Awb::initialValues(double &gainR, double &gainB)
+{
+	gainR = syncResults_.gainR;
+	gainB = syncResults_.gainB;
+}
+
 void Awb::disableAuto()
 {
 	/* Freeze the most recent values, and treat them as manual gains */

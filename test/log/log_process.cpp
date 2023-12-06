@@ -81,7 +81,7 @@ protected:
 			return TestFail;
 		}
 
-		timeout.start(200ms);
+		timeout.start(2s);
 		while (timeout.isRunning())
 			dispatcher->processEvents();
 

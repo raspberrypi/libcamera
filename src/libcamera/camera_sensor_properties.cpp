@@ -208,6 +208,19 @@ const CameraSensorProperties *CameraSensorProperties::get(const std::string &sen
 				 */
 			},
 		} },
+		{ "ov64a40", {
+			.unitCellSize = { 1008, 1008 },
+			.testPatternModes = {
+				{ controls::draft::TestPatternModeOff, 0 },
+				{ controls::draft::TestPatternModeColorBars, 1 },
+				{ controls::draft::TestPatternModeColorBarsFadeToGray, 2 },
+				/*
+				 * No corresponding test patter mode
+				 * 3: "Vertical Color Bar Type 3",
+				 * 4: "Vertical Color Bar Type 4"
+				 */
+			},
+		} },
 		{ "ov8858", {
 			.unitCellSize = { 1120, 1120 },
 			.testPatternModes = {

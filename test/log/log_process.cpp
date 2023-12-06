@@ -139,7 +139,7 @@ private:
 	ProcessManager processManager_;
 
 	Process proc_;
-	Process::ExitStatus exitStatus_;
+	Process::ExitStatus exitStatus_ = Process::NotExited;
 	string logPath_;
 	int exitCode_;
 	int num_;

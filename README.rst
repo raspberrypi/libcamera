@@ -47,7 +47,7 @@ A C++ toolchain: [required]
         Either {g++, clang}
 
 Meson Build system: [required]
-        meson (>= 0.57) ninja-build pkg-config
+        meson (>= 0.60) ninja-build pkg-config
 
 for the libcamera core: [required]
         libyaml-dev python3-yaml python3-ply python3-jinja2

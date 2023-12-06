@@ -26,4 +26,5 @@ lc_compliance  = executable('lc-compliance', lc_compliance_sources,
                                 libevent,
                                 libgtest,
                             ],
-                            install : true)
+                            install : true,
+                            install_tag : 'bin-devel')

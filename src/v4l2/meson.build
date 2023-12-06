@@ -44,4 +44,5 @@ cdata.set('LIBCAMERA_V4L2_SO', get_option('prefix') / libcamera_libexecdir / 'v4
 configure_file(input : 'libcamerify.in',
                output : 'libcamerify',
                configuration : cdata,
-               install_dir : get_option('bindir'))
+               install_dir : get_option('bindir'),
+               install_tag : 'bin')

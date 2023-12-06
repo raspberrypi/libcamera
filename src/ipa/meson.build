@@ -72,5 +72,6 @@ if ipa_sign_module
     # install time, which invalidates the signatures.
     meson.add_install_script('ipa-sign-install.sh',
                              ipa_priv_key.full_path(),
-                             enabled_ipa_modules)
+                             enabled_ipa_modules,
+                             install_tag : 'runtime')
 endif

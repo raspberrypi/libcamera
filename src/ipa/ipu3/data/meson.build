@@ -5,4 +5,5 @@ conf_files = files([
 ])
 
 install_data(conf_files,
-             install_dir : ipa_data_dir / 'ipu3')
+             install_dir : ipa_data_dir / 'ipu3',
+             install_tag : 'runtime')

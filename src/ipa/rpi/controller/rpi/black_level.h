@@ -6,19 +6,21 @@
  */
 #pragma once
 
-#include "../algorithm.h"
+#include "../black_level_algorithm.h"
 #include "../black_level_status.h"
 
 /* This is our implementation of the "black level algorithm". */
 
 namespace RPiController {
 
-class BlackLevel : public Algorithm
+class BlackLevel : public BlackLevelAlgorithm
 {
 public:
 	BlackLevel(Controller *controller);
 	char const *name() const override;
 	int read(const libcamera::YamlObject &params) override;
+	void initialValues(uint16_t &blackLevelR, uint16_t &blackLevelG,
+			   uint16_t &blackLevelB) override;
 	void prepare(Metadata *imageMetadata) override;
 
 private:

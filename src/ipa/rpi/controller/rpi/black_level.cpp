@@ -22,7 +22,7 @@ LOG_DEFINE_CATEGORY(RPiBlackLevel)
 #define NAME "rpi.black_level"
 
 BlackLevel::BlackLevel(Controller *controller)
-	: Algorithm(controller)
+	: BlackLevelAlgorithm(controller)
 {
 }
 
@@ -43,6 +43,14 @@ int BlackLevel::read(const libcamera::YamlObject &params)
 		<< " green " << blackLevelG_
 		<< " blue " << blackLevelB_;
 	return 0;
+}
+
+void BlackLevel::initialValues(uint16_t &blackLevelR, uint16_t &blackLevelG,
+			       uint16_t &blackLevelB)
+{
+	blackLevelR = blackLevelR_;
+	blackLevelG = blackLevelG_;
+	blackLevelB = blackLevelB_;
 }
 
 void BlackLevel::prepare(Metadata *imageMetadata)

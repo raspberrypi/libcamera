@@ -86,7 +86,8 @@ protected:
 			dispatcher->processEvents();
 
 		if (exitStatus_ != Process::NormalExit) {
-			cerr << "process did not exit normally" << endl;
+			cerr << "process did not exit normally: " << exitStatus_
+			     << endl;
 			return TestFail;
 		}
 

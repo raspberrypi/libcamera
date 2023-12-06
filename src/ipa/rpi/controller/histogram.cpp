@@ -47,7 +47,7 @@ double Histogram::quantile(double q, int first, int last) const
 
 double Histogram::interBinMean(double binLo, double binHi) const
 {
-	assert(binHi > binLo);
+	assert(binHi >= binLo);
 	double sumBinFreq = 0, cumulFreq = 0;
 	for (double binNext = floor(binLo) + 1.0; binNext <= ceil(binHi);
 	     binLo = binNext, binNext += 1.0) {
@@ -57,13 +57,19 @@ double Histogram::interBinMean(double binLo, double binHi) const
 		sumBinFreq += bin * freq;
 		cumulFreq += freq;
 	}
+
+	if (cumulFreq == 0) {
+		/* interval had zero width or contained no weight? */
+		return binHi;
+	}
+
 	/* add 0.5 to give an average for bin mid-points */
 	return sumBinFreq / cumulFreq + 0.5;
 }
 
 double Histogram::interQuantileMean(double qLo, double qHi) const
 {
-	assert(qHi > qLo);
+	assert(qHi >= qLo);
 	double pLo = quantile(qLo);
 	double pHi = quantile(qHi, (int)pLo);
 	return interBinMean(pLo, pHi);

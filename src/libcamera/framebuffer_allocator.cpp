@@ -121,8 +121,6 @@ int FrameBufferAllocator::free(Stream *stream)
 	if (iter == buffers_.end())
 		return -EINVAL;
 
-	std::vector<std::unique_ptr<FrameBuffer>> &buffers = iter->second;
-	buffers.clear();
 	buffers_.erase(iter);
 
 	return 0;

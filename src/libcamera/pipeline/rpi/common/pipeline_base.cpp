@@ -367,6 +367,7 @@ V4L2DeviceFormat PipelineHandlerBase::toV4L2DeviceFormat(const V4L2VideoDevice *
 	deviceFormat.planesCount = info.numPlanes();
 	deviceFormat.fourcc = dev->toV4L2PixelFormat(stream->pixelFormat);
 	deviceFormat.size = stream->size;
+	deviceFormat.planes[0].bpl = stream->stride;
 	deviceFormat.colorSpace = stream->colorSpace;
 
 	return deviceFormat;

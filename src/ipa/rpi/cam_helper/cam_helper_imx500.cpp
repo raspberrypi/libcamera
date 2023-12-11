@@ -13,6 +13,8 @@
 #include <stdlib.h>
 
 #include <libcamera/base/log.h>
+#include <libcamera/base/span.h>
+#include <libcamera/control_ids.h>
 
 #include "cam_helper.h"
 #include "md_parser.h"
@@ -120,6 +122,14 @@ void CamHelperImx500::prepare(libcamera::Span<const uint8_t> buffer, Metadata &m
 
 		LOG(IPARPI, Debug) << "Metadata updated for long exposure: "
 				   << parsedDeviceStatus;
+	}
+
+	/* Inference data comes after 2 lines of embedded data. */
+	size_t bytesPerLine = (mode_.width * mode_.bitdepth) >> 3;
+	if (buffer.size() > 2 * bytesPerLine) {
+		Span<const uint8_t> outputTensor(buffer.data() + 2 * bytesPerLine,
+						 buffer.size() - 2 * bytesPerLine);
+		libcameraMetadata.set(libcamera::controls::rpi::Imx500OutputTensor, outputTensor);
 	}
 }
 

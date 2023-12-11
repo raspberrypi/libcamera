@@ -10,6 +10,8 @@
 #include <string>
 #include <utility>
 
+#include <libcamera/controls.h>
+
 #include <libcamera/base/span.h>
 #include <libcamera/base/utils.h>
 
@@ -77,7 +79,7 @@ public:
 	virtual ~CamHelper();
 	void setCameraMode(const CameraMode &mode);
 	virtual void prepare(libcamera::Span<const uint8_t> buffer,
-			     Metadata &metadata);
+			     Metadata &metadata, libcamera::ControlList &libcameraMetadata);
 	virtual void process(StatisticsPtr &stats, Metadata &metadata);
 	virtual uint32_t exposureLines(const libcamera::utils::Duration exposure,
 				       const libcamera::utils::Duration lineLength) const;

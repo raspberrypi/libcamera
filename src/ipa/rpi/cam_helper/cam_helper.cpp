@@ -59,7 +59,8 @@ CamHelper::~CamHelper()
 }
 
 void CamHelper::prepare(Span<const uint8_t> buffer,
-			Metadata &metadata)
+			Metadata &metadata,
+			[[maybe_unused]] ControlList &libcameraMetadata)
 {
 	parseEmbeddedData(buffer, metadata);
 }

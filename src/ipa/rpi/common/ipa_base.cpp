@@ -418,7 +418,7 @@ void IpaBase::prepareIsp(const PrepareParams &params)
 	 * This may overwrite the DeviceStatus using values from the sensor
 	 * metadata, and may also do additional custom processing.
 	 */
-	helper_->prepare(embeddedBuffer, rpiMetadata);
+	helper_->prepare(embeddedBuffer, rpiMetadata, libcameraMetadata_);
 
 	/* Allow a 10% margin on the comparison below. */
 	Duration delta = (frameTimestamp - lastRunTimestamp_) * 1.0ns;

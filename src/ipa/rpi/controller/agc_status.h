@@ -37,7 +37,7 @@ struct AgcStatus {
 	libcamera::utils::Duration flickerPeriod;
 	int floatingRegionEnable;
 	libcamera::utils::Duration fixedExposureTime;
-	double fixedAnalogueGain;
+	double fixedGain;
 	unsigned int channel;
 	HdrStatus hdr;
 };

@@ -494,7 +494,7 @@ CameraConfiguration::Status CameraConfiguration::validateColorSpaces(ColorSpaceF
 	std::optional<ColorSpace> colorSpace;
 	Size size;
 
-	for (auto [i, cfg] : utils::enumerate(config_)) {
+	for (StreamConfiguration &cfg : config_) {
 		if (!cfg.colorSpace)
 			continue;
 

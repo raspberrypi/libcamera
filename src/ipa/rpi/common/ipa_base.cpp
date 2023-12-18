@@ -758,7 +758,7 @@ void IpaBase::applyControls(const ControlList &controls)
 				break;
 			}
 
-			agc->setFixedAnalogueGain(0, ctrl.second.get<float>());
+			agc->setFixedGain(0, ctrl.second.get<float>());
 
 			libcameraMetadata_.set(controls::AnalogueGain,
 					       ctrl.second.get<float>());

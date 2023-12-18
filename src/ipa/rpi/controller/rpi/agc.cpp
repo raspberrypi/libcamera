@@ -144,14 +144,14 @@ void Agc::setFixedShutter(unsigned int channelIndex, Duration fixedShutter)
 	channelData_[channelIndex].channel.setFixedShutter(fixedShutter);
 }
 
-void Agc::setFixedAnalogueGain(unsigned int channelIndex, double fixedAnalogueGain)
+void Agc::setFixedGain(unsigned int channelIndex, double fixedGain)
 {
 	if (checkChannel(channelIndex))
 		return;
 
-	LOG(RPiAgc, Debug) << "setFixedAnalogueGain " << fixedAnalogueGain
+	LOG(RPiAgc, Debug) << "setFixedGain " << fixedGain
 			   << " for channel " << channelIndex;
-	channelData_[channelIndex].channel.setFixedAnalogueGain(fixedAnalogueGain);
+	channelData_[channelIndex].channel.setFixedGain(fixedGain);
 }
 
 void Agc::setMeteringMode(std::string const &meteringModeName)

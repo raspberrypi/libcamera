@@ -221,13 +221,14 @@ private:
 
 	void platformPrepareIsp(const PrepareParams &params,
 				RPiController::Metadata &rpiMetadata) override;
+	void platformPrepareAgc(RPiController::Metadata &rpiMetadata) override;
 	RPiController::StatisticsPtr platformProcessStats(Span<uint8_t> mem) override;
 
 	void handleControls(const ControlList &controls) override;
 
-	void applyWBG(const AwbStatus *awbStatus, const AgcPrepareStatus *agcStatus,
+	void applyWBG(const AwbStatus *awbStatus, double digitalGain,
 		      pisp_be_global_config &global);
-	void applyDgOnly(const AgcPrepareStatus *agcPrepareStatus, pisp_be_global_config &global);
+	void applyDgOnly(double digitalGain, pisp_be_global_config &global);
 	void applyCAC(const CacStatus *cacStatus, pisp_be_global_config &global);
 	void applyContrast(const ContrastStatus *contrastStatus,
 			   pisp_be_global_config &global);
@@ -344,7 +345,6 @@ void IpaPiSP::platformPrepareIsp([[maybe_unused]] const PrepareParams &params,
 				PISP_BE_RGB_ENABLE_SHARPEN + PISP_BE_RGB_ENABLE_SAT_CONTROL);
 
 	NoiseStatus *noiseStatus = rpiMetadata.getLocked<NoiseStatus>("noise.status");
-	AgcPrepareStatus *agcPrepareStatus = rpiMetadata.getLocked<AgcPrepareStatus>("agc.prepare_status");
 
 	{
 		/* All Frontend config goes first, we do not want to hold the FE lock for long! */
@@ -358,14 +358,6 @@ void IpaPiSP::platformPrepareIsp([[maybe_unused]] const PrepareParams &params,
 		if (blackLevelStatus)
 			applyBlackLevel(blackLevelStatus, global);
 
-		AwbStatus *awbStatus = rpiMetadata.getLocked<AwbStatus>("awb.status");
-		if (awbStatus && agcPrepareStatus) {
-			/* Applies digital gain as well. */
-			applyWBG(awbStatus, agcPrepareStatus, global);
-		} else if (agcPrepareStatus) {
-			/* Mono sensor fallback for digital gain. */
-			applyDgOnly(agcPrepareStatus, global);
-		}
 	}
 
 	CacStatus *cacStatus = rpiMetadata.getLocked<CacStatus>("cac.status");
@@ -446,6 +438,34 @@ void IpaPiSP::platformPrepareIsp([[maybe_unused]] const PrepareParams &params,
 	}
 }
 
+void IpaPiSP::platformPrepareAgc(RPiController::Metadata &rpiMetadata)
+{
+	std::scoped_lock<RPiController::Metadata> l(rpiMetadata);
+
+	AgcStatus *delayedAgcStatus = rpiMetadata.getLocked<AgcStatus>("agc.delayed_status");
+	/* If no delayed status, use the gain from the last mode switch. */
+	double digitalGain = delayedAgcStatus ? delayedAgcStatus->digitalGain : agcStatus_.digitalGain;
+	AwbStatus *awbStatus = rpiMetadata.getLocked<AwbStatus>("awb.status");
+
+	pisp_be_global_config global;
+	be_->GetGlobal(global);
+
+	{
+		/* All Frontend config goes first, we do not want to hold the FE lock for long! */
+		std::scoped_lock<FrontEnd> lf(*fe_);
+
+		if (awbStatus) {
+			/* Applies digital gain as well. */
+			applyWBG(awbStatus, digitalGain, global);
+		} else {
+			/* Mono sensor fallback for digital gain. */
+			applyDgOnly(digitalGain, global);
+		}
+	}
+
+	be_->SetGlobal(global);
+}
+
 RPiController::StatisticsPtr IpaPiSP::platformProcessStats(Span<uint8_t> mem)
 {
 	using namespace RPiController;
@@ -517,12 +537,11 @@ void IpaPiSP::handleControls(const ControlList &controls)
 	}
 }
 
-void IpaPiSP::applyWBG(const AwbStatus *awbStatus, const AgcPrepareStatus *agcPrepareStatus,
+void IpaPiSP::applyWBG(const AwbStatus *awbStatus, double digitalGain,
 		       pisp_be_global_config &global)
 {
 	pisp_wbg_config wbg;
 	pisp_fe_rgby_config rgby = {};
-	double dg = agcPrepareStatus ? agcPrepareStatus->digitalGain : 1.0;
 	double minColourGain = std::min({ awbStatus->gainR, awbStatus->gainG, awbStatus->gainB, 1.0 });
 	/* The 0.1 here doesn't mean much, but just stops arithmetic errors and extreme behaviour. */
 	double extraGain = 1.0 / std::max({ minColourGain, 0.1 });
@@ -538,9 +557,9 @@ void IpaPiSP::applyWBG(const AwbStatus *awbStatus, const AgcPrepareStatus *agcPr
 	double gainG = awbStatus->gainG * extraGain;
 	double gainB = awbStatus->gainB * extraGain;
 
-	wbg.gain_r = clampField(dg * gainR, 14, 10);
-	wbg.gain_g = clampField(dg * gainG, 14, 10);
-	wbg.gain_b = clampField(dg * gainB, 14, 10);
+	wbg.gain_r = clampField(digitalGain * gainR, 14, 10);
+	wbg.gain_g = clampField(digitalGain * gainG, 14, 10);
+	wbg.gain_b = clampField(digitalGain * gainB, 14, 10);
 
 	/*
 	 * The YCbCr conversion block should contain the appropriate YCbCr
@@ -563,15 +582,15 @@ void IpaPiSP::applyWBG(const AwbStatus *awbStatus, const AgcPrepareStatus *agcPr
 	global.bayer_enables |= PISP_BE_BAYER_ENABLE_WBG;
 }
 
-void IpaPiSP::applyDgOnly(const AgcPrepareStatus *agcPrepareStatus, pisp_be_global_config &global)
+void IpaPiSP::applyDgOnly(double digitalGain, pisp_be_global_config &global)
 {
 	pisp_wbg_config wbg;
 
-	wbg.gain_r = clampField(agcPrepareStatus->digitalGain, 14, 10);
-	wbg.gain_g = clampField(agcPrepareStatus->digitalGain, 14, 10);
-	wbg.gain_b = clampField(agcPrepareStatus->digitalGain, 14, 10);
+	wbg.gain_r = clampField(digitalGain, 14, 10);
+	wbg.gain_g = clampField(digitalGain, 14, 10);
+	wbg.gain_b = clampField(digitalGain, 14, 10);
 
-	LOG(IPARPI, Debug) << "Applying DG (only) : " << agcPrepareStatus->digitalGain;
+	LOG(IPARPI, Debug) << "Applying DG (only) : " << digitalGain;
 
 	be_->SetWbg(wbg);
 	global.bayer_enables |= PISP_BE_BAYER_ENABLE_WBG;

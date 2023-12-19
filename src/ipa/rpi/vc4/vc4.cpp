@@ -57,6 +57,7 @@ private:
 	int32_t platformConfigure(const ConfigParams &params, ConfigResult *result) override;
 
 	void platformPrepareIsp(const PrepareParams &params, RPiController::Metadata &rpiMetadata) override;
+	void platformPrepareAgc([[maybe_unused]] RPiController::Metadata &rpiMetadata) override {}
 	RPiController::StatisticsPtr platformProcessStats(Span<uint8_t> mem) override;
 
 	void handleControls(const ControlList &controls) override;

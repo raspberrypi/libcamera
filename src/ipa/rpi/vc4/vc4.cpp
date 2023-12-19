@@ -57,14 +57,14 @@ private:
 	int32_t platformConfigure(const ConfigParams &params, ConfigResult *result) override;
 
 	void platformPrepareIsp(const PrepareParams &params, RPiController::Metadata &rpiMetadata) override;
+	void platformPrepareAgc([[maybe_unused]] RPiController::Metadata &rpiMetadata) override;
 	RPiController::StatisticsPtr platformProcessStats(Span<uint8_t> mem) override;
 
 	void handleControls(const ControlList &controls) override;
 	bool validateIspControls();
 
 	void applyAWB(const struct AwbStatus *awbStatus, ControlList &ctrls);
-	void applyDG(const struct AgcPrepareStatus *dgStatus,
-		     const struct AwbStatus *awbStatus, ControlList &ctrls);
+	void applyDG(double digitalGain, const struct AwbStatus *awbStatus, ControlList &ctrls);
 	void applyCCM(const struct CcmStatus *ccmStatus, ControlList &ctrls);
 	void applyBlackLevel(const struct BlackLevelStatus *blackLevelStatus, ControlList &ctrls);
 	void applyGamma(const struct ContrastStatus *contrastStatus, ControlList &ctrls);
@@ -78,6 +78,7 @@ private:
 
 	/* VC4 ISP controls. */
 	ControlInfoMap ispCtrls_;
+	ControlList ctrls_;
 
 	/* LS table allocation passed in from the pipeline handler. */
 	SharedFD lsTableHandle_;
@@ -107,6 +108,7 @@ int32_t IpaVc4::platformStart([[maybe_unused]] const ControlList &controls,
 int32_t IpaVc4::platformConfigure(const ConfigParams &params, [[maybe_unused]] ConfigResult *result)
 {
 	ispCtrls_ = params.ispControls;
+	ctrls_ = ControlList(ispCtrls_);
 	if (!validateIspControls()) {
 		LOG(IPARPI, Error) << "ISP control validation failed.";
 		return -1;
@@ -139,7 +141,7 @@ int32_t IpaVc4::platformConfigure(const ConfigParams &params, [[maybe_unused]] C
 void IpaVc4::platformPrepareIsp([[maybe_unused]] const PrepareParams &params,
 				RPiController::Metadata &rpiMetadata)
 {
-	ControlList ctrls(ispCtrls_);
+	ControlList &ctrls = ctrls_;
 
 	/* Lock the metadata buffer to avoid constant locks/unlocks. */
 	std::unique_lock<RPiController::Metadata> lock(rpiMetadata);
@@ -151,9 +153,6 @@ void IpaVc4::platformPrepareIsp([[maybe_unused]] const PrepareParams &params,
 	CcmStatus *ccmStatus = rpiMetadata.getLocked<CcmStatus>("ccm.status");
 	if (ccmStatus)
 		applyCCM(ccmStatus, ctrls);
-
-	AgcPrepareStatus *dgStatus = rpiMetadata.getLocked<AgcPrepareStatus>("agc.prepare_status");
-	applyDG(dgStatus, awbStatus, ctrls);
 
 	AlscStatus *lsStatus = rpiMetadata.getLocked<AlscStatus>("alsc.status");
 	if (lsStatus)
@@ -190,9 +189,18 @@ void IpaVc4::platformPrepareIsp([[maybe_unused]] const PrepareParams &params,
 		if (!lensctrls.empty())
 			setLensControls.emit(lensctrls);
 	}
+}
 
-	if (!ctrls.empty())
-		setIspControls.emit(ctrls);
+void IpaVc4::platformPrepareAgc(RPiController::Metadata &rpiMetadata)
+{
+	AgcStatus *delayedAgcStatus = rpiMetadata.getLocked<AgcStatus>("agc.delayed_status");
+	double digitalGain = delayedAgcStatus ? delayedAgcStatus->digitalGain : agcStatus_.digitalGain;
+	AwbStatus *awbStatus = rpiMetadata.getLocked<AwbStatus>("awb.status");
+
+	applyDG(digitalGain, awbStatus, ctrls_);
+
+	setIspControls.emit(ctrls_);
+	ctrls_ = ControlList(ispCtrls_);
 }
 
 RPiController::StatisticsPtr IpaVc4::platformProcessStats(Span<uint8_t> mem)
@@ -329,11 +337,9 @@ void IpaVc4::applyAWB(const struct AwbStatus *awbStatus, ControlList &ctrls)
 		  static_cast<int32_t>(awbStatus->gainB * 1000));
 }
 
-void IpaVc4::applyDG(const struct AgcPrepareStatus *dgStatus,
+void IpaVc4::applyDG(double digitalGain,
 		     const struct AwbStatus *awbStatus, ControlList &ctrls)
 {
-	double digitalGain = dgStatus ? dgStatus->digitalGain : 1.0;
-
 	if (awbStatus) {
 		/*
 		 * We must apply sufficient extra digital gain to stop any of the channel gains being

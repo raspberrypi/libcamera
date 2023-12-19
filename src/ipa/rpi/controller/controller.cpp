@@ -17,6 +17,7 @@
 
 using namespace RPiController;
 using namespace libcamera;
+using namespace std::literals::chrono_literals;
 
 LOG_DEFINE_CATEGORY(RPiController)
 
@@ -37,6 +38,7 @@ static const std::map<std::string, Controller::HardwareConfig> HardwareConfigMap
 			.numGammaPoints = 33,
 			.pipelineWidth = 13,
 			.statsInline = false,
+			.minPixelProcessingTime = 0s,
 		}
 	},
 	{
@@ -51,6 +53,7 @@ static const std::map<std::string, Controller::HardwareConfig> HardwareConfigMap
 			.numGammaPoints = 64,
 			.pipelineWidth = 16,
 			.statsInline = true,
+			.minPixelProcessingTime = 1.0us / 380, /* 380 MPix/s */
 		}
 	},
 };

@@ -543,6 +543,32 @@ void IpaBase::setMode(const IPACameraSensorInfo &sensorInfo)
 	mode_.maxLineLength = sensorInfo.maxLineLength * (1.0s / sensorInfo.pixelRate);
 
 	/*
+	 * Ensure that the maximum pixel processing rate does not exceed the ISP
+	 * hardware capabilities. If it does, try adjusting the minimum line
+	 * length to compensate if possible.
+	 */
+	Duration minPixelTime = controller_.getHardwareConfig().minPixelProcessingTime;
+	Duration pixelTime = mode_.minLineLength / mode_.width;
+	if (minPixelTime && pixelTime < minPixelTime) {
+		Duration adjustedLineLength = minPixelTime * mode_.width;
+		if (adjustedLineLength <= mode_.maxLineLength) {
+			LOG(IPARPI, Info)
+				<< "Adjusting mode minimum line length from " << mode_.minLineLength
+				<< " to " << adjustedLineLength << " because of HW constraints.";
+			mode_.minLineLength = adjustedLineLength;
+		} else {
+			LOG(IPARPI, Error)
+				<< "Sensor minimum line length of " << pixelTime * mode_.width
+				<< " (" << 1us / pixelTime << " MPix/s)"
+				<< " is below the minimum allowable HW limit of " << minPixelTime * mode_.width
+				<< " (" << 1us / minPixelTime << " MPix/s) ";
+			LOG(IPARPI, Error)
+				<< "THIS WILL CAUSE IMAGE CORRUPTION!!! "
+				<< "Please update the driver to allow more horizontal blanking control.";
+		}
+	}
+
+	/*
 	 * Set the frame length limits for the mode to ensure exposure and
 	 * framerate calculations are clipped appropriately.
 	 */

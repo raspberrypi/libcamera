@@ -454,25 +454,9 @@ void AgcChannel::prepare(Metadata *imageMetadata)
 	AgcPrepareStatus prepareStatus;
 
 	prepareStatus.locked = false;
-	prepareStatus.digitalGain = 1.0;
 
-	if (!imageMetadata->get("device.status", deviceStatus)) {
+	if (!imageMetadata->get("device.status", deviceStatus))
 		prepareStatus.locked = updateLockStatus(deviceStatus);
-
-		/*
-		 * For now, the IPA code is still expecting the digital gain to combe back in
-		 * the prepare_status. To keep things happy, we'll just fill in the value that
-		 * we calculated previously and put in the AgcStatus (which comes back as the
-		 * "delayed" status). Once the rest of the IPA code is updated, we'll be able
-		 * to remove this, and indeed remove the digitalGain from the AgcPrepareStatus.
-		 */
-		AgcStatus delayedStatus;
-		if (!imageMetadata->get("agc.delayed_status", delayedStatus))
-			prepareStatus.digitalGain = delayedStatus.digitalGain;
-		else
-			/* After a mode switch, this must be correct until new values come through. */
-			prepareStatus.digitalGain = status_.digitalGain;
-	}
 
 	imageMetadata->set("agc.prepare_status", prepareStatus);
 }

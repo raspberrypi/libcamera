@@ -77,6 +77,7 @@ struct AgcConfig {
 	double defaultAnalogueGain;
 	double stableRegion;
 	bool desaturate;
+	double maxDigitalGain;
 };
 
 class AgcChannel

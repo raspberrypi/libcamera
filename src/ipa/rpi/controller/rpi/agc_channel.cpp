@@ -412,14 +412,9 @@ void AgcChannel::switchMode(CameraMode const &cameraMode,
 
 	Duration fixedShutter = limitShutter(fixedShutter_);
 	if (fixedShutter && fixedAnalogueGain_) {
-		/* We're going to reset the algorithm here with these fixed values. */
-		fetchAwbStatus(metadata);
-		double minColourGain = std::min({ awb_.gainR, awb_.gainG, awb_.gainB, 1.0 });
-		ASSERT(minColourGain != 0.0);
-
 		/* This is the equivalent of computeTargetExposure and applyDigitalGain. */
 		target_.totalExposureNoDG = fixedShutter_ * fixedAnalogueGain_;
-		target_.totalExposure = target_.totalExposureNoDG / minColourGain;
+		target_.totalExposure = target_.totalExposureNoDG;
 
 		/* Equivalent of filterExposure. This resets any "history". */
 		filtered_ = target_;
@@ -439,10 +434,10 @@ void AgcChannel::switchMode(CameraMode const &cameraMode,
 		 */
 
 		double ratio = lastSensitivity / cameraMode.sensitivity;
-		target_.totalExposureNoDG *= ratio;
 		target_.totalExposure *= ratio;
-		filtered_.totalExposureNoDG *= ratio;
+		target_.totalExposureNoDG = target_.totalExposure;
 		filtered_.totalExposure *= ratio;
+		filtered_.totalExposureNoDG = filtered_.totalExposure;
 
 		divideUpExposure();
 	} else {
@@ -693,9 +688,17 @@ static double computeInitialY(StatisticsPtr &stats, AwbStatus const &awb,
 	double ySum;
 	/* Factor in the AWB correction if needed. */
 	if (stats->agcStatsPos == Statistics::AgcStatsPos::PreWb) {
-		ySum = rSum * awb.gainR * .299 +
-		       gSum * awb.gainG * .587 +
-		       bSum * awb.gainB * .114;
+		/*
+		 * We apply any extra gain that will automatically be added by the pipeline
+		 * on account of low colour gains. This means that this statistic should then
+		 * drive the exposure to the correct point. The hard-coded 0.1 here doesn't
+		 * really mean anything, just stops arithmetic errors and extreme behaviour.
+		 */
+		double minColourGain = std::min({ awb.gainR, awb.gainG, awb.gainB, 1.0 });
+		double extraGain = 1.0 / std::max({ minColourGain, 0.1 });
+		ySum = rSum * awb.gainR * extraGain * .299 +
+		       gSum * awb.gainG * extraGain * .587 +
+		       bSum * awb.gainB * extraGain * .114;
 	} else
 		ySum = rSum * .299 + gSum * .587 + bSum * .114;
 
@@ -775,16 +778,8 @@ void AgcChannel::computeGain(StatisticsPtr &statistics, Metadata *imageMetadata,
 void AgcChannel::computeTargetExposure(double gain)
 {
 	if (status_.fixedShutter && status_.fixedAnalogueGain) {
-		/*
-		 * When ag and shutter are both fixed, we need to drive the
-		 * total exposure so that we end up with a digital gain of at least
-		 * 1/minColourGain. Otherwise we'd desaturate channels causing
-		 * white to go cyan or magenta.
-		 */
-		double minColourGain = std::min({ awb_.gainR, awb_.gainG, awb_.gainB, 1.0 });
-		ASSERT(minColourGain != 0.0);
 		target_.totalExposure =
-			status_.fixedShutter * status_.fixedAnalogueGain / minColourGain;
+			status_.fixedShutter * status_.fixedAnalogueGain;
 	} else {
 		/*
 		 * The statistics reflect the image without digital gain, so the final
@@ -845,15 +840,8 @@ bool AgcChannel::applyChannelConstraints(const AgcChannelTotalExposures &channel
 
 bool AgcChannel::applyDigitalGain(double gain, double targetY, bool channelBound)
 {
-	double minColourGain = std::min({ awb_.gainR, awb_.gainG, awb_.gainB, 1.0 });
-	ASSERT(minColourGain != 0.0);
-	double dg = 1.0 / minColourGain;
-	/*
-	 * I think this pipeline subtracts black level and rescales before we
-	 * get the stats, so no need to worry about it.
-	 */
-	LOG(RPiAgc, Debug) << "after AWB, target dg " << dg << " gain " << gain
-			   << " target_Y " << targetY;
+	double dg = 1.0;
+
 	/*
 	 * Finally, if we're trying to reduce exposure but the target_Y is
 	 * "close" to 1.0, then the gain computed for that constraint will be

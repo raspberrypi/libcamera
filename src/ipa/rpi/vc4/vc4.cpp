@@ -63,7 +63,8 @@ private:
 	bool validateIspControls();
 
 	void applyAWB(const struct AwbStatus *awbStatus, ControlList &ctrls);
-	void applyDG(const struct AgcPrepareStatus *dgStatus, ControlList &ctrls);
+	void applyDG(const struct AgcPrepareStatus *dgStatus,
+		     const struct AwbStatus *awbStatus, ControlList &ctrls);
 	void applyCCM(const struct CcmStatus *ccmStatus, ControlList &ctrls);
 	void applyBlackLevel(const struct BlackLevelStatus *blackLevelStatus, ControlList &ctrls);
 	void applyGamma(const struct ContrastStatus *contrastStatus, ControlList &ctrls);
@@ -152,8 +153,7 @@ void IpaVc4::platformPrepareIsp([[maybe_unused]] const PrepareParams &params,
 		applyCCM(ccmStatus, ctrls);
 
 	AgcPrepareStatus *dgStatus = rpiMetadata.getLocked<AgcPrepareStatus>("agc.prepare_status");
-	if (dgStatus)
-		applyDG(dgStatus, ctrls);
+	applyDG(dgStatus, awbStatus, ctrls);
 
 	AlscStatus *lsStatus = rpiMetadata.getLocked<AlscStatus>("alsc.status");
 	if (lsStatus)
@@ -328,10 +328,26 @@ void IpaVc4::applyAWB(const struct AwbStatus *awbStatus, ControlList &ctrls)
 		  static_cast<int32_t>(awbStatus->gainB * 1000));
 }
 
-void IpaVc4::applyDG(const struct AgcPrepareStatus *dgStatus, ControlList &ctrls)
+void IpaVc4::applyDG(const struct AgcPrepareStatus *dgStatus,
+		     const struct AwbStatus *awbStatus, ControlList &ctrls)
 {
+	double digitalGain = dgStatus ? dgStatus->digitalGain : 1.0;
+
+	if (awbStatus) {
+		/*
+		 * We must apply sufficient extra digital gain to stop any of the channel gains being
+		 * less than 1, which would cause saturation artifacts. Note that one of the colour
+		 * channels is still getting the minimum possible gain, so it's not a "real" gain
+		 * increase.
+		 */
+		double minColourGain = std::min({ awbStatus->gainR, awbStatus->gainG, awbStatus->gainB, 1.0 });
+		/* The 0.1 here doesn't mean much, but just stops arithmetic errors and extreme behaviour. */
+		double extraGain = 1.0 / std::max({ minColourGain, 0.1 });
+		digitalGain *= extraGain;
+	}
+
 	ctrls.set(V4L2_CID_DIGITAL_GAIN,
-		  static_cast<int32_t>(dgStatus->digitalGain * 1000));
+		  static_cast<int32_t>(digitalGain * 1000));
 }
 
 void IpaVc4::applyCCM(const struct CcmStatus *ccmStatus, ControlList &ctrls)

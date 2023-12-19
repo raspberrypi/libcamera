@@ -135,6 +135,7 @@ private:
 
 		libcamera::utils::Duration exposureTime;
 		double analogueGain;
+		double digitalGain;
 		libcamera::utils::Duration totalExposure;
 		libcamera::utils::Duration totalExposureNoDG; /* without digital gain */
 	};

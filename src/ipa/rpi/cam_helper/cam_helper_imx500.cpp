@@ -125,11 +125,48 @@ void CamHelperImx500::prepare(libcamera::Span<const uint8_t> buffer, Metadata &m
 	}
 
 	/* Inference data comes after 2 lines of embedded data. */
-	size_t bytesPerLine = (mode_.width * mode_.bitdepth) >> 3;
+	size_t bytesPerLine = (((mode_.width * mode_.bitdepth) >> 3) + 15) & ~15;
 	if (buffer.size() > 2 * bytesPerLine) {
 		Span<const uint8_t> outputTensor(buffer.data() + 2 * bytesPerLine,
 						 buffer.size() - 2 * bytesPerLine);
 		libcameraMetadata.set(libcamera::controls::rpi::Imx500OutputTensor, outputTensor);
+		static int frames = 0;
+
+		if (frames++ == 100)
+		{ 
+			FILE *f = fopen("output_full.dat", "wb");
+			fwrite(buffer.data(), buffer.size(), 1, f);
+			fclose(f);
+
+			f = fopen("output.dat", "wb");
+			fwrite(buffer.data() + 2 * bytesPerLine, buffer.size() - 2 * bytesPerLine, 1, f);
+			fclose(f);
+
+		}
+
+		struct DnnHeader {
+			uint8_t frameValid;
+			uint8_t frameCount;
+			uint16_t maxLineLen;
+			uint16_t apParamSize;
+			uint16_t networkId;
+			uint8_t tensorType;
+		};
+
+		const uint8_t *src = buffer.data() + 2 * bytesPerLine;
+		DnnHeader dnnHeader;
+
+		dnnHeader.frameValid = *(src++);
+		dnnHeader.frameCount = *(src++);
+
+		dnnHeader.maxLineLen =  (*(src+1) << 8 |*(src));
+		src+=2;
+		dnnHeader.apParamSize = (*(src+1) << 8 |*(src));
+		src+=2;
+		dnnHeader.networkId = (*(src+1) << 8 |*(src));
+		src+=2;
+		dnnHeader.tensorType = *(src++);
+		(void)dnnHeader;
 	}
 }
 

@@ -95,10 +95,10 @@ std::ostream &operator<<(std::ostream &out, const Point &p)
 }
 
 /**
- * \struct Size
+ * \class Size
  * \brief Describe a two-dimensional size
  *
- * The Size structure defines a two-dimensional size with integer precision.
+ * The Size class defines a two-dimensional size with integer precision.
  */
 
 /**
@@ -455,7 +455,7 @@ std::ostream &operator<<(std::ostream &out, const Size &s)
 }
 
 /**
- * \struct SizeRange
+ * \class SizeRange
  * \brief Describe a range of sizes
  *
  * A SizeRange describes a range of sizes included in the [min, max] interval
@@ -589,7 +589,7 @@ std::ostream &operator<<(std::ostream &out, const SizeRange &sr)
 }
 
 /**
- * \struct Rectangle
+ * \class Rectangle
  * \brief Describe a rectangle's position and dimensions
  *
  * Rectangles are used to identify an area of an image. They are specified by

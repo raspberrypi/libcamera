@@ -95,7 +95,7 @@ void SimpleCaptureBalanced::capture(unsigned int numRequests)
 	captureCount_ = 0;
 	captureLimit_ = numRequests;
 
-	/* Queue the recommended number of reqeuests. */
+	/* Queue the recommended number of requests. */
 	for (const std::unique_ptr<FrameBuffer> &buffer : buffers) {
 		std::unique_ptr<Request> request = camera_->createRequest();
 		ASSERT_TRUE(request) << "Can't create request";
@@ -158,7 +158,7 @@ void SimpleCaptureUnbalanced::capture(unsigned int numRequests)
 	captureCount_ = 0;
 	captureLimit_ = numRequests;
 
-	/* Queue the recommended number of reqeuests. */
+	/* Queue the recommended number of requests. */
 	for (const std::unique_ptr<FrameBuffer> &buffer : buffers) {
 		std::unique_ptr<Request> request = camera_->createRequest();
 		ASSERT_TRUE(request) << "Can't create request";

@@ -12,10 +12,10 @@ endif
 lc_compliance_enabled = true
 
 lc_compliance_sources = files([
+    'capture_test.cpp',
     'environment.cpp',
     'main.cpp',
     'simple_capture.cpp',
-    'capture_test.cpp',
 ])
 
 lc_compliance  = executable('lc-compliance', lc_compliance_sources,

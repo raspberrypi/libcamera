@@ -30,13 +30,17 @@ if [ -n "$(git -C "${chromium_dir}" status --porcelain)" ] ; then
 	exit 1
 fi
 
+# Remove the previously imported files.
+rm -rf "${ipc_dir}/mojo/"
+rm -rf "${ipc_dir}/tools/"
+
 # Copy the diagnosis file
+mkdir -p "${ipc_dir}/tools/diagnosis"
 cp "${chromium_dir}/tools/diagnosis/crbug_1001171.py" "${ipc_dir}/tools/diagnosis"
 
 # Copy the rest of mojo
+mkdir -p "${ipc_dir}/mojo/public"
 cp "${chromium_dir}/mojo/public/LICENSE" "${ipc_dir}/mojo/public"
-
-rm -rf "${ipc_dir}/mojo/public/tools/*"
 
 (
 	cd "${chromium_dir}" || exit

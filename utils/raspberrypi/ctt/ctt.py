@@ -461,7 +461,7 @@ class Camera:
 
         out_json = {
             "version": version,
-            'target': target,
+            'target': target if target != 'vc4' else 'bcm2835',
             "algorithms": [{name: data} for name, data in self.json.items()],
         }
 

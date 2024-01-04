@@ -72,9 +72,19 @@ EOF
 echo "$readme" > utils/ipc/mojo/README
 echo "$readme" > utils/ipc/tools/README
 
-cat <<EOF
-------------------------------------------------------------
-mojo updated. Please review and up-port local changes before
-committing.
-------------------------------------------------------------
-EOF
+# Commit the update. Use 'git commit -n' to avoid checkstyle pre-commit hook
+# failures, as mojo doesn't comply with the Python coding style enforced by
+# checkstyle.py.
+git add utils/ipc/mojo/
+git add utils/ipc/tools/
+
+echo "utils: ipc: Update mojo
+
+Update mojo from commit
+
+$(git -C "${chromium_dir}" show --pretty='%H "%s"' --no-patch)
+
+from the Chromium repository.
+
+The update-mojo.sh script was used for this update." | \
+git commit -n -s -F -

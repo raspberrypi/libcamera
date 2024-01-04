@@ -3,6 +3,8 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # Update mojo copy from a chromium source tree
 
+set -e
+
 if [ $# != 1 ] ; then
 	echo "Usage: $0 <chromium dir>"
 	exit 1

@@ -96,7 +96,7 @@ for message parameters.
 | `string`                      | UTF-8 encoded string.
 | `array<T>`                    | Array of any Mojom type *T*; for example, `array<uint8>` or `array<array<string>>`.
 | `array<T, N>`                 | Fixed-length array of any Mojom type *T*. The parameter *N* must be an integral constant.
-| `map<S, T>`                   | Associated array maping values of type *S* to values of type *T*. *S* may be a `string`, `enum`, or numeric type.
+| `map<S, T>`                   | Associated array mapping values of type *S* to values of type *T*. *S* may be a `string`, `enum`, or numeric type.
 | `handle`                      | Generic Mojo handle. May be any type of handle, including a wrapped native platform handle.
 | `handle<message_pipe>`        | Generic message pipe handle.
 | `handle<shared_buffer>`       | Shared buffer handle.
@@ -188,8 +188,8 @@ struct StringPair {
 };
 
 enum AnEnum {
-  YES,
-  NO
+  kYes,
+  kNo
 };
 
 interface SampleInterface {
@@ -209,7 +209,7 @@ struct AllTheThings {
   uint64 unsigned_64bit_value;
   float float_value_32bit;
   double float_value_64bit;
-  AnEnum enum_value = AnEnum.YES;
+  AnEnum enum_value = AnEnum.kYes;
 
   // Strings may be nullable.
   string? maybe_a_string_maybe_not;
@@ -300,20 +300,23 @@ within a module or nested within the namespace of some struct or interface:
 module business.mojom;
 
 enum Department {
-  SALES = 0,
-  DEV,
+  kSales = 0,
+  kDev,
 };
 
 struct Employee {
   enum Type {
-    FULL_TIME,
-    PART_TIME,
+    kFullTime,
+    kPartTime,
   };
 
   Type type;
   // ...
 };
 ```
+
+C++ constant-style enum value names are preferred as specified in the
+[Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html#Enumerator_Names).
 
 Similar to C-style enums, individual values may be explicitly assigned within an
 enum definition. By default, values are based at zero and increment by
@@ -336,8 +339,8 @@ struct Employee {
   const uint64 kInvalidId = 0;
 
   enum Type {
-    FULL_TIME,
-    PART_TIME,
+    kFullTime,
+    kPartTime,
   };
 
   uint64 id = kInvalidId;
@@ -347,6 +350,37 @@ struct Employee {
 
 The effect of nested definitions on generated bindings varies depending on the
 target language. See [documentation for individual target languages](#Generated-Code-For-Target-Languages).
+
+### Features
+
+Features can be declared with a `name` and `default_state` and can be attached
+in mojo to interfaces or methods using the `RuntimeFeature` attribute. If the
+feature is disabled at runtime, the method will crash and the interface will
+refuse to be bound / instantiated. Features cannot be serialized to be sent over
+IPC at this time.
+
+```
+module experimental.mojom;
+
+feature kUseElevators {
+  const string name = "UseElevators";
+  const bool default_state = false;
+}
+
+[RuntimeFeature=kUseElevators]
+interface Elevator {
+  // This interface cannot be bound or called if the feature is disabled.
+}
+
+interface Building {
+  // This method cannot be called if the feature is disabled.
+  [RuntimeFeature=kUseElevators]
+  CallElevator(int floor);
+
+  // This method can be called.
+  RingDoorbell(int volume);
+}
+```
 
 ### Interfaces
 
@@ -396,20 +430,33 @@ interesting attributes supported today.
   extreme caution, because it can lead to deadlocks otherwise.
 
 * **`[Default]`**:
-  The `Default` attribute may be used to specify an enumerator value that
-  will be used if an `Extensible` enumeration does not deserialize to a known
-  value on the receiver side, i.e. the sender is using a newer version of the
-  enum. This allows unknown values to be mapped to a well-defined value that can
-  be appropriately handled.
+  The `Default` attribute may be used to specify an enumerator value or union
+  field that will be used if an `Extensible` enumeration or union does not
+  deserialize to a known value on the receiver side, i.e. the sender is using a
+  newer version of the enum or union. This allows unknown values to be mapped to
+  a well-defined value that can be appropriately handled.
+
+  Note: The `Default` field for a union must be of nullable or integral type.
+  When a union is defaulted to this field, the field takes on the default value
+  for its type: null for nullable types, and zero/false for integral types.
 
 * **`[Extensible]`**:
-  The `Extensible` attribute may be specified for any enum definition. This
-  essentially disables builtin range validation when receiving values of the
-  enum type in a message, allowing older bindings to tolerate unrecognized
-  values from newer versions of the enum.
+  The `Extensible` attribute may be specified for any enum or union definition.
+  For enums, this essentially disables builtin range validation when receiving
+  values of the enum type in a message, allowing older bindings to tolerate
+  unrecognized values from newer versions of the enum.
 
-  Note: in the future, an `Extensible` enumeration will require that a `Default`
-  enumerator value also be specified.
+  If an enum value within an extensible enum definition is affixed with the
+  `Default` attribute, out-of-range values for the enum will deserialize to that
+  default value. Only one enum value may be designated as the `Default`.
+
+  Similarly, a union marked `Extensible` will deserialize to its `Default` field
+  when an unrecognized field is received. Extensible unions MUST specify exactly
+  one `Default` field, and the field must be of nullable or integral type. When
+  defaulted to this field, the value is always null/zero/false as appropriate.
+
+  An `Extensible` enumeration REQUIRES that a `Default` value be specified,
+  so all new extensible enums should specify one.
 
 * **`[Native]`**:
   The `Native` attribute may be specified for an empty struct declaration to
@@ -422,7 +469,10 @@ interesting attributes supported today.
 * **`[MinVersion=N]`**:
   The `MinVersion` attribute is used to specify the version at which a given
   field, enum value, interface method, or method parameter was introduced.
-  See [Versioning](#Versioning) for more details.
+  See [Versioning](#Versioning) for more details. `MinVersion` does not apply
+  to interfaces, structs or enums, but to the fields of those types.
+  `MinVersion` is not a module-global value, but it is ok to pretend it is by
+  skipping versions when adding fields or parameters.
 
 * **`[Stable]`**:
   The `Stable` attribute specifies that a given mojom type or interface
@@ -442,13 +492,73 @@ interesting attributes supported today.
   string representation as specified by RFC 4122. New UUIDs can be generated
   with common tools such as `uuidgen`.
 
+* **`[RuntimeFeature=feature]`**
+  The `RuntimeFeature` attribute should reference a mojo `feature`. If this
+  feature is enabled (e.g. using `--enable-features={feature.name}`) then the
+  interface behaves entirely as expected. If the feature is not enabled the
+  interface cannot be bound to a concrete receiver or remote - attempting to do
+  so will result in the receiver or remote being reset() to an unbound state.
+  Note that this is a different concept to the build-time `EnableIf` directive.
+  `RuntimeFeature` is currently only supported for C++ bindings and has no
+  effect for, say, Java or TypeScript bindings (see https://crbug.com/1278253).
+
 * **`[EnableIf=value]`**:
   The `EnableIf` attribute is used to conditionally enable definitions when the
   mojom is parsed. If the `mojom` target in the GN file does not include the
   matching `value` in the list of `enabled_features`, the definition will be
   disabled. This is useful for mojom definitions that only make sense on one
   platform. Note that the `EnableIf` attribute can only be set once per
-  definition.
+  definition and cannot be set at the same time as `EnableIfNot`. Also be aware
+  that only one condition can be tested, `EnableIf=value,xyz` introduces a new
+  `xyz` attribute. `xyz` is not part of the `EnableIf` condition that depends
+  only on the feature `value`. Complex conditions can be introduced via
+  enabled_features in `build.gn` files.
+
+* **`[EnableIfNot=value]`**:
+  The `EnableIfNot` attribute is used to conditionally enable definitions when
+  the mojom is parsed. If the `mojom` target in the GN file includes the
+  matching `value` in the list of `enabled_features`, the definition will be
+  disabled. This is useful for mojom definitions that only make sense on all but
+  one platform. Note that the `EnableIfNot` attribute can only be set once per
+  definition and cannot be set at the same time as `EnableIf`.
+
+* **`[ServiceSandbox=value]`**:
+  The `ServiceSandbox` attribute is used in Chromium to tag which sandbox a
+  service hosting an implementation of interface will be launched in. This only
+  applies to `C++` bindings. `value` should match a constant defined in an
+  imported `sandbox.mojom.Sandbox` enum (for Chromium this is
+  `//sandbox/policy/mojom/sandbox.mojom`), such as `kService`.
+
+* **`[RequireContext=enum]`**:
+  The `RequireContext` attribute is used in Chromium to tag interfaces that
+  should be passed (as remotes or receivers) only to privileged process
+  contexts. The process context must be an enum that is imported into the
+  mojom that defines the tagged interface. `RequireContext` may be used in
+  future to DCHECK or CHECK if remotes are made available in contexts that
+  conflict with the one provided in the interface definition. Process contexts
+  are not the same as the sandbox a process is running in, but will reflect
+  the set of capabilities provided to the service.
+
+* **`[AllowedContext=enum]`**:
+  The `AllowedContext` attribute is used in Chromium to tag methods that pass
+  remotes or receivers of interfaces that are marked with a `RequireContext`
+  attribute. The enum provided on the method must be equal or better (lower
+  numerically) than the one required on the interface being passed. At present
+  failing to specify an adequate `AllowedContext` value will cause mojom
+  generation to fail at compile time. In future DCHECKs or CHECKs might be
+  added to enforce that method is only called from a process context that meets
+  the given `AllowedContext` value. The enum must of the same type as that
+  specified in the interface's `RequireContext` attribute. Adding an
+  `AllowedContext` attribute to a method is a strong indication that you need
+   a detailed security review of your design - please reach out to the security
+   team.
+
+* **`[SupportsUrgent]`**:
+  The `SupportsUrgent` attribute is used in conjunction with
+  `mojo::UrgentMessageScope` in Chromium to tag messages as having high
+  priority. The IPC layer notifies the underlying scheduler upon both receiving
+  and processing an urgent message. At present, this attribute only affects
+  channel associated messages in the renderer process.
 
 ## Generated Code For Target Languages
 
@@ -495,9 +605,9 @@ values. For example if a Mojom declares the enum:
 
 ``` cpp
 enum AdvancedBoolean {
-  TRUE = 0,
-  FALSE = 1,
-  FILE_NOT_FOUND = 2,
+  kTrue = 0,
+  kFalse = 1,
+  kFileNotFound = 2,
 };
 ```
 
@@ -550,10 +660,16 @@ See the documentation for
 
 *** note
 **NOTE:** You don't need to worry about versioning if you don't care about
-backwards compatibility. Specifically, all parts of Chrome are updated
-atomically today and there is not yet any possibility of any two Chrome
-processes communicating with two different versions of any given Mojom
-interface.
+backwards compatibility. Today, all parts of the Chrome browser are
+updated atomically and there is not yet any possibility of any two
+Chrome processes communicating with two different versions of any given Mojom
+interface. On Chrome OS, there are several places where versioning is required.
+For example,
+[ARC++](https://developer.android.com/chrome-os/intro)
+uses versioned mojo to send IPC to the Android container.
+Likewise, the
+[Lacros](/docs/lacros.md)
+browser uses versioned mojo to talk to the ash system UI.
 ***
 
 Services extend their interfaces to support new features over time, and clients
@@ -593,8 +709,8 @@ struct Employee {
 
 *** note
 **NOTE:** Mojo object or handle types added with a `MinVersion` **MUST** be
-optional (nullable). See [Primitive Types](#Primitive-Types) for details on
-nullable values.
+optional (nullable) or primitive. See [Primitive Types](#Primitive-Types) for
+details on nullable values.
 ***
 
 By default, fields belong to version 0. New fields must be appended to the
@@ -624,10 +740,10 @@ the following hard constraints:
 * For any given struct or interface, if any field or method explicitly specifies
     an ordinal value, all fields or methods must explicitly specify an ordinal
     value.
-* For an *N*-field struct or *N*-method interface, the set of explicitly
-    assigned ordinal values must be limited to the range *[0, N-1]*. Interfaces
-    should include placeholder methods to fill the ordinal positions of removed
-    methods (for example "Unused_Message_7@7()" or "RemovedMessage@42()", etc).
+* For an *N*-field struct, the set of explicitly assigned ordinal values must be
+    limited to the range *[0, N-1]*. Structs should include placeholder fields
+    to fill the ordinal positions of removed fields (for example "Unused_Field"
+    or "RemovedField", etc).
 
 You may reorder fields, but you must ensure that the ordinal values of existing
 fields remain unchanged. For example, the following struct remains
@@ -652,6 +768,24 @@ There are two dimensions on which an interface can be extended
     that the version number is scoped to the whole interface rather than to any
     individual parameter list.
 
+``` cpp
+// Old version:
+interface HumanResourceDatabase {
+  QueryEmployee(uint64 id) => (Employee? employee);
+};
+
+// New version:
+interface HumanResourceDatabase {
+  QueryEmployee(uint64 id, [MinVersion=1] bool retrieve_finger_print)
+      => (Employee? employee,
+          [MinVersion=1] array<uint8>? finger_print);
+};
+```
+
+Similar to [versioned structs](#Versioned-Structs), when you pass the parameter
+list of a request or response method to a destination using an older version of
+an interface, unrecognized fields are silently discarded.
+
     Please note that adding a response to a message which did not previously
     expect a response is a not a backwards-compatible change.
 
@@ -664,17 +798,12 @@ For example:
 ``` cpp
 // Old version:
 interface HumanResourceDatabase {
-  AddEmployee(Employee employee) => (bool success);
   QueryEmployee(uint64 id) => (Employee? employee);
 };
 
 // New version:
 interface HumanResourceDatabase {
-  AddEmployee(Employee employee) => (bool success);
-
-  QueryEmployee(uint64 id, [MinVersion=1] bool retrieve_finger_print)
-      => (Employee? employee,
-          [MinVersion=1] array<uint8>? finger_print);
+  QueryEmployee(uint64 id) => (Employee? employee);
 
   [MinVersion=1]
   AttachFingerPrint(uint64 id, array<uint8> finger_print)
@@ -682,10 +811,7 @@ interface HumanResourceDatabase {
 };
 ```
 
-Similar to [versioned structs](#Versioned-Structs), when you pass the parameter
-list of a request or response method to a destination using an older version of
-an interface, unrecognized fields are silently discarded. However, if the method
-call itself is not recognized, it is considered a validation error and the
+If a method call is not recognized, it is considered a validation error and the
 receiver will close its end of the interface pipe. For example, if a client on
 version 1 of the above interface sends an `AttachFingerPrint` request to an
 implementation of version 0, the client will be disconnected.
@@ -712,8 +838,8 @@ If you want an enum to be extensible in the future, you can apply the
 ``` cpp
 [Extensible]
 enum Department {
-  SALES,
-  DEV,
+  kSales,
+  kDev,
 };
 ```
 
@@ -722,9 +848,9 @@ And later you can extend this enum without breaking backwards compatibility:
 ``` cpp
 [Extensible]
 enum Department {
-  SALES,
-  DEV,
-  [MinVersion=1] RESEARCH,
+  kSales,
+  kDev,
+  [MinVersion=1] kResearch,
 };
 ```
 
@@ -782,7 +908,7 @@ Statement = ModuleStatement | ImportStatement | Definition
 
 ModuleStatement = AttributeSection "module" Identifier ";"
 ImportStatement = "import" StringLiteral ";"
-Definition = Struct Union Interface Enum Const
+Definition = Struct Union Interface Enum Feature Const
 
 AttributeSection = <empty> | "[" AttributeList "]"
 AttributeList = <empty> | NonEmptyAttributeList
@@ -809,7 +935,7 @@ InterfaceBody = <empty>
               | InterfaceBody Const
               | InterfaceBody Enum
               | InterfaceBody Method
-Method = AttributeSection Name Ordinal "(" ParamterList ")" Response ";"
+Method = AttributeSection Name Ordinal "(" ParameterList ")" Response ";"
 ParameterList = <empty> | NonEmptyParameterList
 NonEmptyParameterList = Parameter
                       | Parameter "," NonEmptyParameterList
@@ -846,6 +972,13 @@ NonEmptyEnumValueList = EnumValue | NonEmptyEnumValueList "," EnumValue
 EnumValue = AttributeSection Name
           | AttributeSection Name "=" Integer
           | AttributeSection Name "=" Identifier
+
+; Note: `feature` is a weak keyword and can appear as, say, a struct field name.
+Feature = AttributeSection "feature" Name "{" FeatureBody "}" ";"
+       | AttributeSection "feature" Name ";"
+FeatureBody = <empty>
+           | FeatureBody FeatureField
+FeatureField = AttributeSection TypeSpec Name Default ";"
 
 Const = "const" TypeSpec Name "=" Constant ";"
 

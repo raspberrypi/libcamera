@@ -1,12 +1,11 @@
-# Copyright 2014 The Chromium Authors. All rights reserved.
+# Copyright 2014 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import imp
+import importlib.util
 import os.path
 import sys
 import unittest
-
 
 def _GetDirAbove(dirname):
   """Returns the directory "above" this file containing |dirname| (which must
@@ -18,16 +17,14 @@ def _GetDirAbove(dirname):
     if tail == dirname:
       return path
 
-
 sys.path.insert(1, os.path.join(_GetDirAbove("mojo"), "third_party"))
 from ply import lex
 
 try:
-  imp.find_module("mojom")
+  importlib.util.find_spec("mojom")
 except ImportError:
   sys.path.append(os.path.join(_GetDirAbove("pylib"), "pylib"))
 import mojom.parse.lexer
-
 
 # This (monkey-patching LexToken to make comparison value-based) is evil, but
 # we'll do it anyway. (I'm pretty sure ply's lexer never cares about comparing
@@ -146,7 +143,6 @@ class LexerTest(unittest.TestCase):
         self._SingleTokenForInput("+"), _MakeLexToken("PLUS", "+"))
     self.assertEquals(
         self._SingleTokenForInput("-"), _MakeLexToken("MINUS", "-"))
-    self.assertEquals(self._SingleTokenForInput("&"), _MakeLexToken("AMP", "&"))
     self.assertEquals(
         self._SingleTokenForInput("?"), _MakeLexToken("QSTN", "?"))
     self.assertEquals(

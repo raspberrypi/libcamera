@@ -12,6 +12,8 @@ import sys
 # TODO set sys.pycache_prefix for >= python3.8
 sys.dont_write_bytecode = True
 
+sys.path.insert(0, f'{os.path.dirname(__file__)}/mojo/public/tools/bindings')
+
 import mojo.public.tools.bindings.mojom_bindings_generator as generator
 
 def _GetModulePath(path, output_dir):

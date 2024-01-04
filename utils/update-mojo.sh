@@ -11,7 +11,9 @@ if [ $# != 1 ] ; then
 fi
 
 ipc_dir="$(dirname "$(realpath "$0")")/ipc"
-chromium_dir="$1"
+chromium_dir="$(realpath "$1")"
+
+cd "${ipc_dir}/../../"
 
 if [ ! -d "${chromium_dir}/mojo" ] ; then
 	echo "Directory ${chromium_dir} doesn't contain mojo"
@@ -33,16 +35,16 @@ if [ -n "$(git -C "${chromium_dir}" status --porcelain)" ] ; then
 fi
 
 # Remove the previously imported files.
-rm -rf "${ipc_dir}/mojo/"
-rm -rf "${ipc_dir}/tools/"
+rm -rf utils/ipc/mojo/
+rm -rf utils/ipc/tools/
 
 # Copy the diagnosis file
-mkdir -p "${ipc_dir}/tools/diagnosis"
-cp "${chromium_dir}/tools/diagnosis/crbug_1001171.py" "${ipc_dir}/tools/diagnosis"
+mkdir -p utils/ipc/tools/diagnosis/
+cp "${chromium_dir}/tools/diagnosis/crbug_1001171.py" utils/ipc/tools/diagnosis/
 
 # Copy the rest of mojo
-mkdir -p "${ipc_dir}/mojo/public"
-cp "${chromium_dir}/mojo/public/LICENSE" "${ipc_dir}/mojo/public"
+mkdir -p utils/ipc/mojo/public/
+cp "${chromium_dir}/mojo/public/LICENSE" utils/ipc/mojo/public/
 
 (
 	cd "${chromium_dir}" || exit
@@ -61,8 +63,8 @@ modify them manually.
 EOF
 )
 
-echo "$readme" > "${ipc_dir}/mojo/README"
-echo "$readme" > "${ipc_dir}/tools/README"
+echo "$readme" > utils/ipc/mojo/README
+echo "$readme" > utils/ipc/tools/README
 
 cat <<EOF
 ------------------------------------------------------------

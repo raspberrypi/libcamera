@@ -15,6 +15,12 @@ chromium_dir="$(realpath "$1")"
 
 cd "${ipc_dir}/../../"
 
+# Reject dirty libcamera trees
+if [ -n "$(git status --porcelain -uno)" ] ; then
+	echo "libcamera tree is dirty"
+	exit 1
+fi
+
 if [ ! -d "${chromium_dir}/mojo" ] ; then
 	echo "Directory ${chromium_dir} doesn't contain mojo"
 	exit 1
@@ -28,7 +34,7 @@ fi
 # Get the chromium commit id
 version=$(git -C "${chromium_dir}" rev-parse --short HEAD)
 
-# Reject dirty trees
+# Reject dirty chromium trees
 if [ -n "$(git -C "${chromium_dir}" status --porcelain)" ] ; then
 	echo "Chromium tree in ${chromium_dir} is dirty"
 	exit 1

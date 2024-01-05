@@ -369,7 +369,7 @@ def ValidateNamespace(namespace):
     if namespace == '':
         raise Exception('Must have a namespace')
 
-    if not re.match('^ipa\.[0-9A-Za-z_]+', namespace):
+    if not re.match(r'^ipa\.[0-9A-Za-z_]+', namespace):
         raise Exception('Namespace must be of the form "ipa.{pipeline_name}"')
 
 def ValidateInterfaces(interfaces):

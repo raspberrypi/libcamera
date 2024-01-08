@@ -10,6 +10,7 @@
 #include <cmath>
 #include <future>
 #include <limits>
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -25,8 +26,8 @@ LOG_DEFINE_CATEGORY(IMX500)
 
 namespace {
 
-/* Setup in the IMX500 driver */
-constexpr unsigned int TensorStride = 4064;
+constexpr unsigned int DnnHeaderSize = 12;
+constexpr unsigned int MipiPhSize = 0;
 
 enum TensorDataType {
 	Signed = 0,
@@ -62,9 +63,6 @@ struct OutputTensorApParams {
 
 int parseHeader(DnnHeader &dnnHeader, std::vector<uint8_t> &apParams, const uint8_t *src)
 {
-	constexpr unsigned int DnnHeaderSize = 12;
-	constexpr unsigned int MipiPhSize = 0;
-
 	dnnHeader = *(DnnHeader *)src;
 
 	LOG(IMX500, Debug)
@@ -444,6 +442,11 @@ int RPiController::imx500ParseOutputTensor(IMX500OutputTensorInfo &outputTensorI
 		return ret;
 	}
 
+	if (dnnHeader.tensorType != TensorType::OutputTensor) {
+		LOG(IMX500, Error) << "Invalid tensor type in AP params!";
+		return -1;
+	}
+
 	ret = parseApParams(outputApParams, apParams, dnnHeader);
 	if (ret) {
 		LOG(IMX500, Error) << "AP param parsing failed!";
@@ -463,4 +466,37 @@ int RPiController::imx500ParseOutputTensor(IMX500OutputTensorInfo &outputTensorI
 	}
 
 	return 0;
+}
+
+std::unordered_map<unsigned int, unsigned int> RPiController::imx500SplitTensors(Span<const uint8_t> tensors)
+{
+	DnnHeader inputHeader, outputHeader;
+	std::unordered_map<unsigned int, unsigned int> offsets;
+	const uint8_t *src = tensors.data();
+
+	inputHeader = *(DnnHeader *)src;
+
+	if (inputHeader.tensorType != TensorType::InputTensor || !inputHeader.frameValid) {
+		LOG(IMX500, Debug) << "Input tensor is invalid, arborting.";
+		return {};
+	}
+
+	offsets[TensorType::InputTensor] = 0;
+	src += TensorStride;
+
+	while (src < tensors.data() + tensors.size()) {
+		outputHeader = *(DnnHeader *)src;
+		if (outputHeader.frameValid &&
+		    outputHeader.frameCount == inputHeader.frameCount &&
+		    outputHeader.apParamSize == inputHeader.apParamSize &&
+		    outputHeader.maxLineLen == inputHeader.maxLineLen) {
+			offsets[TensorType::OutputTensor] = src - tensors.data();
+			LOG(IMX500, Debug)
+				<< "Found output tensor at offset " << offsets[TensorType::OutputTensor];
+			break;
+		}
+		src += TensorStride;
+	}
+
+	return offsets;
 }

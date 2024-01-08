@@ -1,0 +1,466 @@
+/* SPDX-License-Identifier: BSD-2-Clause */
+/*
+ * Copyright (C) 2024, Raspberry Pi Ltd
+ *
+ * imx500_tensor_parser.cpp - Parser for imx500 tensors
+ */
+
+#include "imx500_tensor_parser.h"
+
+#include <cmath>
+#include <future>
+#include <limits>
+#include <utility>
+#include <vector>
+
+#include <libcamera/base/log.h>
+#include <libcamera/base/span.h>
+
+#include "apParams.flatbuffers_generated.h"
+
+using namespace libcamera;
+using namespace RPiController;
+
+LOG_DEFINE_CATEGORY(IMX500)
+
+namespace {
+
+/* Setup in the IMX500 driver */
+constexpr unsigned int TensorStride = 4064;
+
+enum TensorDataType {
+	Signed = 0,
+	Unsigned
+};
+
+struct DnnHeader {
+	uint8_t frameValid;
+	uint8_t frameCount;
+	uint16_t maxLineLen;
+	uint16_t apParamSize;
+	uint16_t networkId;
+	uint8_t tensorType;
+};
+
+struct Dimensions {
+	uint8_t ordinal;
+	uint16_t size;
+	uint8_t serializationIndex;
+	uint8_t padding;
+};
+
+struct OutputTensorApParams {
+	uint8_t id;
+	char *name;
+	uint16_t numDimensions;
+	uint8_t bitsPerElement;
+	std::vector<Dimensions> vecDim;
+	uint16_t shift;
+	float scale;
+	uint8_t format;
+};
+
+int parseHeader(DnnHeader &dnnHeader, std::vector<uint8_t> &apParams, const uint8_t *src)
+{
+	constexpr unsigned int DnnHeaderSize = 12;
+	constexpr unsigned int MipiPhSize = 0;
+
+	dnnHeader = *(DnnHeader *)src;
+
+	LOG(IMX500, Debug)
+		<< "Header: valid " << (bool)dnnHeader.frameValid
+		<< " count " << (int)dnnHeader.frameCount
+		<< " max len " << dnnHeader.maxLineLen
+		<< " ap param size " << dnnHeader.apParamSize
+		<< " network id " << dnnHeader.networkId
+		<< " tensor type " << (int)dnnHeader.tensorType;
+
+	if (!dnnHeader.frameValid)
+		return -1;
+
+	apParams.resize(dnnHeader.apParamSize, 0);
+
+	uint32_t i = DnnHeaderSize;
+	for (unsigned int j = 0; j < dnnHeader.apParamSize; j++) {
+		if (i >= TensorStride) {
+			i = 0;
+			src += TensorStride + MipiPhSize;
+		}
+		apParams[j] = src[i++];
+	}
+
+	return 0;
+}
+
+int parseApParams(std::vector<OutputTensorApParams> &outputApParams, const std::vector<uint8_t> &apParams,
+		  const DnnHeader &dnnHeader)
+{
+	const apParams::fb::FBApParams *fbApParams;
+	const apParams::fb::FBNetwork *fbNetwork;
+	const apParams::fb::FBOutputTensor *fbOutputTensor;
+
+	fbApParams = apParams::fb::GetFBApParams(apParams.data());
+	LOG(IMX500, Debug) << "Networks size: " << fbApParams->networks()->size();
+
+	outputApParams.clear();
+
+	for (unsigned int i = 0; i < fbApParams->networks()->size(); i++) {
+		fbNetwork = (apParams::fb::FBNetwork *)(fbApParams->networks()->Get(i));
+		if (fbNetwork->id() != dnnHeader.networkId)
+			continue;
+
+		LOG(IMX500, Debug)
+			<< "Network: " << fbNetwork->type()->c_str()
+			<< ", i/p size: " << fbNetwork->inputTensors()->size()
+			<< ", o/p size: " << fbNetwork->outputTensors()->size();
+
+		for (unsigned int j = 0; j < fbNetwork->outputTensors()->size(); j++) {
+			OutputTensorApParams outApParam;
+
+			fbOutputTensor = (apParams::fb::FBOutputTensor *)fbNetwork->outputTensors()->Get(j);
+
+			outApParam.id = fbOutputTensor->id();
+			outApParam.name = (char *)fbOutputTensor->name()->c_str();
+			outApParam.numDimensions = fbOutputTensor->numOfDimensions();
+
+			for (unsigned int k = 0; k < fbOutputTensor->numOfDimensions(); k++) {
+				Dimensions dim;
+				dim.ordinal = fbOutputTensor->dimensions()->Get(k)->id();
+				dim.size = fbOutputTensor->dimensions()->Get(k)->size();
+				dim.serializationIndex = fbOutputTensor->dimensions()->Get(k)->serializationIndex();
+				dim.padding = fbOutputTensor->dimensions()->Get(k)->padding();
+				if (dim.padding != 0) {
+					LOG(IMX500, Error)
+						<< "Error in AP Params, Non-Zero padding for Dimension " << k;
+					return -1;
+				}
+
+				outApParam.vecDim.push_back(dim);
+			}
+
+			outApParam.bitsPerElement = fbOutputTensor->bitsPerElement();
+			outApParam.shift = fbOutputTensor->shift();
+			outApParam.scale = fbOutputTensor->scale();
+			outApParam.format = fbOutputTensor->format();
+
+			/* Add the element to vector */
+			outputApParams.push_back(outApParam);
+		}
+
+		break;
+	}
+
+	return 0;
+}
+
+int populateOutputTensorInfo(IMX500OutputTensorInfo &outputTensorInfo,
+			     const std::vector<OutputTensorApParams> &outputApParams)
+{
+	/* Calculate total output size. */
+	unsigned int totalOutSize = 0;
+	for (auto const &ap : outputApParams) {
+		unsigned int totalDimensionSize = 1;
+		for (auto &dim : ap.vecDim) {
+			if (totalDimensionSize >= std::numeric_limits<uint32_t>::max() / dim.size) {
+				LOG(IMX500, Error) << "Invalid totalDimensionSize";
+				return -1;
+			}
+
+			totalDimensionSize *= dim.size;
+		}
+
+		if (totalOutSize >= std::numeric_limits<uint32_t>::max() - totalDimensionSize) {
+			LOG(IMX500, Error) << "Invalid totalOutSize";
+			return -1;
+		}
+
+		totalOutSize += totalDimensionSize;
+	}
+
+	/* CodeSonar check */
+	if (totalOutSize == 0) {
+		LOG(IMX500, Error) << "Invalid output tensor info (totalOutSize is 0)";
+		return -1;
+	}
+
+	LOG(IMX500, Debug) << "Final output size: " << totalOutSize;
+
+	if (totalOutSize >= std::numeric_limits<uint32_t>::max() / sizeof(float)) {
+		LOG(IMX500, Error) << "Invalid output tensor info";
+		return -1;
+	}
+
+	outputTensorInfo.address.resize(totalOutSize, 0.0f);
+	unsigned int numOutputTensors = outputApParams.size();
+
+	/* CodeSonar Check */
+	if (!numOutputTensors) {
+		LOG(IMX500, Error) << "Invalid numOutputTensors (0)";
+		return -1;
+	}
+
+	if (numOutputTensors >= std::numeric_limits<uint32_t>::max() / sizeof(uint32_t)) {
+		LOG(IMX500, Error) << "Invalid numOutputTensors";
+		return -1;
+	}
+
+	outputTensorInfo.totalSize = totalOutSize;
+	outputTensorInfo.numTensors = numOutputTensors;
+	outputTensorInfo.tensorDataNum.resize(numOutputTensors, 0);
+
+	return 0;
+}
+
+template<typename T>
+float getVal8(const uint8_t *src, const OutputTensorApParams &param)
+{
+	T temp = (T)*src;
+	float value = (temp - param.shift) * param.scale;
+	return value;
+}
+
+template<typename T>
+float getVal16(const uint8_t *src, const OutputTensorApParams &param)
+{
+	T temp = (((T) * (src + 1)) & 0xff) << 8 | (*src & 0xff);
+	float value = (temp - param.shift) * param.scale;
+	return value;
+}
+
+int parseOutputTensorBody(IMX500OutputTensorInfo &outputTensorInfo, const uint8_t *src,
+			  const std::vector<OutputTensorApParams> &outputApParams,
+			  const DnnHeader &dnnHeader)
+{
+	float *dst = outputTensorInfo.address.data();
+	int ret = 0;
+
+	if (outputTensorInfo.totalSize > (std::numeric_limits<uint32_t>::max() / sizeof(float))) {
+		LOG(IMX500, Error) << "totalSize is greater than maximum size";
+		return -1;
+	}
+
+	std::vector<float> tmpDst(outputTensorInfo.totalSize, 0.0f);
+	std::vector<uint16_t> numLinesVec(outputApParams.size());
+	std::vector<uint32_t> outSizes(outputApParams.size());
+	std::vector<uint32_t> offsets(outputApParams.size());
+	std::vector<const uint8_t *> srcArr(outputApParams.size());
+	std::vector<std::vector<Dimensions>> serializedDims;
+	std::vector<std::vector<Dimensions>> actualDims;
+
+	const uint8_t *src1 = src;
+	uint32_t offset = 0;
+	for (unsigned int tensorIdx = 0; tensorIdx < outputApParams.size(); tensorIdx++) {
+		offsets[tensorIdx] = offset;
+		srcArr[tensorIdx] = src1;
+		uint32_t tensorDataNum = 0;
+
+		const OutputTensorApParams &param = outputApParams.at(tensorIdx);
+		uint32_t outputTensorSize = 0;
+		uint32_t tensorOutSize = (param.bitsPerElement / 8);
+		std::vector<Dimensions> serializedDim(param.numDimensions);
+		std::vector<Dimensions> actualDim(param.numDimensions);
+
+		for (int idx = 0; idx < param.numDimensions; idx++) {
+			actualDim[idx].size = param.vecDim.at(idx).size;
+			serializedDim[param.vecDim.at(idx).serializationIndex].size = param.vecDim.at(idx).size;
+
+			tensorOutSize *= param.vecDim.at(idx).size;
+			if (tensorOutSize >= std::numeric_limits<uint32_t>::max() / param.bitsPerElement / 8) {
+				LOG(IMX500, Error) << "Invalid output tensor info";
+				return -1;
+			}
+
+			actualDim[idx].serializationIndex = param.vecDim.at(idx).serializationIndex;
+			serializedDim[param.vecDim.at(idx).serializationIndex].serializationIndex = (uint8_t)idx;
+		}
+
+		uint16_t numLines = (uint16_t)std::ceil(tensorOutSize / (float)dnnHeader.maxLineLen);
+		outputTensorSize = tensorOutSize;
+		numLinesVec[tensorIdx] = numLines;
+		outSizes[tensorIdx] = tensorOutSize;
+
+		serializedDims.push_back(serializedDim);
+		actualDims.push_back(actualDim);
+
+		src1 += numLines * TensorStride;
+		tensorDataNum = (outputTensorSize / (param.bitsPerElement / 8));
+		offset += tensorDataNum;
+		outputTensorInfo.tensorDataNum[tensorIdx] = tensorDataNum;
+		if (offset > outputTensorInfo.totalSize) {
+			LOG(IMX500, Error)
+				<< "Error in parsing output tensor offset " << offset << " > output_size";
+			return -1;
+		}
+	}
+
+	std::vector<uint32_t> idxs(outputApParams.size());
+	for (unsigned int i = 0; i < idxs.size(); i++)
+		idxs[i] = i;
+
+	for (unsigned int i = 0; i < idxs.size(); i++) {
+		for (unsigned int j = 0; j < idxs.size(); j++) {
+			if (numLinesVec[idxs[i]] > numLinesVec[idxs[j]])
+				std::swap(idxs[i], idxs[j]);
+		}
+	}
+
+	std::vector<std::future<int>> futures;
+	for (unsigned int ii = 0; ii < idxs.size(); ii++) {
+		uint32_t idx = idxs[ii];
+		futures.emplace_back(std::async(
+			std::launch::async,
+			[&tmpDst, &outSizes, &numLinesVec, &actualDims, &serializedDims,
+			 &outputApParams, &dnnHeader, dst](int tensorIdx, const uint8_t *tsrc, int toffset) -> int {
+				uint32_t outputTensorSize = outSizes[tensorIdx];
+				uint16_t numLines = numLinesVec[tensorIdx];
+				bool sortingRequired = false;
+
+				const OutputTensorApParams &param = outputApParams[tensorIdx];
+				const std::vector<Dimensions> &serializedDim = serializedDims[tensorIdx];
+				const std::vector<Dimensions> &actualDim = actualDims[tensorIdx];
+
+				for (unsigned i = 0; i < param.numDimensions; i++) {
+					if (param.vecDim.at(i).serializationIndex != param.vecDim.at(i).ordinal)
+						sortingRequired = true;
+				}
+
+				if (!outputTensorSize) {
+					LOG(IMX500, Error) << "Invalid output tensorsize (0)";
+					return -1;
+				}
+
+				/* Extract output tensor data */
+				uint32_t elementIndex = 0;
+				if (param.bitsPerElement == 8) {
+					for (unsigned int i = 0; i < numLines; i++) {
+						int lineIndex = 0;
+						while (lineIndex < dnnHeader.maxLineLen) {
+							if (param.format == TensorDataType::Signed)
+								tmpDst[toffset + elementIndex] =
+									getVal8<int8_t>(tsrc + lineIndex, param);
+							else
+								tmpDst[toffset + elementIndex] =
+									getVal8<uint8_t>(tsrc + lineIndex, param);
+							elementIndex++;
+							lineIndex++;
+							if (elementIndex == outputTensorSize)
+								break;
+						}
+						tsrc += TensorStride;
+						if (elementIndex == outputTensorSize)
+							break;
+					}
+				} else if (param.bitsPerElement == 16) {
+					for (unsigned int i = 0; i < numLines; i++) {
+						int lineIndex = 0;
+						while (lineIndex < dnnHeader.maxLineLen) {
+							if (param.format == TensorDataType::Signed)
+								tmpDst[toffset + elementIndex] =
+									getVal16<int16_t>(tsrc + lineIndex, param);
+							else
+								tmpDst[toffset + elementIndex] =
+									getVal16<uint16_t>(tsrc + lineIndex, param);
+							elementIndex++;
+							lineIndex += 2;
+							if (elementIndex >= (outputTensorSize >> 1))
+								break;
+						}
+						tsrc += TensorStride;
+						if (elementIndex >= (outputTensorSize >> 1))
+							break;
+					}
+				}
+
+				/*
+				 * Sorting in order according to AP Params. Not supported if larger than 3D
+				 * Preparation:
+				 */
+				if (sortingRequired) {
+					constexpr unsigned int DimensionMax = 3;
+
+					std::array<uint32_t, DimensionMax> loopCnt{ 1, 1, 1 };
+					std::array<uint32_t, DimensionMax> coef{ 1, 1, 1 };
+					for (unsigned int i = 0; i < param.numDimensions; i++) {
+						if (i >= DimensionMax) {
+							LOG(IMX500, Error) << "numDimensions value is 3 or higher";
+							break;
+						}
+
+						loopCnt[i] = serializedDim.at(i).size;
+
+						for (unsigned int j = serializedDim.at(i).serializationIndex; j > 0; j--)
+							coef[i] *= actualDim.at(j - 1).size;
+					}
+					/* Sort execution */
+					unsigned int srcIndex = 0;
+					unsigned int dstIndex;
+					for (unsigned int i = 0; i < loopCnt[DimensionMax - 1]; i++) {
+						for (unsigned int j = 0; j < loopCnt[DimensionMax - 2]; j++) {
+							for (unsigned int k = 0; k < loopCnt[DimensionMax - 3]; k++) {
+								dstIndex = (coef[DimensionMax - 1] * i) +
+									   (coef[DimensionMax - 2] * j) +
+									   (coef[DimensionMax - 3] * k);
+								dst[toffset + dstIndex] = tmpDst[toffset + srcIndex++];
+							}
+						}
+					}
+				} else {
+					if (param.bitsPerElement == 8)
+						memcpy(dst + toffset, tmpDst.data() + toffset,
+						       outputTensorSize * sizeof(float));
+					else if (param.bitsPerElement == 16)
+						memcpy(dst + toffset, tmpDst.data() + toffset,
+						       (outputTensorSize >> 1) * sizeof(float));
+					else {
+						LOG(IMX500, Error)
+							<< "Invalid bitsPerElement value =" << param.bitsPerElement;
+						return -1;
+					}
+				}
+
+				return 0;
+			},
+			idx, srcArr[idx], offsets[idx]));
+	}
+
+	for (auto &f : futures)
+		ret += f.get();
+
+	return ret;
+}
+
+} /* namespace */
+
+int RPiController::imx500ParseOutputTensor(IMX500OutputTensorInfo &outputTensorInfo, Span<const uint8_t> outputTensor)
+{
+	DnnHeader dnnHeader;
+	std::vector<uint8_t> apParams;
+	std::vector<OutputTensorApParams> outputApParams;
+
+	const uint8_t *src = outputTensor.data();
+	int ret = parseHeader(dnnHeader, apParams, src);
+	if (ret) {
+		LOG(IMX500, Error) << "Header param parsing failed!";
+		return ret;
+	}
+
+	ret = parseApParams(outputApParams, apParams, dnnHeader);
+	if (ret) {
+		LOG(IMX500, Error) << "AP param parsing failed!";
+		return ret;
+	}
+
+	ret = populateOutputTensorInfo(outputTensorInfo, outputApParams);
+	if (ret) {
+		LOG(IMX500, Error) << "Failed to populate OutputTensorInfo!";
+		return ret;
+	}
+
+	ret = parseOutputTensorBody(outputTensorInfo, src + TensorStride, outputApParams, dnnHeader);
+	if (ret) {
+		LOG(IMX500, Error) << "Output tensor body parsing failed!";
+		return ret;
+	}
+
+	return 0;
+}

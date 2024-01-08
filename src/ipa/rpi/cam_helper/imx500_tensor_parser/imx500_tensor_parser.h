@@ -6,11 +6,20 @@
  */
 
 #include <stdint.h>
+#include <unordered_map>
 #include <vector>
 
 #include <libcamera/base/span.h>
 
 namespace RPiController {
+
+/* Setup in the IMX500 driver */
+constexpr unsigned int TensorStride = 4064;
+
+enum TensorType {
+	InputTensor = 0,
+	OutputTensor
+};
 
 struct IMX500OutputTensorInfo {
 	uint32_t totalSize;
@@ -21,5 +30,7 @@ struct IMX500OutputTensorInfo {
 
 int imx500ParseOutputTensor(IMX500OutputTensorInfo &outputTensorInfo,
 			    libcamera::Span<const uint8_t> outputTensor);
+
+std::unordered_map<unsigned int, unsigned int> imx500SplitTensors(libcamera::Span<const uint8_t> tensors);
 
 } /* namespace RPiController */

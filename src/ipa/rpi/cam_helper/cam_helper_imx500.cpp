@@ -126,18 +126,30 @@ void CamHelperImx500::prepare(libcamera::Span<const uint8_t> buffer, Metadata &m
 
 	/* Inference data comes after 2 lines of embedded data. */
 	size_t bytesPerLine = (((mode_.width * mode_.bitdepth) >> 3) + 15) & ~15;
-	if (buffer.size() > 2 * bytesPerLine) {
-		Span<const uint8_t> outputTensor(buffer.data() + 2 * bytesPerLine,
-						 buffer.size() - 2 * bytesPerLine);
-		
-		IMX500OutputTensorInfo outputTensorInfo;
-		if (!imx500ParseOutputTensor(outputTensorInfo, outputTensor)) {
-			Span<const float> parsedTensor
-				{ (const float *)outputTensorInfo.address.data(),
-				  outputTensorInfo.address.size() };
-			libcameraMetadata.set(libcamera::controls::rpi::Imx500OutputTensor,
-					      parsedTensor);
-		}
+	if (buffer.size() <= 2 * bytesPerLine)
+		return;
+
+	Span<const uint8_t> tensors(buffer.data() + 2 * bytesPerLine,
+				    buffer.size() - 2 * bytesPerLine);
+
+	std::unordered_map<unsigned int, unsigned int> offsets =
+		RPiController::imx500SplitTensors(tensors);
+
+	auto it = offsets.find(TensorType::OutputTensor);
+	if (it == offsets.end())
+		return;
+
+	unsigned int outputTensorOffset = 2 * bytesPerLine + it->second;
+	Span<const uint8_t> outputTensor(buffer.data() + outputTensorOffset,
+						buffer.size() - outputTensorOffset);
+
+	IMX500OutputTensorInfo outputTensorInfo;
+	if (!imx500ParseOutputTensor(outputTensorInfo, outputTensor)) {
+		Span<const float> parsedTensor;
+			{ (const float *)outputTensorInfo.address.data(),
+				outputTensorInfo.address.size() };
+		libcameraMetadata.set(libcamera::controls::rpi::Imx500OutputTensor,
+				      parsedTensor);
 	}
 }
 

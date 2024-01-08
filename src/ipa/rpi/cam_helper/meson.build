@@ -18,6 +18,8 @@ rpi_ipa_cam_helper_includes = [
     include_directories('..'),
 ]
 
+subdir('imx500_tensor_parser')
+
 rpi_ipa_cam_helper_deps = [
     libcamera_private,
 ]

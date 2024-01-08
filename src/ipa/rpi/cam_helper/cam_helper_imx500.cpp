@@ -17,15 +17,15 @@
 #include <libcamera/control_ids.h>
 
 #include "cam_helper.h"
+#include "imx500_tensor_parser/imx500_tensor_parser.h"
 #include "md_parser.h"
 
 using namespace RPiController;
 using namespace libcamera;
 using libcamera::utils::Duration;
 
-namespace libcamera {
 LOG_DECLARE_CATEGORY(IPARPI)
-}
+
 
 /*
  * We care about two gain registers and a pair of exposure registers. Their
@@ -129,44 +129,15 @@ void CamHelperImx500::prepare(libcamera::Span<const uint8_t> buffer, Metadata &m
 	if (buffer.size() > 2 * bytesPerLine) {
 		Span<const uint8_t> outputTensor(buffer.data() + 2 * bytesPerLine,
 						 buffer.size() - 2 * bytesPerLine);
-		libcameraMetadata.set(libcamera::controls::rpi::Imx500OutputTensor, outputTensor);
-		static int frames = 0;
-
-		if (frames++ == 100)
-		{ 
-			FILE *f = fopen("output_full.dat", "wb");
-			fwrite(buffer.data(), buffer.size(), 1, f);
-			fclose(f);
-
-			f = fopen("output.dat", "wb");
-			fwrite(buffer.data() + 2 * bytesPerLine, buffer.size() - 2 * bytesPerLine, 1, f);
-			fclose(f);
-
+		
+		IMX500OutputTensorInfo outputTensorInfo;
+		if (!imx500ParseOutputTensor(outputTensorInfo, outputTensor)) {
+			Span<const float> parsedTensor
+				{ (const float *)outputTensorInfo.address.data(),
+				  outputTensorInfo.address.size() };
+			libcameraMetadata.set(libcamera::controls::rpi::Imx500OutputTensor,
+					      parsedTensor);
 		}
-
-		struct DnnHeader {
-			uint8_t frameValid;
-			uint8_t frameCount;
-			uint16_t maxLineLen;
-			uint16_t apParamSize;
-			uint16_t networkId;
-			uint8_t tensorType;
-		};
-
-		const uint8_t *src = buffer.data() + 2 * bytesPerLine;
-		DnnHeader dnnHeader;
-
-		dnnHeader.frameValid = *(src++);
-		dnnHeader.frameCount = *(src++);
-
-		dnnHeader.maxLineLen =  (*(src+1) << 8 |*(src));
-		src+=2;
-		dnnHeader.apParamSize = (*(src+1) << 8 |*(src));
-		src+=2;
-		dnnHeader.networkId = (*(src+1) << 8 |*(src));
-		src+=2;
-		dnnHeader.tensorType = *(src++);
-		(void)dnnHeader;
 	}
 }
 

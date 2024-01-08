@@ -129,28 +129,57 @@ void CamHelperImx500::prepare(libcamera::Span<const uint8_t> buffer, Metadata &m
 	if (buffer.size() <= 2 * bytesPerLine)
 		return;
 
-	Span<const uint8_t> tensors(buffer.data() + 2 * bytesPerLine,
-				    buffer.size() - 2 * bytesPerLine);
+	std::vector<uint8_t> cache(buffer.data(), buffer.data() + buffer.size());
+
+	Span<const uint8_t> tensors(cache.data() + 2 * bytesPerLine,
+				    cache.size() - 2 * bytesPerLine);
 
 	std::unordered_map<unsigned int, unsigned int> offsets =
 		RPiController::imx500SplitTensors(tensors);
 
-	auto it = offsets.find(TensorType::OutputTensor);
-	if (it == offsets.end())
-		return;
+	{
+		auto it = offsets.find(TensorType::OutputTensor);
+		if (it == offsets.end())
+			return;
 
-	unsigned int outputTensorOffset = 2 * bytesPerLine + it->second;
-	Span<const uint8_t> outputTensor(buffer.data() + outputTensorOffset,
-						buffer.size() - outputTensorOffset);
+		unsigned int outputTensorOffset = 2 * bytesPerLine + it->second;
+		Span<const uint8_t> outputTensor(cache.data() + outputTensorOffset,
+						 cache.size() - outputTensorOffset);
 
-	IMX500OutputTensorInfo outputTensorInfo;
-	if (!imx500ParseOutputTensor(outputTensorInfo, outputTensor)) {
-		Span<const float> parsedTensor;
-			{ (const float *)outputTensorInfo.address.data(),
-				outputTensorInfo.address.size() };
-		libcameraMetadata.set(libcamera::controls::rpi::Imx500OutputTensor,
-				      parsedTensor);
+		IMX500OutputTensorInfo outputTensorInfo;
+		if (!imx500ParseOutputTensor(outputTensorInfo, outputTensor)) {
+			Span<const float> parsedTensor
+				{ (const float *)outputTensorInfo.data.data(),
+				  outputTensorInfo.data.size() };
+			libcameraMetadata.set(libcamera::controls::rpi::Imx500OutputTensor,
+					      parsedTensor);
+		}
 	}
+
+	{
+		auto it = offsets.find(TensorType::InputTensor);
+		if (it == offsets.end())
+			return;
+
+		auto itOut = offsets.find(TensorType::OutputTensor);
+		if (itOut == offsets.end())
+			return;
+
+		unsigned int inputTensorOffset = 2 * bytesPerLine + it->second;
+		unsigned int outputTensorOffset = 2 * bytesPerLine + itOut->second;
+		Span<const uint8_t> inputTensor(cache.data() + inputTensorOffset,
+						outputTensorOffset);
+
+		IMX500InputTensorInfo inputTensorInfo;
+		if (!imx500ParseInputTensor(inputTensorInfo, inputTensor)) {
+			Span<const uint8_t> parsedTensor
+				{ (const uint8_t *)inputTensorInfo.data.data(),
+					inputTensorInfo.data.size() };
+			libcameraMetadata.set(libcamera::controls::rpi::Imx500InputTensor,
+					      parsedTensor);
+		}
+	}
+
 }
 
 std::pair<uint32_t, uint32_t> CamHelperImx500::getBlanking(Duration &exposure,

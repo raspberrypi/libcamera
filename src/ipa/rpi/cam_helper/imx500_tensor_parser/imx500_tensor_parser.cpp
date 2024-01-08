@@ -28,6 +28,8 @@ namespace {
 
 constexpr unsigned int DnnHeaderSize = 12;
 constexpr unsigned int MipiPhSize = 0;
+constexpr unsigned int InputSensorMaxWidth = 1280;
+constexpr unsigned int InputSensorMaxHeight = 960;
 
 enum TensorDataType {
 	Signed = 0,
@@ -61,6 +63,24 @@ struct OutputTensorApParams {
 	uint8_t format;
 };
 
+struct InputTensorApParams {
+	uint8_t networkId;
+	uint16_t width;
+	uint16_t height;
+	uint16_t channel;
+	uint16_t widthStride;
+	uint16_t heightStride;
+	uint8_t format;
+};
+
+struct InputNormInfo {
+	uint8_t inputFormat;
+	int32_t normVal[4];
+	uint8_t normShift[4];
+	int16_t divVal[4];
+	uint8_t divShift;
+};
+
 int parseHeader(DnnHeader &dnnHeader, std::vector<uint8_t> &apParams, const uint8_t *src)
 {
 	dnnHeader = *(DnnHeader *)src;
@@ -90,8 +110,8 @@ int parseHeader(DnnHeader &dnnHeader, std::vector<uint8_t> &apParams, const uint
 	return 0;
 }
 
-int parseApParams(std::vector<OutputTensorApParams> &outputApParams, const std::vector<uint8_t> &apParams,
-		  const DnnHeader &dnnHeader)
+int parseOutputApParams(std::vector<OutputTensorApParams> &outputApParams, const std::vector<uint8_t> &apParams,
+			const DnnHeader &dnnHeader)
 {
 	const apParams::fb::FBApParams *fbApParams;
 	const apParams::fb::FBNetwork *fbNetwork;
@@ -175,7 +195,6 @@ int populateOutputTensorInfo(IMX500OutputTensorInfo &outputTensorInfo,
 		totalOutSize += totalDimensionSize;
 	}
 
-	/* CodeSonar check */
 	if (totalOutSize == 0) {
 		LOG(IMX500, Error) << "Invalid output tensor info (totalOutSize is 0)";
 		return -1;
@@ -188,10 +207,9 @@ int populateOutputTensorInfo(IMX500OutputTensorInfo &outputTensorInfo,
 		return -1;
 	}
 
-	outputTensorInfo.address.resize(totalOutSize, 0.0f);
+	outputTensorInfo.data.resize(totalOutSize, 0.0f);
 	unsigned int numOutputTensors = outputApParams.size();
 
-	/* CodeSonar Check */
 	if (!numOutputTensors) {
 		LOG(IMX500, Error) << "Invalid numOutputTensors (0)";
 		return -1;
@@ -229,7 +247,7 @@ int parseOutputTensorBody(IMX500OutputTensorInfo &outputTensorInfo, const uint8_
 			  const std::vector<OutputTensorApParams> &outputApParams,
 			  const DnnHeader &dnnHeader)
 {
-	float *dst = outputTensorInfo.address.data();
+	float *dst = outputTensorInfo.data.data();
 	int ret = 0;
 
 	if (outputTensorInfo.totalSize > (std::numeric_limits<uint32_t>::max() / sizeof(float))) {
@@ -427,7 +445,171 @@ int parseOutputTensorBody(IMX500OutputTensorInfo &outputTensorInfo, const uint8_
 	return ret;
 }
 
+int parseInputApParams(InputTensorApParams &inputApParams, const std::vector<uint8_t> &apParams,
+		       const DnnHeader &dnnHeader)
+{
+	const apParams::fb::FBApParams *fbApParams;
+	const apParams::fb::FBNetwork *fbNetwork;
+	const apParams::fb::FBInputTensor *fbInputTensor;
+
+	fbApParams = apParams::fb::GetFBApParams(apParams.data());
+	LOG(IMX500, Debug) << "Networks size: " << fbApParams->networks()->size();
+
+	for (unsigned int i = 0; i < fbApParams->networks()->size(); i++) {
+		fbNetwork = (apParams::fb::FBNetwork *)(fbApParams->networks()->Get(i));
+		if (fbNetwork->id() != dnnHeader.networkId)
+			continue;
+
+		LOG(IMX500, Debug)
+			<< "Network: " << fbNetwork->type()->c_str()
+			<< ", i/p size: " << fbNetwork->inputTensors()->size()
+			<< ", o/p size: " << fbNetwork->outputTensors()->size();
+
+		fbInputTensor = (apParams::fb::FBInputTensor*)fbNetwork->inputTensors()->Get(0);
+
+		LOG(IMX500, Debug)
+			<< "Input Tensor shift: " << fbInputTensor->shift()
+			<< ", Scale: scale: " << fbInputTensor->scale()
+			<< ", Format: ", (int)fbInputTensor->format();
+
+		if (fbInputTensor->dimensions()->size() != 3) {
+			LOG(IMX500, Error) << "Invalid number of dimensions in InputTensor";
+			return -1;
+		}
+
+		for (unsigned int j = 0; j < fbInputTensor->dimensions()->size(); j++) {
+			switch (fbInputTensor->dimensions()->Get(j)->serializationIndex()) {
+			case 0:
+				inputApParams.width = fbInputTensor->dimensions()->Get(j)->size();
+				inputApParams.widthStride = inputApParams.width + fbInputTensor->dimensions()->Get(j)->padding();
+				break;
+			case 1:
+				inputApParams.height = fbInputTensor->dimensions()->Get(j)->size();
+				inputApParams.heightStride = inputApParams.height + fbInputTensor->dimensions()->Get(j)->padding();
+				break;
+			case 2:
+				inputApParams.channel = fbInputTensor->dimensions()->Get(j)->size();
+				break;
+			default:
+				LOG(IMX500, Error) << "Invalid dimension in InputTensor " << j;
+				break;
+			}
+		}
+	}
+
+	return 0;
+}
+
+int parseInputTensorBody(IMX500InputTensorInfo &inputTensorInfo, const uint8_t *src, const InputTensorApParams &inputApParams,
+			 const DnnHeader &dnnHeader)
+{
+	if ((inputApParams.width > InputSensorMaxWidth) || (inputApParams.height > InputSensorMaxHeight) ||
+	    ((inputApParams.channel != 1) && (inputApParams.channel != 3) && (inputApParams.channel != 4))) {
+		LOG(IMX500, Error)
+			<< "Invalid input tensor size w: " << inputApParams.width
+			<< " h: " << inputApParams.height
+			<< " c: " << inputApParams.channel;
+		return -1;
+	}
+
+	unsigned int outSize = inputApParams.widthStride * inputApParams.heightStride * inputApParams.channel;
+	unsigned int numLines = std::ceil(outSize / (float)dnnHeader.maxLineLen);
+	inputTensorInfo.data.resize(outSize);
+
+	unsigned int diff = 0, outLineIndex = 0, pixelIndex = 0, heightIndex = 0;
+	unsigned int wPad = inputApParams.widthStride - inputApParams.width;
+	unsigned int hPad = inputApParams.heightStride - inputApParams.height;
+
+	for (unsigned int line = 0; line < numLines; line++) {
+		for (unsigned int lineIndex = diff; lineIndex < dnnHeader.maxLineLen; lineIndex++) {
+			if (outLineIndex == inputApParams.width) { /* Skip width padding pixels */
+				outLineIndex = 0;
+				heightIndex++;
+				lineIndex += wPad;
+				if (lineIndex >= dnnHeader.maxLineLen) {
+					diff = lineIndex - dnnHeader.maxLineLen;
+					break;
+				} else
+					diff = 0;
+			}
+
+			if (heightIndex == inputApParams.height) { /* Skip height padding pixels */
+				lineIndex += hPad * inputApParams.widthStride;
+				heightIndex = 0;
+				if (lineIndex >= dnnHeader.maxLineLen) {
+					diff = lineIndex - dnnHeader.maxLineLen;
+					while (diff >= dnnHeader.maxLineLen) {
+						diff -= dnnHeader.maxLineLen;
+						src += TensorStride;
+						line++;
+					}
+					break;
+				} else
+					diff = 0;
+			}
+
+			if (((pixelIndex == inputApParams.width * inputApParams.height) ||
+			     (pixelIndex == inputApParams.width * inputApParams.height * 2) ||
+			     (pixelIndex == inputApParams.width * inputApParams.height * 3))) {
+				if (pixelIndex == outSize)
+					break;
+			}
+
+			inputTensorInfo.data[pixelIndex] = *(src + lineIndex);
+			pixelIndex++;
+			outLineIndex++;
+		}
+
+		if (pixelIndex == outSize)
+			break;
+
+		src += TensorStride;
+	}
+
+	inputTensorInfo.size = outSize;
+	inputTensorInfo.width = inputApParams.width;
+	inputTensorInfo.height = inputApParams.height;
+	inputTensorInfo.channels = inputApParams.channel;
+	inputTensorInfo.widthStride = inputApParams.widthStride;
+	inputTensorInfo.heightStride = inputApParams.heightStride;
+
+	return 0;
+}
+
 } /* namespace */
+
+int RPiController::imx500ParseInputTensor(IMX500InputTensorInfo &inputTensorInfo, libcamera::Span<const uint8_t> inputTensor)
+{
+	DnnHeader dnnHeader;
+	std::vector<uint8_t> apParams;
+	InputTensorApParams inputApParams {};
+
+	const uint8_t *src = inputTensor.data();
+	int ret = parseHeader(dnnHeader, apParams, src);
+	if (ret) {
+		LOG(IMX500, Error) << "Header param parsing failed!";
+		return ret;
+	}
+
+	if (dnnHeader.tensorType != TensorType::InputTensor) {
+		LOG(IMX500, Error) << "Invalid tensor type in AP params!";
+		return -1;
+	}
+
+	ret = parseInputApParams(inputApParams, apParams, dnnHeader);
+	if (ret) {
+		LOG(IMX500, Error) << "AP param parsing failed!";
+		return ret;
+	}
+
+	ret = parseInputTensorBody(inputTensorInfo, src + TensorStride, inputApParams, dnnHeader);
+	if (ret) {
+		LOG(IMX500, Error) << "Input tensor body parsing failed!";
+		return ret;
+	}
+
+	return 0;
+}
 
 int RPiController::imx500ParseOutputTensor(IMX500OutputTensorInfo &outputTensorInfo, Span<const uint8_t> outputTensor)
 {
@@ -447,7 +629,7 @@ int RPiController::imx500ParseOutputTensor(IMX500OutputTensorInfo &outputTensorI
 		return -1;
 	}
 
-	ret = parseApParams(outputApParams, apParams, dnnHeader);
+	ret = parseOutputApParams(outputApParams, apParams, dnnHeader);
 	if (ret) {
 		LOG(IMX500, Error) << "AP param parsing failed!";
 		return ret;

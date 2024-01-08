@@ -46,7 +46,7 @@ controls:
         Output tensor from the IMX500.
 
   - Imx500InputTensor:
-      type: float
+      type: uint8_t
       size: [n]
       description: |
         Input tensor from the IMX500.

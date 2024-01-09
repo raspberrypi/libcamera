@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # SPDX-License-Identifier: GPL-2.0-or-later
 
@@ -61,7 +61,7 @@ do
 		msg=$(git cat-file commit "$commit")
 
 		# 1. The commit message shall not contain a local changelog.
-		if echo "$msg" | grep -q '^--- *$'
+		if echo -E "$msg" | grep -q '^--- *$'
 		then
 			echo >&2 "Found local changelog in commit $commit"
 			errors=$((errors+1))
@@ -71,7 +71,7 @@ do
 		# corresponding the committer and the author.
 		committer=$(echo "$msg" | grep '^committer ' | head -1 | \
 				cut -d ' ' -f 2- | rev | cut -d ' ' -f 3- | rev)
-		if ! echo "$msg" | grep -F -q "Signed-off-by: ${committer}"
+		if ! echo -E "$msg" | grep -F -q "Signed-off-by: ${committer}"
 		then
 			echo >&2 "Missing committer Signed-off-by in commit $commit"
 			errors=$((errors+1))
@@ -79,21 +79,21 @@ do
 
 		author=$(echo "$msg" | grep '^author ' | head -1 | \
 				cut -d ' ' -f 2- | rev | cut -d ' ' -f 3- | rev)
-		if ! echo "$msg" | grep -F -q "Signed-off-by: ${author}"
+		if ! echo -E "$msg" | grep -F -q "Signed-off-by: ${author}"
 		then
 			echo >&2 "Missing author Signed-off-by in commit $commit"
 			errors=$((errors+1))
 		fi
 
 		# 3. A Reviewed-by or Acked-by is required.
-		if ! echo "$msg" | grep -q '^\(Reviewed\|Acked\)-by: '
+		if ! echo -E "$msg" | grep -q '^\(Reviewed\|Acked\)-by: '
 		then
 			echo >&2 "No Reviewed-by or Acked-by in commit $commit"
 			errors=$((errors+1))
 		fi
 
 		# 4. The commit message shall not contain a Change-Id.
-		if echo "$msg" | grep -q '^Change-Id:'
+		if echo -E "$msg" | grep -q '^Change-Id:'
 		then
 			echo >&2 "Found Change-Id in commit $commit"
 			errors=$((errors+1))

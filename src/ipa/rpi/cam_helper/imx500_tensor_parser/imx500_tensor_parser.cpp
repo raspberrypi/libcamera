@@ -521,7 +521,7 @@ int parseInputTensorBody(IMX500InputTensorInfo &inputTensorInfo, const uint8_t *
 	unsigned int hPad = inputApParams.heightStride - inputApParams.height;
 
 	for (unsigned int line = 0; line < numLines; line++) {
-		for (unsigned int lineIndex = diff; lineIndex < dnnHeader.maxLineLen; lineIndex++) {
+		for (unsigned int lineIndex = diff; lineIndex < dnnHeader.maxLineLen; lineIndex += inputApParams.width) {
 			if (outLineIndex == inputApParams.width) { /* Skip width padding pixels */
 				outLineIndex = 0;
 				heightIndex++;
@@ -555,9 +555,9 @@ int parseInputTensorBody(IMX500InputTensorInfo &inputTensorInfo, const uint8_t *
 					break;
 			}
 
-			inputTensorInfo.data[pixelIndex] = *(src + lineIndex);
-			pixelIndex++;
-			outLineIndex++;
+			memcpy(&inputTensorInfo.data[pixelIndex], src + lineIndex, inputApParams.width);
+			pixelIndex += inputApParams.width;
+			outLineIndex += inputApParams.width;
 		}
 
 		if (pixelIndex == outSize)

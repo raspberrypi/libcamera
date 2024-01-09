@@ -129,86 +129,255 @@
         {
             "rpi.agc":
             {
-                "metering_modes":
-                {
-                    "centre-weighted":
-                    {
-                        "weights": [ 3, 3, 3, 2, 2, 2, 2, 1, 1, 1, 1, 0, 0, 0, 0 ]
-                    },
-                    "spot":
-                    {
-                        "weights": [ 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ]
-                    },
-                    "matrix":
-                    {
-                        "weights": [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ]
-                    }
-                },
-                "exposure_modes":
-                {
-                    "normal":
-                    {
-                        "shutter": [ 100, 15000, 30000, 60000, 120000 ],
-                        "gain": [ 1.0, 1.0, 2.0, 4.0, 6.0 ]
-                    },
-                    "short":
-                    {
-                        "shutter": [ 100, 5000, 10000, 20000, 120000 ],
-                        "gain": [ 1.0, 2.0, 4.0, 6.0, 6.0 ]
-                    },
-                    "long":
-                    {
-                        "shutter": [ 1000, 30000, 60000, 90000, 120000 ],
-                        "gain": [ 1.0, 2.0, 4.0, 6.0, 12.0 ]
-                    }
-                },
-                "constraint_modes":
-                {
-                    "normal": [
-                        {
-                            "bound": "LOWER",
-                            "q_lo": 0.98,
-                            "q_hi": 1.0,
-                            "y_target":
-                            [
-                                0, 0.2,
-                                1000, 0.2
-                            ]
-                        }
-                    ],
-                    "highlight": [
-                        {
-                            "bound": "LOWER",
-                            "q_lo": 0.98,
-                            "q_hi": 1.0,
-                            "y_target":
-                            [
-                                0, 0.2,
-                                1000, 0.2
-                            ]
-                        },
-                        {
-                            "bound": "UPPER",
-                            "q_lo": 0.98,
-                            "q_hi": 1.0,
-                            "y_target":
-                            [
-                                0, 0.8,
-                                1000, 0.8
-                            ]
-                        }
-                    ]
-                },
-                "y_target":
-                [
-                    0, 0.16,
-                    1000, 0.165,
-                    10000, 0.17
-                ],
-                "startup_frames": 5,
-                "convergence_frames": 6,
-                "speed": 0.15
-            }
+		"channels":
+		[
+		    {
+			"metering_modes":
+			{
+			    "centre-weighted":
+			    {
+				"weights": [ 3, 3, 3, 2, 2, 2, 2, 1, 1, 1, 1, 0, 0, 0, 0 ]
+			    },
+			    "spot":
+			    {
+				"weights": [ 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ]
+			    },
+			    "matrix":
+			    {
+				"weights": [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ]
+			    }
+			},
+			"exposure_modes":
+			{
+			    "normal":
+			    {
+				"shutter": [ 100, 15000, 30000, 60000, 120000 ],
+				"gain": [ 1.0, 1.0, 2.0, 4.0, 6.0 ]
+			    },
+			    "short":
+			    {
+				"shutter": [ 100, 5000, 10000, 20000, 120000 ],
+				"gain": [ 1.0, 2.0, 4.0, 6.0, 6.0 ]
+			    },
+			    "long":
+			    {
+				"shutter": [ 1000, 30000, 60000, 90000, 120000 ],
+				"gain": [ 1.0, 2.0, 4.0, 6.0, 12.0 ]
+			    }
+			},
+			"constraint_modes":
+			{
+			    "normal": [
+				{
+				    "bound": "LOWER",
+				    "q_lo": 0.98,
+				    "q_hi": 1.0,
+				    "y_target":
+				    [
+					0, 0.2,
+					1000, 0.2
+				    ]
+				}
+			    ],
+			    "highlight": [
+				{
+				    "bound": "LOWER",
+				    "q_lo": 0.98,
+				    "q_hi": 1.0,
+				    "y_target":
+				    [
+					0, 0.2,
+					1000, 0.2
+				    ]
+				},
+				{
+				    "bound": "UPPER",
+				    "q_lo": 0.98,
+				    "q_hi": 1.0,
+				    "y_target":
+				    [
+					0, 0.8,
+					1000, 0.8
+				    ]
+				}
+			    ]
+			},
+			"y_target":
+			[
+			    0, 0.16,
+			    1000, 0.165,
+			    10000, 0.17
+			],
+			"startup_frames": 5,
+			"convergence_frames": 6,
+			"speed": 0.15
+		    },
+		    {
+			"base_ev": 0.125,
+			"metering_modes":
+			{
+			    "centre-weighted":
+			    {
+				"weights": [ 3, 3, 3, 2, 2, 2, 2, 1, 1, 1, 1, 0, 0, 0, 0 ]
+			    },
+			    "spot":
+			    {
+				"weights": [ 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ]
+			    },
+			    "matrix":
+			    {
+				"weights": [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ]
+			    }
+			},
+			"exposure_modes":
+			{
+			    "normal":
+			    {
+				"shutter": [ 100, 15000, 30000, 60000, 120000 ],
+				"gain": [ 1.0, 1.0, 2.0, 4.0, 6.0 ]
+			    },
+			    "short":
+			    {
+				"shutter": [ 100, 5000, 10000, 20000, 120000 ],
+				"gain": [ 1.0, 2.0, 4.0, 6.0, 6.0 ]
+			    },
+			    "long":
+			    {
+				"shutter": [ 1000, 30000, 60000, 90000, 120000 ],
+				"gain": [ 1.0, 2.0, 4.0, 6.0, 12.0 ]
+			    }
+			},
+			"constraint_modes":
+			{
+			    "normal": [
+				{
+				    "bound": "LOWER",
+				    "q_lo": 0.98,
+				    "q_hi": 1.0,
+				    "y_target":
+				    [
+					0, 0.2,
+					1000, 0.2
+				    ]
+				}
+			    ],
+			    "highlight": [
+				{
+				    "bound": "LOWER",
+				    "q_lo": 0.98,
+				    "q_hi": 1.0,
+				    "y_target":
+				    [
+					0, 0.2,
+					1000, 0.2
+				    ]
+				},
+				{
+				    "bound": "UPPER",
+				    "q_lo": 0.98,
+				    "q_hi": 1.0,
+				    "y_target":
+				    [
+					0, 0.8,
+					1000, 0.8
+				    ]
+				}
+			    ]
+			},
+			"y_target":
+			[
+			    0, 0.16,
+			    1000, 0.165,
+			    10000, 0.17
+			],
+			"startup_frames": 5,
+			"convergence_frames": 6,
+			"speed": 0.15
+		    },
+		    {
+			"base_ev": 1.5,
+			"metering_modes":
+			{
+			    "centre-weighted":
+			    {
+				"weights": [ 3, 3, 3, 2, 2, 2, 2, 1, 1, 1, 1, 0, 0, 0, 0 ]
+			    },
+			    "spot":
+			    {
+				"weights": [ 2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ]
+			    },
+			    "matrix":
+			    {
+				"weights": [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ]
+			    }
+			},
+			"exposure_modes":
+			{
+			    "normal":
+			    {
+				"shutter": [ 100, 15000, 30000, 60000, 120000 ],
+				"gain": [ 1.0, 1.0, 2.0, 4.0, 6.0 ]
+			    },
+			    "short":
+			    {
+				"shutter": [ 100, 5000, 10000, 20000, 120000 ],
+				"gain": [ 1.0, 2.0, 4.0, 6.0, 6.0 ]
+			    },
+			    "long":
+			    {
+				"shutter": [ 1000, 30000, 60000, 90000, 120000 ],
+				"gain": [ 1.0, 2.0, 4.0, 6.0, 12.0 ]
+			    }
+			},
+			"constraint_modes":
+			{
+			    "normal": [
+				{
+				    "bound": "LOWER",
+				    "q_lo": 0.98,
+				    "q_hi": 1.0,
+				    "y_target":
+				    [
+					0, 0.2,
+					1000, 0.2
+				    ]
+				}
+			    ],
+			    "highlight": [
+				{
+				    "bound": "LOWER",
+				    "q_lo": 0.98,
+				    "q_hi": 1.0,
+				    "y_target":
+				    [
+					0, 0.2,
+					1000, 0.2
+				    ]
+				},
+				{
+				    "bound": "UPPER",
+				    "q_lo": 0.98,
+				    "q_hi": 1.0,
+				    "y_target":
+				    [
+					0, 0.8,
+					1000, 0.8
+				    ]
+				}
+			    ]
+			},
+			"y_target":
+			[
+			    0, 0.16,
+			    1000, 0.165,
+			    10000, 0.17
+			],
+			"startup_frames": 5,
+			"convergence_frames": 6,
+			"speed": 0.15
+		    }
+		]
+	    }
         },
         {
             "rpi.alsc":
@@ -468,6 +637,21 @@
                 "skip_frames": 5,
                 "map": [ 0.0, 420, 35.0, 920 ]
             }
-        }
+        },
+	{
+	    "rpi.hdr":
+	    {
+		"MultiExposure":
+		{
+		    "cadence": [ 1, 2 ],
+		    "channel_map": { "short": 1, "long": 2 }
+		},
+		"SingleExposure":
+		{
+		    "cadence": [ 1 ],
+		    "channel_map": { "short": 1 }
+		}
+	    }
+	}
     ]
 }

@@ -24,6 +24,8 @@
 #include "controller/ccm_status.h"
 #include "controller/contrast_algorithm.h"
 #include "controller/denoise_algorithm.h"
+#include "controller/hdr_algorithm.h"
+#include "controller/hdr_status.h"
 #include "controller/lux_status.h"
 #include "controller/sharpen_algorithm.h"
 #include "controller/statistics.h"
@@ -67,6 +69,7 @@ const ControlInfoMap::Map ipaControls{
 	{ &controls::AeFlickerPeriod, ControlInfo(100, 1000000) },
 	{ &controls::Brightness, ControlInfo(-1.0f, 1.0f, 0.0f) },
 	{ &controls::Contrast, ControlInfo(0.0f, 32.0f, 1.0f) },
+	{ &controls::HdrMode, ControlInfo(controls::HdrModeValues) },
 	{ &controls::Sharpness, ControlInfo(0.0f, 16.0f, 1.0f) },
 	{ &controls::ScalerCrop, ControlInfo(Rectangle{}, Rectangle(65535, 65535, 65535, 65535), Rectangle{}) },
 	{ &controls::FrameDurationLimits, ControlInfo(INT64_C(33333), INT64_C(120000)) },
@@ -690,9 +693,17 @@ static const std::map<int32_t, RPiController::AfAlgorithm::AfPause> AfPauseTable
 	{ controls::AfPauseResume, RPiController::AfAlgorithm::AfPauseResume },
 };
 
+static const std::map<int32_t, std::string> HdrModeTable = {
+	{ controls::HdrModeOff, "Off" },
+	{ controls::HdrModeMultiExposure, "MultiExposure" },
+	{ controls::HdrModeSingleExposure, "SingleExposure" },
+};
+
 void IpaBase::applyControls(const ControlList &controls)
 {
+	using RPiController::AgcAlgorithm;
 	using RPiController::AfAlgorithm;
+	using RPiController::HdrAlgorithm;
 
 	/* Clear the return metadata buffer. */
 	libcameraMetadata_.clear();
@@ -1164,6 +1175,34 @@ void IpaBase::applyControls(const ControlList &controls)
 			break;
 		}
 
+		case controls::HDR_MODE: {
+			HdrAlgorithm *hdr = dynamic_cast<HdrAlgorithm *>(controller_.getAlgorithm("hdr"));
+			if (!hdr) {
+				LOG(IPARPI, Warning) << "No HDR algorithm available";
+				break;
+			}
+
+			auto mode = HdrModeTable.find(ctrl.second.get<int32_t>());
+			if (mode == HdrModeTable.end()) {
+				LOG(IPARPI, Warning) << "Unrecognised HDR mode";
+				break;
+			}
+
+			AgcAlgorithm *agc = dynamic_cast<AgcAlgorithm *>(controller_.getAlgorithm("agc"));
+			if (!agc) {
+				LOG(IPARPI, Warning) << "HDR requires an AGC algorithm";
+				break;
+			}
+
+			if (hdr->setMode(mode->second) == 0)
+				agc->setActiveChannels(hdr->getChannels());
+			else
+				LOG(IPARPI, Warning)
+					<< "HDR mode " << mode->second << " not supported";
+
+			break;
+		}
+
 		case controls::rpi::STATS_OUTPUT_ENABLE:
 			statsMetadataOutput_ = ctrl.second.get<bool>();
 			break;
@@ -1313,6 +1352,16 @@ void IpaBase::reportMetadata(unsigned int ipaContext)
 		}
 		libcameraMetadata_.set(controls::AfState, s);
 		libcameraMetadata_.set(controls::AfPauseState, p);
+	}
+
+	const HdrStatus *hdrStatus = rpiMetadata.getLocked<HdrStatus>("hdr.status");
+	if (hdrStatus) {
+		if (hdrStatus->channel == "short")
+			libcameraMetadata_.set(controls::HdrChannel, controls::HdrChannelShort);
+		else if (hdrStatus->channel == "long")
+			libcameraMetadata_.set(controls::HdrChannel, controls::HdrChannelLong);
+		else
+			libcameraMetadata_.set(controls::HdrChannel, controls::HdrChannelNone);
 	}
 
 	metadataReady.emit(libcameraMetadata_);

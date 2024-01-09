@@ -25,6 +25,13 @@ void gst_libcamera_clamp_and_set_frameduration(libcamera::ControlList &controls,
 					       GstStructure *element_caps);
 void gst_libcamera_framerate_to_caps(GstCaps *caps, const GstStructure *element_caps);
 
+#if !GST_CHECK_VERSION(1, 16, 0)
+static inline void gst_clear_event(GstEvent **event_ptr)
+{
+	g_clear_pointer(event_ptr, gst_mini_object_unref);
+}
+#endif
+
 #if !GST_CHECK_VERSION(1, 17, 1)
 gboolean gst_task_resume(GstTask *task);
 #endif

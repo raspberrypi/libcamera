@@ -105,12 +105,11 @@ control:
       will be downscaled in its vertical and horizontal sizes by the specified
       factor.
 
-      .. code-block::
+      .. code-block:: c
          :caption: Definition: The horizontal and vertical binning factors
 
          horizontal_binning = xBin;
          vertical_binning = yBin;
-
 
    - skipping
       Skipping reduces the image resolution by skipping the read-out of a number
@@ -118,22 +117,22 @@ control:
       number (number of pixels to 'skip') in the vertical and horizontal
       directions and for even and odd rows and columns.
 
-      .. code-block::
+      .. code-block:: c
          :caption: Definition: The horizontal and vertical skipping factors
 
-         horizontal_skipping = (xOddInc + xEvenInc) / 2
-         vertical_skipping = (yOddInc + yEvenInc) / 2
+         horizontal_skipping = (xOddInc + xEvenInc) / 2;
+         vertical_skipping = (yOddInc + yEvenInc) / 2;
 
    Different sensors perform the binning and skipping stages in different
    orders. For the sake of computing the final output image size the order of
    execution is not relevant. The overall down-scaling factor is obtained by
    combining the binning and skipping factors.
 
-   .. code-block::
+   .. code-block:: c
       :caption: Definition: The total scaling factor (binning + sub-sampling)
 
-      total_horizontal_downscale = horizontal_binning + horizontal_skipping
-      total_vertical_downscale = vertical_binning + vertical_skipping
+      total_horizontal_downscale = horizontal_binning + horizontal_skipping;
+      total_vertical_downscale = vertical_binning + vertical_skipping;
 
 
 4. The output size is used to specify any additional cropping on the sub-sampled
@@ -159,16 +158,16 @@ configurations:
    the *pixel rate* of the data sent on the MIPI CSI-2 bus allows to compute the
    image stream frame rate. The equation is the well known:
 
-   .. code-block::
+   .. code-block:: c
 
-      frame_duration = total_frame_size / pixel_rate
-      frame_rate = 1 / frame_duration
+      frame_duration = total_frame_size / pixel_rate;
+      frame_rate = 1 / frame_duration;
 
 
    where the *pixel_rate* parameter is the result of the sensor's configuration
    of the MIPI CSI-2 bus *(the following formula applies to MIPI CSI-2 when
    used on MIPI D-PHY physical protocol layer only)*
 
-   .. code-block::
+   .. code-block:: c
 
-      pixel_rate = CSI-2_link_freq * 2 * nr_of_lanes / bits_per_sample
+      pixel_rate = csi_2_link_freq * 2 * nr_of_lanes / bits_per_sample;

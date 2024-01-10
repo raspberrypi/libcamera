@@ -666,8 +666,8 @@ std::unordered_map<unsigned int, unsigned int> RPiController::imx500SplitTensors
 	/*
 	 * Structure of the IMX500 DNN output:
 	 * Line 0: KPI params
-	 * Line 1-x: Input tensor
-	 * Line (x+1)-(N-2): Output tensor
+	 * Line [1, x): Input tensor
+	 * Line [x, N-1): Output tensor
 	 * Line N-1: PQ params
 	 */
 	const uint8_t *src = tensors.data() + TensorStride;

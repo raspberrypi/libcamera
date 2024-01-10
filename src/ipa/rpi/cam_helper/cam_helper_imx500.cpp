@@ -26,7 +26,6 @@ using libcamera::utils::Duration;
 
 LOG_DECLARE_CATEGORY(IPARPI)
 
-
 /*
  * We care about two gain registers and a pair of exposure registers. Their
  * I2C addresses from the Sony IMX500 datasheet:
@@ -125,7 +124,7 @@ void CamHelperImx500::prepare(libcamera::Span<const uint8_t> buffer, Metadata &m
 	}
 
 	/* Inference data comes after 2 lines of embedded data. */
-	constexpr int StartLine = 2;
+	constexpr unsigned int StartLine = 2;
 	size_t bytesPerLine = (((mode_.width * mode_.bitdepth) >> 3) + 15) & ~15;
 	if (buffer.size() <= StartLine * bytesPerLine)
 		return;

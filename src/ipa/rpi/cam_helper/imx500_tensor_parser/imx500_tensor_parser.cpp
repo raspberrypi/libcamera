@@ -265,6 +265,9 @@ int parseOutputTensorBody(IMX500OutputTensorInfo &outputTensorInfo, const uint8_
 
 	const uint8_t *src1 = src;
 	uint32_t offset = 0;
+	std::vector<Dimensions> serializedDimT;
+	std::vector<Dimensions> actualDimT;
+
 	for (unsigned int tensorIdx = 0; tensorIdx < outputApParams.size(); tensorIdx++) {
 		offsets[tensorIdx] = offset;
 		srcArr[tensorIdx] = src1;
@@ -273,12 +276,13 @@ int parseOutputTensorBody(IMX500OutputTensorInfo &outputTensorInfo, const uint8_
 		const OutputTensorApParams &param = outputApParams.at(tensorIdx);
 		uint32_t outputTensorSize = 0;
 		uint32_t tensorOutSize = (param.bitsPerElement / 8);
-		std::vector<Dimensions> serializedDim(param.numDimensions);
-		std::vector<Dimensions> actualDim(param.numDimensions);
+
+		serializedDimT.resize(param.numDimensions);
+		actualDimT.resize(param.numDimensions);
 
 		for (int idx = 0; idx < param.numDimensions; idx++) {
-			actualDim[idx].size = param.vecDim.at(idx).size;
-			serializedDim[param.vecDim.at(idx).serializationIndex].size = param.vecDim.at(idx).size;
+			actualDimT[idx].size = param.vecDim.at(idx).size;
+			serializedDimT[param.vecDim.at(idx).serializationIndex].size = param.vecDim.at(idx).size;
 
 			tensorOutSize *= param.vecDim.at(idx).size;
 			if (tensorOutSize >= std::numeric_limits<uint32_t>::max() / param.bitsPerElement / 8) {
@@ -286,8 +290,8 @@ int parseOutputTensorBody(IMX500OutputTensorInfo &outputTensorInfo, const uint8_
 				return -1;
 			}
 
-			actualDim[idx].serializationIndex = param.vecDim.at(idx).serializationIndex;
-			serializedDim[param.vecDim.at(idx).serializationIndex].serializationIndex = (uint8_t)idx;
+			actualDimT[idx].serializationIndex = param.vecDim.at(idx).serializationIndex;
+			serializedDimT[param.vecDim.at(idx).serializationIndex].serializationIndex = (uint8_t)idx;
 		}
 
 		uint16_t numLines = (uint16_t)std::ceil(tensorOutSize / (float)dnnHeader.maxLineLen);
@@ -295,8 +299,8 @@ int parseOutputTensorBody(IMX500OutputTensorInfo &outputTensorInfo, const uint8_
 		numLinesVec[tensorIdx] = numLines;
 		outSizes[tensorIdx] = tensorOutSize;
 
-		serializedDims.push_back(serializedDim);
-		actualDims.push_back(actualDim);
+		serializedDims.push_back(serializedDimT);
+		actualDims.push_back(actualDimT);
 
 		src1 += numLines * TensorStride;
 		tensorDataNum = (outputTensorSize / (param.bitsPerElement / 8));
@@ -512,8 +516,9 @@ int parseInputTensorBody(IMX500InputTensorInfo &inputTensorInfo, const uint8_t *
 		return -1;
 	}
 
-	unsigned int outSize = inputApParams.widthStride * inputApParams.heightStride * inputApParams.channel;
-	unsigned int numLines = std::ceil(outSize / (float)dnnHeader.maxLineLen);
+	unsigned int outSize = inputApParams.width * inputApParams.height * inputApParams.channel;
+	unsigned int outSizePadded = inputApParams.widthStride * inputApParams.heightStride * inputApParams.channel;
+	unsigned int numLines = std::ceil(outSizePadded / (float)dnnHeader.maxLineLen);
 	inputTensorInfo.data.resize(outSize);
 
 	unsigned int diff = 0, outLineIndex = 0, pixelIndex = 0, heightIndex = 0;

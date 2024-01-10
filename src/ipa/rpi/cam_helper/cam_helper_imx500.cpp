@@ -125,14 +125,15 @@ void CamHelperImx500::prepare(libcamera::Span<const uint8_t> buffer, Metadata &m
 	}
 
 	/* Inference data comes after 2 lines of embedded data. */
+	constexpr int StartLine = 2;
 	size_t bytesPerLine = (((mode_.width * mode_.bitdepth) >> 3) + 15) & ~15;
-	if (buffer.size() <= 2 * bytesPerLine)
+	if (buffer.size() <= StartLine * bytesPerLine)
 		return;
 
-	std::vector<uint8_t> cache(buffer.data(), buffer.data() + buffer.size());
-
-	Span<const uint8_t> tensors(cache.data() + 2 * bytesPerLine,
-				    cache.size() - 2 * bytesPerLine);
+	/* Cache the DNN metadata for fast parsing. */
+	std::vector<uint8_t> cache(buffer.data() + StartLine * bytesPerLine,
+				   buffer.data() + buffer.size() - StartLine * bytesPerLine);
+	Span<const uint8_t> tensors(cache.data(), cache.size());
 
 	std::unordered_map<unsigned int, unsigned int> offsets =
 		RPiController::imx500SplitTensors(tensors);
@@ -142,7 +143,7 @@ void CamHelperImx500::prepare(libcamera::Span<const uint8_t> buffer, Metadata &m
 		if (it == offsets.end())
 			return;
 
-		unsigned int outputTensorOffset = 2 * bytesPerLine + it->second;
+		unsigned int outputTensorOffset = it->second;
 		Span<const uint8_t> outputTensor(cache.data() + outputTensorOffset,
 						 cache.size() - outputTensorOffset);
 
@@ -157,16 +158,16 @@ void CamHelperImx500::prepare(libcamera::Span<const uint8_t> buffer, Metadata &m
 	}
 
 	{
-		auto it = offsets.find(TensorType::InputTensor);
-		if (it == offsets.end())
+		auto itIn = offsets.find(TensorType::InputTensor);
+		if (itIn == offsets.end())
 			return;
 
 		auto itOut = offsets.find(TensorType::OutputTensor);
 		if (itOut == offsets.end())
 			return;
 
-		unsigned int inputTensorOffset = 2 * bytesPerLine + it->second;
-		unsigned int outputTensorOffset = 2 * bytesPerLine + itOut->second;
+		unsigned int inputTensorOffset = itIn->second;
+		unsigned int outputTensorOffset = itOut->second;
 		Span<const uint8_t> inputTensor(cache.data() + inputTensorOffset,
 						outputTensorOffset);
 

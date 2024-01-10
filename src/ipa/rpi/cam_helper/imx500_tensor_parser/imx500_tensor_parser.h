@@ -13,9 +13,6 @@
 
 namespace RPiController {
 
-/* Setup in the IMX500 driver */
-constexpr unsigned int TensorStride = 4064;
-
 enum TensorType {
 	InputTensor = 0,
 	OutputTensor

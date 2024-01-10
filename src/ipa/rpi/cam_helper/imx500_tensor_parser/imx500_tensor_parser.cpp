@@ -26,6 +26,9 @@ LOG_DEFINE_CATEGORY(IMX500)
 
 namespace {
 
+/* Setup in the IMX500 driver */
+constexpr unsigned int TensorStride = 2560;
+
 constexpr unsigned int DnnHeaderSize = 12;
 constexpr unsigned int MipiPhSize = 0;
 constexpr unsigned int InputSensorMaxWidth = 1280;
@@ -597,7 +600,7 @@ int RPiController::imx500ParseInputTensor(IMX500InputTensorInfo &inputTensorInfo
 	}
 
 	if (dnnHeader.tensorType != TensorType::InputTensor) {
-		LOG(IMX500, Error) << "Invalid tensor type in AP params!";
+		LOG(IMX500, Error) << "Invalid input tensor type in AP params!";
 		return -1;
 	}
 
@@ -630,7 +633,7 @@ int RPiController::imx500ParseOutputTensor(IMX500OutputTensorInfo &outputTensorI
 	}
 
 	if (dnnHeader.tensorType != TensorType::OutputTensor) {
-		LOG(IMX500, Error) << "Invalid tensor type in AP params!";
+		LOG(IMX500, Error) << "Invalid output tensor type in AP params!";
 		return -1;
 	}
 
@@ -659,24 +662,35 @@ std::unordered_map<unsigned int, unsigned int> RPiController::imx500SplitTensors
 {
 	DnnHeader inputHeader, outputHeader;
 	std::unordered_map<unsigned int, unsigned int> offsets;
-	const uint8_t *src = tensors.data();
+
+	/*
+	 * Structure of the IMX500 DNN output:
+	 * Line 0: KPI params
+	 * Line 1-x: Input tensor
+	 * Line (x+1)-(N-2): Output tensor
+	 * Line N-1: PQ params
+	 */
+	const uint8_t *src = tensors.data() + TensorStride;
 
 	inputHeader = *(DnnHeader *)src;
-
 	if (inputHeader.tensorType != TensorType::InputTensor || !inputHeader.frameValid) {
 		LOG(IMX500, Debug) << "Input tensor is invalid, arborting.";
 		return {};
 	}
 
-	offsets[TensorType::InputTensor] = 0;
+	offsets[TensorType::InputTensor] = TensorStride;
 	src += TensorStride;
+
+	LOG(IMX500, Debug)
+		<< "Found input tensor at offset " << offsets[TensorType::InputTensor];
 
 	while (src < tensors.data() + tensors.size()) {
 		outputHeader = *(DnnHeader *)src;
 		if (outputHeader.frameValid &&
 		    outputHeader.frameCount == inputHeader.frameCount &&
 		    outputHeader.apParamSize == inputHeader.apParamSize &&
-		    outputHeader.maxLineLen == inputHeader.maxLineLen) {
+		    outputHeader.maxLineLen == inputHeader.maxLineLen &&
+		    outputHeader.tensorType == TensorType::OutputTensor) {
 			offsets[TensorType::OutputTensor] = src - tensors.data();
 			LOG(IMX500, Debug)
 				<< "Found output tensor at offset " << offsets[TensorType::OutputTensor];

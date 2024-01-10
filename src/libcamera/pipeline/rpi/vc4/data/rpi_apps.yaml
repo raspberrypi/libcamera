@@ -41,5 +41,6 @@
                 # The application will always provide a request buffer for the
                 # Output 0 stream, if it has been configured.
                 "output0_mandatory_stream": true,
+                "camera_timeout_value_ms": 9999999,
         }
 }

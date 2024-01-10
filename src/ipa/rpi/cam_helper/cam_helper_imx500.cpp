@@ -131,7 +131,7 @@ void CamHelperImx500::prepare(libcamera::Span<const uint8_t> buffer, Metadata &m
 
 	/* Cache the DNN metadata for fast parsing. */
 	std::vector<uint8_t> cache(buffer.data() + StartLine * bytesPerLine,
-				   buffer.data() + buffer.size() - StartLine * bytesPerLine);
+				   buffer.data() + buffer.size());
 	Span<const uint8_t> tensors(cache.data(), cache.size());
 
 	std::unordered_map<unsigned int, unsigned int> offsets =
@@ -149,8 +149,7 @@ void CamHelperImx500::prepare(libcamera::Span<const uint8_t> buffer, Metadata &m
 		IMX500OutputTensorInfo outputTensorInfo;
 		if (!imx500ParseOutputTensor(outputTensorInfo, outputTensor)) {
 			Span<const float> parsedTensor
-				{ (const float *)outputTensorInfo.data.data(),
-				  outputTensorInfo.data.size() };
+				{ (const float *)outputTensorInfo.data.data(), outputTensorInfo.data.size() };
 			libcameraMetadata.set(libcamera::controls::rpi::Imx500OutputTensor,
 					      parsedTensor);
 		}
@@ -168,13 +167,12 @@ void CamHelperImx500::prepare(libcamera::Span<const uint8_t> buffer, Metadata &m
 		unsigned int inputTensorOffset = itIn->second;
 		unsigned int outputTensorOffset = itOut->second;
 		Span<const uint8_t> inputTensor(cache.data() + inputTensorOffset,
-						outputTensorOffset);
+						outputTensorOffset - inputTensorOffset);
 
 		IMX500InputTensorInfo inputTensorInfo;
 		if (!imx500ParseInputTensor(inputTensorInfo, inputTensor)) {
 			Span<const uint8_t> parsedTensor
-				{ (const uint8_t *)inputTensorInfo.data.data(),
-					inputTensorInfo.data.size() };
+				{ (const uint8_t *)inputTensorInfo.data.data(), inputTensorInfo.data.size() };
 			libcameraMetadata.set(libcamera::controls::rpi::Imx500InputTensor,
 					      parsedTensor);
 		}

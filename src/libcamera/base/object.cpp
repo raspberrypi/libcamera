@@ -259,7 +259,7 @@ void Object::message(Message *msg)
  * Moving an object that has a parent is not allowed, and causes undefined
  * behaviour.
  *
- * \context This function is thread-bound.
+ * \context This function is \threadbound.
  */
 void Object::moveToThread(Thread *thread)
 {

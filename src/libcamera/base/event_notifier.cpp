@@ -8,6 +8,7 @@
 #include <libcamera/base/event_notifier.h>
 
 #include <libcamera/base/event_dispatcher.h>
+#include <libcamera/base/log.h>
 #include <libcamera/base/message.h>
 #include <libcamera/base/thread.h>
 
@@ -19,6 +20,8 @@
  */
 
 namespace libcamera {
+
+LOG_DECLARE_CATEGORY(Event)
 
 /**
  * \class EventNotifier
@@ -104,6 +107,9 @@ EventNotifier::~EventNotifier()
  */
 void EventNotifier::setEnabled(bool enable)
 {
+	if (!assertThreadBound("EventNotifier can't be enabled from another thread"))
+		return;
+
 	if (enabled_ == enable)
 		return;
 

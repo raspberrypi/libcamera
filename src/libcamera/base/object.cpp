@@ -226,6 +226,35 @@ void Object::message(Message *msg)
 }
 
 /**
+ * \fn Object::assertThreadBound()
+ * \brief Check if the caller complies with thread-bound constraints
+ * \param[in] message The message to be printed on error
+ *
+ * This function verifies the calling constraints required by the \threadbound
+ * definition. It shall be called at the beginning of member functions of an
+ * Object subclass that are explicitly marked as thread-bound in their
+ * documentation.
+ *
+ * If the thread-bound constraints are not met, the function prints \a message
+ * as an error message. For debug builds, it additionally causes an assertion
+ * error.
+ *
+ * \todo Verify the thread-bound requirements for functions marked as
+ * thread-bound at the class level.
+ *
+ * \return True if the call is thread-bound compliant, false otherwise
+ */
+bool Object::assertThreadBound(const char *message)
+{
+	if (Thread::current() == thread_)
+		return true;
+
+	LOG(Object, Error) << message;
+	ASSERT(false);
+	return false;
+}
+
+/**
  * \fn R Object::invokeMethod()
  * \brief Invoke a method asynchronously on an Object instance
  * \param[in] func The object method to invoke
@@ -276,7 +305,8 @@ void Object::message(Message *msg)
  */
 void Object::moveToThread(Thread *thread)
 {
-	ASSERT(Thread::current() == thread_);
+	if (!assertThreadBound("Object can't be moved from another thread"))
+		return;
 
 	if (thread_ == thread)
 		return;

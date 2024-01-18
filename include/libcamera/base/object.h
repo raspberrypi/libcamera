@@ -49,6 +49,8 @@ public:
 protected:
 	virtual void message(Message *msg);
 
+	bool assertThreadBound(const char *message);
+
 private:
 	friend class SignalBase;
 	friend class Thread;

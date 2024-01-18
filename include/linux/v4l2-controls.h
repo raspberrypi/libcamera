@@ -177,10 +177,6 @@ enum v4l2_colorfx {
  * We reserve 128 controls for this driver.
  */
 #define V4L2_CID_USER_CCS_BASE			(V4L2_CID_USER_BASE + 0x10f0)
-
-/* The base for the bcm2835-isp driver controls.
- * We reserve 16 controls for this driver. */
-#define V4L2_CID_USER_BCM2835_ISP_BASE		(V4L2_CID_USER_BASE + 0x10e0)
 /*
  * The base for Allegro driver controls.
  * We reserve 16 controls for this driver.
@@ -210,6 +206,18 @@ enum v4l2_colorfx {
  * We reserve 16 controls for this driver.
  */
 #define V4L2_CID_USER_NPCM_BASE			(V4L2_CID_USER_BASE + 0x11b0)
+
+/*
+ * The base for THine THP7312 driver controls.
+ * We reserve 32 controls for this driver.
+ */
+#define V4L2_CID_USER_THP7312_BASE		(V4L2_CID_USER_BASE + 0x11c0)
+
+/*
+ * The base for the bcm2835-isp driver controls.
+ * We reserve 16 controls for this driver.
+ */
+#define V4L2_CID_USER_BCM2835_ISP_BASE		(V4L2_CID_USER_BASE + 0x11d0)
 
 /* MPEG-class control IDs */
 /* The MPEG controls are applicable to all codec controls

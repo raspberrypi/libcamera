@@ -17,5 +17,5 @@ foreach test : gstreamer_tests
                      link_with : test_libraries,
                      include_directories : test_includes_internal)
 
-    test(test['name'], exe, suite : 'gstreamer', is_parallel : false)
+    test(test['name'], exe, suite : 'gstreamer', is_parallel : false, env : gst_env)
 endforeach

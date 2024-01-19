@@ -371,6 +371,12 @@ void Thread::run()
 
 void Thread::finishThread()
 {
+	/*
+	 * Objects may have been scheduled for deletion right before the thread
+	 * exited. Ensure they get deleted now, before the thread stops.
+	 */
+	dispatchMessages(Message::Type::DeferredDelete);
+
 	data_->mutex_.lock();
 	data_->running_ = false;
 	data_->mutex_.unlock();

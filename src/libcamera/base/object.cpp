@@ -116,8 +116,9 @@ Object::~Object()
  * event loop that the object belongs to. This ensures the object is destroyed
  * from the right context, as required by the libcamera threading model.
  *
- * If this function is called before the thread's event loop is started, the
- * object will be deleted when the event loop starts.
+ * If this function is called before the thread's event loop is started or after
+ * it has stopped, the object will be deleted when the event loop (re)starts. If
+ * this never occurs, the object will be leaked.
  *
  * Deferred deletion can be used to control the destruction context with shared
  * pointers. An object managed with shared pointers is deleted when the last

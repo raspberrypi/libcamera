@@ -120,12 +120,13 @@ setting the ``LIBCAMERA_LOG_LEVELS`` environment variable:
 Using GStreamer plugin
 ~~~~~~~~~~~~~~~~~~~~~~
 
-To use GStreamer plugin from source tree, set the following environment so that
-GStreamer can find it. This isn't necessary when libcamera is installed.
+To use the GStreamer plugin from the source tree, use the meson ``devenv``
+command.  This will create a new shell instance with the ``GST_PLUGIN_PATH``
+environment set accordingly.
 
 .. code::
 
-  export GST_PLUGIN_PATH=$(pwd)/build/src/gstreamer
+  meson devenv -C build
 
 The debugging tool ``gst-launch-1.0`` can be used to construct a pipeline and
 test it. The following pipeline will stream from the camera named "Camera 1"

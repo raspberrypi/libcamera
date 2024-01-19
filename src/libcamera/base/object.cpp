@@ -40,8 +40,9 @@ LOG_DEFINE_CATEGORY(Object)
  * Object class.
  *
  * Deleting an object from a thread other than the one the object is bound to is
- * unsafe, unless the caller ensures that the object isn't processing any
- * message concurrently.
+ * unsafe, unless the caller ensures that the object's thread is stopped and no
+ * parent or child of the object gets deleted concurrently. See
+ * Object::~Object() for more information.
  *
  * Object slots connected to signals will also run in the context of the
  * object's thread, regardless of whether the signal is emitted in the same or
@@ -84,9 +85,20 @@ Object::Object(Object *parent)
  * Object instances shall be destroyed from the thread they are bound to,
  * otherwise undefined behaviour may occur. If deletion of an Object needs to
  * be scheduled from a different thread, deleteLater() shall be used.
+ *
+ * As an exception to this rule, Object instances may be deleted from a
+ * different thread if the thread the instance is bound to is stopped through
+ * the whole duration of the object's destruction, *and* the parent and children
+ * of the object do not get deleted concurrently. The caller is responsible for
+ * fulfilling those requirements.
+ *
+ * In all cases Object instances shall be deleted before the Thread they are
+ * bound to.
  */
 Object::~Object()
 {
+	ASSERT(Thread::current() == thread_ || !thread_->isRunning());
+
 	/*
 	 * Move signals to a private list to avoid concurrent iteration and
 	 * deletion of items from Signal::disconnect().

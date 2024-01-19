@@ -18,6 +18,7 @@
 #include <libcamera/base/log.h>
 #include <libcamera/base/message.h>
 #include <libcamera/base/mutex.h>
+#include <libcamera/base/object.h>
 
 /**
  * \page thread Thread Support

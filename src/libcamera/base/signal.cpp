@@ -8,6 +8,7 @@
 #include <libcamera/base/signal.h>
 
 #include <libcamera/base/mutex.h>
+#include <libcamera/base/object.h>
 
 /**
  * \file base/signal.h

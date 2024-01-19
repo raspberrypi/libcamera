@@ -13,9 +13,10 @@
 #include <vector>
 
 #include <libcamera/base/bound_method.h>
-#include <libcamera/base/object.h>
 
 namespace libcamera {
+
+class Object;
 
 class SignalBase
 {

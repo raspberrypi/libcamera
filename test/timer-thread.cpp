@@ -9,6 +9,7 @@
 #include <iostream>
 
 #include <libcamera/base/event_dispatcher.h>
+#include <libcamera/base/object.h>
 #include <libcamera/base/thread.h>
 #include <libcamera/base/timer.h>
 

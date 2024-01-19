@@ -10,6 +10,7 @@
 #include <thread>
 
 #include <libcamera/base/message.h>
+#include <libcamera/base/object.h>
 #include <libcamera/base/thread.h>
 #include <libcamera/base/utils.h>
 

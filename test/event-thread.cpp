@@ -11,6 +11,7 @@
 #include <unistd.h>
 
 #include <libcamera/base/event_notifier.h>
+#include <libcamera/base/object.h>
 #include <libcamera/base/thread.h>
 #include <libcamera/base/timer.h>
 

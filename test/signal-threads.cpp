@@ -59,15 +59,20 @@ private:
 class SignalThreadsTest : public Test
 {
 protected:
+	int init()
+	{
+		receiver_ = new SignalReceiver();
+		signal_.connect(receiver_, &SignalReceiver::slot);
+
+		return TestPass;
+	}
+
 	int run()
 	{
-		SignalReceiver receiver;
-		signal_.connect(&receiver, &SignalReceiver::slot);
-
 		/* Test that a signal is received in the main thread. */
 		signal_.emit(0);
 
-		switch (receiver.status()) {
+		switch (receiver_->status()) {
 		case SignalReceiver::NoSignal:
 			cout << "No signal received for direct connection" << endl;
 			return TestFail;
@@ -83,8 +88,8 @@ protected:
 		 * Move the object to a thread and verify that the signal is
 		 * correctly delivered, with the correct data.
 		 */
-		receiver.reset();
-		receiver.moveToThread(&thread_);
+		receiver_->reset();
+		receiver_->moveToThread(&thread_);
 
 		thread_.start();
 
@@ -92,7 +97,7 @@ protected:
 
 		this_thread::sleep_for(chrono::milliseconds(100));
 
-		switch (receiver.status()) {
+		switch (receiver_->status()) {
 		case SignalReceiver::NoSignal:
 			cout << "No signal received for message connection" << endl;
 			return TestFail;
@@ -104,7 +109,7 @@ protected:
 			break;
 		}
 
-		if (receiver.value() != 42) {
+		if (receiver_->value() != 42) {
 			cout << "Signal received with incorrect value" << endl;
 			return TestFail;
 		}
@@ -114,11 +119,13 @@ protected:
 
 	void cleanup()
 	{
+		receiver_->deleteLater();
 		thread_.exit(0);
 		thread_.wait();
 	}
 
 private:
+	SignalReceiver *receiver_;
 	Thread thread_;
 
 	Signal<int> signal_;

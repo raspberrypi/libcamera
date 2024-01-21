@@ -74,7 +74,7 @@ SignalBase::SlotList SignalBase::slots()
  *
  * Signals and slots are a language construct aimed at communication between
  * objects through the observer pattern without the need for boilerplate code.
- * See http://doc.qt.io/qt-5/signalsandslots.html for more information.
+ * See http://doc.qt.io/qt-6/signalsandslots.html for more information.
  *
  * Signals model events that can be observed from objects unrelated to the event
  * source. Slots are functions that are called in response to a signal. Signals

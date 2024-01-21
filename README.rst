@@ -88,7 +88,7 @@ for cam: [optional]
         - libsdl2-dev: Enables the SDL sink
 
 for qcam: [optional]
-        libtiff-dev qtbase5-dev qttools5-dev-tools
+        libtiff-dev qt6-base-dev qt6-tools-dev-tools
 
 for tracing with lttng: [optional]
         liblttng-ust-dev python3-jinja2 lttng-tools

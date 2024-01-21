@@ -109,16 +109,19 @@ protected:
 			return TestFail;
 		}
 
-		MessageReceiver receiver;
-		receiver.moveToThread(&thread_);
+		MessageReceiver *receiver = new MessageReceiver();
+		receiver->moveToThread(&thread_);
 
 		thread_.start();
 
-		receiver.postMessage(std::make_unique<Message>(Message::None));
+		receiver->postMessage(std::make_unique<Message>(Message::None));
 
 		this_thread::sleep_for(chrono::milliseconds(100));
 
-		switch (receiver.status()) {
+		MessageReceiver::Status status = receiver->status();
+		receiver->deleteLater();
+
+		switch (status) {
 		case MessageReceiver::NoMessage:
 			cout << "No message received" << endl;
 			return TestFail;
@@ -135,8 +138,7 @@ protected:
 		 * leaks. Two messages need to be posted to ensure we don't only
 		 * test the simple case of a queue containing a single message.
 		 */
-		std::unique_ptr<RecursiveMessageReceiver> recursiveReceiver =
-			std::make_unique<RecursiveMessageReceiver>();
+		RecursiveMessageReceiver *recursiveReceiver = new RecursiveMessageReceiver();
 		recursiveReceiver->moveToThread(&thread_);
 
 		recursiveReceiver->postMessage(std::make_unique<Message>(Message::None));
@@ -144,7 +146,10 @@ protected:
 
 		this_thread::sleep_for(chrono::milliseconds(10));
 
-		if (!recursiveReceiver->success()) {
+		bool success = recursiveReceiver->success();
+		recursiveReceiver->deleteLater();
+
+		if (!success) {
 			cout << "Recursive message delivery failed" << endl;
 			return TestFail;
 		}

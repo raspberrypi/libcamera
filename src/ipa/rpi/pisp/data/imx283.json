@@ -5,7 +5,7 @@
         {
             "rpi.black_level":
             {
-                "black_level": 4096
+                "black_level": 3200
             }
         },
         {

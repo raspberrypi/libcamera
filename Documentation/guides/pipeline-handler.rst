@@ -1422,7 +1422,7 @@ emitted triggers the execution of the connected slots.  A detailed description
 of the libcamera implementation is available in the `libcamera Signal and Slot`_
 classes documentation.
 
-.. _Qt Signals and Slots: https://doc.qt.io/qt-5/signalsandslots.html
+.. _Qt Signals and Slots: https://doc.qt.io/qt-6/signalsandslots.html
 .. _libcamera Signal and Slot: https://libcamera.org/api-html/classlibcamera_1_1Signal.html#details
 
 In order to notify applications about the availability of new frames and data,

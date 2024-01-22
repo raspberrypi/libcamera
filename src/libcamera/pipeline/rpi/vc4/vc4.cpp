@@ -945,6 +945,7 @@ void Vc4CameraData::tryRunPipeline()
 	params.requestControls = request->controls();
 	params.ipaContext = request->sequence();
 	params.delayContext = bayerFrame.delayContext;
+	params.buffers.embedded = 0;
 
 	if (embeddedBuffer) {
 		unsigned int embeddedId = unicam_[Unicam::Embedded].getBufferId(embeddedBuffer);

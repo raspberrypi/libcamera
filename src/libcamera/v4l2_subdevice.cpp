@@ -57,6 +57,7 @@ struct V4L2SubdeviceFormatInfo {
  * bus codes
  */
 const std::map<uint32_t, V4L2SubdeviceFormatInfo> formatInfoMap = {
+	/* This table is sorted to match the order in linux/media-bus-format.h */
 	{ MEDIA_BUS_FMT_RGB444_2X8_PADHI_BE, { 16, "RGB444_2X8_PADHI_BE", PixelFormatInfo::ColourEncodingRGB } },
 	{ MEDIA_BUS_FMT_RGB444_2X8_PADHI_LE, { 16, "RGB444_2X8_PADHI_LE", PixelFormatInfo::ColourEncodingRGB } },
 	{ MEDIA_BUS_FMT_RGB555_2X8_PADHI_BE, { 16, "RGB555_2X8_PADHI_BE", PixelFormatInfo::ColourEncodingRGB } },

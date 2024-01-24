@@ -77,6 +77,7 @@ struct AgcConfig {
 	double defaultAnalogueGain;
 	double stableRegion;
 	bool desaturate;
+	double maxDigitalGain;
 };
 
 class AgcChannel
@@ -91,7 +92,7 @@ public:
 	void setFlickerPeriod(libcamera::utils::Duration flickerPeriod);
 	void setMaxShutter(libcamera::utils::Duration maxShutter);
 	void setFixedShutter(libcamera::utils::Duration fixedShutter);
-	void setFixedAnalogueGain(double fixedAnalogueGain);
+	void setFixedGain(double fixedGain);
 	void setMeteringMode(std::string const &meteringModeName);
 	void setExposureMode(std::string const &exposureModeName);
 	void setConstraintMode(std::string const &contraintModeName);
@@ -129,6 +130,7 @@ private:
 
 		libcamera::utils::Duration shutter;
 		double analogueGain;
+		double digitalGain;
 		libcamera::utils::Duration totalExposure;
 		libcamera::utils::Duration totalExposureNoDG; /* without digital gain */
 	};
@@ -147,7 +149,7 @@ private:
 	libcamera::utils::Duration flickerPeriod_;
 	libcamera::utils::Duration maxShutter_;
 	libcamera::utils::Duration fixedShutter_;
-	double fixedAnalogueGain_;
+	double fixedGain_;
 };
 
 } /* namespace RPiController */

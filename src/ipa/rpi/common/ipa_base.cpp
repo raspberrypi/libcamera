@@ -285,20 +285,23 @@ void IpaBase::start(const ControlList &controls, StartResult *result)
 	frameLengths_.clear();
 	frameLengths_.resize(FrameLengthsQueueSize, 0s);
 
-	/* SwitchMode may supply updated exposure/gain values to use. */
-	AgcStatus agcStatus;
-	agcStatus.shutterTime = 0.0s;
-	agcStatus.analogueGain = 0.0;
+	/*
+	 * SwitchMode may supply updated exposure/gain values to use.
+	 * agcStatus_ will store these values for us to use until delayed_status values
+	 * start to appear.
+	 */
+	agcStatus_.shutterTime = 0.0s;
+	agcStatus_.analogueGain = 0.0;
 
-	metadata.get("agc.status", agcStatus);
-	if (agcStatus.shutterTime && agcStatus.analogueGain) {
+	metadata.get("agc.status", agcStatus_);
+	if (agcStatus_.shutterTime && agcStatus_.analogueGain) {
 		ControlList ctrls(sensorCtrls_);
-		applyAGC(&agcStatus, ctrls);
+		applyAGC(&agcStatus_, ctrls);
 		result->controls = std::move(ctrls);
 		setCameraTimeoutValue();
 	}
 	/* Make a note of this as it tells us the HDR status of the first few frames. */
-	hdrStatus_ = agcStatus.hdr;
+	hdrStatus_ = agcStatus_.hdr;
 
 	/*
 	 * Initialise frame counts, and decide how many frames must be hidden or
@@ -451,7 +454,9 @@ void IpaBase::prepareIsp(const PrepareParams &params)
 		controller_.prepare(&rpiMetadata);
 		/* Actually prepare the ISP parameters for the frame. */
 		platformPrepareIsp(params, rpiMetadata);
-	}
+		platformPrepareAgc(rpiMetadata);
+	} else
+		platformPrepareAgc(rpiMetadata);
 
 	frameCount_++;
 
@@ -466,10 +471,9 @@ void IpaBase::prepareIsp(const PrepareParams &params)
 void IpaBase::processStats(const ProcessParams &params)
 {
 	unsigned int ipaContext = params.ipaContext % rpiMetadata_.size();
+	RPiController::Metadata &rpiMetadata = rpiMetadata_[ipaContext];
 
 	if (processPending_ && frameCount_ >= mistrustCount_) {
-		RPiController::Metadata &rpiMetadata = rpiMetadata_[ipaContext];
-
 		auto it = buffers_.find(params.buffers.stats);
 		if (it == buffers_.end()) {
 			LOG(IPARPI, Error) << "Could not find stats buffer!";
@@ -483,14 +487,16 @@ void IpaBase::processStats(const ProcessParams &params)
 
 		helper_->process(statistics, rpiMetadata);
 		controller_.process(statistics, &rpiMetadata);
+	}
 
-		struct AgcStatus agcStatus;
-		if (rpiMetadata.get("agc.status", agcStatus) == 0) {
-			ControlList ctrls(sensorCtrls_);
-			applyAGC(&agcStatus, ctrls);
-			setDelayedControls.emit(ctrls, ipaContext);
-			setCameraTimeoutValue();
-		}
+	/* Do this even when we didn't call process, so that delayContext gets advanced. */
+	struct AgcStatus agcStatus;
+	if (rpiMetadata.get("agc.status", agcStatus) == 0) {
+		ControlList ctrls(sensorCtrls_);
+		applyAGC(&agcStatus, ctrls);
+		rpiMetadata.set("agc.status", agcStatus);
+		setDelayedControls.emit(ctrls, ipaContext);
+		setCameraTimeoutValue();
 	}
 
 	/*
@@ -784,7 +790,7 @@ void IpaBase::applyControls(const ControlList &controls)
 				break;
 			}
 
-			agc->setFixedAnalogueGain(0, ctrl.second.get<float>());
+			agc->setFixedGain(0, ctrl.second.get<float>());
 
 			libcameraMetadata_.set(controls::AnalogueGain,
 					       ctrl.second.get<float>());
@@ -1302,8 +1308,14 @@ void IpaBase::reportMetadata(unsigned int ipaContext)
 	AgcPrepareStatus *agcPrepareStatus = rpiMetadata.getLocked<AgcPrepareStatus>("agc.prepare_status");
 	if (agcPrepareStatus) {
 		libcameraMetadata_.set(controls::AeLocked, agcPrepareStatus->locked);
-		libcameraMetadata_.set(controls::DigitalGain, agcPrepareStatus->digitalGain);
 	}
+
+	const AgcStatus *agcStatus = rpiMetadata.getLocked<AgcStatus>("agc.delayed_status");
+	if (agcStatus)
+		libcameraMetadata_.set(controls::DigitalGain, agcStatus->digitalGain);
+	else
+		libcameraMetadata_.set(controls::DigitalGain, agcStatus_.digitalGain);
+	/* The HDR metadata reporting will use this agcStatus too. */
 
 	LuxStatus *luxStatus = rpiMetadata.getLocked<LuxStatus>("lux.status");
 	if (luxStatus)
@@ -1394,7 +1406,6 @@ void IpaBase::reportMetadata(unsigned int ipaContext)
 	 * delayed_status to be available, we use the HDR status that came out of the
 	 * switchMode call.
 	 */
-	const AgcStatus *agcStatus = rpiMetadata.getLocked<AgcStatus>("agc.delayed_status");
 	const HdrStatus &hdrStatus = agcStatus ? agcStatus->hdr : hdrStatus_;
 	if (!hdrStatus.mode.empty() && hdrStatus.mode != "Off") {
 		int32_t hdrMode = controls::HdrModeOff;
@@ -1451,7 +1462,7 @@ void IpaBase::applyFrameDurations(Duration minFrameDuration, Duration maxFrameDu
 	agc->setMaxShutter(maxShutter);
 }
 
-void IpaBase::applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls)
+void IpaBase::applyAGC(struct AgcStatus *agcStatus, ControlList &ctrls)
 {
 	const int32_t minGainCode = helper_->gainCode(mode_.minAnalogueGain);
 	const int32_t maxGainCode = helper_->gainCode(mode_.maxAnalogueGain);
@@ -1479,6 +1490,19 @@ void IpaBase::applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls)
 	ctrls.set(V4L2_CID_VBLANK, static_cast<int32_t>(vblank));
 	ctrls.set(V4L2_CID_EXPOSURE, exposureLines);
 	ctrls.set(V4L2_CID_ANALOGUE_GAIN, gainCode);
+
+	/*
+	 * We must update the digital gain to make up for any quantisation that happens, and
+	 * communicate that back into the metadata so that it will appear as the "delayed" status.
+	 * (Note that "exposure" is already the "actual" exposure.)
+	 */
+	double actualGain = helper_->gain(gainCode);
+	double ratio = agcStatus->analogueGain / actualGain;
+	ratio *= agcStatus->shutterTime / exposure;
+	double newDigitalGain = agcStatus->digitalGain * ratio;
+	agcStatus->digitalGain = newDigitalGain;
+	agcStatus->analogueGain = actualGain;
+	agcStatus->shutterTime = exposure;
 
 	/*
 	 * At present, there is no way of knowing if a control is read-only.

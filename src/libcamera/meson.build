@@ -7,8 +7,6 @@ libcamera_sources = files([
     'camera_controls.cpp',
     'camera_lens.cpp',
     'camera_manager.cpp',
-    'camera_sensor.cpp',
-    'camera_sensor_properties.cpp',
     'color_space.cpp',
     'controls.cpp',
     'control_serializer.cpp',
@@ -69,6 +67,7 @@ subdir('converter')
 subdir('ipa')
 subdir('pipeline')
 subdir('proxy')
+subdir('sensor')
 
 null_dep = dependency('', required : false)
 

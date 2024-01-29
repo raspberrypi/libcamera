@@ -14,7 +14,7 @@
  * We have observed that the imx219 embedded data stream randomly returns junk
  * register values. Do not rely on embedded data until this has been resolved.
  */
-#define ENABLE_EMBEDDED_DATA 0
+#define ENABLE_EMBEDDED_DATA 1
 
 #include "cam_helper.h"
 #if ENABLE_EMBEDDED_DATA

@@ -47,6 +47,7 @@ public:
 		unsigned int numGammaPoints;
 		unsigned int pipelineWidth;
 		bool statsInline;
+		bool cfeDataBufferStrided;
 	};
 
 	Controller();

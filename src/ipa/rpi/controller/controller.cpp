@@ -37,6 +37,7 @@ static const std::map<std::string, Controller::HardwareConfig> HardwareConfigMap
 			.numGammaPoints = 33,
 			.pipelineWidth = 13,
 			.statsInline = false,
+			.cfeDataBufferStrided = true,
 		}
 	},
 	{
@@ -51,6 +52,7 @@ static const std::map<std::string, Controller::HardwareConfig> HardwareConfigMap
 			.numGammaPoints = 64,
 			.pipelineWidth = 16,
 			.statsInline = true,
+			.cfeDataBufferStrided = false,
 		}
 	},
 };

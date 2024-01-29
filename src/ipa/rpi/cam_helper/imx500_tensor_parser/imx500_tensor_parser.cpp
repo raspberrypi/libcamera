@@ -660,7 +660,7 @@ int RPiController::imx500ParseOutputTensor(IMX500OutputTensorInfo &outputTensorI
 
 std::unordered_map<unsigned int, unsigned int> RPiController::imx500SplitTensors(Span<const uint8_t> tensors)
 {
-	DnnHeader inputHeader, outputHeader;
+	DnnHeader inputHeader, *outputHeader;
 	std::unordered_map<unsigned int, unsigned int> offsets;
 
 	/*
@@ -685,12 +685,12 @@ std::unordered_map<unsigned int, unsigned int> RPiController::imx500SplitTensors
 		<< "Found input tensor at offset " << offsets[TensorType::InputTensor];
 
 	while (src < tensors.data() + tensors.size()) {
-		outputHeader = *(DnnHeader *)src;
-		if (outputHeader.frameValid &&
-		    outputHeader.frameCount == inputHeader.frameCount &&
-		    outputHeader.apParamSize == inputHeader.apParamSize &&
-		    outputHeader.maxLineLen == inputHeader.maxLineLen &&
-		    outputHeader.tensorType == TensorType::OutputTensor) {
+		outputHeader = (DnnHeader *)src;
+		if (outputHeader->frameValid &&
+		    outputHeader->frameCount == inputHeader.frameCount &&
+		    outputHeader->apParamSize == inputHeader.apParamSize &&
+		    outputHeader->maxLineLen == inputHeader.maxLineLen &&
+		    outputHeader->tensorType == TensorType::OutputTensor) {
 			offsets[TensorType::OutputTensor] = src - tensors.data();
 			LOG(IMX500, Debug)
 				<< "Found output tensor at offset " << offsets[TensorType::OutputTensor];

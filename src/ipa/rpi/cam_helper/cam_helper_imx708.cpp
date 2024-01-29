@@ -126,6 +126,8 @@ void CamHelperImx708::prepare(libcamera::Span<const uint8_t> buffer, Metadata &m
 	 * of embedded data. As PDAF is quite sensor-specific, it's parsed here.
 	 */
 	size_t bytesPerLine = (mode_.width * mode_.bitdepth) >> 3;
+	if (hwConfig_.cfeDataBufferStrided)
+		bytesPerLine = (bytesPerLine + 15) & ~15;
 
 	if (buffer.size() > 2 * bytesPerLine) {
 		PdafRegions pdaf;

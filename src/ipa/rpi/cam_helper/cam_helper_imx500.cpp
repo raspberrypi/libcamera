@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <assert.h>
+#include <fstream>
 #include <cmath>
 #include <stddef.h>
 #include <stdio.h>
@@ -125,7 +126,10 @@ void CamHelperImx500::prepare(libcamera::Span<const uint8_t> buffer, Metadata &m
 
 	/* Inference data comes after 2 lines of embedded data. */
 	constexpr unsigned int StartLine = 2;
-	size_t bytesPerLine = (((mode_.width * mode_.bitdepth) >> 3) + 15) & ~15;
+	size_t bytesPerLine = (mode_.width * mode_.bitdepth) >> 3;
+	if (hwConfig_.cfeDataBufferStrided)
+		bytesPerLine = (bytesPerLine + 15) & ~15;
+
 	if (buffer.size() <= StartLine * bytesPerLine)
 		return;
 

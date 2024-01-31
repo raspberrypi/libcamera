@@ -156,6 +156,8 @@ void CamHelperImx500::prepare(libcamera::Span<const uint8_t> buffer, Metadata &m
 				{ (const float *)outputTensorInfo.data.data(), outputTensorInfo.data.size() };
 			libcameraMetadata.set(libcamera::controls::rpi::Imx500OutputTensor,
 					      parsedTensor);
+			libcameraMetadata.set(libcamera::controls::rpi::Imx500OutputTensorNetwork,
+					      outputTensorInfo.networkName);
 		}
 	}
 
@@ -179,6 +181,8 @@ void CamHelperImx500::prepare(libcamera::Span<const uint8_t> buffer, Metadata &m
 				{ (const uint8_t *)inputTensorInfo.data.data(), inputTensorInfo.data.size() };
 			libcameraMetadata.set(libcamera::controls::rpi::Imx500InputTensor,
 					      parsedTensor);
+			libcameraMetadata.set(libcamera::controls::rpi::Imx500InputTensorNetwork,
+					      inputTensorInfo.networkName);
 		}
 	}
 

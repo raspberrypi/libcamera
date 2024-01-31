@@ -6,6 +6,7 @@
  */
 
 #include <stdint.h>
+#include <string>
 #include <unordered_map>
 #include <vector>
 
@@ -21,6 +22,7 @@ enum TensorType {
 struct IMX500OutputTensorInfo {
 	uint32_t totalSize;
 	uint32_t numTensors;
+	std::string networkName;
 	std::vector<float> data;
 	std::vector<uint32_t> tensorDataNum;
 };
@@ -32,6 +34,7 @@ struct IMX500InputTensorInfo {
 	unsigned int heightStride;
 	unsigned int channels;
 	unsigned int size;
+	std::string networkName;
 	std::vector<uint8_t> data;
 };
 

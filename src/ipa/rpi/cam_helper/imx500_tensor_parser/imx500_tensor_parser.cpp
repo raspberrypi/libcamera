@@ -11,6 +11,7 @@
 #include <future>
 #include <limits>
 #include <optional>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -57,7 +58,8 @@ struct Dimensions {
 
 struct OutputTensorApParams {
 	uint8_t id;
-	char *name;
+	std::string name;
+	std::string networkName;
 	uint16_t numDimensions;
 	uint8_t bitsPerElement;
 	std::vector<Dimensions> vecDim;
@@ -68,6 +70,7 @@ struct OutputTensorApParams {
 
 struct InputTensorApParams {
 	uint8_t networkId;
+	std::string networkName;
 	uint16_t width;
 	uint16_t height;
 	uint16_t channel;
@@ -76,13 +79,6 @@ struct InputTensorApParams {
 	uint8_t format;
 };
 
-struct InputNormInfo {
-	uint8_t inputFormat;
-	int32_t normVal[4];
-	uint8_t normShift[4];
-	int16_t divVal[4];
-	uint8_t divShift;
-};
 
 int parseHeader(DnnHeader &dnnHeader, std::vector<uint8_t> &apParams, const uint8_t *src)
 {
@@ -141,7 +137,8 @@ int parseOutputApParams(std::vector<OutputTensorApParams> &outputApParams, const
 			fbOutputTensor = (apParams::fb::FBOutputTensor *)fbNetwork->outputTensors()->Get(j);
 
 			outApParam.id = fbOutputTensor->id();
-			outApParam.name = (char *)fbOutputTensor->name()->c_str();
+			outApParam.name = fbOutputTensor->name()->str();
+			outApParam.networkName = fbNetwork->type()->str();
 			outApParam.numDimensions = fbOutputTensor->numOfDimensions();
 
 			for (unsigned int k = 0; k < fbOutputTensor->numOfDimensions(); k++) {
@@ -225,6 +222,7 @@ int populateOutputTensorInfo(IMX500OutputTensorInfo &outputTensorInfo,
 
 	outputTensorInfo.totalSize = totalOutSize;
 	outputTensorInfo.numTensors = numOutputTensors;
+	outputTensorInfo.networkName = outputApParams[0].networkName;
 	outputTensorInfo.tensorDataNum.resize(numOutputTensors, 0);
 
 	return 0;
@@ -472,6 +470,7 @@ int parseInputApParams(InputTensorApParams &inputApParams, const std::vector<uin
 			<< ", i/p size: " << fbNetwork->inputTensors()->size()
 			<< ", o/p size: " << fbNetwork->outputTensors()->size();
 
+		inputApParams.networkName = fbNetwork->type()->str();
 		fbInputTensor = (apParams::fb::FBInputTensor*)fbNetwork->inputTensors()->Get(0);
 
 		LOG(IMX500, Debug)
@@ -580,6 +579,7 @@ int parseInputTensorBody(IMX500InputTensorInfo &inputTensorInfo, const uint8_t *
 	inputTensorInfo.channels = inputApParams.channel;
 	inputTensorInfo.widthStride = inputApParams.widthStride;
 	inputTensorInfo.heightStride = inputApParams.heightStride;
+	inputTensorInfo.networkName = inputApParams.networkName;
 
 	return 0;
 }

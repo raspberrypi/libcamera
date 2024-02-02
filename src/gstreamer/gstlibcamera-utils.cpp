@@ -25,6 +25,22 @@ static struct {
 	{ GST_VIDEO_FORMAT_ENCODED, formats::SGBRG8 },
 	{ GST_VIDEO_FORMAT_ENCODED, formats::SGRBG8 },
 	{ GST_VIDEO_FORMAT_ENCODED, formats::SRGGB8 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SBGGR10 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SGBRG10 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SGRBG10 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SRGGB10 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SBGGR12 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SGBRG12 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SGRBG12 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SRGGB12 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SBGGR14 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SGBRG14 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SGRBG14 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SRGGB14 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SBGGR16 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SGBRG16 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SGRBG16 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SRGGB16 },
 
 	/* Monochrome */
 	{ GST_VIDEO_FORMAT_GRAY8, formats::R8 },
@@ -250,6 +266,38 @@ bayer_format_to_string(int format)
 		return "grbg";
 	case formats::SRGGB8:
 		return "rggb";
+	case formats::SBGGR10:
+		return "bggr10le";
+	case formats::SGBRG10:
+		return "gbrg10le";
+	case formats::SGRBG10:
+		return "grbg10le";
+	case formats::SRGGB10:
+		return "rggb10le";
+	case formats::SBGGR12:
+		return "bggr12le";
+	case formats::SGBRG12:
+		return "gbrg12le";
+	case formats::SGRBG12:
+		return "grbg12le";
+	case formats::SRGGB12:
+		return "rggb12le";
+	case formats::SBGGR14:
+		return "bggr14le";
+	case formats::SGBRG14:
+		return "gbrg14le";
+	case formats::SGRBG14:
+		return "grbg14le";
+	case formats::SRGGB14:
+		return "rggb14le";
+	case formats::SBGGR16:
+		return "bggr16le";
+	case formats::SGBRG16:
+		return "gbrg16le";
+	case formats::SGRBG16:
+		return "grbg16le";
+	case formats::SRGGB16:
+		return "rggb16le";
 	}
 	return NULL;
 }

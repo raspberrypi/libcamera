@@ -26,6 +26,10 @@ static struct {
 	{ GST_VIDEO_FORMAT_ENCODED, formats::SGRBG8 },
 	{ GST_VIDEO_FORMAT_ENCODED, formats::SRGGB8 },
 
+	/* Monochrome */
+	{ GST_VIDEO_FORMAT_GRAY8, formats::R8 },
+	{ GST_VIDEO_FORMAT_GRAY16_LE, formats::R16 },
+
 	/* RGB16 */
 	{ GST_VIDEO_FORMAT_RGB16, formats::RGB565 },
 

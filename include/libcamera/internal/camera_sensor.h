@@ -9,18 +9,16 @@
 
 #include <memory>
 #include <string>
+#include <variant>
 #include <vector>
 
 #include <libcamera/base/class.h>
-#include <libcamera/base/log.h>
 
 #include <libcamera/control_ids.h>
 #include <libcamera/controls.h>
 #include <libcamera/geometry.h>
 #include <libcamera/orientation.h>
 #include <libcamera/transform.h>
-
-#include <libcamera/ipa/core_ipa_interface.h>
 
 #include "libcamera/internal/bayer_format.h"
 #include "libcamera/internal/formats.h"
@@ -32,95 +30,50 @@ class CameraLens;
 class MediaEntity;
 class SensorConfiguration;
 
-struct CameraSensorProperties;
-
 enum class Orientation;
 
-class CameraSensor : protected Loggable
+struct IPACameraSensorInfo;
+
+class CameraSensor
 {
 public:
-	~CameraSensor();
+	virtual ~CameraSensor();
 
-	int init();
+	virtual const std::string &model() const = 0;
+	virtual const std::string &id() const = 0;
 
-	const std::string &model() const { return model_; }
-	const std::string &id() const { return id_; }
+	virtual const MediaEntity *entity() const = 0;
+	virtual V4L2Subdevice *device() = 0;
 
-	const MediaEntity *entity() const { return entity_; }
-	V4L2Subdevice *device() { return subdev_.get(); }
+	virtual CameraLens *focusLens() = 0;
 
-	CameraLens *focusLens() { return focusLens_.get(); }
+	virtual const std::vector<unsigned int> &mbusCodes() const = 0;
+	virtual std::vector<Size> sizes(unsigned int mbusCode) const = 0;
+	virtual Size resolution() const = 0;
 
-	const std::vector<unsigned int> &mbusCodes() const { return mbusCodes_; }
-	std::vector<Size> sizes(unsigned int mbusCode) const;
-	Size resolution() const;
+	virtual V4L2SubdeviceFormat
+	getFormat(const std::vector<unsigned int> &mbusCodes,
+		  const Size &size) const = 0;
+	virtual int setFormat(V4L2SubdeviceFormat *format,
+			      Transform transform = Transform::Identity) = 0;
+	virtual int tryFormat(V4L2SubdeviceFormat *format) const = 0;
 
-	V4L2SubdeviceFormat getFormat(const std::vector<unsigned int> &mbusCodes,
-				      const Size &size) const;
-	int setFormat(V4L2SubdeviceFormat *format,
-		      Transform transform = Transform::Identity);
-	int tryFormat(V4L2SubdeviceFormat *format) const;
+	virtual int applyConfiguration(const SensorConfiguration &config,
+				       Transform transform = Transform::Identity,
+				       V4L2SubdeviceFormat *sensorFormat = nullptr) = 0;
 
-	int applyConfiguration(const SensorConfiguration &config,
-			       Transform transform = Transform::Identity,
-			       V4L2SubdeviceFormat *sensorFormat = nullptr);
+	virtual const ControlList &properties() const = 0;
+	virtual int sensorInfo(IPACameraSensorInfo *info) const = 0;
+	virtual Transform computeTransform(Orientation *orientation) const = 0;
+	virtual BayerFormat::Order bayerOrder(Transform t) const = 0;
 
-	const ControlList &properties() const { return properties_; }
-	int sensorInfo(IPACameraSensorInfo *info) const;
-	Transform computeTransform(Orientation *orientation) const;
-	BayerFormat::Order bayerOrder(Transform t) const;
+	virtual const ControlInfoMap &controls() const = 0;
+	virtual ControlList getControls(const std::vector<uint32_t> &ids) = 0;
+	virtual int setControls(ControlList *ctrls) = 0;
 
-	const ControlInfoMap &controls() const;
-	ControlList getControls(const std::vector<uint32_t> &ids);
-	int setControls(ControlList *ctrls);
-
-	const std::vector<controls::draft::TestPatternModeEnum> &testPatternModes() const
-	{
-		return testPatternModes_;
-	}
-	int setTestPatternMode(controls::draft::TestPatternModeEnum mode);
-
-protected:
-	explicit CameraSensor(const MediaEntity *entity);
-	std::string logPrefix() const override;
-
-private:
-	LIBCAMERA_DISABLE_COPY(CameraSensor)
-
-	int generateId();
-	int validateSensorDriver();
-	void initVimcDefaultProperties();
-	void initStaticProperties();
-	void initTestPatternModes();
-	int initProperties();
-	int discoverAncillaryDevices();
-	int applyTestPatternMode(controls::draft::TestPatternModeEnum mode);
-
-	const MediaEntity *entity_;
-	std::unique_ptr<V4L2Subdevice> subdev_;
-	unsigned int pad_;
-
-	const CameraSensorProperties *staticProps_;
-
-	std::string model_;
-	std::string id_;
-
-	V4L2Subdevice::Formats formats_;
-	std::vector<unsigned int> mbusCodes_;
-	std::vector<Size> sizes_;
-	std::vector<controls::draft::TestPatternModeEnum> testPatternModes_;
-	controls::draft::TestPatternModeEnum testPatternMode_;
-
-	Size pixelArraySize_;
-	Rectangle activeArea_;
-	const BayerFormat *bayerFormat_;
-	bool supportFlips_;
-	bool flipsAlterBayerOrder_;
-	Orientation mountingOrientation_;
-
-	ControlList properties_;
-
-	std::unique_ptr<CameraLens> focusLens_;
+	virtual const std::vector<controls::draft::TestPatternModeEnum> &
+	testPatternModes() const = 0;
+	virtual int setTestPatternMode(controls::draft::TestPatternModeEnum mode) = 0;
 };
 
 class CameraSensorFactoryBase
@@ -138,10 +91,8 @@ private:
 
 	static void registerFactory(CameraSensorFactoryBase *factory);
 
-	virtual bool match(const MediaEntity *entity) const = 0;
-
-	virtual std::unique_ptr<CameraSensor>
-	createInstance(MediaEntity *entity) const = 0;
+	virtual std::variant<std::unique_ptr<CameraSensor>, int>
+	match(MediaEntity *entity) const = 0;
 };
 
 template<typename _CameraSensor>
@@ -154,15 +105,10 @@ public:
 	}
 
 private:
-	bool match(const MediaEntity *entity) const override
+	std::variant<std::unique_ptr<CameraSensor>, int>
+	match(MediaEntity *entity) const override
 	{
 		return _CameraSensor::match(entity);
-	}
-
-	std::unique_ptr<CameraSensor>
-	createInstance(MediaEntity *entity) const override
-	{
-		return _CameraSensor::create(entity);
 	}
 };
 

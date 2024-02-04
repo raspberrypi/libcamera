@@ -42,6 +42,7 @@ EXCLUDE                = @TOP_SRCDIR@/include/libcamera/base/span.h \
                          @TOP_SRCDIR@/src/libcamera/device_enumerator_udev.cpp \
                          @TOP_SRCDIR@/src/libcamera/ipc_pipe_unixsocket.cpp \
                          @TOP_SRCDIR@/src/libcamera/pipeline/ \
+                         @TOP_SRCDIR@/src/libcamera/sensor/camera_sensor_legacy.cpp \
                          @TOP_SRCDIR@/src/libcamera/tracepoints.cpp \
                          @TOP_BUILDDIR@/include/libcamera/internal/tracepoints.h \
                          @TOP_BUILDDIR@/src/libcamera/proxy/

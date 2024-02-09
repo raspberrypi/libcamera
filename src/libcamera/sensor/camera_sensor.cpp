@@ -215,6 +215,30 @@ int CameraSensor::init()
 	return applyTestPatternMode(controls::draft::TestPatternModeEnum::TestPatternModeOff);
 }
 
+int CameraSensor::generateId()
+{
+	const std::string devPath = subdev_->devicePath();
+
+	/* Try to get ID from firmware description. */
+	id_ = sysfs::firmwareNodePath(devPath);
+	if (!id_.empty())
+		return 0;
+
+	/*
+	 * Virtual sensors not described in firmware
+	 *
+	 * Verify it's a platform device and construct ID from the device path
+	 * and model of sensor.
+	 */
+	if (devPath.find("/sys/devices/platform/", 0) == 0) {
+		id_ = devPath.substr(strlen("/sys/devices/")) + " " + model();
+		return 0;
+	}
+
+	LOG(CameraSensor, Error) << "Can't generate sensor ID";
+	return -EINVAL;
+}
+
 int CameraSensor::validateSensorDriver()
 {
 	int err = 0;
@@ -581,6 +605,21 @@ int CameraSensor::discoverAncillaryDevices()
  */
 
 /**
+ * \fn CameraSensor::device()
+ * \brief Retrieve the camera sensor device
+ * \todo Remove this function by integrating DelayedControl with CameraSensor
+ * \return The camera sensor device
+ */
+
+/**
+ * \fn CameraSensor::focusLens()
+ * \brief Retrieve the focus lens controller
+ *
+ * \return The focus lens controller. nullptr if no focus lens controller is
+ * connected to the sensor
+ */
+
+/**
  * \fn CameraSensor::mbusCodes()
  * \brief Retrieve the media bus codes supported by the camera sensor
  *
@@ -630,64 +669,6 @@ std::vector<Size> CameraSensor::sizes(unsigned int mbusCode) const
 Size CameraSensor::resolution() const
 {
 	return std::min(sizes_.back(), activeArea_.size());
-}
-
-/**
- * \fn CameraSensor::testPatternModes()
- * \brief Retrieve all the supported test pattern modes of the camera sensor
- * The test pattern mode values correspond to the controls::TestPattern control.
- *
- * \return The list of test pattern modes
- */
-
-/**
- * \brief Set the test pattern mode for the camera sensor
- * \param[in] mode The test pattern mode
- *
- * The new \a mode is applied to the sensor if it differs from the active test
- * pattern mode. Otherwise, this function is a no-op. Setting the same test
- * pattern mode for every frame thus incurs no performance penalty.
- */
-int CameraSensor::setTestPatternMode(controls::draft::TestPatternModeEnum mode)
-{
-	if (testPatternMode_ == mode)
-		return 0;
-
-	if (testPatternModes_.empty()) {
-		LOG(CameraSensor, Error)
-			<< "Camera sensor does not support test pattern modes.";
-		return -EINVAL;
-	}
-
-	return applyTestPatternMode(mode);
-}
-
-int CameraSensor::applyTestPatternMode(controls::draft::TestPatternModeEnum mode)
-{
-	if (testPatternModes_.empty())
-		return 0;
-
-	auto it = std::find(testPatternModes_.begin(), testPatternModes_.end(),
-			    mode);
-	if (it == testPatternModes_.end()) {
-		LOG(CameraSensor, Error) << "Unsupported test pattern mode "
-					 << mode;
-		return -EINVAL;
-	}
-
-	LOG(CameraSensor, Debug) << "Apply test pattern mode " << mode;
-
-	int32_t index = staticProps_->testPatternModes.at(mode);
-	ControlList ctrls{ controls() };
-	ctrls.set(V4L2_CID_TEST_PATTERN, index);
-
-	int ret = setControls(&ctrls);
-	if (ret)
-		return ret;
-
-	testPatternMode_ = mode;
-
-	return 0;
 }
 
 /**
@@ -920,80 +901,6 @@ int CameraSensor::applyConfiguration(const SensorConfiguration &config,
 }
 
 /**
- * \brief Retrieve the supported V4L2 controls and their information
- *
- * Control information is updated automatically to reflect the current sensor
- * configuration when the setFormat() function is called, without invalidating
- * any iterator on the ControlInfoMap.
- *
- * \return A map of the V4L2 controls supported by the sensor
- */
-const ControlInfoMap &CameraSensor::controls() const
-{
-	return subdev_->controls();
-}
-
-/**
- * \brief Read V4L2 controls from the sensor
- * \param[in] ids The list of controls to read, specified by their ID
- *
- * This function reads the value of all controls contained in \a ids, and
- * returns their values as a ControlList. The control identifiers are defined by
- * the V4L2 specification (V4L2_CID_*).
- *
- * If any control in \a ids is not supported by the device, is disabled (i.e.
- * has the V4L2_CTRL_FLAG_DISABLED flag set), or if any other error occurs
- * during validation of the requested controls, no control is read and this
- * function returns an empty control list.
- *
- * \sa V4L2Device::getControls()
- *
- * \return The control values in a ControlList on success, or an empty list on
- * error
- */
-ControlList CameraSensor::getControls(const std::vector<uint32_t> &ids)
-{
-	return subdev_->getControls(ids);
-}
-
-/**
- * \brief Write V4L2 controls to the sensor
- * \param[in] ctrls The list of controls to write
- *
- * This function writes the value of all controls contained in \a ctrls, and
- * stores the values actually applied to the device in the corresponding \a
- * ctrls entry. The control identifiers are defined by the V4L2 specification
- * (V4L2_CID_*).
- *
- * If any control in \a ctrls is not supported by the device, is disabled (i.e.
- * has the V4L2_CTRL_FLAG_DISABLED flag set), is read-only, or if any other
- * error occurs during validation of the requested controls, no control is
- * written and this function returns -EINVAL.
- *
- * If an error occurs while writing the controls, the index of the first
- * control that couldn't be written is returned. All controls below that index
- * are written and their values are updated in \a ctrls, while all other
- * controls are not written and their values are not changed.
- *
- * \sa V4L2Device::setControls()
- *
- * \return 0 on success or an error code otherwise
- * \retval -EINVAL One of the control is not supported or not accessible
- * \retval i The index of the control that failed
- */
-int CameraSensor::setControls(ControlList *ctrls)
-{
-	return subdev_->setControls(ctrls);
-}
-
-/**
- * \fn CameraSensor::device()
- * \brief Retrieve the camera sensor device
- * \todo Remove this function by integrating DelayedControl with CameraSensor
- * \return The camera sensor device
- */
-
-/**
  * \fn CameraSensor::properties()
  * \brief Retrieve the camera sensor properties
  * \return The list of camera sensor properties
@@ -1089,14 +996,6 @@ int CameraSensor::sensorInfo(IPACameraSensorInfo *info) const
 }
 
 /**
- * \fn CameraSensor::focusLens()
- * \brief Retrieve the focus lens controller
- *
- * \return The focus lens controller. nullptr if no focus lens controller is
- * connected to the sensor
- */
-
-/**
  * \brief Compute the Transform that gives the requested \a orientation
  * \param[inout] orientation The desired image orientation
  *
@@ -1155,33 +1054,134 @@ Transform CameraSensor::computeTransform(Orientation *orientation) const
 	return transform;
 }
 
+/**
+ * \brief Retrieve the supported V4L2 controls and their information
+ *
+ * Control information is updated automatically to reflect the current sensor
+ * configuration when the setFormat() function is called, without invalidating
+ * any iterator on the ControlInfoMap.
+ *
+ * \return A map of the V4L2 controls supported by the sensor
+ */
+const ControlInfoMap &CameraSensor::controls() const
+{
+	return subdev_->controls();
+}
+
+/**
+ * \brief Read V4L2 controls from the sensor
+ * \param[in] ids The list of controls to read, specified by their ID
+ *
+ * This function reads the value of all controls contained in \a ids, and
+ * returns their values as a ControlList. The control identifiers are defined by
+ * the V4L2 specification (V4L2_CID_*).
+ *
+ * If any control in \a ids is not supported by the device, is disabled (i.e.
+ * has the V4L2_CTRL_FLAG_DISABLED flag set), or if any other error occurs
+ * during validation of the requested controls, no control is read and this
+ * function returns an empty control list.
+ *
+ * \sa V4L2Device::getControls()
+ *
+ * \return The control values in a ControlList on success, or an empty list on
+ * error
+ */
+ControlList CameraSensor::getControls(const std::vector<uint32_t> &ids)
+{
+	return subdev_->getControls(ids);
+}
+
+/**
+ * \brief Write V4L2 controls to the sensor
+ * \param[in] ctrls The list of controls to write
+ *
+ * This function writes the value of all controls contained in \a ctrls, and
+ * stores the values actually applied to the device in the corresponding \a
+ * ctrls entry. The control identifiers are defined by the V4L2 specification
+ * (V4L2_CID_*).
+ *
+ * If any control in \a ctrls is not supported by the device, is disabled (i.e.
+ * has the V4L2_CTRL_FLAG_DISABLED flag set), is read-only, or if any other
+ * error occurs during validation of the requested controls, no control is
+ * written and this function returns -EINVAL.
+ *
+ * If an error occurs while writing the controls, the index of the first
+ * control that couldn't be written is returned. All controls below that index
+ * are written and their values are updated in \a ctrls, while all other
+ * controls are not written and their values are not changed.
+ *
+ * \sa V4L2Device::setControls()
+ *
+ * \return 0 on success or an error code otherwise
+ * \retval -EINVAL One of the control is not supported or not accessible
+ * \retval i The index of the control that failed
+ */
+int CameraSensor::setControls(ControlList *ctrls)
+{
+	return subdev_->setControls(ctrls);
+}
+
+/**
+ * \fn CameraSensor::testPatternModes()
+ * \brief Retrieve all the supported test pattern modes of the camera sensor
+ * The test pattern mode values correspond to the controls::TestPattern control.
+ *
+ * \return The list of test pattern modes
+ */
+
+/**
+ * \brief Set the test pattern mode for the camera sensor
+ * \param[in] mode The test pattern mode
+ *
+ * The new \a mode is applied to the sensor if it differs from the active test
+ * pattern mode. Otherwise, this function is a no-op. Setting the same test
+ * pattern mode for every frame thus incurs no performance penalty.
+ */
+int CameraSensor::setTestPatternMode(controls::draft::TestPatternModeEnum mode)
+{
+	if (testPatternMode_ == mode)
+		return 0;
+
+	if (testPatternModes_.empty()) {
+		LOG(CameraSensor, Error)
+			<< "Camera sensor does not support test pattern modes.";
+		return -EINVAL;
+	}
+
+	return applyTestPatternMode(mode);
+}
+
+int CameraSensor::applyTestPatternMode(controls::draft::TestPatternModeEnum mode)
+{
+	if (testPatternModes_.empty())
+		return 0;
+
+	auto it = std::find(testPatternModes_.begin(), testPatternModes_.end(),
+			    mode);
+	if (it == testPatternModes_.end()) {
+		LOG(CameraSensor, Error) << "Unsupported test pattern mode "
+					 << mode;
+		return -EINVAL;
+	}
+
+	LOG(CameraSensor, Debug) << "Apply test pattern mode " << mode;
+
+	int32_t index = staticProps_->testPatternModes.at(mode);
+	ControlList ctrls{ controls() };
+	ctrls.set(V4L2_CID_TEST_PATTERN, index);
+
+	int ret = setControls(&ctrls);
+	if (ret)
+		return ret;
+
+	testPatternMode_ = mode;
+
+	return 0;
+}
+
 std::string CameraSensor::logPrefix() const
 {
 	return "'" + entity_->name() + "'";
-}
-
-int CameraSensor::generateId()
-{
-	const std::string devPath = subdev_->devicePath();
-
-	/* Try to get ID from firmware description. */
-	id_ = sysfs::firmwareNodePath(devPath);
-	if (!id_.empty())
-		return 0;
-
-	/*
-	 * Virtual sensors not described in firmware
-	 *
-	 * Verify it's a platform device and construct ID from the device path
-	 * and model of sensor.
-	 */
-	if (devPath.find("/sys/devices/platform/", 0) == 0) {
-		id_ = devPath.substr(strlen("/sys/devices/")) + " " + model();
-		return 0;
-	}
-
-	LOG(CameraSensor, Error) << "Can't generate sensor ID";
-	return -EINVAL;
 }
 
 } /* namespace libcamera */

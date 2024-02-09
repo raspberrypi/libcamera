@@ -814,7 +814,7 @@ int CameraSensor::setFormat(V4L2SubdeviceFormat *format, Transform transform)
 	if (ret)
 		return ret;
 
-	updateControlInfo();
+	subdev_->updateControlInfo();
 	return 0;
 }
 
@@ -924,9 +924,7 @@ int CameraSensor::applyConfiguration(const SensorConfiguration &config,
  *
  * Control information is updated automatically to reflect the current sensor
  * configuration when the setFormat() function is called, without invalidating
- * any iterator on the ControlInfoMap. A manual update can also be forced by
- * calling the updateControlInfo() function for pipeline handlers that change
- * the sensor configuration wihtout using setFormat().
+ * any iterator on the ControlInfoMap.
  *
  * \return A map of the V4L2 controls supported by the sensor
  */
@@ -1013,10 +1011,6 @@ int CameraSensor::setControls(ControlList *ctrls)
  * Sensor information is only available for raw sensors. When called for a YUV
  * sensor, this function returns -EINVAL.
  *
- * Pipeline handlers that do not change the sensor format using the setFormat()
- * function may need to call updateControlInfo() beforehand, to ensure all the
- * control ranges are up to date.
- *
  * \return 0 on success, a negative error code otherwise
  */
 int CameraSensor::sensorInfo(IPACameraSensorInfo *info) const
@@ -1092,16 +1086,6 @@ int CameraSensor::sensorInfo(IPACameraSensorInfo *info) const
 	info->maxFrameLength = info->outputSize.height + vblank.max().get<int32_t>();
 
 	return 0;
-}
-
-/**
- * \fn void CameraSensor::updateControlInfo()
- * \brief Update the sensor's ControlInfoMap in case they have changed
- * \sa V4L2Device::updateControlInfo()
- */
-void CameraSensor::updateControlInfo()
-{
-	subdev_->updateControlInfo();
 }
 
 /**

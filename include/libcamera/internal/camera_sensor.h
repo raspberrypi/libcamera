@@ -75,8 +75,6 @@ public:
 	const ControlList &properties() const { return properties_; }
 	int sensorInfo(IPACameraSensorInfo *info) const;
 
-	void updateControlInfo();
-
 	CameraLens *focusLens() { return focusLens_.get(); }
 
 	Transform computeTransform(Orientation *orientation) const;

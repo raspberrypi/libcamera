@@ -10,7 +10,7 @@
 #include "libcamera/internal/delayed_controls.h"
 #include "libcamera/internal/device_enumerator.h"
 #include "libcamera/internal/media_device.h"
-#include "libcamera/internal/v4l2_videodevice.h"
+#include "libcamera/internal/v4l2_subdevice.h"
 
 #include "test.h"
 
@@ -38,16 +38,15 @@ protected:
 			return TestFail;
 		}
 
-		DeviceMatch dm("vivid");
-		dm.add("vivid-000-vid-cap");
+		DeviceMatch dm("vimc");
 
 		media_ = enumerator_->search(dm);
 		if (!media_) {
-			cerr << "vivid video device found" << endl;
+			cerr << "Unable to find \'vimc\' media device node" << endl;
 			return TestSkip;
 		}
 
-		dev_ = V4L2VideoDevice::fromEntityName(media_.get(), "vivid-000-vid-cap");
+		dev_ = V4L2Subdevice::fromEntityName(media_.get(), "Sensor A");
 		if (dev_->open()) {
 			cerr << "Failed to open video device" << endl;
 			return TestFail;
@@ -297,7 +296,7 @@ protected:
 private:
 	std::unique_ptr<DeviceEnumerator> enumerator_;
 	std::shared_ptr<MediaDevice> media_;
-	std::unique_ptr<V4L2VideoDevice> dev_;
+	std::unique_ptr<V4L2Subdevice> dev_;
 };
 
 TEST_REGISTER(DelayedControlsTest)

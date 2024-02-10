@@ -17,7 +17,7 @@
 
 namespace libcamera {
 
-class V4L2Device;
+class CameraSensor;
 
 namespace RPi {
 
@@ -29,7 +29,7 @@ public:
 		bool priorityWrite;
 	};
 
-	DelayedControls(V4L2Device *device,
+	DelayedControls(CameraSensor *sensor,
 			const std::unordered_map<uint32_t, ControlParams> &controlParams);
 
 	void reset(unsigned int cookie);
@@ -72,7 +72,7 @@ private:
 		}
 	};
 
-	V4L2Device *device_;
+	CameraSensor *sensor_;
 	std::unordered_map<const ControlId *, ControlParams> controlParams_;
 	unsigned int maxDelay_;
 

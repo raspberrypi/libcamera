@@ -816,7 +816,7 @@ int PipelineHandlerBase::registerCamera(std::unique_ptr<RPi::CameraData> &camera
 		{ V4L2_CID_HBLANK, { result.sensorConfig.hblankDelay, false } },
 		{ V4L2_CID_VBLANK, { result.sensorConfig.vblankDelay, true } }
 	};
-	data->delayedCtrls_ = std::make_unique<RPi::DelayedControls>(data->sensor_->device(), params);
+	data->delayedCtrls_ = std::make_unique<RPi::DelayedControls>(data->sensor_.get(), params);
 	data->sensorMetadata_ = result.sensorConfig.sensorMetadata;
 
 	/* Register initial controls that the Raspberry Pi IPA can handle. */

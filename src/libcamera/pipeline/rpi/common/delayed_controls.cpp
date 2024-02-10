@@ -13,7 +13,7 @@
 
 #include <libcamera/controls.h>
 
-#include "libcamera/internal/v4l2_device.h"
+#include "libcamera/internal/camera_sensor.h"
 
 /**
  * \file delayed_controls.h
@@ -63,7 +63,7 @@ namespace RPi {
 
 /**
  * \brief Construct a DelayedControls instance
- * \param[in] device The V4L2 device the controls have to be applied to
+ * \param[in] sensor The camera sensor the controls have to be applied to
  * \param[in] controlParams Map of the numerical V4L2 control ids to their
  * associated control parameters.
  *
@@ -75,15 +75,15 @@ namespace RPi {
  * mix delayed controls and controls that take effect immediately the immediate
  * controls must be listed in the \a controlParams map with a delay value of 0.
  */
-DelayedControls::DelayedControls(V4L2Device *device,
+DelayedControls::DelayedControls(CameraSensor *sensor,
 				 const std::unordered_map<uint32_t, ControlParams> &controlParams)
-	: device_(device), maxDelay_(0)
+	: sensor_(sensor), maxDelay_(0)
 {
-	const ControlInfoMap &controls = device_->controls();
+	const ControlInfoMap &controls = sensor_->controls();
 
 	/*
 	 * Create a map of control ids to delays for controls exposed by the
-	 * device.
+	 * sensor.
 	 */
 	for (auto const &param : controlParams) {
 		auto it = controls.find(param.first);
@@ -91,8 +91,8 @@ DelayedControls::DelayedControls(V4L2Device *device,
 			LOG(RPiDelayedControls, Error)
 				<< "Delay request for control id "
 				<< utils::hex(param.first)
-				<< " but control is not exposed by device "
-				<< device_->deviceNode();
+				<< " but control is not exposed by sensor "
+				<< sensor_->entity()->name();
 			continue;
 		}
 
@@ -115,7 +115,7 @@ DelayedControls::DelayedControls(V4L2Device *device,
  * \brief Reset state machine
  *
  * Resets the state machine to a starting position based on control values
- * retrieved from the device.
+ * retrieved from the sensor.
  */
 void DelayedControls::reset(unsigned int cookie)
 {
@@ -123,20 +123,20 @@ void DelayedControls::reset(unsigned int cookie)
 	writeCount_ = 0;
 	cookies_[0] = cookie;
 
-	/* Retrieve control as reported by the device. */
+	/* Retrieve control as reported by the sensor. */
 	std::vector<uint32_t> ids;
 	for (auto const &param : controlParams_)
 		ids.push_back(param.first->id());
 
-	ControlList controls = device_->getControls(ids);
+	ControlList controls = sensor_->getControls(ids);
 
-	/* Seed the control queue with the controls reported by the device. */
+	/* Seed the control queue with the controls reported by the sensor. */
 	values_.clear();
 	for (const auto &ctrl : controls) {
-		const ControlId *id = device_->controls().idmap().at(ctrl.first);
+		const ControlId *id = sensor_->controls().idmap().at(ctrl.first);
 		/*
 		 * Do not mark this control value as updated, it does not need
-		 * to be written to to device on startup.
+		 * to be written to tthe sensor on startup.
 		 */
 		values_[id][0] = Info(ctrl.second, false);
 	}
@@ -144,7 +144,7 @@ void DelayedControls::reset(unsigned int cookie)
 
 /**
  * \brief Push a set of controls on the queue
- * \param[in] controls List of controls to add to the device queue
+ * \param[in] controls List of controls to add to the sensor queue
  *
  * Push a set of controls to the control queue. This increases the control queue
  * depth by one.
@@ -161,7 +161,7 @@ bool DelayedControls::push(const ControlList &controls, const unsigned int cooki
 	}
 
 	/* Update with new controls. */
-	const ControlIdMap &idmap = device_->controls().idmap();
+	const ControlIdMap &idmap = sensor_->controls().idmap();
 	for (const auto &control : controls) {
 		const auto &it = idmap.find(control.first);
 		if (it == idmap.end()) {
@@ -210,7 +210,7 @@ std::pair<ControlList, unsigned int> DelayedControls::get(uint32_t sequence)
 {
 	unsigned int index = std::max<int>(0, sequence - maxDelay_);
 
-	ControlList out(device_->controls());
+	ControlList out(sensor_->controls());
 	for (const auto &ctrl : values_) {
 		const ControlId *id = ctrl.first;
 		const Info &info = ctrl.second[index];
@@ -243,7 +243,7 @@ void DelayedControls::applyControls(uint32_t sequence)
 	 * Create control list peeking ahead in the value queue to ensure
 	 * values are set in time to satisfy the sensor delay.
 	 */
-	ControlList out(device_->controls());
+	ControlList out(sensor_->controls());
 	for (auto &ctrl : values_) {
 		const ControlId *id = ctrl.first;
 		unsigned int delayDiff = maxDelay_ - controlParams_[id].delay;
@@ -256,9 +256,9 @@ void DelayedControls::applyControls(uint32_t sequence)
 				 * This control must be written now, it could
 				 * affect validity of the other controls.
 				 */
-				ControlList priority(device_->controls());
+				ControlList priority(sensor_->controls());
 				priority.set(id->id(), info);
-				device_->setControls(&priority);
+				sensor_->setControls(&priority);
 			} else {
 				/*
 				 * Batch up the list of controls and write them
@@ -285,7 +285,7 @@ void DelayedControls::applyControls(uint32_t sequence)
 		push({}, cookies_[queueCount_ - 1]);
 	}
 
-	device_->setControls(&out);
+	sensor_->setControls(&out);
 }
 
 } /* namespace RPi */

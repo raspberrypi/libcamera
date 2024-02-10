@@ -7,10 +7,10 @@
 
 #include <iostream>
 
+#include "libcamera/internal/camera_sensor.h"
 #include "libcamera/internal/delayed_controls.h"
 #include "libcamera/internal/device_enumerator.h"
 #include "libcamera/internal/media_device.h"
-#include "libcamera/internal/v4l2_subdevice.h"
 
 #include "test.h"
 
@@ -46,13 +46,19 @@ protected:
 			return TestSkip;
 		}
 
-		dev_ = V4L2Subdevice::fromEntityName(media_.get(), "Sensor A");
-		if (dev_->open()) {
-			cerr << "Failed to open video device" << endl;
+		MediaEntity *entity = media_->getEntityByName("Sensor A");
+		if (!entity) {
+			cerr << "Unable to find media entity 'Sensor A'" << endl;
 			return TestFail;
 		}
 
-		const ControlInfoMap &infoMap = dev_->controls();
+		sensor_ = CameraSensorFactoryBase::create(entity);
+		if (!sensor_) {
+			cerr << "Unable to initialise camera sensor" << endl;
+			return TestFail;
+		}
+
+		const ControlInfoMap &infoMap = sensor_->controls();
 
 		/* Make sure the controls we require are present. */
 		if (infoMap.empty()) {
@@ -75,12 +81,12 @@ protected:
 			{ V4L2_CID_BRIGHTNESS, { 0, false } },
 		};
 		std::unique_ptr<DelayedControls> delayed =
-			std::make_unique<DelayedControls>(dev_.get(), delays);
+			std::make_unique<DelayedControls>(sensor_.get(), delays);
 		ControlList ctrls;
 
 		/* Reset control to value not used in test. */
 		ctrls.set(V4L2_CID_BRIGHTNESS, 1);
-		dev_->setControls(&ctrls);
+		sensor_->setControls(&ctrls);
 		delayed->reset();
 
 		/* Trigger the first frame start event */
@@ -116,13 +122,13 @@ protected:
 			{ V4L2_CID_BRIGHTNESS, { 1, false } },
 		};
 		std::unique_ptr<DelayedControls> delayed =
-			std::make_unique<DelayedControls>(dev_.get(), delays);
+			std::make_unique<DelayedControls>(sensor_.get(), delays);
 		ControlList ctrls;
 
 		/* Reset control to value that will be first in test. */
 		int32_t expected = 4;
 		ctrls.set(V4L2_CID_BRIGHTNESS, expected);
-		dev_->setControls(&ctrls);
+		sensor_->setControls(&ctrls);
 		delayed->reset();
 
 		/* Trigger the first frame start event */
@@ -163,14 +169,14 @@ protected:
 			{ V4L2_CID_CONTRAST, { maxDelay, false } },
 		};
 		std::unique_ptr<DelayedControls> delayed =
-			std::make_unique<DelayedControls>(dev_.get(), delays);
+			std::make_unique<DelayedControls>(sensor_.get(), delays);
 		ControlList ctrls;
 
 		/* Reset control to value that will be first two frames in test. */
 		int32_t expected = 200;
 		ctrls.set(V4L2_CID_BRIGHTNESS, expected);
 		ctrls.set(V4L2_CID_CONTRAST, expected + 1);
-		dev_->setControls(&ctrls);
+		sensor_->setControls(&ctrls);
 		delayed->reset();
 
 		/* Trigger the first frame start event */
@@ -214,14 +220,14 @@ protected:
 			{ V4L2_CID_CONTRAST, { maxDelay, false } }
 		};
 		std::unique_ptr<DelayedControls> delayed =
-			std::make_unique<DelayedControls>(dev_.get(), delays);
+			std::make_unique<DelayedControls>(sensor_.get(), delays);
 		ControlList ctrls;
 
 		/* Reset control to value that will be first two frames in test. */
 		int32_t expected = 100;
 		ctrls.set(V4L2_CID_BRIGHTNESS, expected);
 		ctrls.set(V4L2_CID_CONTRAST, expected);
-		dev_->setControls(&ctrls);
+		sensor_->setControls(&ctrls);
 		delayed->reset();
 
 		/* Trigger the first frame start event */
@@ -296,7 +302,7 @@ protected:
 private:
 	std::unique_ptr<DeviceEnumerator> enumerator_;
 	std::shared_ptr<MediaDevice> media_;
-	std::unique_ptr<V4L2Subdevice> dev_;
+	std::unique_ptr<CameraSensor> sensor_;
 };
 
 TEST_REGISTER(DelayedControlsTest)

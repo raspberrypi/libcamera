@@ -1127,8 +1127,7 @@ int PipelineHandlerRkISP1::createCamera(MediaEntity *sensor)
 	};
 
 	data->delayedCtrls_ =
-		std::make_unique<DelayedControls>(data->sensor_->device(),
-						  params);
+		std::make_unique<DelayedControls>(data->sensor_.get(), params);
 	isp_->frameStart.connect(data->delayedCtrls_.get(),
 				 &DelayedControls::applyControls);
 

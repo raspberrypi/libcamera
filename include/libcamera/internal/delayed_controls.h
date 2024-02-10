@@ -14,7 +14,7 @@
 
 namespace libcamera {
 
-class V4L2Device;
+class CameraSensor;
 
 class DelayedControls
 {
@@ -24,7 +24,7 @@ public:
 		bool priorityWrite;
 	};
 
-	DelayedControls(V4L2Device *device,
+	DelayedControls(CameraSensor *sensor,
 			const std::unordered_map<uint32_t, ControlParams> &controlParams);
 
 	void reset();
@@ -67,7 +67,7 @@ private:
 		}
 	};
 
-	V4L2Device *device_;
+	CameraSensor *sensor_;
 	/* \todo Evaluate if we should index on ControlId * or unsigned int */
 	std::unordered_map<const ControlId *, ControlParams> controlParams_;
 	unsigned int maxDelay_;

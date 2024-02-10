@@ -1088,7 +1088,7 @@ int PipelineHandlerIPU3::registerCameras()
 		};
 
 		data->delayedCtrls_ =
-			std::make_unique<DelayedControls>(cio2->sensor()->device(),
+			std::make_unique<DelayedControls>(cio2->sensor(),
 							  params);
 		data->cio2_.frameStart().connect(data.get(),
 						 &IPU3CameraData::frameStart);

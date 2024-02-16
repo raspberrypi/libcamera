@@ -136,6 +136,7 @@ int IPARkISP1::init(const IPASettings &settings, unsigned int hwRevision,
 	/* \todo Add support for other revisions */
 	switch (hwRevision) {
 	case RKISP1_V10:
+	case RKISP1_V_IMX8MP:
 		context_.hw = &ipaHwSettingsV10;
 		break;
 	case RKISP1_V12:

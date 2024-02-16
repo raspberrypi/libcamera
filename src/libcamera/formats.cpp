@@ -1066,7 +1066,7 @@ unsigned int PixelFormatInfo::stride(unsigned int width, unsigned int plane,
 		return 0;
 	}
 
-	if (plane > planes.size() || !planes[plane].bytesPerGroup) {
+	if (plane >= planes.size() || !planes[plane].bytesPerGroup) {
 		LOG(Formats, Warning) << "Invalid plane index, stride is zero";
 		return 0;
 	}

@@ -186,8 +186,8 @@ void Agc::prepare(IPAContext &context, const uint32_t frame,
 	/* Produce the luminance histogram. */
 	params->meas.hst_config.mode = RKISP1_CIF_ISP_HISTOGRAM_MODE_Y_HISTOGRAM;
 	/* Set an average weighted histogram. */
-	for (unsigned int histBin = 0; histBin < numHistBins_; histBin++)
-		params->meas.hst_config.hist_weight[histBin] = 1;
+	Span<uint8_t> weights{ params->meas.hst_config.hist_weight, numHistBins_ };
+	std::fill(weights.begin(), weights.end(), 1);
 	/* Step size can't be less than 3. */
 	params->meas.hst_config.histogram_predivider = 4;
 
@@ -318,7 +318,7 @@ void Agc::computeExposure(IPAContext &context, IPAFrameContext &frameContext,
 
 /**
  * \brief Estimate the relative luminance of the frame with a given gain
- * \param[in] ae The RkISP1 statistics and ISP results
+ * \param[in] expMeans The mean luminance values, from the RkISP1 statistics
  * \param[in] gain The gain to apply to the frame
  *
  * This function estimates the average relative luminance of the frame that
@@ -342,28 +342,27 @@ void Agc::computeExposure(IPAContext &context, IPAFrameContext &frameContext,
  *
  * \return The relative luminance
  */
-double Agc::estimateLuminance(const rkisp1_cif_isp_ae_stat *ae,
-			      double gain)
+double Agc::estimateLuminance(Span<const uint8_t> expMeans, double gain)
 {
 	double ySum = 0.0;
 
 	/* Sum the averages, saturated to 255. */
-	for (unsigned int aeCell = 0; aeCell < numCells_; aeCell++)
-		ySum += std::min(ae->exp_mean[aeCell] * gain, 255.0);
+	for (uint8_t expMean : expMeans)
+		ySum += std::min(expMean * gain, 255.0);
 
 	/* \todo Weight with the AWB gains */
 
-	return ySum / numCells_ / 255;
+	return ySum / expMeans.size() / 255;
 }
 
 /**
  * \brief Estimate the mean value of the top 2% of the histogram
- * \param[in] hist The histogram statistics computed by the ImgU
+ * \param[in] hist The histogram statistics computed by the RkISP1
  * \return The mean value of the top 2% of the histogram
  */
-double Agc::measureBrightness(const rkisp1_cif_isp_hist_stat *hist) const
+double Agc::measureBrightness(Span<const uint32_t> hist) const
 {
-	Histogram histogram{ Span<const uint32_t>(hist->hist_bins, numHistBins_) };
+	Histogram histogram{ hist };
 	/* Estimate the quantile mean of the top 2% of the histogram. */
 	return histogram.interQuantileMean(0.98, 1.0);
 }
@@ -415,11 +414,11 @@ void Agc::process(IPAContext &context, [[maybe_unused]] const uint32_t frame,
 	const rkisp1_cif_isp_stat *params = &stats->params;
 	ASSERT(stats->meas_type & RKISP1_CIF_ISP_STAT_AUTOEXP);
 
-	const rkisp1_cif_isp_ae_stat *ae = &params->ae;
-	const rkisp1_cif_isp_hist_stat *hist = &params->hist;
+	Span<const uint8_t> ae{ params->ae.exp_mean, numCells_ };
+	Span<const uint32_t> hist{ params->hist.hist_bins, numHistBins_ };
 
 	double iqMean = measureBrightness(hist);
-	double iqMeanGain = kEvGainTarget * numHistBins_ / iqMean;
+	double iqMeanGain = kEvGainTarget * hist.size() / iqMean;
 
 	/*
 	 * Estimate the gain needed to achieve a relative luminance target. To

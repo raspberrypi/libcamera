@@ -9,6 +9,7 @@
 
 #include <linux/rkisp1-config.h>
 
+#include <libcamera/base/span.h>
 #include <libcamera/base/utils.h>
 
 #include <libcamera/geometry.h>
@@ -42,8 +43,8 @@ private:
 	void computeExposure(IPAContext &Context, IPAFrameContext &frameContext,
 			     double yGain, double iqMeanGain);
 	utils::Duration filterExposure(utils::Duration exposureValue);
-	double estimateLuminance(const rkisp1_cif_isp_ae_stat *ae, double gain);
-	double measureBrightness(const rkisp1_cif_isp_hist_stat *hist) const;
+	double estimateLuminance(Span<const uint8_t> expMeans, double gain);
+	double measureBrightness(Span<const uint32_t> hist) const;
 	void fillMetadata(IPAContext &context, IPAFrameContext &frameContext,
 			  ControlList &metadata);
 

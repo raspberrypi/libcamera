@@ -175,7 +175,7 @@ void Agc::prepare(IPAContext &context, const uint32_t frame,
 	/* Set an average weighted histogram. */
 	Span<uint8_t> weights{
 		params->meas.hst_config.hist_weight,
-		context.hw->numHistogramBins
+		context.hw->numHistogramWeights
 	};
 	std::fill(weights.begin(), weights.end(), 1);
 	/* Step size can't be less than 3. */

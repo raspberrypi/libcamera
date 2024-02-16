@@ -4,8 +4,8 @@
  * Copyright (C) 2017 Rockchip Electronics Co., Ltd.
  */
 
-#ifndef _RKISP1_CONFIG_H
-#define _RKISP1_CONFIG_H
+#ifndef _UAPI_RKISP1_CONFIG_H
+#define _UAPI_RKISP1_CONFIG_H
 
 #include <linux/types.h>
 
@@ -179,12 +179,14 @@
  * @RKISP1_V11: declared in the original vendor code, but not used
  * @RKISP1_V12: used at least in rk3326 and px30
  * @RKISP1_V13: used at least in rk1808
+ * @RKISP1_V_IMX8MP: used in at least imx8mp
  */
 enum rkisp1_cif_isp_version {
 	RKISP1_V10 = 10,
 	RKISP1_V11,
 	RKISP1_V12,
 	RKISP1_V13,
+	RKISP1_V_IMX8MP,
 };
 
 enum rkisp1_cif_isp_histogram_mode {
@@ -992,4 +994,4 @@ struct rkisp1_stat_buffer {
 	struct rkisp1_cif_isp_stat params;
 };
 
-#endif /* _RKISP1_CONFIG_H */
+#endif /* _UAPI_RKISP1_CONFIG_H */

@@ -59,7 +59,7 @@ static constexpr double kEvGainTarget = 0.5;
 static constexpr double kRelativeLuminanceTarget = 0.4;
 
 Agc::Agc()
-	: frameCount_(0), numCells_(0), numHistBins_(0), filteredExposure_(0s)
+	: frameCount_(0), filteredExposure_(0s)
 {
 	supportsRaw_ = true;
 }
@@ -80,19 +80,6 @@ int Agc::configure(IPAContext &context, const IPACameraSensorInfo &configInfo)
 	context.activeState.agc.manual.gain = context.activeState.agc.automatic.gain;
 	context.activeState.agc.manual.exposure = context.activeState.agc.automatic.exposure;
 	context.activeState.agc.autoEnabled = !context.configuration.raw;
-
-	/*
-	 * According to the RkISP1 documentation:
-	 * - versions < V12 have RKISP1_CIF_ISP_AE_MEAN_MAX_V10 entries,
-	 * - versions >= V12 have RKISP1_CIF_ISP_AE_MEAN_MAX_V12 entries.
-	 */
-	if (context.configuration.hw.revision < RKISP1_V12) {
-		numCells_ = RKISP1_CIF_ISP_AE_MEAN_MAX_V10;
-		numHistBins_ = RKISP1_CIF_ISP_HIST_BIN_N_MAX_V10;
-	} else {
-		numCells_ = RKISP1_CIF_ISP_AE_MEAN_MAX_V12;
-		numHistBins_ = RKISP1_CIF_ISP_HIST_BIN_N_MAX_V12;
-	}
 
 	/*
 	 * Define the measurement window for AGC as a centered rectangle
@@ -186,7 +173,10 @@ void Agc::prepare(IPAContext &context, const uint32_t frame,
 	/* Produce the luminance histogram. */
 	params->meas.hst_config.mode = RKISP1_CIF_ISP_HISTOGRAM_MODE_Y_HISTOGRAM;
 	/* Set an average weighted histogram. */
-	Span<uint8_t> weights{ params->meas.hst_config.hist_weight, numHistBins_ };
+	Span<uint8_t> weights{
+		params->meas.hst_config.hist_weight,
+		context.hw->numHistogramBins
+	};
 	std::fill(weights.begin(), weights.end(), 1);
 	/* Step size can't be less than 3. */
 	params->meas.hst_config.histogram_predivider = 4;
@@ -414,8 +404,11 @@ void Agc::process(IPAContext &context, [[maybe_unused]] const uint32_t frame,
 	const rkisp1_cif_isp_stat *params = &stats->params;
 	ASSERT(stats->meas_type & RKISP1_CIF_ISP_STAT_AUTOEXP);
 
-	Span<const uint8_t> ae{ params->ae.exp_mean, numCells_ };
-	Span<const uint32_t> hist{ params->hist.hist_bins, numHistBins_ };
+	Span<const uint8_t> ae{ params->ae.exp_mean, context.hw->numAeCells };
+	Span<const uint32_t> hist{
+		params->hist.hist_bins,
+		context.hw->numHistogramBins
+	};
 
 	double iqMean = measureBrightness(hist);
 	double iqMeanGain = kEvGainTarget * hist.size() / iqMean;

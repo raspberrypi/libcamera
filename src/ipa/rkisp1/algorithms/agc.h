@@ -50,9 +50,6 @@ private:
 
 	uint64_t frameCount_;
 
-	uint32_t numCells_;
-	uint32_t numHistBins_;
-
 	utils::Duration filteredExposure_;
 };
 

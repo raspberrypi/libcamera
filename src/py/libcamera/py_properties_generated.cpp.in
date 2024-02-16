@@ -17,14 +17,12 @@ class PyProperties
 {
 };
 
-class PyDraftProperties
-{
-};
+${vendors_class_def}
 
 void init_py_properties_generated(py::module& m)
 {
 	auto controls = py::class_<PyProperties>(m, "properties");
-	auto draft = py::class_<PyDraftProperties>(controls, "draft");
+${vendors_defs}
 
 ${controls}
 }

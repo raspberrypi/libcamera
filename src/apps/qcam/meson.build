@@ -63,6 +63,7 @@ resources = qt5.preprocess(moc_headers : qcam_moc_headers,
 
 qcam  = executable('qcam', qcam_sources, resources,
                    install : true,
+                   install_tag : 'bin',
                    link_with : apps_lib,
                    dependencies : [
                        libatomic,

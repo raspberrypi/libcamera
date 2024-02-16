@@ -62,6 +62,17 @@ protected:
 	/* Track the frame length times over FrameLengthsQueueSize frames. */
 	std::deque<utils::Duration> frameLengths_;
 	utils::Duration lastTimeout_;
+	ControlList libcameraMetadata_;
+	bool statsMetadataOutput_;
+
+	/* Remember the HDR status after a mode switch. */
+	HdrStatus hdrStatus_;
+
+	/* Whether the stitch block (if available) needs to swap buffers. */
+	bool stitchSwapBuffers_;
+
+	bool monoSensor_;
+	bool lensPresent_;
 
 private:
 	/* Number of metadata objects available in the context list. */
@@ -87,10 +98,6 @@ private:
 	void applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls);
 
 	std::map<unsigned int, MappedFrameBuffer> buffers_;
-
-	bool lensPresent_;
-	bool monoSensor_;
-	ControlList libcameraMetadata_;
 
 	std::array<RPiController::Metadata, numMetadataContexts> rpiMetadata_;
 
@@ -124,13 +131,6 @@ private:
 		int32_t mode;
 		utils::Duration manualPeriod;
 	} flickerState_;
-
-protected:
-	/* Remember the HDR status after a mode switch. */
-	HdrStatus hdrStatus_;
-
-	/* Whether the stitch block (if available) needs to swap buffers. */
-	bool stitchSwapBuffers_;
 };
 
 } /* namespace ipa::RPi */

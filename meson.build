@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: CC0-1.0
 
 project('libcamera', 'c', 'cpp',
-    meson_version : '>= 0.57',
-    version : '0.1.0',
+    meson_version : '>= 0.60',
+    version : '0.2.0',
     default_options : [
         'werror=true',
         'warning_level=2',
@@ -268,6 +268,8 @@ py_mod.find_installation('python3', modules : py_modules)
 summary({
             'Enabled pipelines': pipelines,
             'Enabled IPA modules': enabled_ipa_names,
+            'Controls files': controls_files,
+            'Properties files': properties_files,
             'Hotplug support': libudev.found(),
             'Tracing support': tracing_enabled,
             'Android support': android_enabled,

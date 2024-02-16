@@ -57,6 +57,7 @@ struct V4L2SubdeviceFormatInfo {
  * bus codes
  */
 const std::map<uint32_t, V4L2SubdeviceFormatInfo> formatInfoMap = {
+	/* This table is sorted to match the order in linux/media-bus-format.h */
 	{ MEDIA_BUS_FMT_RGB444_2X8_PADHI_BE, { 16, "RGB444_2X8_PADHI_BE", PixelFormatInfo::ColourEncodingRGB } },
 	{ MEDIA_BUS_FMT_RGB444_2X8_PADHI_LE, { 16, "RGB444_2X8_PADHI_LE", PixelFormatInfo::ColourEncodingRGB } },
 	{ MEDIA_BUS_FMT_RGB555_2X8_PADHI_BE, { 16, "RGB555_2X8_PADHI_BE", PixelFormatInfo::ColourEncodingRGB } },
@@ -88,6 +89,7 @@ const std::map<uint32_t, V4L2SubdeviceFormatInfo> formatInfoMap = {
 	{ MEDIA_BUS_FMT_YUYV10_2X10, { 20, "YUYV10_2X10", PixelFormatInfo::ColourEncodingYUV } },
 	{ MEDIA_BUS_FMT_YVYU10_2X10, { 20, "YVYU10_2X10", PixelFormatInfo::ColourEncodingYUV } },
 	{ MEDIA_BUS_FMT_Y12_1X12, { 12, "Y12_1X12", PixelFormatInfo::ColourEncodingYUV } },
+	{ MEDIA_BUS_FMT_Y16_1X16, { 16, "Y16_1X16", PixelFormatInfo::ColourEncodingYUV } },
 	{ MEDIA_BUS_FMT_UYVY8_1X16, { 16, "UYVY8_1X16", PixelFormatInfo::ColourEncodingYUV } },
 	{ MEDIA_BUS_FMT_VYUY8_1X16, { 16, "VYUY8_1X16", PixelFormatInfo::ColourEncodingYUV } },
 	{ MEDIA_BUS_FMT_YUYV8_1X16, { 16, "YUYV8_1X16", PixelFormatInfo::ColourEncodingYUV } },
@@ -361,6 +363,21 @@ int V4L2Subdevice::open()
 		LOG(V4L2, Error)
 			<< "Unable to query capabilities: " << strerror(-ret);
 		return ret;
+	}
+
+	/* If the subdev supports streams, enable the streams API. */
+	if (caps_.hasStreams()) {
+		struct v4l2_subdev_client_capability clientCaps{};
+		clientCaps.capabilities = V4L2_SUBDEV_CLIENT_CAP_STREAMS;
+
+		ret = ioctl(VIDIOC_SUBDEV_S_CLIENT_CAP, &clientCaps);
+		if (ret < 0) {
+			ret = -errno;
+			LOG(V4L2, Error)
+				<< "Unable to set client capabilities: "
+				<< strerror(-ret);
+			return ret;
+		}
 	}
 
 	return 0;

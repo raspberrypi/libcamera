@@ -270,6 +270,26 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.pixelsPerGroup = 1,
 		.planes = {{ { 4, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
+	{ formats::BGR161616, {
+		.name = "BGR161616",
+		.format = formats::BGR161616,
+		.v4l2Formats = { V4L2PixelFormat(V4L2_PIX_FMT_RGB48), },
+		.bitsPerPixel = 48,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
+		.packed = false,
+		.pixelsPerGroup = 1,
+		.planes = {{ { 3, 1 }, { 0, 0 }, { 0, 0 } }},
+	} },
+	{ formats::RGB161616, {
+		.name = "RGB161616",
+		.format = formats::RGB161616,
+		.v4l2Formats = { V4L2PixelFormat(V4L2_PIX_FMT_BGR48), },
+		.bitsPerPixel = 24,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
+		.packed = false,
+		.pixelsPerGroup = 1,
+		.planes = {{ { 3, 1 }, { 0, 0 }, { 0, 0 } }},
+	} },
 
 	/* YUV packed formats. */
 	{ formats::YUYV, {
@@ -497,6 +517,16 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.pixelsPerGroup = 1,
 		.planes = {{ { 2, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
+	{ formats::R10_CSI2P, {
+		.name = "R10_CSI2P",
+		.format = formats::R10_CSI2P,
+		.v4l2Formats = { V4L2PixelFormat(V4L2_PIX_FMT_Y10P), },
+		.bitsPerPixel = 10,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+		.packed = true,
+		.pixelsPerGroup = 4,
+		.planes = {{ { 5, 1 }, { 0, 0 }, { 0, 0 } }},
+	} },
 	{ formats::R12, {
 		.name = "R12",
 		.format = formats::R12,
@@ -507,15 +537,25 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.pixelsPerGroup = 1,
 		.planes = {{ { 2, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
-	{ formats::R10_CSI2P, {
-		.name = "R10_CSI2P",
-		.format = formats::R10_CSI2P,
-		.v4l2Formats = { V4L2PixelFormat(V4L2_PIX_FMT_Y10P), },
-		.bitsPerPixel = 10,
+	{ formats::R16, {
+		.name = "R16",
+		.format = formats::R16,
+		.v4l2Formats = { V4L2PixelFormat(V4L2_PIX_FMT_Y16), },
+		.bitsPerPixel = 16,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+		.packed = false,
+		.pixelsPerGroup = 1,
+		.planes = {{ { 2, 1 }, { 0, 0 }, { 0, 0 } }},
+	} },
+	{ formats::MONO_PISP_COMP1, {
+		.name = "MONO_PISP_COMP1",
+		.format = formats::MONO_PISP_COMP1,
+		.v4l2Formats = { V4L2PixelFormat(V4L2_PIX_FMT_PISP_COMP1_MONO), },
+		.bitsPerPixel = 16,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 		.packed = true,
-		.pixelsPerGroup = 4,
-		.planes = {{ { 5, 1 }, { 0, 0 }, { 0, 0 } }},
+		.pixelsPerGroup = 1,
+		.planes = {{ { 2, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
 
 	/* Bayer formats. */

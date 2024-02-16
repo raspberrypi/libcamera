@@ -587,12 +587,12 @@ immutable properties of the ``Camera`` device.
 
 The libcamera controls and properties are defined in YAML form which is
 processed to automatically generate documentation and interfaces. Controls are
-defined by the src/libcamera/`control_ids.yaml`_ file and camera properties
-are defined by src/libcamera/`properties_ids.yaml`_.
+defined by the src/libcamera/`control_ids_core.yaml`_ file and camera properties
+are defined by src/libcamera/`properties_ids_core.yaml`_.
 
 .. _controls framework: https://libcamera.org/api-html/controls_8h.html
-.. _control_ids.yaml: https://libcamera.org/api-html/control__ids_8h.html
-.. _properties_ids.yaml: https://libcamera.org/api-html/property__ids_8h.html
+.. _control_ids_core.yaml: https://libcamera.org/api-html/control__ids_8h.html
+.. _properties_ids_core.yaml: https://libcamera.org/api-html/property__ids_8h.html
 
 Pipeline handlers can optionally register the list of controls an application
 can set as well as a list of immutable camera properties. Being both
@@ -671,6 +671,58 @@ handling controls:
 
    #include <libcamera/controls.h>
    #include <libcamera/control_ids.h>
+
+Vendor-specific controls and properties
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Vendor-specific controls and properties must be defined in a separate YAML file
+and included in the build by defining the pipeline handler to file mapping in
+include/libcamera/meson.build. These YAML files live in the src/libcamera
+directory.
+
+For example, adding a Raspberry Pi vendor control file for the PiSP pipeline
+handler is done with the following mapping:
+
+.. code-block:: meson
+
+   controls_map = {
+      'controls': {
+         'draft': 'control_ids_draft.yaml',
+         'libcamera': 'control_ids_core.yaml',
+         'rpi/pisp': 'control_ids_rpi.yaml',
+      },
+
+      'properties': {
+         'draft': 'property_ids_draft.yaml',
+         'libcamera': 'property_ids_core.yaml',
+      }
+   }
+
+The pipeline handler named above must match the pipeline handler option string
+specified in the meson build configuration.
+
+Vendor-specific controls and properties must contain a `vendor: <vendor_string>`
+tag in the YAML file. Every unique vendor tag must define a unique and
+non-overlapping range of reserved control IDs in src/libcamera/control_ranges.yaml.
+
+For example, the following block defines a vendor-specific control with the
+`rpi` vendor tag:
+
+.. code-block:: yaml
+
+    vendor: rpi
+    controls:
+      - PispConfigDumpFile:
+          type: string
+          description: |
+            Triggers the Raspberry Pi PiSP pipeline handler to generate a JSON
+            formatted dump of the Backend configuration to the filename given by the
+            value of the control.
+
+The controls will be generated in the vendor-specific namespace
+`libcamera::controls::rpi`. Additionally a `#define
+LIBCAMERA_HAS_RPI_VENDOR_CONTROLS` will be available to allow applications to
+test for the availability of these controls.
 
 Generating a default configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1370,7 +1422,7 @@ emitted triggers the execution of the connected slots.  A detailed description
 of the libcamera implementation is available in the `libcamera Signal and Slot`_
 classes documentation.
 
-.. _Qt Signals and Slots: https://doc.qt.io/qt-5/signalsandslots.html
+.. _Qt Signals and Slots: https://doc.qt.io/qt-6/signalsandslots.html
 .. _libcamera Signal and Slot: https://libcamera.org/api-html/classlibcamera_1_1Signal.html#details
 
 In order to notify applications about the availability of new frames and data,

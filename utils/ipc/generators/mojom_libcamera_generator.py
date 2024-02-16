@@ -72,7 +72,7 @@ def ParamsCommaSep(l):
 def GetDefaultValue(element):
     if element.default is not None:
         return element.default
-    if type(element.kind) == mojom.Kind:
+    if type(element.kind) == mojom.ValueKind:
         return '0'
     if IsFlags(element):
         return ''
@@ -369,7 +369,7 @@ def ValidateNamespace(namespace):
     if namespace == '':
         raise Exception('Must have a namespace')
 
-    if not re.match('^ipa\.[0-9A-Za-z_]+', namespace):
+    if not re.match(r'^ipa\.[0-9A-Za-z_]+', namespace):
         raise Exception('Namespace must be of the form "ipa.{pipeline_name}"')
 
 def ValidateInterfaces(interfaces):

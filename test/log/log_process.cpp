@@ -81,12 +81,13 @@ protected:
 			return TestFail;
 		}
 
-		timeout.start(200ms);
+		timeout.start(2s);
 		while (timeout.isRunning())
 			dispatcher->processEvents();
 
 		if (exitStatus_ != Process::NormalExit) {
-			cerr << "process did not exit normally" << endl;
+			cerr << "process did not exit normally: " << exitStatus_
+			     << endl;
 			return TestFail;
 		}
 
@@ -115,8 +116,11 @@ protected:
 		close(fd);
 
 		string str(buf);
-		if (str.find(message) == string::npos)
+		if (str.find(message) == string::npos) {
+			cerr << "Received message is not correct (received "
+			     << str.length() << " bytes)" << endl;
 			return TestFail;
+		}
 
 		return TestPass;
 	}
@@ -136,7 +140,7 @@ private:
 	ProcessManager processManager_;
 
 	Process proc_;
-	Process::ExitStatus exitStatus_;
+	Process::ExitStatus exitStatus_ = Process::NotExited;
 	string logPath_;
 	int exitCode_;
 	int num_;

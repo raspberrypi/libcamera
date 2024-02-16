@@ -7,6 +7,7 @@
 
 #include <libcamera/base/bound_method.h>
 #include <libcamera/base/message.h>
+#include <libcamera/base/object.h>
 #include <libcamera/base/semaphore.h>
 #include <libcamera/base/thread.h>
 

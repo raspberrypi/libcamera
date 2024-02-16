@@ -23,14 +23,7 @@ namespace properties {
 
 ${controls_doc}
 
-/**
- * \brief Namespace for libcamera draft properties
- */
-namespace draft {
-
-${draft_controls_doc}
-
-} /* namespace draft */
+${vendor_controls_doc}
 
 #ifndef __DOXYGEN__
 /*
@@ -39,11 +32,8 @@ ${draft_controls_doc}
  */
 ${controls_def}
 
-namespace draft {
+${vendor_controls_def}
 
-${draft_controls_def}
-
-} /* namespace draft */
 #endif
 
 /**

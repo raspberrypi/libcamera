@@ -649,7 +649,7 @@ void PipelineHandler::registerCamera(std::shared_ptr<Camera> camera)
  */
 void PipelineHandler::hotplugMediaDevice(MediaDevice *media)
 {
-	media->disconnected.connect(this, [=]() { mediaDeviceDisconnected(media); });
+	media->disconnected.connect(this, [this, media] { mediaDeviceDisconnected(media); });
 }
 
 /**

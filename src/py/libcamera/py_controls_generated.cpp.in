@@ -17,14 +17,12 @@ class PyControls
 {
 };
 
-class PyDraftControls
-{
-};
+${vendors_class_def}
 
 void init_py_controls_generated(py::module& m)
 {
 	auto controls = py::class_<PyControls>(m, "controls");
-	auto draft = py::class_<PyDraftControls>(controls, "draft");
+${vendors_defs}
 
 ${controls}
 }

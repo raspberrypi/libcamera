@@ -186,7 +186,7 @@ IPADataSerializer<{{param|name}}>::deserialize(
 {% for param in params|with_fds %}
 {%- if loop.first %}
 	const size_t {{param.mojom_name}}FdStart = 0;
-{%- elif not loop.last %}
+{%- else %}
 	const size_t {{param.mojom_name}}FdStart = {{loop.previtem.mojom_name}}FdStart + {{loop.previtem.mojom_name}}FdsSize;
 {%- endif %}
 {%- endfor %}

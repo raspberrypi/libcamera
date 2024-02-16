@@ -29,7 +29,7 @@ protected:
 		if (status_ != TestPass)
 			return status_;
 
-		const gchar *streamDescription = "videoconvert ! fakesink";
+		const gchar *streamDescription = "fakesink";
 		g_autoptr(GError) error0 = NULL;
 		stream0_ = gst_parse_bin_from_description_full(streamDescription, TRUE,
 						NULL,

@@ -1,31 +1,25 @@
-# Copyright 2014 The Chromium Authors. All rights reserved.
+# Copyright 2014 The Chromium Authors
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-import imp
-import os.path
-import sys
 import unittest
 
 from mojom.parse import ast
-
 
 class _TestNode(ast.NodeBase):
   """Node type for tests."""
 
   def __init__(self, value, **kwargs):
-    super(_TestNode, self).__init__(**kwargs)
+    super().__init__(**kwargs)
     self.value = value
 
   def __eq__(self, other):
-    return super(_TestNode, self).__eq__(other) and self.value == other.value
-
+    return super().__eq__(other) and self.value == other.value
 
 class _TestNodeList(ast.NodeListBase):
   """Node list type for tests."""
 
   _list_item_type = _TestNode
-
 
 class ASTTest(unittest.TestCase):
   """Tests various AST classes."""

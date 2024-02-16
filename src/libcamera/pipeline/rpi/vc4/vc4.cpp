@@ -329,6 +329,9 @@ int PipelineHandlerVc4::prepareBuffers(Camera *camera)
 			LOG(RPI, Debug) << "Other numBuffers " << numBuffers;
 		}
 
+		LOG(RPI, Debug) << "Preparing " << numBuffers
+				<< " buffers for stream " << stream->name();
+
 		ret = stream->prepareBuffers(numBuffers);
 		if (ret < 0)
 			return ret;
@@ -994,6 +997,7 @@ void Vc4CameraData::tryRunPipeline()
 	params.requestControls = request->controls();
 	params.ipaContext = request->sequence();
 	params.delayContext = bayerFrame.delayContext;
+	params.buffers.embedded = 0;
 
 	if (embeddedBuffer) {
 		unsigned int embeddedId = unicam_[Unicam::Embedded].getBufferId(embeddedBuffer);

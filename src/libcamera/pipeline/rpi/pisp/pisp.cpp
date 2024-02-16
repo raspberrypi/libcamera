@@ -80,6 +80,9 @@ const std::vector<std::pair<BayerFormat, unsigned int>> BayerToMbusCodeMap{
 	{ { BayerFormat::GBRG, 16, BayerFormat::Packing::PISP1 }, MEDIA_BUS_FMT_SGBRG16_1X16, },
 	{ { BayerFormat::GRBG, 16, BayerFormat::Packing::PISP1 }, MEDIA_BUS_FMT_SGRBG16_1X16, },
 	{ { BayerFormat::RGGB, 16, BayerFormat::Packing::PISP1 }, MEDIA_BUS_FMT_SRGGB16_1X16, },
+	{ { BayerFormat::RGGB, 16, BayerFormat::Packing::PISP1 }, MEDIA_BUS_FMT_SRGGB16_1X16, },
+	{ { BayerFormat::MONO, 16, BayerFormat::Packing::None }, MEDIA_BUS_FMT_Y16_1X16, },
+	{ { BayerFormat::MONO, 16, BayerFormat::Packing::PISP1 }, MEDIA_BUS_FMT_Y16_1X16, },
 };
 
 unsigned int bayerToMbusCode(const BayerFormat &bayer)
@@ -116,6 +119,8 @@ uint8_t toPiSPBayerOrder(V4L2PixelFormat format)
 		return PISP_BAYER_ORDER_GRBG;
 	case BayerFormat::Order::RGGB:
 		return PISP_BAYER_ORDER_RGGB;
+	case BayerFormat::Order::MONO:
+		return PISP_BAYER_ORDER_GREYSCALE;
 	default:
 		ASSERT(0);
 		return -1;
@@ -214,6 +219,10 @@ pisp_image_format_config toPiSPImageFormat(V4L2DeviceFormat &format)
 	case formats::BGRX8888:
 		image.format = PISP_IMAGE_FORMAT_THREE_CHANNEL + PISP_IMAGE_FORMAT_BPP_32 +
 			       PISP_IMAGE_FORMAT_ORDER_SWAPPED;
+		break;
+	case formats::RGB161616:
+	case formats::BGR161616:
+		image.format = PISP_IMAGE_FORMAT_THREE_CHANNEL + PISP_IMAGE_FORMAT_BPS_16;
 		break;
 	default:
 		LOG(RPI, Error) << "Pixel format " << pix << " unsupported";
@@ -319,7 +328,7 @@ void do32BitConversion(void *mem, unsigned int width, unsigned int height,
 #if __aarch64__
 	for (unsigned int j = 0; j < height; j++) {
 		uint8_t *ptr = (uint8_t *)mem + j * stride;
-		unsigned int count = (width + 15) / 16;
+		uint64_t count = (width + 15) / 16;
 		uint8_t *dest = ptr + count * 64;
 		uint8_t *src = ptr + count * 48;
 
@@ -1141,8 +1150,8 @@ PiSPCameraData::platformValidate(RPi::RPiCameraConfiguration *rpiConfig) const
 		 * so signal the output as unpacked 16-bits in these cases.
 		 */
 		if (bayer.packing == BayerFormat::Packing::CSI2 || bayer.bitDepth != 16) {
-			bayer.packing = bayer.packing == BayerFormat::Packing::CSI2 ?
-						BayerFormat::Packing::PISP1 : BayerFormat::Packing::None;
+			bayer.packing = (bayer.packing == BayerFormat::Packing::CSI2) ?
+				BayerFormat::Packing::PISP1 : BayerFormat::Packing::None;
 			bayer.bitDepth = 16;
 		}
 
@@ -1830,7 +1839,8 @@ bool PiSPCameraData::calculateCscConfiguration(const V4L2DeviceFormat &v4l2Forma
 		return true;
 	}
 	/* There will be more formats to check for in due course. */
-	else if (pixFormat == formats::RGB888) {
+	else if (pixFormat == formats::RGB888 || pixFormat == formats::RGBX8888 ||
+		 pixFormat == formats::XRGB8888 || pixFormat == formats::RGB161616) {
 		/* Identity matrix but with RB colour swap. */
 		csc.coeffs[2] = csc.coeffs[4] = csc.coeffs[6] = 1 << 10;
 		return true;
@@ -2198,6 +2208,7 @@ void PiSPCameraData::tryRunPipeline()
 	ipa::RPi::PrepareParams params;
 	params.buffers.bayer = RPi::MaskBayerData | bayerId;
 	params.buffers.stats = RPi::MaskStats | statsId;
+	params.buffers.embedded = 0;
 	params.ipaContext = requestQueue_.front()->sequence();
 	params.delayContext = job.delayContext;
 	params.sensorControls = std::move(job.sensorControls);

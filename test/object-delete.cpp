@@ -33,10 +33,10 @@ public:
 	unsigned int *deleteCount_;
 };
 
-class NewThread : public Thread
+class DeleterThread : public Thread
 {
 public:
-	NewThread(Object *obj)
+	DeleterThread(Object *obj)
 		: object_(obj)
 	{
 	}
@@ -63,9 +63,9 @@ protected:
 		unsigned int count = 0;
 		TestObject *obj = new TestObject(&count);
 
-		NewThread thread(obj);
-		thread.start();
-		thread.wait();
+		DeleterThread delThread(obj);
+		delThread.start();
+		delThread.wait();
 
 		Thread::current()->dispatchMessages(Message::Type::DeferredDelete);
 
@@ -86,6 +86,26 @@ protected:
 		Thread::current()->dispatchMessages(Message::Type::DeferredDelete);
 		if (count != 1) {
 			cout << "Multiple deleteLater() failed (" << count << ")" << endl;
+			return TestFail;
+		}
+
+		/*
+		 * Test that deleteLater() works properly when called just
+		 * before the object's thread exits.
+		 */
+		Thread boundThread;
+		boundThread.start();
+
+		count = 0;
+		obj = new TestObject(&count);
+		obj->moveToThread(&boundThread);
+
+		obj->deleteLater();
+		boundThread.exit();
+		boundThread.wait();
+
+		if (count != 1) {
+			cout << "Object deletion right before thread exit failed (" << count << ")" << endl;
 			return TestFail;
 		}
 

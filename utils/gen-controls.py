@@ -12,6 +12,7 @@ import operator
 import string
 import sys
 import yaml
+import os
 
 
 class ControlEnum(object):
@@ -35,11 +36,12 @@ class ControlEnum(object):
 
 
 class Control(object):
-    def __init__(self, name, data):
+    def __init__(self, name, data, vendor):
         self.__name = name
         self.__data = data
         self.__enum_values = None
         self.__size = None
+        self.__vendor = vendor
 
         enum_values = data.get('enum')
         if enum_values is not None:
@@ -85,20 +87,14 @@ class Control(object):
         return self.__enum_values is not None
 
     @property
-    def is_draft(self):
-        """Is the control a draft control"""
-        return self.__data.get('draft') is not None
+    def vendor(self):
+        """The vendor string, or None"""
+        return self.__vendor
 
     @property
     def name(self):
         """The control name (CamelCase)"""
         return self.__name
-
-    @property
-    def q_name(self):
-        """The control name, qualified with a namespace"""
-        ns = 'draft::' if self.is_draft else ''
-        return ns + self.__name
 
     @property
     def type(self):
@@ -145,14 +141,17 @@ ${description}
     enum_values_start = string.Template('''extern const std::array<const ControlValue, ${size}> ${name}Values = {''')
     enum_values_values = string.Template('''\tstatic_cast<int32_t>(${name}),''')
 
-    ctrls_doc = []
-    ctrls_def = []
-    draft_ctrls_doc = []
-    draft_ctrls_def = []
+    ctrls_doc = {}
+    ctrls_def = {}
     ctrls_map = []
 
     for ctrl in controls:
         id_name = snake_case(ctrl.name).upper()
+
+        vendor = ctrl.vendor
+        if vendor not in ctrls_doc:
+            ctrls_doc[vendor] = []
+            ctrls_def[vendor] = []
 
         info = {
             'name': ctrl.name,
@@ -161,11 +160,8 @@ ${description}
             'id_name': id_name,
         }
 
-        target_doc = ctrls_doc
-        target_def = ctrls_def
-        if ctrl.is_draft:
-            target_doc = draft_ctrls_doc
-            target_def = draft_ctrls_def
+        target_doc = ctrls_doc[vendor]
+        target_def = ctrls_def[vendor]
 
         if ctrl.is_enum:
             enum_doc = []
@@ -201,41 +197,66 @@ ${description}
         target_doc.append(doc_template.substitute(info))
         target_def.append(def_template.substitute(info))
 
-        ctrls_map.append('\t{ ' + id_name + ', &' + ctrl.q_name + ' },')
+        vendor_ns = vendor + '::' if vendor != "libcamera" else ''
+        ctrls_map.append('\t{ ' + vendor_ns + id_name + ', &' + vendor_ns + ctrl.name + ' },')
+
+    vendor_ctrl_doc_sub = []
+    vendor_ctrl_template = string.Template('''
+/**
+ * \\brief Namespace for ${vendor} controls
+ */
+namespace ${vendor} {
+
+${vendor_controls_str}
+
+} /* namespace ${vendor} */''')
+
+    for vendor in [v for v in ctrls_doc.keys() if v not in ['libcamera']]:
+        vendor_ctrl_doc_sub.append(vendor_ctrl_template.substitute({'vendor': vendor, 'vendor_controls_str': '\n\n'.join(ctrls_doc[vendor])}))
+
+    vendor_ctrl_def_sub = []
+    for vendor in [v for v in ctrls_def.keys() if v not in ['libcamera']]:
+        vendor_ctrl_def_sub.append(vendor_ctrl_template.substitute({'vendor': vendor, 'vendor_controls_str': '\n'.join(ctrls_def[vendor])}))
 
     return {
-        'controls_doc': '\n\n'.join(ctrls_doc),
-        'controls_def': '\n'.join(ctrls_def),
-        'draft_controls_doc': '\n\n'.join(draft_ctrls_doc),
-        'draft_controls_def': '\n\n'.join(draft_ctrls_def),
+        'controls_doc': '\n\n'.join(ctrls_doc['libcamera']),
+        'controls_def': '\n'.join(ctrls_def['libcamera']),
         'controls_map': '\n'.join(ctrls_map),
+        'vendor_controls_doc': '\n'.join(vendor_ctrl_doc_sub),
+        'vendor_controls_def': '\n'.join(vendor_ctrl_def_sub),
     }
 
 
-def generate_h(controls):
+def generate_h(controls, mode, ranges):
     enum_template_start = string.Template('''enum ${name}Enum {''')
     enum_value_template = string.Template('''\t${name} = ${value},''')
     enum_values_template = string.Template('''extern const std::array<const ControlValue, ${size}> ${name}Values;''')
     template = string.Template('''extern const Control<${type}> ${name};''')
 
-    ctrls = []
-    draft_ctrls = []
-    ids = []
-    id_value = 1
+    ctrls = {}
+    ids = {}
+    id_value = {}
 
     for ctrl in controls:
         id_name = snake_case(ctrl.name).upper()
 
-        ids.append('\t' + id_name + ' = ' + str(id_value) + ',')
+        vendor = ctrl.vendor
+        if vendor not in ctrls:
+            if vendor not in ranges.keys():
+                raise RuntimeError(f'Control id range is not defined for vendor {vendor}')
+            id_value[vendor] = ranges[vendor] + 1
+            ids[vendor] = []
+            ctrls[vendor] = []
+
+        target_ids = ids[vendor]
+        target_ids.append('\t' + id_name + ' = ' + str(id_value[vendor]) + ',')
 
         info = {
             'name': ctrl.name,
             'type': ctrl.type,
         }
 
-        target_ctrls = ctrls
-        if ctrl.is_draft:
-            target_ctrls = draft_ctrls
+        target_ctrls = ctrls[vendor]
 
         if ctrl.is_enum:
             target_ctrls.append(enum_template_start.substitute(info))
@@ -257,12 +278,34 @@ def generate_h(controls):
             target_ctrls.append(enum_values_template.substitute(values_info))
 
         target_ctrls.append(template.substitute(info))
-        id_value += 1
+        id_value[vendor] += 1
+
+    vendor_template = string.Template('''
+namespace ${vendor} {
+
+#define LIBCAMERA_HAS_${vendor_def}_VENDOR_${mode}
+
+enum {
+${vendor_enums}
+};
+
+${vendor_controls}
+
+} /* namespace ${vendor} */
+''')
+
+    vendor_sub = []
+    for vendor in [v for v in ctrls.keys() if v != 'libcamera']:
+        vendor_sub.append(vendor_template.substitute({'mode': mode.upper(),
+                                                      'vendor': vendor,
+                                                      'vendor_def': vendor.upper(),
+                                                      'vendor_enums': '\n'.join(ids[vendor]),
+                                                      'vendor_controls': '\n'.join(ctrls[vendor])}))
 
     return {
-        'ids': '\n'.join(ids),
-        'controls': '\n'.join(ctrls),
-        'draft_controls': '\n'.join(draft_ctrls)
+        'ids': '\n'.join(ids['libcamera']),
+        'controls': '\n'.join(ctrls['libcamera']),
+        'vendor_controls': '\n'.join(vendor_sub)
     }
 
 
@@ -278,22 +321,36 @@ def main(argv):
 
     # Parse command line arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument('-o', dest='output', metavar='file', type=str,
+    parser.add_argument('--mode', '-m', type=str, required=True, choices=['controls', 'properties'],
+                        help='Mode of operation')
+    parser.add_argument('--output', '-o', metavar='file', type=str,
                         help='Output file name. Defaults to standard output if not specified.')
-    parser.add_argument('input', type=str,
-                        help='Input file name.')
-    parser.add_argument('template', type=str,
+    parser.add_argument('--ranges', '-r', type=str, required=True,
+                        help='Control id range reservation file.')
+    parser.add_argument('--template', '-t', dest='template', type=str, required=True,
                         help='Template file name.')
+    parser.add_argument('input', type=str, nargs='+',
+                        help='Input file name.')
+
     args = parser.parse_args(argv[1:])
 
-    data = open(args.input, 'rb').read()
-    controls = yaml.safe_load(data)['controls']
-    controls = [Control(*ctrl.popitem()) for ctrl in controls]
+    ranges = {}
+    with open(args.ranges, 'rb') as f:
+        data = open(args.ranges, 'rb').read()
+        ranges = yaml.safe_load(data)['ranges']
+
+    controls = []
+    for input in args.input:
+        with open(input, 'rb') as f:
+            data = f.read()
+            vendor = yaml.safe_load(data)['vendor']
+            ctrls = yaml.safe_load(data)['controls']
+            controls = controls + [Control(*ctrl.popitem(), vendor) for ctrl in ctrls]
 
     if args.template.endswith('.cpp.in'):
         data = generate_cpp(controls)
     elif args.template.endswith('.h.in'):
-        data = generate_h(controls)
+        data = generate_h(controls, args.mode, ranges)
     else:
         raise RuntimeError('Unknown template type')
 

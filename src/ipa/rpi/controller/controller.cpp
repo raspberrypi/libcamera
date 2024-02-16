@@ -17,6 +17,7 @@
 
 using namespace RPiController;
 using namespace libcamera;
+using namespace std::literals::chrono_literals;
 
 LOG_DEFINE_CATEGORY(RPiController)
 
@@ -37,6 +38,7 @@ static const std::map<std::string, Controller::HardwareConfig> HardwareConfigMap
 			.numGammaPoints = 33,
 			.pipelineWidth = 13,
 			.statsInline = false,
+			.minPixelProcessingTime = 0s,
 		}
 	},
 	{
@@ -51,6 +53,24 @@ static const std::map<std::string, Controller::HardwareConfig> HardwareConfigMap
 			.numGammaPoints = 64,
 			.pipelineWidth = 16,
 			.statsInline = true,
+
+			/*
+			 * The constraint below is on the rate of pixels going
+			 * from CSI2 peripheral to ISP-FE (400Mpix/s, plus tiny
+			 * overheads per scanline, for which 380Mpix/s is a
+			 * conservative bound).
+			 *
+			 * There is a 64kbit data FIFO before the bottleneck,
+			 * which means that in all reasonable cases the
+			 * constraint applies at a timescale >= 1 scanline, so
+			 * adding horizontal blanking can prevent loss.
+			 *
+			 * If the backlog were to grow beyond 64kbit during a
+			 * single scanline, there could still be loss. This
+			 * could happen using 4 lanes at 1.5Gbps at 10bpp with
+			 * frames wider than ~16,000 pixels.
+			 */
+			.minPixelProcessingTime = 1.0us / 380,
 		}
 	},
 };

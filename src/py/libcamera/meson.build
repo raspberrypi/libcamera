@@ -28,29 +28,35 @@ pycamera_sources = files([
 
 # Generate controls
 
-gen_py_controls_input_files = files([
-    '../../libcamera/control_ids.yaml',
-    'py_controls_generated.cpp.in',
-])
+gen_py_controls_input_files = []
+gen_py_controls_template = files('py_controls_generated.cpp.in')
 
 gen_py_controls = files('gen-py-controls.py')
+
+foreach file : controls_files
+    gen_py_controls_input_files += files('../../libcamera/' + file)
+endforeach
 
 pycamera_sources += custom_target('py_gen_controls',
                                   input : gen_py_controls_input_files,
                                   output : ['py_controls_generated.cpp'],
-                                  command : [gen_py_controls, '--mode', 'controls', '-o', '@OUTPUT@', '@INPUT@'])
+                                  command : [gen_py_controls, '--mode', 'controls', '-o', '@OUTPUT@',
+                                             '-t', gen_py_controls_template, '@INPUT@'])
 
 # Generate properties
 
-gen_py_property_enums_input_files = files([
-    '../../libcamera/property_ids.yaml',
-    'py_properties_generated.cpp.in',
-])
+gen_py_property_enums_input_files = []
+gen_py_properties_template = files('py_properties_generated.cpp.in')
+
+foreach file : properties_files
+    gen_py_property_enums_input_files += files('../../libcamera/' + file)
+endforeach
 
 pycamera_sources += custom_target('py_gen_properties',
                                   input : gen_py_property_enums_input_files,
                                   output : ['py_properties_generated.cpp'],
-                                  command : [gen_py_controls, '--mode', 'properties', '-o', '@OUTPUT@', '@INPUT@'])
+                                  command : [gen_py_controls, '--mode', 'properties', '-o', '@OUTPUT@',
+                                             '-t', gen_py_properties_template, '@INPUT@'])
 
 # Generate formats
 
@@ -84,6 +90,7 @@ pycamera = shared_module('_libcamera',
                          pycamera_sources,
                          install : true,
                          install_dir : destdir,
+                         install_tag : 'python-runtime',
                          name_prefix : '',
                          dependencies : pycamera_deps,
                          cpp_args : pycamera_args)
@@ -99,7 +106,9 @@ run_command('ln', '-fsrT', meson.current_source_dir() / 'utils',
             meson.current_build_dir() / 'utils',
             check : true)
 
-install_data(['__init__.py'], install_dir : destdir)
+install_data(['__init__.py'],
+             install_dir : destdir,
+             install_tag : 'python-runtime')
 
 # \todo Generate stubs when building. See https://peps.python.org/pep-0484/#stub-files
 # Note: Depends on pybind11-stubgen. To generate pylibcamera stubs:

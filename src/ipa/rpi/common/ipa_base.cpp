@@ -72,7 +72,8 @@ const ControlInfoMap::Map ipaControls{
 	{ &controls::Sharpness, ControlInfo(0.0f, 16.0f, 1.0f) },
 	{ &controls::ScalerCrop, ControlInfo(Rectangle{}, Rectangle(65535, 65535, 65535, 65535), Rectangle{}) },
 	{ &controls::FrameDurationLimits, ControlInfo(INT64_C(33333), INT64_C(120000)) },
-	{ &controls::draft::NoiseReductionMode, ControlInfo(controls::draft::NoiseReductionModeValues) }
+	{ &controls::draft::NoiseReductionMode, ControlInfo(controls::draft::NoiseReductionModeValues) },
+	{ &controls::rpi::StatsOutputEnable, ControlInfo(false, true) },
 };
 
 /* IPA controls handled conditionally, if the sensor is not mono */
@@ -102,9 +103,8 @@ LOG_DEFINE_CATEGORY(IPARPI)
 namespace ipa::RPi {
 
 IpaBase::IpaBase()
-	: controller_(), frameLengths_(FrameLengthsQueueSize, 0s), frameCount_(0),
-	  mistrustCount_(0), lastRunTimestamp_(0), firstStart_(true), flickerState_({ 0, 0s }),
-	  stitchSwapBuffers_(false)
+	: controller_(), frameLengths_(FrameLengthsQueueSize, 0s), stitchSwapBuffers_(false), frameCount_(0),
+	  mistrustCount_(0), lastRunTimestamp_(0), firstStart_(true), flickerState_({ 0, 0s })
 {
 }
 
@@ -541,6 +541,33 @@ void IpaBase::setMode(const IPACameraSensorInfo &sensorInfo)
 	 */
 	mode_.minLineLength = sensorInfo.minLineLength * (1.0s / sensorInfo.pixelRate);
 	mode_.maxLineLength = sensorInfo.maxLineLength * (1.0s / sensorInfo.pixelRate);
+
+	/*
+	 * Ensure that the maximum pixel processing rate does not exceed the ISP
+	 * hardware capabilities. If it does, try adjusting the minimum line
+	 * length to compensate if possible.
+	 */
+	Duration minPixelTime = controller_.getHardwareConfig().minPixelProcessingTime;
+	Duration pixelTime = mode_.minLineLength / mode_.width;
+	if (minPixelTime && pixelTime < minPixelTime) {
+		Duration adjustedLineLength = minPixelTime * mode_.width;
+		if (adjustedLineLength <= mode_.maxLineLength) {
+			LOG(IPARPI, Info)
+				<< "Adjusting mode minimum line length from " << mode_.minLineLength
+				<< " to " << adjustedLineLength << " because of ISP constraints.";
+			mode_.minLineLength = adjustedLineLength;
+		} else {
+			LOG(IPARPI, Error)
+				<< "Sensor minimum line length of " << pixelTime * mode_.width
+				<< " (" << 1us / pixelTime << " MPix/s)"
+				<< " is below the minimum allowable ISP limit of "
+				<< adjustedLineLength
+				<< " (" << 1us / minPixelTime << " MPix/s) ";
+			LOG(IPARPI, Error)
+				<< "THIS WILL CAUSE IMAGE CORRUPTION!!! "
+				<< "Please update the camera sensor driver to allow more horizontal blanking control.";
+		}
+	}
 
 	/*
 	 * Set the frame length limits for the mode to ensure exposure and
@@ -1047,7 +1074,7 @@ void IpaBase::applyControls(const ControlList &controls)
 			break;
 		}
 
-		case controls::NOISE_REDUCTION_MODE:
+		case controls::draft::NOISE_REDUCTION_MODE:
 			/* Handled below in handleControls() */
 			libcameraMetadata_.set(controls::draft::NoiseReductionMode,
 					       ctrl.second.get<int32_t>());
@@ -1208,6 +1235,10 @@ void IpaBase::applyControls(const ControlList &controls)
 
 			break;
 		}
+
+		case controls::rpi::STATS_OUTPUT_ENABLE:
+			statsMetadataOutput_ = ctrl.second.get<bool>();
+			break;
 
 		default:
 			LOG(IPARPI, Warning)

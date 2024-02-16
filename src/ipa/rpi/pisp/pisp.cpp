@@ -25,7 +25,9 @@
 #include "controller/af_status.h"
 #include "controller/agc_algorithm.h"
 #include "controller/alsc_status.h"
+#include "controller/awb_algorithm.h"
 #include "controller/awb_status.h"
+#include "controller/black_level_algorithm.h"
 #include "controller/black_level_status.h"
 #include "controller/cac_status.h"
 #include "controller/ccm_status.h"
@@ -53,6 +55,7 @@ namespace {
 
 constexpr unsigned int NumLscCells = PISP_BE_LSC_GRID_SIZE;
 constexpr unsigned int NumLscVertexes = NumLscCells + 1;
+constexpr unsigned int NormalisedBlackLevel = 4096;
 
 inline int32_t clampField(double value, std::size_t fieldBits, std::size_t fracBits = 0,
 			  bool isSigned = false, const char *desc = nullptr)
@@ -224,6 +227,7 @@ private:
 
 	void applyWBG(const AwbStatus *awbStatus, const AgcPrepareStatus *agcStatus,
 		      pisp_be_global_config &global);
+	void applyDgOnly(const AgcPrepareStatus *agcPrepareStatus, pisp_be_global_config &global);
 	void applyCAC(const CacStatus *cacStatus, pisp_be_global_config &global);
 	void applyContrast(const ContrastStatus *contrastStatus,
 			   pisp_be_global_config &global);
@@ -335,8 +339,8 @@ void IpaPiSP::platformPrepareIsp([[maybe_unused]] const PrepareParams &params,
 				  PISP_BE_BAYER_ENABLE_TDN_OUTPUT + PISP_BE_BAYER_ENABLE_TDN_INPUT +
 				  PISP_BE_BAYER_ENABLE_STITCH_INPUT + PISP_BE_BAYER_ENABLE_STITCH_OUTPUT +
 				  PISP_BE_BAYER_ENABLE_STITCH + PISP_BE_BAYER_ENABLE_TONEMAP);
+	/* We leave the YCbCr and inverse conversion enabled in case of false colour or sharpening. */
 	global.rgb_enables &= ~(PISP_BE_RGB_ENABLE_GAMMA + PISP_BE_RGB_ENABLE_CCM +
-				PISP_BE_RGB_ENABLE_YCBCR + PISP_BE_RGB_ENABLE_YCBCR_INVERSE +
 				PISP_BE_RGB_ENABLE_SHARPEN + PISP_BE_RGB_ENABLE_SAT_CONTROL);
 
 	NoiseStatus *noiseStatus = rpiMetadata.getLocked<NoiseStatus>("noise.status");
@@ -355,8 +359,13 @@ void IpaPiSP::platformPrepareIsp([[maybe_unused]] const PrepareParams &params,
 			applyBlackLevel(blackLevelStatus, global);
 
 		AwbStatus *awbStatus = rpiMetadata.getLocked<AwbStatus>("awb.status");
-		if (awbStatus)
+		if (awbStatus && agcPrepareStatus) {
+			/* Applies digital gain as well. */
 			applyWBG(awbStatus, agcPrepareStatus, global);
+		} else if (agcPrepareStatus) {
+			/* Mono sensor fallback for digital gain. */
+			applyDgOnly(agcPrepareStatus, global);
+		}
 	}
 
 	CacStatus *cacStatus = rpiMetadata.getLocked<CacStatus>("cac.status");
@@ -470,6 +479,12 @@ RPiController::StatisticsPtr IpaPiSP::platformProcessStats(Span<uint8_t> mem)
 	for (i = 0; i < statistics->focusRegions.numRegions(); i++)
 		statistics->focusRegions.set(i, { stats->cdaf.foms[i] >> 20, 0, 0 });
 
+	if (statsMetadataOutput_) {
+		Span<const uint8_t> statsSpan(reinterpret_cast<const uint8_t *>(stats),
+					      sizeof(pisp_statistics));
+		libcameraMetadata_.set(controls::rpi::PispStatsOutput, statsSpan);
+	}
+
 	return statistics;
 }
 
@@ -482,7 +497,7 @@ void IpaPiSP::handleControls(const ControlList &controls)
 			setHistogramWeights();
 			break;
 
-		case controls::NOISE_REDUCTION_MODE: {
+		case controls::draft::NOISE_REDUCTION_MODE: {
 			RPiController::DenoiseAlgorithm *denoise = dynamic_cast<RPiController::DenoiseAlgorithm *>(
 				controller_.getAlgorithm("denoise"));
 
@@ -535,6 +550,20 @@ void IpaPiSP::applyWBG(const AwbStatus *awbStatus, const AgcPrepareStatus *agcPr
 	global.bayer_enables |= PISP_BE_BAYER_ENABLE_WBG;
 }
 
+void IpaPiSP::applyDgOnly(const AgcPrepareStatus *agcPrepareStatus, pisp_be_global_config &global)
+{
+	pisp_wbg_config wbg;
+
+	wbg.gain_r = clampField(agcPrepareStatus->digitalGain, 14, 10);
+	wbg.gain_g = clampField(agcPrepareStatus->digitalGain, 14, 10);
+	wbg.gain_b = clampField(agcPrepareStatus->digitalGain, 14, 10);
+
+	LOG(IPARPI, Debug) << "Applying DG (only) : " << agcPrepareStatus->digitalGain;
+
+	be_->SetWbg(wbg);
+	global.bayer_enables |= PISP_BE_BAYER_ENABLE_WBG;
+}
+
 void IpaPiSP::applyContrast(const ContrastStatus *contrastStatus,
 			    pisp_be_global_config &global)
 {
@@ -583,12 +612,12 @@ void IpaPiSP::applyBlackLevel(const BlackLevelStatus *blackLevelStatus, pisp_be_
 	bla.black_level_gr = blackLevelStatus->blackLevelG;
 	bla.black_level_gb = blackLevelStatus->blackLevelG;
 	bla.black_level_b = blackLevelStatus->blackLevelB;
-	bla.output_black_level = 4096;
+	bla.output_black_level = NormalisedBlackLevel;
 	fe_->SetBla(bla);
 
 	/* Frontend Stats and Backend black level correction. */
 	bla.black_level_r = bla.black_level_gr =
-		bla.black_level_gb = bla.black_level_b = 4096;
+		bla.black_level_gb = bla.black_level_b = NormalisedBlackLevel;
 	bla.output_black_level = 0;
 	fe_->SetBlc(bla);
 	be_->SetBlc(bla);
@@ -641,7 +670,7 @@ void IpaPiSP::applySdn(const SdnStatus *sdnStatus, pisp_be_global_config &global
 {
 	pisp_be_sdn_config sdn = {};
 
-	sdn.black_level = 4096;
+	sdn.black_level = NormalisedBlackLevel;
 	/* leakage is "amount of the original pixel we let through", thus 1 - strength */
 	sdn.leakage = clampField(1.0 - sdnStatus->strength, 8, 8);
 	sdn.noise_constant = clampField(sdnStatus->noiseConstant, 16);
@@ -669,7 +698,7 @@ void IpaPiSP::applyTdn(const TdnStatus *tdnStatus, const DeviceStatus *deviceSta
 			   << " last: " << lastExposure_
 			   << " ratio: " << ratio;
 
-	tdn.black_level = 4096;
+	tdn.black_level = NormalisedBlackLevel;
 	tdn.ratio = clampField(ratio, 16, 14);
 	tdn.noise_constant = clampField(tdnStatus->noiseConstant, 16);
 	tdn.noise_slope = clampField(tdnStatus->noiseSlope, 16, 8);
@@ -763,9 +792,8 @@ void IpaPiSP::applySharpen(const SharpenStatus *sharpenStatus,
 	sharpen.negative_limit = clampField(sharpen.negative_limit * sharpenStatus->limit, 16);
 
 	be_->SetSharpen(sharpen);
-	/* Sharpen needs a RGB -> YCbCr and inverse transform after the block. */
-	global.rgb_enables |= PISP_BE_RGB_ENABLE_YCBCR + PISP_BE_RGB_ENABLE_SHARPEN +
-			      PISP_BE_RGB_ENABLE_YCBCR_INVERSE;
+	/* The conversion to YCbCr and back is always enabled. */
+	global.rgb_enables |= PISP_BE_RGB_ENABLE_SHARPEN;
 }
 
 bool IpaPiSP::applyStitch(const StitchStatus *stitchStatus, const DeviceStatus *deviceStatus,
@@ -869,14 +897,56 @@ void IpaPiSP::setDefaultConfig()
 	pisp_be_global_config beGlobal;
 
 	be_->GetGlobal(beGlobal);
-	beGlobal.bayer_enables |= PISP_BE_BAYER_ENABLE_DEMOSAIC;
-	beGlobal.rgb_enables |= PISP_BE_RGB_ENABLE_FALSE_COLOUR;
+	/*
+	 * Always go to YCbCr and back. We need them if the false colour block is enabled,
+	 * and even for mono sensors if sharpening is enabled. So we're better off enabling
+	 * them all the time.
+	 */
+	beGlobal.rgb_enables |= PISP_BE_RGB_ENABLE_YCBCR + PISP_BE_RGB_ENABLE_YCBCR_INVERSE;
+
+	if (!monoSensor_) {
+		beGlobal.bayer_enables |= PISP_BE_BAYER_ENABLE_DEMOSAIC;
+		beGlobal.rgb_enables |= PISP_BE_RGB_ENABLE_FALSE_COLOUR;
+	}
 	be_->SetGlobal(beGlobal);
 
+	/*
+	 * Ask the AWB algorithm for reasonable gain values so that we can program the
+	 * front end stats sensibly. We must also factor in the conversion to luminance.
+	 */
 	pisp_fe_rgby_config rgby = {};
-	rgby.gain_r = rgby.gain_b = clampField(1.0, 14, 10);
-	rgby.gain_g = clampField(1.0, 14, 10);
+	double gainR = 1.5, gainB = 1.5;
+	RPiController::AwbAlgorithm *awb = dynamic_cast<RPiController::AwbAlgorithm *>(
+		controller_.getAlgorithm("awb"));
+	if (awb)
+		awb->initialValues(gainR, gainB);
+	/* The BT.601 RGB -> Y coefficients will do. The precise values are not critical. */
+	rgby.gain_r = clampField(gainR * 0.299, 14, 10);
+	rgby.gain_g = clampField(1.0 * .587, 14, 10);
+	rgby.gain_b = clampField(gainB * .114, 14, 10);
 	fe_->SetRGBY(rgby);
+
+	/* Also get sensible front end black level defaults, for the same reason. */
+	uint16_t blackLevelR = NormalisedBlackLevel;
+	uint16_t blackLevelG = NormalisedBlackLevel;
+	uint16_t blackLevelB = NormalisedBlackLevel;
+	RPiController::BlackLevelAlgorithm *blackLevel = dynamic_cast<RPiController::BlackLevelAlgorithm *>(
+		controller_.getAlgorithm("black_level"));
+	if (blackLevel)
+		blackLevel->initialValues(blackLevelR, blackLevelG, blackLevelB);
+	/* The front end first equalises all the black levels to the same as green. */
+	pisp_bla_config bla;
+	bla.black_level_r = blackLevelR;
+	bla.black_level_gr = blackLevelG;
+	bla.black_level_gb = blackLevelG;
+	bla.black_level_b = blackLevelB;
+	bla.output_black_level = blackLevelG;
+	fe_->SetBla(bla);
+	/* But for the statistics it removes the G black level from everything. */
+	bla.black_level_r = blackLevelG;
+	bla.black_level_b = blackLevelG;
+	bla.output_black_level = 0;
+	fe_->SetBlc(bla);
 
 	pisp_fe_global_config feGlobal;
 	fe_->GetGlobal(feGlobal);

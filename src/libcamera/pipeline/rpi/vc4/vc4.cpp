@@ -434,6 +434,17 @@ CameraConfiguration::Status Vc4CameraData::platformValidate(RPi::RPiCameraConfig
 			rawBayer.packing = BayerFormat::Packing::CSI2;
 
 		PixelFormat rawFormat = rawBayer.toPixelFormat();
+
+		/*
+		 * Try for an unpacked format if a packed one wasn't available.
+		 * This catches 8 (and 16) bit formats which would otherwise
+		 * fail.
+		 */
+		if (!rawFormat.isValid() && rawBayer.packing != BayerFormat::Packing::None) {
+			rawBayer.packing = BayerFormat::Packing::None;
+			rawFormat = rawBayer.toPixelFormat();
+		}
+
 		if (rawStream->pixelFormat != rawFormat ||
 		    rawStream->size != rpiConfig->sensorFormat_.size) {
 			rawStream->pixelFormat = rawFormat;

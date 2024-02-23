@@ -78,12 +78,13 @@ public:
 class CameraSensorFactoryBase
 {
 public:
-	CameraSensorFactoryBase(const char *name);
+	CameraSensorFactoryBase(const char *name, int priority);
 	virtual ~CameraSensorFactoryBase() = default;
 
 	static std::unique_ptr<CameraSensor> create(MediaEntity *entity);
 
 	const std::string &name() const { return name_; }
+	int priority() const { return priority_; }
 
 private:
 	LIBCAMERA_DISABLE_COPY_AND_MOVE(CameraSensorFactoryBase)
@@ -96,14 +97,15 @@ private:
 	match(MediaEntity *entity) const = 0;
 
 	std::string name_;
+	int priority_;
 };
 
 template<typename _CameraSensor>
 class CameraSensorFactory final : public CameraSensorFactoryBase
 {
 public:
-	CameraSensorFactory(const char *name)
-		: CameraSensorFactoryBase(name)
+	CameraSensorFactory(const char *name, int priority)
+		: CameraSensorFactoryBase(name, priority)
 	{
 	}
 
@@ -115,7 +117,7 @@ private:
 	}
 };
 
-#define REGISTER_CAMERA_SENSOR(sensor) \
-static CameraSensorFactory<sensor> global_##sensor##Factory{ #sensor };
+#define REGISTER_CAMERA_SENSOR(sensor, priority) \
+static CameraSensorFactory<sensor> global_##sensor##Factory{ #sensor, priority };
 
 } /* namespace libcamera */

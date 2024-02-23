@@ -348,11 +348,13 @@ CameraSensor::~CameraSensor() = default;
 
 /**
  * \brief Construct a camera sensor factory base
+ * \param[in] priority Priority order for factory selection
  *
  * Creating an instance of the factory base registers it with the global list of
  * factories, accessible through the factories() function.
  */
-CameraSensorFactoryBase::CameraSensorFactoryBase()
+CameraSensorFactoryBase::CameraSensorFactoryBase(int priority)
+	: priority_(priority)
 {
 	registerFactory(this);
 }
@@ -360,6 +362,12 @@ CameraSensorFactoryBase::CameraSensorFactoryBase()
 /**
  * \brief Create an instance of the CameraSensor corresponding to a media entity
  * \param[in] entity The media entity on the source end of the sensor
+ *
+ * When multiple factories match the same \a entity, this function selects the
+ * matching factory with the highest priority as specified to the
+ * REGISTER_CAMERA_SENSOR() macro at factory registration time. If multiple
+ * matching factories have the same highest priority value, which factory gets
+ * selected is undefined and may vary between runs.
  *
  * \return A unique pointer to a new instance of the CameraSensor subclass
  * matching the entity, or a null pointer if no such factory exists
@@ -388,7 +396,16 @@ std::unique_ptr<CameraSensor> CameraSensorFactoryBase::create(MediaEntity *entit
 }
 
 /**
+ * \fn CameraSensorFactoryBase::priority()
+ * \brief Retrieve the priority value for the factory
+ * \return The priority value for the factory
+ */
+
+/**
  * \brief Retrieve the list of all camera sensor factories
+ *
+ * The factories are sorted in decreasing priority order.
+ *
  * \return The list of camera sensor factories
  */
 std::vector<CameraSensorFactoryBase *> &CameraSensorFactoryBase::factories()
@@ -411,7 +428,12 @@ void CameraSensorFactoryBase::registerFactory(CameraSensorFactoryBase *factory)
 	std::vector<CameraSensorFactoryBase *> &factories =
 		CameraSensorFactoryBase::factories();
 
-	factories.push_back(factory);
+	auto pos = std::upper_bound(factories.begin(), factories.end(), factory,
+				    [](const CameraSensorFactoryBase *value,
+				       const CameraSensorFactoryBase *elem) {
+					    return value->priority() > elem->priority();
+				    });
+	factories.insert(pos, factory);
 }
 
 /**
@@ -437,9 +459,10 @@ void CameraSensorFactoryBase::registerFactory(CameraSensorFactoryBase *factory)
  */
 
 /**
- * \def REGISTER_CAMERA_SENSOR(sensor)
+ * \def REGISTER_CAMERA_SENSOR(sensor, priority)
  * \brief Register a camera sensor type to the sensor factory
  * \param[in] sensor Class name of the CameraSensor derived class to register
+ * \param[in] priority Priority order for factory selection
  *
  * Register a CameraSensor subclass with the factory and make it available to
  * try and match sensors. The subclass needs to implement a static match
@@ -457,6 +480,11 @@ void CameraSensorFactoryBase::registerFactory(CameraSensorFactoryBase *factory)
  *   creation succeeded ;
  * - A non-zero error code if the entity matched and the creation failed ; or
  * - A zero error code if the entity didn't match.
+ *
+ * When multiple factories can support the same MediaEntity (as in the match()
+ * function of multiple factories returning true for the same entity), the \a
+ * priority argument selects which factory will be used. See
+ * CameraSensorFactoryBase::create() for more information.
  */
 
 } /* namespace libcamera */

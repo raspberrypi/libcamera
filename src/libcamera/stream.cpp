@@ -433,7 +433,7 @@ std::ostream &operator<<(std::ostream &out, StreamRole role)
 		"Viewfinder",
 	};
 
-	out << names[static_cast<std::underlying_type_t<StreamRole>>(role)];
+	out << names[utils::to_underlying(role)];
 	return out;
 }
 

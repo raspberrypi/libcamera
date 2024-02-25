@@ -14,6 +14,7 @@
 #include <vector>
 
 #include <libcamera/base/flags.h>
+#include <libcamera/base/utils.h>
 
 #include <libcamera/stream.h>
 
@@ -180,19 +181,14 @@ private:
 template<typename E, std::size_t N>
 class Device : public std::array<class Stream, N>
 {
-private:
-	constexpr auto index(E e) const noexcept
-	{
-		return static_cast<std::underlying_type_t<E>>(e);
-	}
 public:
 	Stream &operator[](E e)
 	{
-		return std::array<class Stream, N>::operator[](index(e));
+		return std::array<class Stream, N>::operator[](utils::to_underlying(e));
 	}
 	const Stream &operator[](E e) const
 	{
-		return std::array<class Stream, N>::operator[](index(e));
+		return std::array<class Stream, N>::operator[](utils::to_underlying(e));
 	}
 };
 

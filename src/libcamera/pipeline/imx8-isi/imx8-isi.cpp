@@ -827,16 +827,10 @@ int PipelineHandlerISI::configure(Camera *camera, CameraConfiguration *c)
 	unsigned int xbarFirstSource = crossbar_->entity()->pads().size() / 2 + 1;
 
 	for (const auto &[idx, config] : utils::enumerate(*c)) {
-		struct v4l2_subdev_route route = {
-			.sink_pad = data->xbarSink_,
-			.sink_stream = 0,
-			.source_pad = static_cast<uint32_t>(xbarFirstSource + idx),
-			.source_stream = 0,
-			.flags = V4L2_SUBDEV_ROUTE_FL_ACTIVE,
-			.reserved = {}
-		};
-
-		routing.push_back(route);
+		uint32_t sourcePad = xbarFirstSource + idx;
+		routing.emplace_back(V4L2Subdevice::Stream{ data->xbarSink_, 0 },
+				     V4L2Subdevice::Stream{ sourcePad, 0 },
+				     V4L2_SUBDEV_ROUTE_FL_ACTIVE);
 	}
 
 	int ret = crossbar_->setRouting(&routing, V4L2Subdevice::ActiveFormat);

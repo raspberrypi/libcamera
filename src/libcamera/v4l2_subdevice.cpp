@@ -899,6 +899,53 @@ std::ostream &operator<<(std::ostream &out, const V4L2Subdevice::Stream &stream)
 }
 
 /**
+ * \class V4L2Subdevice::Route
+ * \brief V4L2 subdevice routing table entry
+ *
+ * This class models a route in the subdevice routing table. It is similar to
+ * the v4l2_subdev_route structure, but uses the V4L2Subdevice::Stream class
+ * for easier usage with the V4L2Subdevice stream-aware functions.
+ *
+ * \var V4L2Subdevice::Route::sink
+ * \brief The sink stream of the route
+ *
+ * \var V4L2Subdevice::Route::source
+ * \brief The source stream of the route
+ *
+ * \var V4L2Subdevice::Route::flags
+ * \brief The route flags (V4L2_SUBDEV_ROUTE_FL_*)
+ */
+
+/**
+ * \fn V4L2Subdevice::Route::Route()
+ * \brief Construct a Route with default streams
+ */
+
+/**
+ * \fn V4L2Subdevice::Route::Route(const Stream &sink, const Stream &source,
+ * uint32_t flags)
+ * \brief Construct a Route from \a sink to \a source
+ * \param[in] sink The sink stream
+ * \param[in] source The source stream
+ * \param[in] flags The route flags
+ */
+
+/**
+ * \brief Insert a text representation of a V4L2Subdevice::Route into an
+ * output stream
+ * \param[in] out The output stream
+ * \param[in] route The V4L2Subdevice::Route
+ * \return The output stream \a out
+ */
+std::ostream &operator<<(std::ostream &out, const V4L2Subdevice::Route &route)
+{
+	out << route.sink << " -> " << route.source
+	    << " (" << utils::hex(route.flags) << ")";
+
+	return out;
+}
+
+/**
  * \typedef V4L2Subdevice::Routing
  * \brief V4L2 subdevice routing table
  *
@@ -907,7 +954,7 @@ std::ostream &operator<<(std::ostream &out, const V4L2Subdevice::Stream &stream)
 
 /**
  * \brief Insert a text representation of a V4L2Subdevice::Routing into an
- *	output stream
+ * output stream
  * \param[in] out The output stream
  * \param[in] routing The V4L2Subdevice::Routing
  * \return The output stream \a out
@@ -915,10 +962,7 @@ std::ostream &operator<<(std::ostream &out, const V4L2Subdevice::Stream &stream)
 std::ostream &operator<<(std::ostream &out, const V4L2Subdevice::Routing &routing)
 {
 	for (const auto &[i, route] : utils::enumerate(routing)) {
-		out << "[" << i << "] "
-		    << route.sink_pad << "/" << route.sink_stream << " -> "
-		    << route.source_pad << "/" << route.source_stream
-		    << " (" << utils::hex(route.flags) << ")";
+		out << "[" << i << "] " << route;
 		if (i != routing.size() - 1)
 			out << ", ";
 	}
@@ -1272,6 +1316,30 @@ int V4L2Subdevice::setFormat(const Stream &stream, V4L2SubdeviceFormat *format,
  * \return 0 on success or a negative error code otherwise
  */
 
+namespace {
+
+void routeFromKernel(V4L2Subdevice::Route &route,
+		     const struct v4l2_subdev_route &kroute)
+{
+	route.sink.pad = kroute.sink_pad;
+	route.sink.stream = kroute.sink_stream;
+	route.source.pad = kroute.source_pad;
+	route.source.stream = kroute.source_stream;
+	route.flags = kroute.flags;
+}
+
+void routeToKernel(const V4L2Subdevice::Route &route,
+		   struct v4l2_subdev_route &kroute)
+{
+	kroute.sink_pad = route.sink.pad;
+	kroute.sink_stream = route.sink.stream;
+	kroute.source_pad = route.source.pad;
+	kroute.source_stream = route.source.stream;
+	kroute.flags = route.flags;
+}
+
+} /* namespace */
+
 /**
  * \brief Retrieve the subdevice's internal routing table
  * \param[out] routing The routing table
@@ -1282,6 +1350,8 @@ int V4L2Subdevice::setFormat(const Stream &stream, V4L2SubdeviceFormat *format,
  */
 int V4L2Subdevice::getRouting(Routing *routing, Whence whence)
 {
+	routing->clear();
+
 	if (!caps_.hasStreams())
 		return 0;
 
@@ -1300,8 +1370,8 @@ int V4L2Subdevice::getRouting(Routing *routing, Whence whence)
 		return ret;
 	}
 
-	routing->resize(rt.num_routes);
-	rt.routes = reinterpret_cast<uintptr_t>(routing->data());
+	std::vector<struct v4l2_subdev_route> routes{ rt.num_routes };
+	rt.routes = reinterpret_cast<uintptr_t>(routes.data());
 
 	ret = ioctl(VIDIOC_SUBDEV_G_ROUTING, &rt);
 	if (ret) {
@@ -1310,10 +1380,15 @@ int V4L2Subdevice::getRouting(Routing *routing, Whence whence)
 		return ret;
 	}
 
-	if (rt.num_routes != routing->size()) {
+	if (rt.num_routes != routes.size()) {
 		LOG(V4L2, Error) << "Invalid number of routes";
 		return -EINVAL;
 	}
+
+	routing->resize(rt.num_routes);
+
+	for (const auto &[i, route] : utils::enumerate(routes))
+		routeFromKernel((*routing)[i], route);
 
 	return 0;
 }
@@ -1332,13 +1407,20 @@ int V4L2Subdevice::getRouting(Routing *routing, Whence whence)
  */
 int V4L2Subdevice::setRouting(Routing *routing, Whence whence)
 {
-	if (!caps_.hasStreams())
+	if (!caps_.hasStreams()) {
+		routing->clear();
 		return 0;
+	}
+
+	std::vector<struct v4l2_subdev_route> routes{ routing->size() };
+
+	for (const auto &[i, route] : utils::enumerate(*routing))
+		routeToKernel(route, routes[i]);
 
 	struct v4l2_subdev_routing rt = {};
 	rt.which = whence;
-	rt.num_routes = routing->size();
-	rt.routes = reinterpret_cast<uintptr_t>(routing->data());
+	rt.num_routes = routes.size();
+	rt.routes = reinterpret_cast<uintptr_t>(routes.data());
 
 	int ret = ioctl(VIDIOC_SUBDEV_S_ROUTING, &rt);
 	if (ret) {
@@ -1346,7 +1428,11 @@ int V4L2Subdevice::setRouting(Routing *routing, Whence whence)
 		return ret;
 	}
 
+	routes.resize(rt.num_routes);
 	routing->resize(rt.num_routes);
+
+	for (const auto &[i, route] : utils::enumerate(routes))
+		routeFromKernel((*routing)[i], route);
 
 	return 0;
 }

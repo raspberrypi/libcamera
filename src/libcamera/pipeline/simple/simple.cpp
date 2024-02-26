@@ -852,17 +852,17 @@ std::vector<const MediaPad *> SimpleCameraData::routedSourcePads(MediaPad *sink)
 
 	std::vector<const MediaPad *> pads;
 
-	for (const struct v4l2_subdev_route &route : routing) {
-		if (sink->index() != route.sink_pad ||
+	for (const V4L2Subdevice::Route &route : routing) {
+		if (sink->index() != route.sink.pad ||
 		    !(route.flags & V4L2_SUBDEV_ROUTE_FL_ACTIVE))
 			continue;
 
-		const MediaPad *pad = entity->getPadByIndex(route.source_pad);
+		const MediaPad *pad = entity->getPadByIndex(route.source.pad);
 		if (!pad) {
 			LOG(SimplePipeline, Warning)
 				<< "Entity " << entity->name()
 				<< " has invalid route source pad "
-				<< route.source_pad;
+				<< route.source.pad;
 		}
 
 		pads.push_back(pad);

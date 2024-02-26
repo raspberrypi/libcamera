@@ -95,7 +95,23 @@ public:
 		unsigned int stream;
 	};
 
-	using Routing = std::vector<struct v4l2_subdev_route>;
+	struct Route {
+		Route()
+			: flags(0)
+		{
+		}
+
+		Route(const Stream &snk, const Stream &src, uint32_t f)
+			: sink(snk), source(src), flags(f)
+		{
+		}
+
+		Stream sink;
+		Stream source;
+		uint32_t flags;
+	};
+
+	using Routing = std::vector<Route>;
 
 	explicit V4L2Subdevice(const MediaEntity *entity);
 	~V4L2Subdevice();
@@ -174,6 +190,7 @@ static inline bool operator!=(const V4L2Subdevice::Stream &lhs,
 }
 
 std::ostream &operator<<(std::ostream &out, const V4L2Subdevice::Stream &stream);
+std::ostream &operator<<(std::ostream &out, const V4L2Subdevice::Route &route);
 std::ostream &operator<<(std::ostream &out, const V4L2Subdevice::Routing &routing);
 
 } /* namespace libcamera */

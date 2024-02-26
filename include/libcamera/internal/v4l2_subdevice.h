@@ -66,7 +66,6 @@ struct V4L2SubdeviceFormat {
 	std::optional<ColorSpace> colorSpace;
 
 	const std::string toString() const;
-	uint8_t bitsPerPixel() const;
 };
 
 std::ostream &operator<<(std::ostream &out, const V4L2SubdeviceFormat &f);

@@ -1060,7 +1060,8 @@ int CameraSensor::sensorInfo(IPACameraSensorInfo *info) const
 	ret = subdev_->getFormat(pad_, &format);
 	if (ret)
 		return ret;
-	info->bitsPerPixel = format.bitsPerPixel();
+
+	info->bitsPerPixel = MediaBusFormatInfo::info(format.mbus_code).bitsPerPixel;
 	info->outputSize = format.size;
 
 	std::optional<int32_t> cfa = properties_.get(properties::draft::ColorFilterArrangement);

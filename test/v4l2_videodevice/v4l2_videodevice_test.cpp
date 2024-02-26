@@ -75,7 +75,7 @@ int V4L2VideoDeviceTest::init()
 		format.fourcc = V4L2PixelFormat(V4L2_PIX_FMT_SBGGR8);
 
 		V4L2SubdeviceFormat subformat = {};
-		subformat.mbus_code = MEDIA_BUS_FMT_SBGGR8_1X8;
+		subformat.code = MEDIA_BUS_FMT_SBGGR8_1X8;
 		subformat.size = format.size;
 
 		if (sensor_->setFormat(&subformat))

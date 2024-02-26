@@ -554,7 +554,7 @@ CameraConfiguration::Status ISICameraConfiguration::validate()
 	PixelFormat pixelFormat = config_[0].pixelFormat;
 
 	V4L2SubdeviceFormat sensorFormat{};
-	sensorFormat.mbus_code = data_->getMediaBusFormat(&pixelFormat);
+	sensorFormat.code = data_->getMediaBusFormat(&pixelFormat);
 	sensorFormat.size = maxSize;
 
 	LOG(ISI, Debug) << "Computed sensor configuration: " << sensorFormat;
@@ -569,7 +569,7 @@ CameraConfiguration::Status ISICameraConfiguration::validate()
 	 * the smallest larger format without considering the aspect ratio
 	 * as the ISI can freely scale.
 	 */
-	auto sizes = sensor->sizes(sensorFormat.mbus_code);
+	auto sizes = sensor->sizes(sensorFormat.code);
 	Size bestSize;
 
 	for (const Size &s : sizes) {
@@ -595,7 +595,7 @@ CameraConfiguration::Status ISICameraConfiguration::validate()
 		return Invalid;
 	}
 
-	sensorFormat_.mbus_code = sensorFormat.mbus_code;
+	sensorFormat_.code = sensorFormat.code;
 	sensorFormat_.size = bestSize;
 
 	LOG(ISI, Debug) << "Selected sensor format: " << sensorFormat_;
@@ -632,7 +632,7 @@ StreamConfiguration PipelineHandlerISI::generateYUVConfiguration(Camera *camera,
 
 	/* Adjust the requested size to the sensor's capabilities. */
 	V4L2SubdeviceFormat sensorFmt;
-	sensorFmt.mbus_code = mbusCode;
+	sensorFmt.code = mbusCode;
 	sensorFmt.size = size;
 
 	int ret = data->sensor_->tryFormat(&sensorFmt);
@@ -891,7 +891,7 @@ int PipelineHandlerISI::configure(Camera *camera, CameraConfiguration *c)
 		unsigned int isiCode = ISICameraConfiguration::formatsMap_.at(config.pixelFormat);
 
 		V4L2SubdeviceFormat isiFormat{};
-		isiFormat.mbus_code = isiCode;
+		isiFormat.code = isiCode;
 		isiFormat.size = config.size;
 
 		ret = pipe->isi->setFormat(1, &isiFormat);

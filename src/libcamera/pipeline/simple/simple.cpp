@@ -562,13 +562,13 @@ void SimpleCameraData::tryPipeline(unsigned int code, const Size &size)
 	 * corresponding possible V4L2 pixel formats on the video node.
 	 */
 	V4L2SubdeviceFormat format{};
-	format.mbus_code = code;
+	format.code = code;
 	format.size = size;
 
 	int ret = setupFormats(&format, V4L2Subdevice::TryFormat);
 	if (ret < 0) {
 		/* Pipeline configuration failed, skip this configuration. */
-		format.mbus_code = code;
+		format.code = code;
 		format.size = size;
 		LOG(SimplePipeline, Debug)
 			<< "Sensor format " << format
@@ -576,7 +576,7 @@ void SimpleCameraData::tryPipeline(unsigned int code, const Size &size)
 		return;
 	}
 
-	V4L2VideoDevice::Formats videoFormats = video_->formats(format.mbus_code);
+	V4L2VideoDevice::Formats videoFormats = video_->formats(format.code);
 
 	LOG(SimplePipeline, Debug)
 		<< "Adding configuration for " << format.size
@@ -706,7 +706,7 @@ int SimpleCameraData::setupFormats(V4L2SubdeviceFormat *format,
 			if (ret < 0)
 				return ret;
 
-			if (format->mbus_code != sourceFormat.mbus_code ||
+			if (format->code != sourceFormat.code ||
 			    format->size != sourceFormat.size) {
 				LOG(SimplePipeline, Debug)
 					<< "Source '" << source->entity()->name()
@@ -1120,7 +1120,7 @@ int SimplePipelineHandler::configure(Camera *camera, CameraConfiguration *c)
 
 	const SimpleCameraData::Configuration *pipeConfig = config->pipeConfig();
 	V4L2SubdeviceFormat format{};
-	format.mbus_code = pipeConfig->code;
+	format.code = pipeConfig->code;
 	format.size = pipeConfig->sensorSize;
 
 	ret = data->setupFormats(&format, V4L2Subdevice::ActiveFormat,

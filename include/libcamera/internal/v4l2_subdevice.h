@@ -61,7 +61,7 @@ struct V4L2SubdeviceCapability final : v4l2_subdev_capability {
 };
 
 struct V4L2SubdeviceFormat {
-	uint32_t mbus_code;
+	uint32_t code;
 	Size size;
 	std::optional<ColorSpace> colorSpace;
 

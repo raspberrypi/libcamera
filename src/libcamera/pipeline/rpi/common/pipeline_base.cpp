@@ -37,10 +37,10 @@ namespace {
 
 constexpr unsigned int defaultRawBitDepth = 12;
 
-PixelFormat mbusCodeToPixelFormat(unsigned int mbus_code,
+PixelFormat mbusCodeToPixelFormat(unsigned int code,
 				  BayerFormat::Packing packingReq)
 {
-	BayerFormat bayer = BayerFormat::fromMbusCode(mbus_code);
+	BayerFormat bayer = BayerFormat::fromMbusCode(code);
 
 	ASSERT(bayer.isValid());
 
@@ -221,7 +221,7 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 	 * without modifications.
 	 */
 	if (sensorConfig) {
-		BayerFormat bayer = BayerFormat::fromMbusCode(sensorFormat_.mbus_code);
+		BayerFormat bayer = BayerFormat::fromMbusCode(sensorFormat_.code);
 
 		if (bayer.bitDepth != sensorConfig->bitDepth ||
 		    sensorFormat_.size != sensorConfig->outputSize) {
@@ -236,7 +236,7 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 		StreamConfiguration *rawStream = raw.cfg;
 
 		/* Adjust the RAW stream to match the computed sensor format. */
-		BayerFormat sensorBayer = BayerFormat::fromMbusCode(sensorFormat_.mbus_code);
+		BayerFormat sensorBayer = BayerFormat::fromMbusCode(sensorFormat_.code);
 
 		/*
 		 * Some sensors change their Bayer order when they are h-flipped
@@ -377,8 +377,8 @@ V4L2DeviceFormat PipelineHandlerBase::toV4L2DeviceFormat(const V4L2VideoDevice *
 							 const V4L2SubdeviceFormat &format,
 							 BayerFormat::Packing packingReq)
 {
-	unsigned int mbus_code = format.mbus_code;
-	const PixelFormat pix = mbusCodeToPixelFormat(mbus_code, packingReq);
+	unsigned int code = format.code;
+	const PixelFormat pix = mbusCodeToPixelFormat(code, packingReq);
 	V4L2DeviceFormat deviceFormat;
 
 	deviceFormat.fourcc = dev->toV4L2PixelFormat(pix);
@@ -409,7 +409,7 @@ PipelineHandlerBase::generateConfiguration(Camera *camera, Span<const StreamRole
 		case StreamRole::Raw:
 			size = sensorSize;
 			sensorFormat = data->findBestFormat(size, defaultRawBitDepth);
-			pixelFormat = mbusCodeToPixelFormat(sensorFormat.mbus_code,
+			pixelFormat = mbusCodeToPixelFormat(sensorFormat.code,
 							    BayerFormat::Packing::CSI2);
 			ASSERT(pixelFormat.isValid());
 			colorSpace = ColorSpace::Raw;
@@ -990,7 +990,7 @@ V4L2SubdeviceFormat CameraData::findBestFormat(const Size &req, unsigned int bit
 
 			if (score <= bestScore) {
 				bestScore = score;
-				bestFormat.mbus_code = mbusCode;
+				bestFormat.code = mbusCode;
 				bestFormat.size = size;
 			}
 

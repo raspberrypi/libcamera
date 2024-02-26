@@ -32,12 +32,19 @@ class MediaDevice;
 class MediaBusFormatInfo
 {
 public:
+	enum class Type {
+		Image,
+		Metadata,
+		EmbeddedData,
+	};
+
 	bool isValid() const { return code != 0; }
 
 	static const MediaBusFormatInfo &info(uint32_t code);
 
 	const char *name;
 	uint32_t code;
+	Type type;
 	unsigned int bitsPerPixel;
 	PixelFormatInfo::ColourEncoding colourEncoding;
 };

@@ -51,6 +51,9 @@ LOG_DECLARE_CATEGORY(V4L2)
  * \var MediaBusFormatInfo::code
  * \brief The media bus format code described by this instance (MEDIA_BUS_FMT_*)
  *
+ * \var MediaBusFormatInfo::type
+ * \brief The media bus format type
+ *
  * \var MediaBusFormatInfo::bitsPerPixel
  * \brief The average number of bits per pixel
  *
@@ -62,10 +65,26 @@ LOG_DECLARE_CATEGORY(V4L2)
  * value will differ from the bus width.
  *
  * Formats that don't have a fixed number of bits per pixel, such as compressed
- * formats, report 0 in this field.
+ * formats, or device-specific embedded data formats, report 0 in this field.
  *
  * \var MediaBusFormatInfo::colourEncoding
  * \brief The colour encoding type
+ *
+ * This field is valid for Type::Image formats only.
+ */
+
+/**
+ * \enum MediaBusFormatInfo::Type
+ * \brief The format type
+ *
+ * \var MediaBusFormatInfo::Type::Image
+ * \brief The format describes image data
+ *
+ * \var MediaBusFormatInfo::Type::Metadata
+ * \brief The format describes generic metadata
+ *
+ * \var MediaBusFormatInfo::Type::EmbeddedData
+ * \brief The format describes sensor embedded data
  */
 
 namespace {
@@ -75,480 +94,560 @@ const std::map<uint32_t, MediaBusFormatInfo> mediaBusFormatInfo{
 	{ MEDIA_BUS_FMT_RGB444_2X8_PADHI_BE, {
 		.name = "RGB444_2X8_PADHI_BE",
 		.code = MEDIA_BUS_FMT_RGB444_2X8_PADHI_BE,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 16,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
 	} },
 	{ MEDIA_BUS_FMT_RGB444_2X8_PADHI_LE, {
 		.name = "RGB444_2X8_PADHI_LE",
 		.code = MEDIA_BUS_FMT_RGB444_2X8_PADHI_LE,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 16,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
 	} },
 	{ MEDIA_BUS_FMT_RGB555_2X8_PADHI_BE, {
 		.name = "RGB555_2X8_PADHI_BE",
 		.code = MEDIA_BUS_FMT_RGB555_2X8_PADHI_BE,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 16,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
 	} },
 	{ MEDIA_BUS_FMT_RGB555_2X8_PADHI_LE, {
 		.name = "RGB555_2X8_PADHI_LE",
 		.code = MEDIA_BUS_FMT_RGB555_2X8_PADHI_LE,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 16,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
 	} },
 	{ MEDIA_BUS_FMT_RGB565_1X16, {
 		.name = "RGB565_1X16",
 		.code = MEDIA_BUS_FMT_RGB565_1X16,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 16,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
 	} },
 	{ MEDIA_BUS_FMT_BGR565_2X8_BE, {
 		.name = "BGR565_2X8_BE",
 		.code = MEDIA_BUS_FMT_BGR565_2X8_BE,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 16,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
 	} },
 	{ MEDIA_BUS_FMT_BGR565_2X8_LE, {
 		.name = "BGR565_2X8_LE",
 		.code = MEDIA_BUS_FMT_BGR565_2X8_LE,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 16,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
 	} },
 	{ MEDIA_BUS_FMT_RGB565_2X8_BE, {
 		.name = "RGB565_2X8_BE",
 		.code = MEDIA_BUS_FMT_RGB565_2X8_BE,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 16,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
 	} },
 	{ MEDIA_BUS_FMT_RGB565_2X8_LE, {
 		.name = "RGB565_2X8_LE",
 		.code = MEDIA_BUS_FMT_RGB565_2X8_LE,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 16,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
 	} },
 	{ MEDIA_BUS_FMT_RGB666_1X18, {
 		.name = "RGB666_1X18",
 		.code = MEDIA_BUS_FMT_RGB666_1X18,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 18,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
 	} },
 	{ MEDIA_BUS_FMT_BGR888_1X24, {
 		.name = "BGR888_1X24",
 		.code = MEDIA_BUS_FMT_BGR888_1X24,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 24,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
 	} },
 	{ MEDIA_BUS_FMT_RGB888_1X24, {
 		.name = "RGB888_1X24",
 		.code = MEDIA_BUS_FMT_RGB888_1X24,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 24,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
 	} },
 	{ MEDIA_BUS_FMT_RGB888_2X12_BE, {
 		.name = "RGB888_2X12_BE",
 		.code = MEDIA_BUS_FMT_RGB888_2X12_BE,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 24,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
 	} },
 	{ MEDIA_BUS_FMT_RGB888_2X12_LE, {
 		.name = "RGB888_2X12_LE",
 		.code = MEDIA_BUS_FMT_RGB888_2X12_LE,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 24,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
 	} },
 	{ MEDIA_BUS_FMT_ARGB8888_1X32, {
 		.name = "ARGB8888_1X32",
 		.code = MEDIA_BUS_FMT_ARGB8888_1X32,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 32,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
 	} },
 	{ MEDIA_BUS_FMT_Y8_1X8, {
 		.name = "Y8_1X8",
 		.code = MEDIA_BUS_FMT_Y8_1X8,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 8,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 	} },
 	{ MEDIA_BUS_FMT_UV8_1X8, {
 		.name = "UV8_1X8",
 		.code = MEDIA_BUS_FMT_UV8_1X8,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 8,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 	} },
 	{ MEDIA_BUS_FMT_UYVY8_1_5X8, {
 		.name = "UYVY8_1_5X8",
 		.code = MEDIA_BUS_FMT_UYVY8_1_5X8,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 12,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 	} },
 	{ MEDIA_BUS_FMT_VYUY8_1_5X8, {
 		.name = "VYUY8_1_5X8",
 		.code = MEDIA_BUS_FMT_VYUY8_1_5X8,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 12,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 	} },
 	{ MEDIA_BUS_FMT_YUYV8_1_5X8, {
 		.name = "YUYV8_1_5X8",
 		.code = MEDIA_BUS_FMT_YUYV8_1_5X8,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 12,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 	} },
 	{ MEDIA_BUS_FMT_YVYU8_1_5X8, {
 		.name = "YVYU8_1_5X8",
 		.code = MEDIA_BUS_FMT_YVYU8_1_5X8,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 12,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 	} },
 	{ MEDIA_BUS_FMT_UYVY8_2X8, {
 		.name = "UYVY8_2X8",
 		.code = MEDIA_BUS_FMT_UYVY8_2X8,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 16,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 	} },
 	{ MEDIA_BUS_FMT_VYUY8_2X8, {
 		.name = "VYUY8_2X8",
 		.code = MEDIA_BUS_FMT_VYUY8_2X8,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 16,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 	} },
 	{ MEDIA_BUS_FMT_YUYV8_2X8, {
 		.name = "YUYV8_2X8",
 		.code = MEDIA_BUS_FMT_YUYV8_2X8,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 16,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 	} },
 	{ MEDIA_BUS_FMT_YVYU8_2X8, {
 		.name = "YVYU8_2X8",
 		.code = MEDIA_BUS_FMT_YVYU8_2X8,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 16,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 	} },
 	{ MEDIA_BUS_FMT_Y10_1X10, {
 		.name = "Y10_1X10",
 		.code = MEDIA_BUS_FMT_Y10_1X10,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 10,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 	} },
 	{ MEDIA_BUS_FMT_UYVY10_2X10, {
 		.name = "UYVY10_2X10",
 		.code = MEDIA_BUS_FMT_UYVY10_2X10,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 20,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 	} },
 	{ MEDIA_BUS_FMT_VYUY10_2X10, {
 		.name = "VYUY10_2X10",
 		.code = MEDIA_BUS_FMT_VYUY10_2X10,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 20,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 	} },
 	{ MEDIA_BUS_FMT_YUYV10_2X10, {
 		.name = "YUYV10_2X10",
 		.code = MEDIA_BUS_FMT_YUYV10_2X10,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 20,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 	} },
 	{ MEDIA_BUS_FMT_YVYU10_2X10, {
 		.name = "YVYU10_2X10",
 		.code = MEDIA_BUS_FMT_YVYU10_2X10,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 20,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 	} },
 	{ MEDIA_BUS_FMT_Y12_1X12, {
 		.name = "Y12_1X12",
 		.code = MEDIA_BUS_FMT_Y12_1X12,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 12,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 	} },
 	{ MEDIA_BUS_FMT_Y16_1X16, {
 		.name = "Y16_1X16",
 		.code = MEDIA_BUS_FMT_Y16_1X16,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 16,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 	} },
 	{ MEDIA_BUS_FMT_UYVY8_1X16, {
 		.name = "UYVY8_1X16",
 		.code = MEDIA_BUS_FMT_UYVY8_1X16,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 16,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 	} },
 	{ MEDIA_BUS_FMT_VYUY8_1X16, {
 		.name = "VYUY8_1X16",
 		.code = MEDIA_BUS_FMT_VYUY8_1X16,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 16,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 	} },
 	{ MEDIA_BUS_FMT_YUYV8_1X16, {
 		.name = "YUYV8_1X16",
 		.code = MEDIA_BUS_FMT_YUYV8_1X16,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 16,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 	} },
 	{ MEDIA_BUS_FMT_YVYU8_1X16, {
 		.name = "YVYU8_1X16",
 		.code = MEDIA_BUS_FMT_YVYU8_1X16,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 16,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 	} },
 	{ MEDIA_BUS_FMT_YDYUYDYV8_1X16, {
 		.name = "YDYUYDYV8_1X16",
 		.code = MEDIA_BUS_FMT_YDYUYDYV8_1X16,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 16,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 	} },
 	{ MEDIA_BUS_FMT_UYVY10_1X20, {
 		.name = "UYVY10_1X20",
 		.code = MEDIA_BUS_FMT_UYVY10_1X20,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 20,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 	} },
 	{ MEDIA_BUS_FMT_VYUY10_1X20, {
 		.name = "VYUY10_1X20",
 		.code = MEDIA_BUS_FMT_VYUY10_1X20,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 20,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 	} },
 	{ MEDIA_BUS_FMT_YUYV10_1X20, {
 		.name = "YUYV10_1X20",
 		.code = MEDIA_BUS_FMT_YUYV10_1X20,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 20,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 	} },
 	{ MEDIA_BUS_FMT_YVYU10_1X20, {
 		.name = "YVYU10_1X20",
 		.code = MEDIA_BUS_FMT_YVYU10_1X20,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 20,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 	} },
 	{ MEDIA_BUS_FMT_YUV8_1X24, {
 		.name = "YUV8_1X24",
 		.code = MEDIA_BUS_FMT_YUV8_1X24,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 24,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 	} },
 	{ MEDIA_BUS_FMT_YUV10_1X30, {
 		.name = "YUV10_1X30",
 		.code = MEDIA_BUS_FMT_YUV10_1X30,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 30,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 	} },
 	{ MEDIA_BUS_FMT_AYUV8_1X32, {
 		.name = "AYUV8_1X32",
 		.code = MEDIA_BUS_FMT_AYUV8_1X32,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 32,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 	} },
 	{ MEDIA_BUS_FMT_UYVY12_2X12, {
 		.name = "UYVY12_2X12",
 		.code = MEDIA_BUS_FMT_UYVY12_2X12,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 24,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 	} },
 	{ MEDIA_BUS_FMT_VYUY12_2X12, {
 		.name = "VYUY12_2X12",
 		.code = MEDIA_BUS_FMT_VYUY12_2X12,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 24,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 	} },
 	{ MEDIA_BUS_FMT_YUYV12_2X12, {
 		.name = "YUYV12_2X12",
 		.code = MEDIA_BUS_FMT_YUYV12_2X12,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 24,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 	} },
 	{ MEDIA_BUS_FMT_YVYU12_2X12, {
 		.name = "YVYU12_2X12",
 		.code = MEDIA_BUS_FMT_YVYU12_2X12,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 24,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 	} },
 	{ MEDIA_BUS_FMT_UYVY12_1X24, {
 		.name = "UYVY12_1X24",
 		.code = MEDIA_BUS_FMT_UYVY12_1X24,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 24,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 	} },
 	{ MEDIA_BUS_FMT_VYUY12_1X24, {
 		.name = "VYUY12_1X24",
 		.code = MEDIA_BUS_FMT_VYUY12_1X24,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 24,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 	} },
 	{ MEDIA_BUS_FMT_YUYV12_1X24, {
 		.name = "YUYV12_1X24",
 		.code = MEDIA_BUS_FMT_YUYV12_1X24,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 24,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 	} },
 	{ MEDIA_BUS_FMT_YVYU12_1X24, {
 		.name = "YVYU12_1X24",
 		.code = MEDIA_BUS_FMT_YVYU12_1X24,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 24,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 	} },
 	{ MEDIA_BUS_FMT_SBGGR8_1X8, {
 		.name = "SBGGR8_1X8",
 		.code = MEDIA_BUS_FMT_SBGGR8_1X8,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 8,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 	} },
 	{ MEDIA_BUS_FMT_SGBRG8_1X8, {
 		.name = "SGBRG8_1X8",
 		.code = MEDIA_BUS_FMT_SGBRG8_1X8,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 8,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 	} },
 	{ MEDIA_BUS_FMT_SGRBG8_1X8, {
 		.name = "SGRBG8_1X8",
 		.code = MEDIA_BUS_FMT_SGRBG8_1X8,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 8,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 	} },
 	{ MEDIA_BUS_FMT_SRGGB8_1X8, {
 		.name = "SRGGB8_1X8",
 		.code = MEDIA_BUS_FMT_SRGGB8_1X8,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 8,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 	} },
 	{ MEDIA_BUS_FMT_SBGGR10_ALAW8_1X8, {
 		.name = "SBGGR10_ALAW8_1X8",
 		.code = MEDIA_BUS_FMT_SBGGR10_ALAW8_1X8,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 8,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 	} },
 	{ MEDIA_BUS_FMT_SGBRG10_ALAW8_1X8, {
 		.name = "SGBRG10_ALAW8_1X8",
 		.code = MEDIA_BUS_FMT_SGBRG10_ALAW8_1X8,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 8,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 	} },
 	{ MEDIA_BUS_FMT_SGRBG10_ALAW8_1X8, {
 		.name = "SGRBG10_ALAW8_1X8",
 		.code = MEDIA_BUS_FMT_SGRBG10_ALAW8_1X8,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 8,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 	} },
 	{ MEDIA_BUS_FMT_SRGGB10_ALAW8_1X8, {
 		.name = "SRGGB10_ALAW8_1X8",
 		.code = MEDIA_BUS_FMT_SRGGB10_ALAW8_1X8,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 8,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 	} },
 	{ MEDIA_BUS_FMT_SBGGR10_DPCM8_1X8, {
 		.name = "SBGGR10_DPCM8_1X8",
 		.code = MEDIA_BUS_FMT_SBGGR10_DPCM8_1X8,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 8,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 	} },
 	{ MEDIA_BUS_FMT_SGBRG10_DPCM8_1X8, {
 		.name = "SGBRG10_DPCM8_1X8",
 		.code = MEDIA_BUS_FMT_SGBRG10_DPCM8_1X8,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 8,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 	} },
 	{ MEDIA_BUS_FMT_SGRBG10_DPCM8_1X8, {
 		.name = "SGRBG10_DPCM8_1X8",
 		.code = MEDIA_BUS_FMT_SGRBG10_DPCM8_1X8,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 8,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 	} },
 	{ MEDIA_BUS_FMT_SRGGB10_DPCM8_1X8, {
 		.name = "SRGGB10_DPCM8_1X8",
 		.code = MEDIA_BUS_FMT_SRGGB10_DPCM8_1X8,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 8,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 	} },
 	{ MEDIA_BUS_FMT_SBGGR10_2X8_PADHI_BE, {
 		.name = "SBGGR10_2X8_PADHI_BE",
 		.code = MEDIA_BUS_FMT_SBGGR10_2X8_PADHI_BE,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 16,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 	} },
 	{ MEDIA_BUS_FMT_SBGGR10_2X8_PADHI_LE, {
 		.name = "SBGGR10_2X8_PADHI_LE",
 		.code = MEDIA_BUS_FMT_SBGGR10_2X8_PADHI_LE,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 16,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 	} },
 	{ MEDIA_BUS_FMT_SBGGR10_2X8_PADLO_BE, {
 		.name = "SBGGR10_2X8_PADLO_BE",
 		.code = MEDIA_BUS_FMT_SBGGR10_2X8_PADLO_BE,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 16,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 	} },
 	{ MEDIA_BUS_FMT_SBGGR10_2X8_PADLO_LE, {
 		.name = "SBGGR10_2X8_PADLO_LE",
 		.code = MEDIA_BUS_FMT_SBGGR10_2X8_PADLO_LE,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 16,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 	} },
 	{ MEDIA_BUS_FMT_SBGGR10_1X10, {
 		.name = "SBGGR10_1X10",
 		.code = MEDIA_BUS_FMT_SBGGR10_1X10,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 10,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 	} },
 	{ MEDIA_BUS_FMT_SGBRG10_1X10, {
 		.name = "SGBRG10_1X10",
 		.code = MEDIA_BUS_FMT_SGBRG10_1X10,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 10,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 	} },
 	{ MEDIA_BUS_FMT_SGRBG10_1X10, {
 		.name = "SGRBG10_1X10",
 		.code = MEDIA_BUS_FMT_SGRBG10_1X10,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 10,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 	} },
 	{ MEDIA_BUS_FMT_SRGGB10_1X10, {
 		.name = "SRGGB10_1X10",
 		.code = MEDIA_BUS_FMT_SRGGB10_1X10,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 10,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 	} },
 	{ MEDIA_BUS_FMT_SBGGR12_1X12, {
 		.name = "SBGGR12_1X12",
 		.code = MEDIA_BUS_FMT_SBGGR12_1X12,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 12,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 	} },
 	{ MEDIA_BUS_FMT_SGBRG12_1X12, {
 		.name = "SGBRG12_1X12",
 		.code = MEDIA_BUS_FMT_SGBRG12_1X12,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 12,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 	} },
 	{ MEDIA_BUS_FMT_SGRBG12_1X12, {
 		.name = "SGRBG12_1X12",
 		.code = MEDIA_BUS_FMT_SGRBG12_1X12,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 12,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 	} },
 	{ MEDIA_BUS_FMT_SRGGB12_1X12, {
 		.name = "SRGGB12_1X12",
 		.code = MEDIA_BUS_FMT_SRGGB12_1X12,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 12,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 	} },
 	{ MEDIA_BUS_FMT_SBGGR14_1X14, {
 		.name = "SBGGR14_1X14",
 		.code = MEDIA_BUS_FMT_SBGGR14_1X14,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 14,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 	} },
 	{ MEDIA_BUS_FMT_SGBRG14_1X14, {
 		.name = "SGBRG14_1X14",
 		.code = MEDIA_BUS_FMT_SGBRG14_1X14,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 14,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 	} },
 	{ MEDIA_BUS_FMT_SGRBG14_1X14, {
 		.name = "SGRBG14_1X14",
 		.code = MEDIA_BUS_FMT_SGRBG14_1X14,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 14,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 	} },
 	{ MEDIA_BUS_FMT_SRGGB14_1X14, {
 		.name = "SRGGB14_1X14",
 		.code = MEDIA_BUS_FMT_SRGGB14_1X14,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 14,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 	} },
@@ -556,14 +655,23 @@ const std::map<uint32_t, MediaBusFormatInfo> mediaBusFormatInfo{
 	{ MEDIA_BUS_FMT_AHSV8888_1X32, {
 		.name = "AHSV8888_1X32",
 		.code = MEDIA_BUS_FMT_AHSV8888_1X32,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 32,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
 	} },
 	{ MEDIA_BUS_FMT_JPEG_1X8, {
 		.name = "JPEG_1X8",
 		.code = MEDIA_BUS_FMT_JPEG_1X8,
+		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 8,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+	} },
+	{ MEDIA_BUS_FMT_METADATA_FIXED, {
+		.name = "METADATA_FIXED",
+		.code = MEDIA_BUS_FMT_METADATA_FIXED,
+		.type = MediaBusFormatInfo::Type::Metadata,
+		.bitsPerPixel = 0,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 	} },
 };
 

@@ -36,28 +36,40 @@ namespace libcamera {
 
 LOG_DECLARE_CATEGORY(V4L2)
 
+/**
+ * \class MediaBusFormatInfo
+ * \brief Information about media bus formats
+ *
+ * The MediaBusFormatInfo class groups together information describing a media
+ * bus format. It facilitates handling of media bus formats by providing data
+ * commonly used in pipeline handlers.
+ *
+ * \var MediaBusFormatInfo::name
+ * \brief The format name as a human-readable string, used as the text
+ * representation of the format
+ *
+ * \var MediaBusFormatInfo::code
+ * \brief The media bus format code described by this instance (MEDIA_BUS_FMT_*)
+ *
+ * \var MediaBusFormatInfo::bitsPerPixel
+ * \brief The average number of bits per pixel
+ *
+ * The number of bits per pixel averages the total number of bits for all
+ * colour components over the whole image, excluding any padding bits or
+ * padding pixels.
+ *
+ * For formats that transmit multiple or fractional pixels per sample, the
+ * value will differ from the bus width.
+ *
+ * Formats that don't have a fixed number of bits per pixel, such as compressed
+ * formats, report 0 in this field.
+ *
+ * \var MediaBusFormatInfo::colourEncoding
+ * \brief The colour encoding type
+ */
+
 namespace {
 
-/*
- * \struct MediaBusFormatInfo
- * \brief Information about media bus formats
- * \param name Name of MBUS format
- * \param code The media bus format code
- * \param bitsPerPixel Bits per pixel
- * \param colourEncoding Type of colour encoding
- */
-struct MediaBusFormatInfo {
-	const char *name;
-	uint32_t code;
-	unsigned int bitsPerPixel;
-	PixelFormatInfo::ColourEncoding colourEncoding;
-};
-
-/*
- * \var mediaBusFormatInfo
- * \brief A map that associates MediaBusFormatInfo struct to V4L2 media
- * bus codes
- */
 const std::map<uint32_t, MediaBusFormatInfo> mediaBusFormatInfo{
 	/* This table is sorted to match the order in linux/media-bus-format.h */
 	{ MEDIA_BUS_FMT_RGB444_2X8_PADHI_BE, {
@@ -558,6 +570,33 @@ const std::map<uint32_t, MediaBusFormatInfo> mediaBusFormatInfo{
 } /* namespace */
 
 /**
+ * \fn bool MediaBusFormatInfo::isValid() const
+ * \brief Check if the media bus format info is valid
+ * \return True if the media bus format info is valid, false otherwise
+ */
+
+/**
+ * \brief Retrieve information about a media bus format
+ * \param[in] code The media bus format code
+ * \return The MediaBusFormatInfo describing the \a code if known, or an invalid
+ * MediaBusFormatInfo otherwise
+ */
+const MediaBusFormatInfo &MediaBusFormatInfo::info(uint32_t code)
+{
+	static const MediaBusFormatInfo invalid{};
+
+	const auto it = mediaBusFormatInfo.find(code);
+	if (it == mediaBusFormatInfo.end()) {
+		LOG(V4L2, Warning)
+			<< "Unsupported media bus format "
+			<< utils::hex(code, 4);
+		return invalid;
+	}
+
+	return it->second;
+}
+
+/**
  * \struct V4L2SubdeviceCapability
  * \brief struct v4l2_subdev_capability object wrapper and helpers
  *
@@ -653,14 +692,7 @@ const std::string V4L2SubdeviceFormat::toString() const
  */
 uint8_t V4L2SubdeviceFormat::bitsPerPixel() const
 {
-	const auto it = mediaBusFormatInfo.find(mbus_code);
-	if (it == mediaBusFormatInfo.end()) {
-		LOG(V4L2, Error) << "No information available for format '"
-				 << *this << "'";
-		return 0;
-	}
-
-	return it->second.bitsPerPixel;
+	return MediaBusFormatInfo::info(mbus_code).bitsPerPixel;
 }
 
 /**
@@ -927,9 +959,9 @@ std::optional<ColorSpace> V4L2Subdevice::toColorSpace(const v4l2_mbus_framefmt &
 		return std::nullopt;
 
 	PixelFormatInfo::ColourEncoding colourEncoding;
-	auto iter = mediaBusFormatInfo.find(format.code);
-	if (iter != mediaBusFormatInfo.end()) {
-		colourEncoding = iter->second.colourEncoding;
+	const MediaBusFormatInfo &info = MediaBusFormatInfo::info(format.code);
+	if (info.isValid()) {
+		colourEncoding = info.colourEncoding;
 	} else {
 		LOG(V4L2, Warning)
 			<< "Unknown subdev format "

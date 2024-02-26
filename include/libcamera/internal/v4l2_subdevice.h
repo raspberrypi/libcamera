@@ -29,6 +29,19 @@ namespace libcamera {
 
 class MediaDevice;
 
+class MediaBusFormatInfo
+{
+public:
+	bool isValid() const { return code != 0; }
+
+	static const MediaBusFormatInfo &info(uint32_t code);
+
+	const char *name;
+	uint32_t code;
+	unsigned int bitsPerPixel;
+	PixelFormatInfo::ColourEncoding colourEncoding;
+};
+
 struct V4L2SubdeviceCapability final : v4l2_subdev_capability {
 	bool isReadOnly() const
 	{

@@ -952,8 +952,8 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 	 */
 	if (camera3Request->settings)
 		lastSettings_ = camera3Request->settings;
-	else
-		descriptor->settings_ = lastSettings_;
+
+	descriptor->settings_ = lastSettings_;
 
 	LOG(HAL, Debug) << "Queueing request " << descriptor->request_->cookie()
 			<< " with " << descriptor->buffers_.size() << " streams";
@@ -1108,6 +1108,8 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 	}
 
 	if (state_ == State::Stopped) {
+		lastSettings_ = {};
+
 		ret = camera_->start();
 		if (ret) {
 			LOG(HAL, Error) << "Failed to start camera";

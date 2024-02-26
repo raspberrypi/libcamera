@@ -1387,7 +1387,7 @@ int SimplePipelineHandler::resetRoutingTable(V4L2Subdevice *subdev)
 
 	LOG(SimplePipeline, Debug)
 		<< "Routing table of " << subdev->deviceNode()
-		<< " reset to " << routing.toString();
+		<< " reset to " << routing;
 
 	return 0;
 }

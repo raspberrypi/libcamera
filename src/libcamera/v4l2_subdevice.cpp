@@ -899,30 +899,31 @@ std::ostream &operator<<(std::ostream &out, const V4L2Subdevice::Stream &stream)
 }
 
 /**
- * \class V4L2Subdevice::Routing
+ * \typedef V4L2Subdevice::Routing
  * \brief V4L2 subdevice routing table
  *
  * This class stores a subdevice routing table as a vector of routes.
  */
 
 /**
- * \brief Assemble and return a string describing the routing table
- * \return A string describing the routing table
+ * \brief Insert a text representation of a V4L2Subdevice::Routing into an
+ *	output stream
+ * \param[in] out The output stream
+ * \param[in] routing The V4L2Subdevice::Routing
+ * \return The output stream \a out
  */
-std::string V4L2Subdevice::Routing::toString() const
+std::ostream &operator<<(std::ostream &out, const V4L2Subdevice::Routing &routing)
 {
-	std::stringstream routing;
-
-	for (const auto &[i, route] : utils::enumerate(*this)) {
-		routing << "[" << i << "] "
-			<< route.sink_pad << "/" << route.sink_stream << " -> "
-			<< route.source_pad << "/" << route.source_stream
-			<< " (" << utils::hex(route.flags) << ")";
-		if (i != size() - 1)
-			routing << ", ";
+	for (const auto &[i, route] : utils::enumerate(routing)) {
+		out << "[" << i << "] "
+		    << route.sink_pad << "/" << route.sink_stream << " -> "
+		    << route.source_pad << "/" << route.source_stream
+		    << " (" << utils::hex(route.flags) << ")";
+		if (i != routing.size() - 1)
+			out << ", ";
 	}
 
-	return routing.str();
+	return out;
 }
 
 /**

@@ -95,11 +95,7 @@ public:
 		unsigned int stream;
 	};
 
-	class Routing : public std::vector<struct v4l2_subdev_route>
-	{
-	public:
-		std::string toString() const;
-	};
+	using Routing = std::vector<struct v4l2_subdev_route>;
 
 	explicit V4L2Subdevice(const MediaEntity *entity);
 	~V4L2Subdevice();
@@ -178,5 +174,6 @@ static inline bool operator!=(const V4L2Subdevice::Stream &lhs,
 }
 
 std::ostream &operator<<(std::ostream &out, const V4L2Subdevice::Stream &stream);
+std::ostream &operator<<(std::ostream &out, const V4L2Subdevice::Routing &routing);
 
 } /* namespace libcamera */

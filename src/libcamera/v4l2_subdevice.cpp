@@ -843,6 +843,62 @@ std::ostream &operator<<(std::ostream &out, const V4L2SubdeviceFormat &f)
  */
 
 /**
+ * \class V4L2Subdevice::Stream
+ * \brief V4L2 subdevice stream
+ *
+ * This class identifies a subdev stream, by bundling the pad number with the
+ * stream number. It is used in all stream-aware functions of the V4L2Subdevice
+ * class to identify the stream the functions operate on.
+ *
+ * \var V4L2Subdevice::Stream::pad
+ * \brief The 0-indexed pad number
+ *
+ * \var V4L2Subdevice::Stream::stream
+ * \brief The stream number
+ */
+
+/**
+ * \fn V4L2Subdevice::Stream::Stream()
+ * \brief Construct a Stream with pad and stream set to 0
+ */
+
+/**
+ * \fn V4L2Subdevice::Stream::Stream(unsigned int pad, unsigned int stream)
+ * \brief Construct a Stream with a given \a pad and \a stream number
+ * \param[in] pad The indexed pad number
+ * \param[in] stream The stream number
+ */
+
+/**
+ * \brief Compare streams for equality
+ * \return True if the two streams are equal, false otherwise
+ */
+bool operator==(const V4L2Subdevice::Stream &lhs, const V4L2Subdevice::Stream &rhs)
+{
+	return lhs.pad == rhs.pad && lhs.stream == rhs.stream;
+}
+
+/**
+ * \fn bool operator!=(const V4L2Subdevice::Stream &lhs, const V4L2Subdevice::Stream &rhs)
+ * \brief Compare streams for inequality
+ * \return True if the two streams are not equal, false otherwise
+ */
+
+/**
+ * \brief Insert a text representation of a V4L2Subdevice::Stream into an
+ * output stream
+ * \param[in] out The output stream
+ * \param[in] stream The V4L2Subdevice::Stream
+ * \return The output stream \a out
+ */
+std::ostream &operator<<(std::ostream &out, const V4L2Subdevice::Stream &stream)
+{
+	out << stream.pad << "/" << stream.stream;
+
+	return out;
+}
+
+/**
  * \class V4L2Subdevice::Routing
  * \brief V4L2 subdevice routing table
  *
@@ -933,7 +989,7 @@ int V4L2Subdevice::open()
 
 /**
  * \brief Get selection rectangle \a rect for \a target
- * \param[in] pad The 0-indexed pad number the rectangle is retrieved from
+ * \param[in] stream The stream the rectangle is retrieved from
  * \param[in] target The selection target defined by the V4L2_SEL_TGT_* flags
  * \param[out] rect The retrieved selection rectangle
  *
@@ -941,13 +997,14 @@ int V4L2Subdevice::open()
  *
  * \return 0 on success or a negative error code otherwise
  */
-int V4L2Subdevice::getSelection(unsigned int pad, unsigned int target,
+int V4L2Subdevice::getSelection(const Stream &stream, unsigned int target,
 				Rectangle *rect)
 {
 	struct v4l2_subdev_selection sel = {};
 
 	sel.which = V4L2_SUBDEV_FORMAT_ACTIVE;
-	sel.pad = pad;
+	sel.pad = stream.pad;
+	sel.stream = stream.stream;
 	sel.target = target;
 	sel.flags = 0;
 
@@ -955,7 +1012,7 @@ int V4L2Subdevice::getSelection(unsigned int pad, unsigned int target,
 	if (ret < 0) {
 		LOG(V4L2, Error)
 			<< "Unable to get rectangle " << target << " on pad "
-			<< pad << ": " << strerror(-ret);
+			<< stream << ": " << strerror(-ret);
 		return ret;
 	}
 
@@ -968,8 +1025,19 @@ int V4L2Subdevice::getSelection(unsigned int pad, unsigned int target,
 }
 
 /**
+ * \fn V4L2Subdevice::getSelection(unsigned int pad, unsigned int target,
+ * Rectangle *rect)
+ * \brief Get selection rectangle \a rect for \a target
+ * \param[in] pad The 0-indexed pad number the rectangle is retrieved from
+ * \param[in] target The selection target defined by the V4L2_SEL_TGT_* flags
+ * \param[out] rect The retrieved selection rectangle
+ *
+ * \return 0 on success or a negative error code otherwise
+ */
+
+/**
  * \brief Set selection rectangle \a rect for \a target
- * \param[in] pad The 0-indexed pad number the rectangle is to be applied to
+ * \param[in] stream The stream the rectangle is to be applied to
  * \param[in] target The selection target defined by the V4L2_SEL_TGT_* flags
  * \param[inout] rect The selection rectangle to be applied
  *
@@ -977,13 +1045,14 @@ int V4L2Subdevice::getSelection(unsigned int pad, unsigned int target,
  *
  * \return 0 on success or a negative error code otherwise
  */
-int V4L2Subdevice::setSelection(unsigned int pad, unsigned int target,
+int V4L2Subdevice::setSelection(const Stream &stream, unsigned int target,
 				Rectangle *rect)
 {
 	struct v4l2_subdev_selection sel = {};
 
 	sel.which = V4L2_SUBDEV_FORMAT_ACTIVE;
-	sel.pad = pad;
+	sel.pad = stream.pad;
+	sel.stream = stream.stream;
 	sel.target = target;
 	sel.flags = 0;
 
@@ -996,7 +1065,7 @@ int V4L2Subdevice::setSelection(unsigned int pad, unsigned int target,
 	if (ret < 0) {
 		LOG(V4L2, Error)
 			<< "Unable to set rectangle " << target << " on pad "
-			<< pad << ": " << strerror(-ret);
+			<< stream << ": " << strerror(-ret);
 		return ret;
 	}
 
@@ -1007,26 +1076,40 @@ int V4L2Subdevice::setSelection(unsigned int pad, unsigned int target,
 
 	return 0;
 }
+
 /**
- * \brief Enumerate all media bus codes and frame sizes on a \a pad
- * \param[in] pad The 0-indexed pad number to enumerate formats on
+ * \fn V4L2Subdevice::setSelection(unsigned int pad, unsigned int target,
+ * Rectangle *rect)
+ * \brief Set selection rectangle \a rect for \a target
+ * \param[in] pad The 0-indexed pad number the rectangle is to be applied to
+ * \param[in] target The selection target defined by the V4L2_SEL_TGT_* flags
+ * \param[inout] rect The selection rectangle to be applied
+ *
+ * \todo Define a V4L2SelectionTarget enum for the selection target
+ *
+ * \return 0 on success or a negative error code otherwise
+ */
+
+/**
+ * \brief Enumerate all media bus codes and frame sizes on a \a stream
+ * \param[in] stream The stream to enumerate formats for
  *
  * Enumerate all media bus codes and frame sizes supported by the subdevice on
- * a \a pad.
+ * a \a stream.
  *
  * \return A list of the supported device formats
  */
-V4L2Subdevice::Formats V4L2Subdevice::formats(unsigned int pad)
+V4L2Subdevice::Formats V4L2Subdevice::formats(const Stream &stream)
 {
 	Formats formats;
 
-	if (pad >= entity_->pads().size()) {
-		LOG(V4L2, Error) << "Invalid pad: " << pad;
+	if (stream.pad >= entity_->pads().size()) {
+		LOG(V4L2, Error) << "Invalid pad: " << stream.pad;
 		return {};
 	}
 
-	for (unsigned int code : enumPadCodes(pad)) {
-		std::vector<SizeRange> sizes = enumPadSizes(pad, code);
+	for (unsigned int code : enumPadCodes(stream)) {
+		std::vector<SizeRange> sizes = enumPadSizes(stream, code);
 		if (sizes.empty())
 			return {};
 
@@ -1034,13 +1117,24 @@ V4L2Subdevice::Formats V4L2Subdevice::formats(unsigned int pad)
 		if (!inserted.second) {
 			LOG(V4L2, Error)
 				<< "Could not add sizes for media bus code "
-				<< code << " on pad " << pad;
+				<< code << " on pad " << stream.pad;
 			return {};
 		}
 	}
 
 	return formats;
 }
+
+/**
+ * \fn V4L2Subdevice::formats(unsigned int pad)
+ * \brief Enumerate all media bus codes and frame sizes on a \a pad
+ * \param[in] pad The 0-indexed pad number to enumerate formats on
+ *
+ * Enumerate all media bus codes and frame sizes supported by the subdevice on
+ * a \a pad
+ *
+ * \return A list of the supported device formats
+ */
 
 std::optional<ColorSpace> V4L2Subdevice::toColorSpace(const v4l2_mbus_framefmt &format) const
 {
@@ -1073,25 +1167,26 @@ std::optional<ColorSpace> V4L2Subdevice::toColorSpace(const v4l2_mbus_framefmt &
 }
 
 /**
- * \brief Retrieve the image format set on one of the V4L2 subdevice pads
- * \param[in] pad The 0-indexed pad number the format is to be retrieved from
+ * \brief Retrieve the image format set on one of the V4L2 subdevice streams
+ * \param[in] stream The stream the format is to be retrieved from
  * \param[out] format The image bus format
  * \param[in] whence The format to get, \ref V4L2Subdevice::ActiveFormat
  * "ActiveFormat" or \ref V4L2Subdevice::TryFormat "TryFormat"
  * \return 0 on success or a negative error code otherwise
  */
-int V4L2Subdevice::getFormat(unsigned int pad, V4L2SubdeviceFormat *format,
+int V4L2Subdevice::getFormat(const Stream &stream, V4L2SubdeviceFormat *format,
 			     Whence whence)
 {
 	struct v4l2_subdev_format subdevFmt = {};
 	subdevFmt.which = whence;
-	subdevFmt.pad = pad;
+	subdevFmt.pad = stream.pad;
+	subdevFmt.stream = stream.stream;
 
 	int ret = ioctl(VIDIOC_SUBDEV_G_FMT, &subdevFmt);
 	if (ret) {
 		LOG(V4L2, Error)
-			<< "Unable to get format on pad " << pad
-			<< ": " << strerror(-ret);
+			<< "Unable to get format on pad " << stream << ": "
+			<< strerror(-ret);
 		return ret;
 	}
 
@@ -1104,6 +1199,66 @@ int V4L2Subdevice::getFormat(unsigned int pad, V4L2SubdeviceFormat *format,
 }
 
 /**
+ * \fn V4L2Subdevice::getFormat(unsigned int pad, V4L2SubdeviceFormat *format,
+ * Whence whence)
+ * \brief Retrieve the image format set on one of the V4L2 subdevice pads
+ * \param[in] pad The 0-indexed pad number the format is to be retrieved from
+ * \param[out] format The image bus format
+ * \param[in] whence The format to get, \ref V4L2Subdevice::ActiveFormat
+ * "ActiveFormat" or \ref V4L2Subdevice::TryFormat "TryFormat"
+ * \return 0 on success or a negative error code otherwise
+ */
+
+/**
+ * \brief Set an image format on one of the V4L2 subdevice pads
+ * \param[in] stream The stream the format is to be applied to
+ * \param[inout] format The image bus format to apply to the stream
+ * \param[in] whence The format to set, \ref V4L2Subdevice::ActiveFormat
+ * "ActiveFormat" or \ref V4L2Subdevice::TryFormat "TryFormat"
+ *
+ * Apply the requested image format to the desired stream and return the
+ * actually applied format parameters, as getFormat() would do.
+ *
+ * \return 0 on success or a negative error code otherwise
+ */
+int V4L2Subdevice::setFormat(const Stream &stream, V4L2SubdeviceFormat *format,
+			     Whence whence)
+{
+	struct v4l2_subdev_format subdevFmt = {};
+	subdevFmt.which = whence;
+	subdevFmt.pad = stream.pad;
+	subdevFmt.stream = stream.stream;
+	subdevFmt.format.width = format->size.width;
+	subdevFmt.format.height = format->size.height;
+	subdevFmt.format.code = format->code;
+	subdevFmt.format.field = V4L2_FIELD_NONE;
+	if (format->colorSpace) {
+		fromColorSpace(format->colorSpace, subdevFmt.format);
+
+		/* The CSC flag is only applicable to source pads. */
+		if (entity_->pads()[stream.pad]->flags() & MEDIA_PAD_FL_SOURCE)
+			subdevFmt.format.flags |= V4L2_MBUS_FRAMEFMT_SET_CSC;
+	}
+
+	int ret = ioctl(VIDIOC_SUBDEV_S_FMT, &subdevFmt);
+	if (ret) {
+		LOG(V4L2, Error)
+			<< "Unable to set format on pad " << stream << ": "
+			<< strerror(-ret);
+		return ret;
+	}
+
+	format->size.width = subdevFmt.format.width;
+	format->size.height = subdevFmt.format.height;
+	format->code = subdevFmt.format.code;
+	format->colorSpace = toColorSpace(subdevFmt.format);
+
+	return 0;
+}
+
+/**
+ * \fn V4L2Subdevice::setFormat(unsigned int pad, V4L2SubdeviceFormat *format,
+ * Whence whence)
  * \brief Set an image format on one of the V4L2 subdevice pads
  * \param[in] pad The 0-indexed pad number the format is to be applied to
  * \param[inout] format The image bus format to apply to the subdevice's pad
@@ -1115,39 +1270,6 @@ int V4L2Subdevice::getFormat(unsigned int pad, V4L2SubdeviceFormat *format,
  *
  * \return 0 on success or a negative error code otherwise
  */
-int V4L2Subdevice::setFormat(unsigned int pad, V4L2SubdeviceFormat *format,
-			     Whence whence)
-{
-	struct v4l2_subdev_format subdevFmt = {};
-	subdevFmt.which = whence;
-	subdevFmt.pad = pad;
-	subdevFmt.format.width = format->size.width;
-	subdevFmt.format.height = format->size.height;
-	subdevFmt.format.code = format->code;
-	subdevFmt.format.field = V4L2_FIELD_NONE;
-	if (format->colorSpace) {
-		fromColorSpace(format->colorSpace, subdevFmt.format);
-
-		/* The CSC flag is only applicable to source pads. */
-		if (entity_->pads()[pad]->flags() & MEDIA_PAD_FL_SOURCE)
-			subdevFmt.format.flags |= V4L2_MBUS_FRAMEFMT_SET_CSC;
-	}
-
-	int ret = ioctl(VIDIOC_SUBDEV_S_FMT, &subdevFmt);
-	if (ret) {
-		LOG(V4L2, Error)
-			<< "Unable to set format on pad " << pad
-			<< ": " << strerror(-ret);
-		return ret;
-	}
-
-	format->size.width = subdevFmt.format.width;
-	format->size.height = subdevFmt.format.height;
-	format->code = subdevFmt.format.code;
-	format->colorSpace = toColorSpace(subdevFmt.format);
-
-	return 0;
-}
 
 /**
  * \brief Retrieve the subdevice's internal routing table
@@ -1310,14 +1432,15 @@ std::string V4L2Subdevice::logPrefix() const
 	return "'" + entity_->name() + "'";
 }
 
-std::vector<unsigned int> V4L2Subdevice::enumPadCodes(unsigned int pad)
+std::vector<unsigned int> V4L2Subdevice::enumPadCodes(const Stream &stream)
 {
 	std::vector<unsigned int> codes;
 	int ret;
 
 	for (unsigned int index = 0; ; index++) {
 		struct v4l2_subdev_mbus_code_enum mbusEnum = {};
-		mbusEnum.pad = pad;
+		mbusEnum.pad = stream.pad;
+		mbusEnum.stream = stream.stream;
 		mbusEnum.index = index;
 		mbusEnum.which = V4L2_SUBDEV_FORMAT_ACTIVE;
 
@@ -1330,7 +1453,7 @@ std::vector<unsigned int> V4L2Subdevice::enumPadCodes(unsigned int pad)
 
 	if (ret < 0 && ret != -EINVAL) {
 		LOG(V4L2, Error)
-			<< "Unable to enumerate formats on pad " << pad
+			<< "Unable to enumerate formats on pad " << stream
 			<< ": " << strerror(-ret);
 		return {};
 	}
@@ -1338,7 +1461,7 @@ std::vector<unsigned int> V4L2Subdevice::enumPadCodes(unsigned int pad)
 	return codes;
 }
 
-std::vector<SizeRange> V4L2Subdevice::enumPadSizes(unsigned int pad,
+std::vector<SizeRange> V4L2Subdevice::enumPadSizes(const Stream &stream,
 						   unsigned int code)
 {
 	std::vector<SizeRange> sizes;
@@ -1347,7 +1470,8 @@ std::vector<SizeRange> V4L2Subdevice::enumPadSizes(unsigned int pad,
 	for (unsigned int index = 0;; index++) {
 		struct v4l2_subdev_frame_size_enum sizeEnum = {};
 		sizeEnum.index = index;
-		sizeEnum.pad = pad;
+		sizeEnum.pad = stream.pad;
+		sizeEnum.stream = stream.stream;
 		sizeEnum.code = code;
 		sizeEnum.which = V4L2_SUBDEV_FORMAT_ACTIVE;
 
@@ -1361,7 +1485,7 @@ std::vector<SizeRange> V4L2Subdevice::enumPadSizes(unsigned int pad,
 
 	if (ret < 0 && ret != -EINVAL && ret != -ENOTTY) {
 		LOG(V4L2, Error)
-			<< "Unable to enumerate sizes on pad " << pad
+			<< "Unable to enumerate sizes on pad " << stream
 			<< ": " << strerror(-ret);
 		return {};
 	}

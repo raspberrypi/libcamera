@@ -33,7 +33,7 @@ LOG_DEFINE_CATEGORY(Formats)
  * used in pipeline handlers.
  *
  * \var PixelFormatInfo::name
- * \brief The format name as a human-readable string, used as the test
+ * \brief The format name as a human-readable string, used as the text
  * representation of the PixelFormat
  *
  * \var PixelFormatInfo::format
@@ -49,9 +49,9 @@ LOG_DEFINE_CATEGORY(Formats)
  * \var PixelFormatInfo::bitsPerPixel
  * \brief The average number of bits per pixel
  *
- * The number per pixel averages the total number of bits for all colour
- * components over the whole image, excluding any padding bits or padding
- * pixels.
+ * The number of bits per pixel averages the total number of bits for all
+ * colour components over the whole image, excluding any padding bits or
+ * padding pixels.
  *
  * For formats that store pixels with bit padding within words, only the
  * effective bits are taken into account. For instance, 12-bit Bayer data

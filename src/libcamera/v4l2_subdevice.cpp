@@ -794,16 +794,6 @@ const std::string V4L2SubdeviceFormat::toString() const
 }
 
 /**
- * \brief Retrieve the number of bits per pixel for the V4L2 subdevice format
- * \return The number of bits per pixel for the format, or 0 if the format is
- * not supported
- */
-uint8_t V4L2SubdeviceFormat::bitsPerPixel() const
-{
-	return MediaBusFormatInfo::info(mbus_code).bitsPerPixel;
-}
-
-/**
  * \brief Insert a text representation of a V4L2SubdeviceFormat into an output
  * stream
  * \param[in] out The output stream

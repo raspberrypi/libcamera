@@ -39,24 +39,24 @@ LOG_DECLARE_CATEGORY(V4L2)
 namespace {
 
 /*
- * \struct V4L2SubdeviceFormatInfo
+ * \struct MediaBusFormatInfo
  * \brief Information about media bus formats
  * \param bitsPerPixel Bits per pixel
  * \param name Name of MBUS format
  * \param colourEncoding Type of colour encoding
  */
-struct V4L2SubdeviceFormatInfo {
+struct MediaBusFormatInfo {
 	unsigned int bitsPerPixel;
 	const char *name;
 	PixelFormatInfo::ColourEncoding colourEncoding;
 };
 
 /*
- * \var formatInfoMap
- * \brief A map that associates V4L2SubdeviceFormatInfo struct to V4L2 media
+ * \var mediaBusFormatInfo
+ * \brief A map that associates MediaBusFormatInfo struct to V4L2 media
  * bus codes
  */
-const std::map<uint32_t, V4L2SubdeviceFormatInfo> formatInfoMap = {
+const std::map<uint32_t, MediaBusFormatInfo> mediaBusFormatInfo = {
 	/* This table is sorted to match the order in linux/media-bus-format.h */
 	{ MEDIA_BUS_FMT_RGB444_2X8_PADHI_BE, { 16, "RGB444_2X8_PADHI_BE", PixelFormatInfo::ColourEncodingRGB } },
 	{ MEDIA_BUS_FMT_RGB444_2X8_PADHI_LE, { 16, "RGB444_2X8_PADHI_LE", PixelFormatInfo::ColourEncodingRGB } },
@@ -241,8 +241,8 @@ const std::string V4L2SubdeviceFormat::toString() const
  */
 uint8_t V4L2SubdeviceFormat::bitsPerPixel() const
 {
-	const auto it = formatInfoMap.find(mbus_code);
-	if (it == formatInfoMap.end()) {
+	const auto it = mediaBusFormatInfo.find(mbus_code);
+	if (it == mediaBusFormatInfo.end()) {
 		LOG(V4L2, Error) << "No information available for format '"
 				 << *this << "'";
 		return 0;
@@ -262,9 +262,9 @@ std::ostream &operator<<(std::ostream &out, const V4L2SubdeviceFormat &f)
 {
 	out << f.size << "-";
 
-	const auto it = formatInfoMap.find(f.mbus_code);
+	const auto it = mediaBusFormatInfo.find(f.mbus_code);
 
-	if (it == formatInfoMap.end())
+	if (it == mediaBusFormatInfo.end())
 		out << utils::hex(f.mbus_code, 4);
 	else
 		out << it->second.name;
@@ -515,8 +515,8 @@ std::optional<ColorSpace> V4L2Subdevice::toColorSpace(const v4l2_mbus_framefmt &
 		return std::nullopt;
 
 	PixelFormatInfo::ColourEncoding colourEncoding;
-	auto iter = formatInfoMap.find(format.code);
-	if (iter != formatInfoMap.end()) {
+	auto iter = mediaBusFormatInfo.find(format.code);
+	if (iter != mediaBusFormatInfo.end()) {
 		colourEncoding = iter->second.colourEncoding;
 	} else {
 		LOG(V4L2, Warning)

@@ -757,7 +757,7 @@ const MediaBusFormatInfo &MediaBusFormatInfo::info(uint32_t code)
  */
 
 /**
- * \var V4L2SubdeviceFormat::mbus_code
+ * \var V4L2SubdeviceFormat::code
  * \brief The image format bus code
  */
 
@@ -804,10 +804,10 @@ std::ostream &operator<<(std::ostream &out, const V4L2SubdeviceFormat &f)
 {
 	out << f.size << "-";
 
-	const auto it = mediaBusFormatInfo.find(f.mbus_code);
+	const auto it = mediaBusFormatInfo.find(f.code);
 
 	if (it == mediaBusFormatInfo.end())
-		out << utils::hex(f.mbus_code, 4);
+		out << utils::hex(f.code, 4);
 	else
 		out << it->second.name;
 
@@ -1097,7 +1097,7 @@ int V4L2Subdevice::getFormat(unsigned int pad, V4L2SubdeviceFormat *format,
 
 	format->size.width = subdevFmt.format.width;
 	format->size.height = subdevFmt.format.height;
-	format->mbus_code = subdevFmt.format.code;
+	format->code = subdevFmt.format.code;
 	format->colorSpace = toColorSpace(subdevFmt.format);
 
 	return 0;
@@ -1123,7 +1123,7 @@ int V4L2Subdevice::setFormat(unsigned int pad, V4L2SubdeviceFormat *format,
 	subdevFmt.pad = pad;
 	subdevFmt.format.width = format->size.width;
 	subdevFmt.format.height = format->size.height;
-	subdevFmt.format.code = format->mbus_code;
+	subdevFmt.format.code = format->code;
 	subdevFmt.format.field = V4L2_FIELD_NONE;
 	if (format->colorSpace) {
 		fromColorSpace(format->colorSpace, subdevFmt.format);
@@ -1143,7 +1143,7 @@ int V4L2Subdevice::setFormat(unsigned int pad, V4L2SubdeviceFormat *format,
 
 	format->size.width = subdevFmt.format.width;
 	format->size.height = subdevFmt.format.height;
-	format->mbus_code = subdevFmt.format.code;
+	format->code = subdevFmt.format.code;
 	format->colorSpace = toColorSpace(subdevFmt.format);
 
 	return 0;

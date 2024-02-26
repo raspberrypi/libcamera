@@ -761,7 +761,7 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 
 	/* YUYV8_2X8 is required on the ISP source path pad for YUV output. */
 	if (!isRaw_)
-		format.mbus_code = MEDIA_BUS_FMT_YUYV8_2X8;
+		format.code = MEDIA_BUS_FMT_YUYV8_2X8;
 
 	LOG(RkISP1, Debug)
 		<< "Configuring ISP output pad with " << format

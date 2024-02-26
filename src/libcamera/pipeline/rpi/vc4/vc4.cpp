@@ -426,7 +426,7 @@ CameraConfiguration::Status Vc4CameraData::platformValidate(RPi::RPiCameraConfig
 		BayerFormat rawBayer = BayerFormat::fromPixelFormat(rawStream->pixelFormat);
 
 		/* Apply the sensor bitdepth. */
-		rawBayer.bitDepth = BayerFormat::fromMbusCode(rpiConfig->sensorFormat_.mbus_code).bitDepth;
+		rawBayer.bitDepth = BayerFormat::fromMbusCode(rpiConfig->sensorFormat_.code).bitDepth;
 
 		/* Default to CSI2 packing if the user request is unsupported. */
 		if (rawBayer.packing != BayerFormat::Packing::CSI2 &&

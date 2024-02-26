@@ -770,7 +770,7 @@ V4L2SubdeviceFormat CameraSensor::getFormat(const std::vector<unsigned int> &mbu
 	}
 
 	V4L2SubdeviceFormat format{
-		.mbus_code = bestCode,
+		.code = bestCode,
 		.size = *bestSize,
 		.colorSpace = ColorSpace::Raw,
 	};
@@ -892,12 +892,12 @@ int CameraSensor::applyConfiguration(const SensorConfiguration &config,
 			    size.height != config.outputSize.height)
 				continue;
 
-			subdevFormat.mbus_code = code;
+			subdevFormat.code = code;
 			subdevFormat.size = size;
 			break;
 		}
 	}
-	if (!subdevFormat.mbus_code) {
+	if (!subdevFormat.code) {
 		LOG(CameraSensor, Error) << "Invalid output size in sensor configuration";
 		return -EINVAL;
 	}
@@ -1061,7 +1061,7 @@ int CameraSensor::sensorInfo(IPACameraSensorInfo *info) const
 	if (ret)
 		return ret;
 
-	info->bitsPerPixel = MediaBusFormatInfo::info(format.mbus_code).bitsPerPixel;
+	info->bitsPerPixel = MediaBusFormatInfo::info(format.code).bitsPerPixel;
 	info->outputSize = format.size;
 
 	std::optional<int32_t> cfa = properties_.get(properties::draft::ColorFilterArrangement);

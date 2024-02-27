@@ -588,7 +588,7 @@ class IncludeChecker(StyleChecker):
 
 
 class LogCategoryChecker(StyleChecker):
-    log_regex = re.compile('\\bLOG\((Debug|Info|Warning|Error|Fatal)\)')
+    log_regex = re.compile(r'\bLOG\((Debug|Info|Warning|Error|Fatal)\)')
     patterns = ('*.cpp',)
 
     def __init__(self, content):

@@ -176,6 +176,9 @@ private:
 	std::vector<SizeRange> enumPadSizes(const Stream &stream,
 					    unsigned int code);
 
+	int getRoutingLegacy(Routing *routing, Whence whence);
+	int setRoutingLegacy(Routing *routing, Whence whence);
+
 	const MediaEntity *entity_;
 
 	std::string model_;

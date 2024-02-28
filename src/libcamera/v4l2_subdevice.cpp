@@ -1360,18 +1360,22 @@ int V4L2Subdevice::getRouting(Routing *routing, Whence whence)
 	rt.which = whence;
 
 	int ret = ioctl(VIDIOC_SUBDEV_G_ROUTING, &rt);
-	if (ret == 0 || ret == -ENOTTY)
-		return ret;
-
-	if (ret != -ENOSPC) {
-		LOG(V4L2, Error)
-			<< "Failed to retrieve number of routes: "
-			<< strerror(-ret);
+	if (ret) {
+		if (ret != -ENOTTY)
+			LOG(V4L2, Error)
+				<< "Failed to retrieve number of routes: "
+				<< strerror(-ret);
 		return ret;
 	}
 
+	if (!rt.num_routes)
+		return 0;
+
 	std::vector<struct v4l2_subdev_route> routes{ rt.num_routes };
 	rt.routes = reinterpret_cast<uintptr_t>(routes.data());
+
+	rt.len_routes = rt.num_routes;
+	rt.num_routes = 0;
 
 	ret = ioctl(VIDIOC_SUBDEV_G_ROUTING, &rt);
 	if (ret) {
@@ -1419,6 +1423,7 @@ int V4L2Subdevice::setRouting(Routing *routing, Whence whence)
 
 	struct v4l2_subdev_routing rt = {};
 	rt.which = whence;
+	rt.len_routes = routes.size();
 	rt.num_routes = routes.size();
 	rt.routes = reinterpret_cast<uintptr_t>(routes.data());
 
@@ -1428,7 +1433,29 @@ int V4L2Subdevice::setRouting(Routing *routing, Whence whence)
 		return ret;
 	}
 
-	routes.resize(rt.num_routes);
+	/*
+	 * The kernel wants to return more routes than we have space for. We
+	 * need to issue a VIDIOC_SUBDEV_G_ROUTING call.
+	 */
+	if (rt.num_routes > routes.size()) {
+		routes.resize(rt.num_routes);
+
+		rt.len_routes = rt.num_routes;
+		rt.num_routes = 0;
+
+		ret = ioctl(VIDIOC_SUBDEV_G_ROUTING, &rt);
+		if (ret) {
+			LOG(V4L2, Error)
+				<< "Failed to retrieve routes: " << strerror(-ret);
+			return ret;
+		}
+	}
+
+	if (rt.num_routes != routes.size()) {
+		LOG(V4L2, Error) << "Invalid number of routes";
+		return -EINVAL;
+	}
+
 	routing->resize(rt.num_routes);
 
 	for (const auto &[i, route] : utils::enumerate(routes))

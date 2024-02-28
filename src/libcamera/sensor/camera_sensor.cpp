@@ -58,7 +58,7 @@ LOG_DEFINE_CATEGORY(CameraSensor)
 CameraSensor::CameraSensor(const MediaEntity *entity)
 	: entity_(entity), pad_(UINT_MAX), staticProps_(nullptr),
 	  bayerFormat_(nullptr), supportFlips_(false),
-	  properties_(properties::properties)
+	  flipsAlterBayerOrder_(false), properties_(properties::properties)
 {
 }
 
@@ -271,8 +271,13 @@ int CameraSensor::validateSensorDriver()
 	const struct v4l2_query_ext_ctrl *hflipInfo = subdev_->controlInfo(V4L2_CID_HFLIP);
 	const struct v4l2_query_ext_ctrl *vflipInfo = subdev_->controlInfo(V4L2_CID_VFLIP);
 	if (hflipInfo && !(hflipInfo->flags & V4L2_CTRL_FLAG_READ_ONLY) &&
-	    vflipInfo && !(vflipInfo->flags & V4L2_CTRL_FLAG_READ_ONLY))
+	    vflipInfo && !(vflipInfo->flags & V4L2_CTRL_FLAG_READ_ONLY)) {
 		supportFlips_ = true;
+
+		if (hflipInfo->flags & V4L2_CTRL_FLAG_MODIFY_LAYOUT ||
+		    vflipInfo->flags & V4L2_CTRL_FLAG_MODIFY_LAYOUT)
+			flipsAlterBayerOrder_ = true;
+	}
 
 	if (!supportFlips_)
 		LOG(CameraSensor, Debug)
@@ -1039,6 +1044,34 @@ Transform CameraSensor::computeTransform(Orientation *orientation) const
 	}
 
 	return transform;
+}
+
+/**
+ * \brief Compute the Bayer order that results from the given Transform
+ * \param[in] t The Transform to apply to the sensor
+ *
+ * Some sensors change their Bayer order when they are h-flipped or v-flipped.
+ * This function computes and returns the Bayer order that would result from the
+ * given transform applied to the sensor.
+ *
+ * This function is valid only when the sensor produces raw Bayer formats.
+ *
+ * \return The Bayer order produced by the sensor when the Transform is applied
+ */
+BayerFormat::Order CameraSensor::bayerOrder(Transform t) const
+{
+	/* Return a defined by meaningless value for non-Bayer sensors. */
+	if (!bayerFormat_)
+		return BayerFormat::Order::BGGR;
+
+	if (!flipsAlterBayerOrder_)
+		return bayerFormat_->order;
+
+	/*
+	 * Apply the transform to the native (i.e. untransformed) Bayer order,
+	 * using the rest of the Bayer format supplied by the caller.
+	 */
+	return bayerFormat_->transform(t).order;
 }
 
 /**

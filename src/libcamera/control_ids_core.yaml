@@ -449,7 +449,7 @@ controls:
         range of reported temperatures is device dependent.
 
         The SensorTemperature control will only be returned in metadata if a
-        themal sensor is present.
+        thermal sensor is present.
 
   - SensorTimestamp:
       type: int64_t

@@ -22,12 +22,12 @@
 
 #include <libcamera/ipa/core_ipa_interface.h>
 
+#include "libcamera/internal/bayer_format.h"
 #include "libcamera/internal/formats.h"
 #include "libcamera/internal/v4l2_subdevice.h"
 
 namespace libcamera {
 
-class BayerFormat;
 class CameraLens;
 class MediaEntity;
 class SensorConfiguration;
@@ -69,6 +69,7 @@ public:
 	const ControlList &properties() const { return properties_; }
 	int sensorInfo(IPACameraSensorInfo *info) const;
 	Transform computeTransform(Orientation *orientation) const;
+	BayerFormat::Order bayerOrder(Transform t) const;
 
 	const ControlInfoMap &controls() const;
 	ControlList getControls(const std::vector<uint32_t> &ids);
@@ -114,6 +115,7 @@ private:
 	Rectangle activeArea_;
 	const BayerFormat *bayerFormat_;
 	bool supportFlips_;
+	bool flipsAlterBayerOrder_;
 	Orientation mountingOrientation_;
 
 	ControlList properties_;

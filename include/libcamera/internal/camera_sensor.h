@@ -43,7 +43,6 @@ public:
 	virtual const std::string &id() const = 0;
 
 	virtual const MediaEntity *entity() const = 0;
-	virtual V4L2Subdevice *device() = 0;
 
 	virtual CameraLens *focusLens() = 0;
 

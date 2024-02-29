@@ -66,7 +66,6 @@ public:
 	const std::string &id() const override { return id_; }
 
 	const MediaEntity *entity() const override { return entity_; }
-	V4L2Subdevice *device() override { return subdev_.get(); }
 
 	CameraLens *focusLens() override { return focusLens_.get(); }
 

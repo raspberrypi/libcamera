@@ -84,6 +84,11 @@ public:
 			       Transform transform = Transform::Identity,
 			       V4L2SubdeviceFormat *sensorFormat = nullptr) override;
 
+	V4L2Subdevice::Stream imageStream() const override;
+	std::optional<V4L2Subdevice::Stream> embeddedDataStream() const override;
+	V4L2SubdeviceFormat embeddedDataFormat() const override;
+	int setEmbeddedDataEnabled(bool enable) override;
+
 	const ControlList &properties() const override { return properties_; }
 	int sensorInfo(IPACameraSensorInfo *info) const override;
 	Transform computeTransform(Orientation *orientation) const override;
@@ -874,6 +879,73 @@ int CameraSensorRaw::applyConfiguration(const SensorConfiguration &config,
 
 	/* \todo Handle AnalogCrop. Most sensors do not support set_selection */
 	/* \todo Handle scaling in the digital domain. */
+
+	return 0;
+}
+
+V4L2Subdevice::Stream CameraSensorRaw::imageStream() const
+{
+	return streams_.image.source;
+}
+
+std::optional<V4L2Subdevice::Stream> CameraSensorRaw::embeddedDataStream() const
+{
+	if (!streams_.edata)
+		return {};
+
+	return { streams_.edata->source };
+}
+
+V4L2SubdeviceFormat CameraSensorRaw::embeddedDataFormat() const
+{
+	if (!streams_.edata)
+		return {};
+
+	V4L2SubdeviceFormat format;
+	int ret = subdev_->getFormat(streams_.edata->source, &format);
+	if (ret)
+		return {};
+
+	return format;
+}
+
+int CameraSensorRaw::setEmbeddedDataEnabled(bool enable)
+{
+	if (!streams_.edata)
+		return enable ? -ENOSTR : 0;
+
+	V4L2Subdevice::Routing routing{ 2 };
+
+	routing[0].sink = streams_.image.sink;
+	routing[0].source = streams_.image.source;
+	routing[0].flags = V4L2_SUBDEV_ROUTE_FL_ACTIVE;
+
+	routing[1].sink = streams_.edata->sink;
+	routing[1].source = streams_.edata->source;
+	routing[1].flags = enable ? V4L2_SUBDEV_ROUTE_FL_ACTIVE : 0;
+
+	int ret = subdev_->setRouting(&routing);
+	if (ret)
+		return ret;
+
+	/*
+	 * Check if the embedded data stream has been enabled or disabled
+	 * correctly. Assume at least one route will match the embedded data
+	 * source stream, as there would be something seriously wrong
+	 * otherwise.
+	 */
+	bool enabled = false;
+
+	for (const V4L2Subdevice::Route &route : routing) {
+		if (route.source != streams_.edata->source)
+			continue;
+
+		enabled = route.flags & V4L2_SUBDEV_ROUTE_FL_ACTIVE;
+		break;
+	}
+
+	if (enabled != enable)
+		return enabled ? -EISCONN : -ENOSTR;
 
 	return 0;
 }

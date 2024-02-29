@@ -10,10 +10,11 @@
 #include <assert.h>
 #include <limits.h>
 #include <stdint.h>
-
+#include <type_traits>
 #include <vector>
 
 #include <libcamera/base/span.h>
+#include <libcamera/base/utils.h>
 
 namespace libcamera {
 
@@ -24,6 +25,17 @@ class Histogram
 public:
 	Histogram() { cumulative_.push_back(0); }
 	Histogram(Span<const uint32_t> data);
+
+	template<typename Transform,
+		 std::enable_if_t<std::is_invocable_v<Transform, uint32_t>> * = nullptr>
+	Histogram(Span<const uint32_t> data, Transform transform)
+	{
+		cumulative_.resize(data.size() + 1);
+		cumulative_[0] = 0;
+		for (const auto &[i, value] : utils::enumerate(data))
+			cumulative_[i + 1] = cumulative_[i] + transform(value);
+	}
+
 	size_t bins() const { return cumulative_.size() - 1; }
 	uint64_t total() const { return cumulative_[cumulative_.size() - 1]; }
 	uint64_t cumulativeFrequency(double bin) const;

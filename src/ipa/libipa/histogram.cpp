@@ -39,15 +39,21 @@ namespace ipa {
 
 /**
  * \brief Create a cumulative histogram
- * \param[in] data A pre-sorted histogram to be passed
+ * \param[in] data A (non-cumulative) histogram
  */
 Histogram::Histogram(Span<const uint32_t> data)
 {
-	cumulative_.reserve(data.size());
-	cumulative_.push_back(0);
-	for (const uint32_t &value : data)
-		cumulative_.push_back(cumulative_.back() + value);
+	cumulative_.resize(data.size() + 1);
+	cumulative_[0] = 0;
+	for (const auto &[i, value] : utils::enumerate(data))
+		cumulative_[i + 1] = cumulative_[i] + value;
 }
+
+/**
+ * \brief Create a cumulative histogram
+ * \param[in] data A (non-cumulative) histogram
+ * \param[in] transform The transformation function to apply to every bin
+ */
 
 /**
  * \fn Histogram::bins()

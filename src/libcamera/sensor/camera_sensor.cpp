@@ -197,6 +197,73 @@ CameraSensor::~CameraSensor() = default;
  */
 
 /**
+ * \brief Retrieve the image source stream
+ *
+ * Sensors that produce multiple streams do not guarantee that the image stream
+ * is always assigned number 0. This function allows callers to retrieve the
+ * image stream on the sensor's source pad, in order to configure the receiving
+ * side accordingly.
+ *
+ * \return The image source stream
+ */
+V4L2Subdevice::Stream CameraSensor::imageStream() const
+{
+	return { 0, 0 };
+}
+
+/**
+ * \brief Retrieve the embedded data source stream
+ *
+ * Some sensors produce embedded data in a stream separate from the image
+ * stream. This function indicates if the sensor supports this feature by
+ * returning the embedded data stream on the sensor's source pad if available,
+ * or an std::optional<> without a value otheriwse.
+ *
+ * \return The embedded data source stream
+ */
+std::optional<V4L2Subdevice::Stream> CameraSensor::embeddedDataStream() const
+{
+	return {};
+}
+
+/**
+ * \brief Retrieve the format on the embedded data stream
+ *
+ * When an embedded data stream is available, this function returns the
+ * corresponding format on the sensor's source pad. The format may vary with
+ * the image stream format, and should therefore be retrieved after configuring
+ * the image stream.
+ *
+ * If the sensor doesn't support embedded data, this function returns a
+ * default-constructed format.
+ *
+ * \return The format on the embedded data stream
+ */
+V4L2SubdeviceFormat CameraSensor::embeddedDataFormat() const
+{
+	return {};
+}
+
+/**
+ * \brief Enable or disable the embedded data stream
+ * \param[in] enable True to enable the embedded data stream, false to disable it
+ *
+ * For sensors that support embedded data, this function enables or disables
+ * generation of embedded data. Some of such sensors always produce embedded
+ * data, in which case this function return -EISCONN if the caller attempts to
+ * disable embedded data.
+ *
+ * If the sensor doesn't support embedded data, this function returns 0 when \a
+ * enable is false, and -ENOSTR otherwise.
+ *
+ * \return 0 on success, or a negative error code otherwise
+ */
+int CameraSensor::setEmbeddedDataEnabled(bool enable)
+{
+	return enable ? -ENOSTR : 0;
+}
+
+/**
  * \fn CameraSensor::properties()
  * \brief Retrieve the camera sensor properties
  * \return The list of camera sensor properties

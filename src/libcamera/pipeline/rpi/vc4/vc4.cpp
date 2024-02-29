@@ -589,9 +589,9 @@ int Vc4CameraData::platformPipelineConfigure(const std::unique_ptr<YamlObject> &
 
 int Vc4CameraData::platformConfigure(const RPi::RPiCameraConfiguration *rpiConfig)
 {
-	const std::vector<StreamParams> &rawStreams = rpiConfig->rawStreams_;
-	const std::vector<StreamParams> &outStreams = rpiConfig->outStreams_;
-	int ret;
+	/*
+	 * 1. Configure the Unicam video devices.
+	 */
 
 	V4L2VideoDevice *unicam = unicam_[Unicam::Image].dev();
 	V4L2DeviceFormat unicamFormat;
@@ -600,6 +600,8 @@ int Vc4CameraData::platformConfigure(const RPi::RPiCameraConfiguration *rpiConfi
 	 * See which streams are requested, and route the user
 	 * StreamConfiguration appropriately.
 	 */
+	const std::vector<StreamParams> &rawStreams = rpiConfig->rawStreams_;
+
 	if (!rawStreams.empty()) {
 		rawStreams[0].cfg->setStream(&unicam_[Unicam::Image]);
 		unicam_[Unicam::Image].setFlags(StreamFlag::External);
@@ -611,11 +613,7 @@ int Vc4CameraData::platformConfigure(const RPi::RPiCameraConfiguration *rpiConfi
 								     BayerFormat::Packing::CSI2);
 	}
 
-	ret = unicam->setFormat(&unicamFormat);
-	if (ret)
-		return ret;
-
-	ret = isp_[Isp::Input].dev()->setFormat(&unicamFormat);
+	int ret = unicam->setFormat(&unicamFormat);
 	if (ret)
 		return ret;
 
@@ -623,7 +621,37 @@ int Vc4CameraData::platformConfigure(const RPi::RPiCameraConfiguration *rpiConfi
 		       << " - Selected sensor format: " << rpiConfig->sensorFormat_
 		       << " - Selected unicam format: " << unicamFormat;
 
+	/*
+	 * Configure the Unicam embedded data output format only if the sensor
+	 * supports it.
+	 */
+	if (sensorMetadata_) {
+		V4L2SubdeviceFormat embeddedFormat;
+
+		sensor_->device()->getFormat(1, &embeddedFormat);
+		V4L2DeviceFormat format{};
+		format.fourcc = V4L2PixelFormat(V4L2_META_FMT_SENSOR_DATA);
+		format.planes[0].size = embeddedFormat.size.width * embeddedFormat.size.height;
+
+		LOG(RPI, Debug) << "Setting embedded data format " << format;
+		ret = unicam_[Unicam::Embedded].dev()->setFormat(&format);
+		if (ret) {
+			LOG(RPI, Error) << "Failed to set format on Unicam embedded: "
+					<< format;
+			return ret;
+		}
+	}
+
+	/*
+	 * 2. Configure the ISP.
+	 */
+
+	ret = isp_[Isp::Input].dev()->setFormat(&unicamFormat);
+	if (ret)
+		return ret;
+
 	/* Use a sensible small default size if no output streams are configured. */
+	const std::vector<StreamParams> &outStreams = rpiConfig->outStreams_;
 	Size maxSize = outStreams.empty() ? Size(320, 240) : outStreams[0].cfg->size;
 	V4L2DeviceFormat format;
 
@@ -729,27 +757,6 @@ int Vc4CameraData::platformConfigure(const RPi::RPiCameraConfiguration *rpiConfi
 	}
 
 	ispOutputTotal_++;
-
-	/*
-	 * Configure the Unicam embedded data output format only if the sensor
-	 * supports it.
-	 */
-	if (sensorMetadata_) {
-		V4L2SubdeviceFormat embeddedFormat;
-
-		sensor_->device()->getFormat(1, &embeddedFormat);
-		format = {};
-		format.fourcc = V4L2PixelFormat(V4L2_META_FMT_SENSOR_DATA);
-		format.planes[0].size = embeddedFormat.size.width * embeddedFormat.size.height;
-
-		LOG(RPI, Debug) << "Setting embedded data format " << format;
-		ret = unicam_[Unicam::Embedded].dev()->setFormat(&format);
-		if (ret) {
-			LOG(RPI, Error) << "Failed to set format on Unicam embedded: "
-					<< format;
-			return ret;
-		}
-	}
 
 	/* Figure out the smallest selection the ISP will allow. */
 	Rectangle testCrop(0, 0, 1, 1);

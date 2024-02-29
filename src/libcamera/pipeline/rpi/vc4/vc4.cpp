@@ -626,9 +626,7 @@ int Vc4CameraData::platformConfigure(const RPi::RPiCameraConfiguration *rpiConfi
 	 * supports it.
 	 */
 	if (sensorMetadata_) {
-		V4L2SubdeviceFormat embeddedFormat;
-
-		sensor_->device()->getFormat(1, &embeddedFormat);
+		V4L2SubdeviceFormat embeddedFormat = sensor_->embeddedDataFormat();
 		V4L2DeviceFormat format{};
 		format.fourcc = V4L2PixelFormat(V4L2_META_FMT_SENSOR_DATA);
 		format.planes[0].size = embeddedFormat.size.width * embeddedFormat.size.height;

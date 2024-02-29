@@ -528,6 +528,18 @@ int PipelineHandlerBase::configure(Camera *camera, CameraConfiguration *config)
 		return ret;
 
 	/*
+	 * Configure embedded data on the sensor. Only check for errors when
+	 * enabling embedded data, as some sensors don't support disabling it,
+	 * and Unicam will simply drop the embedded data packets if we don't
+	 * capture them.
+	 */
+	ret = data->sensor_->setEmbeddedDataEnabled(data->sensorMetadata_);
+	if (ret && data->sensorMetadata_) {
+		LOG(RPI, Error) << "Unable to enable embedded data: " << ret;
+		return ret;
+	}
+
+	/*
 	 * Platform specific internal stream configuration. This also assigns
 	 * external streams which get configured below.
 	 */

@@ -676,10 +676,25 @@ int Vc4CameraData::platformConfigure(const RPi::RPiCameraConfiguration *rpiConfi
 	 * supports it.
 	 */
 	if (sensorMetadata_) {
+		static const std::map<uint32_t, V4L2PixelFormat> metaFormats{
+			{ MEDIA_BUS_FMT_META_8, V4L2PixelFormat(V4L2_META_FMT_GENERIC_8) },
+			{ MEDIA_BUS_FMT_META_10, V4L2PixelFormat(V4L2_META_FMT_GENERIC_CSI2_10) },
+			{ MEDIA_BUS_FMT_META_12, V4L2PixelFormat(V4L2_META_FMT_GENERIC_CSI2_12) },
+			{ MEDIA_BUS_FMT_META_14, V4L2PixelFormat(V4L2_META_FMT_GENERIC_CSI2_14) },
+		};
+
 		V4L2SubdeviceFormat embeddedFormat = sensor_->embeddedDataFormat();
+		const auto metaFormat = metaFormats.find(embeddedFormat.code);
+		if (metaFormat == metaFormats.end()) {
+			LOG(RPI, Error)
+				<< "Unsupported metadata format "
+				<< utils::hex(embeddedFormat.code, 4);
+			return -EINVAL;
+		}
+
 		V4L2DeviceFormat format{};
-		format.fourcc = V4L2PixelFormat(V4L2_META_FMT_SENSOR_DATA);
-		format.planes[0].size = embeddedFormat.size.width * embeddedFormat.size.height;
+		format.fourcc = metaFormat->second;
+		format.size = embeddedFormat.size;
 
 		LOG(RPI, Debug) << "Setting embedded data format " << format;
 		ret = unicam_[Unicam::Embedded].dev()->setFormat(&format);

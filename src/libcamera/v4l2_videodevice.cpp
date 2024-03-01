@@ -863,7 +863,7 @@ int V4L2VideoDevice::setFormat(V4L2DeviceFormat *format)
 int V4L2VideoDevice::getFormatMeta(V4L2DeviceFormat *format)
 {
 	struct v4l2_format v4l2Format = {};
-	struct v4l2_meta_format *pix = &v4l2Format.fmt.meta;
+	struct v4l2_meta_format *meta = &v4l2Format.fmt.meta;
 	int ret;
 
 	v4l2Format.type = bufferType_;
@@ -873,12 +873,12 @@ int V4L2VideoDevice::getFormatMeta(V4L2DeviceFormat *format)
 		return ret;
 	}
 
-	format->size.width = 0;
-	format->size.height = 0;
-	format->fourcc = V4L2PixelFormat(pix->dataformat);
+	format->size.width = meta->width;
+	format->size.height = meta->height;
+	format->fourcc = V4L2PixelFormat(meta->dataformat);
 	format->planesCount = 1;
-	format->planes[0].bpl = pix->buffersize;
-	format->planes[0].size = pix->buffersize;
+	format->planes[0].bpl = meta->bytesperline;
+	format->planes[0].size = meta->buffersize;
 
 	return 0;
 }
@@ -886,12 +886,15 @@ int V4L2VideoDevice::getFormatMeta(V4L2DeviceFormat *format)
 int V4L2VideoDevice::trySetFormatMeta(V4L2DeviceFormat *format, bool set)
 {
 	struct v4l2_format v4l2Format = {};
-	struct v4l2_meta_format *pix = &v4l2Format.fmt.meta;
+	struct v4l2_meta_format *meta = &v4l2Format.fmt.meta;
 	int ret;
 
 	v4l2Format.type = bufferType_;
-	pix->dataformat = format->fourcc;
-	pix->buffersize = format->planes[0].size;
+	meta->width = format->size.width;
+	meta->height = format->size.height;
+	meta->dataformat = format->fourcc;
+	meta->bytesperline = format->planes[0].bpl;
+	meta->buffersize = format->planes[0].size;
 	ret = ioctl(set ? VIDIOC_S_FMT : VIDIOC_TRY_FMT, &v4l2Format);
 	if (ret) {
 		LOG(V4L2, Error)
@@ -904,12 +907,12 @@ int V4L2VideoDevice::trySetFormatMeta(V4L2DeviceFormat *format, bool set)
 	 * Return to caller the format actually applied on the video device,
 	 * which might differ from the requested one.
 	 */
-	format->size.width = 0;
-	format->size.height = 0;
-	format->fourcc = V4L2PixelFormat(pix->dataformat);
+	format->size.width = meta->width;
+	format->size.height = meta->height;
+	format->fourcc = V4L2PixelFormat(meta->dataformat);
 	format->planesCount = 1;
-	format->planes[0].bpl = pix->buffersize;
-	format->planes[0].size = pix->buffersize;
+	format->planes[0].bpl = meta->bytesperline;
+	format->planes[0].size = meta->buffersize;
 
 	return 0;
 }

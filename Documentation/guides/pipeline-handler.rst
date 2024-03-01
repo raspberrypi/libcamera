@@ -651,7 +651,7 @@ inline in our VividCameraData init:
            ctrls.emplace(id, info);
    }
 
-   controlInfo_ = std::move(ctrls);
+   controlInfo_ = ControlInfoMap(std::move(ctrls), controls::controls);
 
 The ``properties_`` field is  a list of ``ControlId`` instances
 associated with immutable values, which represent static characteristics that can

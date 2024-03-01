@@ -742,7 +742,7 @@ int Vc4CameraData::platformConfigure(const RPi::RPiCameraConfiguration *rpiConfi
 		format.fourcc = V4L2PixelFormat(V4L2_META_FMT_SENSOR_DATA);
 		format.planes[0].size = embeddedFormat.size.width * embeddedFormat.size.height;
 
-		LOG(RPI, Debug) << "Setting embedded data format " << format.toString();
+		LOG(RPI, Debug) << "Setting embedded data format " << format;
 		ret = unicam_[Unicam::Embedded].dev()->setFormat(&format);
 		if (ret) {
 			LOG(RPI, Error) << "Failed to set format on Unicam embedded: "

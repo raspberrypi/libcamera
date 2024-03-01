@@ -17,6 +17,8 @@
 #include <libcamera/control_ids.h>
 #include <libcamera/ipa/core_ipa_interface.h>
 
+#include "libcamera/internal/yaml_parser.h"
+
 #include "libipa/histogram.h"
 
 /**
@@ -35,6 +37,85 @@ namespace ipa::rkisp1::algorithms {
  */
 
 LOG_DEFINE_CATEGORY(RkISP1Agc)
+
+int Agc::parseMeteringModes(IPAContext &context, const YamlObject &tuningData)
+{
+	if (!tuningData.isDictionary()) {
+		LOG(RkISP1Agc, Error)
+			<< "'AeMeteringMode' parameter not found in tuning file";
+		return -EINVAL;
+	}
+
+	for (const auto &[key, value] : tuningData.asDict()) {
+		if (controls::AeMeteringModeNameValueMap.find(key) ==
+		    controls::AeMeteringModeNameValueMap.end()) {
+			LOG(RkISP1Agc, Warning)
+				<< "Skipping unknown metering mode '" << key << "'";
+			continue;
+		}
+
+		std::vector<uint8_t> weights =
+			value.getList<uint8_t>().value_or(std::vector<uint8_t>{});
+		if (weights.size() != context.hw->numHistogramWeights) {
+			LOG(RkISP1Agc, Warning)
+				<< "Failed to read metering mode'" << key << "'";
+			continue;
+		}
+
+		meteringModes_[controls::AeMeteringModeNameValueMap.at(key)] = weights;
+	}
+
+	if (meteringModes_.empty()) {
+		LOG(RkISP1Agc, Warning)
+			<< "No metering modes read from tuning file; defaulting to matrix";
+		int32_t meteringModeId = controls::AeMeteringModeNameValueMap.at("MeteringMatrix");
+		std::vector<uint8_t> weights(context.hw->numHistogramWeights, 1);
+
+		meteringModes_[meteringModeId] = weights;
+	}
+
+	return 0;
+}
+
+uint8_t Agc::computeHistogramPredivider(Size &size, enum rkisp1_cif_isp_histogram_mode mode)
+{
+	/*
+	 * The maximum number of pixels that could potentially be in one bin is
+	 * if all the pixels of the image are in it, multiplied by 3 for the
+	 * three color channels. The counter for each bin is 16 bits wide, so
+	 * `factor` thus contains the number of times we'd wrap around. This is
+	 * obviously the number of pixels that we need to skip to make sure
+	 * that we don't wrap around, but we compute the square root of it
+	 * instead, as the skip that we need to program is for both the x and y
+	 * directions.
+	 *
+	 * Even though it looks like dividing into a counter of 65536 would
+	 * overflow by 1, this is apparently fine according to the hardware
+	 * documentation, and this successfully gets the expected documented
+	 * predivider size for cases where:
+	 * (width / predivider) * (height / predivider) * 3 == 65536.
+	 *
+	 * There's a bit of extra rounding math to make sure the rounding goes
+	 * the correct direction so that the square of the step is big enough
+	 * to encompass the `factor` number of pixels that we need to skip.
+	 *
+	 * \todo Take into account weights. That is, if the weights are low
+	 * enough we can potentially reduce the predivider to increase
+	 * precision. This needs some investigation however, as this hardware
+	 * behavior is undocumented and is only an educated guess.
+	 */
+	int count = mode == RKISP1_CIF_ISP_HISTOGRAM_MODE_RGB_COMBINED ? 3 : 1;
+	double factor = size.width * size.height * count / 65536.0;
+	double root = std::sqrt(factor);
+	uint8_t predivider;
+
+	if (std::pow(std::floor(root), 2) < factor)
+		predivider = static_cast<uint8_t>(std::ceil(root));
+	else
+		predivider = static_cast<uint8_t>(std::floor(root));
+
+	return std::clamp<uint8_t>(predivider, 3, 127);
+}
 
 Agc::Agc()
 {
@@ -56,6 +137,11 @@ int Agc::init(IPAContext &context, const YamlObject &tuningData)
 	int ret;
 
 	ret = parseTuningData(tuningData);
+	if (ret)
+		return ret;
+
+	const YamlObject &yamlMeteringModes = tuningData["AeMeteringMode"];
+	ret = parseMeteringModes(context, yamlMeteringModes);
 	if (ret)
 		return ret;
 
@@ -160,6 +246,7 @@ void Agc::prepare(IPAContext &context, const uint32_t frame,
 		frameContext.agc.gain = context.activeState.agc.automatic.gain;
 	}
 
+	/* \todo Remove this when we can set the below with controls */
 	if (frame > 0)
 		return;
 
@@ -178,14 +265,21 @@ void Agc::prepare(IPAContext &context, const uint32_t frame,
 	params->meas.hst_config.meas_window = context.configuration.agc.measureWindow;
 	/* Produce the luminance histogram. */
 	params->meas.hst_config.mode = RKISP1_CIF_ISP_HISTOGRAM_MODE_Y_HISTOGRAM;
+
 	/* Set an average weighted histogram. */
 	Span<uint8_t> weights{
 		params->meas.hst_config.hist_weight,
 		context.hw->numHistogramWeights
 	};
-	std::fill(weights.begin(), weights.end(), 1);
-	/* Step size can't be less than 3. */
-	params->meas.hst_config.histogram_predivider = 4;
+	/* \todo Get this from control */
+	std::vector<uint8_t> &modeWeights = meteringModes_.at(controls::MeteringMatrix);
+	std::copy(modeWeights.begin(), modeWeights.end(), weights.begin());
+
+	struct rkisp1_cif_isp_window window = params->meas.hst_config.meas_window;
+	Size windowSize = { window.h_size, window.v_size };
+	params->meas.hst_config.histogram_predivider =
+		computeHistogramPredivider(windowSize,
+					   static_cast<rkisp1_cif_isp_histogram_mode>(params->meas.hst_config.mode));
 
 	/* Update the configuration for histogram. */
 	params->module_cfg_update |= RKISP1_CIF_ISP_MODULE_HST;

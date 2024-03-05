@@ -86,10 +86,13 @@ MdParserSmia::ParseStatus MdParserSmia::findRegs(libcamera::Span<const uint8_t> 
 	while (1) {
 		int tag = buffer[currentOffset++];
 
-		if ((bitsPerPixel_ == 10 &&
-		     (currentOffset + 1 - currentLineStart) % 5 == 0) ||
-		    (bitsPerPixel_ == 12 &&
-		     (currentOffset + 1 - currentLineStart) % 3 == 0)) {
+		/* Non-dummy bytes come in even-sized blocks: skip can only ever follow tag */
+		while ((bitsPerPixel_ == 10 &&
+			(currentOffset + 1 - currentLineStart) % 5 == 0) ||
+		       (bitsPerPixel_ == 12 &&
+			(currentOffset + 1 - currentLineStart) % 3 == 0) ||
+		       (bitsPerPixel_ == 14 &&
+			(currentOffset - currentLineStart) % 7 >= 4)) {
 			if (buffer[currentOffset++] != RegSkip)
 				return BadDummy;
 		}

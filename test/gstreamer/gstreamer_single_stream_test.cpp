@@ -29,30 +29,21 @@ protected:
 		if (status_ != TestPass)
 			return status_;
 
-		const gchar *streamDescription = "fakesink";
-		g_autoptr(GError) error0 = NULL;
-		stream0_ = gst_parse_bin_from_description_full(streamDescription, TRUE,
-						NULL,
-						GST_PARSE_FLAG_FATAL_ERRORS,
-						&error0);
-
-		if (!stream0_) {
-			g_printerr("Bin could not be created (%s)\n", error0->message);
+		fakesink_ = gst_element_factory_make("fakesink", nullptr);
+		if (!fakesink_) {
+			g_printerr("Your installation is missing 'fakesink'\n");
 			return TestFail;
 		}
-		g_object_ref_sink(stream0_);
+		g_object_ref_sink(fakesink_);
 
-		if (createPipeline() != TestPass)
-			return TestFail;
-
-		return TestPass;
+		return createPipeline();
 	}
 
 	int run() override
 	{
 		/* Build the pipeline */
-		gst_bin_add_many(GST_BIN(pipeline_), libcameraSrc_, stream0_, NULL);
-		if (gst_element_link(libcameraSrc_, stream0_) != TRUE) {
+		gst_bin_add_many(GST_BIN(pipeline_), libcameraSrc_, fakesink_, nullptr);
+		if (!gst_element_link(libcameraSrc_, fakesink_)) {
 			g_printerr("Elements could not be linked.\n");
 			return TestFail;
 		}
@@ -68,11 +59,11 @@ protected:
 
 	void cleanup() override
 	{
-		g_clear_object(&stream0_);
+		g_clear_object(&fakesink_);
 	}
 
 private:
-	GstElement *stream0_;
+	GstElement *fakesink_;
 };
 
 TEST_REGISTER(GstreamerSingleStreamTest)

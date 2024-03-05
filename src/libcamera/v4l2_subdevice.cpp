@@ -134,6 +134,10 @@ const std::map<uint32_t, V4L2SubdeviceFormatInfo> formatInfoMap = {
 	{ MEDIA_BUS_FMT_SGBRG12_1X12, { 12, "SGBRG12_1X12", PixelFormatInfo::ColourEncodingRAW } },
 	{ MEDIA_BUS_FMT_SGRBG12_1X12, { 12, "SGRBG12_1X12", PixelFormatInfo::ColourEncodingRAW } },
 	{ MEDIA_BUS_FMT_SRGGB12_1X12, { 12, "SRGGB12_1X12", PixelFormatInfo::ColourEncodingRAW } },
+	{ MEDIA_BUS_FMT_SBGGR14_1X14, { 14, "SBGGR14_1X14", PixelFormatInfo::ColourEncodingRAW } },
+	{ MEDIA_BUS_FMT_SGBRG14_1X14, { 14, "SGBRG14_1X14", PixelFormatInfo::ColourEncodingRAW } },
+	{ MEDIA_BUS_FMT_SGRBG14_1X14, { 14, "SGRBG14_1X14", PixelFormatInfo::ColourEncodingRAW } },
+	{ MEDIA_BUS_FMT_SRGGB14_1X14, { 14, "SRGGB14_1X14", PixelFormatInfo::ColourEncodingRAW } },
 	/* \todo Clarify colour encoding for HSV formats */
 	{ MEDIA_BUS_FMT_AHSV8888_1X32, { 32, "AHSV8888_1X32", PixelFormatInfo::ColourEncodingRGB } },
 	{ MEDIA_BUS_FMT_JPEG_1X8, { 8, "JPEG_1X8", PixelFormatInfo::ColourEncodingYUV } },

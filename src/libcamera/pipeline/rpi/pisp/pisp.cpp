@@ -381,8 +381,7 @@ void do16BitEndianSwap([[maybe_unused]] void *mem, [[maybe_unused]] unsigned int
 		asm volatile("1: \n"
 				"ld1 {v1.16b}, [%[ptr]] \n"
 				"rev16 v1.16b, v1.16b \n"
-				"st1 {v1.16b}, [%[ptr]] \n"
-				"add %[ptr], %[ptr], #16 \n"
+				"st1 {v1.16b}, [%[ptr]], #16 \n"
 				"subs %[count], %[count], #1 \n"
 				"b.gt 1b \n"
 				: [count]"+r" (count), [ptr]"+r" (ptr)

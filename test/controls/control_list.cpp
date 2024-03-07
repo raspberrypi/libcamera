@@ -196,6 +196,56 @@ protected:
 			return TestFail;
 		}
 
+		/*
+		 * Create two lists with overlapping controls. Merge them with
+		 * overwriteExisting = true, verifying that the existing control
+		 * values *get* overwritten.
+		 */
+		mergeList.clear();
+		mergeList.set(controls::Brightness, 0.7f);
+		mergeList.set(controls::Saturation, 0.4f);
+
+		list.clear();
+		list.set(controls::Brightness, 0.5f);
+		list.set(controls::Contrast, 1.1f);
+
+		mergeList.merge(list, ControlList::MergePolicy::OverwriteExisting);
+		if (mergeList.size() != 3) {
+			cout << "Merged list should contain three elements" << endl;
+			return TestFail;
+		}
+
+		if (list.size() != 2) {
+			cout << "The list to merge should contain two elements"
+			     << endl;
+			return TestFail;
+		}
+
+		if (!mergeList.get(controls::Brightness) ||
+		    !mergeList.get(controls::Contrast) ||
+		    !mergeList.get(controls::Saturation)) {
+			cout << "Merged list does not contain all controls" << endl;
+			return TestFail;
+		}
+
+		if (mergeList.get(controls::Brightness) != 0.5f) {
+			cout << "Brightness control value did not change after merging lists"
+			     << endl;
+			return TestFail;
+		}
+
+		if (mergeList.get(controls::Contrast) != 1.1f) {
+			cout << "Contrast control value changed after merging lists"
+			     << endl;
+			return TestFail;
+		}
+
+		if (mergeList.get(controls::Saturation) != 0.4f) {
+			cout << "Saturation control value changed after merging lists"
+			     << endl;
+			return TestFail;
+		}
+
 		return TestPass;
 	}
 };

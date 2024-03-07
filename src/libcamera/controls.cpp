@@ -908,12 +908,26 @@ ControlList::ControlList(const ControlInfoMap &infoMap,
  */
 
 /**
+ * \enum ControlList::MergePolicy
+ * \brief The policy used by the merge function
+ *
+ * \var ControlList::MergePolicy::KeepExisting
+ * \brief Existing controls in the target list are kept
+ *
+ * \var ControlList::MergePolicy::OverwriteExisting
+ * \brief Existing controls in the target list are updated
+ */
+
+/**
  * \brief Merge the \a source into the ControlList
  * \param[in] source The ControlList to merge into this object
+ * \param[in] policy Controls if existing elements in *this shall be
+ * overwritten
  *
  * Merging two control lists copies elements from the \a source and inserts
  * them in *this. If the \a source contains elements whose key is already
- * present in *this, then those elements are not overwritten.
+ * present in *this, then those elements are only overwritten if
+ * \a policy is MergePolicy::OverwriteExisting.
  *
  * Only control lists created from the same ControlIdMap or ControlInfoMap may
  * be merged. Attempting to do otherwise results in undefined behaviour.
@@ -921,7 +935,7 @@ ControlList::ControlList(const ControlInfoMap &infoMap,
  * \todo Reimplement or implement an overloaded version which internally uses
  * std::unordered_map::merge() and accepts a non-const argument.
  */
-void ControlList::merge(const ControlList &source)
+void ControlList::merge(const ControlList &source, MergePolicy policy)
 {
 	/**
 	 * \todo ASSERT that the current and source ControlList are derived
@@ -936,7 +950,7 @@ void ControlList::merge(const ControlList &source)
 	 */
 
 	for (const auto &ctrl : source) {
-		if (contains(ctrl.first)) {
+		if (policy == MergePolicy::KeepExisting && contains(ctrl.first)) {
 			const ControlId *id = idmap_->at(ctrl.first);
 			LOG(Controls, Warning)
 				<< "Control " << id->name() << " not overwritten";

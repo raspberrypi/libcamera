@@ -63,10 +63,7 @@ FrameBufferAllocator::FrameBufferAllocator(std::shared_ptr<Camera> camera)
 {
 }
 
-FrameBufferAllocator::~FrameBufferAllocator()
-{
-	buffers_.clear();
-}
+FrameBufferAllocator::~FrameBufferAllocator() = default;
 
 /**
  * \brief Allocate buffers for a configured stream

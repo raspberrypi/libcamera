@@ -97,6 +97,10 @@ int FrameBufferAllocator::allocate(Stream *stream)
 		LOG(Allocator, Error)
 			<< "Stream is not part of " << camera_->id()
 			<< " active configuration";
+
+	if (ret < 0)
+		buffers_.erase(it);
+
 	return ret;
 }
 

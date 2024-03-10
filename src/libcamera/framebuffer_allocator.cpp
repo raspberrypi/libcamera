@@ -59,7 +59,7 @@ LOG_DEFINE_CATEGORY(Allocator)
  * \param[in] camera The camera
  */
 FrameBufferAllocator::FrameBufferAllocator(std::shared_ptr<Camera> camera)
-	: camera_(camera)
+	: camera_(std::move(camera))
 {
 }
 

@@ -471,6 +471,7 @@ class TrailersChecker(CommitChecker):
     known_trailers = {
         'Acked-by': email_regex,
         'Bug': link_regex,
+        'Co-developed-by': email_regex,
         'Fixes': commit_regex,
         'Link': link_regex,
         'Reported-by': validate_reported_by,
@@ -478,7 +479,6 @@ class TrailersChecker(CommitChecker):
         'Signed-off-by': email_regex,
         'Suggested-by': email_regex,
         'Tested-by': email_regex,
-        'Co-developed-by': email_regex,
     }
 
     trailer_regex = re.compile(r'([A-Z][a-zA-Z-]*)\s*:\s*(.*)')

@@ -478,6 +478,7 @@ class TrailersChecker(CommitChecker):
         'Signed-off-by': email_regex,
         'Suggested-by': email_regex,
         'Tested-by': email_regex,
+        'Co-developed-by': email_regex,
     }
 
     trailer_regex = re.compile(r'([A-Z][a-zA-Z-]*)\s*:\s*(.*)')

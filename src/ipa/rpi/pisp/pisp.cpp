@@ -55,7 +55,6 @@ namespace {
 
 constexpr unsigned int NumLscCells = PISP_BE_LSC_GRID_SIZE;
 constexpr unsigned int NumLscVertexes = NumLscCells + 1;
-constexpr unsigned int NormalisedBlackLevel = 4096;
 
 inline int32_t clampField(double value, std::size_t fieldBits, std::size_t fracBits = 0,
 			  bool isSigned = false, const char *desc = nullptr)
@@ -605,19 +604,24 @@ void IpaPiSP::applyCAC(const CacStatus *cacStatus, pisp_be_global_config &global
 
 void IpaPiSP::applyBlackLevel(const BlackLevelStatus *blackLevelStatus, pisp_be_global_config &global)
 {
+	uint16_t minBlackLevel = std::min({ blackLevelStatus->blackLevelR, blackLevelStatus->blackLevelG,
+					    blackLevelStatus->blackLevelB });
 	pisp_bla_config bla;
 
-	/* Set the Frontend to adjust the black level to 4096 (in 16-bits). */
+	/*
+	 * Set the Frontend to adjust the black level to the smallest black level
+	 * of all channels (in 16-bits).
+	 */
 	bla.black_level_r = blackLevelStatus->blackLevelR;
 	bla.black_level_gr = blackLevelStatus->blackLevelG;
 	bla.black_level_gb = blackLevelStatus->blackLevelG;
 	bla.black_level_b = blackLevelStatus->blackLevelB;
-	bla.output_black_level = NormalisedBlackLevel;
+	bla.output_black_level = minBlackLevel;
 	fe_->SetBla(bla);
 
 	/* Frontend Stats and Backend black level correction. */
 	bla.black_level_r = bla.black_level_gr =
-		bla.black_level_gb = bla.black_level_b = NormalisedBlackLevel;
+		bla.black_level_gb = bla.black_level_b = minBlackLevel;
 	bla.output_black_level = 0;
 	fe_->SetBlc(bla);
 	be_->SetBlc(bla);
@@ -669,8 +673,11 @@ void IpaPiSP::applyDPC(const DpcStatus *dpcStatus, pisp_be_global_config &global
 void IpaPiSP::applySdn(const SdnStatus *sdnStatus, pisp_be_global_config &global)
 {
 	pisp_be_sdn_config sdn = {};
+	pisp_bla_config blc;
 
-	sdn.black_level = NormalisedBlackLevel;
+	be_->GetBlc(blc);
+	/* All R/G/B black levels are the same value in the BE after FE alignment */
+	sdn.black_level = blc.black_level_r;
 	/* leakage is "amount of the original pixel we let through", thus 1 - strength */
 	sdn.leakage = clampField(1.0 - sdnStatus->strength, 8, 8);
 	sdn.noise_constant = clampField(sdnStatus->noiseConstant, 16);
@@ -698,7 +705,10 @@ void IpaPiSP::applyTdn(const TdnStatus *tdnStatus, const DeviceStatus *deviceSta
 			   << " last: " << lastExposure_
 			   << " ratio: " << ratio;
 
-	tdn.black_level = NormalisedBlackLevel;
+	pisp_bla_config blc;
+	be_->GetBlc(blc);
+	/* All R/G/B black levels are the same value in the BE after FE alignment */
+	tdn.black_level = blc.black_level_r;
 	tdn.ratio = clampField(ratio, 16, 14);
 	tdn.noise_constant = clampField(tdnStatus->noiseConstant, 16);
 	tdn.noise_slope = clampField(tdnStatus->noiseSlope, 16, 8);
@@ -895,7 +905,9 @@ void IpaPiSP::setDefaultConfig()
 	std::scoped_lock<FrontEnd> l(*fe_);
 
 	pisp_be_global_config beGlobal;
+	pisp_fe_global_config feGlobal;
 
+	fe_->GetGlobal(feGlobal);
 	be_->GetGlobal(beGlobal);
 	/*
 	 * Always go to YCbCr and back. We need them if the false colour block is enabled,
@@ -908,7 +920,6 @@ void IpaPiSP::setDefaultConfig()
 		beGlobal.bayer_enables |= PISP_BE_BAYER_ENABLE_DEMOSAIC;
 		beGlobal.rgb_enables |= PISP_BE_RGB_ENABLE_FALSE_COLOUR;
 	}
-	be_->SetGlobal(beGlobal);
 
 	/*
 	 * Ask the AWB algorithm for reasonable gain values so that we can program the
@@ -925,33 +936,25 @@ void IpaPiSP::setDefaultConfig()
 	rgby.gain_g = clampField(1.0 * .587, 14, 10);
 	rgby.gain_b = clampField(gainB * .114, 14, 10);
 	fe_->SetRGBY(rgby);
+	feGlobal.enables |= PISP_FE_ENABLE_RGBY;
 
 	/* Also get sensible front end black level defaults, for the same reason. */
-	uint16_t blackLevelR = NormalisedBlackLevel;
-	uint16_t blackLevelG = NormalisedBlackLevel;
-	uint16_t blackLevelB = NormalisedBlackLevel;
 	RPiController::BlackLevelAlgorithm *blackLevel = dynamic_cast<RPiController::BlackLevelAlgorithm *>(
 		controller_.getAlgorithm("black_level"));
-	if (blackLevel)
-		blackLevel->initialValues(blackLevelR, blackLevelG, blackLevelB);
-	/* The front end first equalises all the black levels to the same as green. */
-	pisp_bla_config bla;
-	bla.black_level_r = blackLevelR;
-	bla.black_level_gr = blackLevelG;
-	bla.black_level_gb = blackLevelG;
-	bla.black_level_b = blackLevelB;
-	bla.output_black_level = blackLevelG;
-	fe_->SetBla(bla);
-	/* But for the statistics it removes the G black level from everything. */
-	bla.black_level_r = blackLevelG;
-	bla.black_level_b = blackLevelG;
-	bla.output_black_level = 0;
-	fe_->SetBlc(bla);
+	if (blackLevel) {
+		uint16_t blackLevelR, blackLevelG, blackLevelB;
+		BlackLevelStatus blackLevelStatus;
 
-	pisp_fe_global_config feGlobal;
-	fe_->GetGlobal(feGlobal);
-	feGlobal.enables |= PISP_FE_ENABLE_BLA + PISP_FE_ENABLE_BLC + PISP_FE_ENABLE_RGBY;
+		blackLevel->initialValues(blackLevelR, blackLevelG, blackLevelB);
+		blackLevelStatus.blackLevelR = blackLevelR;
+		blackLevelStatus.blackLevelG = blackLevelG;
+		blackLevelStatus.blackLevelB = blackLevelB;
+		applyBlackLevel(&blackLevelStatus, beGlobal);
+		feGlobal.enables |= PISP_FE_ENABLE_BLA + PISP_FE_ENABLE_BLC;
+	}
+
 	fe_->SetGlobal(feGlobal);
+	be_->SetGlobal(beGlobal);
 }
 
 void IpaPiSP::setStatsAndDebin()

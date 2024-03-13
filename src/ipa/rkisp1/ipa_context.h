@@ -12,6 +12,7 @@
 
 #include <libcamera/base/utils.h>
 
+#include <libcamera/control_ids.h>
 #include <libcamera/controls.h>
 #include <libcamera/geometry.h>
 
@@ -68,8 +69,10 @@ struct IPAActiveState {
 		} automatic;
 
 		bool autoEnabled;
-		uint32_t constraintMode;
-		uint32_t exposureMode;
+		controls::AeConstraintModeEnum constraintMode;
+		controls::AeExposureModeEnum exposureMode;
+		controls::AeMeteringModeEnum meteringMode;
+		utils::Duration maxShutterSpeed;
 	} agc;
 
 	struct {
@@ -115,6 +118,11 @@ struct IPAFrameContext : public FrameContext {
 		uint32_t exposure;
 		double gain;
 		bool autoEnabled;
+		controls::AeConstraintModeEnum constraintMode;
+		controls::AeExposureModeEnum exposureMode;
+		controls::AeMeteringModeEnum meteringMode;
+		utils::Duration maxShutterSpeed;
+		bool update;
 	} agc;
 
 	struct {

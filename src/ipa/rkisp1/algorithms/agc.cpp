@@ -10,6 +10,8 @@
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <tuple>
+#include <vector>
 
 #include <libcamera/base/log.h>
 #include <libcamera/base/utils.h>
@@ -73,6 +75,13 @@ int Agc::parseMeteringModes(IPAContext &context, const YamlObject &tuningData)
 
 		meteringModes_[meteringModeId] = weights;
 	}
+
+	std::vector<ControlValue> meteringModes;
+	std::vector<int> meteringModeKeys = utils::map_keys(meteringModes_);
+	std::transform(meteringModeKeys.begin(), meteringModeKeys.end(),
+		       std::back_inserter(meteringModes),
+		       [](int x) { return ControlValue(x); });
+	context.ctrlMap[&controls::AeMeteringMode] = ControlInfo(meteringModes);
 
 	return 0;
 }
@@ -167,8 +176,19 @@ int Agc::configure(IPAContext &context, const IPACameraSensorInfo &configInfo)
 	context.activeState.agc.manual.exposure = context.activeState.agc.automatic.exposure;
 	context.activeState.agc.autoEnabled = !context.configuration.raw;
 
-	context.activeState.agc.constraintMode = constraintModes().begin()->first;
-	context.activeState.agc.exposureMode = exposureModeHelpers().begin()->first;
+	context.activeState.agc.constraintMode =
+		static_cast<controls::AeConstraintModeEnum>(constraintModes().begin()->first);
+	context.activeState.agc.exposureMode =
+		static_cast<controls::AeExposureModeEnum>(exposureModeHelpers().begin()->first);
+	context.activeState.agc.meteringMode =
+		static_cast<controls::AeMeteringModeEnum>(meteringModes_.begin()->first);
+
+	/*
+	 * \todo This should probably come from FrameDurationLimits instead,
+	 * except it's computed in the IPA and not here so we'd have to
+	 * recompute it.
+	 */
+	context.activeState.agc.maxShutterSpeed = context.configuration.sensor.maxShutterSpeed;
 
 	/*
 	 * Define the measurement window for AGC as a centered rectangle
@@ -179,7 +199,6 @@ int Agc::configure(IPAContext &context, const IPACameraSensorInfo &configInfo)
 	context.configuration.agc.measureWindow.h_size = 3 * configInfo.outputSize.width / 4;
 	context.configuration.agc.measureWindow.v_size = 3 * configInfo.outputSize.height / 4;
 
-	/* \todo Run this again when FrameDurationLimits is passed in */
 	setLimits(context.configuration.sensor.minShutterSpeed,
 		  context.configuration.sensor.maxShutterSpeed,
 		  context.configuration.sensor.minAnalogueGain,
@@ -233,6 +252,39 @@ void Agc::queueRequest(IPAContext &context,
 		frameContext.agc.exposure = agc.manual.exposure;
 		frameContext.agc.gain = agc.manual.gain;
 	}
+
+	const auto &meteringMode = controls.get(controls::AeMeteringMode);
+	if (meteringMode) {
+		frameContext.agc.update = agc.meteringMode != *meteringMode;
+		agc.meteringMode =
+			static_cast<controls::AeMeteringModeEnum>(*meteringMode);
+	}
+	frameContext.agc.meteringMode = agc.meteringMode;
+
+	const auto &exposureMode = controls.get(controls::AeExposureMode);
+	if (exposureMode) {
+		frameContext.agc.update = agc.exposureMode != *exposureMode;
+		agc.exposureMode =
+			static_cast<controls::AeExposureModeEnum>(*exposureMode);
+	}
+	frameContext.agc.exposureMode = agc.exposureMode;
+
+	const auto &constraintMode = controls.get(controls::AeConstraintMode);
+	if (constraintMode) {
+		frameContext.agc.update = agc.constraintMode != *constraintMode;
+		agc.constraintMode =
+			static_cast<controls::AeConstraintModeEnum>(*constraintMode);
+	}
+	frameContext.agc.constraintMode = agc.constraintMode;
+
+	const auto &frameDurationLimits = controls.get(controls::FrameDurationLimits);
+	if (frameDurationLimits) {
+		utils::Duration maxShutterSpeed =
+			std::chrono::milliseconds((*frameDurationLimits).back());
+		frameContext.agc.update = agc.maxShutterSpeed != maxShutterSpeed;
+		agc.maxShutterSpeed = maxShutterSpeed;
+	}
+	frameContext.agc.maxShutterSpeed = agc.maxShutterSpeed;
 }
 
 /**
@@ -246,8 +298,7 @@ void Agc::prepare(IPAContext &context, const uint32_t frame,
 		frameContext.agc.gain = context.activeState.agc.automatic.gain;
 	}
 
-	/* \todo Remove this when we can set the below with controls */
-	if (frame > 0)
+	if (frame > 0 && !frameContext.agc.update)
 		return;
 
 	/* Configure the measurement window. */
@@ -271,8 +322,7 @@ void Agc::prepare(IPAContext &context, const uint32_t frame,
 		params->meas.hst_config.hist_weight,
 		context.hw->numHistogramWeights
 	};
-	/* \todo Get this from control */
-	std::vector<uint8_t> &modeWeights = meteringModes_.at(controls::MeteringMatrix);
+	std::vector<uint8_t> &modeWeights = meteringModes_.at(frameContext.agc.meteringMode);
 	std::copy(modeWeights.begin(), modeWeights.end(), weights.begin());
 
 	struct rkisp1_cif_isp_window window = params->meas.hst_config.meas_window;
@@ -295,6 +345,7 @@ void Agc::fillMetadata(IPAContext &context, IPAFrameContext &frameContext,
 				     * frameContext.sensor.exposure;
 	metadata.set(controls::AnalogueGain, frameContext.sensor.gain);
 	metadata.set(controls::ExposureTime, exposureTime.get<std::micro>());
+	metadata.set(controls::AeEnable, frameContext.agc.autoEnabled);
 
 	/* \todo Use VBlank value calculated from each frame exposure. */
 	uint32_t vTotal = context.configuration.sensor.size.height
@@ -302,6 +353,10 @@ void Agc::fillMetadata(IPAContext &context, IPAFrameContext &frameContext,
 	utils::Duration frameDuration = context.configuration.sensor.lineDuration
 				      * vTotal;
 	metadata.set(controls::FrameDuration, frameDuration.get<std::micro>());
+
+	metadata.set(controls::AeMeteringMode, frameContext.agc.meteringMode);
+	metadata.set(controls::AeExposureMode, frameContext.agc.exposureMode);
+	metadata.set(controls::AeConstraintMode, frameContext.agc.constraintMode);
 }
 
 /**
@@ -375,6 +430,13 @@ void Agc::process(IPAContext &context, [[maybe_unused]] const uint32_t frame,
 	Histogram hist({ params->hist.hist_bins, context.hw->numHistogramBins },
 		       [](uint32_t x) { return x >> 4; });
 	expMeans_ = { params->ae.exp_mean, context.hw->numAeCells };
+
+	utils::Duration maxShutterSpeed = std::min(context.configuration.sensor.maxShutterSpeed,
+						   frameContext.agc.maxShutterSpeed);
+	setLimits(context.configuration.sensor.minShutterSpeed,
+		  maxShutterSpeed,
+		  context.configuration.sensor.minAnalogueGain,
+		  context.configuration.sensor.maxAnalogueGain);
 
 	/*
 	 * The Agc algorithm needs to know the effective exposure value that was

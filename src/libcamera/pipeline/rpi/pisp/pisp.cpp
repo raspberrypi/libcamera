@@ -845,9 +845,9 @@ bool PipelineHandlerPiSP::match(DeviceEnumerator *enumerator)
 	 */
 	for (unsigned int i = 0; i < numCfeDevices; i++) {
 		DeviceMatch cfe("rp1-cfe");
-		cfe.add("rp1-cfe-fe_image0");
-		cfe.add("rp1-cfe-fe_stats");
-		cfe.add("rp1-cfe-fe_config");
+		cfe.add("rp1-cfe-fe-image0");
+		cfe.add("rp1-cfe-fe-stats");
+		cfe.add("rp1-cfe-fe-config");
 		MediaDevice *cfeDevice = acquireMediaDevice(enumerator, cfe);
 
 		if (!cfeDevice) {
@@ -1034,10 +1034,10 @@ int PipelineHandlerPiSP::platformRegister(std::unique_ptr<RPi::CameraData> &came
 	PiSPCameraData *data = static_cast<PiSPCameraData *>(cameraData.get());
 	int ret;
 
-	MediaEntity *cfeImage = cfe->getEntityByName("rp1-cfe-fe_image0");
-	MediaEntity *cfeEmbedded = cfe->getEntityByName("rp1-cfe-embedded");
-	MediaEntity *cfeStats = cfe->getEntityByName("rp1-cfe-fe_stats");
-	MediaEntity *cfeConfig = cfe->getEntityByName("rp1-cfe-fe_config");
+	MediaEntity *cfeImage = cfe->getEntityByName("rp1-cfe-fe-image0");
+	MediaEntity *cfeEmbedded = cfe->getEntityByName("rp1-cfe-csi2-ch1");
+	MediaEntity *cfeStats = cfe->getEntityByName("rp1-cfe-fe-stats");
+	MediaEntity *cfeConfig = cfe->getEntityByName("rp1-cfe-fe-config");
 	MediaEntity *ispInput = isp->getEntityByName("pispbe-input");
 	MediaEntity *IpaPrepare = isp->getEntityByName("pispbe-config");
 	MediaEntity *ispOutput0 = isp->getEntityByName("pispbe-output0");
@@ -1385,7 +1385,6 @@ int PiSPCameraData::platformConfigure(const RPi::RPiCameraConfiguration *rpiConf
 	const std::vector<RPi::RPiCameraConfiguration::StreamParams> &rawStreams = rpiConfig->rawStreams_;
 	const std::vector<RPi::RPiCameraConfiguration::StreamParams> &outStreams = rpiConfig->outStreams_;
 	int ret;
-
 	V4L2VideoDevice *cfe = cfe_[Cfe::Output0].dev();
 	V4L2DeviceFormat cfeFormat;
 
@@ -1399,7 +1398,7 @@ int PiSPCameraData::platformConfigure(const RPi::RPiCameraConfiguration *rpiConf
 		 * mbus code right at the start.
 		 */
 		V4L2SubdeviceFormat sensorFormatMod = rpiConfig->sensorFormat_;
-		sensorFormatMod.mbus_code = mbusCodeUnpacked16(sensorFormatMod.mbus_code);
+		sensorFormatMod.code = mbusCodeUnpacked16(sensorFormatMod.code);
 		cfeFormat = RPi::PipelineHandlerBase::toV4L2DeviceFormat(cfe,
 									 sensorFormatMod,
 									 BayerFormat::Packing::PISP1);
@@ -1415,7 +1414,7 @@ int PiSPCameraData::platformConfigure(const RPi::RPiCameraConfiguration *rpiConf
 	 * contents to account for the HW missing this feature.
 	 */
 	cfe_[Cfe::Output0].clearFlags(StreamFlag::Needs16bitEndianSwap);
-	if (rpiConfig->sensorFormat_.bitsPerPixel() == 16) {
+	if (MediaBusFormatInfo::info(rpiConfig->sensorFormat_.code).bitsPerPixel == 16) {
 		cfe_[Cfe::Output0].setFlags(StreamFlag::Needs16bitEndianSwap);
 		LOG(RPI, Warning)
 			<< "The sensor is configured for a 16-bit output, statistics"
@@ -1536,7 +1535,7 @@ int PiSPCameraData::platformConfigure(const RPi::RPiCameraConfiguration *rpiConf
 	ret = cfe_[Cfe::Stats].dev()->setFormat(&format);
 	if (ret) {
 		LOG(RPI, Error) << "Failed to set format on CFE stats stream: "
-				<< format.toString();
+				<< format;
 		return ret;
 	}
 
@@ -1546,7 +1545,7 @@ int PiSPCameraData::platformConfigure(const RPi::RPiCameraConfiguration *rpiConf
 	ret = cfe_[Cfe::Config].dev()->setFormat(&format);
 	if (ret) {
 		LOG(RPI, Error) << "Failed to set format on CFE config stream: "
-				<< format.toString();
+				<< format;
 		return ret;
 	}
 
@@ -1554,14 +1553,28 @@ int PiSPCameraData::platformConfigure(const RPi::RPiCameraConfiguration *rpiConf
 	 * Configure the CFE embedded data output format only if the sensor
 	 * supports it.
 	 */
-	V4L2SubdeviceFormat embeddedFormat;
+	V4L2SubdeviceFormat embeddedFormat = sensor_->embeddedDataFormat();
 	if (sensorMetadata_) {
-		sensor_->device()->getFormat(1, &embeddedFormat);
-		format = {};
-		format.fourcc = V4L2PixelFormat(V4L2_META_FMT_SENSOR_DATA);
-		format.planes[0].size = embeddedFormat.size.width * embeddedFormat.size.height;
+		static const std::map<uint32_t, V4L2PixelFormat> metaFormats{
+			{ MEDIA_BUS_FMT_META_8, V4L2PixelFormat(V4L2_META_FMT_GENERIC_8) },
+			{ MEDIA_BUS_FMT_META_10, V4L2PixelFormat(V4L2_META_FMT_GENERIC_CSI2_10) },
+			{ MEDIA_BUS_FMT_META_12, V4L2PixelFormat(V4L2_META_FMT_GENERIC_CSI2_12) },
+			{ MEDIA_BUS_FMT_META_14, V4L2PixelFormat(V4L2_META_FMT_GENERIC_CSI2_14) },
+		};
 
-		LOG(RPI, Debug) << "Setting embedded data format " << format.toString();
+		const auto metaFormat = metaFormats.find(embeddedFormat.code);
+		if (metaFormat == metaFormats.end()) {
+			LOG(RPI, Error)
+				<< "Unsupported metadata format "
+				<< utils::hex(embeddedFormat.code, 4);
+			return -EINVAL;
+		}
+
+		format = {};
+		format.fourcc = metaFormat->second;
+		format.size = embeddedFormat.size;
+
+		LOG(RPI, Debug) << "Setting embedded data format " << format;
 		ret = cfe_[Cfe::Embedded].dev()->setFormat(&format);
 		if (ret) {
 			LOG(RPI, Error) << "Failed to set format on CFE embedded: "
@@ -2088,9 +2101,8 @@ int PiSPCameraData::configureEntities(V4L2SubdeviceFormat sensorFormat,
 	int ret = 0;
 
 	constexpr unsigned int csiVideoSinkPad = 0;
-	constexpr unsigned int csiMetaSinkPad = 1;
-	constexpr unsigned int csiVideoSourcePad = 4;
-	constexpr unsigned int csiMetaSourcePad = 5;
+	constexpr unsigned int csiVideoSourcePad = 1;
+	constexpr unsigned int csiMetaSourcePad = 2;
 
 	constexpr unsigned int feVideoSinkPad = 0;
 	constexpr unsigned int feConfigSinkPad = 1;
@@ -2102,7 +2114,7 @@ int PiSPCameraData::configureEntities(V4L2SubdeviceFormat sensorFormat,
 	const MediaEntity *fe = feSubdev_->entity();
 
 	for (MediaLink *link : csi2->pads()[csiVideoSourcePad]->links()) {
-		if (link->sink()->entity()->name() == "rp1-cfe-csi2_ch0")
+		if (link->sink()->entity()->name() == "rp1-cfe-csi2-ch0")
 			link->setEnabled(false);
 		else if (link->sink()->entity()->name() == "pisp-fe")
 			link->setEnabled(true);
@@ -2115,22 +2127,41 @@ int PiSPCameraData::configureEntities(V4L2SubdeviceFormat sensorFormat,
 	fe->pads()[feVideo1SourcePad]->links()[0]->setEnabled(false);
 	fe->pads()[feStatsSourcePad]->links()[0]->setEnabled(true);
 
-	ret = csi2Subdev_->setFormat(csiVideoSinkPad, &sensorFormat);
+	const V4L2Subdevice::Stream imageStream {
+		csiVideoSinkPad,
+		sensor_->imageStream().stream
+	};
+	const V4L2Subdevice::Stream embeddedDataStream{
+		csiVideoSinkPad,
+		sensor_->embeddedDataStream().value_or(V4L2Subdevice::Stream{}).stream
+	};
+
+	V4L2Subdevice::Routing routing;
+	routing.emplace_back(imageStream, V4L2Subdevice::Stream{ csiVideoSourcePad, 0 },
+			     V4L2_SUBDEV_ROUTE_FL_ACTIVE);
+
+	if (sensorMetadata_)
+		routing.emplace_back(embeddedDataStream,
+				     V4L2Subdevice::Stream{ csiMetaSourcePad, 0 },
+				     V4L2_SUBDEV_ROUTE_FL_ACTIVE);
+
+	ret = csi2Subdev_->setRouting(&routing);
+	if (ret)
+		return ret;
+
+
+	ret = csi2Subdev_->setFormat(imageStream, &sensorFormat);
 	if (ret)
 		return ret;
 
 	if (sensorMetadata_) {
-		ret = csi2Subdev_->setFormat(csiMetaSinkPad, &embeddedFormat);
-		if (ret)
-			return ret;
-
-		ret = csi2Subdev_->setFormat(csiMetaSourcePad, &embeddedFormat);
+		ret = csi2Subdev_->setFormat(embeddedDataStream, &embeddedFormat);
 		if (ret)
 			return ret;
 	}
 
 	V4L2SubdeviceFormat feFormat = sensorFormat;
-	feFormat.mbus_code = mbusCodeUnpacked16(sensorFormat.mbus_code);
+	feFormat.code = mbusCodeUnpacked16(sensorFormat.code);
 	ret = feSubdev_->setFormat(feVideoSinkPad, &feFormat);
 	if (ret)
 		return ret;
@@ -2143,7 +2174,7 @@ int PiSPCameraData::configureEntities(V4L2SubdeviceFormat sensorFormat,
 	cfe_[Cfe::Output0].dev()->getFormat(&feOutputFormat);
 	BayerFormat feOutputBayer = BayerFormat::fromV4L2PixelFormat(feOutputFormat.fourcc);
 
-	feFormat.mbus_code = bayerToMbusCode(feOutputBayer);
+	feFormat.code = bayerToMbusCode(feOutputBayer);
 	ret = feSubdev_->setFormat(feVideo0SourcePad, &feFormat);
 
 	return ret;

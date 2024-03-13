@@ -356,7 +356,7 @@ std::optional<int> CameraSensorRaw::init()
 	 * format, and is not affected by flips.
 	 */
 	V4L2Subdevice::Formats formats = subdev_->formats(streams_.image.sink);
-	if (formats.size() != 1) {
+	if (!formats.size()) {
 		LOG(CameraSensor, Error)
 			<< "Image pad has " << formats.size()
 			<< " formats, expected 1";
@@ -481,8 +481,12 @@ std::optional<int> CameraSensorRaw::init()
 	const struct v4l2_query_ext_ctrl *hflipInfo = subdev_->controlInfo(V4L2_CID_HFLIP);
 	const struct v4l2_query_ext_ctrl *vflipInfo = subdev_->controlInfo(V4L2_CID_VFLIP);
 	if (hflipInfo && !(hflipInfo->flags & V4L2_CTRL_FLAG_READ_ONLY) &&
-	    vflipInfo && !(vflipInfo->flags & V4L2_CTRL_FLAG_READ_ONLY))
+	    vflipInfo && !(vflipInfo->flags & V4L2_CTRL_FLAG_READ_ONLY)) {
 		supportFlips_ = true;
+		if (hflipInfo->flags & V4L2_CTRL_FLAG_MODIFY_LAYOUT ||
+		    vflipInfo->flags & V4L2_CTRL_FLAG_MODIFY_LAYOUT)
+			flipsAlterBayerOrder_ = true;
+	}
 
 	if (!supportFlips_)
 		LOG(CameraSensor, Debug)
@@ -634,7 +638,7 @@ int CameraSensorRaw::initProperties()
 	properties_.set(properties::PixelArrayActiveAreas, { activeArea_ });
 
 	/* Color filter array pattern. */
-	uint32_t cfa;
+	uint32_t cfa = 0;
 
 	switch (cfaPattern_) {
 	case BayerFormat::BGGR:

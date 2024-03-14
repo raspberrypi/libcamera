@@ -49,7 +49,6 @@ Architecture: any
 Depends: libcamera0.2 (= ${binary:Version}),
          ${misc:Depends},
          ${shlibs:Depends}
-Multi-Arch: same
 Description: complex camera support library (development files)
  libcamera is a complex camera support library which handles low-level
  control of the camera devices, providing a unified higher-level

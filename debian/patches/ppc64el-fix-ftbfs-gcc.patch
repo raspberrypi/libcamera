@@ -18,7 +18,7 @@ Last-Update: 2022-10-18
 
 --- a/src/ipa/rpi/common/ipa_base.cpp
 +++ b/src/ipa/rpi/common/ipa_base.cpp
-@@ -41,7 +41,7 @@
+@@ -43,7 +43,7 @@
  /* Configure the sensor with these values initially. */
  constexpr double defaultAnalogueGain = 1.0;
  constexpr Duration defaultExposureTime = 20.0ms;
@@ -27,7 +27,7 @@ Last-Update: 2022-10-18
  constexpr Duration defaultMaxFrameDuration = 250.0s;
  
  /*
-@@ -50,7 +50,7 @@
+@@ -52,7 +52,7 @@
   * we rate-limit the controller Prepare() and Process() calls to lower than or
   * equal to this rate.
   */

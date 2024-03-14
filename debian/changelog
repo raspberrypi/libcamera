@@ -1,3 +1,20 @@
+libcamera (0.2.0-3) unstable; urgency=medium
+
+  [ Jeremy Bícha ]
+  * Update debian/gbp.conf
+  * Don't use liblltng-ust-dev on i386
+  * Disable v4l2 on non-Linux
+  * autopkgtest: Run the upstream tests
+
+  [ Steve Langasek ]
+  * Add patch for 64-bit time_t compatibility (Closes: #1066836)
+
+  [ Dylan Aïssi ]
+  * Refresh patches
+  * Drop 'Multi-Arch: same' for libcamera-dev due to file conflict
+
+ -- Dylan Aïssi <daissi@debian.org>  Thu, 14 Mar 2024 11:58:17 +0100
+
 libcamera (0.2.0-2) unstable; urgency=medium
 
   * Upload to unstable

@@ -533,29 +533,15 @@ std::optional<int> CameraSensorRaw::init()
 	 * Set HBLANK to the minimum to start with a well-defined line length,
 	 * allowing IPA modules that do not modify HBLANK to use the sensor
 	 * minimum line length in their calculations.
-	 *
-	 * At present, there is no way of knowing if a control is read-only.
-	 * As a workaround, assume that if the minimum and maximum values of
-	 * the V4L2_CID_HBLANK control are the same, it implies the control
-	 * is read-only.
-	 *
-	 * \todo The control API ought to have a flag to specify if a control
-	 * is read-only which could be used below.
 	 */
-	const ControlInfoMap &ctrls = subdev_->controls();
-	if (ctrls.find(V4L2_CID_HBLANK) != ctrls.end()) {
-		const ControlInfo hblank = ctrls.at(V4L2_CID_HBLANK);
-		const int32_t hblankMin = hblank.min().get<int32_t>();
-		const int32_t hblankMax = hblank.max().get<int32_t>();
+	const struct v4l2_query_ext_ctrl *hblankInfo = subdev_->controlInfo(V4L2_CID_HBLANK);
+	if (hblankInfo && !(hblankInfo->flags & V4L2_CTRL_FLAG_READ_ONLY)) {
+		ControlList ctrl(subdev_->controls());
 
-		if (hblankMin != hblankMax) {
-			ControlList ctrl(subdev_->controls());
-
-			ctrl.set(V4L2_CID_HBLANK, hblankMin);
-			ret = subdev_->setControls(&ctrl);
-			if (ret)
-				return { ret };
-		}
+		ctrl.set(V4L2_CID_HBLANK, static_cast<int32_t>(hblankInfo->minimum));
+		ret = subdev_->setControls(&ctrl);
+		if (ret)
+			return ret;
 	}
 
 	ret = applyTestPatternMode(controls::draft::TestPatternModeEnum::TestPatternModeOff);

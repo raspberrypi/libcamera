@@ -168,6 +168,12 @@ def parse_diff(diff):
             hunk = DiffHunk(line)
 
         elif hunk is not None:
+            # Work around https://github.com/python/cpython/issues/46395
+            # See https://www.gnu.org/software/diffutils/manual/html_node/Incomplete-Lines.html
+            if line[-1] != '\n':
+                hunk.append(line + '\n')
+                line = '\\ No newline at end of file\n'
+
             hunk.append(line)
 
     if hunk:

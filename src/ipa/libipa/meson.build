@@ -8,6 +8,7 @@ libipa_headers = files([
     'fc_queue.h',
     'histogram.h',
     'module.h',
+    'pwl.h',
     'vector.h',
 ])
 
@@ -19,6 +20,7 @@ libipa_sources = files([
     'fc_queue.cpp',
     'histogram.cpp',
     'module.cpp',
+    'pwl.cpp',
     'vector.cpp',
 ])
 

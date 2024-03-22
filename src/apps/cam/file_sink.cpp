@@ -17,6 +17,7 @@
 
 #include "../common/dng_writer.h"
 #include "../common/image.h"
+#include "../common/ppm_writer.h"
 
 #include "file_sink.h"
 
@@ -76,6 +77,7 @@ void FileSink::writeBuffer(const Stream *stream, FrameBuffer *buffer,
 #ifdef HAVE_TIFF
 	bool dng = filename.find(".dng", filename.size() - 4) != std::string::npos;
 #endif /* HAVE_TIFF */
+	bool ppm = filename.find(".ppm", filename.size() - 4) != std::string::npos;
 
 	if (filename.empty() || filename.back() == '/')
 		filename += "frame-#.bin";
@@ -102,6 +104,15 @@ void FileSink::writeBuffer(const Stream *stream, FrameBuffer *buffer,
 		return;
 	}
 #endif /* HAVE_TIFF */
+	if (ppm) {
+		ret = PPMWriter::write(filename.c_str(), stream->configuration(),
+				       image->data(0));
+		if (ret < 0)
+			std::cerr << "failed to write PPM file `" << filename
+				  << "'" << std::endl;
+
+		return;
+	}
 
 	fd = open(filename.c_str(), O_CREAT | O_WRONLY |
 		  (pos == std::string::npos ? O_APPEND : O_TRUNC),

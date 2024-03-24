@@ -8,6 +8,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <libgen.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -15,9 +16,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-static void usage(const char *argv0)
+static void usage(char *argv0)
 {
-
 	printf("Usage: %s input-file output-file\n", basename(argv0));
 	printf("Convert unpacked RAW10 Bayer data to the IPU3 packed Bayer formats\n");
 	printf("If the output-file '-', output data will be written to standard output\n");

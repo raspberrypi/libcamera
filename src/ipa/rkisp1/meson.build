@@ -8,6 +8,7 @@ ipa_name = 'ipa_rkisp1'
 rkisp1_ipa_sources = files([
     'ipa_context.cpp',
     'rkisp1.cpp',
+    'utils.cpp',
 ])
 
 rkisp1_ipa_sources += rkisp1_ipa_algorithms

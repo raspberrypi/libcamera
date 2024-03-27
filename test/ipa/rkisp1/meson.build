@@ -1,17 +1,15 @@
 # SPDX-License-Identifier: CC0-1.0
 
-subdir('rkisp1')
-
-ipa_test = [
-    {'name': 'ipa_module_test', 'sources': ['ipa_module_test.cpp']},
-    {'name': 'ipa_interface_test', 'sources': ['ipa_interface_test.cpp']},
+rkisp1_ipa_test = [
+    {'name': 'rkisp1-utils', 'sources': ['rkisp1-utils.cpp']},
 ]
 
-foreach test : ipa_test
+foreach test : rkisp1_ipa_test
     exe = executable(test['name'], test['sources'], libcamera_generated_ipa_headers,
                      dependencies : libcamera_private,
                      link_with : [libipa, test_libraries],
-                     include_directories : [libipa_includes, test_includes_internal])
+                     include_directories : [libipa_includes, test_includes_internal,
+                                            '../../../src/ipa/rkisp1/'])
 
     test(test['name'], exe, suite : 'ipa')
 endforeach

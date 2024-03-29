@@ -6,6 +6,8 @@
  */
 #pragma once
 
+#include <libipa/pwl.h>
+
 #include "../algorithm.h"
 #include "../geq_status.h"
 
@@ -16,7 +18,7 @@ namespace RPiController {
 struct GeqConfig {
 	uint16_t offset;
 	double slope;
-	Pwl strength; /* lux to strength factor */
+	libcamera::ipa::Pwl strength; /* lux to strength factor */
 };
 
 class Geq : public Algorithm

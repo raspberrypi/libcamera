@@ -53,7 +53,7 @@ int Contrast::read(const libcamera::YamlObject &params)
 	config_.hiHistogram = params["hi_histogram"].get<double>(0.95);
 	config_.hiLevel = params["hi_level"].get<double>(0.95);
 	config_.hiMax = params["hi_max"].get<double>(2000);
-	return config_.gammaCurve.read(params["gamma_curve"]);
+	return config_.gammaCurve.readYaml(params["gamma_curve"]);
 }
 
 void Contrast::setBrightness(double brightness)
@@ -92,10 +92,10 @@ void Contrast::prepare(Metadata *imageMetadata)
 	imageMetadata->set("contrast.status", status_);
 }
 
-Pwl computeStretchCurve(Histogram const &histogram,
+ipa::Pwl computeStretchCurve(Histogram const &histogram,
 			ContrastConfig const &config)
 {
-	Pwl enhance;
+	ipa::Pwl enhance;
 	enhance.append(0, 0);
 	/*
 	 * If the start of the histogram is rather empty, try to pull it down a
@@ -136,10 +136,10 @@ Pwl computeStretchCurve(Histogram const &histogram,
 	return enhance;
 }
 
-Pwl applyManualContrast(Pwl const &gammaCurve, double brightness,
-			double contrast)
+ipa::Pwl applyManualContrast(ipa::Pwl const &gammaCurve, double brightness,
+			     double contrast)
 {
-	Pwl newGammaCurve;
+	ipa::Pwl newGammaCurve;
 	LOG(RPiContrast, Debug)
 		<< "Manual brightness " << brightness << " contrast " << contrast;
 	gammaCurve.map([&](double x, double y) {
@@ -160,7 +160,7 @@ void Contrast::process(StatisticsPtr &stats,
 	 * ways: 1. Adjust the gamma curve so as to pull the start of the
 	 * histogram down, and possibly push the end up.
 	 */
-	Pwl gammaCurve = config_.gammaCurve;
+	ipa::Pwl gammaCurve = config_.gammaCurve;
 	if (ceEnable_) {
 		if (config_.loMax != 0 || config_.hiMax != 0)
 			gammaCurve = computeStretchCurve(histogram, config_).compose(gammaCurve);

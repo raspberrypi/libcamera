@@ -130,7 +130,7 @@ int AgcConstraint::read(const libcamera::YamlObject &params)
 		return -EINVAL;
 	qHi = *value;
 
-	return yTarget.read(params["y_target"]);
+	return yTarget.readYaml(params["y_target"]);
 }
 
 static std::tuple<int, AgcConstraintMode>
@@ -237,7 +237,7 @@ int AgcConfig::read(const libcamera::YamlObject &params)
 			return ret;
 	}
 
-	ret = yTarget.read(params["y_target"]);
+	ret = yTarget.readYaml(params["y_target"]);
 	if (ret)
 		return ret;
 
@@ -715,7 +715,7 @@ static constexpr double EvGainYTargetLimit = 0.9;
 static double constraintComputeGain(AgcConstraint &c, const Histogram &h, double lux,
 				    double evGain, double &targetY)
 {
-	targetY = c.yTarget.eval(c.yTarget.domain().clip(lux));
+	targetY = c.yTarget.eval(c.yTarget.domain().clamp(lux));
 	targetY = std::min(EvGainYTargetLimit, targetY * evGain);
 	double iqm = h.interQuantileMean(c.qLo, c.qHi);
 	return (targetY * h.bins()) / iqm;
@@ -734,7 +734,7 @@ void AgcChannel::computeGain(StatisticsPtr &statistics, Metadata *imageMetadata,
 	 * The initial gain and target_Y come from some of the regions. After
 	 * that we consider the histogram constraints.
 	 */
-	targetY = config_.yTarget.eval(config_.yTarget.domain().clip(lux.lux));
+	targetY = config_.yTarget.eval(config_.yTarget.domain().clamp(lux.lux));
 	targetY = std::min(EvGainYTargetLimit, targetY * evGain);
 
 	/*

@@ -8,8 +8,9 @@
 
 #include <mutex>
 
+#include <libipa/pwl.h>
+
 #include "../contrast_algorithm.h"
-#include "../pwl.h"
 
 namespace RPiController {
 
@@ -26,7 +27,7 @@ struct ContrastConfig {
 	double hiHistogram;
 	double hiLevel;
 	double hiMax;
-	Pwl gammaCurve;
+	libcamera::ipa::Pwl gammaCurve;
 };
 
 class Contrast : public ContrastAlgorithm

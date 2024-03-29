@@ -8,8 +8,9 @@
 
 #include <vector>
 
+#include <libipa/pwl.h>
+
 #include "../ccm_algorithm.h"
-#include "../pwl.h"
 
 namespace RPiController {
 
@@ -54,7 +55,7 @@ struct CtCcm {
 
 struct CcmConfig {
 	std::vector<CtCcm> ccms;
-	Pwl saturation;
+	libcamera::ipa::Pwl saturation;
 };
 
 class Ccm : public CcmAlgorithm

@@ -12,9 +12,10 @@
 
 #include <libcamera/geometry.h>
 
+#include <libipa/pwl.h>
+
 #include "../hdr_algorithm.h"
 #include "../hdr_status.h"
-#include "../pwl.h"
 
 /* This is our implementation of an HDR algorithm. */
 
@@ -26,7 +27,7 @@ struct HdrConfig {
 	std::map<unsigned int, std::string> channelMap;
 
 	/* Lens shading related parameters. */
-	Pwl spatialGainCurve; /* Brightness to gain curve for different image regions. */
+	libcamera::ipa::Pwl spatialGainCurve; /* Brightness to gain curve for different image regions. */
 	unsigned int diffusion; /* How much to diffuse the gain spatially. */
 
 	/* Tonemap related parameters. */
@@ -35,7 +36,7 @@ struct HdrConfig {
 	double detailSlope;
 	double iirStrength;
 	double strength;
-	Pwl tonemap;
+	libcamera::ipa::Pwl tonemap;
 	/* These relate to adaptive tonemap calculation. */
 	double speed;
 	std::vector<double> hiQuantileTargets; /* quantiles to check for unsaturated images */
@@ -75,7 +76,7 @@ private:
 	HdrStatus status_; /* track the current HDR mode and channel */
 	HdrStatus delayedStatus_; /* track the delayed HDR mode and channel */
 	std::string previousMode_;
-	Pwl tonemap_;
+	libcamera::ipa::Pwl tonemap_;
 	libcamera::Size regions_; /* stats regions */
 	unsigned int numRegions_; /* total number of stats regions */
 	std::vector<double> gains_[2];

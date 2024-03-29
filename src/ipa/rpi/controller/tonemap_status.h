@@ -6,12 +6,12 @@
  */
 #pragma once
 
-#include "pwl.h"
+#include <libipa/pwl.h>
 
 struct TonemapStatus {
 	uint16_t detailConstant;
 	double detailSlope;
 	double iirStrength;
 	double strength;
-	RPiController::Pwl tonemap;
+	libcamera::ipa::Pwl tonemap;
 };

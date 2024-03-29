@@ -71,7 +71,7 @@ int Ccm::read(const libcamera::YamlObject &params)
 	int ret;
 
 	if (params.contains("saturation")) {
-		ret = config_.saturation.read(params["saturation"]);
+		ret = config_.saturation.readYaml(params["saturation"]);
 		if (ret)
 			return ret;
 	}
@@ -172,7 +172,7 @@ void Ccm::prepare(Metadata *imageMetadata)
 	ccmStatus.saturation = saturation;
 	if (!config_.saturation.empty())
 		saturation *= config_.saturation.eval(
-			config_.saturation.domain().clip(lux.lux));
+			config_.saturation.domain().clamp(lux.lux));
 	ccm = applySaturation(ccm, saturation);
 	for (int j = 0; j < 3; j++)
 		for (int i = 0; i < 3; i++)

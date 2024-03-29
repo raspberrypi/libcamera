@@ -42,7 +42,7 @@ void HdrConfig::read(const libcamera::YamlObject &params, const std::string &mod
 
 	/* Lens shading related parameters. */
 	if (params.contains("spatial_gain_curve")) {
-		spatialGainCurve.read(params["spatial_gain_curve"]);
+		spatialGainCurve.readYaml(params["spatial_gain_curve"]);
 	} else if (params.contains("spatial_gain")) {
 		double spatialGain = params["spatial_gain"].get<double>(2.0);
 		spatialGainCurve.append(0.0, spatialGain);
@@ -66,7 +66,7 @@ void HdrConfig::read(const libcamera::YamlObject &params, const std::string &mod
 	iirStrength = params["iir_strength"].get<double>(8.0);
 	strength = params["strength"].get<double>(1.5);
 	if (tonemapEnable)
-		tonemap.read(params["tonemap"]);
+		tonemap.readYaml(params["tonemap"]);
 	speed = params["speed"].get<double>(1.0);
 	if (params.contains("hi_quantile_targets")) {
 		hiQuantileTargets = params["hi_quantile_targets"].getList<double>().value();
@@ -212,7 +212,7 @@ bool Hdr::updateTonemap([[maybe_unused]] StatisticsPtr &stats, HdrConfig &config
 	/* When there's a change of HDR mode we start over with a new tonemap curve. */
 	if (delayedStatus_.mode != previousMode_) {
 		previousMode_ = delayedStatus_.mode;
-		tonemap_ = Pwl();
+		tonemap_ = ipa::Pwl();
 	}
 
 	/* No tonemapping. No need to output a tonemap.status. */
@@ -275,7 +275,7 @@ bool Hdr::updateTonemap([[maybe_unused]] StatisticsPtr &stats, HdrConfig &config
 	double power = std::clamp(min_power, config.powerMin, config.powerMax);
 
 	/* Generate the tonemap, including the contrast adjustment factors. */
-	Pwl tonemap;
+	libcamera::ipa::Pwl tonemap;
 	tonemap.append(0, 0);
 	for (unsigned int i = 0; i <= 6; i++) {
 		double x = 1 << (i + 9); /* x loops from 512 to 32768 inclusive */

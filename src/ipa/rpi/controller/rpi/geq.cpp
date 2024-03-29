@@ -9,7 +9,6 @@
 
 #include "../device_status.h"
 #include "../lux_status.h"
-#include "../pwl.h"
 
 #include "geq.h"
 
@@ -45,7 +44,7 @@ int Geq::read(const libcamera::YamlObject &params)
 	}
 
 	if (params.contains("strength")) {
-		int ret = config_.strength.read(params["strength"]);
+		int ret = config_.strength.readYaml(params["strength"]);
 		if (ret)
 			return ret;
 	}
@@ -67,7 +66,7 @@ void Geq::prepare(Metadata *imageMetadata)
 	GeqStatus geqStatus = {};
 	double strength = config_.strength.empty()
 			? 1.0
-			: config_.strength.eval(config_.strength.domain().clip(luxStatus.lux));
+			: config_.strength.eval(config_.strength.domain().clamp(luxStatus.lux));
 	strength *= deviceStatus.analogueGain;
 	double offset = config_.offset * strength;
 	double slope = config_.slope * strength;

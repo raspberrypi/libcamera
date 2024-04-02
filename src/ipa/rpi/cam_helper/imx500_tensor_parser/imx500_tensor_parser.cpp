@@ -660,7 +660,7 @@ int RPiController::imx500ParseOutputTensor(IMX500OutputTensorInfo &outputTensorI
 
 std::unordered_map<unsigned int, unsigned int> RPiController::imx500SplitTensors(Span<const uint8_t> tensors)
 {
-	DnnHeader header;
+	DnnHeader inputHeader, *outputHeader;
 	std::unordered_map<unsigned int, unsigned int> offsets;
 
 	/*
@@ -672,40 +672,31 @@ std::unordered_map<unsigned int, unsigned int> RPiController::imx500SplitTensors
 	 */
 	const uint8_t *src = tensors.data() + TensorStride;
 
-	header = *(DnnHeader *)src;
-	if ((header.tensorType != TensorType::InputTensor &&
-	     header.tensorType != TensorType::OutputTensor) || !header.frameValid) {
-		LOG(IMX500, Debug) << "Input/Output tensor is invalid, arborting.";
+	inputHeader = *(DnnHeader *)src;
+	if (inputHeader.tensorType != TensorType::InputTensor || !inputHeader.frameValid) {
+		LOG(IMX500, Debug) << "Input tensor is invalid, arborting.";
 		return {};
 	}
 
-	if (header.tensorType == TensorType::InputTensor) {
-		offsets[TensorType::InputTensor] = TensorStride;
-		src += TensorStride;
+	offsets[TensorType::InputTensor] = TensorStride;
+	src += TensorStride;
 
-		LOG(IMX500, Debug)
-			<< "Found input tensor at offset " << offsets[TensorType::InputTensor];
+	LOG(IMX500, Debug)
+		<< "Found input tensor at offset " << offsets[TensorType::InputTensor];
 
-		while (src < tensors.data() + tensors.size()) {
-			DnnHeader *outputHeader = (DnnHeader *)src;
-
-			if (outputHeader->frameValid &&
-			    outputHeader->frameCount == header.frameCount &&
-			    outputHeader->apParamSize == header.apParamSize &&
-			    outputHeader->maxLineLen == header.maxLineLen &&
-			    outputHeader->tensorType == TensorType::OutputTensor) {
-				offsets[TensorType::OutputTensor] = src - tensors.data();
-				LOG(IMX500, Debug)
-					<< "Found output tensor at offset " << offsets[TensorType::OutputTensor];
-				break;
-			}
-			src += TensorStride;
+	while (src < tensors.data() + tensors.size()) {
+		outputHeader = (DnnHeader *)src;
+		if (outputHeader->frameValid &&
+		    outputHeader->frameCount == inputHeader.frameCount &&
+		    outputHeader->apParamSize == inputHeader.apParamSize &&
+		    outputHeader->maxLineLen == inputHeader.maxLineLen &&
+		    outputHeader->tensorType == TensorType::OutputTensor) {
+			offsets[TensorType::OutputTensor] = src - tensors.data();
+			LOG(IMX500, Debug)
+				<< "Found output tensor at offset " << offsets[TensorType::OutputTensor];
+			break;
 		}
-	} else if (header.tensorType == TensorType::OutputTensor) {
-		offsets[TensorType::OutputTensor] = TensorStride;
-		LOG(IMX500, Debug)
-			<< "Missing input tensor, but found output tensor at offset "
-			<< offsets[TensorType::OutputTensor];
+		src += TensorStride;
 	}
 
 	return offsets;

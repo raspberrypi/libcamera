@@ -73,6 +73,8 @@ private:
 
 	void populateMetadata(const MdParser::RegisterMap &registers,
 			      Metadata &metadata) const override;
+
+	std::vector<uint8_t> savedInputTensor_;
 };
 
 CamHelperImx500::CamHelperImx500()
@@ -91,7 +93,7 @@ double CamHelperImx500::gain(uint32_t gainCode) const
 }
 
 void CamHelperImx500::prepare(libcamera::Span<const uint8_t> buffer, Metadata &metadata,
-                              [[maybe_unused]] ControlList &libcameraMetadata)
+                              ControlList &libcameraMetadata)
 {
 	MdParser::RegisterMap registers;
 	DeviceStatus deviceStatus;
@@ -140,54 +142,78 @@ void CamHelperImx500::prepare(libcamera::Span<const uint8_t> buffer, Metadata &m
 				   buffer.data() + buffer.size());
 	Span<const uint8_t> tensors(cache.data(), cache.size());
 
-	std::unordered_map<unsigned int, unsigned int> offsets =
-		RPiController::imx500SplitTensors(tensors);
+	std::unordered_map<TensorType, IMX500Tensors> offsets = RPiController::imx500SplitTensors(tensors);
+	auto itIn = offsets.find(TensorType::InputTensor);
+	auto itOut = offsets.find(TensorType::OutputTensor);
 
-	{
-		auto it = offsets.find(TensorType::OutputTensor);
-		if (it == offsets.end())
-			return;
+	if (itIn != offsets.end() && itOut != offsets.end()) {
+		unsigned int inputTensorOffset = itIn->second.offset;
+		unsigned int outputTensorOffset = itOut->second.offset;
+		Span<const uint8_t> inputTensor;
 
-		unsigned int outputTensorOffset = it->second;
+		if (itIn->second.valid) {
+			if (itOut->second.valid) {
+				/* Valid input and output tensor, get the span directly from the current cache. */
+				inputTensor = Span<const uint8_t>(cache.data() + inputTensorOffset,
+								  outputTensorOffset - inputTensorOffset);
+			} else if (!itOut->second.valid) {
+				/*
+				 * Invalid output tensor with valid input tensor.
+				 * This is likely because the DNN takes longer than
+				 * a frame time to generate the output tensor.
+				 *
+				 * In such cases, we don't process the input tensor,
+				 * but simply save it for when the next output
+				 * tensor is valid. This way, we ensure that both
+				 * valid input and output tensors are in lock-step.
+				 */
+				memcpy(savedInputTensor_.data(), cache.data() + inputTensorOffset,
+				       outputTensorOffset - inputTensorOffset);
+			}
+		} else if (itOut->second.valid && savedInputTensor_.size()) {
+			/*
+			 * Invalid input tensor with valid output tensor. This is
+			 * likely because the DNN takes longer than a frame time
+			 * to generate the output tensor.
+			 *
+			 * In such cases, use the previously saved input tensor
+			 * if possible.
+			 */
+			inputTensor = Span<const uint8_t>(savedInputTensor_.data(),
+							  outputTensorOffset - inputTensorOffset);
+		}
+
+		if (inputTensor.size()) {
+			IMX500InputTensorInfo inputTensorInfo;
+			if (!imx500ParseInputTensor(inputTensorInfo, inputTensor)) {
+				Span<const uint8_t> parsedTensor{
+					(const uint8_t *)inputTensorInfo.data.data(), inputTensorInfo.data.size() };
+				libcameraMetadata.set(libcamera::controls::rpi::Imx500InputTensor,
+						      parsedTensor);
+				libcameraMetadata.set(libcamera::controls::rpi::Imx500InputTensorNetwork,
+						      inputTensorInfo.networkName);
+			}
+
+			/* We can now safely clear the saved input tensor. */
+			savedInputTensor_.clear();
+		}
+	}
+
+	if (itOut != offsets.end() && itOut->second.valid) {
+		unsigned int outputTensorOffset = itOut->second.offset;
 		Span<const uint8_t> outputTensor(cache.data() + outputTensorOffset,
 						 cache.size() - outputTensorOffset);
 
 		IMX500OutputTensorInfo outputTensorInfo;
 		if (!imx500ParseOutputTensor(outputTensorInfo, outputTensor)) {
-			Span<const float> parsedTensor
-				{ (const float *)outputTensorInfo.data.data(), outputTensorInfo.data.size() };
+			Span<const float> parsedTensor{
+				(const float *)outputTensorInfo.data.data(), outputTensorInfo.data.size() };
 			libcameraMetadata.set(libcamera::controls::rpi::Imx500OutputTensor,
 					      parsedTensor);
 			libcameraMetadata.set(libcamera::controls::rpi::Imx500OutputTensorNetwork,
 					      outputTensorInfo.networkName);
 		}
 	}
-
-	{
-		auto itIn = offsets.find(TensorType::InputTensor);
-		if (itIn == offsets.end())
-			return;
-
-		auto itOut = offsets.find(TensorType::OutputTensor);
-		if (itOut == offsets.end())
-			return;
-
-		unsigned int inputTensorOffset = itIn->second;
-		unsigned int outputTensorOffset = itOut->second;
-		Span<const uint8_t> inputTensor(cache.data() + inputTensorOffset,
-						outputTensorOffset - inputTensorOffset);
-
-		IMX500InputTensorInfo inputTensorInfo;
-		if (!imx500ParseInputTensor(inputTensorInfo, inputTensor)) {
-			Span<const uint8_t> parsedTensor
-				{ (const uint8_t *)inputTensorInfo.data.data(), inputTensorInfo.data.size() };
-			libcameraMetadata.set(libcamera::controls::rpi::Imx500InputTensor,
-					      parsedTensor);
-			libcameraMetadata.set(libcamera::controls::rpi::Imx500InputTensorNetwork,
-					      inputTensorInfo.networkName);
-		}
-	}
-
 }
 
 std::pair<uint32_t, uint32_t> CamHelperImx500::getBlanking(Duration &exposure,

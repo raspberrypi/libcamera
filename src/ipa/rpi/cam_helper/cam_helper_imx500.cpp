@@ -25,7 +25,9 @@ using namespace RPiController;
 using namespace libcamera;
 using libcamera::utils::Duration;
 
+namespace libcamera {
 LOG_DECLARE_CATEGORY(IPARPI)
+}
 
 /*
  * We care about two gain registers and a pair of exposure registers. Their

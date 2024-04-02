@@ -658,10 +658,10 @@ int RPiController::imx500ParseOutputTensor(IMX500OutputTensorInfo &outputTensorI
 	return 0;
 }
 
-std::unordered_map<unsigned int, unsigned int> RPiController::imx500SplitTensors(Span<const uint8_t> tensors)
+std::unordered_map<TensorType, IMX500Tensors> RPiController::imx500SplitTensors(Span<const uint8_t> tensors)
 {
 	DnnHeader inputHeader, *outputHeader;
-	std::unordered_map<unsigned int, unsigned int> offsets;
+	std::unordered_map<TensorType, IMX500Tensors> offsets;
 
 	/*
 	 * Structure of the IMX500 DNN output:
@@ -673,27 +673,30 @@ std::unordered_map<unsigned int, unsigned int> RPiController::imx500SplitTensors
 	const uint8_t *src = tensors.data() + TensorStride;
 
 	inputHeader = *(DnnHeader *)src;
-	if (inputHeader.tensorType != TensorType::InputTensor || !inputHeader.frameValid) {
+	if (inputHeader.tensorType != TensorType::InputTensor) {
 		LOG(IMX500, Debug) << "Input tensor is invalid, arborting.";
 		return {};
 	}
 
-	offsets[TensorType::InputTensor] = TensorStride;
-	src += TensorStride;
-
+	offsets[TensorType::InputTensor].offset = TensorStride;
+	offsets[TensorType::InputTensor].valid = inputHeader.frameValid;
 	LOG(IMX500, Debug)
-		<< "Found input tensor at offset " << offsets[TensorType::InputTensor];
+		<< "Found input tensor at offset: " << offsets[TensorType::InputTensor].offset
+		<< ", valid: " << (unsigned int)offsets[TensorType::InputTensor].valid;
+
+	src += TensorStride;
 
 	while (src < tensors.data() + tensors.size()) {
 		outputHeader = (DnnHeader *)src;
-		if (outputHeader->frameValid &&
-		    outputHeader->frameCount == inputHeader.frameCount &&
+		if (outputHeader->frameCount == inputHeader.frameCount &&
 		    outputHeader->apParamSize == inputHeader.apParamSize &&
 		    outputHeader->maxLineLen == inputHeader.maxLineLen &&
 		    outputHeader->tensorType == TensorType::OutputTensor) {
-			offsets[TensorType::OutputTensor] = src - tensors.data();
+			offsets[TensorType::OutputTensor].offset = src - tensors.data();
+			offsets[TensorType::OutputTensor].valid = outputHeader->frameValid;
 			LOG(IMX500, Debug)
-				<< "Found output tensor at offset " << offsets[TensorType::OutputTensor];
+				<< "Found output tensor at offset: " << offsets[TensorType::OutputTensor].offset
+				<< ", valid: " << (unsigned int)offsets[TensorType::OutputTensor].valid;
 			break;
 		}
 		src += TensorStride;

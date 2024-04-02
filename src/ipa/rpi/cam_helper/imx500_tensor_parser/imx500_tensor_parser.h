@@ -38,10 +38,15 @@ struct IMX500InputTensorInfo {
 	std::vector<uint8_t> data;
 };
 
+struct IMX500Tensors {
+	bool valid;
+	unsigned int offset;
+};
+
 int imx500ParseOutputTensor(IMX500OutputTensorInfo &outputTensorInfo,
 			    libcamera::Span<const uint8_t> outputTensor);
 int imx500ParseInputTensor(IMX500InputTensorInfo &inputTensorInfo,
 			   libcamera::Span<const uint8_t> inputTensor);
-std::unordered_map<unsigned int, unsigned int> imx500SplitTensors(libcamera::Span<const uint8_t> tensors);
+std::unordered_map<TensorType, IMX500Tensors> imx500SplitTensors(libcamera::Span<const uint8_t> tensors);
 
 } /* namespace RPiController */

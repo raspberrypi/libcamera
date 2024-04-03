@@ -4,7 +4,7 @@ Description: 64-bit time_t compatibility for v4l2 module
  64-bit time_t (none of the functions it intercepts handle time), we also
  unset _TIME_BITS to allow this to build as before.
 Author: Steve Langasek <steve.langasek@canonical.com>
-Forwarded: no
+Forwarded: https://lists.libcamera.org/pipermail/libcamera-devel/2024-March/041135.html
 Last-Update: 2024-03-13
 Bug-Debian: https://bugs.debian.org/1066836
 

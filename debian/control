@@ -45,7 +45,7 @@ Vcs-Git: https://salsa.debian.org/multimedia-team/libcamera.git
 
 Package: libcamera-dev
 Section: libdevel
-Architecture: any
+Architecture: linux-any
 Depends: libcamera0.2 (= ${binary:Version}),
          ${misc:Depends},
          ${shlibs:Depends}
@@ -75,7 +75,7 @@ Description: complex camera support library (documentation)
  This package contains the documentation developing with libcamera.
 
 Package: libcamera0.2
-Architecture: any
+Architecture: linux-any
 Depends: ${misc:Depends},
          ${shlibs:Depends}
 Pre-Depends: ${misc:Pre-Depends}
@@ -89,7 +89,7 @@ Description: complex camera support library
  programming interface to the applications.
 
 Package: libcamera-ipa
-Architecture: any
+Architecture: linux-any
 Depends: ${misc:Depends},
          ${shlibs:Depends}
 Breaks: libcamera0 (<< 0.0.3-1~)
@@ -104,7 +104,7 @@ Description: complex camera support library (IPA modules)
 
 Package: libcamera-tools
 Section: video
-Architecture: any
+Architecture: linux-any
 Depends: ${misc:Depends},
          ${shlibs:Depends}
 Pre-Depends: ${misc:Pre-Depends}
@@ -131,7 +131,7 @@ Description: complex camera support library (V4L2 module)
  This package contains the libcamera V4L2 module.
 
 Package: gstreamer1.0-libcamera
-Architecture: any
+Architecture: linux-any
 Depends: ${misc:Depends},
          ${shlibs:Depends}
 Breaks: libcamera0 (<< 0.0.3-1~)
@@ -146,7 +146,7 @@ Description: complex camera support library (GStreamer plugin)
 
 Package: python3-libcamera
 Section: python
-Architecture: any
+Architecture: linux-any
 Depends: ${misc:Depends},
          ${python3:Depends},
          ${shlibs:Depends},

@@ -149,13 +149,14 @@ void CamHelperImx500::prepare(libcamera::Span<const uint8_t> buffer, Metadata &m
 	if (itIn != offsets.end() && itOut != offsets.end()) {
 		unsigned int inputTensorOffset = itIn->second.offset;
 		unsigned int outputTensorOffset = itOut->second.offset;
+		unsigned int inputTensorSize = outputTensorOffset - inputTensorOffset;
 		Span<const uint8_t> inputTensor;
 
 		if (itIn->second.valid) {
 			if (itOut->second.valid) {
 				/* Valid input and output tensor, get the span directly from the current cache. */
 				inputTensor = Span<const uint8_t>(cache.data() + inputTensorOffset,
-								  outputTensorOffset - inputTensorOffset);
+								  inputTensorSize);
 			} else if (!itOut->second.valid) {
 				/*
 				 * Invalid output tensor with valid input tensor.
@@ -167,8 +168,9 @@ void CamHelperImx500::prepare(libcamera::Span<const uint8_t> buffer, Metadata &m
 				 * tensor is valid. This way, we ensure that both
 				 * valid input and output tensors are in lock-step.
 				 */
+				savedInputTensor_.resize(inputTensorSize, 0);
 				memcpy(savedInputTensor_.data(), cache.data() + inputTensorOffset,
-				       outputTensorOffset - inputTensorOffset);
+				       inputTensorSize);
 			}
 		} else if (itOut->second.valid && savedInputTensor_.size()) {
 			/*
@@ -180,7 +182,7 @@ void CamHelperImx500::prepare(libcamera::Span<const uint8_t> buffer, Metadata &m
 			 * if possible.
 			 */
 			inputTensor = Span<const uint8_t>(savedInputTensor_.data(),
-							  outputTensorOffset - inputTensorOffset);
+							  savedInputTensor_.size());
 		}
 
 		if (inputTensor.size()) {

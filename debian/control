@@ -79,7 +79,7 @@ Architecture: linux-any
 Depends: ${misc:Depends},
          ${shlibs:Depends}
 Pre-Depends: ${misc:Pre-Depends}
-Suggests: libcamera-ipa
+Recommends: libcamera-ipa (= ${binary:Version}),
 Breaks: libcamera0 (<< 0.0.3-1~)
 Replaces: libcamera0 (<< 0.0.3-1~)
 Multi-Arch: same

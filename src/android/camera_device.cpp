@@ -433,8 +433,6 @@ void CameraDevice::flush()
 void CameraDevice::stop()
 {
 	MutexLocker stateLock(stateMutex_);
-	if (state_ == State::Stopped)
-		return;
 
 	camera_->stop();
 

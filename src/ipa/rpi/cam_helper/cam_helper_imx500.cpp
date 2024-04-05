@@ -12,6 +12,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <libcamera/base/log.h>
 #include <libcamera/base/span.h>
@@ -28,6 +29,27 @@ using libcamera::utils::Duration;
 namespace libcamera {
 LOG_DECLARE_CATEGORY(IPARPI)
 }
+
+/*
+ * The following two structures are used to export the input/output tensor info
+ * through the Imx500OutputTensorInfo and Imx500InputTensorInfo controls.
+ * Applications must cast the span to these structures exactly.
+ */
+static constexpr unsigned int NetworkNameLen = 64;
+static constexpr unsigned int MaxNumTensors = 16;
+
+struct IMX500OutputTensorInfoExported {
+	char networkName[NetworkNameLen];
+	uint32_t tensorDataNum[MaxNumTensors];
+	uint32_t numTensors;
+};
+
+struct IMX500InputTensorInfoExported {
+	char networkName[NetworkNameLen];
+	uint32_t width;
+	uint32_t height;
+	uint32_t numChannels;
+};
 
 /*
  * We care about two gain registers and a pair of exposure registers. Their
@@ -251,8 +273,18 @@ void CamHelperImx500::parseInferenceData(libcamera::Span<const uint8_t> buffer,
 					(const uint8_t *)inputTensorInfo.data.data(), inputTensorInfo.data.size() };
 				libcameraMetadata.set(libcamera::controls::rpi::Imx500InputTensor,
 						      parsedTensor);
-				libcameraMetadata.set(libcamera::controls::rpi::Imx500InputTensorNetwork,
-						      inputTensorInfo.networkName);
+
+				IMX500InputTensorInfoExported exported{};
+				exported.width = inputTensorInfo.width;
+				exported.height = inputTensorInfo.height;
+				exported.numChannels = inputTensorInfo.channels;
+				strncpy(exported.networkName, inputTensorInfo.networkName.c_str(),
+					sizeof(exported.networkName));
+
+				const Span<const uint8_t> tensorInfo{ (const uint8_t *)&exported,
+								      sizeof(exported) };
+				libcameraMetadata.set(libcamera::controls::rpi::Imx500InputTensorInfo,
+						      tensorInfo);
 			}
 
 			/* We can now safely clear the saved input tensor. */
@@ -271,8 +303,23 @@ void CamHelperImx500::parseInferenceData(libcamera::Span<const uint8_t> buffer,
 				(const float *)outputTensorInfo.data.data(), outputTensorInfo.data.size() };
 			libcameraMetadata.set(libcamera::controls::rpi::Imx500OutputTensor,
 					      parsedTensor);
-			libcameraMetadata.set(libcamera::controls::rpi::Imx500OutputTensorNetwork,
-					      outputTensorInfo.networkName);
+
+			IMX500OutputTensorInfoExported exported{};
+			if (outputTensorInfo.numTensors < MaxNumTensors) {
+				exported.numTensors = outputTensorInfo.numTensors;
+				for (unsigned int i = 0; i < exported.numTensors; i++)
+					exported.tensorDataNum[i] = outputTensorInfo.tensorDataNum[i];
+			} else {
+				LOG(IPARPI, Debug)
+					<< "IMX500 output tensor info export failed, numTensors > MaxNumTensors";
+			}
+			strncpy(exported.networkName, outputTensorInfo.networkName.c_str(),
+				sizeof(exported.networkName));
+
+			const Span<const uint8_t> tensorInfo{ (const uint8_t *)&exported,
+							      sizeof(exported) };
+			libcameraMetadata.set(libcamera::controls::rpi::Imx500OutputTensorInfo,
+					      tensorInfo);
 		}
 	}
 }

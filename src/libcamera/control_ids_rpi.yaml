@@ -54,10 +54,11 @@ controls:
       description: |
         Output tensor from the IMX500.
 
-  - Imx500OutputTensorNetwork:
-      type: string
+  - Imx500OutputTensorInfo:
+      type: uint8_t
+      size: [n]
       description: |
-        Output tensor network string.
+        Output tensor info from the IMX500.
 
   - Imx500InputTensor:
       type: uint8_t
@@ -65,9 +66,10 @@ controls:
       description: |
         Input tensor from the IMX500.
 
-  - Imx500InputTensorNetwork:
-      type: string
+  - Imx500InputTensorInfo:
+      type: uint8_t
+      size: [n]
       description: |
-        Input tensor network string.
+        Input tensor info from the IMX500.
 
 ...

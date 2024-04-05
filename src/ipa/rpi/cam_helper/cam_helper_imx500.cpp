@@ -71,6 +71,7 @@ private:
 	/* Largest long exposure scale factor given as a left shift on the frame length. */
 	static constexpr int longExposureShiftMax = 7;
 
+	void parseInferenceData(libcamera::Span<const uint8_t> buffer, ControlList &libcameraMetadata);
 	void populateMetadata(const MdParser::RegisterMap &registers,
 			      Metadata &metadata) const override;
 
@@ -128,6 +129,64 @@ void CamHelperImx500::prepare(libcamera::Span<const uint8_t> buffer, Metadata &m
 				   << parsedDeviceStatus;
 	}
 
+	parseInferenceData(buffer, libcameraMetadata);
+}
+
+std::pair<uint32_t, uint32_t> CamHelperImx500::getBlanking(Duration &exposure,
+							   Duration minFrameDuration,
+							   Duration maxFrameDuration) const
+{
+	uint32_t frameLength, exposureLines;
+	unsigned int shift = 0;
+
+	auto [vblank, hblank] = CamHelper::getBlanking(exposure, minFrameDuration,
+						       maxFrameDuration);
+
+	frameLength = mode_.height + vblank;
+	Duration lineLength = hblankToLineLength(hblank);
+
+	/*
+	 * Check if the frame length calculated needs to be setup for long
+	 * exposure mode. This will require us to use a long exposure scale
+	 * factor provided by a shift operation in the sensor.
+	 */
+	while (frameLength > frameLengthMax) {
+		if (++shift > longExposureShiftMax) {
+			shift = longExposureShiftMax;
+			frameLength = frameLengthMax;
+			break;
+		}
+		frameLength >>= 1;
+	}
+
+	if (shift) {
+		/* Account for any rounding in the scaled frame length value. */
+		frameLength <<= shift;
+		exposureLines = CamHelperImx500::exposureLines(exposure, lineLength);
+		exposureLines = std::min(exposureLines, frameLength - frameIntegrationDiff);
+		exposure = CamHelperImx500::exposure(exposureLines, lineLength);
+	}
+
+	return { frameLength - mode_.height, hblank };
+}
+
+void CamHelperImx500::getDelays(int &exposureDelay, int &gainDelay,
+				int &vblankDelay, int &hblankDelay) const
+{
+	exposureDelay = 2;
+	gainDelay = 2;
+	vblankDelay = 3;
+	hblankDelay = 3;
+}
+
+bool CamHelperImx500::sensorEmbeddedDataPresent() const
+{
+	return true;
+}
+
+void CamHelperImx500::parseInferenceData(libcamera::Span<const uint8_t> buffer,
+					 ControlList &libcameraMetadata)
+{
 	/* Inference data comes after 2 lines of embedded data. */
 	constexpr unsigned int StartLine = 2;
 	size_t bytesPerLine = (mode_.width * mode_.bitdepth) >> 3;
@@ -147,9 +206,9 @@ void CamHelperImx500::prepare(libcamera::Span<const uint8_t> buffer, Metadata &m
 	auto itOut = offsets.find(TensorType::OutputTensor);
 
 	if (itIn != offsets.end() && itOut != offsets.end()) {
-		unsigned int inputTensorOffset = itIn->second.offset;
-		unsigned int outputTensorOffset = itOut->second.offset;
-		unsigned int inputTensorSize = outputTensorOffset - inputTensorOffset;
+		const unsigned int inputTensorOffset = itIn->second.offset;
+		const unsigned int outputTensorOffset = itOut->second.offset;
+		const unsigned int inputTensorSize = outputTensorOffset - inputTensorOffset;
 		Span<const uint8_t> inputTensor;
 
 		if (itIn->second.valid) {
@@ -216,58 +275,6 @@ void CamHelperImx500::prepare(libcamera::Span<const uint8_t> buffer, Metadata &m
 					      outputTensorInfo.networkName);
 		}
 	}
-}
-
-std::pair<uint32_t, uint32_t> CamHelperImx500::getBlanking(Duration &exposure,
-							   Duration minFrameDuration,
-							   Duration maxFrameDuration) const
-{
-	uint32_t frameLength, exposureLines;
-	unsigned int shift = 0;
-
-	auto [vblank, hblank] = CamHelper::getBlanking(exposure, minFrameDuration,
-						       maxFrameDuration);
-
-	frameLength = mode_.height + vblank;
-	Duration lineLength = hblankToLineLength(hblank);
-
-	/*
-	 * Check if the frame length calculated needs to be setup for long
-	 * exposure mode. This will require us to use a long exposure scale
-	 * factor provided by a shift operation in the sensor.
-	 */
-	while (frameLength > frameLengthMax) {
-		if (++shift > longExposureShiftMax) {
-			shift = longExposureShiftMax;
-			frameLength = frameLengthMax;
-			break;
-		}
-		frameLength >>= 1;
-	}
-
-	if (shift) {
-		/* Account for any rounding in the scaled frame length value. */
-		frameLength <<= shift;
-		exposureLines = CamHelperImx500::exposureLines(exposure, lineLength);
-		exposureLines = std::min(exposureLines, frameLength - frameIntegrationDiff);
-		exposure = CamHelperImx500::exposure(exposureLines, lineLength);
-	}
-
-	return { frameLength - mode_.height, hblank };
-}
-
-void CamHelperImx500::getDelays(int &exposureDelay, int &gainDelay,
-				int &vblankDelay, int &hblankDelay) const
-{
-	exposureDelay = 2;
-	gainDelay = 2;
-	vblankDelay = 3;
-	hblankDelay = 3;
-}
-
-bool CamHelperImx500::sensorEmbeddedDataPresent() const
-{
-	return true;
 }
 
 void CamHelperImx500::populateMetadata(const MdParser::RegisterMap &registers,

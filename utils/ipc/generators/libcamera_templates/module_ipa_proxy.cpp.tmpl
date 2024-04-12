@@ -175,9 +175,9 @@ void {{proxy_name}}::recvMessage(const IPCMessage &data)
 );
 {% elif method|is_async %}
 	ASSERT(state_ == ProxyRunning);
-	proxy_.invokeMethod(&ThreadProxy::{{method.mojom_name}}, ConnectionTypeQueued,
+	proxy_.invokeMethod(&ThreadProxy::{{method.mojom_name}}, ConnectionTypeQueued
 	{%- for param in method|method_param_names -%}
-		{{param}}{{- ", " if not loop.last}}
+		, {{param}}
 	{%- endfor -%}
 );
 {%- endif %}

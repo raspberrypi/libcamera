@@ -591,31 +591,42 @@ void downscaleStreamBuffer(RPi::Stream *stream, int index)
 			else
 				downscaleInterleaved4(mem, height, src_width, stride);
 		} else if (pixFormat == formats::YUV420 || pixFormat == formats::YVU420) {
-			/*
-			 * These look "multiplanar" even when they're a single allocation,
-			 * so the following should work for everyone.
-			 */
-			void *mem1 = b.mapped->planes()[1].data();
-			void *mem2 = b.mapped->planes()[2].data();
+			/* These may look like either single or multi-planar buffers. */
+			void *mem1;
+			void *mem2;
+			if (b.mapped->planes().size() == 3) {
+				mem1 = b.mapped->planes()[1].data();
+				mem2 = b.mapped->planes()[2].data();
+			} else {
+				unsigned int ySize = height * stride;
+				mem1 = static_cast<uint8_t *>(mem) + ySize;
+				mem2 = static_cast<uint8_t *>(mem1) + ySize / 4;
+			}
 			downscalePlanar420(mem, mem1, mem2, height, src_width, stride);
 		} else if (pixFormat == formats::YUV422 || pixFormat == formats::YVU422) {
-			/*
-			 * These look "multiplanar" even when they're a single allocation,
-			 * so the following should work for everyone.
-			 */
-			void *mem1 = b.mapped->planes()[1].data();
-			void *mem2 = b.mapped->planes()[2].data();
+			/* These may look like either single or multi-planar buffers. */
+			void *mem1;
+			void *mem2;
+			if (b.mapped->planes().size() == 3) {
+				mem1 = b.mapped->planes()[1].data();
+				mem2 = b.mapped->planes()[2].data();
+			} else {
+				unsigned int ySize = height * stride;
+				mem1 = static_cast<uint8_t *>(mem) + ySize;
+				mem2 = static_cast<uint8_t *>(mem1) + ySize / 2;
+			}
 			downscalePlanar422(mem, mem1, mem2, height, src_width, stride);
 		} else if (pixFormat == formats::YUYV || pixFormat == formats::YVYU) {
 			downscaleInterleavedYuyv(mem, height, src_width, stride);
 		} else if (pixFormat == formats::UYVY || pixFormat == formats::VYUY) {
 			downscaleInterleavedUyvy(mem, height, src_width, stride);
 		} else if (pixFormat == formats::NV12 || pixFormat == formats::NV21) {
-			/*
-			 * These look "multiplanar" even when they're a single allocation,
-			 * so the following should work for everyone.
-			 */
-			void *mem1 = b.mapped->planes()[1].data();
+			/* These may look like either single or multi-planar buffers. */
+			void *mem1;
+			if (b.mapped->planes().size() == 2)
+				mem1 = b.mapped->planes()[1].data();
+			else
+				mem1 = static_cast<uint8_t *>(mem) + height * stride;
 			downscaleSemiPlanar420(mem, mem1, height, src_width, stride);
 		} else {
 			LOG(RPI, Error) << "Sw downscale unsupported for " << pixFormat;

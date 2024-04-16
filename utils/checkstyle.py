@@ -753,6 +753,7 @@ class CLangFormatter(Formatter):
 class DoxygenFormatter(Formatter):
     patterns = ('*.c', '*.cpp')
 
+    oneliner_regex = re.compile(r'^ +\* +\\(brief|param|return)\b.*\.$')
     return_regex = re.compile(r' +\* +\\return +[a-z]')
 
     @classmethod
@@ -768,6 +769,7 @@ class DoxygenFormatter(Formatter):
                 lines.append(line)
                 continue
 
+            line = cls.oneliner_regex.sub(lambda m: m.group(0)[:-1], line)
             line = cls.return_regex.sub(lambda m: m.group(0)[:-1] + m.group(0)[-1].upper(), line)
 
             if line.find('*/') != -1:

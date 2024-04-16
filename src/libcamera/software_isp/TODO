@@ -256,3 +256,14 @@ At some point, yes.
 >	}
 
 This could be handled better with DelayedControls.
+
+---
+
+12. Use DelayedControls class in ispStatsReady()
+
+> void SimpleCameraData::ispStatsReady()
+> {
+> 	swIsp_->processStats(sensor_->getControls({ V4L2_CID_ANALOGUE_GAIN,
+> 						    V4L2_CID_EXPOSURE }));
+
+You should use the DelayedControls class.

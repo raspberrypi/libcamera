@@ -39,6 +39,7 @@ libcamera_sources = files([
     'process.cpp',
     'pub_key.cpp',
     'request.cpp',
+    'shared_mem_object.cpp',
     'source_paths.cpp',
     'stream.cpp',
     'sysfs.cpp',

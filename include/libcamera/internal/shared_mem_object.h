@@ -1,85 +1,98 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later */
 /*
- * Copyright (C) 2023, Raspberry Pi Ltd
+ * Copyright (C) 2023 Raspberry Pi Ltd
+ * Copyright (C) 2024 Andrei Konovalov
+ * Copyright (C) 2024 Dennis Bonke
  *
- * shared_mem_object.h - Helper class for shared memory allocations
+ * shared_mem_object.h - Helpers for shared memory allocations
  */
 #pragma once
 
-#include <fcntl.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <string>
 #include <sys/mman.h>
-#include <sys/stat.h>
-#include <unistd.h>
+#include <type_traits>
 #include <utility>
 
 #include <libcamera/base/class.h>
 #include <libcamera/base/shared_fd.h>
+#include <libcamera/base/span.h>
 
 namespace libcamera {
 
-template<class T>
-class SharedMemObject
+class SharedMem
+{
+public:
+	SharedMem();
+
+	SharedMem(const std::string &name, std::size_t size);
+	SharedMem(SharedMem &&rhs);
+
+	virtual ~SharedMem();
+
+	SharedMem &operator=(SharedMem &&rhs);
+
+	const SharedFD &fd() const
+	{
+		return fd_;
+	}
+
+	Span<uint8_t> mem() const
+	{
+		return mem_;
+	}
+
+	explicit operator bool() const
+	{
+		return !mem_.empty();
+	}
+
+private:
+	LIBCAMERA_DISABLE_COPY(SharedMem)
+
+	SharedFD fd_;
+
+	Span<uint8_t> mem_;
+};
+
+template<class T, typename = std::enable_if_t<std::is_standard_layout<T>::value>>
+class SharedMemObject : public SharedMem
 {
 public:
 	static constexpr std::size_t kSize = sizeof(T);
 
 	SharedMemObject()
-		: obj_(nullptr)
+		: SharedMem(), obj_(nullptr)
 	{
 	}
 
 	template<class... Args>
 	SharedMemObject(const std::string &name, Args &&...args)
-		: name_(name), obj_(nullptr)
+		: SharedMem(name, kSize), obj_(nullptr)
 	{
-		void *mem;
-		int ret;
-
-		ret = memfd_create(name_.c_str(), MFD_CLOEXEC);
-		if (ret < 0)
+		if (mem().empty())
 			return;
 
-		fd_ = SharedFD(std::move(ret));
-		if (!fd_.isValid())
-			return;
-
-		ret = ftruncate(fd_.get(), kSize);
-		if (ret < 0)
-			return;
-
-		mem = mmap(nullptr, kSize, PROT_READ | PROT_WRITE, MAP_SHARED,
-			   fd_.get(), 0);
-		if (mem == MAP_FAILED)
-			return;
-
-		obj_ = new (mem) T(std::forward<Args>(args)...);
+		obj_ = new (mem().data()) T(std::forward<Args>(args)...);
 	}
 
 	SharedMemObject(SharedMemObject<T> &&rhs)
+		: SharedMem(std::move(rhs))
 	{
-		this->name_ = std::move(rhs.name_);
-		this->fd_ = std::move(rhs.fd_);
 		this->obj_ = rhs.obj_;
 		rhs.obj_ = nullptr;
 	}
 
 	~SharedMemObject()
 	{
-		if (obj_) {
+		if (obj_)
 			obj_->~T();
-			munmap(obj_, kSize);
-		}
 	}
-
-	/* Make SharedMemObject non-copyable for now. */
-	LIBCAMERA_DISABLE_COPY(SharedMemObject)
 
 	SharedMemObject<T> &operator=(SharedMemObject<T> &&rhs)
 	{
-		this->name_ = std::move(rhs.name_);
-		this->fd_ = std::move(rhs.fd_);
+		SharedMem::operator=(std::move(rhs));
 		this->obj_ = rhs.obj_;
 		rhs.obj_ = nullptr;
 		return *this;
@@ -105,19 +118,9 @@ public:
 		return *obj_;
 	}
 
-	const SharedFD &fd() const
-	{
-		return fd_;
-	}
-
-	explicit operator bool() const
-	{
-		return !!obj_;
-	}
-
 private:
-	std::string name_;
-	SharedFD fd_;
+	LIBCAMERA_DISABLE_COPY(SharedMemObject)
+
 	T *obj_;
 };
 

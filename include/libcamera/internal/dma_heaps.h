@@ -13,8 +13,6 @@
 
 namespace libcamera {
 
-namespace RPi {
-
 class DmaHeap
 {
 public:
@@ -26,7 +24,5 @@ public:
 private:
 	UniqueFD dmaHeapHandle_;
 };
-
-} /* namespace RPi */
 
 } /* namespace libcamera */

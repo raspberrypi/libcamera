@@ -25,6 +25,7 @@ libcamera_internal_headers = files([
     'device_enumerator.h',
     'device_enumerator_sysfs.h',
     'device_enumerator_udev.h',
+    'dma_heaps.h',
     'formats.h',
     'framebuffer.h',
     'ipa_manager.h',

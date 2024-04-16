@@ -12,11 +12,10 @@
 #include <libcamera/formats.h>
 
 #include "libcamera/internal/device_enumerator.h"
+#include "libcamera/internal/dma_heaps.h"
 
 #include "../common/pipeline_base.h"
 #include "../common/rpi_stream.h"
-
-#include "dma_heaps.h"
 
 using namespace std::chrono_literals;
 
@@ -87,7 +86,7 @@ public:
 	RPi::Device<Isp, 4> isp_;
 
 	/* DMAHEAP allocation helper. */
-	RPi::DmaHeap dmaHeap_;
+	DmaHeap dmaHeap_;
 	SharedFD lsTable_;
 
 	struct Config {

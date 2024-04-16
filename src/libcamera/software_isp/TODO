@@ -1,0 +1,71 @@
+1. Setting F_SEAL_SHRINK and F_SEAL_GROW after ftruncate()
+
+>> SharedMem::SharedMem(const std::string &name, std::size_t size)
+>> 	: name_(name), size_(size), mem_(nullptr)
+>>
+>> ...
+>>
+>> 	if (ftruncate(fd_.get(), size_) < 0)
+>> 		return;
+>
+> Should we set the GROW and SHRINK seals (in a separate patch) ?
+
+Yes, this can be done.
+Setting F_SEAL_SHRINK and F_SEAL_GROW after the ftruncate() call above could catch
+some potential errors related to improper access to the shared memory allocated by
+the SharedMemObject.
+
+---
+
+2. Reconsider stats sharing
+
+>>> +void SwStatsCpu::finishFrame(void)
+>>> +{
+>>> +	*sharedStats_ = stats_;
+>> 
+>> Is it more efficient to copy the stats instead of operating directly on
+>> the shared memory ?
+>
+> I inherited doing things this way from Andrey. I kept this because
+> we don't really have any synchronization with the IPA reading this.
+>
+> So the idea is to only touch this when the next set of statistics
+> is ready since we don't know when the IPA is done with accessing
+> the previous set of statistics ...
+>
+> This is both something which seems mostly a theoretic problem,
+> yet also definitely something which I think we need to fix.
+>
+> Maybe use a ringbuffer of stats buffers and pass the index into
+> the ringbuffer to the emit signal ?
+
+That would match how we deal with hardware ISPs, and I think that's a
+good idea. It will help decoupling the processing side from the IPA.
+
+---
+
+3. Remove statsReady signal
+
+> class SwStatsCpu
+> {
+> 	/**
+> 	 * \brief Signals that the statistics are ready
+> 	 */
+> 	Signal<> statsReady;
+
+But better, I wonder if the signal could be dropped completely. The
+SwStatsCpu class does not operate asynchronously. Shouldn't whoever
+calls the finishFrame() function then handle emitting the signal ?
+
+Now, the trouble is that this would be the DebayerCpu class, whose name
+doesn't indicate as a prime candidate to handle stats. However, it
+already exposes a getStatsFD() function, so we're already calling for
+trouble :-) Either that should be moved to somewhere else, or the class
+should be renamed. Considering that the class applies colour gains in
+addition to performing the interpolation, it may be more of a naming
+issue.
+
+Removing the signal and refactoring those classes doesn't have to be
+addressed now, I think it would be part of a larger refactoring
+(possibly also considering platforms that have no ISP but can produce
+stats in hardware, such as the i.MX7), but please keep it on your radar.

@@ -41,6 +41,9 @@ ipa_names = []
 
 subdirs = []
 foreach pipeline : pipelines
+    # The current implementation expects the IPA module name to match the
+    # pipeline name.
+    # \todo Make the IPA naming scheme more flexible.
     if not ipa_modules.contains(pipeline)
         continue
     endif

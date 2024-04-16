@@ -173,3 +173,86 @@ the need for performances and the need for a maintainable architecture.
 > I think this falls under the lets wait until we have a GPU
 > based SoftISP MVP/POC and then do some refactoring to see which
 > bits should go where.
+
+---
+
+8. Decouple pipeline and IPA naming
+
+> The current src/ipa/meson.build assumes the IPA name to match the
+> pipeline name. For this reason "-Dipas=simple" is used for the
+> Soft IPA module.
+
+This should be addressed.
+
+---
+
+9. Doxyfile cleanup
+
+>> diff --git a/Documentation/Doxyfile.in b/Documentation/Doxyfile.in
+>> index a86ea6c1..2be8d47b 100644
+>> --- a/Documentation/Doxyfile.in
+>> +++ b/Documentation/Doxyfile.in
+>> @@ -44,6 +44,7 @@ EXCLUDE                = @TOP_SRCDIR@/include/libcamera/base/span.h \
+>>                            @TOP_SRCDIR@/src/libcamera/pipeline/ \
+>>                            @TOP_SRCDIR@/src/libcamera/tracepoints.cpp \
+>>                            @TOP_BUILDDIR@/include/libcamera/internal/tracepoints.h \
+>> +                         @TOP_BUILDDIR@/include/libcamera/ipa/soft_ipa_interface.h \
+> Why is this needed ?
+>
+>>                            @TOP_BUILDDIR@/src/libcamera/proxy/
+>>     EXCLUDE_PATTERNS       = @TOP_BUILDDIR@/include/libcamera/ipa/*_serializer.h \
+>> diff --git a/include/libcamera/ipa/meson.build b/include/libcamera/ipa/meson.build
+>> index f3b4881c..3352d08f 100644
+>> --- a/include/libcamera/ipa/meson.build
+>> +++ b/include/libcamera/ipa/meson.build
+>> @@ -65,6 +65,7 @@ pipeline_ipa_mojom_mapping = {
+>>       'ipu3': 'ipu3.mojom',
+>>       'rkisp1': 'rkisp1.mojom',
+>>       'rpi/vc4': 'raspberrypi.mojom',
+>> +    'simple': 'soft.mojom',
+>>       'vimc': 'vimc.mojom',
+>>   }
+>>   diff --git a/include/libcamera/ipa/soft.mojom b/include/libcamera/ipa/soft.mojom
+>> new file mode 100644
+>> index 00000000..c249bd75
+>> --- /dev/null
+>> +++ b/include/libcamera/ipa/soft.mojom
+>> @@ -0,0 +1,28 @@
+>> +/* SPDX-License-Identifier: LGPL-2.1-or-later */
+>> +
+>> +/*
+>> + * \todo Document the interface and remove the related EXCLUDE_PATTERNS entry.
+> Ah that's why.
+
+Yes, because, well... all the other IPAs were doing that...
+
+> It doesn't have to be done before merging, but could you
+> address this sooner than later ?
+
+---
+
+10. Switch to libipa/algorithm.h API in processStats
+
+>> void IPASoftSimple::processStats(const ControlList &sensorControls)
+>>
+> Do you envision switching to the libipa/algorithm.h API at some point ?
+
+At some point, yes.
+
+---
+
+11. Improve handling the sensor controls which take effect with a delay
+
+> void IPASoftSimple::processStats(const ControlList &sensorControls)
+> {
+>       ...
+>	/*
+>	 * AE / AGC, use 2 frames delay to make sure that the exposure and
+>	 * the gain set have applied to the camera sensor.
+>	 */
+>	if (ignore_updates_ > 0) {
+>		--ignore_updates_;
+>		return;
+>	}
+
+This could be handled better with DelayedControls.

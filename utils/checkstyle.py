@@ -569,7 +569,7 @@ class IncludeChecker(StyleChecker):
                'limits', 'locale', 'setjmp', 'signal', 'stdarg', 'stddef',
                'stdint', 'stdio', 'stdlib', 'string', 'time', 'uchar', 'wchar',
                'wctype')
-    include_regex = re.compile('^#include <c([a-z]*)>')
+    include_regex = re.compile(r'^#include <c([a-z]*)>')
 
     def __init__(self, content):
         super().__init__()
@@ -632,7 +632,7 @@ class MesonChecker(StyleChecker):
 
 class Pep8Checker(StyleChecker):
     patterns = ('*.py',)
-    results_regex = re.compile('stdin:([0-9]+):([0-9]+)(.*)')
+    results_regex = re.compile(r'stdin:([0-9]+):([0-9]+)(.*)')
 
     def __init__(self, content):
         super().__init__()
@@ -665,7 +665,7 @@ class Pep8Checker(StyleChecker):
 
 class ShellChecker(StyleChecker):
     patterns = ('*.sh',)
-    results_line_regex = re.compile('In - line ([0-9]+):')
+    results_line_regex = re.compile(r'In - line ([0-9]+):')
 
     def __init__(self, content):
         super().__init__()
@@ -753,7 +753,7 @@ class CLangFormatter(Formatter):
 class DoxygenFormatter(Formatter):
     patterns = ('*.c', '*.cpp')
 
-    return_regex = re.compile(' +\\* +\\\\return +[a-z]')
+    return_regex = re.compile(r' +\* +\\return +[a-z]')
 
     @classmethod
     def format(cls, filename, data):
@@ -813,7 +813,7 @@ class DPointerFormatter(Formatter):
 class IncludeOrderFormatter(Formatter):
     patterns = ('*.cpp', '*.h')
 
-    include_regex = re.compile('^#include (["<])([^">]*)([">])')
+    include_regex = re.compile(r'^#include (["<])([^">]*)([">])')
 
     @classmethod
     def format(cls, filename, data):

@@ -882,6 +882,33 @@ SimpleCameraConfiguration::SimpleCameraConfiguration(Camera *camera,
 {
 }
 
+namespace {
+
+static Size adjustSize(const Size &requestedSize, const SizeRange &supportedSizes)
+{
+	ASSERT(supportedSizes.min <= supportedSizes.max);
+
+	if (supportedSizes.min == supportedSizes.max)
+		return supportedSizes.max;
+
+	unsigned int hStep = supportedSizes.hStep;
+	unsigned int vStep = supportedSizes.vStep;
+
+	if (hStep == 0)
+		hStep = supportedSizes.max.width - supportedSizes.min.width;
+	if (vStep == 0)
+		vStep = supportedSizes.max.height - supportedSizes.min.height;
+
+	Size adjusted = requestedSize.boundedTo(supportedSizes.max)
+				.expandedTo(supportedSizes.min);
+
+	return adjusted.shrunkBy(supportedSizes.min)
+		.alignedDownTo(hStep, vStep)
+		.grownBy(supportedSizes.min);
+}
+
+} /* namespace */
+
 CameraConfiguration::Status SimpleCameraConfiguration::validate()
 {
 	const CameraSensor *sensor = data_->sensor_.get();
@@ -998,10 +1025,19 @@ CameraConfiguration::Status SimpleCameraConfiguration::validate()
 		}
 
 		if (!pipeConfig_->outputSizes.contains(cfg.size)) {
+			Size adjustedSize = pipeConfig_->captureSize;
+			/*
+			 * The converter (when present) may not be able to output
+			 * a size identical to its input size. The capture size is thus
+			 * not guaranteed to be a valid output size. In such cases, use
+			 * the smaller valid output size closest to the requested.
+			 */
+			if (!pipeConfig_->outputSizes.contains(adjustedSize))
+				adjustedSize = adjustSize(cfg.size, pipeConfig_->outputSizes);
 			LOG(SimplePipeline, Debug)
 				<< "Adjusting size from " << cfg.size
-				<< " to " << pipeConfig_->captureSize;
-			cfg.size = pipeConfig_->captureSize;
+				<< " to " << adjustedSize;
+			cfg.size = adjustedSize;
 			status = Adjusted;
 		}
 

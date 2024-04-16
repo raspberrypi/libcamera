@@ -35,7 +35,7 @@ namespace libcamera {
  * \param[in] stats Pointer to the stats object to use
  */
 DebayerCpu::DebayerCpu(std::unique_ptr<SwStatsCpu> stats)
-	: stats_(std::move(stats)), gammaCorrection_(1.0)
+	: stats_(std::move(stats)), gammaCorrection_(1.0), blackLevel_(0)
 {
 	/*
 	 * Reading from uncached buffers may be very slow.
@@ -699,11 +699,16 @@ void DebayerCpu::process(FrameBuffer *input, FrameBuffer *output, DebayerParams 
 	}
 
 	/* Apply DebayerParams */
-	if (params.gamma != gammaCorrection_) {
-		for (unsigned int i = 0; i < kGammaLookupSize; i++)
-			gamma_[i] = UINT8_MAX * powf(i / (kGammaLookupSize - 1.0), params.gamma);
+	if (params.gamma != gammaCorrection_ || params.blackLevel != blackLevel_) {
+		const unsigned int blackIndex =
+			params.blackLevel * kGammaLookupSize / 256;
+		std::fill(gamma_.begin(), gamma_.begin() + blackIndex, 0);
+		const float divisor = kGammaLookupSize - blackIndex - 1.0;
+		for (unsigned int i = blackIndex; i < kGammaLookupSize; i++)
+			gamma_[i] = UINT8_MAX * powf((i - blackIndex) / divisor, params.gamma);
 
 		gammaCorrection_ = params.gamma;
+		blackLevel_ = params.blackLevel;
 	}
 
 	if (swapRedBlueGains_)

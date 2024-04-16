@@ -64,7 +64,7 @@ LOG_DEFINE_CATEGORY(SoftwareIsp)
  */
 SoftwareIsp::SoftwareIsp(PipelineHandler *pipe, const CameraSensor *sensor)
 	: debayerParams_{ DebayerParams::kGain10, DebayerParams::kGain10,
-			  DebayerParams::kGain10, 0.5f },
+			  DebayerParams::kGain10, 0.5f, 0 },
 	  dmaHeap_(DmaHeap::DmaHeapFlag::Cma | DmaHeap::DmaHeapFlag::System)
 {
 	if (!dmaHeap_.isValid()) {

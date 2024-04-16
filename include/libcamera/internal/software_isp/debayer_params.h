@@ -20,6 +20,10 @@ struct DebayerParams {
 	unsigned int gainB;
 
 	float gamma;
+	/**
+	 * \brief Level of the black point, 0..255, 0 is no correction.
+	 */
+	unsigned int blackLevel;
 };
 
 } /* namespace libcamera */

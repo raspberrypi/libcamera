@@ -267,3 +267,13 @@ This could be handled better with DelayedControls.
 > 						    V4L2_CID_EXPOSURE }));
 
 You should use the DelayedControls class.
+
+---
+
+13. Improve black level and colour gains application
+
+I think the black level should eventually be moved before debayering, and
+ideally the colour gains as well. I understand the need for optimizations to
+lower the CPU consumption, but at the same time I don't feel comfortable
+building up on top of an implementation that may work a bit more by chance than
+by correctness, as that's not very maintainable.

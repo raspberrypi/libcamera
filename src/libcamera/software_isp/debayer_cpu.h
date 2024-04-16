@@ -147,6 +147,7 @@ private:
 	bool enableInputMemcpy_;
 	bool swapRedBlueGains_;
 	float gammaCorrection_;
+	unsigned int blackLevel_;
 	unsigned int measuredFrames_;
 	int64_t frameProcessTime_;
 	/* Skip 30 frames for things to stabilize then measure 30 frames */

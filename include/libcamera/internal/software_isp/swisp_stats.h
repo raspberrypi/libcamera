@@ -35,11 +35,15 @@ struct SwIspStats {
 	/**
 	 * \brief Number of bins in the yHistogram
 	 */
-	static constexpr unsigned int kYHistogramSize = 16;
+	static constexpr unsigned int kYHistogramSize = 64;
+	/**
+	 * \brief Type of the histogram.
+	 */
+	using Histogram = std::array<uint32_t, kYHistogramSize>;
 	/**
 	 * \brief A histogram of luminance values
 	 */
-	std::array<uint32_t, kYHistogramSize> yHistogram;
+	Histogram yHistogram;
 };
 
 } /* namespace libcamera */

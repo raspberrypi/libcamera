@@ -9,6 +9,7 @@
 
 #include <stddef.h>
 
+#include <libcamera/base/flags.h>
 #include <libcamera/base/unique_fd.h>
 
 namespace libcamera {
@@ -16,7 +17,14 @@ namespace libcamera {
 class DmaHeap
 {
 public:
-	DmaHeap();
+	enum class DmaHeapFlag {
+		Cma = 1 << 0,
+		System = 1 << 1,
+	};
+
+	using DmaHeapFlags = Flags<DmaHeapFlag>;
+
+	DmaHeap(DmaHeapFlags flags = DmaHeapFlag::Cma);
 	~DmaHeap();
 	bool isValid() const { return dmaHeapHandle_.isValid(); }
 	UniqueFD alloc(const char *name, std::size_t size);
@@ -24,5 +32,7 @@ public:
 private:
 	UniqueFD dmaHeapHandle_;
 };
+
+LIBCAMERA_FLAGS_ENABLE_OPERATORS(DmaHeap::DmaHeapFlag)
 
 } /* namespace libcamera */

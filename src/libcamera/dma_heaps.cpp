@@ -19,8 +19,10 @@
 
 /**
  * \file dma_heaps.cpp
- * \brief CMA dma-heap allocator
+ * \brief dma-heap allocator
  */
+
+namespace libcamera {
 
 /*
  * /dev/dma_heap/linux,cma is the dma-heap allocator, which allows dmaheap-cma
@@ -29,40 +31,79 @@
  * Annoyingly, should the cma heap size be specified on the kernel command line
  * instead of DT, the heap gets named "reserved" instead.
  */
-static constexpr std::array<const char *, 2> heapNames = {
-	"/dev/dma_heap/linux,cma",
-	"/dev/dma_heap/reserved"
-};
 
-namespace libcamera {
+#ifndef __DOXYGEN__
+struct DmaHeapInfo {
+	DmaHeap::DmaHeapFlag type;
+	const char *deviceNodeName;
+};
+#endif
+
+static constexpr std::array<DmaHeapInfo, 3> heapInfos = { {
+	{ DmaHeap::DmaHeapFlag::Cma, "/dev/dma_heap/linux,cma" },
+	{ DmaHeap::DmaHeapFlag::Cma, "/dev/dma_heap/reserved" },
+	{ DmaHeap::DmaHeapFlag::System, "/dev/dma_heap/system" },
+} };
 
 LOG_DEFINE_CATEGORY(DmaHeap)
 
 /**
  * \class DmaHeap
- * \brief Helper class for CMA dma-heap allocations
+ * \brief Helper class for dma-heap allocations
+ *
+ * DMA heaps are kernel devices that provide an API to allocate memory from
+ * different pools called "heaps", wrap each allocated piece of memory in a
+ * dmabuf object, and return the dmabuf file descriptor to userspace. Multiple
+ * heaps can be provided by the system, with different properties for the
+ * underlying memory.
+ *
+ * This class wraps a DMA heap selected at construction time, and exposes
+ * functions to manage memory allocation.
  */
 
 /**
- * \brief Construct a DmaHeap that owns a CMA dma-heap file descriptor
- *
- * Looks for a CMA dma-heap device to use. If it fails to open any dma-heap
- * device, an invalid DmaHeap object is constructed.
- *
- * Check the new DmaHeap object with isValid before using it.
+ * \enum DmaHeap::DmaHeapFlag
+ * \brief Type of the dma-heap
+ * \var DmaHeap::Cma
+ * \brief Allocate from a CMA dma-heap, providing physically-contiguous memory
+ * \var DmaHeap::System
+ * \brief Allocate from the system dma-heap, using the page allocator
  */
-DmaHeap::DmaHeap()
+
+/**
+ * \typedef DmaHeap::DmaHeapFlags
+ * \brief A bitwise combination of DmaHeap::DmaHeapFlag values
+ */
+
+/**
+ * \brief Construct a DmaHeap of a given type
+ * \param[in] type The type(s) of the dma-heap(s) to allocate from
+ *
+ * The DMA heap type is selected with the \a type parameter, which defaults to
+ * the CMA heap. If no heap of the given type can be accessed, the constructed
+ * DmaHeap instance is invalid as indicated by the isValid() function.
+ *
+ * Multiple types can be selected by combining type flags, in which case the
+ * constructed DmaHeap will match one of the types. If the system provides
+ * multiple heaps that match the requested types, which heap is used is
+ * undefined.
+ */
+DmaHeap::DmaHeap(DmaHeapFlags type)
 {
-	for (const char *name : heapNames) {
-		int ret = ::open(name, O_RDWR | O_CLOEXEC, 0);
+	for (const auto &info : heapInfos) {
+		if (!(type & info.type))
+			continue;
+
+		int ret = ::open(info.deviceNodeName, O_RDWR | O_CLOEXEC, 0);
 		if (ret < 0) {
 			ret = errno;
 			LOG(DmaHeap, Debug)
-				<< "Failed to open " << name << ": "
+				<< "Failed to open " << info.deviceNodeName << ": "
 				<< strerror(ret);
 			continue;
 		}
 
+		LOG(DmaHeap, Debug) << "Using " << info.deviceNodeName;
 		dmaHeapHandle_ = UniqueFD(ret);
 		break;
 	}

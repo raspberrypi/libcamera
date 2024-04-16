@@ -23,7 +23,7 @@ template<class T>
 class SharedMemObject
 {
 public:
-	static constexpr std::size_t SIZE = sizeof(T);
+	static constexpr std::size_t kSize = sizeof(T);
 
 	SharedMemObject()
 		: obj_(nullptr)
@@ -45,11 +45,11 @@ public:
 		if (!fd_.isValid())
 			return;
 
-		ret = ftruncate(fd_.get(), SIZE);
+		ret = ftruncate(fd_.get(), kSize);
 		if (ret < 0)
 			return;
 
-		mem = mmap(nullptr, SIZE, PROT_READ | PROT_WRITE, MAP_SHARED,
+		mem = mmap(nullptr, kSize, PROT_READ | PROT_WRITE, MAP_SHARED,
 			   fd_.get(), 0);
 		if (mem == MAP_FAILED)
 			return;
@@ -69,7 +69,7 @@ public:
 	{
 		if (obj_) {
 			obj_->~T();
-			munmap(obj_, SIZE);
+			munmap(obj_, kSize);
 		}
 	}
 

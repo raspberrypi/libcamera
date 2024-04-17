@@ -56,7 +56,7 @@ private:
 	Span<uint8_t> mem_;
 };
 
-template<class T, typename = std::enable_if_t<std::is_standard_layout<T>::value>>
+template<class T>
 class SharedMemObject : public SharedMem
 {
 public:

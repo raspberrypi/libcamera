@@ -1,0 +1,28 @@
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
+
+/*
+ * \todo Document the interface and remove the related EXCLUDE_PATTERNS entry.
+ */
+
+module ipa.soft;
+
+import "include/libcamera/ipa/core.mojom";
+
+interface IPASoftInterface {
+	init(libcamera.IPASettings settings,
+	     libcamera.SharedFD fdStats,
+	     libcamera.SharedFD fdParams,
+	     libcamera.ControlInfoMap sensorCtrlInfoMap)
+		=> (int32 ret);
+	start() => (int32 ret);
+	stop();
+	configure(libcamera.ControlInfoMap sensorCtrlInfoMap)
+		=> (int32 ret);
+
+	[async] processStats(libcamera.ControlList sensorControls);
+};
+
+interface IPASoftEventInterface {
+	setSensorControls(libcamera.ControlList sensorControls);
+	setIspParams();
+};

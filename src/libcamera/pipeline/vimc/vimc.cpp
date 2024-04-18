@@ -244,7 +244,7 @@ int PipelineHandlerVimc::configure(Camera *camera, CameraConfiguration *config)
 
 	/* The scaler hardcodes a x3 scale-up ratio. */
 	V4L2SubdeviceFormat subformat = {};
-	subformat.mbus_code = MEDIA_BUS_FMT_SGRBG8_1X8;
+	subformat.code = MEDIA_BUS_FMT_SGRBG8_1X8;
 	subformat.size = { cfg.size.width / 3, cfg.size.height / 3 };
 
 	ret = data->sensor_->setFormat(&subformat);
@@ -255,7 +255,7 @@ int PipelineHandlerVimc::configure(Camera *camera, CameraConfiguration *config)
 	if (ret)
 		return ret;
 
-	subformat.mbus_code = pixelformats.find(cfg.pixelFormat)->second;
+	subformat.code = pixelformats.find(cfg.pixelFormat)->second;
 	ret = data->debayer_->setFormat(1, &subformat);
 	if (ret)
 		return ret;

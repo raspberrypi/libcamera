@@ -12,10 +12,15 @@ endif
 lc_compliance_enabled = true
 
 lc_compliance_sources = files([
-    'capture_test.cpp',
     'environment.cpp',
+    'helpers/capture.cpp',
     'main.cpp',
-    'simple_capture.cpp',
+    'tests/capture_test.cpp',
+])
+
+lc_compliance_includes = ([
+    include_directories('.'),
+    include_directories('helpers/')
 ])
 
 lc_compliance  = executable('lc-compliance', lc_compliance_sources,
@@ -27,5 +32,6 @@ lc_compliance  = executable('lc-compliance', lc_compliance_sources,
                                 libevent,
                                 libgtest,
                             ],
+                            include_directories : lc_compliance_includes,
                             install : true,
                             install_tag : 'bin-devel')

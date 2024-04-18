@@ -12,11 +12,10 @@
 #include <libcamera/formats.h>
 
 #include "libcamera/internal/device_enumerator.h"
+#include "libcamera/internal/dma_heaps.h"
 
 #include "../common/pipeline_base.h"
 #include "../common/rpi_stream.h"
-
-#include "dma_heaps.h"
 
 using namespace std::chrono_literals;
 
@@ -87,7 +86,7 @@ public:
 	RPi::Device<Isp, 4> isp_;
 
 	/* DMAHEAP allocation helper. */
-	RPi::DmaHeap dmaHeap_;
+	DmaHeap dmaHeap_;
 	SharedFD lsTable_;
 
 	struct Config {
@@ -472,7 +471,7 @@ CameraConfiguration::Status Vc4CameraData::platformValidate(RPi::RPiCameraConfig
 		BayerFormat rawBayer = BayerFormat::fromPixelFormat(rawStream->pixelFormat);
 
 		/* Apply the sensor bitdepth. */
-		rawBayer.bitDepth = BayerFormat::fromMbusCode(rpiConfig->sensorFormat_.mbus_code).bitDepth;
+		rawBayer.bitDepth = BayerFormat::fromMbusCode(rpiConfig->sensorFormat_.code).bitDepth;
 
 		/* Default to CSI2 packing if the user request is unsupported. */
 		if (rawBayer.packing != BayerFormat::Packing::CSI2 &&
@@ -480,6 +479,17 @@ CameraConfiguration::Status Vc4CameraData::platformValidate(RPi::RPiCameraConfig
 			rawBayer.packing = BayerFormat::Packing::CSI2;
 
 		PixelFormat rawFormat = rawBayer.toPixelFormat();
+
+		/*
+		 * Try for an unpacked format if a packed one wasn't available.
+		 * This catches 8 (and 16) bit formats which would otherwise
+		 * fail.
+		 */
+		if (!rawFormat.isValid() && rawBayer.packing != BayerFormat::Packing::None) {
+			rawBayer.packing = BayerFormat::Packing::None;
+			rawFormat = rawBayer.toPixelFormat();
+		}
+
 		if (rawStream->pixelFormat != rawFormat ||
 		    rawStream->size != rpiConfig->sensorFormat_.size) {
 			rawStream->pixelFormat = rawFormat;

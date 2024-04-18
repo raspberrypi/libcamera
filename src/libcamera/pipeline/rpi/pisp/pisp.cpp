@@ -26,6 +26,7 @@
 #include <libcamera/formats.h>
 
 #include "libcamera/internal/device_enumerator.h"
+#include "libcamera/internal/shared_mem_object.h"
 
 #include "libpisp/backend/backend.hpp"
 #include "libpisp/common/logging.hpp"
@@ -36,7 +37,6 @@
 
 #include "../common/pipeline_base.h"
 #include "../common/rpi_stream.h"
-#include "../common/shared_mem_object.h"
 
 namespace libcamera {
 
@@ -98,9 +98,9 @@ unsigned int bayerToMbusCode(const BayerFormat &bayer)
 	return 0;
 }
 
-uint32_t mbusCodeUnpacked16(unsigned int mbus_code)
+uint32_t mbusCodeUnpacked16(unsigned int code)
 {
-	BayerFormat bayer = BayerFormat::fromMbusCode(mbus_code);
+	BayerFormat bayer = BayerFormat::fromMbusCode(code);
 	BayerFormat bayer16(bayer.order, 16, BayerFormat::Packing::None);
 
 	return bayerToMbusCode(bayer16);
@@ -370,6 +370,28 @@ void do32BitConversion(void *mem, unsigned int width, unsigned int height,
 #endif
 }
 
+void do16BitEndianSwap([[maybe_unused]] void *mem, [[maybe_unused]] unsigned int width,
+		       [[maybe_unused]] unsigned int height, [[maybe_unused]] unsigned int stride)
+{
+#if __aarch64__
+	for (unsigned int j = 0; j < height; j++) {
+		uint8_t *ptr = (uint8_t *)mem + j * stride;
+		uint64_t count = (width + 7) / 8;
+
+		asm volatile("1: \n"
+				"ld1 {v1.16b}, [%[ptr]] \n"
+				"rev16 v1.16b, v1.16b \n"
+				"st1 {v1.16b}, [%[ptr]], #16 \n"
+				"subs %[count], %[count], #1 \n"
+				"b.gt 1b \n"
+				: [count]"+r" (count), [ptr]"+r" (ptr)
+				:
+				: "cc", "v1", "memory"
+				);
+	}
+#endif
+}
+
 void downscaleInterleaved3(void *mem, unsigned int height, unsigned int src_width,
 			   unsigned int stride)
 {
@@ -569,31 +591,42 @@ void downscaleStreamBuffer(RPi::Stream *stream, int index)
 			else
 				downscaleInterleaved4(mem, height, src_width, stride);
 		} else if (pixFormat == formats::YUV420 || pixFormat == formats::YVU420) {
-			/*
-			 * These look "multiplanar" even when they're a single allocation,
-			 * so the following should work for everyone.
-			 */
-			void *mem1 = b.mapped->planes()[1].data();
-			void *mem2 = b.mapped->planes()[2].data();
+			/* These may look like either single or multi-planar buffers. */
+			void *mem1;
+			void *mem2;
+			if (b.mapped->planes().size() == 3) {
+				mem1 = b.mapped->planes()[1].data();
+				mem2 = b.mapped->planes()[2].data();
+			} else {
+				unsigned int ySize = height * stride;
+				mem1 = static_cast<uint8_t *>(mem) + ySize;
+				mem2 = static_cast<uint8_t *>(mem1) + ySize / 4;
+			}
 			downscalePlanar420(mem, mem1, mem2, height, src_width, stride);
 		} else if (pixFormat == formats::YUV422 || pixFormat == formats::YVU422) {
-			/*
-			 * These look "multiplanar" even when they're a single allocation,
-			 * so the following should work for everyone.
-			 */
-			void *mem1 = b.mapped->planes()[1].data();
-			void *mem2 = b.mapped->planes()[2].data();
+			/* These may look like either single or multi-planar buffers. */
+			void *mem1;
+			void *mem2;
+			if (b.mapped->planes().size() == 3) {
+				mem1 = b.mapped->planes()[1].data();
+				mem2 = b.mapped->planes()[2].data();
+			} else {
+				unsigned int ySize = height * stride;
+				mem1 = static_cast<uint8_t *>(mem) + ySize;
+				mem2 = static_cast<uint8_t *>(mem1) + ySize / 2;
+			}
 			downscalePlanar422(mem, mem1, mem2, height, src_width, stride);
 		} else if (pixFormat == formats::YUYV || pixFormat == formats::YVYU) {
 			downscaleInterleavedYuyv(mem, height, src_width, stride);
 		} else if (pixFormat == formats::UYVY || pixFormat == formats::VYUY) {
 			downscaleInterleavedUyvy(mem, height, src_width, stride);
 		} else if (pixFormat == formats::NV12 || pixFormat == formats::NV21) {
-			/*
-			 * These look "multiplanar" even when they're a single allocation,
-			 * so the following should work for everyone.
-			 */
-			void *mem1 = b.mapped->planes()[1].data();
+			/* These may look like either single or multi-planar buffers. */
+			void *mem1;
+			if (b.mapped->planes().size() == 2)
+				mem1 = b.mapped->planes()[1].data();
+			else
+				mem1 = static_cast<uint8_t *>(mem) + height * stride;
 			downscaleSemiPlanar420(mem, mem1, height, src_width, stride);
 		} else {
 			LOG(RPI, Error) << "Sw downscale unsupported for " << pixFormat;
@@ -706,8 +739,8 @@ public:
 	const libpisp::PiSPVariant &pispVariant_;
 
 	/* Frontend/Backend objects shared with the IPA. */
-	RPi::SharedMemObject<FrontEnd> fe_;
-	RPi::SharedMemObject<BackEnd> be_;
+	SharedMemObject<FrontEnd> fe_;
+	SharedMemObject<BackEnd> be_;
 	bool beEnabled_;
 
 	std::unique_ptr<V4L2Subdevice> csi2Subdev_;
@@ -873,9 +906,9 @@ bool PipelineHandlerPiSP::match(DeviceEnumerator *enumerator)
 			PiSPCameraData *pisp =
 				static_cast<PiSPCameraData *>(cameraData.get());
 
-			pisp->fe_ = RPi::SharedMemObject<FrontEnd>
+			pisp->fe_ = SharedMemObject<FrontEnd>
 					("pisp_frontend", true, pisp->pispVariant_);
-			pisp->be_ = RPi::SharedMemObject<BackEnd>
+			pisp->be_ = SharedMemObject<BackEnd>
 					("pisp_backend", BackEnd::Config({}), pisp->pispVariant_);
 
 			if (!pisp->fe_.fd().isValid() || !pisp->be_.fd().isValid()) {
@@ -1026,7 +1059,7 @@ int PipelineHandlerPiSP::platformRegister(std::unique_ptr<RPi::CameraData> &came
 	MediaEntity *ispStitchInput = isp->getEntityByName("pispbe-stitch_input");
 
 	/* Locate and open the cfe video streams. */
-	data->cfe_[Cfe::Output0] = RPi::Stream("CFE Image", cfeImage);
+	data->cfe_[Cfe::Output0] = RPi::Stream("CFE Image", cfeImage, StreamFlag::RequiresMmap);
 	data->cfe_[Cfe::Embedded] = RPi::Stream("CFE Embedded", cfeEmbedded);
 	data->cfe_[Cfe::Stats] = RPi::Stream("CFE Stats", cfeStats);
 	data->cfe_[Cfe::Config] = RPi::Stream("CFE Config", cfeConfig,
@@ -1377,7 +1410,7 @@ int PiSPCameraData::platformConfigure(const RPi::RPiCameraConfiguration *rpiConf
 		 * mbus code right at the start.
 		 */
 		V4L2SubdeviceFormat sensorFormatMod = rpiConfig->sensorFormat_;
-		sensorFormatMod.mbus_code = mbusCodeUnpacked16(sensorFormatMod.mbus_code);
+		sensorFormatMod.code = mbusCodeUnpacked16(sensorFormatMod.code);
 		cfeFormat = RPi::PipelineHandlerBase::toV4L2DeviceFormat(cfe,
 									 sensorFormatMod,
 									 BayerFormat::Packing::PISP1);
@@ -1386,6 +1419,18 @@ int PiSPCameraData::platformConfigure(const RPi::RPiCameraConfiguration *rpiConf
 		rawStreams[0].cfg->setStream(&cfe_[Cfe::Output0]);
 		cfe_[Cfe::Output0].setFlags(StreamFlag::External);
 		cfeFormat = rawStreams[0].format;
+	}
+
+	/*
+	 * If the sensor output is 16-bits, we must endian swap the buffer
+	 * contents to account for the HW missing this feature.
+	 */
+	cfe_[Cfe::Output0].clearFlags(StreamFlag::Needs16bitEndianSwap);
+	if (MediaBusFormatInfo::info(rpiConfig->sensorFormat_.code).bitsPerPixel == 16) {
+		cfe_[Cfe::Output0].setFlags(StreamFlag::Needs16bitEndianSwap);
+		LOG(RPI, Warning)
+			<< "The sensor is configured for a 16-bit output, statistics"
+			<< "  will not be correct. You must use manual camera settings.";
 	}
 
 	ret = cfe->setFormat(&cfeFormat);
@@ -1628,6 +1673,21 @@ void PiSPCameraData::cfeBufferDequeue(FrameBuffer *buffer)
 	job.buffers[stream] = buffer;
 
 	if (stream == &cfe_[Cfe::Output0]) {
+		/* Do an endian swap if needed. */
+		if (stream->getFlags() & StreamFlag::Needs16bitEndianSwap) {
+			const unsigned int stride = stream->configuration().stride;
+			const unsigned int width = stream->configuration().size.width;
+			const unsigned int height = stream->configuration().size.height;
+			const RPi::BufferObject &b = stream->getBuffer(index);
+
+			ASSERT(b.mapped);
+			void *mem = b.mapped->planes()[0].data();
+
+			dmabufSyncStart(buffer->planes()[0].fd);
+			do16BitEndianSwap(mem, width, height, stride);
+			dmabufSyncEnd(buffer->planes()[0].fd);
+		}
+
 		/*
 		 * Lookup the sensor controls used for this frame sequence from
 		 * DelayedControl and queue them along with the frame buffer.
@@ -2081,7 +2141,7 @@ int PiSPCameraData::configureEntities(V4L2SubdeviceFormat sensorFormat,
 	}
 
 	V4L2SubdeviceFormat feFormat = sensorFormat;
-	feFormat.mbus_code = mbusCodeUnpacked16(sensorFormat.mbus_code);
+	feFormat.code = mbusCodeUnpacked16(sensorFormat.code);
 	ret = feSubdev_->setFormat(feVideoSinkPad, &feFormat);
 	if (ret)
 		return ret;
@@ -2094,7 +2154,7 @@ int PiSPCameraData::configureEntities(V4L2SubdeviceFormat sensorFormat,
 	cfe_[Cfe::Output0].dev()->getFormat(&feOutputFormat);
 	BayerFormat feOutputBayer = BayerFormat::fromV4L2PixelFormat(feOutputFormat.fourcc);
 
-	feFormat.mbus_code = bayerToMbusCode(feOutputBayer);
+	feFormat.code = bayerToMbusCode(feOutputBayer);
 	ret = feSubdev_->setFormat(feVideo0SourcePad, &feFormat);
 
 	return ret;

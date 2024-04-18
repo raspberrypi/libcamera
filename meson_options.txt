@@ -27,7 +27,7 @@ option('gstreamer',
 
 option('ipas',
         type : 'array',
-        choices : ['ipu3', 'rkisp1', 'rpi/pisp', 'rpi/vc4', 'vimc'],
+        choices : ['ipu3', 'rkisp1', 'rpi/pisp', 'rpi/vc4', 'simple', 'vimc'],
         description : 'Select which IPA modules to build')
 
 option('lc-compliance',
@@ -43,6 +43,7 @@ option('pipelines',
             'auto',
             'imx8-isi',
             'ipu3',
+            'mali-c55',
             'rkisp1',
             'rpi/pisp',
             'rpi/vc4',
@@ -54,7 +55,7 @@ option('pipelines',
 
 option('pycamera',
         type : 'feature',
-        value : 'disabled',
+        value : 'auto',
         description : 'Enable libcamera Python bindings (experimental)')
 
 option('qcam',

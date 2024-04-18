@@ -521,6 +521,16 @@ double strtod(const char *__restrict nptr, char **__restrict endptr)
 #endif
 }
 
+/**
+ * \fn to_underlying(Enum e)
+ * \brief Convert an enumeration to its underlygin type
+ * \param[in] e Enumeration value to convert
+ *
+ * This function is equivalent to the C++23 std::to_underlying().
+ *
+ * \return The value of e converted to its underlying type
+ */
+
 } /* namespace utils */
 
 #ifndef __DOXYGEN__

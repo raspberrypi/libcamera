@@ -33,7 +33,7 @@ LOG_DEFINE_CATEGORY(Formats)
  * used in pipeline handlers.
  *
  * \var PixelFormatInfo::name
- * \brief The format name as a human-readable string, used as the test
+ * \brief The format name as a human-readable string, used as the text
  * representation of the PixelFormat
  *
  * \var PixelFormatInfo::format
@@ -49,9 +49,9 @@ LOG_DEFINE_CATEGORY(Formats)
  * \var PixelFormatInfo::bitsPerPixel
  * \brief The average number of bits per pixel
  *
- * The number per pixel averages the total number of bits for all colour
- * components over the whole image, excluding any padding bits or padding
- * pixels.
+ * The number of bits per pixel averages the total number of bits for all
+ * colour components over the whole image, excluding any padding bits or
+ * padding pixels.
  *
  * For formats that store pixels with bit padding within words, only the
  * effective bits are taken into account. For instance, 12-bit Bayer data
@@ -284,7 +284,7 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.name = "RGB161616",
 		.format = formats::RGB161616,
 		.v4l2Formats = { V4L2PixelFormat(V4L2_PIX_FMT_BGR48), },
-		.bitsPerPixel = 24,
+		.bitsPerPixel = 48,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
 		.packed = false,
 		.pixelsPerGroup = 1,
@@ -551,7 +551,7 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.name = "MONO_PISP_COMP1",
 		.format = formats::MONO_PISP_COMP1,
 		.v4l2Formats = { V4L2PixelFormat(V4L2_PIX_FMT_PISP_COMP1_MONO), },
-		.bitsPerPixel = 16,
+		.bitsPerPixel = 8,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 		.packed = true,
 		.pixelsPerGroup = 1,
@@ -920,41 +920,41 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.pixelsPerGroup = 25,
 		.planes = {{ { 32, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
-	{ formats::BGGR16_PISP_COMP1, {
-		.name = "BGGR16_PISP_COMP1",
-		.format = formats::BGGR16_PISP_COMP1,
+	{ formats::BGGR_PISP_COMP1, {
+		.name = "BGGR_PISP_COMP1",
+		.format = formats::BGGR_PISP_COMP1,
 		.v4l2Formats = { V4L2PixelFormat(V4L2_PIX_FMT_PISP_COMP1_BGGR), },
-		.bitsPerPixel = 16,
+		.bitsPerPixel = 8,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = true,
 		.pixelsPerGroup = 2,
 		.planes = {{ { 2, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
-	{ formats::GBRG16_PISP_COMP1, {
-		.name = "GBRG16_PISP_COMP1",
-		.format = formats::GBRG16_PISP_COMP1,
+	{ formats::GBRG_PISP_COMP1, {
+		.name = "GBRG_PISP_COMP1",
+		.format = formats::GBRG_PISP_COMP1,
 		.v4l2Formats = { V4L2PixelFormat(V4L2_PIX_FMT_PISP_COMP1_GBRG), },
-		.bitsPerPixel = 16,
+		.bitsPerPixel = 8,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = true,
 		.pixelsPerGroup = 2,
 		.planes = {{ { 2, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
-	{ formats::GRBG16_PISP_COMP1, {
-		.name = "GRBG16_PISP_COMP1",
-		.format = formats::GRBG16_PISP_COMP1,
+	{ formats::GRBG_PISP_COMP1, {
+		.name = "GRBG_PISP_COMP1",
+		.format = formats::GRBG_PISP_COMP1,
 		.v4l2Formats = { V4L2PixelFormat(V4L2_PIX_FMT_PISP_COMP1_GRBG), },
-		.bitsPerPixel = 16,
+		.bitsPerPixel = 8,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = true,
 		.pixelsPerGroup = 2,
 		.planes = {{ { 2, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
-	{ formats::RGGB16_PISP_COMP1, {
-		.name = "RGGB16_PISP_COMP1",
-		.format = formats::RGGB16_PISP_COMP1,
+	{ formats::RGGB_PISP_COMP1, {
+		.name = "RGGB_PISP_COMP1",
+		.format = formats::RGGB_PISP_COMP1,
 		.v4l2Formats = { V4L2PixelFormat(V4L2_PIX_FMT_PISP_COMP1_RGGB), },
-		.bitsPerPixel = 16,
+		.bitsPerPixel = 8,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 		.packed = true,
 		.pixelsPerGroup = 2,
@@ -1066,7 +1066,7 @@ unsigned int PixelFormatInfo::stride(unsigned int width, unsigned int plane,
 		return 0;
 	}
 
-	if (plane > planes.size() || !planes[plane].bytesPerGroup) {
+	if (plane >= planes.size() || !planes[plane].bytesPerGroup) {
 		LOG(Formats, Warning) << "Invalid plane index, stride is zero";
 		return 0;
 	}

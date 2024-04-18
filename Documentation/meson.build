@@ -80,6 +80,7 @@ if sphinx.found()
         'lens_driver_requirements.rst',
         'python-bindings.rst',
         'sensor_driver_requirements.rst',
+        'software-isp-benchmarking.rst',
        '../README.rst',
     ]
 

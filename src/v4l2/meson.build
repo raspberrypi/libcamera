@@ -24,6 +24,7 @@ v4l2_compat_cpp_args = [
     '-U_FILE_OFFSET_BITS',
     '-D_FILE_OFFSET_BITS=32',
     '-D_LARGEFILE64_SOURCE',
+    '-U_TIME_BITS',
     '-fvisibility=hidden',
 ]
 

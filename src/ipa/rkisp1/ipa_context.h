@@ -20,6 +20,13 @@ namespace libcamera {
 
 namespace ipa::rkisp1 {
 
+struct IPAHwSettings {
+	unsigned int numAeCells;
+	unsigned int numHistogramBins;
+	unsigned int numHistogramWeights;
+	unsigned int numGammaOutSamples;
+};
+
 struct IPASessionConfiguration {
 	struct {
 		struct rkisp1_cif_isp_window measureWindow;
@@ -44,10 +51,6 @@ struct IPASessionConfiguration {
 		utils::Duration lineDuration;
 		Size size;
 	} sensor;
-
-	struct {
-		rkisp1_cif_isp_version revision;
-	} hw;
 
 	bool raw;
 };
@@ -143,6 +146,7 @@ struct IPAFrameContext : public FrameContext {
 };
 
 struct IPAContext {
+	const IPAHwSettings *hw;
 	IPASessionConfiguration configuration;
 	IPAActiveState activeState;
 

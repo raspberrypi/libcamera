@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-or-later
 # Copyright (C) 2018, Google Inc.
 #
@@ -168,6 +168,12 @@ def parse_diff(diff):
             hunk = DiffHunk(line)
 
         elif hunk is not None:
+            # Work around https://github.com/python/cpython/issues/46395
+            # See https://www.gnu.org/software/diffutils/manual/html_node/Incomplete-Lines.html
+            if line[-1] != '\n':
+                hunk.append(line + '\n')
+                line = '\\ No newline at end of file\n'
+
             hunk.append(line)
 
     if hunk:
@@ -471,6 +477,7 @@ class TrailersChecker(CommitChecker):
     known_trailers = {
         'Acked-by': email_regex,
         'Bug': link_regex,
+        'Co-developed-by': email_regex,
         'Fixes': commit_regex,
         'Link': link_regex,
         'Reported-by': validate_reported_by,
@@ -588,7 +595,7 @@ class IncludeChecker(StyleChecker):
 
 
 class LogCategoryChecker(StyleChecker):
-    log_regex = re.compile('\\bLOG\((Debug|Info|Warning|Error|Fatal)\)')
+    log_regex = re.compile(r'\bLOG\((Debug|Info|Warning|Error|Fatal)\)')
     patterns = ('*.cpp',)
 
     def __init__(self, content):

@@ -351,7 +351,10 @@ ControlValue CaptureScript::parseRectangles()
 	}
 
 	ControlValue controlValue;
-	controlValue.set(Span<const Rectangle>(rectangles));
+	if (rectangles.size() == 1)
+		controlValue.set(rectangles.at(0));
+	else
+		controlValue.set(Span<const Rectangle>(rectangles));
 
 	return controlValue;
 }

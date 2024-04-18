@@ -365,7 +365,7 @@ int RkISP1Path::configure(const StreamConfiguration &config,
 	 * The configuration has been validated, the pixel format is guaranteed
 	 * to be supported and thus found in formatToMediaBus.
 	 */
-	ispFormat.mbus_code = formatToMediaBus.at(config.pixelFormat);
+	ispFormat.code = formatToMediaBus.at(config.pixelFormat);
 
 	ret = resizer_->setFormat(1, &ispFormat);
 	if (ret < 0)

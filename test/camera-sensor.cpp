@@ -100,7 +100,7 @@ protected:
 								  MEDIA_BUS_FMT_SBGGR10_1X10,
 								  MEDIA_BUS_FMT_BGR888_1X24 },
 								Size(1024, 768));
-		if (format.mbus_code != MEDIA_BUS_FMT_SBGGR10_1X10 ||
+		if (format.code != MEDIA_BUS_FMT_SBGGR10_1X10 ||
 		    format.size != Size(4096, 2160)) {
 			cerr << "Failed to get a suitable format, expected 4096x2160-0x"
 			     << utils::hex(MEDIA_BUS_FMT_SBGGR10_1X10)

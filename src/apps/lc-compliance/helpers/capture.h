@@ -13,14 +13,14 @@
 
 #include "../common/event_loop.h"
 
-class SimpleCapture
+class Capture
 {
 public:
 	void configure(libcamera::StreamRole role);
 
 protected:
-	SimpleCapture(std::shared_ptr<libcamera::Camera> camera);
-	virtual ~SimpleCapture();
+	Capture(std::shared_ptr<libcamera::Camera> camera);
+	virtual ~Capture();
 
 	void start();
 	void stop();
@@ -35,10 +35,10 @@ protected:
 	std::vector<std::unique_ptr<libcamera::Request>> requests_;
 };
 
-class SimpleCaptureBalanced : public SimpleCapture
+class CaptureBalanced : public Capture
 {
 public:
-	SimpleCaptureBalanced(std::shared_ptr<libcamera::Camera> camera);
+	CaptureBalanced(std::shared_ptr<libcamera::Camera> camera);
 
 	void capture(unsigned int numRequests);
 
@@ -51,10 +51,10 @@ private:
 	unsigned int captureLimit_;
 };
 
-class SimpleCaptureUnbalanced : public SimpleCapture
+class CaptureUnbalanced : public Capture
 {
 public:
-	SimpleCaptureUnbalanced(std::shared_ptr<libcamera::Camera> camera);
+	CaptureUnbalanced(std::shared_ptr<libcamera::Camera> camera);
 
 	void capture(unsigned int numRequests);
 

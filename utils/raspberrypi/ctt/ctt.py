@@ -350,7 +350,7 @@ class Camera:
         alsc_out = alsc_all(self, do_alsc_colour, plot)
         cal_cr_list, cal_cb_list, luminance_lut, av_corn = alsc_out
         """
-        write ouput to json and finish if not do_alsc_colour
+        write output to json and finish if not do_alsc_colour
         """
         if not do_alsc_colour:
             self.json['rpi.alsc']['luminance_lut'] = luminance_lut

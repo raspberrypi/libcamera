@@ -403,10 +403,15 @@ def find_macbeth(img, mac_config):
     # nothing more is tried as this is a high enough confidence to ensure
     # reliable macbeth square centre placement.
 
+    # Keep a list that will include this and any brightened up versions of
+    # the image for reuse.
+    all_images = [img]
+
     for brightness in [2, 4]:
         if cor >= 0.75:
             break
         img_br = cv2.convertScaleAbs(img, alpha=brightness, beta=0)
+        all_images.append(img_br)
         cor_b, mac_b, coords_b, ret_b = get_macbeth_chart(img_br, ref_data)
         if cor_b > cor:
             cor, mac, coords, ret = cor_b, mac_b, coords_b, ret_b
@@ -456,23 +461,24 @@ def find_macbeth(img, mac_config):
         w_inc = int(w * pair['inc'])
         h_inc = int(h * pair['inc'])
 
-        loop = ((1 - pair['sel']) / pair['inc']) + 1
+        loop = int(((1 - pair['sel']) / pair['inc']) + 1)
         # For each subselection, look for a macbeth chart
-        for i in range(loop):
-            for j in range(loop):
-                w_s, h_s = i * w_inc, j * h_inc
-                img_sel = img[w_s:w_s + w_sel, h_s:h_s + h_sel]
-                cor_ij, mac_ij, coords_ij, ret_ij = get_macbeth_chart(img_sel, ref_data)
+        for img_br in all_images:
+            for i in range(loop):
+                for j in range(loop):
+                    w_s, h_s = i * w_inc, j * h_inc
+                    img_sel = img_br[w_s:w_s + w_sel, h_s:h_s + h_sel]
+                    cor_ij, mac_ij, coords_ij, ret_ij = get_macbeth_chart(img_sel, ref_data)
 
-                # If the correlation is better than the best then record the
-                # scale and current subselection at which macbeth chart was
-                # found. Also record the coordinates, macbeth chart and message.
-                if cor_ij > cor:
-                    cor = cor_ij
-                    mac, coords, ret = mac_ij, coords_ij, ret_ij
-                    ii, jj = i, j
-                    w_best, h_best = w_inc, h_inc
-                    d_best = index + 1
+                    # If the correlation is better than the best then record the
+                    # scale and current subselection at which macbeth chart was
+                    # found. Also record the coordinates, macbeth chart and message.
+                    if cor_ij > cor:
+                        cor = cor_ij
+                        mac, coords, ret = mac_ij, coords_ij, ret_ij
+                        ii, jj = i, j
+                        w_best, h_best = w_inc, h_inc
+                        d_best = index + 1
 
     # Transform coordinates from subselection to original image
     if ii != -1:

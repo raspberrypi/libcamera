@@ -277,7 +277,9 @@ void Agc::process(IPAContext &context, [[maybe_unused]] const uint32_t frame,
 	const rkisp1_cif_isp_stat *params = &stats->params;
 	ASSERT(stats->meas_type & RKISP1_CIF_ISP_STAT_AUTOEXP);
 
-	Histogram hist({ params->hist.hist_bins, context.hw->numHistogramBins });
+	/* The lower 4 bits are fractional and meant to be discarded. */
+	Histogram hist({ params->hist.hist_bins, context.hw->numHistogramBins },
+		       [](uint32_t x) { return x >> 4; });
 	expMeans_ = { params->ae.exp_mean, context.hw->numAeCells };
 
 	/*

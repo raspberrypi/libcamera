@@ -43,7 +43,6 @@ private:
 
 	void signalFence();
 
-	std::unique_ptr<Fence> fence_;
 	EventDispatcher *dispatcher_;
 	UniqueFD eventFd_;
 	UniqueFD eventFd2_;
@@ -274,13 +273,14 @@ int FenceTest::run()
 		int ret;
 		if (i == expiredRequestId_) {
 			/* This request will have a fence, and it will expire. */
-			fence_ = std::make_unique<Fence>(std::move(eventFd_));
-			if (!fence_->isValid()) {
+			std::unique_ptr<Fence> fence =
+				std::make_unique<Fence>(std::move(eventFd_));
+			if (!fence->isValid()) {
 				cerr << "Fence should be valid" << endl;
 				return TestFail;
 			}
 
-			ret = request->addBuffer(stream_, buffer.get(), std::move(fence_));
+			ret = request->addBuffer(stream_, buffer.get(), std::move(fence));
 		} else {
 			/* All other requests will have no Fence. */
 			ret = request->addBuffer(stream_, buffer.get());

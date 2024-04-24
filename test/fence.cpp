@@ -327,10 +327,14 @@ int FenceTest::run()
 	Timer fenceTimer;
 	fenceTimer.timeout.connect(this, &FenceTest::signalFence);
 
-	/* Loop for one second. */
+	/*
+	 * Loop long enough for all requests to complete, allowing 500ms per
+	 * request.
+	 */
 	Timer timer;
-	timer.start(1000ms);
-	while (timer.isRunning() && expectedCompletionResult_) {
+	timer.start(500ms * (signalledRequestId_ + 1));
+	while (timer.isRunning() && expectedCompletionResult_ &&
+	       completedRequestId_ <= signalledRequestId_ + 1) {
 		if (completedRequestId_ == signalledRequestId_ - 1 && setFence_)
 			/*
 			 * The request just before signalledRequestId_ has just

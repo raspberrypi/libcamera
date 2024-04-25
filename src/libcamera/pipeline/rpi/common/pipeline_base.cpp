@@ -474,7 +474,11 @@ PipelineHandlerBase::generateConfiguration(Camera *camera, Span<const StreamRole
 			 */
 			for (const auto &format : fmts) {
 				PixelFormat pf = format.first.toPixelFormat();
-				if (pf.isValid()) {
+				/*
+				 * Some V4L2 formats translate to the same pixel format (e.g. YU12, YM12
+				 * both give YUV420). We must avoid duplicating the range in this case.
+				 */
+				if (pf.isValid() && deviceFormats.find(pf) == deviceFormats.end()) {
 					const SizeRange &ispSizes = format.second[0];
 					deviceFormats[pf].emplace_back(ispSizes.min, sensorSize,
 								       ispSizes.hStep, ispSizes.vStep);

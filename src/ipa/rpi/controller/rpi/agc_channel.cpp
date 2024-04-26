@@ -699,7 +699,7 @@ static double computeInitialY(StatisticsPtr &stats, AwbStatus const &awb,
 	} else
 		ySum = rSum * .299 + gSum * .587 + bSum * .114;
 
-	return ySum / pixelSum / (1 << 16);
+	return ySum / pixelSum / maxVal;
 }
 
 /*

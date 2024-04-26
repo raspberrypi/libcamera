@@ -455,6 +455,17 @@ class CameraSensorHelperImx327 : public CameraSensorHelperImx290
 };
 REGISTER_CAMERA_SENSOR_HELPER("imx327", CameraSensorHelperImx327)
 
+class CameraSensorHelperImx335 : public CameraSensorHelper
+{
+public:
+	CameraSensorHelperImx335()
+	{
+		gainType_ = AnalogueGainExponential;
+		gainConstants_.exp = { 1.0, expGainDb(0.3) };
+	}
+};
+REGISTER_CAMERA_SENSOR_HELPER("imx335", CameraSensorHelperImx335)
+
 class CameraSensorHelperImx477 : public CameraSensorHelper
 {
 public:

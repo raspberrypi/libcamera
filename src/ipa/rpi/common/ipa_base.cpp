@@ -586,6 +586,12 @@ void IpaBase::setMode(const IPACameraSensorInfo &sensorInfo)
 	mode_.minAnalogueGain = helper_->gain(gainCtrl.min().get<int32_t>());
 	mode_.maxAnalogueGain = helper_->gain(gainCtrl.max().get<int32_t>());
 
+	/*
+	 * We need to give the helper the min/max frame durations so it can calculate
+	 * the correct exposure limits below.
+	 */
+	helper_->setCameraMode(mode_);
+
 	/* Shutter speed is calculated based on the limits of the frame durations. */
 	mode_.minShutter = helper_->exposure(shutterCtrl.min().get<int32_t>(), mode_.minLineLength);
 	mode_.maxShutter = Duration::max();

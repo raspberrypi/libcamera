@@ -385,13 +385,14 @@ gst_libcamera_src_open(GstLibcameraSrc *self)
 			return false;
 		}
 	} else {
-		if (cm->cameras().empty()) {
+		auto cameras = cm->cameras();
+		if (cameras.empty()) {
 			GST_ELEMENT_ERROR(self, RESOURCE, NOT_FOUND,
 					  ("Could not find any supported camera on this system."),
 					  ("libcamera::CameraMananger::cameras() is empty"));
 			return false;
 		}
-		cam = cm->cameras()[0];
+		cam = cameras[0];
 	}
 
 	GST_INFO_OBJECT(self, "Using camera '%s'", cam->id().c_str());

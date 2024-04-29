@@ -116,19 +116,21 @@ available.
 
 .. code:: cpp
 
-   if (cm->cameras().empty()) {
+   auto cameras = cm->cameras();
+   if (cameras.empty()) {
        std::cout << "No cameras were identified on the system."
                  << std::endl;
        cm->stop();
        return EXIT_FAILURE;
    }
 
-   std::string cameraId = cm->cameras()[0]->id();
-   camera = cm->get(cameraId);
+   std::string cameraId = cameras[0]->id();
 
+   auto camera = cm->get(cameraId);
    /*
-    * Note that is equivalent to:
-    * camera = cm->cameras()[0];
+    * Note that `camera` may not compare equal to `cameras[0]`.
+    * In fact, it might simply be a `nullptr`, as the particular
+    * device might have disappeared (and reappeared) in the meantime.
     */
 
 Once a camera has been selected an application needs to acquire an exclusive

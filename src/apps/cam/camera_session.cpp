@@ -39,9 +39,14 @@ CameraSession::CameraSession(CameraManager *cm,
 {
 	char *endptr;
 	unsigned long index = strtoul(cameraId.c_str(), &endptr, 10);
-	if (*endptr == '\0' && index > 0 && index <= cm->cameras().size())
-		camera_ = cm->cameras()[index - 1];
-	else
+
+	if (*endptr == '\0' && index > 0) {
+		auto cameras = cm->cameras();
+		if (index <= cameras.size())
+			camera_ = cameras[index - 1];
+	}
+
+	if (!camera_)
 		camera_ = cm->get(cameraId);
 
 	if (!camera_) {

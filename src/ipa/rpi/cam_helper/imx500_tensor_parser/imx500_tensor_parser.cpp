@@ -523,12 +523,12 @@ int parseInputTensorBody(IMX500InputTensorInfo &inputTensorInfo, const uint8_t *
 	unsigned int numLines = std::ceil(outSizePadded / (float)dnnHeader.maxLineLen);
 	inputTensorInfo.data.resize(outSize);
 
-	unsigned int diff = 0, outLineIndex = 0, pixelIndex = 0, heightIndex = 0;
+	unsigned int diff = 0, outLineIndex = 0, pixelIndex = 0, heightIndex = 0, size = 0, left = 0;
 	unsigned int wPad = inputApParams.widthStride - inputApParams.width;
 	unsigned int hPad = inputApParams.heightStride - inputApParams.height;
 
 	for (unsigned int line = 0; line < numLines; line++) {
-		for (unsigned int lineIndex = diff; lineIndex < dnnHeader.maxLineLen; lineIndex += inputApParams.width) {
+		for (unsigned int lineIndex = diff; lineIndex < dnnHeader.maxLineLen; lineIndex += size) {
 			if (outLineIndex == inputApParams.width) { /* Skip width padding pixels */
 				outLineIndex = 0;
 				heightIndex++;
@@ -562,9 +562,21 @@ int parseInputTensorBody(IMX500InputTensorInfo &inputTensorInfo, const uint8_t *
 					break;
 			}
 
-			memcpy(&inputTensorInfo.data[pixelIndex], src + lineIndex, inputApParams.width);
-			pixelIndex += inputApParams.width;
-			outLineIndex += inputApParams.width;
+			if (left > 0) {
+				size = left;
+				left = 0;
+			} else if (pixelIndex + inputApParams.width >= outSize) {
+				size = outSize - pixelIndex;
+			} else if (lineIndex + inputApParams.width >= dnnHeader.maxLineLen) {
+				size = dnnHeader.maxLineLen - lineIndex;
+				left = inputApParams.width - size;
+			} else {
+				size = inputApParams.width;
+			}
+
+			memcpy(&inputTensorInfo.data[pixelIndex], src + lineIndex, size);
+			pixelIndex += size;
+			outLineIndex += size;
 		}
 
 		if (pixelIndex == outSize)

@@ -44,18 +44,9 @@ public:
 		     ControlList &metadata) override;
 
 private:
-	void computeExposure(IPAContext &Context, IPAFrameContext &frameContext,
-			     double yGain, double iqMeanGain);
-	utils::Duration filterExposure(utils::Duration exposureValue);
-	double estimateLuminance(Span<const uint8_t> expMeans, double gain);
-	double measureBrightness(Span<const uint32_t> hist) const;
 	void fillMetadata(IPAContext &context, IPAFrameContext &frameContext,
 			  ControlList &metadata);
 	double estimateLuminance(double gain) const override;
-
-	uint64_t frameCount_;
-
-	utils::Duration filteredExposure_;
 
 	Span<const uint8_t> expMeans_;
 };

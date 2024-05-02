@@ -22,6 +22,7 @@ namespace ipa {
 class Histogram
 {
 public:
+	Histogram() { cumulative_.push_back(0); }
 	Histogram(Span<const uint32_t> data);
 	size_t bins() const { return cumulative_.size() - 1; }
 	uint64_t total() const { return cumulative_[cumulative_.size() - 1]; }

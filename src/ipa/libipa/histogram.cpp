@@ -29,6 +29,15 @@ namespace ipa {
  */
 
 /**
+ * \fn Histogram::Histogram()
+ * \brief Construct an empty Histogram
+ *
+ * This empty constructor exists largely to allow Histograms to be embedded in
+ * other classes which may be created before the contents of the Histogram are
+ * known.
+ */
+
+/**
  * \brief Create a cumulative histogram
  * \param[in] data A pre-sorted histogram to be passed
  */

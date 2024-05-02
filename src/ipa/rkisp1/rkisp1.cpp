@@ -119,7 +119,7 @@ const ControlInfoMap::Map rkisp1Controls{
 } /* namespace */
 
 IPARkISP1::IPARkISP1()
-	: context_({ {}, {}, {}, { kMaxFrameContexts } })
+	: context_({ {}, {}, {}, { kMaxFrameContexts }, {} })
 {
 }
 
@@ -427,6 +427,7 @@ void IPARkISP1::updateControls(const IPACameraSensorInfo &sensorInfo,
 							      frameDurations[1],
 							      frameDurations[2]);
 
+	ctrlMap.merge(context_.ctrlMap);
 	*ipaControls = ControlInfoMap(std::move(ctrlMap), controls::controls);
 }
 

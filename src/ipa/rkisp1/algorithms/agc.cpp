@@ -65,6 +65,29 @@ Agc::Agc()
 }
 
 /**
+ * \brief Initialise the AGC algorithm from tuning files
+ * \param[in] context The shared IPA context
+ * \param[in] tuningData The YamlObject containing Agc tuning data
+ *
+ * This function calls the base class' tuningData parsers to discover which
+ * control values are supported.
+ *
+ * \return 0 on success or errors from the base class
+ */
+int Agc::init(IPAContext &context, const YamlObject &tuningData)
+{
+	int ret;
+
+	ret = parseTuningData(tuningData);
+	if (ret)
+		return ret;
+
+	context.ctrlMap.merge(controls());
+
+	return 0;
+}
+
+/**
  * \brief Configure the AGC given a configInfo
  * \param[in] context The shared IPA context
  * \param[in] configInfo The IPA configuration data
@@ -81,6 +104,9 @@ int Agc::configure(IPAContext &context, const IPACameraSensorInfo &configInfo)
 	context.activeState.agc.manual.exposure = context.activeState.agc.automatic.exposure;
 	context.activeState.agc.autoEnabled = !context.configuration.raw;
 
+	context.activeState.agc.constraintMode = constraintModes().begin()->first;
+	context.activeState.agc.exposureMode = exposureModeHelpers().begin()->first;
+
 	/*
 	 * Define the measurement window for AGC as a centered rectangle
 	 * covering 3/4 of the image width and height.
@@ -95,6 +121,15 @@ int Agc::configure(IPAContext &context, const IPACameraSensorInfo &configInfo)
 	 * frame index
 	 */
 	frameCount_ = 0;
+
+	/* \todo Run this again when FrameDurationLimits is passed in */
+	setLimits(context.configuration.sensor.minShutterSpeed,
+		  context.configuration.sensor.maxShutterSpeed,
+		  context.configuration.sensor.minAnalogueGain,
+		  context.configuration.sensor.maxAnalogueGain);
+
+	resetFrameCount();
+
 	return 0;
 }
 
@@ -234,7 +269,6 @@ void Agc::computeExposure(IPAContext &context, IPAFrameContext &frameContext,
 			  double yGain, double iqMeanGain)
 {
 	IPASessionConfiguration &configuration = context.configuration;
-	IPAActiveState &activeState = context.activeState;
 
 	/* Get the effective exposure and gain applied on the sensor. */
 	uint32_t exposure = frameContext.sensor.exposure;
@@ -300,10 +334,6 @@ void Agc::computeExposure(IPAContext &context, IPAFrameContext &frameContext,
 	LOG(RkISP1Agc, Debug) << "Divided up shutter and gain are "
 			      << shutterTime << " and "
 			      << stepGain;
-
-	/* Update the estimated exposure and gain. */
-	activeState.agc.automatic.exposure = shutterTime / configuration.sensor.lineDuration;
-	activeState.agc.automatic.gain = stepGain;
 }
 
 /**
@@ -373,6 +403,19 @@ void Agc::fillMetadata(IPAContext &context, IPAFrameContext &frameContext,
 	metadata.set(controls::FrameDuration, frameDuration.get<std::micro>());
 }
 
+double Agc::estimateLuminance(double gain) const
+{
+	double ySum = 0.0;
+
+	/* Sum the averages, saturated to 255. */
+	for (uint8_t expMean : expMeans_)
+		ySum += std::min(expMean * gain, 255.0);
+
+	/* \todo Weight with the AWB gains */
+
+	return ySum / expMeans_.size() / 255;
+}
+
 /**
  * \brief Process RkISP1 statistics, and run AGC operations
  * \param[in] context The shared IPA context
@@ -438,7 +481,35 @@ void Agc::process(IPAContext &context, [[maybe_unused]] const uint32_t frame,
 	computeExposure(context, frameContext, yGain, iqMeanGain);
 	frameCount_++;
 
+	expMeans_ = { params->ae.exp_mean, context.hw->numAeCells };
+
+	/*
+	 * The Agc algorithm needs to know the effective exposure value that was
+	 * applied to the sensor when the statistics were collected.
+	 */
+	utils::Duration exposureTime = context.configuration.sensor.lineDuration
+				       * frameContext.sensor.exposure;
+	double analogueGain = frameContext.sensor.gain;
+	utils::Duration effectiveExposureValue = exposureTime * analogueGain;
+
+	utils::Duration shutterTime;
+	double aGain, dGain;
+	std::tie(shutterTime, aGain, dGain) =
+		calculateNewEv(context.activeState.agc.constraintMode,
+			       context.activeState.agc.exposureMode,
+			       Histogram(hist), effectiveExposureValue);
+
+	LOG(RkISP1Agc, Debug)
+		<< "Divided up shutter, analogue gain and digital gain are "
+		<< shutterTime << ", " << aGain << " and " << dGain;
+
+	IPAActiveState &activeState = context.activeState;
+	/* Update the estimated exposure and gain. */
+	activeState.agc.automatic.exposure = shutterTime / context.configuration.sensor.lineDuration;
+	activeState.agc.automatic.gain = aGain;
+
 	fillMetadata(context, frameContext, metadata);
+	expMeans_ = {};
 }
 
 REGISTER_IPA_ALGORITHM(Agc, "Agc")

@@ -12,6 +12,7 @@
 
 #include <libcamera/base/utils.h>
 
+#include <libcamera/controls.h>
 #include <libcamera/geometry.h>
 
 #include <libipa/fc_queue.h>
@@ -67,6 +68,8 @@ struct IPAActiveState {
 		} automatic;
 
 		bool autoEnabled;
+		uint32_t constraintMode;
+		uint32_t exposureMode;
 	} agc;
 
 	struct {
@@ -151,6 +154,8 @@ struct IPAContext {
 	IPAActiveState activeState;
 
 	FCQueue<IPAFrameContext> frameContexts;
+
+	ControlInfoMap::Map ctrlMap;
 };
 
 } /* namespace ipa::rkisp1 */

@@ -244,6 +244,14 @@ float getVal16(const uint8_t *src, const OutputTensorApParams &param)
 	return value;
 }
 
+template<typename T>
+float getVal32(const uint8_t *src, const OutputTensorApParams &param)
+{
+	T temp = (((T) * (src + 3)) & 0xff) << 24 | (((T) * (src + 2)) & 0xff) << 16 | (((T) * (src + 1)) & 0xff) << 8 | (*src & 0xff);
+	float value = (temp - param.shift) * param.scale;
+	return value;
+}
+
 int parseOutputTensorBody(IMX500OutputTensorInfo &outputTensorInfo, const uint8_t *src,
 			  const std::vector<OutputTensorApParams> &outputApParams,
 			  const DnnHeader &dnnHeader)
@@ -390,6 +398,25 @@ int parseOutputTensorBody(IMX500OutputTensorInfo &outputTensorInfo, const uint8_
 						if (elementIndex >= (outputTensorSize >> 1))
 							break;
 					}
+				} else if (param.bitsPerElement == 32) {
+					for (unsigned int i = 0; i < numLines; i++) {
+						int lineIndex = 0;
+						while (lineIndex < dnnHeader.maxLineLen) {
+							if (param.format == TensorDataType::Signed)
+								tmpDst[toffset + elementIndex] =
+									getVal32<int32_t>(tsrc + lineIndex, param);
+							else
+								tmpDst[toffset + elementIndex] =
+									getVal32<uint32_t>(tsrc + lineIndex, param);
+							elementIndex++;
+							lineIndex += 4;
+							if (elementIndex >= (outputTensorSize >> 2))
+								break;
+						}
+						tsrc += TensorStride;
+						if (elementIndex >= (outputTensorSize >> 2))
+							break;
+					}
 				}
 
 				/*
@@ -432,6 +459,9 @@ int parseOutputTensorBody(IMX500OutputTensorInfo &outputTensorInfo, const uint8_
 					else if (param.bitsPerElement == 16)
 						memcpy(dst + toffset, tmpDst.data() + toffset,
 						       (outputTensorSize >> 1) * sizeof(float));
+					else if (param.bitsPerElement == 32)
+						memcpy(dst + toffset, tmpDst.data() + toffset,
+						       (outputTensorSize >> 2) * sizeof(float));
 					else {
 						LOG(IMX500, Error)
 							<< "Invalid bitsPerElement value =" << param.bitsPerElement;

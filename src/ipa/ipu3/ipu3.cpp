@@ -189,7 +189,7 @@ private:
 };
 
 IPAIPU3::IPAIPU3()
-	: context_({ {}, {}, { kMaxFrameContexts } })
+	: context_({ {}, {}, { kMaxFrameContexts }, {} })
 {
 }
 
@@ -287,6 +287,7 @@ void IPAIPU3::updateControls(const IPACameraSensorInfo &sensorInfo,
 							       frameDurations[1],
 							       frameDurations[2]);
 
+	controls.merge(context_.ctrlMap);
 	*ipaControls = ControlInfoMap(std::move(controls), controls::controls);
 }
 

@@ -12,6 +12,7 @@
 
 #include <libcamera/base/utils.h>
 
+#include <libcamera/controls.h>
 #include <libcamera/geometry.h>
 
 #include <libipa/fc_queue.h>
@@ -55,6 +56,8 @@ struct IPAActiveState {
 	struct {
 		uint32_t exposure;
 		double gain;
+		uint32_t constraintMode;
+		uint32_t exposureMode;
 	} agc;
 
 	struct {
@@ -85,6 +88,8 @@ struct IPAContext {
 	IPAActiveState activeState;
 
 	FCQueue<IPAFrameContext> frameContexts;
+
+	ControlInfoMap::Map ctrlMap;
 };
 
 } /* namespace ipa::ipu3 */

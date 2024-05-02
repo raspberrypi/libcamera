@@ -71,9 +71,31 @@ static constexpr uint32_t kNumStartupFrames = 10;
 static constexpr double kRelativeLuminanceTarget = 0.16;
 
 Agc::Agc()
-	: frameCount_(0), minShutterSpeed_(0s),
-	  maxShutterSpeed_(0s), filteredExposure_(0s)
+	: minShutterSpeed_(0s), maxShutterSpeed_(0s)
 {
+}
+
+/**
+ * \brief Initialise the AGC algorithm from tuning files
+ * \param[in] context The shared IPA context
+ * \param[in] tuningData The YamlObject containing Agc tuning data
+ *
+ * This function calls the base class' tuningData parsers to discover which
+ * control values are supported.
+ *
+ * \return 0 on success or errors from the base class
+ */
+int Agc::init(IPAContext &context, const YamlObject &tuningData)
+{
+	int ret;
+
+	ret = parseTuningData(tuningData);
+	if (ret)
+		return ret;
+
+	context.ctrlMap.merge(controls());
+
+	return 0;
 }
 
 /**
@@ -90,6 +112,7 @@ int Agc::configure(IPAContext &context,
 	IPAActiveState &activeState = context.activeState;
 
 	stride_ = configuration.grid.stride;
+	bdsGrid_ = configuration.grid.bdsGrid;
 
 	minShutterSpeed_ = configuration.agc.minShutterSpeed;
 	maxShutterSpeed_ = std::min(configuration.agc.maxShutterSpeed,
@@ -103,6 +126,15 @@ int Agc::configure(IPAContext &context,
 	activeState.agc.exposure = 10ms / configuration.sensor.lineDuration;
 
 	frameCount_ = 0;
+
+	context.activeState.agc.constraintMode = constraintModes().begin()->first;
+	context.activeState.agc.exposureMode = exposureModeHelpers().begin()->first;
+
+	/* \todo Run this again when FrameDurationLimits is passed in */
+	setLimits(minShutterSpeed_, maxShutterSpeed_, minAnalogueGain_,
+		  maxAnalogueGain_);
+	resetFrameCount();
+
 	return 0;
 }
 
@@ -140,6 +172,39 @@ double Agc::measureBrightness(const ipu3_uapi_stats_3a *stats,
 
 	/* Estimate the quantile mean of the top 2% of the histogram. */
 	return Histogram(Span<uint32_t>(hist)).interQuantileMean(0.98, 1.0);
+}
+
+Histogram Agc::parseStatistics(const ipu3_uapi_stats_3a *stats,
+			       const ipu3_uapi_grid_config &grid)
+{
+	uint32_t hist[knumHistogramBins] = { 0 };
+
+	rgbTriples_.clear();
+
+	for (unsigned int cellY = 0; cellY < grid.height; cellY++) {
+		for (unsigned int cellX = 0; cellX < grid.width; cellX++) {
+			uint32_t cellPosition = cellY * stride_ + cellX;
+
+			const ipu3_uapi_awb_set_item *cell =
+				reinterpret_cast<const ipu3_uapi_awb_set_item *>(
+					&stats->awb_raw_buffer.meta_data[cellPosition]);
+
+			rgbTriples_.push_back({
+				cell->R_avg,
+				(cell->Gr_avg + cell->Gb_avg) / 2,
+				cell->B_avg
+			});
+
+			/*
+			 * Store the average green value to estimate the
+			 * brightness. Even the overexposed pixels are
+			 * taken into account.
+			 */
+			hist[(cell->Gr_avg + cell->Gb_avg) / 2]++;
+		}
+	}
+
+	return Histogram(Span<uint32_t>(hist));
 }
 
 /**
@@ -247,11 +312,6 @@ void Agc::computeExposure(IPAContext &context, IPAFrameContext &frameContext,
 	LOG(IPU3Agc, Debug) << "Divided up shutter and gain are "
 			    << shutterTime << " and "
 			    << stepGain;
-
-	IPAActiveState &activeState = context.activeState;
-	/* Update the estimated exposure and gain. */
-	activeState.agc.exposure = shutterTime / configuration.sensor.lineDuration;
-	activeState.agc.gain = stepGain;
 }
 
 /**
@@ -314,6 +374,23 @@ double Agc::estimateLuminance(IPAActiveState &activeState,
 	return ySum / (grid.height * grid.width) / 255;
 }
 
+double Agc::estimateLuminance(double gain) const
+{
+	double redSum = 0, greenSum = 0, blueSum = 0;
+
+	for (unsigned int i = 0; i < rgbTriples_.size(); i++) {
+		redSum += std::min(std::get<0>(rgbTriples_[i]) * gain, 255.0);
+		greenSum += std::min(std::get<1>(rgbTriples_[i]) * gain, 255.0);
+		blueSum += std::min(std::get<2>(rgbTriples_[i]) * gain, 255.0);
+	}
+
+	double ySum = redSum * rGain_ * 0.299
+		    + greenSum * gGain_ * 0.587
+		    + blueSum * bGain_ * 0.114;
+
+	return ySum / (bdsGrid_.height * bdsGrid_.width) / 255;
+}
+
 /**
  * \brief Process IPU3 statistics, and run AGC operations
  * \param[in] context The shared IPA context
@@ -366,8 +443,36 @@ void Agc::process(IPAContext &context, [[maybe_unused]] const uint32_t frame,
 	computeExposure(context, frameContext, yGain, iqMeanGain);
 	frameCount_++;
 
+	Histogram hist = parseStatistics(stats, context.configuration.grid.bdsGrid);
+	rGain_ = context.activeState.awb.gains.red;
+	gGain_ = context.activeState.awb.gains.blue;
+	bGain_ = context.activeState.awb.gains.green;
+
+	/*
+	 * The Agc algorithm needs to know the effective exposure value that was
+	 * applied to the sensor when the statistics were collected.
+	 */
 	utils::Duration exposureTime = context.configuration.sensor.lineDuration
 				     * frameContext.sensor.exposure;
+	double analogueGain = frameContext.sensor.gain;
+	utils::Duration effectiveExposureValue = exposureTime * analogueGain;
+
+	utils::Duration shutterTime;
+	double aGain, dGain;
+	std::tie(shutterTime, aGain, dGain) =
+		calculateNewEv(context.activeState.agc.constraintMode,
+			       context.activeState.agc.exposureMode, hist,
+			       effectiveExposureValue);
+
+	LOG(IPU3Agc, Debug)
+		<< "Divided up shutter, analogue gain and digital gain are "
+		<< shutterTime << ", " << aGain << " and " << dGain;
+
+	IPAActiveState &activeState = context.activeState;
+	/* Update the estimated exposure and gain. */
+	activeState.agc.exposure = shutterTime / context.configuration.sensor.lineDuration;
+	activeState.agc.gain = aGain;
+
 	metadata.set(controls::AnalogueGain, frameContext.sensor.gain);
 	metadata.set(controls::ExposureTime, exposureTime.get<std::micro>());
 

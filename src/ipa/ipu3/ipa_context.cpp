@@ -47,6 +47,9 @@ namespace libcamera::ipa::ipu3 {
  *
  * \var IPAContext::activeState
  * \brief The current state of IPA algorithms
+ *
+ * \var IPAContext::ctrlMap
+ * \brief A ControlInfoMap::Map of controls populated by the algorithms
  */
 
 /**

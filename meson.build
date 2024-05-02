@@ -178,6 +178,15 @@ if cc.has_argument('-Wno-c99-designator')
     ]
 endif
 
+# Enable the C++20 deprecated enum-enum conversion warning if the compiler
+# supports it. This helps avoiding C++20 regressions, and should be removed
+# when switching to C++20 as the warning will then be enabled by default.
+if cxx.has_argument('-Wdeprecated-enum-enum-conversion')
+    cpp_arguments += [
+        '-Wdeprecated-enum-enum-conversion',
+    ]
+endif
+
 c_arguments += common_arguments
 cpp_arguments += common_arguments
 

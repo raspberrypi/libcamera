@@ -3,6 +3,7 @@
 libipa_headers = files([
     'algorithm.h',
     'camera_sensor_helper.h',
+    'exposure_mode_helper.h',
     'fc_queue.h',
     'histogram.h',
     'module.h',
@@ -11,6 +12,7 @@ libipa_headers = files([
 libipa_sources = files([
     'algorithm.cpp',
     'camera_sensor_helper.cpp',
+    'exposure_mode_helper.cpp',
     'fc_queue.cpp',
     'histogram.cpp',
     'module.cpp',

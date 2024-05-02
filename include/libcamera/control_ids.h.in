@@ -10,7 +10,9 @@
 #pragma once
 
 #include <array>
+#include <map>
 #include <stdint.h>
+#include <string>
 
 #include <libcamera/controls.h>
 

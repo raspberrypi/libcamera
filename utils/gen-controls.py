@@ -140,6 +140,12 @@ ${description}
  */''')
     enum_values_start = string.Template('''extern const std::array<const ControlValue, ${size}> ${name}Values = {''')
     enum_values_values = string.Template('''\tstatic_cast<int32_t>(${name}),''')
+    name_value_map_doc = string.Template('''/**
+ * \\var ${name}NameValueMap
+ * \\brief Map of all $name supported value names (in std::string format) to value
+ */''')
+    name_value_map_start = string.Template('''extern const std::map<std::string, ${type}> ${name}NameValueMap = {''')
+    name_value_values = string.Template('''\t{ "${name}", ${name} },''')
 
     ctrls_doc = {}
     ctrls_def = {}
@@ -183,6 +189,7 @@ ${description}
 
             values_info = {
                 'name': info['name'],
+                'type': ctrl.type,
                 'size': num_entries,
             }
             target_doc.append(enum_values_doc.substitute(values_info))
@@ -192,6 +199,15 @@ ${description}
                     'name': enum.name
                 }
                 target_def.append(enum_values_values.substitute(value_info))
+            target_def.append("};")
+
+            target_doc.append(name_value_map_doc.substitute(values_info))
+            target_def.append(name_value_map_start.substitute(values_info))
+            for enum in ctrl.enum_values:
+                value_info = {
+                    'name': enum.name
+                }
+                target_def.append(name_value_values.substitute(value_info))
             target_def.append("};")
 
         target_doc.append(doc_template.substitute(info))
@@ -231,6 +247,7 @@ def generate_h(controls, mode, ranges):
     enum_template_start = string.Template('''enum ${name}Enum {''')
     enum_value_template = string.Template('''\t${name} = ${value},''')
     enum_values_template = string.Template('''extern const std::array<const ControlValue, ${size}> ${name}Values;''')
+    name_value_map_template = string.Template('''extern const std::map<std::string, ${type}> ${name}NameValueMap;''')
     template = string.Template('''extern const Control<${type}> ${name};''')
 
     ctrls = {}
@@ -273,9 +290,11 @@ def generate_h(controls, mode, ranges):
 
             values_info = {
                 'name': info['name'],
+                'type': ctrl.type,
                 'size': num_entries,
             }
             target_ctrls.append(enum_values_template.substitute(values_info))
+            target_ctrls.append(name_value_map_template.substitute(values_info))
 
         target_ctrls.append(template.substitute(info))
         id_value[vendor] += 1

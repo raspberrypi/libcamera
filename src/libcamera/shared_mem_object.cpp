@@ -12,6 +12,8 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <sys/mman.h>
+#include <sys/syscall.h>
 #include <sys/types.h>
 #include <unistd.h>
 
@@ -56,7 +58,11 @@ SharedMem::SharedMem() = default;
  */
 SharedMem::SharedMem(const std::string &name, std::size_t size)
 {
+#if HAVE_MEMFD_CREATE
 	int fd = memfd_create(name.c_str(), MFD_CLOEXEC);
+#else
+	int fd = syscall(SYS_memfd_create, name.c_str(), MFD_CLOEXEC);
+#endif
 	if (fd < 0)
 		return;
 

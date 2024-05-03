@@ -114,6 +114,7 @@ public:
 	const std::string &name() const { return name_; }
 
 	static std::vector<PipelineHandlerFactoryBase *> &factories();
+	static const PipelineHandlerFactoryBase *getFactoryByName(const std::string &name);
 
 private:
 	static void registerType(PipelineHandlerFactoryBase *factory);

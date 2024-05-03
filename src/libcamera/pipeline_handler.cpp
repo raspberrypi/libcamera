@@ -795,6 +795,28 @@ std::vector<PipelineHandlerFactoryBase *> &PipelineHandlerFactoryBase::factories
 }
 
 /**
+ * \brief Return the factory for the pipeline handler with name \a name
+ * \param[in] name The pipeline handler name
+ * \return The factory of the pipeline with name \a name, or nullptr if not found
+ */
+const PipelineHandlerFactoryBase *PipelineHandlerFactoryBase::getFactoryByName(const std::string &name)
+{
+	const std::vector<PipelineHandlerFactoryBase *> &factories =
+		PipelineHandlerFactoryBase::factories();
+
+	auto iter = std::find_if(factories.begin(),
+				 factories.end(),
+				 [&name](const PipelineHandlerFactoryBase *f) {
+					 return f->name() == name;
+				 });
+
+	if (iter != factories.end())
+		return *iter;
+
+	return nullptr;
+}
+
+/**
  * \class PipelineHandlerFactory
  * \brief Registration of PipelineHandler classes and creation of instances
  * \tparam _PipelineHandler The pipeline handler class type for this factory

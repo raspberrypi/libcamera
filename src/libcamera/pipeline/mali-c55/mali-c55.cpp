@@ -1061,6 +1061,6 @@ bool PipelineHandlerMaliC55::match(DeviceEnumerator *enumerator)
 	return true;
 }
 
-REGISTER_PIPELINE_HANDLER(PipelineHandlerMaliC55)
+REGISTER_PIPELINE_HANDLER(PipelineHandlerMaliC55, "mali-c55")
 
 } /* namespace libcamera */

@@ -1420,6 +1420,6 @@ void IPU3CameraData::frameStart(uint32_t sequence)
 				*testPatternMode);
 }
 
-REGISTER_PIPELINE_HANDLER(PipelineHandlerIPU3)
+REGISTER_PIPELINE_HANDLER(PipelineHandlerIPU3, "ipu3")
 
 } /* namespace libcamera */

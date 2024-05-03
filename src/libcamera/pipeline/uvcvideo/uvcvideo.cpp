@@ -709,6 +709,6 @@ void UVCCameraData::bufferReady(FrameBuffer *buffer)
 	pipe()->completeRequest(request);
 }
 
-REGISTER_PIPELINE_HANDLER(PipelineHandlerUVC)
+REGISTER_PIPELINE_HANDLER(PipelineHandlerUVC, "uvcvideo")
 
 } /* namespace libcamera */

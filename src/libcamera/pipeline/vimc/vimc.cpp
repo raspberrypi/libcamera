@@ -623,6 +623,6 @@ void VimcCameraData::paramsBufferReady([[maybe_unused]] unsigned int id,
 {
 }
 
-REGISTER_PIPELINE_HANDLER(PipelineHandlerVimc)
+REGISTER_PIPELINE_HANDLER(PipelineHandlerVimc, "vimc")
 
 } /* namespace libcamera */

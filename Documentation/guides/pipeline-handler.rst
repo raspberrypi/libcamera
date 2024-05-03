@@ -258,7 +258,7 @@ implementations for the overridden class members.
           return false;
    }
 
-   REGISTER_PIPELINE_HANDLER(PipelineHandlerVivid)
+   REGISTER_PIPELINE_HANDLER(PipelineHandlerVivid, "vivid")
 
    } /* namespace libcamera */
 
@@ -266,6 +266,8 @@ Note that you must register the ``PipelineHandler`` subclass with the pipeline
 handler factory using the `REGISTER_PIPELINE_HANDLER`_ macro which
 registers it and creates a global symbol to reference the class and make it
 available to try and match devices.
+String "vivid" is the name assigned to the pipeline, matching the pipeline
+subdirectory name in the source tree.
 
 .. _REGISTER_PIPELINE_HANDLER: https://libcamera.org/api-html/pipeline__handler_8h.html
 

@@ -830,6 +830,8 @@ std::vector<PipelineHandlerFactoryBase *> &PipelineHandlerFactoryBase::factories
  * \def REGISTER_PIPELINE_HANDLER
  * \brief Register a pipeline handler with the pipeline handler factory
  * \param[in] handler Class name of PipelineHandler derived class to register
+ * \param[in] name Name assigned to the pipeline handler, matching the pipeline
+ * subdirectory name in the source tree.
  *
  * Register a PipelineHandler subclass with the factory and make it available to
  * try and match devices.

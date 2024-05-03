@@ -1018,6 +1018,6 @@ bool Vc4CameraData::findMatchingBuffers(BayerFrame &bayerFrame, FrameBuffer *&em
 	return true;
 }
 
-REGISTER_PIPELINE_HANDLER(PipelineHandlerVc4)
+REGISTER_PIPELINE_HANDLER(PipelineHandlerVc4, "rpi/vc4")
 
 } /* namespace libcamera */

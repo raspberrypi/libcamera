@@ -57,7 +57,7 @@ protected:
 		const struct IPAModuleInfo testInfo = {
 			IPA_MODULE_API_VERSION,
 			0,
-			"PipelineHandlerVimc",
+			"vimc",
 			"vimc",
 		};
 

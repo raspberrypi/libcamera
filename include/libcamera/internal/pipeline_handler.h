@@ -140,7 +140,7 @@ public:
 	}
 };
 
-#define REGISTER_PIPELINE_HANDLER(handler) \
-static PipelineHandlerFactory<handler> global_##handler##Factory(#handler);
+#define REGISTER_PIPELINE_HANDLER(handler, name) \
+	static PipelineHandlerFactory<handler> global_##handler##Factory(name);
 
 } /* namespace libcamera */

@@ -1112,6 +1112,6 @@ void PipelineHandlerISI::bufferReady(FrameBuffer *buffer)
 	completeRequest(request);
 }
 
-REGISTER_PIPELINE_HANDLER(PipelineHandlerISI)
+REGISTER_PIPELINE_HANDLER(PipelineHandlerISI, "imx8-isi")
 
 } /* namespace libcamera */

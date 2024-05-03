@@ -1732,6 +1732,6 @@ void SimplePipelineHandler::releasePipeline(SimpleCameraData *data)
 	}
 }
 
-REGISTER_PIPELINE_HANDLER(SimplePipelineHandler)
+REGISTER_PIPELINE_HANDLER(SimplePipelineHandler, "simple")
 
 } /* namespace libcamera */

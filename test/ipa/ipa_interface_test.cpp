@@ -56,7 +56,7 @@ protected:
 		const std::vector<PipelineHandlerFactoryBase *> &factories =
 			PipelineHandlerFactoryBase::factories();
 		for (const PipelineHandlerFactoryBase *factory : factories) {
-			if (factory->name() == "PipelineHandlerVimc") {
+			if (factory->name() == "vimc") {
 				pipe_ = factory->create(nullptr);
 				break;
 			}

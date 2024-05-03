@@ -44,6 +44,7 @@ protected:
 private:
 	int init();
 	void createPipelineHandlers();
+	void pipelineFactoryMatch(const PipelineHandlerFactoryBase *factory);
 	void cleanup() LIBCAMERA_TSA_EXCLUDES(mutex_);
 
 	/*

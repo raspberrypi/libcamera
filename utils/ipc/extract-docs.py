@@ -38,7 +38,7 @@ def main(argv):
 /*
  * Copyright (C) 2021, Google Inc.
  *
- * {pipeline}_ipa_interface.cpp - Docs file for generated {pipeline}.mojom
+ * Docs file for generated {pipeline}.mojom
  *
  * This file is auto-generated. Do not edit.
  */

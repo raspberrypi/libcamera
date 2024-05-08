@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2022, Google Inc.
  *
- * hal_framebuffer.h - HAL Frame Buffer Handling
+ * HAL Frame Buffer Handling
  */
 
 #pragma once

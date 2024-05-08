@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * viewfinder_qt.h - qcam - QPainter-based ViewFinder
+ * qcam - QPainter-based ViewFinder
  */
 
 #pragma once

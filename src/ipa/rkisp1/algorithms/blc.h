@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021-2022, Ideas On Board
  *
- * blc.h - RkISP1 Black Level Correction control
+ * RkISP1 Black Level Correction control
  */
 
 #pragma once

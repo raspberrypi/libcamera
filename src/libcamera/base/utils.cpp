@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * utils.cpp - Miscellaneous utility functions
+ * Miscellaneous utility functions
  */
 
 #include <libcamera/base/utils.h>

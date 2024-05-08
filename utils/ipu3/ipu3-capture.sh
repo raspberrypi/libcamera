@@ -4,7 +4,7 @@
 #
 # Author: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 #
-# ipu3-capture.sh - Capture raw frames from cameras based on the Intel IPU3
+# Capture raw frames from cameras based on the Intel IPU3
 #
 # The scripts makes use of the following tools, which are expected to be
 # executable from the system-wide path or from the local directory:

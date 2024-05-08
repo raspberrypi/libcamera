@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * serialization_test.cpp - Base class for serialization tests
+ * Base class for serialization tests
  */
 
 #include "serialization_test.h"

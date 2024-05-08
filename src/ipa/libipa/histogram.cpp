@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Raspberry Pi Ltd
  *
- * histogram.cpp - histogram calculations
+ * histogram calculations
  */
 #include "histogram.h"
 

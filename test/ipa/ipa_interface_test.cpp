@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * ipa_interface_test.cpp - Test the IPA interface
+ * Test the IPA interface
  */
 
 #include <fcntl.h>

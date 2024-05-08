@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Google Inc.
  *
- * camera_stream.cpp - Camera HAL stream
+ * Camera HAL stream
  */
 
 #include "camera_stream.h"

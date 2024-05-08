@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * framebuffer_allocator.cpp - FrameBuffer allocator
+ * FrameBuffer allocator
  */
 
 #include <libcamera/framebuffer_allocator.h>

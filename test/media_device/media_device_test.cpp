@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * media_device_test.cpp - libcamera media device test base class
+ * libcamera media device test base class
  */
 
 #include <iostream>

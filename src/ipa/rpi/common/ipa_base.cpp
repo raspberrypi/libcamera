@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019-2023, Raspberry Pi Ltd
  *
- * ipa_base.cpp - Raspberry Pi IPA base class
+ * Raspberry Pi IPA base class
  */
 
 #include "ipa_base.h"

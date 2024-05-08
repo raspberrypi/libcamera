@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * geometry.h - Geometry-related classes
+ * Geometry-related classes
  */
 
 #pragma once

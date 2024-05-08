@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * controls.h - Control handling
+ * Control handling
  */
 
 #pragma once

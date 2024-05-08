@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021, Ideas On Board
  *
- * agc.h - IPU3 AGC/AEC mean-based control algorithm
+ * IPU3 AGC/AEC mean-based control algorithm
  */
 
 #pragma once

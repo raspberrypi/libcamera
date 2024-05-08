@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Raspberry Pi Ltd
  *
- * cam_helper.cpp - helper information for different sensors
+ * helper information for different sensors
  */
 
 #include <linux/videodev2.h>

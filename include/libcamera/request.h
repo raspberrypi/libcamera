@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * request.h - Capture request handling
+ * Capture request handling
  */
 
 #pragma once

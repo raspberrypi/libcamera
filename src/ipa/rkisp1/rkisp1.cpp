@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * rkisp1.cpp - RkISP1 Image Processing Algorithms
+ * RkISP1 Image Processing Algorithms
  */
 
 #include <algorithm>

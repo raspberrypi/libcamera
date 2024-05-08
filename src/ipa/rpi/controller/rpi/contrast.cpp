@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Raspberry Pi Ltd
  *
- * contrast.cpp - contrast (gamma) control algorithm
+ * contrast (gamma) control algorithm
  */
 #include <stdint.h>
 

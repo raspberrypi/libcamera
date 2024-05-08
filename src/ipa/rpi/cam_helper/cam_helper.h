@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Raspberry Pi Ltd
  *
- * cam_helper.h - helper class providing camera information
+ * helper class providing camera information
  */
 #pragma once
 

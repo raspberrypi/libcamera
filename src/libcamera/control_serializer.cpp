@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * control_serializer.cpp - Control (de)serializer
+ * Control (de)serializer
  */
 
 #include "libcamera/internal/control_serializer.h"

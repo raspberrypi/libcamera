@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2023, Linaro Ltd
  *
- * software_isp.cpp - Simple software ISP implementation
+ * Simple software ISP implementation
  */
 
 #include "libcamera/internal/software_isp/software_isp.h"

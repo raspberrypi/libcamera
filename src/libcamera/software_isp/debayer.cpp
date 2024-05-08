@@ -6,7 +6,7 @@
  * Authors:
  * Hans de Goede <hdegoede@redhat.com>
  *
- * debayer.cpp - debayer base class
+ * debayer base class
  */
 
 #include "debayer.h"

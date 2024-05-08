@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2022, Ideas on Board Oy
  *
- * sdl_texture_yuv.cpp - SDL YUV Textures
+ * SDL YUV Textures
  */
 
 #include "sdl_texture_yuv.h"

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2022, Google Inc.
  *
- * yaml_parser.cpp - libcamera YAML parsing helper
+ * libcamera YAML parsing helper
  */
 
 #include "libcamera/internal/yaml_parser.h"

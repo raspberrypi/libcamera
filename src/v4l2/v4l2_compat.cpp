@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * v4l2_compat.cpp - V4L2 compatibility layer
+ * V4L2 compatibility layer
  */
 
 #include "v4l2_compat_manager.h"

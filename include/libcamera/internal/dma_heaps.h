@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Raspberry Pi Ltd
  *
- * dma_heaps.h - Helper class for dma-heap allocations.
+ * Helper class for dma-heap allocations.
  */
 
 #pragma once

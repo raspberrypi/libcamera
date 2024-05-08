@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * ipa_module_test.cpp - Test loading of the VIMC IPA module and verify its info
+ * Test loading of the VIMC IPA module and verify its info
  */
 
 #include <iostream>

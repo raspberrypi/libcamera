@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * rkisp1.cpp - Pipeline handler for Rockchip ISP1
+ * Pipeline handler for Rockchip ISP1
  */
 
 #include <algorithm>

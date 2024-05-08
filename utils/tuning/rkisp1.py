@@ -3,7 +3,7 @@
 #
 # Copyright (C) 2022, Paul Elder <paul.elder@ideasonboard.com>
 #
-# rkisp1.py - Tuning script for rkisp1
+# Tuning script for rkisp1
 
 import sys
 

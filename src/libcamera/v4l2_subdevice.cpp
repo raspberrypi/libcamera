@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * v4l2_subdevice.cpp - V4L2 Subdevice
+ * V4L2 Subdevice
  */
 
 #include "libcamera/internal/v4l2_subdevice.h"

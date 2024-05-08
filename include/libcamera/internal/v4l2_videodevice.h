@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * v4l2_videodevice.h - V4L2 Video Device
+ * V4L2 Video Device
  */
 
 #pragma once

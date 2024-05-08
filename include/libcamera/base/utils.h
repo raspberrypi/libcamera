@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2018, Google Inc.
  *
- * utils.h - Miscellaneous utility functions
+ * Miscellaneous utility functions
  */
 
 #pragma once

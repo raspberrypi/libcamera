@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2022, Google Inc.
  *
- * yaml-parser.cpp - YAML parser operations tests
+ * YAML parser operations tests
  */
 
 #include <array>

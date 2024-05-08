@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021, Ideas on Board Oy
  *
- * kms_sink.h - KMS Sink
+ * KMS Sink
  */
 
 #pragma once

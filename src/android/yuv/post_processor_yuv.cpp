@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021, Google Inc.
  *
- * post_processor_yuv.cpp - Post Processor using libyuv
+ * Post Processor using libyuv
  */
 
 #include "post_processor_yuv.h"

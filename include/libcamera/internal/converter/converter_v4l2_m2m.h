@@ -3,7 +3,7 @@
  * Copyright (C) 2020, Laurent Pinchart
  * Copyright 2022 NXP
  *
- * converter_v4l2_m2m.h - V4l2 M2M Format converter interface
+ * V4l2 M2M Format converter interface
  */
 
 #pragma once

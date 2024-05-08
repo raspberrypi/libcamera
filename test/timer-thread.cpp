@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * timer-thread.cpp - Threaded timer test
+ * Threaded timer test
  */
 
 #include <chrono>

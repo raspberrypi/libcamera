@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021, Google Inc.
  *
- * unique_fd.h - File descriptor wrapper that owns a file descriptor.
+ * File descriptor wrapper that owns a file descriptor.
  */
 
 #pragma once

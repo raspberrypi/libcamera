@@ -3,7 +3,7 @@
 # Copyright (C) 2019, Raspberry Pi Ltd
 # Copyright (C) 2022, Paul Elder <paul.elder@ideasonboard.com>
 #
-# utils.py - Utilities for libtuning
+# Utilities for libtuning
 
 import decimal
 import math

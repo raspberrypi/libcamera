@@ -2,7 +2,7 @@
 #
 # Copyright (C) 2019, Raspberry Pi Ltd
 #
-# ctt_ransac.py - camera tuning tool RANSAC selector for Macbeth chart locator
+# camera tuning tool RANSAC selector for Macbeth chart locator
 
 import numpy as np
 

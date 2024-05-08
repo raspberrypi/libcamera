@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021-2022, Ideas On Board
  *
- * cproc.cpp - RkISP1 Color Processing control
+ * RkISP1 Color Processing control
  */
 
 #include "cproc.h"

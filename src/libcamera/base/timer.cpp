@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * timer.cpp - Generic timer
+ * Generic timer
  */
 
 #include <libcamera/base/timer.h>

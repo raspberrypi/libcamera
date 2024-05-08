@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Google Inc.
  *
- * unixsocket_ipc.cpp - Unix socket IPC test
+ * Unix socket IPC test
  */
 
 #include <algorithm>

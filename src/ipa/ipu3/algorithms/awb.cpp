@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021, Ideas On Board
  *
- * awb.cpp - AWB control algorithm
+ * AWB control algorithm
  */
 #include "awb.h"
 

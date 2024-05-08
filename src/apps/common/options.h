@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * options.h - cam - Options parsing
+ * cam - Options parsing
  */
 
 #pragma once

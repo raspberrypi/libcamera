@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * main.cpp - cam - The libcamera swiss army knife
+ * cam - The libcamera swiss army knife
  */
 
 #include <atomic>

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Google Inc.
  *
- * exif.cpp - EXIF tag creation using libexif
+ * EXIF tag creation using libexif
  */
 
 #include "exif.h"

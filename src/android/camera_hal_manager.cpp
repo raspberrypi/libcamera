@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * camera_hal_manager.cpp - libcamera Android Camera Manager
+ * libcamera Android Camera Manager
  */
 
 #include "camera_hal_manager.h"

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2022, Google Inc.
  *
- * yaml_parser.h - libcamera YAML parsing helper
+ * libcamera YAML parsing helper
  */
 
 #pragma once

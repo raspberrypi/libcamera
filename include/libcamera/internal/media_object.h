@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2018, Google Inc.
  *
- * media_object.h - Media Device objects: entities, pads and links.
+ * Media Device objects: entities, pads and links.
  */
 
 #pragma once

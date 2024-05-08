@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019-2021, Raspberry Pi Ltd
  *
- * sdn.cpp - SDN (spatial denoise) control algorithm
+ * SDN (spatial denoise) control algorithm
  */
 
 #include <libcamera/base/log.h>

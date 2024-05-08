@@ -3,7 +3,7 @@
  * Copyright (C) 2020, Laurent Pinchart
  * Copyright (C) 2019, Martijn Braam
  *
- * simple.cpp - Pipeline handler for simple pipelines
+ * Pipeline handler for simple pipelines
  */
 
 #include <algorithm>

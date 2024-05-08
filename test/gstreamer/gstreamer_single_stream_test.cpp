@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021, Vedant Paranjape
  *
- * gstreamer_single_stream_test.cpp - GStreamer single stream capture test
+ * GStreamer single stream capture test
  */
 
 #include <iostream>

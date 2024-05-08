@@ -6,7 +6,7 @@
  * Authors:
  * Hans de Goede <hdegoede@redhat.com>
  *
- * debayer_cpu.h - CPU based debayering header
+ * CPU based debayering header
  */
 
 #pragma once

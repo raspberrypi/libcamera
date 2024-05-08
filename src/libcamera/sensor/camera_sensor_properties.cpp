@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021, Google Inc.
  *
- * camera_sensor_properties.cpp - Database of camera sensor properties
+ * Database of camera sensor properties
  */
 
 #include "libcamera/internal/camera_sensor_properties.h"

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * geometry.cpp - Geometry classes tests
+ * Geometry classes tests
  */
 
 #include <iostream>

@@ -4,7 +4,7 @@
  * Copyright (C) 2024 Andrei Konovalov
  * Copyright (C) 2024 Dennis Bonke
  *
- * shared_mem_object.h - Helpers for shared memory allocations
+ * Helpers for shared memory allocations
  */
 #pragma once
 

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Raspberry Pi Ltd
  *
- * ccm.cpp - CCM (colour correction matrix) control algorithm
+ * CCM (colour correction matrix) control algorithm
  */
 
 #include <libcamera/base/log.h>

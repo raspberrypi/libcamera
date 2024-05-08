@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Google Inc.
  *
- * ipu3.cpp - IPU3 Image Processing Algorithms
+ * IPU3 Image Processing Algorithms
  */
 
 #include <algorithm>

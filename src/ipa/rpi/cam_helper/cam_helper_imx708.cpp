@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2022, Raspberry Pi Ltd
  *
- * cam_helper_imx708.cpp - camera helper for imx708 sensor
+ * camera helper for imx708 sensor
  */
 
 #include <cmath>

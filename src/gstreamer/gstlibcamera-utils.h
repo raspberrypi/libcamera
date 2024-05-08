@@ -3,7 +3,7 @@
  * Copyright (C) 2020, Collabora Ltd.
  *     Author: Nicolas Dufresne <nicolas.dufresne@collabora.com>
  *
- * gstlibcamera-utils.h - GStreamer libcamera Utility Functions
+ * GStreamer libcamera Utility Functions
  */
 
 #pragma once

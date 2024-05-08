@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2024, Red Hat Inc.
  *
- * black_level.cpp - black level handling
+ * black level handling
  */
 
 #include "black_level.h"

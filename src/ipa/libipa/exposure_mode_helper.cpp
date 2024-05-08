@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2024, Paul Elder <paul.elder@ideasonboard.com>
  *
- * exposure_mode_helper.cpp - Helper class that performs computations relating to exposure
+ * Helper class that performs computations relating to exposure
  */
 #include "exposure_mode_helper.h"
 

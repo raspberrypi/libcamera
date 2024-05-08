@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021, Google Inc.
  *
- * mutex.cpp - Mutex classes with clang thread safety annotation
+ * Mutex classes with clang thread safety annotation
  */
 
 #include <libcamera/base/mutex.h>

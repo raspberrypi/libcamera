@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Raspberry Pi Ltd
  *
- * cam_helper_ov5647.cpp - camera information for ov5647 sensor
+ * camera information for ov5647 sensor
  */
 
 #include <assert.h>

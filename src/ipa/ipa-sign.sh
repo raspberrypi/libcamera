@@ -4,7 +4,7 @@
 #
 # Author: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 #
-# ipa-sign.sh - Generate a signature for an IPA module
+# Generate a signature for an IPA module
 
 key="$1"
 input="$2"

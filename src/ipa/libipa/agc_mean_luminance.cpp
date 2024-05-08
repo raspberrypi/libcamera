@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2024 Ideas on Board Oy
  *
- * agc_mean_luminance.cpp - Base class for mean luminance AGC algorithms
+ * Base class for mean luminance AGC algorithms
  */
 
 #include "agc_mean_luminance.h"

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021, Google Inc.
  *
- * camera3_hal.cpp - cros-specific components of Android Camera HALv3 module
+ * cros-specific components of Android Camera HALv3 module
  */
 
 #include <cros-camera/cros_camera_hal.h>

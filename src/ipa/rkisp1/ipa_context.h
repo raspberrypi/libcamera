@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021-2022, Ideas On Board
  *
- * ipa_context.h - RkISP1 IPA Context
+ * RkISP1 IPA Context
  *
  */
 

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * timer.cpp - Timer test
+ * Timer test
  */
 
 #include <chrono>

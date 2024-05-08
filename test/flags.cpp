@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Google Inc.
  *
- * flags.cpp - Flags tests
+ * Flags tests
  */
 
 #include <iostream>

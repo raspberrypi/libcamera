@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2023 Raspberry Pi Ltd
  *
- * cac.cpp - Chromatic Aberration Correction algorithm
+ * Chromatic Aberration Correction algorithm
  */
 #include "cac.h"
 

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Google Inc.
  *
- * ipa_data_serializer.h - Image Processing Algorithm data serializer
+ * Image Processing Algorithm data serializer
  */
 
 #pragma once

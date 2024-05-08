@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Raspberry Pi Ltd
  *
- * transform.h - 2D plane transforms
+ * 2D plane transforms
  */
 
 #pragma once

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2018, Google Inc.
  *
- * camera.h - Camera object interface
+ * Camera object interface
  */
 
 #pragma once

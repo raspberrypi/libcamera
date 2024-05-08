@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019-2021, Raspberry Pi Ltd
  *
- * denoise_status.h - Denoise control algorithm status
+ * Denoise control algorithm status
  */
 #pragma once
 

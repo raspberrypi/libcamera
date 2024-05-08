@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * log_process.cpp - Logging in isolated child process test
+ * Logging in isolated child process test
  */
 
 #include <fcntl.h>

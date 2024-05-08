@@ -2,7 +2,7 @@
 #
 # Copyright (C) 2019, Raspberry Pi Ltd
 #
-# ctt_macbeth_locator.py - camera tuning tool Macbeth chart locator
+# camera tuning tool Macbeth chart locator
 
 from ctt_ransac import *
 from ctt_tools import *

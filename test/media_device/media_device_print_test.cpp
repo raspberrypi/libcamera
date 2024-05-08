@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2018-2019, Google Inc.
  *
- * media_device_print_test.cpp - Print out media devices
+ * Print out media devices
  */
 
 #include <iostream>

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * geometry.cpp - Geometry-related structures
+ * Geometry-related structures
  */
 
 #include <libcamera/geometry.h>

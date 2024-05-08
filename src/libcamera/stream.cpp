@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * stream.cpp - Video stream for a Camera
+ * Video stream for a Camera
  */
 
 #include <libcamera/stream.h>

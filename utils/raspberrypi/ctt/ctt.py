@@ -4,7 +4,7 @@
 #
 # Copyright (C) 2019, Raspberry Pi Ltd
 #
-# ctt.py - camera tuning tool
+# camera tuning tool
 
 import os
 import sys

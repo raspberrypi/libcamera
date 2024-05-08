@@ -4,7 +4,7 @@
 #
 # Author: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 #
-# checkstyle.py - A patch style checker script based on clang-format
+# A patch style checker script based on clang-format
 #
 # TODO:
 #

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * viewfinder_qt.cpp - qcam - QPainter-based ViewFinder
+ * qcam - QPainter-based ViewFinder
  */
 
 #include "viewfinder_qt.h"

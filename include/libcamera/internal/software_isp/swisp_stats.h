@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2023, Linaro Ltd
  *
- * swisp_stats.h - Statistics data format used by the software ISP and software IPA
+ * Statistics data format used by the software ISP and software IPA
  */
 
 #pragma once

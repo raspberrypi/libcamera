@@ -3,7 +3,7 @@
 # Copyright (C) 2019, Raspberry Pi Ltd
 # Copyright (C) 2022, Paul Elder <paul.elder@ideasonboard.com>
 #
-# rkisp1.py - LSC module for tuning rkisp1
+# LSC module for tuning rkisp1
 
 from .lsc import LSC
 

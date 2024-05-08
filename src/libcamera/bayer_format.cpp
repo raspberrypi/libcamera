@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Raspberry Pi Ltd
  *
- * bayer_format.cpp - Class to represent Bayer formats
+ * Class to represent Bayer formats
  */
 
 #include "libcamera/internal/bayer_format.h"

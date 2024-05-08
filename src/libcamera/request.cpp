@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * request.cpp - Capture request handling
+ * Capture request handling
  */
 
 #include "libcamera/internal/request.h"

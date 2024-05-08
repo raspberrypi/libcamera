@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * camera3_hal.cpp - Android Camera HALv3 module
+ * Android Camera HALv3 module
  */
 
 #include <hardware/camera_common.h>

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2023, Ideas On Board Oy
  *
- * transform.cpp - Transform and Orientation tests
+ * Transform and Orientation tests
  */
 
 #include <iostream>

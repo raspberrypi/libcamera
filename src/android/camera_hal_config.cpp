@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021, Google Inc.
  *
- * camera_hal_config.cpp - Camera HAL configuration file manager
+ * Camera HAL configuration file manager
  */
 #include "camera_hal_config.h"
 

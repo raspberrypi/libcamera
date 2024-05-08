@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021, Google Inc.
  *
- * cros_camera_buffer.cpp - Chromium OS buffer backend using CameraBufferManager
+ * Chromium OS buffer backend using CameraBufferManager
  */
 
 #include "../camera_buffer.h"

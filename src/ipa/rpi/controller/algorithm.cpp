@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Raspberry Pi Ltd
  *
- * algorithm.cpp - ISP control algorithms
+ * ISP control algorithms
  */
 
 #include "algorithm.h"

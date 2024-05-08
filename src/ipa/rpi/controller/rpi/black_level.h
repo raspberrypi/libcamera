@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Raspberry Pi Ltd
  *
- * black_level.h - black level control algorithm
+ * black level control algorithm
  */
 #pragma once
 

@@ -3,7 +3,7 @@
  * Copyright (C) 2019, Collabora Ltd.
  *     Author: Nicolas Dufresne <nicolas.dufresne@collabora.com>
  *
- * gstlibcamerasrc.cpp - GStreamer Capture Element
+ * GStreamer Capture Element
  */
 
 /**

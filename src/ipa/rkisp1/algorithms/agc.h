@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021-2022, Ideas On Board
  *
- * agc.h - RkISP1 AGC/AEC mean-based control algorithm
+ * RkISP1 AGC/AEC mean-based control algorithm
  */
 
 #pragma once

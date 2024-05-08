@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2022, Ideas on Board Oy
  *
- * sdl_texture_yuv.h - SDL YUV Textures
+ * SDL YUV Textures
  */
 
 #pragma once

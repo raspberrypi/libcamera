@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2022, Ideas on Board Oy
  *
- * sdl_sink.h - SDL Sink
+ * SDL Sink
  */
 
 #pragma once

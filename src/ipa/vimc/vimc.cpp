@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * vimc.cpp - Vimc Image Processing Algorithm module
+ * Vimc Image Processing Algorithm module
  */
 #include <libcamera/ipa/vimc_ipa_interface.h>
 

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2024, Paul Elder <paul.elder@ideasonboard.com>
  *
- * exposure_mode_helper.h - Helper class that performs computations relating to exposure
+ * Helper class that performs computations relating to exposure
  */
 
 #pragma once

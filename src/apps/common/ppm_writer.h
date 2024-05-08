@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2024, Red Hat, Inc.
  *
- * ppm_writer.h - PPM writer
+ * PPM writer
  */
 
 #pragma once

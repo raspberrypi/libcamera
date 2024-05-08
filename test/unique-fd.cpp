@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021, Google Inc.
  *
- * unique-fd.cpp - UniqueFD test
+ * UniqueFD test
  */
 
 #include <fcntl.h>

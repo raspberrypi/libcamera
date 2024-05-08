@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2018, Google Inc.
  *
- * pipeline_handler.h - Pipeline handler infrastructure
+ * Pipeline handler infrastructure
  */
 
 #pragma once

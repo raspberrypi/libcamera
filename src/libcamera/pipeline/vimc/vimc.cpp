@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2018, Google Inc.
  *
- * vimc.cpp - Pipeline handler for the vimc device
+ * Pipeline handler for the vimc device
  */
 
 #include <algorithm>

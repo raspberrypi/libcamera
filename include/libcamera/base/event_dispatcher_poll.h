@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * event_dispatcher_poll.h - Poll-based event dispatcher
+ * Poll-based event dispatcher
  */
 
 #pragma once

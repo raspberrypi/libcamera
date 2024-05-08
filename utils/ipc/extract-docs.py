@@ -4,7 +4,7 @@
 #
 # Author: Paul Elder <paul.elder@ideasonboard.com>
 #
-# extract-docs.py - Extract doxygen documentation from mojom files
+# Extract doxygen documentation from mojom files
 
 import argparse
 import re

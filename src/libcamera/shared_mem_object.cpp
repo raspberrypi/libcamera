@@ -5,7 +5,7 @@
  * Copyright (C) 2024 Dennis Bonke
  * Copyright (C) 2024 Ideas on Board Oy
  *
- * shared_mem_object.cpp - Helpers for shared memory allocations
+ * Helpers for shared memory allocations
  */
 
 #include "libcamera/internal/shared_mem_object.h"

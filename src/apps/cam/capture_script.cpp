@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2022, Ideas on Board Oy
  *
- * capture_script.cpp - Capture session configuration script
+ * Capture session configuration script
  */
 
 #include "capture_script.h"

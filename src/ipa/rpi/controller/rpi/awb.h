@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Raspberry Pi Ltd
  *
- * awb.h - AWB control algorithm
+ * AWB control algorithm
  */
 #pragma once
 

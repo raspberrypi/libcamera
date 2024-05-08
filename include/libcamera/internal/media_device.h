@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2018, Google Inc.
  *
- * media_device.h - Media device handler
+ * Media device handler
  */
 
 #pragma once

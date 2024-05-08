@@ -2,7 +2,7 @@
 #
 # Copyright (C) 2019, Raspberry Pi Ltd
 #
-# ctt_ccm.py - camera tuning tool for CCM (colour correction matrix)
+# camera tuning tool for CCM (colour correction matrix)
 
 from ctt_image_load import *
 from ctt_awb import get_alsc_patches

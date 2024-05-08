@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Google Inc.
  *
- * class.h - Utilities and helpers for classes
+ * Utilities and helpers for classes
  */
 
 #pragma once

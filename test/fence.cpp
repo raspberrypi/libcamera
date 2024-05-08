@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021, Google Inc.
  *
- * fence.cpp - Fence test
+ * Fence test
  */
 
 #include <iostream>

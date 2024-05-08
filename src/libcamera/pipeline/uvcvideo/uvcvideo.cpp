@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * uvcvideo.cpp - Pipeline handler for uvcvideo devices
+ * Pipeline handler for uvcvideo devices
  */
 
 #include <algorithm>

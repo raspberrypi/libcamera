@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021-2022, Ideas On Board
  *
- * agc.cpp - AGC/AEC mean-based control algorithm
+ * AGC/AEC mean-based control algorithm
  */
 
 #include "agc.h"

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * message.h - Message queue support
+ * Message queue support
  */
 
 #pragma once

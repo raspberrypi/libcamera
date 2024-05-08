@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * camera_session.h - Camera capture session
+ * Camera capture session
  */
 
 #pragma once

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2022, Ideas on Board Oy
  *
- * sdl_texture.h - SDL Texture
+ * SDL Texture
  */
 
 #pragma once

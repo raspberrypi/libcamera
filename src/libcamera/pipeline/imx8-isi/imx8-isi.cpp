@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2022 - Jacopo Mondi <jacopo@jmondi.org>
  *
- * imx8-isi.cpp - Pipeline handler for ISI interface found on NXP i.MX8 SoC
+ * Pipeline handler for ISI interface found on NXP i.MX8 SoC
  */
 
 #include <algorithm>

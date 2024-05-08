@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021, Ideas on Board Oy
  *
- * image.cpp - Multi-planar image with access to pixel data
+ * Multi-planar image with access to pixel data
  */
 
 #include "image.h"

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * main_window.cpp - qcam - Main application window
+ * qcam - Main application window
  */
 
 #include "main_window.h"

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2023, Linaro Ltd
  *
- * soft_simple.cpp - Simple Software Image Processing Algorithm module
+ * Simple Software Image Processing Algorithm module
  */
 
 #include <sys/mman.h>

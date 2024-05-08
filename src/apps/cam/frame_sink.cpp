@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021, Ideas on Board Oy
  *
- * frame_sink.cpp - Base Frame Sink Class
+ * Base Frame Sink Class
  */
 
 #include "frame_sink.h"

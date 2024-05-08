@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * threads.cpp - Threads test
+ * Threads test
  */
 
 #include <chrono>

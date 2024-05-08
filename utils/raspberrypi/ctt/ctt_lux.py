@@ -2,7 +2,7 @@
 #
 # Copyright (C) 2019, Raspberry Pi Ltd
 #
-# ctt_lux.py - camera tuning tool for lux level
+# camera tuning tool for lux level
 
 from ctt_tools import *
 

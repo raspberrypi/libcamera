@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2018, Google Inc.
  *
- * log.cpp - Logging infrastructure
+ * Logging infrastructure
  */
 
 #include <libcamera/base/log.h>

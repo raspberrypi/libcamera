@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Google Inc.
  *
- * thumbnailer.h - Simple image thumbnailer
+ * Simple image thumbnailer
  */
 
 #pragma once

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019-2023, Raspberry Pi Ltd
  *
- * vc4.cpp - Pipeline handler for VC4-based Raspberry Pi devices
+ * Pipeline handler for VC4-based Raspberry Pi devices
  */
 
 #include <linux/bcm2835-isp.h>

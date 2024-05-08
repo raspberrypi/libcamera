@@ -5,7 +5,7 @@
  * Authors:
  * Hans de Goede <hdegoede@redhat.com>
  *
- * debayer_params.h - DebayerParams header
+ * DebayerParams header
  */
 
 #pragma once

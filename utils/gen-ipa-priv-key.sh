@@ -4,7 +4,7 @@
 #
 # Author: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 #
-# gen-ipa-priv-key.sh - Generate an RSA private key to sign IPA modules
+# Generate an RSA private key to sign IPA modules
 
 key="$1"
 

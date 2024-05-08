@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2022-2023, Raspberry Pi Ltd
  *
- * af.h - Autofocus control algorithm
+ * Autofocus control algorithm
  */
 #pragma once
 

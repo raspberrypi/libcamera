@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * object.cpp - Base object
+ * Base object
  */
 
 #include <libcamera/base/object.h>

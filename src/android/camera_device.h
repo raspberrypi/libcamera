@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * camera_device.h - libcamera Android Camera Device
+ * libcamera Android Camera Device
  */
 
 #pragma once

@@ -3,7 +3,7 @@
  * Copyright (C) 2020, Laurent Pinchart
  * Copyright 2022 NXP
  *
- * converter.h - Generic format converter interface
+ * Generic format converter interface
  */
 
 #pragma once

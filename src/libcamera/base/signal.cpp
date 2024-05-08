@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * signal.cpp - Signal & slot implementation
+ * Signal & slot implementation
  */
 
 #include <libcamera/base/signal.h>

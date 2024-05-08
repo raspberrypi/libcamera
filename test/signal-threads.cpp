@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * signal-threads.cpp - Cross-thread signal delivery test
+ * Cross-thread signal delivery test
  */
 
 #include <chrono>

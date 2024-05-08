@@ -2,7 +2,7 @@
 #
 # Copyright 2022 Paul Elder <paul.elder@ideasonboard.com>
 #
-# yaml_output.py - Generate tuning file in YAML format
+# Generate tuning file in YAML format
 
 from .generator import Generator
 

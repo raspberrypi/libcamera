@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Google Inc.
  *
- * ipa_data_serializer.cpp - Image Processing Algorithm data serializer
+ * Image Processing Algorithm data serializer
  */
 
 #include "libcamera/internal/ipa_data_serializer.h"

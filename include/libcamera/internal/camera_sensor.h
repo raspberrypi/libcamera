@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * camera_sensor.h - A camera sensor
+ * A camera sensor
  */
 
 #pragma once

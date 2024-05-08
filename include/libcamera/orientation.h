@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2023, Ideas On Board Oy
  *
- * orientation.h - Image orientation
+ * Image orientation
  */
 
 #pragma once

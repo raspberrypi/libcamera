@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021, Raspberry Pi Ltd
  *
- * cam_helper_imx290.cpp - camera helper for imx290 sensor
+ * camera helper for imx290 sensor
  */
 
 #include <math.h>

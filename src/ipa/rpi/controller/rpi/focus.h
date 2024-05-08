@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Raspberry Pi Ltd
  *
- * focus.h - focus algorithm
+ * focus algorithm
  */
 #pragma once
 

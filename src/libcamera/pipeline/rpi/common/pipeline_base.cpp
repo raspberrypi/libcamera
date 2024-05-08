@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019-2023, Raspberry Pi Ltd
  *
- * pipeline_base.cpp - Pipeline handler base class for Raspberry Pi devices
+ * Pipeline handler base class for Raspberry Pi devices
  */
 
 #include "pipeline_base.h"

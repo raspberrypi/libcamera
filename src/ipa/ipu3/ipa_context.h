@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021, Google Inc.
  *
- * ipa_context.h - IPU3 IPA Context
+ * IPU3 IPA Context
  *
  */
 

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Raspberry Pi Ltd
  *
- * dma_heaps.cpp - Helper class for dma-heap allocations.
+ * Helper class for dma-heap allocations.
  */
 
 #include "libcamera/internal/dma_heaps.h"

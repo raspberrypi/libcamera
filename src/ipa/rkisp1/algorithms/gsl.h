@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021-2022, Ideas On Board
  *
- * gsl.h - RkISP1 Gamma Sensor Linearization control
+ * RkISP1 Gamma Sensor Linearization control
  */
 
 #pragma once

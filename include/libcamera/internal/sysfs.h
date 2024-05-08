@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Google Inc.
  *
- * sysfs.h - Miscellaneous utility functions to access sysfs
+ * Miscellaneous utility functions to access sysfs
  */
 
 #pragma once

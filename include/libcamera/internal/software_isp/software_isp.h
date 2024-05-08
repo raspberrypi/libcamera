@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2023, Linaro Ltd
  *
- * software_isp.h - Simple software ISP implementation
+ * Simple software ISP implementation
  */
 
 #pragma once

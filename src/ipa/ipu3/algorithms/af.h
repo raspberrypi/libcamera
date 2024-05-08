@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021, Red Hat
  *
- * af.h - IPU3 Af algorithm
+ * IPU3 Af algorithm
  */
 
 #pragma once

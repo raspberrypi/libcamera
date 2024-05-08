@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Google Inc.
  *
- * encoder_libjpeg.h - JPEG encoding using libjpeg
+ * JPEG encoding using libjpeg
  */
 
 #pragma once

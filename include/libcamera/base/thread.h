@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * thread.h - Thread support
+ * Thread support
  */
 
 #pragma once

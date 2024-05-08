@@ -3,7 +3,7 @@
 # Copyright (C) 2019, Raspberry Pi Ltd
 # Copyright (C) 2022, Paul Elder <paul.elder@ideasonboard.com>
 #
-# raspberrypi.py - ALSC module for tuning Raspberry Pi
+# ALSC module for tuning Raspberry Pi
 
 from .lsc import LSC
 

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2022, Ideas on Board Oy
  *
- * sdl_texture_mjpg.cpp - SDL Texture MJPG
+ * SDL Texture MJPG
  */
 
 #include "sdl_texture_mjpg.h"

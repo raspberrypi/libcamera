@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Raspberry Pi Ltd
  *
- * sdn.h - SDN (spatial denoise) control algorithm
+ * SDN (spatial denoise) control algorithm
  */
 #pragma once
 

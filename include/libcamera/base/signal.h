@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * signal.h - Signal & slot implementation
+ * Signal & slot implementation
  */
 
 #pragma once

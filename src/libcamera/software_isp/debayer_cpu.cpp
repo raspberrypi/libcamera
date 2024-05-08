@@ -6,7 +6,7 @@
  * Authors:
  * Hans de Goede <hdegoede@redhat.com>
  *
- * debayer_cpu.cpp - CPU based debayering class
+ * CPU based debayering class
  */
 
 #include "debayer_cpu.h"

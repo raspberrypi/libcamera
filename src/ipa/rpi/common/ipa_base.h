@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2023, Raspberry Pi Ltd
  *
- * ipa_base.h - Raspberry Pi IPA base class
+ * Raspberry Pi IPA base class
  */
 #pragma once
 

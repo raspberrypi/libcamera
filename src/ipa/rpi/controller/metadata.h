@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019-2021, Raspberry Pi Ltd
  *
- * metadata.h - general metadata class
+ * general metadata class
  */
 #pragma once
 

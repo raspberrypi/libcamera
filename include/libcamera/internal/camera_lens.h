@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021, Google Inc.
  *
- * camera_lens.h - A camera lens controller
+ * A camera lens controller
  */
 #pragma once
 

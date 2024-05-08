@@ -4,7 +4,7 @@
 #
 # Author: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 #
-# gen-controls.py - Generate control definitions from YAML
+# Generate control definitions from YAML
 
 import argparse
 from functools import reduce

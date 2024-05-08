@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Raspberry Pi Ltd
  *
- * dng_writer.cpp - DNG writer
+ * DNG writer
  */
 
 #include "dng_writer.h"

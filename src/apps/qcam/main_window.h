@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * main_window.h - qcam - Main application window
+ * qcam - Main application window
  */
 
 #pragma once

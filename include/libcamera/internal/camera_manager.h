@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2023, Ideas on Board Oy.
  *
- * camera_manager.h - Camera manager private data
+ * Camera manager private data
  */
 
 #pragma once

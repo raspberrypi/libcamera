@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021-2022, Ideas On Board
  *
- * dpcc.cpp - RkISP1 Defect Pixel Cluster Correction control
+ * RkISP1 Defect Pixel Cluster Correction control
  */
 
 #include "dpcc.h"

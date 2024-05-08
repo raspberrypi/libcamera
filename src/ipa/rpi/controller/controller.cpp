@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Raspberry Pi Ltd
  *
- * controller.cpp - ISP controller
+ * ISP controller
  */
 
 #include <assert.h>

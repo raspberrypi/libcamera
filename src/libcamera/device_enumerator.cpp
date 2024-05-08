@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2018, Google Inc.
  *
- * device_enumerator.cpp - Enumeration and matching
+ * Enumeration and matching
  */
 
 #include "libcamera/internal/device_enumerator.h"

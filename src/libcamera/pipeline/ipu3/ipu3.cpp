@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * ipu3.cpp - Pipeline handler for Intel IPU3
+ * Pipeline handler for Intel IPU3
  */
 
 #include <algorithm>

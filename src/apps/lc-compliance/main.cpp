@@ -3,7 +3,7 @@
  * Copyright (C) 2020, Google Inc.
  * Copyright (C) 2021, Collabora Ltd.
  *
- * main.cpp - lc-compliance - The libcamera compliance tool
+ * lc-compliance - The libcamera compliance tool
  */
 
 #include <iomanip>

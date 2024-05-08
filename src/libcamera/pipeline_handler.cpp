@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2018, Google Inc.
  *
- * pipeline_handler.cpp - Pipeline handler infrastructure
+ * Pipeline handler infrastructure
  */
 
 #include "libcamera/internal/pipeline_handler.h"

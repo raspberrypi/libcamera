@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021, Google Inc.
  *
- * frame_buffer_allocator.h - Interface definition to allocate Frame buffer in
+ * Interface definition to allocate Frame buffer in
  * platform dependent way.
  */
 #ifndef __ANDROID_FRAME_BUFFER_ALLOCATOR_H__

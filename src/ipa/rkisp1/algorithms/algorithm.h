@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021, Ideas On Board
  *
- * algorithm.h - RkISP1 control algorithm interface
+ * RkISP1 control algorithm interface
  */
 
 #pragma once

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Raspberry Pi Ltd
  *
- * dpc.cpp - DPC (defective pixel correction) control algorithm
+ * DPC (defective pixel correction) control algorithm
  */
 
 #include <libcamera/base/log.h>

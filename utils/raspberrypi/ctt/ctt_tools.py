@@ -2,7 +2,7 @@
 #
 # Copyright (C) 2019, Raspberry Pi Ltd
 #
-# ctt_tools.py - camera tuning tool miscellaneous
+# camera tuning tool miscellaneous
 
 import time
 import re

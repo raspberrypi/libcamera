@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2024, Red Hat Inc.
  *
- * black_level.h - black level handling
+ * black level handling
  */
 
 #pragma once

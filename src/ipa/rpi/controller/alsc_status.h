@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Raspberry Pi Ltd
  *
- * alsc_status.h - ALSC (auto lens shading correction) control algorithm status
+ * ALSC (auto lens shading correction) control algorithm status
  */
 #pragma once
 

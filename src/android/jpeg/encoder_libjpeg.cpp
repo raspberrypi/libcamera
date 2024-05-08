@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Google Inc.
  *
- * encoder_libjpeg.cpp - JPEG encoding using libjpeg native API
+ * JPEG encoding using libjpeg native API
  */
 
 #include "encoder_libjpeg.h"

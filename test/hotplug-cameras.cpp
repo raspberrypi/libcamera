@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Umang Jain <email@uajain.com>
  *
- * hotplug-cameras.cpp - Test cameraAdded/cameraRemoved signals in CameraManager
+ * Test cameraAdded/cameraRemoved signals in CameraManager
  */
 
 #include <dirent.h>

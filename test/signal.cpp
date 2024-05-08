@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * signal.cpp - Signal test
+ * Signal test
  */
 
 #include <iostream>

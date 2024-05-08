@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Google Inc.
  *
- * frames.h - Intel IPU3 Frames helper
+ * Intel IPU3 Frames helper
  */
 
 #pragma once

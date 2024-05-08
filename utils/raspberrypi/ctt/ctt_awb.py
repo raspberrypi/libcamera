@@ -2,7 +2,7 @@
 #
 # Copyright (C) 2019, Raspberry Pi Ltd
 #
-# ctt_awb.py - camera tuning tool for AWB
+# camera tuning tool for AWB
 
 from ctt_image_load import *
 import matplotlib.pyplot as plt

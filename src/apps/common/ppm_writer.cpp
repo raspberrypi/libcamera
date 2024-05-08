@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2024 Red Hat, Inc.
  *
- * ppm_writer.cpp - PPM writer
+ * PPM writer
  */
 
 #include "ppm_writer.h"

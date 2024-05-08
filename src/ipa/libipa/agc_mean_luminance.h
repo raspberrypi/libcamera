@@ -31,8 +31,8 @@ public:
 
 	struct AgcConstraint {
 		enum class Bound {
-			lower = 0,
-			upper = 1
+			Lower = 0,
+			Upper = 1
 		};
 		Bound bound;
 		double qLo;

@@ -59,9 +59,9 @@ static constexpr double kDefaultRelativeLuminanceTarget = 0.16;
 /**
  * \enum AgcMeanLuminance::AgcConstraint::Bound
  * \brief Specify whether the constraint defines a lower or upper bound
- * \var AgcMeanLuminance::AgcConstraint::lower
+ * \var AgcMeanLuminance::AgcConstraint::Lower
  * \brief The constraint defines a lower bound
- * \var AgcMeanLuminance::AgcConstraint::upper
+ * \var AgcMeanLuminance::AgcConstraint::Upper
  * \brief The constraint defines an upper bound
  */
 
@@ -209,7 +209,7 @@ int AgcMeanLuminance::parseConstraintModes(const YamlObject &tuningData)
 	 */
 	if (constraintModes_.empty()) {
 		AgcConstraint constraint = {
-			AgcConstraint::Bound::lower,
+			AgcConstraint::Bound::Lower,
 			0.98,
 			1.0,
 			0.5
@@ -467,11 +467,11 @@ double AgcMeanLuminance::constraintClampGain(uint32_t constraintModeIndex,
 		double newGain = constraint.yTarget * hist.bins() /
 				 hist.interQuantileMean(constraint.qLo, constraint.qHi);
 
-		if (constraint.bound == AgcConstraint::Bound::lower &&
+		if (constraint.bound == AgcConstraint::Bound::Lower &&
 		    newGain > gain)
 			gain = newGain;
 
-		if (constraint.bound == AgcConstraint::Bound::upper &&
+		if (constraint.bound == AgcConstraint::Bound::Upper &&
 		    newGain < gain)
 			gain = newGain;
 	}

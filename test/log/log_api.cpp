@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * log.cpp - log API test
+ * log API test
  */
 
 #include <algorithm>

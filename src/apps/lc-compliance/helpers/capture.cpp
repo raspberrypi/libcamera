@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020-2021, Google Inc.
  *
- * simple_capture.cpp - Simple capture helper
+ * Simple capture helper
  */
 
 #include "capture.h"

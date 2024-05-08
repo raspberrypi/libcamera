@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2023, Umang Jain <umang.jain@ideasonboard.com>
  *
- * gstreamer_single_stream_test.cpp - GStreamer single stream capture test
+ * GStreamer single stream capture test
  */
 
 #include <vector>

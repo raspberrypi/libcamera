@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021, Ideas On Board
  *
- * ipu3_agc.cpp - AGC/AEC mean-based control algorithm
+ * AGC/AEC mean-based control algorithm
  */
 
 #include "agc.h"

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2018, Google Inc.
  *
- * byte_stream_buffer.cpp - ByteStreamBuffer tests
+ * ByteStreamBuffer tests
  */
 
 #include <array>

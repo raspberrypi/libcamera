@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019-2021, Raspberry Pi Ltd
  *
- * rpi.cpp - Raspberry Pi VC4/BCM2835 ISP IPA.
+ * Raspberry Pi VC4/BCM2835 ISP IPA.
  */
 
 #include <string.h>

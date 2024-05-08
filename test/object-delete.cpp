@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Google Inc.
  *
- * object.cpp - Object deletion tests
+ * Object deletion tests
  */
 
 #include <iostream>

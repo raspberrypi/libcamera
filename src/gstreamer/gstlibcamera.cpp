@@ -3,7 +3,7 @@
  * Copyright (C) 2019, Collabora Ltd.
  *     Author: Nicolas Dufresne <nicolas.dufresne@collabora.com>
  *
- * gstlibcamera.c - GStreamer plugin
+ * GStreamer plugin
  */
 
 #include "gstlibcameraprovider.h"

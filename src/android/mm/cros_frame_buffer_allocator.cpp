@@ -2,8 +2,7 @@
 /*
  * Copyright (C) 2021, Google Inc.
  *
- * cros_frame_buffer.cpp - Allocate FrameBuffer for Chromium OS using
- * CameraBufferManager
+ * Allocate FrameBuffer for Chromium OS using CameraBufferManager
  */
 
 #include <memory>

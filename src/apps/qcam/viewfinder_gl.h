@@ -2,8 +2,7 @@
 /*
  * Copyright (C) 2020, Linaro
  *
- * viewfinder_GL.h - OpenGL Viewfinder for rendering by OpenGL shader
- *
+ * OpenGL Viewfinder for rendering by OpenGL shader
  */
 
 #pragma once

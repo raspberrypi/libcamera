@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2022 Raspberry Pi Ltd
  *
- * hdr.h - Tonemap control algorithm status
+ * Tonemap control algorithm status
  */
 #pragma once
 

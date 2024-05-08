@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Linaro
  *
- * viewfinderGL.cpp - OpenGL Viewfinder for rendering by OpenGL shader
+ * OpenGL Viewfinder for rendering by OpenGL shader
  */
 
 #include "viewfinder_gl.h"

@@ -12,6 +12,8 @@
 #include <tuple>
 #include <vector>
 
+#include <libcamera/base/utils.h>
+
 #include <libcamera/controls.h>
 
 #include "libcamera/internal/yaml_parser.h"

@@ -61,6 +61,10 @@ namespace libcamera {
  * \brief Format uses MIPI CSI-2 style packing
  * \var BayerFormat::Packing::IPU3
  * \brief Format uses IPU3 style packing
+ * \var BayerFormat::Packing::PISP1
+ * \brief Format uses PISP mode 1 compression
+ * \var BayerFormat::Packing::PISP2
+ * \brief Format uses PISP mode 2 compression
  */
 
 namespace {
@@ -164,6 +168,14 @@ const std::map<BayerFormat, Formats, BayerFormatComparator> bayerToFormat{
 		{ formats::SGRBG16, V4L2PixelFormat(V4L2_PIX_FMT_SGRBG16) } },
 	{ { BayerFormat::RGGB, 16, BayerFormat::Packing::None },
 		{ formats::SRGGB16, V4L2PixelFormat(V4L2_PIX_FMT_SRGGB16) } },
+	{ { BayerFormat::BGGR, 16, BayerFormat::Packing::PISP1 },
+		{ formats::BGGR_PISP_COMP1, V4L2PixelFormat(V4L2_PIX_FMT_PISP_COMP1_BGGR) } },
+	{ { BayerFormat::GBRG, 16, BayerFormat::Packing::PISP1 },
+		{ formats::GBRG_PISP_COMP1, V4L2PixelFormat(V4L2_PIX_FMT_PISP_COMP1_GBRG) } },
+	{ { BayerFormat::GRBG, 16, BayerFormat::Packing::PISP1 },
+		{ formats::GRBG_PISP_COMP1, V4L2PixelFormat(V4L2_PIX_FMT_PISP_COMP1_GRBG) } },
+	{ { BayerFormat::RGGB, 16, BayerFormat::Packing::PISP1 },
+		{ formats::RGGB_PISP_COMP1, V4L2PixelFormat(V4L2_PIX_FMT_PISP_COMP1_RGGB) } },
 	{ { BayerFormat::MONO, 8, BayerFormat::Packing::None },
 		{ formats::R8, V4L2PixelFormat(V4L2_PIX_FMT_GREY) } },
 	{ { BayerFormat::MONO, 10, BayerFormat::Packing::None },
@@ -174,6 +186,8 @@ const std::map<BayerFormat, Formats, BayerFormatComparator> bayerToFormat{
 		{ formats::R12, V4L2PixelFormat(V4L2_PIX_FMT_Y12) } },
 	{ { BayerFormat::MONO, 16, BayerFormat::Packing::None },
 		{ formats::R16, V4L2PixelFormat(V4L2_PIX_FMT_Y16) } },
+	{ { BayerFormat::MONO, 16, BayerFormat::Packing::PISP1 },
+		{ formats::MONO_PISP_COMP1, V4L2PixelFormat(V4L2_PIX_FMT_PISP_COMP1_MONO) } },
 };
 
 const std::unordered_map<unsigned int, BayerFormat> mbusCodeToBayer{
@@ -303,6 +317,10 @@ std::ostream &operator<<(std::ostream &out, const BayerFormat &f)
 		out << "-CSI2P";
 	else if (f.packing == BayerFormat::Packing::IPU3)
 		out << "-IPU3P";
+	else if (f.packing == BayerFormat::Packing::PISP1)
+		out << "-PISP1";
+	else if (f.packing == BayerFormat::Packing::PISP2)
+		out << "-PISP2";
 
 	return out;
 }

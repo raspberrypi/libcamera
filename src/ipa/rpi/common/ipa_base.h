@@ -22,6 +22,7 @@
 #include "controller/agc_status.h"
 #include "controller/camera_mode.h"
 #include "controller/controller.h"
+#include "controller/hdr_status.h"
 #include "controller/metadata.h"
 
 namespace libcamera {
@@ -63,6 +64,12 @@ protected:
 	utils::Duration lastTimeout_;
 	ControlList libcameraMetadata_;
 	bool statsMetadataOutput_;
+
+	/* Remember the HDR status after a mode switch. */
+	HdrStatus hdrStatus_;
+
+	/* Whether the stitch block (if available) needs to swap buffers. */
+	bool stitchSwapBuffers_;
 
 private:
 	/* Number of metadata objects available in the context list. */

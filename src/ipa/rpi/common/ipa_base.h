@@ -49,6 +49,11 @@ public:
 	void processStats(const ProcessParams &params) override;
 
 protected:
+	bool monoSensor()
+	{
+		return monoSensor_;
+	}
+
 	/* Raspberry Pi controller specific defines. */
 	std::unique_ptr<RPiController::CamHelper> helper_;
 	RPiController::Controller controller_;

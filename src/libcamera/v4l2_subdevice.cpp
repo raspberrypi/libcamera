@@ -651,6 +651,34 @@ const std::map<uint32_t, MediaBusFormatInfo> mediaBusFormatInfo{
 		.bitsPerPixel = 14,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 	} },
+	{ MEDIA_BUS_FMT_SBGGR16_1X16, {
+		.name = "SBGGR16_1X16",
+		.code = MEDIA_BUS_FMT_SBGGR16_1X16,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 16,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW
+	} },
+	{ MEDIA_BUS_FMT_SGBRG16_1X16, {
+		.name = "SGBRG16_1X16",
+		.code = MEDIA_BUS_FMT_SGBRG16_1X16,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 16,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW
+	} },
+	{ MEDIA_BUS_FMT_SGRBG16_1X16, {
+		.name = "SGRBG16_1X16",
+		.code = MEDIA_BUS_FMT_SGRBG16_1X16,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 16,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW
+	} },
+	{ MEDIA_BUS_FMT_SRGGB16_1X16, {
+		.name = "SRGGB16_1X16",
+		.code = MEDIA_BUS_FMT_SRGGB16_1X16,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 16,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW
+	} },
 	/* \todo Clarify colour encoding for HSV formats */
 	{ MEDIA_BUS_FMT_AHSV8888_1X32, {
 		.name = "AHSV8888_1X32",

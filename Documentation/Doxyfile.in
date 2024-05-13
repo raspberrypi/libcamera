@@ -20,6 +20,7 @@ TOC_INCLUDE_HEADINGS   = 0
 CASE_SENSE_NAMES       = YES
 
 QUIET                  = YES
+WARN_AS_ERROR          = @WARN_AS_ERROR@
 
 INPUT                  = "@TOP_SRCDIR@/include/libcamera" \
                          "@TOP_SRCDIR@/src/ipa/ipu3" \

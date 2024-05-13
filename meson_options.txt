@@ -20,6 +20,11 @@ option('documentation',
         type : 'feature',
         description : 'Generate the project documentation')
 
+option('doc_werror',
+        type : 'boolean',
+        value : false,
+        description : 'Treat documentation warnings as errors')
+
 option('gstreamer',
         type : 'feature',
         value : 'auto',

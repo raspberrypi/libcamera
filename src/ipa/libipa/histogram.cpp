@@ -50,6 +50,7 @@ Histogram::Histogram(Span<const uint32_t> data)
 }
 
 /**
+ * \fn Histogram::Histogram(Span<const uint32_t> data, Transform transform)
  * \brief Create a cumulative histogram
  * \param[in] data A (non-cumulative) histogram
  * \param[in] transform The transformation function to apply to every bin

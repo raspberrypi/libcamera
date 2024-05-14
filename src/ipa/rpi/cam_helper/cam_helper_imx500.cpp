@@ -280,6 +280,7 @@ void CamHelperImx500::parseInferenceData(libcamera::Span<const uint8_t> buffer,
 				exported.numChannels = inputTensorInfo.channels;
 				strncpy(exported.networkName, inputTensorInfo.networkName.c_str(),
 					sizeof(exported.networkName));
+				exported.networkName[sizeof(exported.networkName) - 1] = '\0';
 
 				const Span<const uint8_t> tensorInfo{ (const uint8_t *)&exported,
 								      sizeof(exported) };
@@ -315,6 +316,7 @@ void CamHelperImx500::parseInferenceData(libcamera::Span<const uint8_t> buffer,
 			}
 			strncpy(exported.networkName, outputTensorInfo.networkName.c_str(),
 				sizeof(exported.networkName));
+			exported.networkName[sizeof(exported.networkName) - 1] = '\0';
 
 			const Span<const uint8_t> tensorInfo{ (const uint8_t *)&exported,
 							      sizeof(exported) };

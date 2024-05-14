@@ -385,7 +385,7 @@ gst_libcamera_stream_configuration_to_caps(const StreamConfiguration &stream_cfg
 
 	if (stream_cfg.colorSpace) {
 		GstVideoColorimetry colorimetry = colorimetry_from_colorspace(stream_cfg.colorSpace.value());
-		gchar *colorimetry_str = gst_video_colorimetry_to_string(&colorimetry);
+		g_autofree gchar *colorimetry_str = gst_video_colorimetry_to_string(&colorimetry);
 
 		if (colorimetry_str)
 			gst_structure_set(s, "colorimetry", G_TYPE_STRING, colorimetry_str, nullptr);

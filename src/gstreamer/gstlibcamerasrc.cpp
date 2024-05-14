@@ -377,10 +377,10 @@ gst_libcamera_src_open(GstLibcameraSrc *self)
 	}
 
 	if (camera_name) {
-		cam = cm->get(self->camera_name);
+		cam = cm->get(camera_name);
 		if (!cam) {
 			GST_ELEMENT_ERROR(self, RESOURCE, NOT_FOUND,
-					  ("Could not find a camera named '%s'.", self->camera_name),
+					  ("Could not find a camera named '%s'.", camera_name),
 					  ("libcamera::CameraMananger::get() returned nullptr"));
 			return false;
 		}

@@ -218,6 +218,14 @@ namespace libcamera::ipa::rkisp1 {
  */
 
 /**
+ * \var IPAActiveState::goc
+ * \brief State for the goc algorithm
+ *
+ * \var IPAActiveState::goc.gamma
+ * \brief Gamma value applied as 1.0/gamma
+ */
+
+/**
  * \struct IPAFrameContext
  * \brief Per-frame context for algorithms
  *
@@ -330,6 +338,18 @@ namespace libcamera::ipa::rkisp1 {
  *
  * \var IPAFrameContext::filter.updateParams
  * \brief Indicates if the filter parameters have been updated compared to the
+ * previous frame
+ */
+
+/**
+ * \var IPAFrameContext::goc
+ * \brief Gamma out correction parameters for this frame
+ *
+ * \var IPAFrameContext::goc.gamma
+ * \brief Gamma value applied as 1.0/gamma
+ *
+ * \var IPAFrameContext::goc.update
+ * \brief Indicates if the goc parameters have been updated compared to the
  * previous frame
  */
 

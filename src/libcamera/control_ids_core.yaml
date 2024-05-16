@@ -865,4 +865,11 @@ controls:
           description: |
             This is a long exposure image.
 
+  - Gamma:
+      type: float
+      description:  |
+        Specify a fixed gamma value. Default must be 2.2 which closely mimics 
+        sRGB gamma. Note that this is camera gamma, so it is applied as 
+        1.0/gamma
+
 ...

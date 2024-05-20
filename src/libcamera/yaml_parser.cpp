@@ -468,10 +468,13 @@ bool YamlObject::contains(const std::string &key) const
  */
 const YamlObject &YamlObject::operator[](const std::string &key) const
 {
-	if (type_ != Type::Dictionary || !contains(key))
+	if (type_ != Type::Dictionary)
 		return empty;
 
 	auto iter = dictionary_.find(key);
+	if (iter == dictionary_.end())
+		return empty;
+
 	return *iter->second;
 }
 

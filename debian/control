@@ -36,7 +36,7 @@ Build-Depends: debhelper-compat (= 13),
                python3-sphinx <!nodoc>,
                python3-yaml,
                qtbase5-dev <!pkg.libcamera.noqt>
-Standards-Version: 4.6.2
+Standards-Version: 4.7.0
 Rules-Requires-Root: no
 Section: libs
 Homepage: https://libcamera.org/

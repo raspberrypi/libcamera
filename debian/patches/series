@@ -1,3 +1,2 @@
 ppc64el-fix-ftbfs-gcc.patch
 skip_failing_tests.patch
-64-bit-time-t-compat.patch

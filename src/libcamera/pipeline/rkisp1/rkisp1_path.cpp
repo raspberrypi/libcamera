@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Google Inc.
  *
- * rkisp1path.cpp - Rockchip ISP1 path helper
+ * Rockchip ISP1 path helper
  */
 
 #include "rkisp1_path.h"
@@ -365,7 +365,7 @@ int RkISP1Path::configure(const StreamConfiguration &config,
 	 * The configuration has been validated, the pixel format is guaranteed
 	 * to be supported and thus found in formatToMediaBus.
 	 */
-	ispFormat.mbus_code = formatToMediaBus.at(config.pixelFormat);
+	ispFormat.code = formatToMediaBus.at(config.pixelFormat);
 
 	ret = resizer_->setFormat(1, &ispFormat);
 	if (ret < 0)

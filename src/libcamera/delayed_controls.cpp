@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Raspberry Pi Ltd
  *
- * delayed_controls.h - Helper to deal with controls that take effect with a delay
+ * Helper to deal with controls that take effect with a delay
  */
 
 #include "libcamera/internal/delayed_controls.h"

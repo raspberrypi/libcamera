@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2022, Google Inc.
  *
- * cros_mojo_token.h - cros-specific mojo token
+ * cros-specific mojo token
  */
 
 #pragma once

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021, Google Inc.
  *
- * camera_sensor_helper.cpp - Helper class that performs sensor-specific
+ * Helper class that performs sensor-specific
  * parameter computations
  */
 #include "camera_sensor_helper.h"
@@ -417,6 +417,17 @@ public:
 };
 REGISTER_CAMERA_SENSOR_HELPER("imx258", CameraSensorHelperImx258)
 
+class CameraSensorHelperImx283 : public CameraSensorHelper
+{
+public:
+	CameraSensorHelperImx283()
+	{
+		gainType_ = AnalogueGainLinear;
+		gainConstants_.linear = { 0, 2048, -1, 2048 };
+	}
+};
+REGISTER_CAMERA_SENSOR_HELPER("imx283", CameraSensorHelperImx283)
+
 class CameraSensorHelperImx290 : public CameraSensorHelper
 {
 public:
@@ -443,6 +454,28 @@ class CameraSensorHelperImx327 : public CameraSensorHelperImx290
 {
 };
 REGISTER_CAMERA_SENSOR_HELPER("imx327", CameraSensorHelperImx327)
+
+class CameraSensorHelperImx335 : public CameraSensorHelper
+{
+public:
+	CameraSensorHelperImx335()
+	{
+		gainType_ = AnalogueGainExponential;
+		gainConstants_.exp = { 1.0, expGainDb(0.3) };
+	}
+};
+REGISTER_CAMERA_SENSOR_HELPER("imx335", CameraSensorHelperImx335)
+
+class CameraSensorHelperImx415 : public CameraSensorHelper
+{
+public:
+	CameraSensorHelperImx415()
+	{
+		gainType_ = AnalogueGainExponential;
+		gainConstants_.exp = { 1.0, expGainDb(0.3) };
+	}
+};
+REGISTER_CAMERA_SENSOR_HELPER("imx415", CameraSensorHelperImx415)
 
 class CameraSensorHelperImx477 : public CameraSensorHelper
 {

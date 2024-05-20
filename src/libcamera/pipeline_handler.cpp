@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2018, Google Inc.
  *
- * pipeline_handler.cpp - Pipeline handler infrastructure
+ * Pipeline handler infrastructure
  */
 
 #include "libcamera/internal/pipeline_handler.h"
@@ -795,6 +795,28 @@ std::vector<PipelineHandlerFactoryBase *> &PipelineHandlerFactoryBase::factories
 }
 
 /**
+ * \brief Return the factory for the pipeline handler with name \a name
+ * \param[in] name The pipeline handler name
+ * \return The factory of the pipeline with name \a name, or nullptr if not found
+ */
+const PipelineHandlerFactoryBase *PipelineHandlerFactoryBase::getFactoryByName(const std::string &name)
+{
+	const std::vector<PipelineHandlerFactoryBase *> &factories =
+		PipelineHandlerFactoryBase::factories();
+
+	auto iter = std::find_if(factories.begin(),
+				 factories.end(),
+				 [&name](const PipelineHandlerFactoryBase *f) {
+					 return f->name() == name;
+				 });
+
+	if (iter != factories.end())
+		return *iter;
+
+	return nullptr;
+}
+
+/**
  * \class PipelineHandlerFactory
  * \brief Registration of PipelineHandler classes and creation of instances
  * \tparam _PipelineHandler The pipeline handler class type for this factory
@@ -830,6 +852,8 @@ std::vector<PipelineHandlerFactoryBase *> &PipelineHandlerFactoryBase::factories
  * \def REGISTER_PIPELINE_HANDLER
  * \brief Register a pipeline handler with the pipeline handler factory
  * \param[in] handler Class name of PipelineHandler derived class to register
+ * \param[in] name Name assigned to the pipeline handler, matching the pipeline
+ * subdirectory name in the source tree.
  *
  * Register a PipelineHandler subclass with the factory and make it available to
  * try and match devices.

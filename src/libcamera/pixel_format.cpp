@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * pixel_format.cpp - libcamera Pixel Format
+ * libcamera Pixel Format
  */
 
 #include <libcamera/formats.h>

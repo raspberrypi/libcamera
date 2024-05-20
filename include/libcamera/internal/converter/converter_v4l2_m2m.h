@@ -3,7 +3,7 @@
  * Copyright (C) 2020, Laurent Pinchart
  * Copyright 2022 NXP
  *
- * converter_v4l2_m2m.h - V4l2 M2M Format converter interface
+ * V4l2 M2M Format converter interface
  */
 
 #pragma once
@@ -47,7 +47,7 @@ public:
 
 	int configure(const StreamConfiguration &inputCfg,
 		      const std::vector<std::reference_wrapper<StreamConfiguration>> &outputCfg);
-	int exportBuffers(unsigned int ouput, unsigned int count,
+	int exportBuffers(unsigned int output, unsigned int count,
 			  std::vector<std::unique_ptr<FrameBuffer>> *buffers);
 
 	int start();

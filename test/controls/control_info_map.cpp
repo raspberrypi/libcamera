@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * control_info.cpp - ControlInfoMap tests
+ * ControlInfoMap tests
  */
 
 #include <iostream>

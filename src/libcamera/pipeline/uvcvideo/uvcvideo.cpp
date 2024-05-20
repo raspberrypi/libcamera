@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * uvcvideo.cpp - Pipeline handler for uvcvideo devices
+ * Pipeline handler for uvcvideo devices
  */
 
 #include <algorithm>
@@ -709,6 +709,6 @@ void UVCCameraData::bufferReady(FrameBuffer *buffer)
 	pipe()->completeRequest(request);
 }
 
-REGISTER_PIPELINE_HANDLER(PipelineHandlerUVC)
+REGISTER_PIPELINE_HANDLER(PipelineHandlerUVC, "uvcvideo")
 
 } /* namespace libcamera */

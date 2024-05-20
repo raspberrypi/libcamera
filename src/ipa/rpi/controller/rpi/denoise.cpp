@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2022 Raspberry Pi Ltd
  *
- * Denoise.cpp - Denoise (spatial, colour, temporal) control algorithm
+ * Denoise (spatial, colour, temporal) control algorithm
  */
 #include "denoise.h"
 

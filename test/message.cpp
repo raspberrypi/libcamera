@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * message.cpp - Messages test
+ * Messages test
  */
 
 #include <chrono>
@@ -11,6 +11,7 @@
 #include <thread>
 
 #include <libcamera/base/message.h>
+#include <libcamera/base/object.h>
 #include <libcamera/base/thread.h>
 
 #include "test.h"
@@ -92,25 +93,6 @@ private:
 	bool success_;
 };
 
-class SlowMessageReceiver : public Object
-{
-protected:
-	void message(Message *msg)
-	{
-		if (msg->type() != Message::None) {
-			Object::message(msg);
-			return;
-		}
-
-		/*
-		 * Don't access any member of the object here (including the
-		 * vtable) as the object will be deleted by the main thread
-		 * while we're sleeping.
-		 */
-		this_thread::sleep_for(chrono::milliseconds(100));
-	}
-};
-
 class MessageTest : public Test
 {
 protected:
@@ -127,16 +109,19 @@ protected:
 			return TestFail;
 		}
 
-		MessageReceiver receiver;
-		receiver.moveToThread(&thread_);
+		MessageReceiver *receiver = new MessageReceiver();
+		receiver->moveToThread(&thread_);
 
 		thread_.start();
 
-		receiver.postMessage(std::make_unique<Message>(Message::None));
+		receiver->postMessage(std::make_unique<Message>(Message::None));
 
 		this_thread::sleep_for(chrono::milliseconds(100));
 
-		switch (receiver.status()) {
+		MessageReceiver::Status status = receiver->status();
+		receiver->deleteLater();
+
+		switch (status) {
 		case MessageReceiver::NoMessage:
 			cout << "No message received" << endl;
 			return TestFail;
@@ -148,28 +133,12 @@ protected:
 		}
 
 		/*
-		 * Test for races between message delivery and object deletion.
-		 * Failures result in assertion errors, there is no need for
-		 * explicit checks.
-		 */
-		SlowMessageReceiver *slowReceiver = new SlowMessageReceiver();
-		slowReceiver->moveToThread(&thread_);
-		slowReceiver->postMessage(std::make_unique<Message>(Message::None));
-
-		this_thread::sleep_for(chrono::milliseconds(10));
-
-		delete slowReceiver;
-
-		this_thread::sleep_for(chrono::milliseconds(100));
-
-		/*
 		 * Test recursive calls to Thread::dispatchMessages(). Messages
 		 * should be delivered correctly, without crashes or memory
 		 * leaks. Two messages need to be posted to ensure we don't only
 		 * test the simple case of a queue containing a single message.
 		 */
-		std::unique_ptr<RecursiveMessageReceiver> recursiveReceiver =
-			std::make_unique<RecursiveMessageReceiver>();
+		RecursiveMessageReceiver *recursiveReceiver = new RecursiveMessageReceiver();
 		recursiveReceiver->moveToThread(&thread_);
 
 		recursiveReceiver->postMessage(std::make_unique<Message>(Message::None));
@@ -177,7 +146,10 @@ protected:
 
 		this_thread::sleep_for(chrono::milliseconds(10));
 
-		if (!recursiveReceiver->success()) {
+		bool success = recursiveReceiver->success();
+		recursiveReceiver->deleteLater();
+
+		if (!success) {
 			cout << "Recursive message delivery failed" << endl;
 			return TestFail;
 		}

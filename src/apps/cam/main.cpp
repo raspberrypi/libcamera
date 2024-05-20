@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * main.cpp - cam - The libcamera swiss army knife
+ * cam - The libcamera swiss army knife
  */
 
 #include <atomic>
@@ -154,6 +154,8 @@ int CamApp::parseOptions(int argc, char *argv[])
 			 "If the file name ends with '.dng', then the frame will be written to\n"
 			 "the output file(s) in DNG format.\n"
 #endif
+			 "If the file name ends with '.ppm', then the frame will be written to\n"
+			 "the output file(s) in PPM format.\n"
 			 "The default file name is 'frame-#.bin'.",
 			 "file", ArgumentOptional, "filename", false,
 			 OptCamera);

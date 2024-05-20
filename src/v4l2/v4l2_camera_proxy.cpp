@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * v4l2_camera_proxy.cpp - Proxy to V4L2 compatibility camera
+ * Proxy to V4L2 compatibility camera
  */
 
 #include "v4l2_camera_proxy.h"

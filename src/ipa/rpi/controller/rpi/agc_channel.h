@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2023, Raspberry Pi Ltd
  *
- * agc_channel.h - AGC/AEC control algorithm
+ * AGC/AEC control algorithm
  */
 #pragma once
 

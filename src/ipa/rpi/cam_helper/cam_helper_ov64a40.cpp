@@ -3,7 +3,7 @@
  * Copyright (C) 2021, Raspberry Pi Ltd
  * Copyright (C) 2023, Ideas on Board Oy.
  *
- * cam_helper_ov64a40.cpp - camera information for ov64a40 sensor
+ * camera information for ov64a40 sensor
  */
 
 #include <assert.h>

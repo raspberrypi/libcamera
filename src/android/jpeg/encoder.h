@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Google Inc.
  *
- * encoder.h - Image encoding interface
+ * Image encoding interface
  */
 
 #pragma once

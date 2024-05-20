@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021-2022, Ideas On Board
  *
- * ipa_context.cpp - RkISP1 IPA Context
+ * RkISP1 IPA Context
  */
 
 #include "ipa_context.h"
@@ -13,6 +13,25 @@
  */
 
 namespace libcamera::ipa::rkisp1 {
+
+/**
+ * \struct IPAHwSettings
+ * \brief RkISP1 version-specific hardware parameters
+ */
+
+/**
+ * \var IPAHwSettings::numAeCells
+ * \brief Number of cells in the AE exposure means grid
+ *
+ * \var IPAHwSettings::numHistogramBins
+ * \brief Number of bins in the histogram
+ *
+ * \var IPAHwSettings::numHistogramWeights
+ * \brief Number of weights in the histogram grid
+ *
+ * \var IPAHwSettings::numGammaOutSamples
+ * \brief Number of samples in the gamma out table
+ */
 
 /**
  * \struct IPASessionConfiguration
@@ -30,14 +49,6 @@ namespace libcamera::ipa::rkisp1 {
  *
  * \var IPASessionConfiguration::agc.measureWindow
  * \brief AGC measure window
- */
-
-/**
- * \var IPASessionConfiguration::hw
- * \brief RkISP1-specific hardware information
- *
- * \var IPASessionConfiguration::hw.revision
- * \brief Hardware revision of the ISP
  */
 
 /**
@@ -336,6 +347,9 @@ namespace libcamera::ipa::rkisp1 {
 /**
  * \struct IPAContext
  * \brief Global IPA context data shared between all algorithms
+ *
+ * \var IPAContext::hw
+ * \brief RkISP1 version-specific hardware parameters
  *
  * \var IPAContext::configuration
  * \brief The IPA session configuration, immutable during the session

@@ -3,7 +3,7 @@
  * Copyright (C) 2020, Collabora Ltd.
  *     Author: Nicolas Dufresne <nicolas.dufresne@collabora.com>
  *
- * gstlibcameraprovider.h - GStreamer Device Provider
+ * GStreamer Device Provider
  */
 
 #pragma once

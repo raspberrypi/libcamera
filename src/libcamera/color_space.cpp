@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021, Raspberry Pi Ltd
  *
- * color_space.cpp - color spaces.
+ * color spaces.
  */
 
 #include <libcamera/color_space.h>

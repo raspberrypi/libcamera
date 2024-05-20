@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * framebuffer.h - Frame buffer handling
+ * Frame buffer handling
  */
 
 #pragma once

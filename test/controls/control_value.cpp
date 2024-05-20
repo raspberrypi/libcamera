@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * control_value.cpp - ControlValue tests
+ * ControlValue tests
  */
 
 #include <algorithm>

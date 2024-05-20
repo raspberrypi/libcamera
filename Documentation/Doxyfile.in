@@ -20,6 +20,7 @@ TOC_INCLUDE_HEADINGS   = 0
 CASE_SENSE_NAMES       = YES
 
 QUIET                  = YES
+WARN_AS_ERROR          = @WARN_AS_ERROR@
 
 INPUT                  = "@TOP_SRCDIR@/include/libcamera" \
                          "@TOP_SRCDIR@/src/ipa/ipu3" \
@@ -44,6 +45,7 @@ EXCLUDE                = @TOP_SRCDIR@/include/libcamera/base/span.h \
                          @TOP_SRCDIR@/src/libcamera/pipeline/ \
                          @TOP_SRCDIR@/src/libcamera/tracepoints.cpp \
                          @TOP_BUILDDIR@/include/libcamera/internal/tracepoints.h \
+                         @TOP_BUILDDIR@/include/libcamera/ipa/soft_ipa_interface.h \
                          @TOP_BUILDDIR@/src/libcamera/proxy/
 
 EXCLUDE_PATTERNS       = @TOP_BUILDDIR@/include/libcamera/ipa/*_serializer.h \

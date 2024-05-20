@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2018, Google Inc.
  *
- * utils.cpp - Miscellaneous utility tests
+ * Miscellaneous utility tests
  */
 
 #include <iostream>

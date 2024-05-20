@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Google Inc.
  *
- * ipc_pipe.h - Image Processing Algorithm IPC module for IPA proxies
+ * Image Processing Algorithm IPC module for IPA proxies
  */
 
 #pragma once

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * camera_test.h - libcamera camera test base class
+ * libcamera camera test base class
  */
 
 #pragma once

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021, Ideas on Board Oy
  *
- * kms_sink.cpp - KMS Sink
+ * KMS Sink
  */
 
 #include "kms_sink.h"

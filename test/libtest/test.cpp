@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2018, Google Inc.
  *
- * test.cpp - libcamera test base class
+ * libcamera test base class
  */
 
 #include <stdlib.h>

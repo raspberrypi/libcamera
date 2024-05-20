@@ -2,7 +2,7 @@
 #
 # Copyright (C) 2022, Paul Elder <paul.elder@ideasonboard.com>
 #
-# generator.py - Base class for a generator to convert dict to tuning file
+# Base class for a generator to convert dict to tuning file
 
 from pathlib import Path
 

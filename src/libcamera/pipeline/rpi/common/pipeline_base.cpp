@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019-2023, Raspberry Pi Ltd
  *
- * pipeline_base.cpp - Pipeline handler base class for Raspberry Pi devices
+ * Pipeline handler base class for Raspberry Pi devices
  */
 
 #include "pipeline_base.h"
@@ -37,10 +37,10 @@ namespace {
 
 constexpr unsigned int defaultRawBitDepth = 12;
 
-PixelFormat mbusCodeToPixelFormat(unsigned int mbus_code,
+PixelFormat mbusCodeToPixelFormat(unsigned int code,
 				  BayerFormat::Packing packingReq)
 {
-	BayerFormat bayer = BayerFormat::fromMbusCode(mbus_code);
+	BayerFormat bayer = BayerFormat::fromMbusCode(code);
 
 	ASSERT(bayer.isValid());
 
@@ -221,7 +221,7 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 	 * without modifications.
 	 */
 	if (sensorConfig) {
-		BayerFormat bayer = BayerFormat::fromMbusCode(sensorFormat_.mbus_code);
+		BayerFormat bayer = BayerFormat::fromMbusCode(sensorFormat_.code);
 
 		if (bayer.bitDepth != sensorConfig->bitDepth ||
 		    sensorFormat_.size != sensorConfig->outputSize) {
@@ -235,24 +235,16 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 	for (auto &raw : rawStreams_) {
 		StreamConfiguration *rawStream = raw.cfg;
 
-		/* Adjust the RAW stream to match the computed sensor format. */
-		BayerFormat sensorBayer = BayerFormat::fromMbusCode(sensorFormat_.mbus_code);
-
 		/*
-		 * Some sensors change their Bayer order when they are h-flipped
-		 * or v-flipped, according to the transform. If this one does, we
-		 * must advertise the transformed Bayer order in the raw stream.
-		 * Note how we must fetch the "native" (i.e. untransformed) Bayer
-		 * order, because the sensor may currently be flipped!
+		 * Some sensors change their Bayer order when they are
+		 * h-flipped or v-flipped, according to the transform. Adjust
+		 * the RAW stream to match the computed sensor format by
+		 * applying the sensor Bayer order resulting from the transform
+		 * to the user request.
 		 */
-		if (data_->flipsAlterBayerOrder_) {
-			sensorBayer.order = data_->nativeBayerOrder_;
-			sensorBayer = sensorBayer.transform(combinedTransform_);
-		}
 
-		/* Apply the sensor adjusted Bayer order to the user request. */
 		BayerFormat cfgBayer = BayerFormat::fromPixelFormat(rawStream->pixelFormat);
-		cfgBayer.order = sensorBayer.order;
+		cfgBayer.order = data_->sensor_->bayerOrder(combinedTransform_);
 
 		if (rawStream->pixelFormat != cfgBayer.toPixelFormat()) {
 			rawStream->pixelFormat = cfgBayer.toPixelFormat();
@@ -377,8 +369,8 @@ V4L2DeviceFormat PipelineHandlerBase::toV4L2DeviceFormat(const V4L2VideoDevice *
 							 const V4L2SubdeviceFormat &format,
 							 BayerFormat::Packing packingReq)
 {
-	unsigned int mbus_code = format.mbus_code;
-	const PixelFormat pix = mbusCodeToPixelFormat(mbus_code, packingReq);
+	unsigned int code = format.code;
+	const PixelFormat pix = mbusCodeToPixelFormat(code, packingReq);
 	V4L2DeviceFormat deviceFormat;
 
 	deviceFormat.fourcc = dev->toV4L2PixelFormat(pix);
@@ -409,7 +401,7 @@ PipelineHandlerBase::generateConfiguration(Camera *camera, Span<const StreamRole
 		case StreamRole::Raw:
 			size = sensorSize;
 			sensorFormat = data->findBestFormat(size, defaultRawBitDepth);
-			pixelFormat = mbusCodeToPixelFormat(sensorFormat.mbus_code,
+			pixelFormat = mbusCodeToPixelFormat(sensorFormat.code,
 							    BayerFormat::Packing::CSI2);
 			ASSERT(pixelFormat.isValid());
 			colorSpace = ColorSpace::Raw;
@@ -482,7 +474,11 @@ PipelineHandlerBase::generateConfiguration(Camera *camera, Span<const StreamRole
 			 */
 			for (const auto &format : fmts) {
 				PixelFormat pf = format.first.toPixelFormat();
-				if (pf.isValid()) {
+				/*
+				 * Some V4L2 formats translate to the same pixel format (e.g. YU12, YM12
+				 * both give YUV420). We must avoid duplicating the range in this case.
+				 */
+				if (pf.isValid() && deviceFormats.find(pf) == deviceFormats.end()) {
 					const SizeRange &ispSizes = format.second[0];
 					deviceFormats[pf].emplace_back(ispSizes.min, sensorSize,
 								       ispSizes.hStep, ispSizes.vStep);
@@ -840,40 +836,6 @@ int PipelineHandlerBase::registerCamera(std::unique_ptr<RPi::CameraData> &camera
 	 */
 	data->properties_.set(properties::ScalerCropMaximum, Rectangle{});
 
-	/*
-	 * We cache two things about the sensor in relation to transforms
-	 * (meaning horizontal and vertical flips): if they affect the Bayer
-	 * ordering, and what the "native" Bayer order is, when no transforms
-	 * are applied.
-	 *
-	 * If flips are supported verify if they affect the Bayer ordering
-	 * and what the "native" Bayer order is, when no transforms are
-	 * applied.
-	 *
-	 * We note that the sensor's cached list of supported formats is
-	 * already in the "native" order, with any flips having been undone.
-	 */
-	const V4L2Subdevice *sensor = data->sensor_->device();
-	const struct v4l2_query_ext_ctrl *hflipCtrl = sensor->controlInfo(V4L2_CID_HFLIP);
-	if (hflipCtrl) {
-		/* We assume it will support vflips too... */
-		data->flipsAlterBayerOrder_ = hflipCtrl->flags & V4L2_CTRL_FLAG_MODIFY_LAYOUT;
-	}
-
-	/* Look for a valid Bayer format. */
-	BayerFormat bayerFormat;
-	for (const auto &iter : data->sensorFormats_) {
-		bayerFormat = BayerFormat::fromMbusCode(iter.first);
-		if (bayerFormat.isValid())
-			break;
-	}
-
-	if (!bayerFormat.isValid()) {
-		LOG(RPI, Error) << "No Bayer format found";
-		return -EINVAL;
-	}
-	data->nativeBayerOrder_ = bayerFormat.order;
-
 	ret = platformRegister(cameraData, frontend, backend);
 	if (ret)
 		return ret;
@@ -990,7 +952,7 @@ V4L2SubdeviceFormat CameraData::findBestFormat(const Size &req, unsigned int bit
 
 			if (score <= bestScore) {
 				bestScore = score;
-				bestFormat.mbus_code = mbusCode;
+				bestFormat.code = mbusCode;
 				bestFormat.size = size;
 			}
 

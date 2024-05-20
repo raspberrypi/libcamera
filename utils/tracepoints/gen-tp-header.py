@@ -4,7 +4,7 @@
 #
 # Author: Paul Elder <paul.elder@ideasonboard.com>
 #
-# gen-tp-header.py - Generate header file to contain lttng tracepoints
+# Generate header file to contain lttng tracepoints
 
 import datetime
 import jinja2

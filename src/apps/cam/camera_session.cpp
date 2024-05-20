@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * camera_session.cpp - Camera capture session
+ * Camera capture session
  */
 
 #include <iomanip>
@@ -377,7 +377,7 @@ void CameraSession::requestComplete(Request *request)
 	 * Defer processing of the completed request to the event loop, to avoid
 	 * blocking the camera manager thread.
 	 */
-	EventLoop::instance()->callLater([=]() { processRequest(request); });
+	EventLoop::instance()->callLater([this, request]() { processRequest(request); });
 }
 
 void CameraSession::processRequest(Request *request)

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2018, Google Inc.
  *
- * utils.h - Miscellaneous utility functions
+ * Miscellaneous utility functions
  */
 
 #pragma once
@@ -368,6 +368,12 @@ decltype(auto) abs_diff(const T &a, const T &b)
 }
 
 double strtod(const char *__restrict nptr, char **__restrict endptr);
+
+template<class Enum>
+constexpr std::underlying_type_t<Enum> to_underlying(Enum e) noexcept
+{
+	return static_cast<std::underlying_type_t<Enum>>(e);
+}
 
 } /* namespace utils */
 

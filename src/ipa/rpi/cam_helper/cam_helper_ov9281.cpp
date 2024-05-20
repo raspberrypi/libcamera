@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021, Raspberry Pi Ltd
  *
- * cam_helper_ov9281.cpp - camera information for ov9281 sensor
+ * camera information for ov9281 sensor
  */
 
 #include <assert.h>

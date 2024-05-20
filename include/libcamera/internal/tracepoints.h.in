@@ -2,7 +2,7 @@
 /*
  * Copyright (C) {{year}}, Google Inc.
  *
- * tracepoints.h - Tracepoints with lttng
+ * Tracepoints with lttng
  *
  * This file is auto-generated. Do not edit.
  */

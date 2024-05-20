@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019-2021, Raspberry Pi Ltd
  *
- * rpi.cpp - Raspberry Pi VC4/BCM2835 ISP IPA.
+ * Raspberry Pi VC4/BCM2835 ISP IPA.
  */
 
 #include <string.h>
@@ -583,7 +583,7 @@ extern "C" {
 const struct IPAModuleInfo ipaModuleInfo = {
 	IPA_MODULE_API_VERSION,
 	1,
-	"PipelineHandlerVc4",
+	"rpi/vc4",
 	"rpi/vc4",
 };
 

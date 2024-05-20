@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2022, Raspberry Pi Ltd
  *
- * cam_helper_imx708.cpp - camera helper for imx708 sensor
+ * camera helper for imx708 sensor
  */
 
 #include <cmath>
@@ -269,7 +269,7 @@ bool CamHelperImx708::parsePdafData(const uint8_t *ptr, size_t len,
 {
 	size_t step = bpp >> 1; /* bytes per PDAF grid entry */
 
-	if (bpp < 10 || bpp > 12 || len < 194 * step || ptr[0] != 0 || ptr[1] >= 0x40) {
+	if (bpp < 10 || bpp > 14 || len < 194 * step || ptr[0] != 0 || ptr[1] >= 0x40) {
 		LOG(IPARPI, Error) << "PDAF data in unsupported format";
 		return false;
 	}

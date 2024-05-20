@@ -46,3 +46,15 @@ libcamera_gst = shared_library('gstlibcamera',
     install : true,
     install_dir : '@0@/gstreamer-1.0'.format(get_option('libdir')),
 )
+
+# Make the plugin visible to GStreamer inside meson devenv.
+fs = import('fs')
+gst_plugin_path = fs.parent(libcamera_gst.full_path())
+
+gst_env = environment()
+gst_env.prepend('GST_PLUGIN_PATH', gst_plugin_path)
+
+# Avoid polluting the system registry.
+gst_env.set('GST_REGISTRY', gst_plugin_path / 'registry.data')
+
+meson.add_devenv(gst_env)

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * object.cpp - Base object
+ * Base object
  */
 
 #include <libcamera/base/object.h>
@@ -40,8 +40,9 @@ LOG_DEFINE_CATEGORY(Object)
  * Object class.
  *
  * Deleting an object from a thread other than the one the object is bound to is
- * unsafe, unless the caller ensures that the object isn't processing any
- * message concurrently.
+ * unsafe, unless the caller ensures that the object's thread is stopped and no
+ * parent or child of the object gets deleted concurrently. See
+ * Object::~Object() for more information.
  *
  * Object slots connected to signals will also run in the context of the
  * object's thread, regardless of whether the signal is emitted in the same or
@@ -84,9 +85,20 @@ Object::Object(Object *parent)
  * Object instances shall be destroyed from the thread they are bound to,
  * otherwise undefined behaviour may occur. If deletion of an Object needs to
  * be scheduled from a different thread, deleteLater() shall be used.
+ *
+ * As an exception to this rule, Object instances may be deleted from a
+ * different thread if the thread the instance is bound to is stopped through
+ * the whole duration of the object's destruction, *and* the parent and children
+ * of the object do not get deleted concurrently. The caller is responsible for
+ * fulfilling those requirements.
+ *
+ * In all cases Object instances shall be deleted before the Thread they are
+ * bound to.
  */
 Object::~Object()
 {
+	ASSERT(Thread::current() == thread_ || !thread_->isRunning());
+
 	/*
 	 * Move signals to a private list to avoid concurrent iteration and
 	 * deletion of items from Signal::disconnect().
@@ -116,8 +128,9 @@ Object::~Object()
  * event loop that the object belongs to. This ensures the object is destroyed
  * from the right context, as required by the libcamera threading model.
  *
- * If this function is called before the thread's event loop is started, the
- * object will be deleted when the event loop starts.
+ * If this function is called before the thread's event loop is started or after
+ * it has stopped, the object will be deleted when the event loop (re)starts. If
+ * this never occurs, the object will be leaked.
  *
  * Deferred deletion can be used to control the destruction context with shared
  * pointers. An object managed with shared pointers is deleted when the last
@@ -213,6 +226,35 @@ void Object::message(Message *msg)
 }
 
 /**
+ * \fn Object::assertThreadBound()
+ * \brief Check if the caller complies with thread-bound constraints
+ * \param[in] message The message to be printed on error
+ *
+ * This function verifies the calling constraints required by the \threadbound
+ * definition. It shall be called at the beginning of member functions of an
+ * Object subclass that are explicitly marked as thread-bound in their
+ * documentation.
+ *
+ * If the thread-bound constraints are not met, the function prints \a message
+ * as an error message. For debug builds, it additionally causes an assertion
+ * error.
+ *
+ * \todo Verify the thread-bound requirements for functions marked as
+ * thread-bound at the class level.
+ *
+ * \return True if the call is thread-bound compliant, false otherwise
+ */
+bool Object::assertThreadBound(const char *message)
+{
+	if (Thread::current() == thread_)
+		return true;
+
+	LOG(Object, Error) << message;
+	ASSERT(false);
+	return false;
+}
+
+/**
  * \fn R Object::invokeMethod()
  * \brief Invoke a method asynchronously on an Object instance
  * \param[in] func The object method to invoke
@@ -259,11 +301,12 @@ void Object::message(Message *msg)
  * Moving an object that has a parent is not allowed, and causes undefined
  * behaviour.
  *
- * \context This function is thread-bound.
+ * \context This function is \threadbound.
  */
 void Object::moveToThread(Thread *thread)
 {
-	ASSERT(Thread::current() == thread_);
+	if (!assertThreadBound("Object can't be moved from another thread"))
+		return;
 
 	if (thread_ == thread)
 		return;

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021, Raspberry Pi Ltd
  *
- * denoise.h - Denoise control algorithm interface
+ * Denoise control algorithm interface
  */
 #pragma once
 

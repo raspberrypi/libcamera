@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021, Google Inc.
  *
- * camera.h - Camera private data
+ * Camera private data
  */
 
 #pragma once

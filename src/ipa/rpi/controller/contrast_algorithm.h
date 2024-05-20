@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Raspberry Pi Ltd
  *
- * contrast_algorithm.h - contrast (gamma) control algorithm interface
+ * contrast (gamma) control algorithm interface
  */
 #pragma once
 

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Raspberry Pi Ltd
  *
- * awb.cpp - AWB control algorithm
+ * AWB control algorithm
  */
 
 #include <assert.h>

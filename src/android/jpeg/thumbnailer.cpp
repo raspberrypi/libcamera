@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Google Inc.
  *
- * thumbnailer.cpp - Simple image thumbnailer
+ * Simple image thumbnailer
  */
 
 #include "thumbnailer.h"

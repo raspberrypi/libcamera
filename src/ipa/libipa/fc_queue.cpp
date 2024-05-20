@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2022, Google Inc.
  *
- * fc_queue.cpp - IPA Frame context queue
+ * IPA Frame context queue
  */
 
 #include "fc_queue.h"

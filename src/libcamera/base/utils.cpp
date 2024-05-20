@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * utils.cpp - Miscellaneous utility functions
+ * Miscellaneous utility functions
  */
 
 #include <libcamera/base/utils.h>
@@ -517,9 +517,19 @@ double strtod(const char *__restrict nptr, char **__restrict endptr)
 	 * If the libc implementation doesn't provide locale object support,
 	 * assume that strtod() is locale-independent.
 	 */
-	return strtod(nptr, endptr);
+	return ::strtod(nptr, endptr);
 #endif
 }
+
+/**
+ * \fn to_underlying(Enum e)
+ * \brief Convert an enumeration to its underlygin type
+ * \param[in] e Enumeration value to convert
+ *
+ * This function is equivalent to the C++23 std::to_underlying().
+ *
+ * \return The value of e converted to its underlying type
+ */
 
 } /* namespace utils */
 

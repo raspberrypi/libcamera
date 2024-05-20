@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2023, Ideas On Board Oy
  *
- * orientation.cpp - Image orientation
+ * Image orientation
  */
 
 #include <libcamera/orientation.h>

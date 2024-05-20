@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * main.cpp - qcam - The libcamera GUI test application
+ * qcam - The libcamera GUI test application
  */
 
 #include <signal.h>

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Raspberry Pi Ltd
  *
- * dng_writer.h - DNG writer
+ * DNG writer
  */
 
 #pragma once

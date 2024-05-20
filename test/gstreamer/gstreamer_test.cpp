@@ -52,23 +52,6 @@ GstreamerTest::GstreamerTest(unsigned int numStreams)
 	}
 
 	/*
-	 * Remove the system libcamera plugin, if any, and add the plugin from
-	 * the build directory.
-	 */
-	GstRegistry *registry = gst_registry_get();
-	g_autoptr(GstPlugin) plugin = gst_registry_lookup(registry, "libgstlibcamera.so");
-	if (plugin)
-		gst_registry_remove_plugin(registry, plugin);
-
-	std::string path = libcamera::utils::libcameraBuildPath() + "src/gstreamer";
-	if (!gst_registry_scan_path(registry, path.c_str())) {
-		g_printerr("Failed to add plugin to registry\n");
-
-		status_ = TestFail;
-		return;
-	}
-
-	/*
 	 * Atleast one camera should be available with numStreams streams,
 	 * otherwise skip the test entirely.
 	 */

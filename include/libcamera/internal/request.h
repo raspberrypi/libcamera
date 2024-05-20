@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * request.h - Request class private data
+ * Request class private data
  */
 
 #pragma once

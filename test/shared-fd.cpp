@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * shared_fd.cpp - SharedFD test
+ * SharedFD test
  */
 
 #include <fcntl.h>

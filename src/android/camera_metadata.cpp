@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * camera_metadata.cpp - libcamera Android Camera Metadata Helper
+ * libcamera Android Camera Metadata Helper
  */
 
 #include "camera_metadata.h"

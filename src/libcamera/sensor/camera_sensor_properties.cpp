@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021, Google Inc.
  *
- * camera_sensor_properties.cpp - Database of camera sensor properties
+ * Database of camera sensor properties
  */
 
 #include "libcamera/internal/camera_sensor_properties.h"
@@ -99,6 +99,10 @@ const CameraSensorProperties *CameraSensorProperties::get(const std::string &sen
 				{ controls::draft::TestPatternModePn9, 4 },
 			},
 		} },
+		{ "imx283", {
+			.unitCellSize = { 2400, 2400 },
+			.testPatternModes = {},
+		} },
 		{ "imx290", {
 			.unitCellSize = { 2900, 2900 },
 			.testPatternModes = {},
@@ -109,6 +113,14 @@ const CameraSensorProperties *CameraSensorProperties::get(const std::string &sen
 		} },
 		{ "imx327", {
 			.unitCellSize = { 2900, 2900 },
+			.testPatternModes = {},
+		} },
+		{ "imx335", {
+			.unitCellSize = { 2000, 2000 },
+			.testPatternModes = {},
+		} },
+		{ "imx415", {
+			.unitCellSize = { 1450, 1450 },
 			.testPatternModes = {},
 		} },
 		{ "imx477", {

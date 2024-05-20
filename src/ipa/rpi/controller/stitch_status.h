@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2023 Raspberry Pi Ltd
  *
- * stitch_status.h - stitch control algorithm status
+ * stitch control algorithm status
  */
 #pragma once
 

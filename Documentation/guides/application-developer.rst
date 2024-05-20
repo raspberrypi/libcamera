@@ -348,7 +348,7 @@ The libcamera library uses the concept of `signals and slots` (similar to `Qt
 Signals and Slots`_) to connect events with callbacks to handle them.
 
 .. _signals and slots: https://libcamera.org/api-html/classlibcamera_1_1Signal.html#details
-.. _Qt Signals and Slots: https://doc.qt.io/qt-5/signalsandslots.html
+.. _Qt Signals and Slots: https://doc.qt.io/qt-6/signalsandslots.html
 
 The ``Camera`` device emits two signals that applications can connect to in
 order to execute callbacks on frame completion events.

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021-2022, Ideas On Board
  *
- * cproc.h - RkISP1 Color Processing control
+ * RkISP1 Color Processing control
  */
 
 #pragma once

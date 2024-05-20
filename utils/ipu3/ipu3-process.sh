@@ -4,7 +4,7 @@
 #
 # Author: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 #
-# ipu3-process.sh - Process raw frames with the Intel IPU3
+# Process raw frames with the Intel IPU3
 #
 # The scripts makes use of the following tools, which are expected to be
 # found in $PATH:

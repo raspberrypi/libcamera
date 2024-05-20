@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2022, Ideas On Board
  *
- * module.cpp - IPA Module
+ * IPA Module
  */
 
 #include "module.h"

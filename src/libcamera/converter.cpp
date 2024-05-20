@@ -2,7 +2,7 @@
 /*
  * Copyright 2022 NXP
  *
- * converter.cpp - Generic format converter interface
+ * Generic format converter interface
  */
 
 #include "libcamera/internal/converter.h"

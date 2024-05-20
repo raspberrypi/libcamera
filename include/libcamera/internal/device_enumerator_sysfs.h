@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * device_enumerator_sysfs.h - sysfs-based device enumerator
+ * sysfs-based device enumerator
  */
 
 #pragma once

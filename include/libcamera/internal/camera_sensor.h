@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * camera_sensor.h - A camera sensor
+ * A camera sensor
  */
 
 #pragma once
@@ -22,12 +22,12 @@
 
 #include <libcamera/ipa/core_ipa_interface.h>
 
+#include "libcamera/internal/bayer_format.h"
 #include "libcamera/internal/formats.h"
 #include "libcamera/internal/v4l2_subdevice.h"
 
 namespace libcamera {
 
-class BayerFormat;
 class CameraLens;
 class MediaEntity;
 class SensorConfiguration;
@@ -46,15 +46,15 @@ public:
 
 	const std::string &model() const { return model_; }
 	const std::string &id() const { return id_; }
+
 	const MediaEntity *entity() const { return entity_; }
+	V4L2Subdevice *device() { return subdev_.get(); }
+
+	CameraLens *focusLens() { return focusLens_.get(); }
+
 	const std::vector<unsigned int> &mbusCodes() const { return mbusCodes_; }
 	std::vector<Size> sizes(unsigned int mbusCode) const;
 	Size resolution() const;
-	const std::vector<controls::draft::TestPatternModeEnum> &testPatternModes() const
-	{
-		return testPatternModes_;
-	}
-	int setTestPatternMode(controls::draft::TestPatternModeEnum mode);
 
 	V4L2SubdeviceFormat getFormat(const std::vector<unsigned int> &mbusCodes,
 				      const Size &size) const;
@@ -66,20 +66,20 @@ public:
 			       Transform transform = Transform::Identity,
 			       V4L2SubdeviceFormat *sensorFormat = nullptr);
 
+	const ControlList &properties() const { return properties_; }
+	int sensorInfo(IPACameraSensorInfo *info) const;
+	Transform computeTransform(Orientation *orientation) const;
+	BayerFormat::Order bayerOrder(Transform t) const;
+
 	const ControlInfoMap &controls() const;
 	ControlList getControls(const std::vector<uint32_t> &ids);
 	int setControls(ControlList *ctrls);
 
-	V4L2Subdevice *device() { return subdev_.get(); }
-
-	const ControlList &properties() const { return properties_; }
-	int sensorInfo(IPACameraSensorInfo *info) const;
-
-	void updateControlInfo();
-
-	CameraLens *focusLens() { return focusLens_.get(); }
-
-	Transform computeTransform(Orientation *orientation) const;
+	const std::vector<controls::draft::TestPatternModeEnum> &testPatternModes() const
+	{
+		return testPatternModes_;
+	}
+	int setTestPatternMode(controls::draft::TestPatternModeEnum mode);
 
 protected:
 	std::string logPrefix() const override;
@@ -93,8 +93,8 @@ private:
 	void initStaticProperties();
 	void initTestPatternModes();
 	int initProperties();
-	int applyTestPatternMode(controls::draft::TestPatternModeEnum mode);
 	int discoverAncillaryDevices();
+	int applyTestPatternMode(controls::draft::TestPatternModeEnum mode);
 
 	const MediaEntity *entity_;
 	std::unique_ptr<V4L2Subdevice> subdev_;
@@ -115,6 +115,7 @@ private:
 	Rectangle activeArea_;
 	const BayerFormat *bayerFormat_;
 	bool supportFlips_;
+	bool flipsAlterBayerOrder_;
 	Orientation mountingOrientation_;
 
 	ControlList properties_;

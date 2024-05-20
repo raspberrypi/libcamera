@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Google Inc.
  *
- * flags.cpp - Type-safe enum-based bitfields
+ * Type-safe enum-based bitfields
  */
 
 #include <libcamera/base/flags.h>

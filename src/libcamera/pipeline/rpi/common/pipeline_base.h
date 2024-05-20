@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019-2023, Raspberry Pi Ltd
  *
- * pipeline_base.h - Pipeline handler base class for Raspberry Pi devices
+ * Pipeline handler base class for Raspberry Pi devices
  */
 
 #include <map>
@@ -48,7 +48,7 @@ class CameraData : public Camera::Private
 public:
 	CameraData(PipelineHandler *pipe)
 		: Camera::Private(pipe), state_(State::Stopped),
-		  flipsAlterBayerOrder_(false), dropFrameCount_(0), buffersAllocated_(false),
+		  dropFrameCount_(0), buffersAllocated_(false),
 		  ispOutputCount_(0), ispOutputTotal_(0)
 	{
 	}
@@ -130,10 +130,6 @@ public:
 	}
 
 	std::queue<Request *> requestQueue_;
-
-	/* Store the "native" Bayer order (that is, with no transforms applied). */
-	bool flipsAlterBayerOrder_;
-	BayerFormat::Order nativeBayerOrder_;
 
 	/* For handling digital zoom. */
 	IPACameraSensorInfo sensorInfo_;

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2023 Raspberry Pi Ltd
  *
- * hdr_status.h - HDR control algorithm status
+ * HDR control algorithm status
  */
 #pragma once
 

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * media_device_link_test.cpp - Tests link handling on VIMC media device
+ * Tests link handling on VIMC media device
  */
 
 #include <iostream>

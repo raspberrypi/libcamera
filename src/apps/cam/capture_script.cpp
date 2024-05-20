@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2022, Ideas on Board Oy
  *
- * capture_script.cpp - Capture session configuration script
+ * Capture session configuration script
  */
 
 #include "capture_script.h"
@@ -351,7 +351,10 @@ ControlValue CaptureScript::parseRectangles()
 	}
 
 	ControlValue controlValue;
-	controlValue.set(Span<const Rectangle>(rectangles));
+	if (rectangles.size() == 1)
+		controlValue.set(rectangles.at(0));
+	else
+		controlValue.set(Span<const Rectangle>(rectangles));
 
 	return controlValue;
 }

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Raspberry Pi Ltd
  *
- * noise.cpp - Noise control algorithm
+ * Noise control algorithm
  */
 
 #include <math.h>

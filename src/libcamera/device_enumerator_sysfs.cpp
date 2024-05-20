@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * device_enumerator_sysfs.cpp - sysfs-based device enumerator
+ * sysfs-based device enumerator
  */
 
 #include "libcamera/internal/device_enumerator_sysfs.h"

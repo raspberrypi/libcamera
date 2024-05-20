@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Raspberry Pi Ltd
  *
- * agc_algorithm.h - AGC/AEC control algorithm interface
+ * AGC/AEC control algorithm interface
  */
 #pragma once
 

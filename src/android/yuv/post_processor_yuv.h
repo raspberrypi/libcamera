@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021, Google Inc.
  *
- * post_processor_yuv.h - Post Processor using libyuv
+ * Post Processor using libyuv
  */
 
 #pragma once

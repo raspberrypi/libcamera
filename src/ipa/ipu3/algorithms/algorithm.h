@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021, Ideas On Board
  *
- * algorithm.h - IPU3 control algorithm interface
+ * IPU3 control algorithm interface
  */
 
 #pragma once

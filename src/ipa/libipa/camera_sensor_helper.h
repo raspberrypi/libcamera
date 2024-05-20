@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021, Google Inc.
  *
- * camera_sensor_helper.h - Helper class that performs sensor-specific parameter computations
+ * Helper class that performs sensor-specific parameter computations
  */
 
 #pragma once
@@ -88,7 +88,7 @@ public:
 	}
 
 private:
-	std::unique_ptr<CameraSensorHelper> createInstance() const
+	std::unique_ptr<CameraSensorHelper> createInstance() const override
 	{
 		return std::make_unique<_Helper>();
 	}

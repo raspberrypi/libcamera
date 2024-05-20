@@ -4,7 +4,7 @@
 #
 # Author: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 #
-# ipa-sign-install.sh - Regenerate IPA module signatures when installing
+# Regenerate IPA module signatures when installing
 
 key=$1
 shift

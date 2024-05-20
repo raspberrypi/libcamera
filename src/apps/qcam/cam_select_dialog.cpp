@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2022, Utkarsh Tiwari <utkarsh02t@gmail.com>
  *
- * cam_select_dialog.cpp - qcam - Camera Selection dialog
+ * qcam - Camera Selection dialog
  */
 
 #include "cam_select_dialog.h"

@@ -15,6 +15,7 @@ if doxygen.found() and dot.found()
     cdata.set('TOP_SRCDIR', meson.project_source_root())
     cdata.set('TOP_BUILDDIR', meson.project_build_root())
     cdata.set('OUTPUT_DIR', meson.current_build_dir())
+    cdata.set('WARN_AS_ERROR', get_option('doc_werror') ? 'YES' : 'NO')
 
     doxygen_predefined = []
     foreach key : config_h.keys()
@@ -80,6 +81,7 @@ if sphinx.found()
         'lens_driver_requirements.rst',
         'python-bindings.rst',
         'sensor_driver_requirements.rst',
+        'software-isp-benchmarking.rst',
        '../README.rst',
     ]
 

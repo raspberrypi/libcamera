@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Raspberry Pi Ltd
  *
- * black_level.cpp - black level control algorithm
+ * black level control algorithm
  */
 
 #include <math.h>

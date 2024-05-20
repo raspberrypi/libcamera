@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Google Inc.
  *
- * tracepoints.cpp - Tracepoints with lttng
+ * Tracepoints with lttng
  */
 #define TRACEPOINT_CREATE_PROBES
 #define TRACEPOINT_DEFINE

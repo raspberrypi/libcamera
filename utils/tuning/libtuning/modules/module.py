@@ -2,7 +2,7 @@
 #
 # Copyright (C) 2022, Paul Elder <paul.elder@ideasonboard.com>
 #
-# module.py - Base class for algorithm-specific tuning modules
+# Base class for algorithm-specific tuning modules
 
 
 # @var type Type of the module. Defined in the base module.

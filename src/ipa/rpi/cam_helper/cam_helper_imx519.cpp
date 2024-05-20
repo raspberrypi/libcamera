@@ -3,7 +3,7 @@
  * Based on cam_helper_imx477.cpp
  * Copyright (C) 2020, Raspberry Pi Ltd
  *
- * cam_helper_imx519.cpp - camera helper for imx519 sensor
+ * camera helper for imx519 sensor
  * Copyright (C) 2021, Arducam Technology co., Ltd.
  */
 

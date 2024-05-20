@@ -2,10 +2,11 @@
 /*
  * Copyright (C) 2019-2021, Raspberry Pi Ltd
  *
- * sdn.cpp - SDN (spatial denoise) control algorithm
+ * SDN (spatial denoise) control algorithm
  */
 
 #include <libcamera/base/log.h>
+#include <libcamera/base/utils.h>
 
 #include "../denoise_status.h"
 #include "../noise_status.h"
@@ -60,7 +61,7 @@ void Sdn::prepare(Metadata *imageMetadata)
 	status.noiseConstant = noiseStatus.noiseConstant * deviation_;
 	status.noiseSlope = noiseStatus.noiseSlope * deviation_;
 	status.strength = strength_;
-	status.mode = static_cast<std::underlying_type_t<DenoiseMode>>(mode_);
+	status.mode = utils::to_underlying(mode_);
 	imageMetadata->set("denoise.status", status);
 	LOG(RPiSdn, Debug)
 		<< "programmed constant " << status.noiseConstant

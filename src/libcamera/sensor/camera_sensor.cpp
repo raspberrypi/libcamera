@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * camera_sensor.cpp - A camera sensor
+ * A camera sensor
  */
 
 #include "libcamera/internal/camera_sensor.h"
@@ -58,7 +58,7 @@ LOG_DEFINE_CATEGORY(CameraSensor)
 CameraSensor::CameraSensor(const MediaEntity *entity)
 	: entity_(entity), pad_(UINT_MAX), staticProps_(nullptr),
 	  bayerFormat_(nullptr), supportFlips_(false),
-	  properties_(properties::properties)
+	  flipsAlterBayerOrder_(false), properties_(properties::properties)
 {
 }
 
@@ -188,31 +188,42 @@ int CameraSensor::init()
 	 * Set HBLANK to the minimum to start with a well-defined line length,
 	 * allowing IPA modules that do not modify HBLANK to use the sensor
 	 * minimum line length in their calculations.
-	 *
-	 * At present, there is no way of knowing if a control is read-only.
-	 * As a workaround, assume that if the minimum and maximum values of
-	 * the V4L2_CID_HBLANK control are the same, it implies the control
-	 * is read-only.
-	 *
-	 * \todo The control API ought to have a flag to specify if a control
-	 * is read-only which could be used below.
 	 */
-	if (ctrls.infoMap()->find(V4L2_CID_HBLANK) != ctrls.infoMap()->end()) {
-		const ControlInfo hblank = ctrls.infoMap()->at(V4L2_CID_HBLANK);
-		const int32_t hblankMin = hblank.min().get<int32_t>();
-		const int32_t hblankMax = hblank.max().get<int32_t>();
+	const struct v4l2_query_ext_ctrl *hblankInfo = subdev_->controlInfo(V4L2_CID_HBLANK);
+	if (hblankInfo && !(hblankInfo->flags & V4L2_CTRL_FLAG_READ_ONLY)) {
+		ControlList ctrl(subdev_->controls());
 
-		if (hblankMin != hblankMax) {
-			ControlList ctrl(subdev_->controls());
-
-			ctrl.set(V4L2_CID_HBLANK, hblankMin);
-			ret = subdev_->setControls(&ctrl);
-			if (ret)
-				return ret;
-		}
+		ctrl.set(V4L2_CID_HBLANK, static_cast<int32_t>(hblankInfo->minimum));
+		ret = subdev_->setControls(&ctrl);
+		if (ret)
+			return ret;
 	}
 
 	return applyTestPatternMode(controls::draft::TestPatternModeEnum::TestPatternModeOff);
+}
+
+int CameraSensor::generateId()
+{
+	const std::string devPath = subdev_->devicePath();
+
+	/* Try to get ID from firmware description. */
+	id_ = sysfs::firmwareNodePath(devPath);
+	if (!id_.empty())
+		return 0;
+
+	/*
+	 * Virtual sensors not described in firmware
+	 *
+	 * Verify it's a platform device and construct ID from the device path
+	 * and model of sensor.
+	 */
+	if (devPath.find("/sys/devices/platform/", 0) == 0) {
+		id_ = devPath.substr(strlen("/sys/devices/")) + " " + model();
+		return 0;
+	}
+
+	LOG(CameraSensor, Error) << "Can't generate sensor ID";
+	return -EINVAL;
 }
 
 int CameraSensor::validateSensorDriver()
@@ -260,8 +271,13 @@ int CameraSensor::validateSensorDriver()
 	const struct v4l2_query_ext_ctrl *hflipInfo = subdev_->controlInfo(V4L2_CID_HFLIP);
 	const struct v4l2_query_ext_ctrl *vflipInfo = subdev_->controlInfo(V4L2_CID_VFLIP);
 	if (hflipInfo && !(hflipInfo->flags & V4L2_CTRL_FLAG_READ_ONLY) &&
-	    vflipInfo && !(vflipInfo->flags & V4L2_CTRL_FLAG_READ_ONLY))
+	    vflipInfo && !(vflipInfo->flags & V4L2_CTRL_FLAG_READ_ONLY)) {
 		supportFlips_ = true;
+
+		if (hflipInfo->flags & V4L2_CTRL_FLAG_MODIFY_LAYOUT ||
+		    vflipInfo->flags & V4L2_CTRL_FLAG_MODIFY_LAYOUT)
+			flipsAlterBayerOrder_ = true;
+	}
 
 	if (!supportFlips_)
 		LOG(CameraSensor, Debug)
@@ -581,6 +597,21 @@ int CameraSensor::discoverAncillaryDevices()
  */
 
 /**
+ * \fn CameraSensor::device()
+ * \brief Retrieve the camera sensor device
+ * \todo Remove this function by integrating DelayedControl with CameraSensor
+ * \return The camera sensor device
+ */
+
+/**
+ * \fn CameraSensor::focusLens()
+ * \brief Retrieve the focus lens controller
+ *
+ * \return The focus lens controller. nullptr if no focus lens controller is
+ * connected to the sensor
+ */
+
+/**
  * \fn CameraSensor::mbusCodes()
  * \brief Retrieve the media bus codes supported by the camera sensor
  *
@@ -630,64 +661,6 @@ std::vector<Size> CameraSensor::sizes(unsigned int mbusCode) const
 Size CameraSensor::resolution() const
 {
 	return std::min(sizes_.back(), activeArea_.size());
-}
-
-/**
- * \fn CameraSensor::testPatternModes()
- * \brief Retrieve all the supported test pattern modes of the camera sensor
- * The test pattern mode values correspond to the controls::TestPattern control.
- *
- * \return The list of test pattern modes
- */
-
-/**
- * \brief Set the test pattern mode for the camera sensor
- * \param[in] mode The test pattern mode
- *
- * The new \a mode is applied to the sensor if it differs from the active test
- * pattern mode. Otherwise, this function is a no-op. Setting the same test
- * pattern mode for every frame thus incurs no performance penalty.
- */
-int CameraSensor::setTestPatternMode(controls::draft::TestPatternModeEnum mode)
-{
-	if (testPatternMode_ == mode)
-		return 0;
-
-	if (testPatternModes_.empty()) {
-		LOG(CameraSensor, Error)
-			<< "Camera sensor does not support test pattern modes.";
-		return -EINVAL;
-	}
-
-	return applyTestPatternMode(mode);
-}
-
-int CameraSensor::applyTestPatternMode(controls::draft::TestPatternModeEnum mode)
-{
-	if (testPatternModes_.empty())
-		return 0;
-
-	auto it = std::find(testPatternModes_.begin(), testPatternModes_.end(),
-			    mode);
-	if (it == testPatternModes_.end()) {
-		LOG(CameraSensor, Error) << "Unsupported test pattern mode "
-					 << mode;
-		return -EINVAL;
-	}
-
-	LOG(CameraSensor, Debug) << "Apply test pattern mode " << mode;
-
-	int32_t index = staticProps_->testPatternModes.at(mode);
-	ControlList ctrls{ controls() };
-	ctrls.set(V4L2_CID_TEST_PATTERN, index);
-
-	int ret = setControls(&ctrls);
-	if (ret)
-		return ret;
-
-	testPatternMode_ = mode;
-
-	return 0;
 }
 
 /**
@@ -770,7 +743,7 @@ V4L2SubdeviceFormat CameraSensor::getFormat(const std::vector<unsigned int> &mbu
 	}
 
 	V4L2SubdeviceFormat format{
-		.mbus_code = bestCode,
+		.code = bestCode,
 		.size = *bestSize,
 		.colorSpace = ColorSpace::Raw,
 	};
@@ -814,7 +787,7 @@ int CameraSensor::setFormat(V4L2SubdeviceFormat *format, Transform transform)
 	if (ret)
 		return ret;
 
-	updateControlInfo();
+	subdev_->updateControlInfo();
 	return 0;
 }
 
@@ -892,12 +865,12 @@ int CameraSensor::applyConfiguration(const SensorConfiguration &config,
 			    size.height != config.outputSize.height)
 				continue;
 
-			subdevFormat.mbus_code = code;
+			subdevFormat.code = code;
 			subdevFormat.size = size;
 			break;
 		}
 	}
-	if (!subdevFormat.mbus_code) {
+	if (!subdevFormat.code) {
 		LOG(CameraSensor, Error) << "Invalid output size in sensor configuration";
 		return -EINVAL;
 	}
@@ -920,13 +893,193 @@ int CameraSensor::applyConfiguration(const SensorConfiguration &config,
 }
 
 /**
+ * \fn CameraSensor::properties()
+ * \brief Retrieve the camera sensor properties
+ * \return The list of camera sensor properties
+ */
+
+/**
+ * \brief Assemble and return the camera sensor info
+ * \param[out] info The camera sensor info
+ *
+ * This function fills \a info with information that describes the camera sensor
+ * and its current configuration. The information combines static data (such as
+ * the the sensor model or active pixel array size) and data specific to the
+ * current sensor configuration (such as the line length and pixel rate).
+ *
+ * Sensor information is only available for raw sensors. When called for a YUV
+ * sensor, this function returns -EINVAL.
+ *
+ * \return 0 on success, a negative error code otherwise
+ */
+int CameraSensor::sensorInfo(IPACameraSensorInfo *info) const
+{
+	if (!bayerFormat_)
+		return -EINVAL;
+
+	info->model = model();
+
+	/*
+	 * The active area size is a static property, while the crop
+	 * rectangle needs to be re-read as it depends on the sensor
+	 * configuration.
+	 */
+	info->activeAreaSize = { activeArea_.width, activeArea_.height };
+
+	/*
+	 * \todo Support for retreiving the crop rectangle is scheduled to
+	 * become mandatory. For the time being use the default value if it has
+	 * been initialized at sensor driver validation time.
+	 */
+	int ret = subdev_->getSelection(pad_, V4L2_SEL_TGT_CROP, &info->analogCrop);
+	if (ret) {
+		info->analogCrop = activeArea_;
+		LOG(CameraSensor, Warning)
+			<< "The analogue crop rectangle has been defaulted to the active area size";
+	}
+
+	/*
+	 * IPACameraSensorInfo::analogCrop::x and IPACameraSensorInfo::analogCrop::y
+	 * are defined relatively to the active pixel area, while V4L2's
+	 * TGT_CROP target is defined in respect to the full pixel array.
+	 *
+	 * Compensate it by subtracting the active area offset.
+	 */
+	info->analogCrop.x -= activeArea_.x;
+	info->analogCrop.y -= activeArea_.y;
+
+	/* The bit depth and image size depend on the currently applied format. */
+	V4L2SubdeviceFormat format{};
+	ret = subdev_->getFormat(pad_, &format);
+	if (ret)
+		return ret;
+
+	info->bitsPerPixel = MediaBusFormatInfo::info(format.code).bitsPerPixel;
+	info->outputSize = format.size;
+
+	std::optional<int32_t> cfa = properties_.get(properties::draft::ColorFilterArrangement);
+	info->cfaPattern = cfa ? *cfa : properties::draft::RGB;
+
+	/*
+	 * Retrieve the pixel rate, line length and minimum/maximum frame
+	 * duration through V4L2 controls. Support for the V4L2_CID_PIXEL_RATE,
+	 * V4L2_CID_HBLANK and V4L2_CID_VBLANK controls is mandatory.
+	 */
+	ControlList ctrls = subdev_->getControls({ V4L2_CID_PIXEL_RATE,
+						   V4L2_CID_HBLANK,
+						   V4L2_CID_VBLANK });
+	if (ctrls.empty()) {
+		LOG(CameraSensor, Error)
+			<< "Failed to retrieve camera info controls";
+		return -EINVAL;
+	}
+
+	info->pixelRate = ctrls.get(V4L2_CID_PIXEL_RATE).get<int64_t>();
+
+	const ControlInfo hblank = ctrls.infoMap()->at(V4L2_CID_HBLANK);
+	info->minLineLength = info->outputSize.width + hblank.min().get<int32_t>();
+	info->maxLineLength = info->outputSize.width + hblank.max().get<int32_t>();
+
+	const ControlInfo vblank = ctrls.infoMap()->at(V4L2_CID_VBLANK);
+	info->minFrameLength = info->outputSize.height + vblank.min().get<int32_t>();
+	info->maxFrameLength = info->outputSize.height + vblank.max().get<int32_t>();
+
+	return 0;
+}
+
+/**
+ * \brief Compute the Transform that gives the requested \a orientation
+ * \param[inout] orientation The desired image orientation
+ *
+ * This function computes the Transform that the pipeline handler should apply
+ * to the CameraSensor to obtain the requested \a orientation.
+ *
+ * The intended caller of this function is the validate() implementation of
+ * pipeline handlers, that pass in the application requested
+ * CameraConfiguration::orientation and obtain a Transform to apply to the
+ * camera sensor, likely at configure() time.
+ *
+ * If the requested \a orientation cannot be obtained, the \a orientation
+ * parameter is adjusted to report the current image orientation and
+ * Transform::Identity is returned.
+ *
+ * If the requested \a orientation can be obtained, the function computes a
+ * Transform and does not adjust \a orientation.
+ *
+ * Pipeline handlers are expected to verify if \a orientation has been
+ * adjusted by this function and set the CameraConfiguration::status to
+ * Adjusted accordingly.
+ *
+ * \return A Transform instance that applied to the CameraSensor produces images
+ * with \a orientation
+ */
+Transform CameraSensor::computeTransform(Orientation *orientation) const
+{
+	/*
+	 * If we cannot do any flips we cannot change the native camera mounting
+	 * orientation.
+	 */
+	if (!supportFlips_) {
+		*orientation = mountingOrientation_;
+		return Transform::Identity;
+	}
+
+	/*
+	 * Now compute the required transform to obtain 'orientation' starting
+	 * from the mounting rotation.
+	 *
+	 * As a note:
+	 * 	orientation / mountingOrientation_ = transform
+	 * 	mountingOrientation_ * transform = orientation
+	 */
+	Transform transform = *orientation / mountingOrientation_;
+
+	/*
+	 * If transform contains any Transpose we cannot do it, so adjust
+	 * 'orientation' to report the image native orientation and return Identity.
+	 */
+	if (!!(transform & Transform::Transpose)) {
+		*orientation = mountingOrientation_;
+		return Transform::Identity;
+	}
+
+	return transform;
+}
+
+/**
+ * \brief Compute the Bayer order that results from the given Transform
+ * \param[in] t The Transform to apply to the sensor
+ *
+ * Some sensors change their Bayer order when they are h-flipped or v-flipped.
+ * This function computes and returns the Bayer order that would result from the
+ * given transform applied to the sensor.
+ *
+ * This function is valid only when the sensor produces raw Bayer formats.
+ *
+ * \return The Bayer order produced by the sensor when the Transform is applied
+ */
+BayerFormat::Order CameraSensor::bayerOrder(Transform t) const
+{
+	/* Return a defined by meaningless value for non-Bayer sensors. */
+	if (!bayerFormat_)
+		return BayerFormat::Order::BGGR;
+
+	if (!flipsAlterBayerOrder_)
+		return bayerFormat_->order;
+
+	/*
+	 * Apply the transform to the native (i.e. untransformed) Bayer order,
+	 * using the rest of the Bayer format supplied by the caller.
+	 */
+	return bayerFormat_->transform(t).order;
+}
+
+/**
  * \brief Retrieve the supported V4L2 controls and their information
  *
  * Control information is updated automatically to reflect the current sensor
  * configuration when the setFormat() function is called, without invalidating
- * any iterator on the ControlInfoMap. A manual update can also be forced by
- * calling the updateControlInfo() function for pipeline handlers that change
- * the sensor configuration wihtout using setFormat().
+ * any iterator on the ControlInfoMap.
  *
  * \return A map of the V4L2 controls supported by the sensor
  */
@@ -989,214 +1142,66 @@ int CameraSensor::setControls(ControlList *ctrls)
 }
 
 /**
- * \fn CameraSensor::device()
- * \brief Retrieve the camera sensor device
- * \todo Remove this function by integrating DelayedControl with CameraSensor
- * \return The camera sensor device
+ * \fn CameraSensor::testPatternModes()
+ * \brief Retrieve all the supported test pattern modes of the camera sensor
+ * The test pattern mode values correspond to the controls::TestPattern control.
+ *
+ * \return The list of test pattern modes
  */
 
 /**
- * \fn CameraSensor::properties()
- * \brief Retrieve the camera sensor properties
- * \return The list of camera sensor properties
+ * \brief Set the test pattern mode for the camera sensor
+ * \param[in] mode The test pattern mode
+ *
+ * The new \a mode is applied to the sensor if it differs from the active test
+ * pattern mode. Otherwise, this function is a no-op. Setting the same test
+ * pattern mode for every frame thus incurs no performance penalty.
  */
-
-/**
- * \brief Assemble and return the camera sensor info
- * \param[out] info The camera sensor info
- *
- * This function fills \a info with information that describes the camera sensor
- * and its current configuration. The information combines static data (such as
- * the the sensor model or active pixel array size) and data specific to the
- * current sensor configuration (such as the line length and pixel rate).
- *
- * Sensor information is only available for raw sensors. When called for a YUV
- * sensor, this function returns -EINVAL.
- *
- * Pipeline handlers that do not change the sensor format using the setFormat()
- * function may need to call updateControlInfo() beforehand, to ensure all the
- * control ranges are up to date.
- *
- * \return 0 on success, a negative error code otherwise
- */
-int CameraSensor::sensorInfo(IPACameraSensorInfo *info) const
+int CameraSensor::setTestPatternMode(controls::draft::TestPatternModeEnum mode)
 {
-	if (!bayerFormat_)
+	if (testPatternMode_ == mode)
+		return 0;
+
+	if (testPatternModes_.empty()) {
+		LOG(CameraSensor, Error)
+			<< "Camera sensor does not support test pattern modes.";
 		return -EINVAL;
-
-	info->model = model();
-
-	/*
-	 * The active area size is a static property, while the crop
-	 * rectangle needs to be re-read as it depends on the sensor
-	 * configuration.
-	 */
-	info->activeAreaSize = { activeArea_.width, activeArea_.height };
-
-	/*
-	 * \todo Support for retreiving the crop rectangle is scheduled to
-	 * become mandatory. For the time being use the default value if it has
-	 * been initialized at sensor driver validation time.
-	 */
-	int ret = subdev_->getSelection(pad_, V4L2_SEL_TGT_CROP, &info->analogCrop);
-	if (ret) {
-		info->analogCrop = activeArea_;
-		LOG(CameraSensor, Warning)
-			<< "The analogue crop rectangle has been defaulted to the active area size";
 	}
 
-	/*
-	 * IPACameraSensorInfo::analogCrop::x and IPACameraSensorInfo::analogCrop::y
-	 * are defined relatively to the active pixel area, while V4L2's
-	 * TGT_CROP target is defined in respect to the full pixel array.
-	 *
-	 * Compensate it by subtracting the active area offset.
-	 */
-	info->analogCrop.x -= activeArea_.x;
-	info->analogCrop.y -= activeArea_.y;
+	return applyTestPatternMode(mode);
+}
 
-	/* The bit depth and image size depend on the currently applied format. */
-	V4L2SubdeviceFormat format{};
-	ret = subdev_->getFormat(pad_, &format);
+int CameraSensor::applyTestPatternMode(controls::draft::TestPatternModeEnum mode)
+{
+	if (testPatternModes_.empty())
+		return 0;
+
+	auto it = std::find(testPatternModes_.begin(), testPatternModes_.end(),
+			    mode);
+	if (it == testPatternModes_.end()) {
+		LOG(CameraSensor, Error) << "Unsupported test pattern mode "
+					 << mode;
+		return -EINVAL;
+	}
+
+	LOG(CameraSensor, Debug) << "Apply test pattern mode " << mode;
+
+	int32_t index = staticProps_->testPatternModes.at(mode);
+	ControlList ctrls{ controls() };
+	ctrls.set(V4L2_CID_TEST_PATTERN, index);
+
+	int ret = setControls(&ctrls);
 	if (ret)
 		return ret;
-	info->bitsPerPixel = format.bitsPerPixel();
-	info->outputSize = format.size;
 
-	std::optional<int32_t> cfa = properties_.get(properties::draft::ColorFilterArrangement);
-	info->cfaPattern = cfa ? *cfa : properties::draft::RGB;
-
-	/*
-	 * Retrieve the pixel rate, line length and minimum/maximum frame
-	 * duration through V4L2 controls. Support for the V4L2_CID_PIXEL_RATE,
-	 * V4L2_CID_HBLANK and V4L2_CID_VBLANK controls is mandatory.
-	 */
-	ControlList ctrls = subdev_->getControls({ V4L2_CID_PIXEL_RATE,
-						   V4L2_CID_HBLANK,
-						   V4L2_CID_VBLANK });
-	if (ctrls.empty()) {
-		LOG(CameraSensor, Error)
-			<< "Failed to retrieve camera info controls";
-		return -EINVAL;
-	}
-
-	info->pixelRate = ctrls.get(V4L2_CID_PIXEL_RATE).get<int64_t>();
-
-	const ControlInfo hblank = ctrls.infoMap()->at(V4L2_CID_HBLANK);
-	info->minLineLength = info->outputSize.width + hblank.min().get<int32_t>();
-	info->maxLineLength = info->outputSize.width + hblank.max().get<int32_t>();
-
-	const ControlInfo vblank = ctrls.infoMap()->at(V4L2_CID_VBLANK);
-	info->minFrameLength = info->outputSize.height + vblank.min().get<int32_t>();
-	info->maxFrameLength = info->outputSize.height + vblank.max().get<int32_t>();
+	testPatternMode_ = mode;
 
 	return 0;
-}
-
-/**
- * \fn void CameraSensor::updateControlInfo()
- * \brief Update the sensor's ControlInfoMap in case they have changed
- * \sa V4L2Device::updateControlInfo()
- */
-void CameraSensor::updateControlInfo()
-{
-	subdev_->updateControlInfo();
-}
-
-/**
- * \fn CameraSensor::focusLens()
- * \brief Retrieve the focus lens controller
- *
- * \return The focus lens controller. nullptr if no focus lens controller is
- * connected to the sensor
- */
-
-/**
- * \brief Compute the Transform that gives the requested \a orientation
- * \param[inout] orientation The desired image orientation
- *
- * This function computes the Transform that the pipeline handler should apply
- * to the CameraSensor to obtain the requested \a orientation.
- *
- * The intended caller of this function is the validate() implementation of
- * pipeline handlers, that pass in the application requested
- * CameraConfiguration::orientation and obtain a Transform to apply to the
- * camera sensor, likely at configure() time.
- *
- * If the requested \a orientation cannot be obtained, the \a orientation
- * parameter is adjusted to report the current image orientation and
- * Transform::Identity is returned.
- *
- * If the requested \a orientation can be obtained, the function computes a
- * Transform and does not adjust \a orientation.
- *
- * Pipeline handlers are expected to verify if \a orientation has been
- * adjusted by this function and set the CameraConfiguration::status to
- * Adjusted accordingly.
- *
- * \return A Transform instance that applied to the CameraSensor produces images
- * with \a orientation
- */
-Transform CameraSensor::computeTransform(Orientation *orientation) const
-{
-	/*
-	 * If we cannot do any flips we cannot change the native camera mounting
-	 * orientation.
-	 */
-	if (!supportFlips_) {
-		*orientation = mountingOrientation_;
-		return Transform::Identity;
-	}
-
-	/*
-	 * Now compute the required transform to obtain 'orientation' starting
-	 * from the mounting rotation.
-	 *
-	 * As a note:
-	 * 	orientation / mountingOrientation_ = transform
-	 * 	mountingOrientation_ * transform = orientation
-	 */
-	Transform transform = *orientation / mountingOrientation_;
-
-	/*
-	 * If transform contains any Transpose we cannot do it, so adjust
-	 * 'orientation' to report the image native orientation and return Identity.
-	 */
-	if (!!(transform & Transform::Transpose)) {
-		*orientation = mountingOrientation_;
-		return Transform::Identity;
-	}
-
-	return transform;
 }
 
 std::string CameraSensor::logPrefix() const
 {
 	return "'" + entity_->name() + "'";
-}
-
-int CameraSensor::generateId()
-{
-	const std::string devPath = subdev_->devicePath();
-
-	/* Try to get ID from firmware description. */
-	id_ = sysfs::firmwareNodePath(devPath);
-	if (!id_.empty())
-		return 0;
-
-	/*
-	 * Virtual sensors not described in firmware
-	 *
-	 * Verify it's a platform device and construct ID from the device path
-	 * and model of sensor.
-	 */
-	if (devPath.find("/sys/devices/platform/", 0) == 0) {
-		id_ = devPath.substr(strlen("/sys/devices/")) + " " + model();
-		return 0;
-	}
-
-	LOG(CameraSensor, Error) << "Can't generate sensor ID";
-	return -EINVAL;
 }
 
 } /* namespace libcamera */

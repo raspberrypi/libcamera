@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Google Inc.
  *
- * file.h - File I/O operations
+ * File I/O operations
  */
 
 #pragma once

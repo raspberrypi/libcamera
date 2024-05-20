@@ -3,15 +3,16 @@
  * Copyright (C) 2020, Google Inc.
  * Copyright (C) 2021, Collabora Ltd.
  *
- * capture_test.cpp - Test camera capture
+ * Test camera capture
  */
+
+#include "capture.h"
 
 #include <iostream>
 
 #include <gtest/gtest.h>
 
 #include "environment.h"
-#include "simple_capture.h"
 
 using namespace libcamera;
 
@@ -83,7 +84,7 @@ TEST_P(SingleStream, Capture)
 {
 	auto [role, numRequests] = GetParam();
 
-	SimpleCaptureBalanced capture(camera_);
+	CaptureBalanced capture(camera_);
 
 	capture.configure(role);
 
@@ -102,7 +103,7 @@ TEST_P(SingleStream, CaptureStartStop)
 	auto [role, numRequests] = GetParam();
 	unsigned int numRepeats = 3;
 
-	SimpleCaptureBalanced capture(camera_);
+	CaptureBalanced capture(camera_);
 
 	capture.configure(role);
 
@@ -121,7 +122,7 @@ TEST_P(SingleStream, UnbalancedStop)
 {
 	auto [role, numRequests] = GetParam();
 
-	SimpleCaptureUnbalanced capture(camera_);
+	CaptureUnbalanced capture(camera_);
 
 	capture.configure(role);
 

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Raspberry Pi Ltd
  *
- * agc.cpp - AGC/AEC control algorithm
+ * AGC/AEC control algorithm
  */
 
 #include "agc.h"

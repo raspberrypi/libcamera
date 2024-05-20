@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Google Inc.
  *
- * file.cpp - File I/O operations tests
+ * File I/O operations tests
  */
 
 #include <fstream>

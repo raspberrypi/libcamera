@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Raspberry Pi Ltd
  *
- * geq.cpp - GEQ (green equalisation) control algorithm
+ * GEQ (green equalisation) control algorithm
  */
 
 #include <libcamera/base/log.h>

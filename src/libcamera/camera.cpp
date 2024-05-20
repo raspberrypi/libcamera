@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2018, Google Inc.
  *
- * camera.cpp - Camera device
+ * Camera device
  */
 
 #include <libcamera/camera.h>

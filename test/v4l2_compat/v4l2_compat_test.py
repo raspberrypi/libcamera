@@ -4,7 +4,7 @@
 #
 # Author: Paul Elder <paul.elder@ideasonboard.com>
 #
-# v4l2_compat_test.py - Test the V4L2 compatibility layer
+# Test the V4L2 compatibility layer
 
 import argparse
 import glob

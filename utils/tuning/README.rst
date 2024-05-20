@@ -5,7 +5,7 @@
 Dependencies
 ------------
 
-- cv2
 - numpy
-- pyexiv2
+- opencv-python
+- py3exiv2
 - rawpy

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * v4l2_device.h - Common base for V4L2 video devices and subdevices
+ * Common base for V4L2 video devices and subdevices
  */
 
 #pragma once

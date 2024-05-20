@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Raspberry Pi Ltd
  *
- * sharpen_algorithm.h - sharpness control algorithm interface
+ * sharpness control algorithm interface
  */
 #pragma once
 

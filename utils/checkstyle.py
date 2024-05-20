@@ -1,10 +1,10 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-or-later
 # Copyright (C) 2018, Google Inc.
 #
 # Author: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 #
-# checkstyle.py - A patch style checker script based on clang-format
+# A patch style checker script based on clang-format
 #
 # TODO:
 #
@@ -168,6 +168,12 @@ def parse_diff(diff):
             hunk = DiffHunk(line)
 
         elif hunk is not None:
+            # Work around https://github.com/python/cpython/issues/46395
+            # See https://www.gnu.org/software/diffutils/manual/html_node/Incomplete-Lines.html
+            if line[-1] != '\n':
+                hunk.append(line + '\n')
+                line = '\\ No newline at end of file\n'
+
             hunk.append(line)
 
     if hunk:
@@ -471,6 +477,7 @@ class TrailersChecker(CommitChecker):
     known_trailers = {
         'Acked-by': email_regex,
         'Bug': link_regex,
+        'Co-developed-by': email_regex,
         'Fixes': commit_regex,
         'Link': link_regex,
         'Reported-by': validate_reported_by,
@@ -562,7 +569,7 @@ class IncludeChecker(StyleChecker):
                'limits', 'locale', 'setjmp', 'signal', 'stdarg', 'stddef',
                'stdint', 'stdio', 'stdlib', 'string', 'time', 'uchar', 'wchar',
                'wctype')
-    include_regex = re.compile('^#include <c([a-z]*)>')
+    include_regex = re.compile(r'^#include <c([a-z]*)>')
 
     def __init__(self, content):
         super().__init__()
@@ -588,7 +595,7 @@ class IncludeChecker(StyleChecker):
 
 
 class LogCategoryChecker(StyleChecker):
-    log_regex = re.compile('\\bLOG\((Debug|Info|Warning|Error|Fatal)\)')
+    log_regex = re.compile(r'\bLOG\((Debug|Info|Warning|Error|Fatal)\)')
     patterns = ('*.cpp',)
 
     def __init__(self, content):
@@ -625,7 +632,7 @@ class MesonChecker(StyleChecker):
 
 class Pep8Checker(StyleChecker):
     patterns = ('*.py',)
-    results_regex = re.compile('stdin:([0-9]+):([0-9]+)(.*)')
+    results_regex = re.compile(r'stdin:([0-9]+):([0-9]+)(.*)')
 
     def __init__(self, content):
         super().__init__()
@@ -658,7 +665,7 @@ class Pep8Checker(StyleChecker):
 
 class ShellChecker(StyleChecker):
     patterns = ('*.sh',)
-    results_line_regex = re.compile('In - line ([0-9]+):')
+    results_line_regex = re.compile(r'In - line ([0-9]+):')
 
     def __init__(self, content):
         super().__init__()
@@ -746,7 +753,8 @@ class CLangFormatter(Formatter):
 class DoxygenFormatter(Formatter):
     patterns = ('*.c', '*.cpp')
 
-    return_regex = re.compile(' +\\* +\\\\return +[a-z]')
+    oneliner_regex = re.compile(r'^ +\* +\\(brief|param|return)\b.*\.$')
+    return_regex = re.compile(r' +\* +\\return +[a-z]')
 
     @classmethod
     def format(cls, filename, data):
@@ -761,6 +769,7 @@ class DoxygenFormatter(Formatter):
                 lines.append(line)
                 continue
 
+            line = cls.oneliner_regex.sub(lambda m: m.group(0)[:-1], line)
             line = cls.return_regex.sub(lambda m: m.group(0)[:-1] + m.group(0)[-1].upper(), line)
 
             if line.find('*/') != -1:
@@ -806,7 +815,7 @@ class DPointerFormatter(Formatter):
 class IncludeOrderFormatter(Formatter):
     patterns = ('*.cpp', '*.h')
 
-    include_regex = re.compile('^#include (["<])([^">]*)([">])')
+    include_regex = re.compile(r'^#include (["<])([^">]*)([">])')
 
     @classmethod
     def format(cls, filename, data):

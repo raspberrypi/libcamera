@@ -4,15 +4,15 @@
 #
 # Author: Paul Elder <paul.elder@ideasonboard.com>
 #
-# extract-docs.py - Extract doxygen documentation from mojom files
+# Extract doxygen documentation from mojom files
 
 import argparse
 import re
 import sys
 
-regex_block_start = re.compile('^\/\*\*$')
-regex_block_end = re.compile('^ \*\/$')
-regex_spdx = re.compile('^\/\* SPDX-License-Identifier: .* \*\/$')
+regex_block_start = re.compile(r'^/\*\*$')
+regex_block_end = re.compile(r'^ \*/$')
+regex_spdx = re.compile(r'^/\* SPDX-License-Identifier: .* \*/$')
 
 
 def main(argv):
@@ -38,7 +38,7 @@ def main(argv):
 /*
  * Copyright (C) 2021, Google Inc.
  *
- * {pipeline}_ipa_interface.cpp - Docs file for generated {pipeline}.mojom
+ * Docs file for generated {pipeline}.mojom
  *
  * This file is auto-generated. Do not edit.
  */

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Raspberry Pi Ltd
  *
- * geq.h - GEQ (green equalisation) control algorithm
+ * GEQ (green equalisation) control algorithm
  */
 #pragma once
 

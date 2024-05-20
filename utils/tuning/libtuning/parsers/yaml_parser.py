@@ -2,7 +2,7 @@
 #
 # Copyright (C) 2022, Paul Elder <paul.elder@ideasonboard.com>
 #
-# yaml_parser.py - Parser for YAML format config file
+# Parser for YAML format config file
 
 from .parser import Parser
 

@@ -4,7 +4,7 @@
 #
 # Author: Paul Elder <paul.elder@ideasonboard.com>
 #
-# mojom_libcamera_generator.py - Generates libcamera files from a mojom.Module.
+# Generates libcamera files from a mojom.Module.
 
 import argparse
 import datetime
@@ -72,7 +72,7 @@ def ParamsCommaSep(l):
 def GetDefaultValue(element):
     if element.default is not None:
         return element.default
-    if type(element.kind) == mojom.Kind:
+    if type(element.kind) == mojom.ValueKind:
         return '0'
     if IsFlags(element):
         return ''

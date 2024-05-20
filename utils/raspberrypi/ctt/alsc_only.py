@@ -4,7 +4,7 @@
 #
 # Copyright (C) 2022, Raspberry Pi (Trading) Limited
 #
-# alsc_only.py - alsc tuning tool
+# alsc tuning tool
 
 from ctt import *
 

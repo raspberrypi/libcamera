@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021-2022, Ideas On Board
  *
- * awb.h - AWB control algorithm
+ * AWB control algorithm
  */
 
 #pragma once

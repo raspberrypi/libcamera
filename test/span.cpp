@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Google Inc.
  *
- * span.cpp - Span tests
+ * Span tests
  */
 
 /*

@@ -3,7 +3,7 @@
  * Copyright (C) 2020, Collabora Ltd.
  *     Author: Nicolas Dufresne <nicolas.dufresne@collabora.com>
  *
- * gstlibcamerapool.cpp - GStreamer Buffer Pool
+ * GStreamer Buffer Pool
  */
 
 #include "gstlibcamerapool.h"

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021, Google Inc.
  *
- * source_paths.cpp - Identify libcamera source and build paths
+ * Identify libcamera source and build paths
  */
 
 #include "libcamera/internal/source_paths.h"

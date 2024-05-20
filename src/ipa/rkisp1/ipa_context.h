@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021-2022, Ideas On Board
  *
- * ipa_context.h - RkISP1 IPA Context
+ * RkISP1 IPA Context
  *
  */
 
@@ -12,6 +12,7 @@
 
 #include <libcamera/base/utils.h>
 
+#include <libcamera/controls.h>
 #include <libcamera/geometry.h>
 
 #include <libipa/fc_queue.h>
@@ -19,6 +20,13 @@
 namespace libcamera {
 
 namespace ipa::rkisp1 {
+
+struct IPAHwSettings {
+	unsigned int numAeCells;
+	unsigned int numHistogramBins;
+	unsigned int numHistogramWeights;
+	unsigned int numGammaOutSamples;
+};
 
 struct IPASessionConfiguration {
 	struct {
@@ -45,10 +53,6 @@ struct IPASessionConfiguration {
 		Size size;
 	} sensor;
 
-	struct {
-		rkisp1_cif_isp_version revision;
-	} hw;
-
 	bool raw;
 };
 
@@ -64,6 +68,8 @@ struct IPAActiveState {
 		} automatic;
 
 		bool autoEnabled;
+		uint32_t constraintMode;
+		uint32_t exposureMode;
 	} agc;
 
 	struct {
@@ -143,10 +149,13 @@ struct IPAFrameContext : public FrameContext {
 };
 
 struct IPAContext {
+	const IPAHwSettings *hw;
 	IPASessionConfiguration configuration;
 	IPAActiveState activeState;
 
 	FCQueue<IPAFrameContext> frameContexts;
+
+	ControlInfoMap::Map ctrlMap;
 };
 
 } /* namespace ipa::rkisp1 */

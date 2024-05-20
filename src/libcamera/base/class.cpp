@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Google Inc.
  *
- * class.cpp - Utilities and helpers for classes
+ * Utilities and helpers for classes
  */
 
 #include <libcamera/base/class.h>

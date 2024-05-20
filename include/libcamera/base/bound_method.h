@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * bound_method.h - Method bind and invocation
+ * Method bind and invocation
  */
 
 #pragma once

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * main_window.cpp - qcam - Main application window
+ * qcam - Main application window
  */
 
 #include "main_window.h"
@@ -190,7 +190,7 @@ int MainWindow::createToolbars()
 	action = toolbar_->addAction(QIcon::fromTheme("application-exit",
 						      QIcon(":x-circle.svg")),
 				     "Quit");
-	action->setShortcut(Qt::CTRL | Qt::Key_Q);
+	action->setShortcut(QKeySequence::Quit);
 	connect(action, &QAction::triggered, this, &MainWindow::quit);
 
 	/* Camera selector. */

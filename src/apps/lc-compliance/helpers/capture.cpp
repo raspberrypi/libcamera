@@ -2,27 +2,27 @@
 /*
  * Copyright (C) 2020-2021, Google Inc.
  *
- * simple_capture.cpp - Simple capture helper
+ * Simple capture helper
  */
+
+#include "capture.h"
 
 #include <gtest/gtest.h>
 
-#include "simple_capture.h"
-
 using namespace libcamera;
 
-SimpleCapture::SimpleCapture(std::shared_ptr<Camera> camera)
+Capture::Capture(std::shared_ptr<Camera> camera)
 	: loop_(nullptr), camera_(camera),
 	  allocator_(std::make_unique<FrameBufferAllocator>(camera))
 {
 }
 
-SimpleCapture::~SimpleCapture()
+Capture::~Capture()
 {
 	stop();
 }
 
-void SimpleCapture::configure(StreamRole role)
+void Capture::configure(StreamRole role)
 {
 	config_ = camera_->generateConfiguration({ role });
 
@@ -42,7 +42,7 @@ void SimpleCapture::configure(StreamRole role)
 	}
 }
 
-void SimpleCapture::start()
+void Capture::start()
 {
 	Stream *stream = config_->at(0).stream();
 	int count = allocator_->allocate(stream);
@@ -50,12 +50,12 @@ void SimpleCapture::start()
 	ASSERT_GE(count, 0) << "Failed to allocate buffers";
 	EXPECT_EQ(count, config_->at(0).bufferCount) << "Allocated less buffers than expected";
 
-	camera_->requestCompleted.connect(this, &SimpleCapture::requestComplete);
+	camera_->requestCompleted.connect(this, &Capture::requestComplete);
 
 	ASSERT_EQ(camera_->start(), 0) << "Failed to start camera";
 }
 
-void SimpleCapture::stop()
+void Capture::stop()
 {
 	if (!config_ || !allocator_->allocated())
 		return;
@@ -69,14 +69,14 @@ void SimpleCapture::stop()
 	allocator_->free(stream);
 }
 
-/* SimpleCaptureBalanced */
+/* CaptureBalanced */
 
-SimpleCaptureBalanced::SimpleCaptureBalanced(std::shared_ptr<Camera> camera)
-	: SimpleCapture(camera)
+CaptureBalanced::CaptureBalanced(std::shared_ptr<Camera> camera)
+	: Capture(camera)
 {
 }
 
-void SimpleCaptureBalanced::capture(unsigned int numRequests)
+void CaptureBalanced::capture(unsigned int numRequests)
 {
 	start();
 
@@ -95,7 +95,7 @@ void SimpleCaptureBalanced::capture(unsigned int numRequests)
 	captureCount_ = 0;
 	captureLimit_ = numRequests;
 
-	/* Queue the recommended number of reqeuests. */
+	/* Queue the recommended number of requests. */
 	for (const std::unique_ptr<FrameBuffer> &buffer : buffers) {
 		std::unique_ptr<Request> request = camera_->createRequest();
 		ASSERT_TRUE(request) << "Can't create request";
@@ -116,7 +116,7 @@ void SimpleCaptureBalanced::capture(unsigned int numRequests)
 	ASSERT_EQ(captureCount_, captureLimit_);
 }
 
-int SimpleCaptureBalanced::queueRequest(Request *request)
+int CaptureBalanced::queueRequest(Request *request)
 {
 	queueCount_++;
 	if (queueCount_ > captureLimit_)
@@ -125,8 +125,11 @@ int SimpleCaptureBalanced::queueRequest(Request *request)
 	return camera_->queueRequest(request);
 }
 
-void SimpleCaptureBalanced::requestComplete(Request *request)
+void CaptureBalanced::requestComplete(Request *request)
 {
+	EXPECT_EQ(request->status(), Request::Status::RequestComplete)
+		<< "Request didn't complete successfully";
+
 	captureCount_++;
 	if (captureCount_ >= captureLimit_) {
 		loop_->exit(0);
@@ -138,14 +141,14 @@ void SimpleCaptureBalanced::requestComplete(Request *request)
 		loop_->exit(-EINVAL);
 }
 
-/* SimpleCaptureUnbalanced */
+/* CaptureUnbalanced */
 
-SimpleCaptureUnbalanced::SimpleCaptureUnbalanced(std::shared_ptr<Camera> camera)
-	: SimpleCapture(camera)
+CaptureUnbalanced::CaptureUnbalanced(std::shared_ptr<Camera> camera)
+	: Capture(camera)
 {
 }
 
-void SimpleCaptureUnbalanced::capture(unsigned int numRequests)
+void CaptureUnbalanced::capture(unsigned int numRequests)
 {
 	start();
 
@@ -155,7 +158,7 @@ void SimpleCaptureUnbalanced::capture(unsigned int numRequests)
 	captureCount_ = 0;
 	captureLimit_ = numRequests;
 
-	/* Queue the recommended number of reqeuests. */
+	/* Queue the recommended number of requests. */
 	for (const std::unique_ptr<FrameBuffer> &buffer : buffers) {
 		std::unique_ptr<Request> request = camera_->createRequest();
 		ASSERT_TRUE(request) << "Can't create request";
@@ -176,13 +179,16 @@ void SimpleCaptureUnbalanced::capture(unsigned int numRequests)
 	ASSERT_EQ(status, 0);
 }
 
-void SimpleCaptureUnbalanced::requestComplete(Request *request)
+void CaptureUnbalanced::requestComplete(Request *request)
 {
 	captureCount_++;
 	if (captureCount_ >= captureLimit_) {
 		loop_->exit(0);
 		return;
 	}
+
+	EXPECT_EQ(request->status(), Request::Status::RequestComplete)
+		<< "Request didn't complete successfully";
 
 	request->reuse(Request::ReuseBuffers);
 	if (camera_->queueRequest(request))

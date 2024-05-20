@@ -2,14 +2,16 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * property_ids.h - Property ID list
+ * Property ID list
  *
  * This file is auto-generated. Do not edit.
  */
 
 #pragma once
 
+#include <map>
 #include <stdint.h>
+#include <string>
 
 #include <libcamera/controls.h>
 

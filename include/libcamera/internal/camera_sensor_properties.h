@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021, Google Inc.
  *
- * camera_sensor_properties.h - Database of camera sensor properties
+ * Database of camera sensor properties
  */
 
 #pragma once

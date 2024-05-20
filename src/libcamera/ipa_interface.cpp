@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * ipa_interface.cpp - Image Processing Algorithm interface
+ * Image Processing Algorithm interface
  */
 
 #include <libcamera/ipa/ipa_interface.h>

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021, Google Inc.
  *
- * camera_capabilities.cpp - Camera static properties manager
+ * Camera static properties manager
  */
 
 #include "camera_capabilities.h"

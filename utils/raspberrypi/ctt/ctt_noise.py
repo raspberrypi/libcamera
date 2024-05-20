@@ -2,7 +2,7 @@
 #
 # Copyright (C) 2019, Raspberry Pi Ltd
 #
-# ctt_noise.py - camera tuning tool noise calibration
+# camera tuning tool noise calibration
 
 from ctt_image_load import *
 import matplotlib.pyplot as plt

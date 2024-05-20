@@ -258,7 +258,7 @@ implementations for the overridden class members.
           return false;
    }
 
-   REGISTER_PIPELINE_HANDLER(PipelineHandlerVivid)
+   REGISTER_PIPELINE_HANDLER(PipelineHandlerVivid, "vivid")
 
    } /* namespace libcamera */
 
@@ -266,6 +266,8 @@ Note that you must register the ``PipelineHandler`` subclass with the pipeline
 handler factory using the `REGISTER_PIPELINE_HANDLER`_ macro which
 registers it and creates a global symbol to reference the class and make it
 available to try and match devices.
+String "vivid" is the name assigned to the pipeline, matching the pipeline
+subdirectory name in the source tree.
 
 .. _REGISTER_PIPELINE_HANDLER: https://libcamera.org/api-html/pipeline__handler_8h.html
 
@@ -651,7 +653,7 @@ inline in our VividCameraData init:
            ctrls.emplace(id, info);
    }
 
-   controlInfo_ = std::move(ctrls);
+   controlInfo_ = ControlInfoMap(std::move(ctrls), controls::controls);
 
 The ``properties_`` field is  a list of ``ControlId`` instances
 associated with immutable values, which represent static characteristics that can
@@ -1422,7 +1424,7 @@ emitted triggers the execution of the connected slots.  A detailed description
 of the libcamera implementation is available in the `libcamera Signal and Slot`_
 classes documentation.
 
-.. _Qt Signals and Slots: https://doc.qt.io/qt-5/signalsandslots.html
+.. _Qt Signals and Slots: https://doc.qt.io/qt-6/signalsandslots.html
 .. _libcamera Signal and Slot: https://libcamera.org/api-html/classlibcamera_1_1Signal.html#details
 
 In order to notify applications about the availability of new frames and data,

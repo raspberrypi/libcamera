@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * formats.cpp - libcamera image formats
+ * libcamera image formats
  */
 
 #include "libcamera/internal/formats.h"
@@ -33,7 +33,7 @@ LOG_DEFINE_CATEGORY(Formats)
  * used in pipeline handlers.
  *
  * \var PixelFormatInfo::name
- * \brief The format name as a human-readable string, used as the test
+ * \brief The format name as a human-readable string, used as the text
  * representation of the PixelFormat
  *
  * \var PixelFormatInfo::format
@@ -49,9 +49,9 @@ LOG_DEFINE_CATEGORY(Formats)
  * \var PixelFormatInfo::bitsPerPixel
  * \brief The average number of bits per pixel
  *
- * The number per pixel averages the total number of bits for all colour
- * components over the whole image, excluding any padding bits or padding
- * pixels.
+ * The number of bits per pixel averages the total number of bits for all
+ * colour components over the whole image, excluding any padding bits or
+ * padding pixels.
  *
  * For formats that store pixels with bit padding within words, only the
  * effective bits are taken into account. For instance, 12-bit Bayer data
@@ -269,6 +269,26 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.packed = false,
 		.pixelsPerGroup = 1,
 		.planes = {{ { 4, 1 }, { 0, 0 }, { 0, 0 } }},
+	} },
+	{ formats::BGR161616, {
+		.name = "BGR161616",
+		.format = formats::BGR161616,
+		.v4l2Formats = { V4L2PixelFormat(V4L2_PIX_FMT_RGB48), },
+		.bitsPerPixel = 48,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
+		.packed = false,
+		.pixelsPerGroup = 1,
+		.planes = {{ { 3, 1 }, { 0, 0 }, { 0, 0 } }},
+	} },
+	{ formats::RGB161616, {
+		.name = "RGB161616",
+		.format = formats::RGB161616,
+		.v4l2Formats = { V4L2PixelFormat(V4L2_PIX_FMT_BGR48), },
+		.bitsPerPixel = 48,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
+		.packed = false,
+		.pixelsPerGroup = 1,
+		.planes = {{ { 3, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
 
 	/* YUV packed formats. */
@@ -497,6 +517,16 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.pixelsPerGroup = 1,
 		.planes = {{ { 2, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
+	{ formats::R10_CSI2P, {
+		.name = "R10_CSI2P",
+		.format = formats::R10_CSI2P,
+		.v4l2Formats = { V4L2PixelFormat(V4L2_PIX_FMT_Y10P), },
+		.bitsPerPixel = 10,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+		.packed = true,
+		.pixelsPerGroup = 4,
+		.planes = {{ { 5, 1 }, { 0, 0 }, { 0, 0 } }},
+	} },
 	{ formats::R12, {
 		.name = "R12",
 		.format = formats::R12,
@@ -507,15 +537,25 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.pixelsPerGroup = 1,
 		.planes = {{ { 2, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
-	{ formats::R10_CSI2P, {
-		.name = "R10_CSI2P",
-		.format = formats::R10_CSI2P,
-		.v4l2Formats = { V4L2PixelFormat(V4L2_PIX_FMT_Y10P), },
-		.bitsPerPixel = 10,
+	{ formats::R16, {
+		.name = "R16",
+		.format = formats::R16,
+		.v4l2Formats = { V4L2PixelFormat(V4L2_PIX_FMT_Y16), },
+		.bitsPerPixel = 16,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+		.packed = false,
+		.pixelsPerGroup = 1,
+		.planes = {{ { 2, 1 }, { 0, 0 }, { 0, 0 } }},
+	} },
+	{ formats::MONO_PISP_COMP1, {
+		.name = "MONO_PISP_COMP1",
+		.format = formats::MONO_PISP_COMP1,
+		.v4l2Formats = { V4L2PixelFormat(V4L2_PIX_FMT_PISP_COMP1_MONO), },
+		.bitsPerPixel = 8,
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 		.packed = true,
-		.pixelsPerGroup = 4,
-		.planes = {{ { 5, 1 }, { 0, 0 }, { 0, 0 } }},
+		.pixelsPerGroup = 1,
+		.planes = {{ { 1, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
 
 	/* Bayer formats. */
@@ -880,7 +920,46 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.pixelsPerGroup = 25,
 		.planes = {{ { 32, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
-
+	{ formats::BGGR_PISP_COMP1, {
+		.name = "BGGR_PISP_COMP1",
+		.format = formats::BGGR_PISP_COMP1,
+		.v4l2Formats = { V4L2PixelFormat(V4L2_PIX_FMT_PISP_COMP1_BGGR), },
+		.bitsPerPixel = 8,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+		.packed = true,
+		.pixelsPerGroup = 2,
+		.planes = {{ { 2, 1 }, { 0, 0 }, { 0, 0 } }},
+	} },
+	{ formats::GBRG_PISP_COMP1, {
+		.name = "GBRG_PISP_COMP1",
+		.format = formats::GBRG_PISP_COMP1,
+		.v4l2Formats = { V4L2PixelFormat(V4L2_PIX_FMT_PISP_COMP1_GBRG), },
+		.bitsPerPixel = 8,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+		.packed = true,
+		.pixelsPerGroup = 2,
+		.planes = {{ { 2, 1 }, { 0, 0 }, { 0, 0 } }},
+	} },
+	{ formats::GRBG_PISP_COMP1, {
+		.name = "GRBG_PISP_COMP1",
+		.format = formats::GRBG_PISP_COMP1,
+		.v4l2Formats = { V4L2PixelFormat(V4L2_PIX_FMT_PISP_COMP1_GRBG), },
+		.bitsPerPixel = 8,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+		.packed = true,
+		.pixelsPerGroup = 2,
+		.planes = {{ { 2, 1 }, { 0, 0 }, { 0, 0 } }},
+	} },
+	{ formats::RGGB_PISP_COMP1, {
+		.name = "RGGB_PISP_COMP1",
+		.format = formats::RGGB_PISP_COMP1,
+		.v4l2Formats = { V4L2PixelFormat(V4L2_PIX_FMT_PISP_COMP1_RGGB), },
+		.bitsPerPixel = 8,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+		.packed = true,
+		.pixelsPerGroup = 2,
+		.planes = {{ { 2, 1 }, { 0, 0 }, { 0, 0 } }},
+	} },
 	/* Compressed formats. */
 	{ formats::MJPEG, {
 		.name = "MJPEG",
@@ -987,7 +1066,7 @@ unsigned int PixelFormatInfo::stride(unsigned int width, unsigned int plane,
 		return 0;
 	}
 
-	if (plane > planes.size() || !planes[plane].bytesPerGroup) {
+	if (plane >= planes.size() || !planes[plane].bytesPerGroup) {
 		LOG(Formats, Warning) << "Invalid plane index, stride is zero";
 		return 0;
 	}

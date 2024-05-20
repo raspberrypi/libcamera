@@ -96,6 +96,9 @@ for tracing with lttng: [optional]
 for android: [optional]
         libexif-dev libjpeg-dev
 
+for Python bindings: [optional]
+        pybind11-dev
+
 for lc-compliance: [optional]
         libevent-dev libgtest-dev
 
@@ -120,12 +123,13 @@ setting the ``LIBCAMERA_LOG_LEVELS`` environment variable:
 Using GStreamer plugin
 ~~~~~~~~~~~~~~~~~~~~~~
 
-To use GStreamer plugin from source tree, set the following environment so that
-GStreamer can find it. This isn't necessary when libcamera is installed.
+To use the GStreamer plugin from the source tree, use the meson ``devenv``
+command.  This will create a new shell instance with the ``GST_PLUGIN_PATH``
+environment set accordingly.
 
 .. code::
 
-  export GST_PLUGIN_PATH=$(pwd)/build/src/gstreamer
+  meson devenv -C build
 
 The debugging tool ``gst-launch-1.0`` can be used to construct a pipeline and
 test it. The following pipeline will stream from the camera named "Camera 1"
@@ -133,7 +137,7 @@ onto the OpenGL accelerated display element on your system.
 
 .. code::
 
-  gst-launch-1.0 libcamerasrc camera-name="Camera 1" ! glimagesink
+  gst-launch-1.0 libcamerasrc camera-name="Camera 1" ! queue ! glimagesink
 
 To show the first camera found you can omit the camera-name property, or you
 can list the cameras and their capabilities using:
@@ -148,7 +152,7 @@ if desired with a pipeline such as:
 .. code::
 
   gst-launch-1.0 libcamerasrc ! 'video/x-raw,width=1280,height=720' ! \
-        glimagesink
+       queue ! glimagesink
 
 The libcamerasrc element has two log categories, named libcamera-provider (for
 the video device provider) and libcamerasrc (for the operation of the camera).
@@ -164,7 +168,7 @@ the following example could be used as a starting point:
 
    gst-launch-1.0 libcamerasrc ! \
         video/x-raw,colorimetry=bt709,format=NV12,width=1280,height=720,framerate=30/1 ! \
-        jpegenc ! multipartmux ! \
+        queue ! jpegenc ! multipartmux ! \
         tcpserversink host=0.0.0.0 port=5000
 
 Which can be received on another device over the network with:

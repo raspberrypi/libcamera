@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Raspberry Pi Ltd
  *
- * pwl.cpp - piecewise linear functions
+ * piecewise linear functions
  */
 
 #include <cassert>

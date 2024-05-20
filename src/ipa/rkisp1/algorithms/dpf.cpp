@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021-2022, Ideas On Board
  *
- * dpf.cpp - RkISP1 Denoise Pre-Filter control
+ * RkISP1 Denoise Pre-Filter control
  */
 
 #include "dpf.h"

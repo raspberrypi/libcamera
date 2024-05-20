@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Raspberry Pi Ltd
  *
- * dng_writer.cpp - DNG writer
+ * DNG writer
  */
 
 #include "dng_writer.h"
@@ -248,6 +248,7 @@ void thumbScanlineIPU3([[maybe_unused]] const FormatInfo &info, void *output,
 
 		uint16_t val1, val2, val3, val4;
 		switch (pixelInBlock % 4) {
+		default:
 		case 0:
 			val1 = (in[1] & 0x03) << 14 | (in[0] & 0xff) << 6;
 			val2 = (in[2] & 0x0f) << 12 | (in[1] & 0xfc) << 4;

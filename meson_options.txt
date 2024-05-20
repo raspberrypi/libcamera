@@ -20,6 +20,11 @@ option('documentation',
         type : 'feature',
         description : 'Generate the project documentation')
 
+option('doc_werror',
+        type : 'boolean',
+        value : false,
+        description : 'Treat documentation warnings as errors')
+
 option('gstreamer',
         type : 'feature',
         value : 'auto',
@@ -27,7 +32,7 @@ option('gstreamer',
 
 option('ipas',
         type : 'array',
-        choices : ['ipu3', 'rkisp1', 'rpi/vc4', 'vimc'],
+        choices : ['ipu3', 'rkisp1', 'rpi/vc4', 'simple', 'vimc'],
         description : 'Select which IPA modules to build')
 
 option('lc-compliance',
@@ -43,6 +48,7 @@ option('pipelines',
             'auto',
             'imx8-isi',
             'ipu3',
+            'mali-c55',
             'rkisp1',
             'rpi/vc4',
             'simple',
@@ -53,7 +59,7 @@ option('pipelines',
 
 option('pycamera',
         type : 'feature',
-        value : 'disabled',
+        value : 'auto',
         description : 'Enable libcamera Python bindings (experimental)')
 
 option('qcam',

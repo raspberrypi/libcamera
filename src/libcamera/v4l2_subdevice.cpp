@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * v4l2_subdevice.cpp - V4L2 Subdevice
+ * V4L2 Subdevice
  */
 
 #include "libcamera/internal/v4l2_subdevice.h"
@@ -36,108 +36,701 @@ namespace libcamera {
 
 LOG_DECLARE_CATEGORY(V4L2)
 
+/**
+ * \class MediaBusFormatInfo
+ * \brief Information about media bus formats
+ *
+ * The MediaBusFormatInfo class groups together information describing a media
+ * bus format. It facilitates handling of media bus formats by providing data
+ * commonly used in pipeline handlers.
+ *
+ * \var MediaBusFormatInfo::name
+ * \brief The format name as a human-readable string, used as the text
+ * representation of the format
+ *
+ * \var MediaBusFormatInfo::code
+ * \brief The media bus format code described by this instance (MEDIA_BUS_FMT_*)
+ *
+ * \var MediaBusFormatInfo::type
+ * \brief The media bus format type
+ *
+ * \var MediaBusFormatInfo::bitsPerPixel
+ * \brief The average number of bits per pixel
+ *
+ * The number of bits per pixel averages the total number of bits for all
+ * colour components over the whole image, excluding any padding bits or
+ * padding pixels.
+ *
+ * For formats that transmit multiple or fractional pixels per sample, the
+ * value will differ from the bus width.
+ *
+ * Formats that don't have a fixed number of bits per pixel, such as compressed
+ * formats, or device-specific embedded data formats, report 0 in this field.
+ *
+ * \var MediaBusFormatInfo::colourEncoding
+ * \brief The colour encoding type
+ *
+ * This field is valid for Type::Image formats only.
+ */
+
+/**
+ * \enum MediaBusFormatInfo::Type
+ * \brief The format type
+ *
+ * \var MediaBusFormatInfo::Type::Image
+ * \brief The format describes image data
+ *
+ * \var MediaBusFormatInfo::Type::Metadata
+ * \brief The format describes generic metadata
+ *
+ * \var MediaBusFormatInfo::Type::EmbeddedData
+ * \brief The format describes sensor embedded data
+ */
+
 namespace {
 
-/*
- * \struct V4L2SubdeviceFormatInfo
- * \brief Information about media bus formats
- * \param bitsPerPixel Bits per pixel
- * \param name Name of MBUS format
- * \param colourEncoding Type of colour encoding
- */
-struct V4L2SubdeviceFormatInfo {
-	unsigned int bitsPerPixel;
-	const char *name;
-	PixelFormatInfo::ColourEncoding colourEncoding;
-};
-
-/*
- * \var formatInfoMap
- * \brief A map that associates V4L2SubdeviceFormatInfo struct to V4L2 media
- * bus codes
- */
-const std::map<uint32_t, V4L2SubdeviceFormatInfo> formatInfoMap = {
-	{ MEDIA_BUS_FMT_RGB444_2X8_PADHI_BE, { 16, "RGB444_2X8_PADHI_BE", PixelFormatInfo::ColourEncodingRGB } },
-	{ MEDIA_BUS_FMT_RGB444_2X8_PADHI_LE, { 16, "RGB444_2X8_PADHI_LE", PixelFormatInfo::ColourEncodingRGB } },
-	{ MEDIA_BUS_FMT_RGB555_2X8_PADHI_BE, { 16, "RGB555_2X8_PADHI_BE", PixelFormatInfo::ColourEncodingRGB } },
-	{ MEDIA_BUS_FMT_RGB555_2X8_PADHI_LE, { 16, "RGB555_2X8_PADHI_LE", PixelFormatInfo::ColourEncodingRGB } },
-	{ MEDIA_BUS_FMT_RGB565_1X16, { 16, "RGB565_1X16", PixelFormatInfo::ColourEncodingRGB } },
-	{ MEDIA_BUS_FMT_BGR565_2X8_BE, { 16, "BGR565_2X8_BE", PixelFormatInfo::ColourEncodingRGB } },
-	{ MEDIA_BUS_FMT_BGR565_2X8_LE, { 16, "BGR565_2X8_LE", PixelFormatInfo::ColourEncodingRGB } },
-	{ MEDIA_BUS_FMT_RGB565_2X8_BE, { 16, "RGB565_2X8_BE", PixelFormatInfo::ColourEncodingRGB } },
-	{ MEDIA_BUS_FMT_RGB565_2X8_LE, { 16, "RGB565_2X8_LE", PixelFormatInfo::ColourEncodingRGB } },
-	{ MEDIA_BUS_FMT_RGB666_1X18, { 18, "RGB666_1X18", PixelFormatInfo::ColourEncodingRGB } },
-	{ MEDIA_BUS_FMT_BGR888_1X24, { 24, "BGR888_1X24", PixelFormatInfo::ColourEncodingRGB } },
-	{ MEDIA_BUS_FMT_RGB888_1X24, { 24, "RGB888_1X24", PixelFormatInfo::ColourEncodingRGB } },
-	{ MEDIA_BUS_FMT_RGB888_2X12_BE, { 24, "RGB888_2X12_BE", PixelFormatInfo::ColourEncodingRGB } },
-	{ MEDIA_BUS_FMT_RGB888_2X12_LE, { 24, "RGB888_2X12_LE", PixelFormatInfo::ColourEncodingRGB } },
-	{ MEDIA_BUS_FMT_ARGB8888_1X32, { 32, "ARGB8888_1X32", PixelFormatInfo::ColourEncodingRGB } },
-	{ MEDIA_BUS_FMT_Y8_1X8, { 8, "Y8_1X8", PixelFormatInfo::ColourEncodingYUV } },
-	{ MEDIA_BUS_FMT_UV8_1X8, { 8, "UV8_1X8", PixelFormatInfo::ColourEncodingYUV } },
-	{ MEDIA_BUS_FMT_UYVY8_1_5X8, { 12, "UYVY8_1_5X8", PixelFormatInfo::ColourEncodingYUV } },
-	{ MEDIA_BUS_FMT_VYUY8_1_5X8, { 12, "VYUY8_1_5X8", PixelFormatInfo::ColourEncodingYUV } },
-	{ MEDIA_BUS_FMT_YUYV8_1_5X8, { 12, "YUYV8_1_5X8", PixelFormatInfo::ColourEncodingYUV } },
-	{ MEDIA_BUS_FMT_YVYU8_1_5X8, { 12, "YVYU8_1_5X8", PixelFormatInfo::ColourEncodingYUV } },
-	{ MEDIA_BUS_FMT_UYVY8_2X8, { 16, "UYVY8_2X8", PixelFormatInfo::ColourEncodingYUV } },
-	{ MEDIA_BUS_FMT_VYUY8_2X8, { 16, "VYUY8_2X8", PixelFormatInfo::ColourEncodingYUV } },
-	{ MEDIA_BUS_FMT_YUYV8_2X8, { 16, "YUYV8_2X8", PixelFormatInfo::ColourEncodingYUV } },
-	{ MEDIA_BUS_FMT_YVYU8_2X8, { 16, "YVYU8_2X8", PixelFormatInfo::ColourEncodingYUV } },
-	{ MEDIA_BUS_FMT_Y10_1X10, { 10, "Y10_1X10", PixelFormatInfo::ColourEncodingYUV } },
-	{ MEDIA_BUS_FMT_UYVY10_2X10, { 20, "UYVY10_2X10", PixelFormatInfo::ColourEncodingYUV } },
-	{ MEDIA_BUS_FMT_VYUY10_2X10, { 20, "VYUY10_2X10", PixelFormatInfo::ColourEncodingYUV } },
-	{ MEDIA_BUS_FMT_YUYV10_2X10, { 20, "YUYV10_2X10", PixelFormatInfo::ColourEncodingYUV } },
-	{ MEDIA_BUS_FMT_YVYU10_2X10, { 20, "YVYU10_2X10", PixelFormatInfo::ColourEncodingYUV } },
-	{ MEDIA_BUS_FMT_Y12_1X12, { 12, "Y12_1X12", PixelFormatInfo::ColourEncodingYUV } },
-	{ MEDIA_BUS_FMT_UYVY8_1X16, { 16, "UYVY8_1X16", PixelFormatInfo::ColourEncodingYUV } },
-	{ MEDIA_BUS_FMT_VYUY8_1X16, { 16, "VYUY8_1X16", PixelFormatInfo::ColourEncodingYUV } },
-	{ MEDIA_BUS_FMT_YUYV8_1X16, { 16, "YUYV8_1X16", PixelFormatInfo::ColourEncodingYUV } },
-	{ MEDIA_BUS_FMT_YVYU8_1X16, { 16, "YVYU8_1X16", PixelFormatInfo::ColourEncodingYUV } },
-	{ MEDIA_BUS_FMT_YDYUYDYV8_1X16, { 16, "YDYUYDYV8_1X16", PixelFormatInfo::ColourEncodingYUV } },
-	{ MEDIA_BUS_FMT_UYVY10_1X20, { 20, "UYVY10_1X20", PixelFormatInfo::ColourEncodingYUV } },
-	{ MEDIA_BUS_FMT_VYUY10_1X20, { 20, "VYUY10_1X20", PixelFormatInfo::ColourEncodingYUV } },
-	{ MEDIA_BUS_FMT_YUYV10_1X20, { 20, "YUYV10_1X20", PixelFormatInfo::ColourEncodingYUV } },
-	{ MEDIA_BUS_FMT_YVYU10_1X20, { 20, "YVYU10_1X20", PixelFormatInfo::ColourEncodingYUV } },
-	{ MEDIA_BUS_FMT_YUV8_1X24, { 24, "YUV8_1X24", PixelFormatInfo::ColourEncodingYUV } },
-	{ MEDIA_BUS_FMT_YUV10_1X30, { 30, "YUV10_1X30", PixelFormatInfo::ColourEncodingYUV } },
-	{ MEDIA_BUS_FMT_AYUV8_1X32, { 32, "AYUV8_1X32", PixelFormatInfo::ColourEncodingYUV } },
-	{ MEDIA_BUS_FMT_UYVY12_2X12, { 24, "UYVY12_2X12", PixelFormatInfo::ColourEncodingYUV } },
-	{ MEDIA_BUS_FMT_VYUY12_2X12, { 24, "VYUY12_2X12", PixelFormatInfo::ColourEncodingYUV } },
-	{ MEDIA_BUS_FMT_YUYV12_2X12, { 24, "YUYV12_2X12", PixelFormatInfo::ColourEncodingYUV } },
-	{ MEDIA_BUS_FMT_YVYU12_2X12, { 24, "YVYU12_2X12", PixelFormatInfo::ColourEncodingYUV } },
-	{ MEDIA_BUS_FMT_UYVY12_1X24, { 24, "UYVY12_1X24", PixelFormatInfo::ColourEncodingYUV } },
-	{ MEDIA_BUS_FMT_VYUY12_1X24, { 24, "VYUY12_1X24", PixelFormatInfo::ColourEncodingYUV } },
-	{ MEDIA_BUS_FMT_YUYV12_1X24, { 24, "YUYV12_1X24", PixelFormatInfo::ColourEncodingYUV } },
-	{ MEDIA_BUS_FMT_YVYU12_1X24, { 24, "YVYU12_1X24", PixelFormatInfo::ColourEncodingYUV } },
-	{ MEDIA_BUS_FMT_SBGGR8_1X8, { 8, "SBGGR8_1X8", PixelFormatInfo::ColourEncodingRAW } },
-	{ MEDIA_BUS_FMT_SGBRG8_1X8, { 8, "SGBRG8_1X8", PixelFormatInfo::ColourEncodingRAW } },
-	{ MEDIA_BUS_FMT_SGRBG8_1X8, { 8, "SGRBG8_1X8", PixelFormatInfo::ColourEncodingRAW } },
-	{ MEDIA_BUS_FMT_SRGGB8_1X8, { 8, "SRGGB8_1X8", PixelFormatInfo::ColourEncodingRAW } },
-	{ MEDIA_BUS_FMT_SBGGR10_ALAW8_1X8, { 8, "SBGGR10_ALAW8_1X8", PixelFormatInfo::ColourEncodingRAW } },
-	{ MEDIA_BUS_FMT_SGBRG10_ALAW8_1X8, { 8, "SGBRG10_ALAW8_1X8", PixelFormatInfo::ColourEncodingRAW } },
-	{ MEDIA_BUS_FMT_SGRBG10_ALAW8_1X8, { 8, "SGRBG10_ALAW8_1X8", PixelFormatInfo::ColourEncodingRAW } },
-	{ MEDIA_BUS_FMT_SRGGB10_ALAW8_1X8, { 8, "SRGGB10_ALAW8_1X8", PixelFormatInfo::ColourEncodingRAW } },
-	{ MEDIA_BUS_FMT_SBGGR10_DPCM8_1X8, { 8, "SBGGR10_DPCM8_1X8", PixelFormatInfo::ColourEncodingRAW } },
-	{ MEDIA_BUS_FMT_SGBRG10_DPCM8_1X8, { 8, "SGBRG10_DPCM8_1X8", PixelFormatInfo::ColourEncodingRAW } },
-	{ MEDIA_BUS_FMT_SGRBG10_DPCM8_1X8, { 8, "SGRBG10_DPCM8_1X8", PixelFormatInfo::ColourEncodingRAW } },
-	{ MEDIA_BUS_FMT_SRGGB10_DPCM8_1X8, { 8, "SRGGB10_DPCM8_1X8", PixelFormatInfo::ColourEncodingRAW } },
-	{ MEDIA_BUS_FMT_SBGGR10_2X8_PADHI_BE, { 16, "SBGGR10_2X8_PADHI_BE", PixelFormatInfo::ColourEncodingRAW } },
-	{ MEDIA_BUS_FMT_SBGGR10_2X8_PADHI_LE, { 16, "SBGGR10_2X8_PADHI_LE", PixelFormatInfo::ColourEncodingRAW } },
-	{ MEDIA_BUS_FMT_SBGGR10_2X8_PADLO_BE, { 16, "SBGGR10_2X8_PADLO_BE", PixelFormatInfo::ColourEncodingRAW } },
-	{ MEDIA_BUS_FMT_SBGGR10_2X8_PADLO_LE, { 16, "SBGGR10_2X8_PADLO_LE", PixelFormatInfo::ColourEncodingRAW } },
-	{ MEDIA_BUS_FMT_SBGGR10_1X10, { 10, "SBGGR10_1X10", PixelFormatInfo::ColourEncodingRAW } },
-	{ MEDIA_BUS_FMT_SGBRG10_1X10, { 10, "SGBRG10_1X10", PixelFormatInfo::ColourEncodingRAW } },
-	{ MEDIA_BUS_FMT_SGRBG10_1X10, { 10, "SGRBG10_1X10", PixelFormatInfo::ColourEncodingRAW } },
-	{ MEDIA_BUS_FMT_SRGGB10_1X10, { 10, "SRGGB10_1X10", PixelFormatInfo::ColourEncodingRAW } },
-	{ MEDIA_BUS_FMT_SBGGR12_1X12, { 12, "SBGGR12_1X12", PixelFormatInfo::ColourEncodingRAW } },
-	{ MEDIA_BUS_FMT_SGBRG12_1X12, { 12, "SGBRG12_1X12", PixelFormatInfo::ColourEncodingRAW } },
-	{ MEDIA_BUS_FMT_SGRBG12_1X12, { 12, "SGRBG12_1X12", PixelFormatInfo::ColourEncodingRAW } },
-	{ MEDIA_BUS_FMT_SRGGB12_1X12, { 12, "SRGGB12_1X12", PixelFormatInfo::ColourEncodingRAW } },
+const std::map<uint32_t, MediaBusFormatInfo> mediaBusFormatInfo{
+	/* This table is sorted to match the order in linux/media-bus-format.h */
+	{ MEDIA_BUS_FMT_RGB444_2X8_PADHI_BE, {
+		.name = "RGB444_2X8_PADHI_BE",
+		.code = MEDIA_BUS_FMT_RGB444_2X8_PADHI_BE,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 16,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
+	} },
+	{ MEDIA_BUS_FMT_RGB444_2X8_PADHI_LE, {
+		.name = "RGB444_2X8_PADHI_LE",
+		.code = MEDIA_BUS_FMT_RGB444_2X8_PADHI_LE,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 16,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
+	} },
+	{ MEDIA_BUS_FMT_RGB555_2X8_PADHI_BE, {
+		.name = "RGB555_2X8_PADHI_BE",
+		.code = MEDIA_BUS_FMT_RGB555_2X8_PADHI_BE,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 16,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
+	} },
+	{ MEDIA_BUS_FMT_RGB555_2X8_PADHI_LE, {
+		.name = "RGB555_2X8_PADHI_LE",
+		.code = MEDIA_BUS_FMT_RGB555_2X8_PADHI_LE,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 16,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
+	} },
+	{ MEDIA_BUS_FMT_RGB565_1X16, {
+		.name = "RGB565_1X16",
+		.code = MEDIA_BUS_FMT_RGB565_1X16,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 16,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
+	} },
+	{ MEDIA_BUS_FMT_BGR565_2X8_BE, {
+		.name = "BGR565_2X8_BE",
+		.code = MEDIA_BUS_FMT_BGR565_2X8_BE,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 16,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
+	} },
+	{ MEDIA_BUS_FMT_BGR565_2X8_LE, {
+		.name = "BGR565_2X8_LE",
+		.code = MEDIA_BUS_FMT_BGR565_2X8_LE,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 16,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
+	} },
+	{ MEDIA_BUS_FMT_RGB565_2X8_BE, {
+		.name = "RGB565_2X8_BE",
+		.code = MEDIA_BUS_FMT_RGB565_2X8_BE,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 16,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
+	} },
+	{ MEDIA_BUS_FMT_RGB565_2X8_LE, {
+		.name = "RGB565_2X8_LE",
+		.code = MEDIA_BUS_FMT_RGB565_2X8_LE,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 16,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
+	} },
+	{ MEDIA_BUS_FMT_RGB666_1X18, {
+		.name = "RGB666_1X18",
+		.code = MEDIA_BUS_FMT_RGB666_1X18,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 18,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
+	} },
+	{ MEDIA_BUS_FMT_BGR888_1X24, {
+		.name = "BGR888_1X24",
+		.code = MEDIA_BUS_FMT_BGR888_1X24,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 24,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
+	} },
+	{ MEDIA_BUS_FMT_RGB888_1X24, {
+		.name = "RGB888_1X24",
+		.code = MEDIA_BUS_FMT_RGB888_1X24,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 24,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
+	} },
+	{ MEDIA_BUS_FMT_RGB888_2X12_BE, {
+		.name = "RGB888_2X12_BE",
+		.code = MEDIA_BUS_FMT_RGB888_2X12_BE,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 24,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
+	} },
+	{ MEDIA_BUS_FMT_RGB888_2X12_LE, {
+		.name = "RGB888_2X12_LE",
+		.code = MEDIA_BUS_FMT_RGB888_2X12_LE,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 24,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
+	} },
+	{ MEDIA_BUS_FMT_ARGB8888_1X32, {
+		.name = "ARGB8888_1X32",
+		.code = MEDIA_BUS_FMT_ARGB8888_1X32,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 32,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
+	} },
+	{ MEDIA_BUS_FMT_Y8_1X8, {
+		.name = "Y8_1X8",
+		.code = MEDIA_BUS_FMT_Y8_1X8,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 8,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+	} },
+	{ MEDIA_BUS_FMT_UV8_1X8, {
+		.name = "UV8_1X8",
+		.code = MEDIA_BUS_FMT_UV8_1X8,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 8,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+	} },
+	{ MEDIA_BUS_FMT_UYVY8_1_5X8, {
+		.name = "UYVY8_1_5X8",
+		.code = MEDIA_BUS_FMT_UYVY8_1_5X8,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 12,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+	} },
+	{ MEDIA_BUS_FMT_VYUY8_1_5X8, {
+		.name = "VYUY8_1_5X8",
+		.code = MEDIA_BUS_FMT_VYUY8_1_5X8,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 12,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+	} },
+	{ MEDIA_BUS_FMT_YUYV8_1_5X8, {
+		.name = "YUYV8_1_5X8",
+		.code = MEDIA_BUS_FMT_YUYV8_1_5X8,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 12,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+	} },
+	{ MEDIA_BUS_FMT_YVYU8_1_5X8, {
+		.name = "YVYU8_1_5X8",
+		.code = MEDIA_BUS_FMT_YVYU8_1_5X8,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 12,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+	} },
+	{ MEDIA_BUS_FMT_UYVY8_2X8, {
+		.name = "UYVY8_2X8",
+		.code = MEDIA_BUS_FMT_UYVY8_2X8,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 16,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+	} },
+	{ MEDIA_BUS_FMT_VYUY8_2X8, {
+		.name = "VYUY8_2X8",
+		.code = MEDIA_BUS_FMT_VYUY8_2X8,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 16,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+	} },
+	{ MEDIA_BUS_FMT_YUYV8_2X8, {
+		.name = "YUYV8_2X8",
+		.code = MEDIA_BUS_FMT_YUYV8_2X8,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 16,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+	} },
+	{ MEDIA_BUS_FMT_YVYU8_2X8, {
+		.name = "YVYU8_2X8",
+		.code = MEDIA_BUS_FMT_YVYU8_2X8,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 16,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+	} },
+	{ MEDIA_BUS_FMT_Y10_1X10, {
+		.name = "Y10_1X10",
+		.code = MEDIA_BUS_FMT_Y10_1X10,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 10,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+	} },
+	{ MEDIA_BUS_FMT_UYVY10_2X10, {
+		.name = "UYVY10_2X10",
+		.code = MEDIA_BUS_FMT_UYVY10_2X10,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 20,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+	} },
+	{ MEDIA_BUS_FMT_VYUY10_2X10, {
+		.name = "VYUY10_2X10",
+		.code = MEDIA_BUS_FMT_VYUY10_2X10,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 20,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+	} },
+	{ MEDIA_BUS_FMT_YUYV10_2X10, {
+		.name = "YUYV10_2X10",
+		.code = MEDIA_BUS_FMT_YUYV10_2X10,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 20,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+	} },
+	{ MEDIA_BUS_FMT_YVYU10_2X10, {
+		.name = "YVYU10_2X10",
+		.code = MEDIA_BUS_FMT_YVYU10_2X10,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 20,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+	} },
+	{ MEDIA_BUS_FMT_Y12_1X12, {
+		.name = "Y12_1X12",
+		.code = MEDIA_BUS_FMT_Y12_1X12,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 12,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+	} },
+	{ MEDIA_BUS_FMT_Y16_1X16, {
+		.name = "Y16_1X16",
+		.code = MEDIA_BUS_FMT_Y16_1X16,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 16,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+	} },
+	{ MEDIA_BUS_FMT_UYVY8_1X16, {
+		.name = "UYVY8_1X16",
+		.code = MEDIA_BUS_FMT_UYVY8_1X16,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 16,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+	} },
+	{ MEDIA_BUS_FMT_VYUY8_1X16, {
+		.name = "VYUY8_1X16",
+		.code = MEDIA_BUS_FMT_VYUY8_1X16,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 16,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+	} },
+	{ MEDIA_BUS_FMT_YUYV8_1X16, {
+		.name = "YUYV8_1X16",
+		.code = MEDIA_BUS_FMT_YUYV8_1X16,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 16,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+	} },
+	{ MEDIA_BUS_FMT_YVYU8_1X16, {
+		.name = "YVYU8_1X16",
+		.code = MEDIA_BUS_FMT_YVYU8_1X16,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 16,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+	} },
+	{ MEDIA_BUS_FMT_YDYUYDYV8_1X16, {
+		.name = "YDYUYDYV8_1X16",
+		.code = MEDIA_BUS_FMT_YDYUYDYV8_1X16,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 16,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+	} },
+	{ MEDIA_BUS_FMT_UYVY10_1X20, {
+		.name = "UYVY10_1X20",
+		.code = MEDIA_BUS_FMT_UYVY10_1X20,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 20,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+	} },
+	{ MEDIA_BUS_FMT_VYUY10_1X20, {
+		.name = "VYUY10_1X20",
+		.code = MEDIA_BUS_FMT_VYUY10_1X20,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 20,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+	} },
+	{ MEDIA_BUS_FMT_YUYV10_1X20, {
+		.name = "YUYV10_1X20",
+		.code = MEDIA_BUS_FMT_YUYV10_1X20,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 20,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+	} },
+	{ MEDIA_BUS_FMT_YVYU10_1X20, {
+		.name = "YVYU10_1X20",
+		.code = MEDIA_BUS_FMT_YVYU10_1X20,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 20,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+	} },
+	{ MEDIA_BUS_FMT_YUV8_1X24, {
+		.name = "YUV8_1X24",
+		.code = MEDIA_BUS_FMT_YUV8_1X24,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 24,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+	} },
+	{ MEDIA_BUS_FMT_YUV10_1X30, {
+		.name = "YUV10_1X30",
+		.code = MEDIA_BUS_FMT_YUV10_1X30,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 30,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+	} },
+	{ MEDIA_BUS_FMT_AYUV8_1X32, {
+		.name = "AYUV8_1X32",
+		.code = MEDIA_BUS_FMT_AYUV8_1X32,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 32,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+	} },
+	{ MEDIA_BUS_FMT_UYVY12_2X12, {
+		.name = "UYVY12_2X12",
+		.code = MEDIA_BUS_FMT_UYVY12_2X12,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 24,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+	} },
+	{ MEDIA_BUS_FMT_VYUY12_2X12, {
+		.name = "VYUY12_2X12",
+		.code = MEDIA_BUS_FMT_VYUY12_2X12,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 24,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+	} },
+	{ MEDIA_BUS_FMT_YUYV12_2X12, {
+		.name = "YUYV12_2X12",
+		.code = MEDIA_BUS_FMT_YUYV12_2X12,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 24,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+	} },
+	{ MEDIA_BUS_FMT_YVYU12_2X12, {
+		.name = "YVYU12_2X12",
+		.code = MEDIA_BUS_FMT_YVYU12_2X12,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 24,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+	} },
+	{ MEDIA_BUS_FMT_UYVY12_1X24, {
+		.name = "UYVY12_1X24",
+		.code = MEDIA_BUS_FMT_UYVY12_1X24,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 24,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+	} },
+	{ MEDIA_BUS_FMT_VYUY12_1X24, {
+		.name = "VYUY12_1X24",
+		.code = MEDIA_BUS_FMT_VYUY12_1X24,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 24,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+	} },
+	{ MEDIA_BUS_FMT_YUYV12_1X24, {
+		.name = "YUYV12_1X24",
+		.code = MEDIA_BUS_FMT_YUYV12_1X24,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 24,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+	} },
+	{ MEDIA_BUS_FMT_YVYU12_1X24, {
+		.name = "YVYU12_1X24",
+		.code = MEDIA_BUS_FMT_YVYU12_1X24,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 24,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+	} },
+	{ MEDIA_BUS_FMT_SBGGR8_1X8, {
+		.name = "SBGGR8_1X8",
+		.code = MEDIA_BUS_FMT_SBGGR8_1X8,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 8,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+	} },
+	{ MEDIA_BUS_FMT_SGBRG8_1X8, {
+		.name = "SGBRG8_1X8",
+		.code = MEDIA_BUS_FMT_SGBRG8_1X8,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 8,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+	} },
+	{ MEDIA_BUS_FMT_SGRBG8_1X8, {
+		.name = "SGRBG8_1X8",
+		.code = MEDIA_BUS_FMT_SGRBG8_1X8,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 8,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+	} },
+	{ MEDIA_BUS_FMT_SRGGB8_1X8, {
+		.name = "SRGGB8_1X8",
+		.code = MEDIA_BUS_FMT_SRGGB8_1X8,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 8,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+	} },
+	{ MEDIA_BUS_FMT_SBGGR10_ALAW8_1X8, {
+		.name = "SBGGR10_ALAW8_1X8",
+		.code = MEDIA_BUS_FMT_SBGGR10_ALAW8_1X8,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 8,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+	} },
+	{ MEDIA_BUS_FMT_SGBRG10_ALAW8_1X8, {
+		.name = "SGBRG10_ALAW8_1X8",
+		.code = MEDIA_BUS_FMT_SGBRG10_ALAW8_1X8,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 8,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+	} },
+	{ MEDIA_BUS_FMT_SGRBG10_ALAW8_1X8, {
+		.name = "SGRBG10_ALAW8_1X8",
+		.code = MEDIA_BUS_FMT_SGRBG10_ALAW8_1X8,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 8,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+	} },
+	{ MEDIA_BUS_FMT_SRGGB10_ALAW8_1X8, {
+		.name = "SRGGB10_ALAW8_1X8",
+		.code = MEDIA_BUS_FMT_SRGGB10_ALAW8_1X8,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 8,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+	} },
+	{ MEDIA_BUS_FMT_SBGGR10_DPCM8_1X8, {
+		.name = "SBGGR10_DPCM8_1X8",
+		.code = MEDIA_BUS_FMT_SBGGR10_DPCM8_1X8,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 8,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+	} },
+	{ MEDIA_BUS_FMT_SGBRG10_DPCM8_1X8, {
+		.name = "SGBRG10_DPCM8_1X8",
+		.code = MEDIA_BUS_FMT_SGBRG10_DPCM8_1X8,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 8,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+	} },
+	{ MEDIA_BUS_FMT_SGRBG10_DPCM8_1X8, {
+		.name = "SGRBG10_DPCM8_1X8",
+		.code = MEDIA_BUS_FMT_SGRBG10_DPCM8_1X8,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 8,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+	} },
+	{ MEDIA_BUS_FMT_SRGGB10_DPCM8_1X8, {
+		.name = "SRGGB10_DPCM8_1X8",
+		.code = MEDIA_BUS_FMT_SRGGB10_DPCM8_1X8,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 8,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+	} },
+	{ MEDIA_BUS_FMT_SBGGR10_2X8_PADHI_BE, {
+		.name = "SBGGR10_2X8_PADHI_BE",
+		.code = MEDIA_BUS_FMT_SBGGR10_2X8_PADHI_BE,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 16,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+	} },
+	{ MEDIA_BUS_FMT_SBGGR10_2X8_PADHI_LE, {
+		.name = "SBGGR10_2X8_PADHI_LE",
+		.code = MEDIA_BUS_FMT_SBGGR10_2X8_PADHI_LE,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 16,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+	} },
+	{ MEDIA_BUS_FMT_SBGGR10_2X8_PADLO_BE, {
+		.name = "SBGGR10_2X8_PADLO_BE",
+		.code = MEDIA_BUS_FMT_SBGGR10_2X8_PADLO_BE,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 16,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+	} },
+	{ MEDIA_BUS_FMT_SBGGR10_2X8_PADLO_LE, {
+		.name = "SBGGR10_2X8_PADLO_LE",
+		.code = MEDIA_BUS_FMT_SBGGR10_2X8_PADLO_LE,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 16,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+	} },
+	{ MEDIA_BUS_FMT_SBGGR10_1X10, {
+		.name = "SBGGR10_1X10",
+		.code = MEDIA_BUS_FMT_SBGGR10_1X10,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 10,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+	} },
+	{ MEDIA_BUS_FMT_SGBRG10_1X10, {
+		.name = "SGBRG10_1X10",
+		.code = MEDIA_BUS_FMT_SGBRG10_1X10,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 10,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+	} },
+	{ MEDIA_BUS_FMT_SGRBG10_1X10, {
+		.name = "SGRBG10_1X10",
+		.code = MEDIA_BUS_FMT_SGRBG10_1X10,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 10,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+	} },
+	{ MEDIA_BUS_FMT_SRGGB10_1X10, {
+		.name = "SRGGB10_1X10",
+		.code = MEDIA_BUS_FMT_SRGGB10_1X10,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 10,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+	} },
+	{ MEDIA_BUS_FMT_SBGGR12_1X12, {
+		.name = "SBGGR12_1X12",
+		.code = MEDIA_BUS_FMT_SBGGR12_1X12,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 12,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+	} },
+	{ MEDIA_BUS_FMT_SGBRG12_1X12, {
+		.name = "SGBRG12_1X12",
+		.code = MEDIA_BUS_FMT_SGBRG12_1X12,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 12,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+	} },
+	{ MEDIA_BUS_FMT_SGRBG12_1X12, {
+		.name = "SGRBG12_1X12",
+		.code = MEDIA_BUS_FMT_SGRBG12_1X12,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 12,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+	} },
+	{ MEDIA_BUS_FMT_SRGGB12_1X12, {
+		.name = "SRGGB12_1X12",
+		.code = MEDIA_BUS_FMT_SRGGB12_1X12,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 12,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+	} },
+	{ MEDIA_BUS_FMT_SBGGR14_1X14, {
+		.name = "SBGGR14_1X14",
+		.code = MEDIA_BUS_FMT_SBGGR14_1X14,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 14,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+	} },
+	{ MEDIA_BUS_FMT_SGBRG14_1X14, {
+		.name = "SGBRG14_1X14",
+		.code = MEDIA_BUS_FMT_SGBRG14_1X14,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 14,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+	} },
+	{ MEDIA_BUS_FMT_SGRBG14_1X14, {
+		.name = "SGRBG14_1X14",
+		.code = MEDIA_BUS_FMT_SGRBG14_1X14,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 14,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+	} },
+	{ MEDIA_BUS_FMT_SRGGB14_1X14, {
+		.name = "SRGGB14_1X14",
+		.code = MEDIA_BUS_FMT_SRGGB14_1X14,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 14,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+	} },
+	{ MEDIA_BUS_FMT_SBGGR16_1X16, {
+		.name = "SBGGR16_1X16",
+		.code = MEDIA_BUS_FMT_SBGGR16_1X16,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 16,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW
+	} },
+	{ MEDIA_BUS_FMT_SGBRG16_1X16, {
+		.name = "SGBRG16_1X16",
+		.code = MEDIA_BUS_FMT_SGBRG16_1X16,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 16,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW
+	} },
+	{ MEDIA_BUS_FMT_SGRBG16_1X16, {
+		.name = "SGRBG16_1X16",
+		.code = MEDIA_BUS_FMT_SGRBG16_1X16,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 16,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW
+	} },
+	{ MEDIA_BUS_FMT_SRGGB16_1X16, {
+		.name = "SRGGB16_1X16",
+		.code = MEDIA_BUS_FMT_SRGGB16_1X16,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 16,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW
+	} },
 	/* \todo Clarify colour encoding for HSV formats */
-	{ MEDIA_BUS_FMT_AHSV8888_1X32, { 32, "AHSV8888_1X32", PixelFormatInfo::ColourEncodingRGB } },
-	{ MEDIA_BUS_FMT_JPEG_1X8, { 8, "JPEG_1X8", PixelFormatInfo::ColourEncodingYUV } },
+	{ MEDIA_BUS_FMT_AHSV8888_1X32, {
+		.name = "AHSV8888_1X32",
+		.code = MEDIA_BUS_FMT_AHSV8888_1X32,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 32,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
+	} },
+	{ MEDIA_BUS_FMT_JPEG_1X8, {
+		.name = "JPEG_1X8",
+		.code = MEDIA_BUS_FMT_JPEG_1X8,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 8,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+	} },
+	{ MEDIA_BUS_FMT_METADATA_FIXED, {
+		.name = "METADATA_FIXED",
+		.code = MEDIA_BUS_FMT_METADATA_FIXED,
+		.type = MediaBusFormatInfo::Type::Metadata,
+		.bitsPerPixel = 0,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+	} },
 };
 
 } /* namespace */
+
+/**
+ * \fn bool MediaBusFormatInfo::isValid() const
+ * \brief Check if the media bus format info is valid
+ * \return True if the media bus format info is valid, false otherwise
+ */
+
+/**
+ * \brief Retrieve information about a media bus format
+ * \param[in] code The media bus format code
+ * \return The MediaBusFormatInfo describing the \a code if known, or an invalid
+ * MediaBusFormatInfo otherwise
+ */
+const MediaBusFormatInfo &MediaBusFormatInfo::info(uint32_t code)
+{
+	static const MediaBusFormatInfo invalid{};
+
+	const auto it = mediaBusFormatInfo.find(code);
+	if (it == mediaBusFormatInfo.end()) {
+		LOG(V4L2, Warning)
+			<< "Unsupported media bus format "
+			<< utils::hex(code, 4);
+		return invalid;
+	}
+
+	return it->second;
+}
 
 /**
  * \struct V4L2SubdeviceCapability
@@ -192,7 +785,7 @@ const std::map<uint32_t, V4L2SubdeviceFormatInfo> formatInfoMap = {
  */
 
 /**
- * \var V4L2SubdeviceFormat::mbus_code
+ * \var V4L2SubdeviceFormat::code
  * \brief The image format bus code
  */
 
@@ -229,23 +822,6 @@ const std::string V4L2SubdeviceFormat::toString() const
 }
 
 /**
- * \brief Retrieve the number of bits per pixel for the V4L2 subdevice format
- * \return The number of bits per pixel for the format, or 0 if the format is
- * not supported
- */
-uint8_t V4L2SubdeviceFormat::bitsPerPixel() const
-{
-	const auto it = formatInfoMap.find(mbus_code);
-	if (it == formatInfoMap.end()) {
-		LOG(V4L2, Error) << "No information available for format '"
-				 << *this << "'";
-		return 0;
-	}
-
-	return it->second.bitsPerPixel;
-}
-
-/**
  * \brief Insert a text representation of a V4L2SubdeviceFormat into an output
  * stream
  * \param[in] out The output stream
@@ -256,10 +832,10 @@ std::ostream &operator<<(std::ostream &out, const V4L2SubdeviceFormat &f)
 {
 	out << f.size << "-";
 
-	const auto it = formatInfoMap.find(f.mbus_code);
+	const auto it = mediaBusFormatInfo.find(f.code);
 
-	if (it == formatInfoMap.end())
-		out << utils::hex(f.mbus_code, 4);
+	if (it == mediaBusFormatInfo.end())
+		out << utils::hex(f.code, 4);
 	else
 		out << it->second.name;
 
@@ -295,30 +871,131 @@ std::ostream &operator<<(std::ostream &out, const V4L2SubdeviceFormat &f)
  */
 
 /**
- * \class V4L2Subdevice::Routing
+ * \class V4L2Subdevice::Stream
+ * \brief V4L2 subdevice stream
+ *
+ * This class identifies a subdev stream, by bundling the pad number with the
+ * stream number. It is used in all stream-aware functions of the V4L2Subdevice
+ * class to identify the stream the functions operate on.
+ *
+ * \var V4L2Subdevice::Stream::pad
+ * \brief The 0-indexed pad number
+ *
+ * \var V4L2Subdevice::Stream::stream
+ * \brief The stream number
+ */
+
+/**
+ * \fn V4L2Subdevice::Stream::Stream()
+ * \brief Construct a Stream with pad and stream set to 0
+ */
+
+/**
+ * \fn V4L2Subdevice::Stream::Stream(unsigned int pad, unsigned int stream)
+ * \brief Construct a Stream with a given \a pad and \a stream number
+ * \param[in] pad The indexed pad number
+ * \param[in] stream The stream number
+ */
+
+/**
+ * \brief Compare streams for equality
+ * \return True if the two streams are equal, false otherwise
+ */
+bool operator==(const V4L2Subdevice::Stream &lhs, const V4L2Subdevice::Stream &rhs)
+{
+	return lhs.pad == rhs.pad && lhs.stream == rhs.stream;
+}
+
+/**
+ * \fn bool operator!=(const V4L2Subdevice::Stream &lhs, const V4L2Subdevice::Stream &rhs)
+ * \brief Compare streams for inequality
+ * \return True if the two streams are not equal, false otherwise
+ */
+
+/**
+ * \brief Insert a text representation of a V4L2Subdevice::Stream into an
+ * output stream
+ * \param[in] out The output stream
+ * \param[in] stream The V4L2Subdevice::Stream
+ * \return The output stream \a out
+ */
+std::ostream &operator<<(std::ostream &out, const V4L2Subdevice::Stream &stream)
+{
+	out << stream.pad << "/" << stream.stream;
+
+	return out;
+}
+
+/**
+ * \class V4L2Subdevice::Route
+ * \brief V4L2 subdevice routing table entry
+ *
+ * This class models a route in the subdevice routing table. It is similar to
+ * the v4l2_subdev_route structure, but uses the V4L2Subdevice::Stream class
+ * for easier usage with the V4L2Subdevice stream-aware functions.
+ *
+ * \var V4L2Subdevice::Route::sink
+ * \brief The sink stream of the route
+ *
+ * \var V4L2Subdevice::Route::source
+ * \brief The source stream of the route
+ *
+ * \var V4L2Subdevice::Route::flags
+ * \brief The route flags (V4L2_SUBDEV_ROUTE_FL_*)
+ */
+
+/**
+ * \fn V4L2Subdevice::Route::Route()
+ * \brief Construct a Route with default streams
+ */
+
+/**
+ * \fn V4L2Subdevice::Route::Route(const Stream &sink, const Stream &source,
+ * uint32_t flags)
+ * \brief Construct a Route from \a sink to \a source
+ * \param[in] sink The sink stream
+ * \param[in] source The source stream
+ * \param[in] flags The route flags
+ */
+
+/**
+ * \brief Insert a text representation of a V4L2Subdevice::Route into an
+ * output stream
+ * \param[in] out The output stream
+ * \param[in] route The V4L2Subdevice::Route
+ * \return The output stream \a out
+ */
+std::ostream &operator<<(std::ostream &out, const V4L2Subdevice::Route &route)
+{
+	out << route.sink << " -> " << route.source
+	    << " (" << utils::hex(route.flags) << ")";
+
+	return out;
+}
+
+/**
+ * \typedef V4L2Subdevice::Routing
  * \brief V4L2 subdevice routing table
  *
  * This class stores a subdevice routing table as a vector of routes.
  */
 
 /**
- * \brief Assemble and return a string describing the routing table
- * \return A string describing the routing table
+ * \brief Insert a text representation of a V4L2Subdevice::Routing into an
+ * output stream
+ * \param[in] out The output stream
+ * \param[in] routing The V4L2Subdevice::Routing
+ * \return The output stream \a out
  */
-std::string V4L2Subdevice::Routing::toString() const
+std::ostream &operator<<(std::ostream &out, const V4L2Subdevice::Routing &routing)
 {
-	std::stringstream routing;
-
-	for (const auto &[i, route] : utils::enumerate(*this)) {
-		routing << "[" << i << "] "
-			<< route.sink_pad << "/" << route.sink_stream << " -> "
-			<< route.source_pad << "/" << route.source_stream
-			<< " (" << utils::hex(route.flags) << ")";
-		if (i != size() - 1)
-			routing << ", ";
+	for (const auto &[i, route] : utils::enumerate(routing)) {
+		out << "[" << i << "] " << route;
+		if (i != routing.size() - 1)
+			out << ", ";
 	}
 
-	return routing.str();
+	return out;
 }
 
 /**
@@ -359,6 +1036,21 @@ int V4L2Subdevice::open()
 		return ret;
 	}
 
+	/* If the subdev supports streams, enable the streams API. */
+	if (caps_.hasStreams()) {
+		struct v4l2_subdev_client_capability clientCaps{};
+		clientCaps.capabilities = V4L2_SUBDEV_CLIENT_CAP_STREAMS;
+
+		ret = ioctl(VIDIOC_SUBDEV_S_CLIENT_CAP, &clientCaps);
+		if (ret < 0) {
+			ret = -errno;
+			LOG(V4L2, Error)
+				<< "Unable to set client capabilities: "
+				<< strerror(-ret);
+			return ret;
+		}
+	}
+
 	return 0;
 }
 
@@ -370,7 +1062,7 @@ int V4L2Subdevice::open()
 
 /**
  * \brief Get selection rectangle \a rect for \a target
- * \param[in] pad The 0-indexed pad number the rectangle is retrieved from
+ * \param[in] stream The stream the rectangle is retrieved from
  * \param[in] target The selection target defined by the V4L2_SEL_TGT_* flags
  * \param[out] rect The retrieved selection rectangle
  *
@@ -378,13 +1070,14 @@ int V4L2Subdevice::open()
  *
  * \return 0 on success or a negative error code otherwise
  */
-int V4L2Subdevice::getSelection(unsigned int pad, unsigned int target,
+int V4L2Subdevice::getSelection(const Stream &stream, unsigned int target,
 				Rectangle *rect)
 {
 	struct v4l2_subdev_selection sel = {};
 
 	sel.which = V4L2_SUBDEV_FORMAT_ACTIVE;
-	sel.pad = pad;
+	sel.pad = stream.pad;
+	sel.stream = stream.stream;
 	sel.target = target;
 	sel.flags = 0;
 
@@ -392,7 +1085,7 @@ int V4L2Subdevice::getSelection(unsigned int pad, unsigned int target,
 	if (ret < 0) {
 		LOG(V4L2, Error)
 			<< "Unable to get rectangle " << target << " on pad "
-			<< pad << ": " << strerror(-ret);
+			<< stream << ": " << strerror(-ret);
 		return ret;
 	}
 
@@ -405,8 +1098,19 @@ int V4L2Subdevice::getSelection(unsigned int pad, unsigned int target,
 }
 
 /**
+ * \fn V4L2Subdevice::getSelection(unsigned int pad, unsigned int target,
+ * Rectangle *rect)
+ * \brief Get selection rectangle \a rect for \a target
+ * \param[in] pad The 0-indexed pad number the rectangle is retrieved from
+ * \param[in] target The selection target defined by the V4L2_SEL_TGT_* flags
+ * \param[out] rect The retrieved selection rectangle
+ *
+ * \return 0 on success or a negative error code otherwise
+ */
+
+/**
  * \brief Set selection rectangle \a rect for \a target
- * \param[in] pad The 0-indexed pad number the rectangle is to be applied to
+ * \param[in] stream The stream the rectangle is to be applied to
  * \param[in] target The selection target defined by the V4L2_SEL_TGT_* flags
  * \param[inout] rect The selection rectangle to be applied
  *
@@ -414,13 +1118,14 @@ int V4L2Subdevice::getSelection(unsigned int pad, unsigned int target,
  *
  * \return 0 on success or a negative error code otherwise
  */
-int V4L2Subdevice::setSelection(unsigned int pad, unsigned int target,
+int V4L2Subdevice::setSelection(const Stream &stream, unsigned int target,
 				Rectangle *rect)
 {
 	struct v4l2_subdev_selection sel = {};
 
 	sel.which = V4L2_SUBDEV_FORMAT_ACTIVE;
-	sel.pad = pad;
+	sel.pad = stream.pad;
+	sel.stream = stream.stream;
 	sel.target = target;
 	sel.flags = 0;
 
@@ -433,7 +1138,7 @@ int V4L2Subdevice::setSelection(unsigned int pad, unsigned int target,
 	if (ret < 0) {
 		LOG(V4L2, Error)
 			<< "Unable to set rectangle " << target << " on pad "
-			<< pad << ": " << strerror(-ret);
+			<< stream << ": " << strerror(-ret);
 		return ret;
 	}
 
@@ -444,26 +1149,40 @@ int V4L2Subdevice::setSelection(unsigned int pad, unsigned int target,
 
 	return 0;
 }
+
 /**
- * \brief Enumerate all media bus codes and frame sizes on a \a pad
- * \param[in] pad The 0-indexed pad number to enumerate formats on
+ * \fn V4L2Subdevice::setSelection(unsigned int pad, unsigned int target,
+ * Rectangle *rect)
+ * \brief Set selection rectangle \a rect for \a target
+ * \param[in] pad The 0-indexed pad number the rectangle is to be applied to
+ * \param[in] target The selection target defined by the V4L2_SEL_TGT_* flags
+ * \param[inout] rect The selection rectangle to be applied
+ *
+ * \todo Define a V4L2SelectionTarget enum for the selection target
+ *
+ * \return 0 on success or a negative error code otherwise
+ */
+
+/**
+ * \brief Enumerate all media bus codes and frame sizes on a \a stream
+ * \param[in] stream The stream to enumerate formats for
  *
  * Enumerate all media bus codes and frame sizes supported by the subdevice on
- * a \a pad.
+ * a \a stream.
  *
  * \return A list of the supported device formats
  */
-V4L2Subdevice::Formats V4L2Subdevice::formats(unsigned int pad)
+V4L2Subdevice::Formats V4L2Subdevice::formats(const Stream &stream)
 {
 	Formats formats;
 
-	if (pad >= entity_->pads().size()) {
-		LOG(V4L2, Error) << "Invalid pad: " << pad;
+	if (stream.pad >= entity_->pads().size()) {
+		LOG(V4L2, Error) << "Invalid pad: " << stream.pad;
 		return {};
 	}
 
-	for (unsigned int code : enumPadCodes(pad)) {
-		std::vector<SizeRange> sizes = enumPadSizes(pad, code);
+	for (unsigned int code : enumPadCodes(stream)) {
+		std::vector<SizeRange> sizes = enumPadSizes(stream, code);
 		if (sizes.empty())
 			return {};
 
@@ -471,13 +1190,24 @@ V4L2Subdevice::Formats V4L2Subdevice::formats(unsigned int pad)
 		if (!inserted.second) {
 			LOG(V4L2, Error)
 				<< "Could not add sizes for media bus code "
-				<< code << " on pad " << pad;
+				<< code << " on pad " << stream.pad;
 			return {};
 		}
 	}
 
 	return formats;
 }
+
+/**
+ * \fn V4L2Subdevice::formats(unsigned int pad)
+ * \brief Enumerate all media bus codes and frame sizes on a \a pad
+ * \param[in] pad The 0-indexed pad number to enumerate formats on
+ *
+ * Enumerate all media bus codes and frame sizes supported by the subdevice on
+ * a \a pad
+ *
+ * \return A list of the supported device formats
+ */
 
 std::optional<ColorSpace> V4L2Subdevice::toColorSpace(const v4l2_mbus_framefmt &format) const
 {
@@ -494,9 +1224,9 @@ std::optional<ColorSpace> V4L2Subdevice::toColorSpace(const v4l2_mbus_framefmt &
 		return std::nullopt;
 
 	PixelFormatInfo::ColourEncoding colourEncoding;
-	auto iter = formatInfoMap.find(format.code);
-	if (iter != formatInfoMap.end()) {
-		colourEncoding = iter->second.colourEncoding;
+	const MediaBusFormatInfo &info = MediaBusFormatInfo::info(format.code);
+	if (info.isValid()) {
+		colourEncoding = info.colourEncoding;
 	} else {
 		LOG(V4L2, Warning)
 			<< "Unknown subdev format "
@@ -510,6 +1240,40 @@ std::optional<ColorSpace> V4L2Subdevice::toColorSpace(const v4l2_mbus_framefmt &
 }
 
 /**
+ * \brief Retrieve the image format set on one of the V4L2 subdevice streams
+ * \param[in] stream The stream the format is to be retrieved from
+ * \param[out] format The image bus format
+ * \param[in] whence The format to get, \ref V4L2Subdevice::ActiveFormat
+ * "ActiveFormat" or \ref V4L2Subdevice::TryFormat "TryFormat"
+ * \return 0 on success or a negative error code otherwise
+ */
+int V4L2Subdevice::getFormat(const Stream &stream, V4L2SubdeviceFormat *format,
+			     Whence whence)
+{
+	struct v4l2_subdev_format subdevFmt = {};
+	subdevFmt.which = whence;
+	subdevFmt.pad = stream.pad;
+	subdevFmt.stream = stream.stream;
+
+	int ret = ioctl(VIDIOC_SUBDEV_G_FMT, &subdevFmt);
+	if (ret) {
+		LOG(V4L2, Error)
+			<< "Unable to get format on pad " << stream << ": "
+			<< strerror(-ret);
+		return ret;
+	}
+
+	format->size.width = subdevFmt.format.width;
+	format->size.height = subdevFmt.format.height;
+	format->code = subdevFmt.format.code;
+	format->colorSpace = toColorSpace(subdevFmt.format);
+
+	return 0;
+}
+
+/**
+ * \fn V4L2Subdevice::getFormat(unsigned int pad, V4L2SubdeviceFormat *format,
+ * Whence whence)
  * \brief Retrieve the image format set on one of the V4L2 subdevice pads
  * \param[in] pad The 0-indexed pad number the format is to be retrieved from
  * \param[out] format The image bus format
@@ -517,30 +1281,57 @@ std::optional<ColorSpace> V4L2Subdevice::toColorSpace(const v4l2_mbus_framefmt &
  * "ActiveFormat" or \ref V4L2Subdevice::TryFormat "TryFormat"
  * \return 0 on success or a negative error code otherwise
  */
-int V4L2Subdevice::getFormat(unsigned int pad, V4L2SubdeviceFormat *format,
+
+/**
+ * \brief Set an image format on one of the V4L2 subdevice pads
+ * \param[in] stream The stream the format is to be applied to
+ * \param[inout] format The image bus format to apply to the stream
+ * \param[in] whence The format to set, \ref V4L2Subdevice::ActiveFormat
+ * "ActiveFormat" or \ref V4L2Subdevice::TryFormat "TryFormat"
+ *
+ * Apply the requested image format to the desired stream and return the
+ * actually applied format parameters, as getFormat() would do.
+ *
+ * \return 0 on success or a negative error code otherwise
+ */
+int V4L2Subdevice::setFormat(const Stream &stream, V4L2SubdeviceFormat *format,
 			     Whence whence)
 {
 	struct v4l2_subdev_format subdevFmt = {};
 	subdevFmt.which = whence;
-	subdevFmt.pad = pad;
+	subdevFmt.pad = stream.pad;
+	subdevFmt.stream = stream.stream;
+	subdevFmt.format.width = format->size.width;
+	subdevFmt.format.height = format->size.height;
+	subdevFmt.format.code = format->code;
+	subdevFmt.format.field = V4L2_FIELD_NONE;
+	if (format->colorSpace) {
+		fromColorSpace(format->colorSpace, subdevFmt.format);
 
-	int ret = ioctl(VIDIOC_SUBDEV_G_FMT, &subdevFmt);
+		/* The CSC flag is only applicable to source pads. */
+		if (entity_->pads()[stream.pad]->flags() & MEDIA_PAD_FL_SOURCE)
+			subdevFmt.format.flags |= V4L2_MBUS_FRAMEFMT_SET_CSC;
+	}
+
+	int ret = ioctl(VIDIOC_SUBDEV_S_FMT, &subdevFmt);
 	if (ret) {
 		LOG(V4L2, Error)
-			<< "Unable to get format on pad " << pad
-			<< ": " << strerror(-ret);
+			<< "Unable to set format on pad " << stream << ": "
+			<< strerror(-ret);
 		return ret;
 	}
 
 	format->size.width = subdevFmt.format.width;
 	format->size.height = subdevFmt.format.height;
-	format->mbus_code = subdevFmt.format.code;
+	format->code = subdevFmt.format.code;
 	format->colorSpace = toColorSpace(subdevFmt.format);
 
 	return 0;
 }
 
 /**
+ * \fn V4L2Subdevice::setFormat(unsigned int pad, V4L2SubdeviceFormat *format,
+ * Whence whence)
  * \brief Set an image format on one of the V4L2 subdevice pads
  * \param[in] pad The 0-indexed pad number the format is to be applied to
  * \param[inout] format The image bus format to apply to the subdevice's pad
@@ -552,39 +1343,30 @@ int V4L2Subdevice::getFormat(unsigned int pad, V4L2SubdeviceFormat *format,
  *
  * \return 0 on success or a negative error code otherwise
  */
-int V4L2Subdevice::setFormat(unsigned int pad, V4L2SubdeviceFormat *format,
-			     Whence whence)
+
+namespace {
+
+void routeFromKernel(V4L2Subdevice::Route &route,
+		     const struct v4l2_subdev_route &kroute)
 {
-	struct v4l2_subdev_format subdevFmt = {};
-	subdevFmt.which = whence;
-	subdevFmt.pad = pad;
-	subdevFmt.format.width = format->size.width;
-	subdevFmt.format.height = format->size.height;
-	subdevFmt.format.code = format->mbus_code;
-	subdevFmt.format.field = V4L2_FIELD_NONE;
-	if (format->colorSpace) {
-		fromColorSpace(format->colorSpace, subdevFmt.format);
-
-		/* The CSC flag is only applicable to source pads. */
-		if (entity_->pads()[pad]->flags() & MEDIA_PAD_FL_SOURCE)
-			subdevFmt.format.flags |= V4L2_MBUS_FRAMEFMT_SET_CSC;
-	}
-
-	int ret = ioctl(VIDIOC_SUBDEV_S_FMT, &subdevFmt);
-	if (ret) {
-		LOG(V4L2, Error)
-			<< "Unable to set format on pad " << pad
-			<< ": " << strerror(-ret);
-		return ret;
-	}
-
-	format->size.width = subdevFmt.format.width;
-	format->size.height = subdevFmt.format.height;
-	format->mbus_code = subdevFmt.format.code;
-	format->colorSpace = toColorSpace(subdevFmt.format);
-
-	return 0;
+	route.sink.pad = kroute.sink_pad;
+	route.sink.stream = kroute.sink_stream;
+	route.source.pad = kroute.source_pad;
+	route.source.stream = kroute.source_stream;
+	route.flags = kroute.flags;
 }
+
+void routeToKernel(const V4L2Subdevice::Route &route,
+		   struct v4l2_subdev_route &kroute)
+{
+	kroute.sink_pad = route.sink.pad;
+	kroute.sink_stream = route.sink.stream;
+	kroute.source_pad = route.source.pad;
+	kroute.source_stream = route.source.stream;
+	kroute.flags = route.flags;
+}
+
+} /* namespace */
 
 /**
  * \brief Retrieve the subdevice's internal routing table
@@ -596,6 +1378,8 @@ int V4L2Subdevice::setFormat(unsigned int pad, V4L2SubdeviceFormat *format,
  */
 int V4L2Subdevice::getRouting(Routing *routing, Whence whence)
 {
+	routing->clear();
+
 	if (!caps_.hasStreams())
 		return 0;
 
@@ -614,8 +1398,8 @@ int V4L2Subdevice::getRouting(Routing *routing, Whence whence)
 		return ret;
 	}
 
-	routing->resize(rt.num_routes);
-	rt.routes = reinterpret_cast<uintptr_t>(routing->data());
+	std::vector<struct v4l2_subdev_route> routes{ rt.num_routes };
+	rt.routes = reinterpret_cast<uintptr_t>(routes.data());
 
 	ret = ioctl(VIDIOC_SUBDEV_G_ROUTING, &rt);
 	if (ret) {
@@ -624,10 +1408,15 @@ int V4L2Subdevice::getRouting(Routing *routing, Whence whence)
 		return ret;
 	}
 
-	if (rt.num_routes != routing->size()) {
+	if (rt.num_routes != routes.size()) {
 		LOG(V4L2, Error) << "Invalid number of routes";
 		return -EINVAL;
 	}
+
+	routing->resize(rt.num_routes);
+
+	for (const auto &[i, route] : utils::enumerate(routes))
+		routeFromKernel((*routing)[i], route);
 
 	return 0;
 }
@@ -646,13 +1435,20 @@ int V4L2Subdevice::getRouting(Routing *routing, Whence whence)
  */
 int V4L2Subdevice::setRouting(Routing *routing, Whence whence)
 {
-	if (!caps_.hasStreams())
+	if (!caps_.hasStreams()) {
+		routing->clear();
 		return 0;
+	}
+
+	std::vector<struct v4l2_subdev_route> routes{ routing->size() };
+
+	for (const auto &[i, route] : utils::enumerate(*routing))
+		routeToKernel(route, routes[i]);
 
 	struct v4l2_subdev_routing rt = {};
 	rt.which = whence;
-	rt.num_routes = routing->size();
-	rt.routes = reinterpret_cast<uintptr_t>(routing->data());
+	rt.num_routes = routes.size();
+	rt.routes = reinterpret_cast<uintptr_t>(routes.data());
 
 	int ret = ioctl(VIDIOC_SUBDEV_S_ROUTING, &rt);
 	if (ret) {
@@ -660,7 +1456,11 @@ int V4L2Subdevice::setRouting(Routing *routing, Whence whence)
 		return ret;
 	}
 
+	routes.resize(rt.num_routes);
 	routing->resize(rt.num_routes);
+
+	for (const auto &[i, route] : utils::enumerate(routes))
+		routeFromKernel((*routing)[i], route);
 
 	return 0;
 }
@@ -747,14 +1547,15 @@ std::string V4L2Subdevice::logPrefix() const
 	return "'" + entity_->name() + "'";
 }
 
-std::vector<unsigned int> V4L2Subdevice::enumPadCodes(unsigned int pad)
+std::vector<unsigned int> V4L2Subdevice::enumPadCodes(const Stream &stream)
 {
 	std::vector<unsigned int> codes;
 	int ret;
 
 	for (unsigned int index = 0; ; index++) {
 		struct v4l2_subdev_mbus_code_enum mbusEnum = {};
-		mbusEnum.pad = pad;
+		mbusEnum.pad = stream.pad;
+		mbusEnum.stream = stream.stream;
 		mbusEnum.index = index;
 		mbusEnum.which = V4L2_SUBDEV_FORMAT_ACTIVE;
 
@@ -767,7 +1568,7 @@ std::vector<unsigned int> V4L2Subdevice::enumPadCodes(unsigned int pad)
 
 	if (ret < 0 && ret != -EINVAL) {
 		LOG(V4L2, Error)
-			<< "Unable to enumerate formats on pad " << pad
+			<< "Unable to enumerate formats on pad " << stream
 			<< ": " << strerror(-ret);
 		return {};
 	}
@@ -775,7 +1576,7 @@ std::vector<unsigned int> V4L2Subdevice::enumPadCodes(unsigned int pad)
 	return codes;
 }
 
-std::vector<SizeRange> V4L2Subdevice::enumPadSizes(unsigned int pad,
+std::vector<SizeRange> V4L2Subdevice::enumPadSizes(const Stream &stream,
 						   unsigned int code)
 {
 	std::vector<SizeRange> sizes;
@@ -784,7 +1585,8 @@ std::vector<SizeRange> V4L2Subdevice::enumPadSizes(unsigned int pad,
 	for (unsigned int index = 0;; index++) {
 		struct v4l2_subdev_frame_size_enum sizeEnum = {};
 		sizeEnum.index = index;
-		sizeEnum.pad = pad;
+		sizeEnum.pad = stream.pad;
+		sizeEnum.stream = stream.stream;
 		sizeEnum.code = code;
 		sizeEnum.which = V4L2_SUBDEV_FORMAT_ACTIVE;
 
@@ -798,7 +1600,7 @@ std::vector<SizeRange> V4L2Subdevice::enumPadSizes(unsigned int pad,
 
 	if (ret < 0 && ret != -EINVAL && ret != -ENOTTY) {
 		LOG(V4L2, Error)
-			<< "Unable to enumerate sizes on pad " << pad
+			<< "Unable to enumerate sizes on pad " << stream
 			<< ": " << strerror(-ret);
 		return {};
 	}

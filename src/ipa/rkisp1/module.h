@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2022, Ideas On Board
  *
- * module.h - RkISP1 IPA Module
+ * RkISP1 IPA Module
  */
 
 #pragma once

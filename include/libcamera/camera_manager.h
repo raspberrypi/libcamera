@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2018, Google Inc.
  *
- * camera_manager.h - Camera management
+ * Camera management
  */
 
 #pragma once

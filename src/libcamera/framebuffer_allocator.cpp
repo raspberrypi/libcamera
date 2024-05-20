@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * framebuffer_allocator.cpp - FrameBuffer allocator
+ * FrameBuffer allocator
  */
 
 #include <libcamera/framebuffer_allocator.h>
@@ -59,14 +59,11 @@ LOG_DEFINE_CATEGORY(Allocator)
  * \param[in] camera The camera
  */
 FrameBufferAllocator::FrameBufferAllocator(std::shared_ptr<Camera> camera)
-	: camera_(camera)
+	: camera_(std::move(camera))
 {
 }
 
-FrameBufferAllocator::~FrameBufferAllocator()
-{
-	buffers_.clear();
-}
+FrameBufferAllocator::~FrameBufferAllocator() = default;
 
 /**
  * \brief Allocate buffers for a configured stream
@@ -100,6 +97,10 @@ int FrameBufferAllocator::allocate(Stream *stream)
 		LOG(Allocator, Error)
 			<< "Stream is not part of " << camera_->id()
 			<< " active configuration";
+
+	if (ret < 0)
+		buffers_.erase(it);
+
 	return ret;
 }
 

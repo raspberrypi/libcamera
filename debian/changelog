@@ -1,6 +1,7 @@
 libcamera (0.3.0-1) UNRELEASED; urgency=medium
 
   * New upstream version 0.3.0
+  * Bump SONAME to libcamera0.3
   * Set architecture to linux-any
   * Promote libcamera-ipa in Recommends of libcamera0.2 and ensure the
       binary version matches

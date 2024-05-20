@@ -1,16 +1,16 @@
-libcamera (0.3.0-1) UNRELEASED; urgency=medium
+libcamera (0.3.0-1) experimental; urgency=medium
 
   * New upstream version 0.3.0
   * Bump SONAME to libcamera0.3
   * Set architecture to linux-any
-  * Promote libcamera-ipa in Recommends of libcamera0.2 and ensure the
+  * Promote libcamera-ipa in Recommends of libcamera0.3 and ensure the
       binary version matches
   * Update debian/watch to use upstream recommended tarball
   * Standards-Version: 4.7.0 (no changes needed)
   * Drop obsolete pkg-config from Build-Deps
   * Refresh patches
 
- -- Dylan Aïssi <daissi@debian.org>  Mon, 20 May 2024 10:03:59 +0200
+ -- Dylan Aïssi <daissi@debian.org>  Mon, 20 May 2024 10:53:34 +0200
 
 libcamera (0.2.0-3) unstable; urgency=medium
 

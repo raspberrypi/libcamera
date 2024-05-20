@@ -1,9 +1,4 @@
 version=4
-
-opts="mode=git, pgpmode=none, repack, compression=xz" \
-    https://git.libcamera.org/libcamera/libcamera.git/ \
-    refs/tags/v@ANY_VERSION@
-
-#opts="mode=git, pgpmode=none, pretty=0.0.5+git%cd+%h, repack, compression=xz" \
-#    https://git.libcamera.org/libcamera/libcamera.git/ \
-#    HEAD
+opts="searchmode=plain" \
+ https://gitlab.freedesktop.org/camera/@PACKAGE@/tags?sort=updated_desc \
+ -/archive/v?\d[\d.]+/@PACKAGE@-@ANY_VERSION@@ARCHIVE_EXT@

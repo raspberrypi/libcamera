@@ -427,7 +427,7 @@ void IPARkISP1::updateControls(const IPACameraSensorInfo &sensorInfo,
 							      frameDurations[1],
 							      frameDurations[2]);
 
-	ctrlMap.merge(context_.ctrlMap);
+	ctrlMap.insert(context_.ctrlMap.begin(), context_.ctrlMap.end());
 	*ipaControls = ControlInfoMap(std::move(ctrlMap), controls::controls);
 }
 

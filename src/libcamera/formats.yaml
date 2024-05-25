@@ -138,6 +138,9 @@ formats:
   - R10_CSI2P:
       fourcc: DRM_FORMAT_R10
       mod: MIPI_FORMAT_MOD_CSI2_PACKED
+  - R12_CSI2P:
+      fourcc: DRM_FORMAT_R12
+      mod: MIPI_FORMAT_MOD_CSI2_PACKED
 
   - SRGGB10_CSI2P:
       fourcc: DRM_FORMAT_SRGGB10

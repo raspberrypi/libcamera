@@ -527,6 +527,16 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.pixelsPerGroup = 4,
 		.planes = {{ { 5, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
+	{ formats::R12_CSI2P, {
+		.name = "R12_CSI2P",
+		.format = formats::R12_CSI2P,
+		.v4l2Formats = { V4L2PixelFormat(V4L2_PIX_FMT_Y12P), },
+		.bitsPerPixel = 12,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+		.packed = true,
+		.pixelsPerGroup = 2,
+		.planes = {{ { 3, 1 }, { 0, 0 }, { 0, 0 } }},
+	} },
 	{ formats::R12, {
 		.name = "R12",
 		.format = formats::R12,

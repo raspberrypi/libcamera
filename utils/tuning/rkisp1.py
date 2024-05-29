@@ -14,6 +14,7 @@ from libtuning.parsers import YamlParser
 from libtuning.generators import YamlOutput
 from libtuning.modules.lsc import LSCRkISP1
 from libtuning.modules.agc import AGCRkISP1
+from libtuning.modules.ccm import CCMRkISP1
 
 
 coloredlogs.install(level=logging.INFO, fmt='%(name)s %(levelname)s %(message)s')
@@ -39,9 +40,10 @@ tuner.add(LSCRkISP1(
           smoothing_function=lt.smoothing.MedianBlur(3),
           ))
 tuner.add(AGCRkISP1(debug=[lt.Debug.Plot]))
+tuner.add(CCMRkISP1(debug=[lt.Debug.Plot]))
 tuner.set_input_parser(YamlParser())
 tuner.set_output_formatter(YamlOutput())
-tuner.set_output_order([AGCRkISP1, LSCRkISP1])
+tuner.set_output_order([AGCRkISP1, CCMRkISP1, LSCRkISP1])
 
 if __name__ == '__main__':
     sys.exit(tuner.run(sys.argv))

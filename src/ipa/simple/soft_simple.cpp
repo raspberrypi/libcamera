@@ -5,6 +5,8 @@
  * Simple Software Image Processing Algorithm module
  */
 
+#include <numeric>
+#include <stdint.h>
 #include <sys/mman.h>
 
 #include <linux/v4l2-controls.h>
@@ -240,27 +242,34 @@ void IPASoftSimple::stop()
 
 void IPASoftSimple::processStats(const ControlList &sensorControls)
 {
+	SwIspStats::Histogram histogram = stats_->yHistogram;
+	if (ignoreUpdates_ > 0)
+		blackLevel_.update(histogram);
+	const uint8_t blackLevel = blackLevel_.get();
+	params_->blackLevel = blackLevel;
+
+	/*
+	 * Black level must be subtracted to get the correct AWB ratios, they
+	 * would be off if they were computed from the whole brightness range
+	 * rather than from the sensor range.
+	 */
+	const uint64_t nPixels = std::accumulate(
+		histogram.begin(), histogram.end(), 0);
+	const uint64_t offset = blackLevel * nPixels;
+	const uint64_t sumR = stats_->sumR_ - offset / 4;
+	const uint64_t sumG = stats_->sumG_ - offset / 2;
+	const uint64_t sumB = stats_->sumB_ - offset / 4;
+
 	/*
 	 * Calculate red and blue gains for AWB.
 	 * Clamp max gain at 4.0, this also avoids 0 division.
 	 */
-	if (stats_->sumR_ <= stats_->sumG_ / 4)
-		params_->gainR = 1024;
-	else
-		params_->gainR = 256 * stats_->sumG_ / stats_->sumR_;
-
-	if (stats_->sumB_ <= stats_->sumG_ / 4)
-		params_->gainB = 1024;
-	else
-		params_->gainB = 256 * stats_->sumG_ / stats_->sumB_;
+	params_->gainR = sumR <= sumG / 4 ? 1024 : 256 * sumG / sumR;
+	params_->gainB = sumB <= sumG / 4 ? 1024 : 256 * sumG / sumB;
 
 	/* Green gain and gamma values are fixed */
 	params_->gainG = 256;
 	params_->gamma = 0.5;
-
-	if (ignoreUpdates_ > 0)
-		blackLevel_.update(stats_->yHistogram);
-	params_->blackLevel = blackLevel_.get();
 
 	setIspParams.emit();
 

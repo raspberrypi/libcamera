@@ -556,8 +556,9 @@ class StyleChecker(metaclass=ClassRegistry):
 
 
 class StyleIssue(object):
-    def __init__(self, line_number, line, msg):
+    def __init__(self, line_number, position, line, msg):
         self.line_number = line_number
+        self.position = position
         self.line = line
         self.msg = msg
 
@@ -584,7 +585,7 @@ class HexValueChecker(StyleChecker):
             if value == value.lower():
                 continue
 
-            issues.append(StyleIssue(line_number, line,
+            issues.append(StyleIssue(line_number, match.span(0), line,
                                      f'Use lowercase hex constant {value.lower()}'))
 
         return issues
@@ -623,7 +624,7 @@ class IncludeChecker(StyleChecker):
                 header_type = 'C compatibility'
                 header = header[1:] + '.h'
 
-            issues.append(StyleIssue(line_number, line,
+            issues.append(StyleIssue(line_number, match.span(1), line,
                                      f'{header_type} header <{header}> is preferred'))
 
         return issues
@@ -641,10 +642,12 @@ class LogCategoryChecker(StyleChecker):
         issues = []
         for line_number in line_numbers:
             line = self.__content[line_number-1]
-            if not LogCategoryChecker.log_regex.search(line):
+            match = LogCategoryChecker.log_regex.search(line)
+            if not match:
                 continue
 
-            issues.append(StyleIssue(line_number, line, 'LOG() should use categories'))
+            issues.append(StyleIssue(line_number, match.span(1), line,
+                                     'LOG() should use categories'))
 
         return issues
 
@@ -660,8 +663,10 @@ class MesonChecker(StyleChecker):
         issues = []
         for line_number in line_numbers:
             line = self.__content[line_number-1]
-            if line.find('\t') != -1:
-                issues.append(StyleIssue(line_number, line, 'meson.build should use spaces for indentation'))
+            pos = line.find('\t')
+            if pos != -1:
+                issues.append(StyleIssue(line_number, [pos, pos], line,
+                                         'meson.build should use spaces for indentation'))
         return issues
 
 
@@ -681,7 +686,7 @@ class Pep8Checker(StyleChecker):
             ret = subprocess.run(['pycodestyle', '--ignore=E501', '-'],
                                  input=data, stdout=subprocess.PIPE)
         except FileNotFoundError:
-            issues.append(StyleIssue(0, None, 'Please install pycodestyle to validate python additions'))
+            issues.append(StyleIssue(0, None, None, 'Please install pycodestyle to validate python additions'))
             return issues
 
         results = ret.stdout.decode('utf-8').splitlines()
@@ -693,7 +698,7 @@ class Pep8Checker(StyleChecker):
 
             if line_number in line_numbers:
                 line = self.__content[line_number - 1]
-                issues.append(StyleIssue(line_number, line, msg))
+                issues.append(StyleIssue(line_number, None, line, msg))
 
         return issues
 
@@ -714,7 +719,7 @@ class ShellChecker(StyleChecker):
             ret = subprocess.run(['shellcheck', '-Cnever', '-'],
                                  input=data, stdout=subprocess.PIPE)
         except FileNotFoundError:
-            issues.append(StyleIssue(0, None, 'Please install shellcheck to validate shell script additions'))
+            issues.append(StyleIssue(0, None, None, 'Please install shellcheck to validate shell script additions'))
             return issues
 
         results = ret.stdout.decode('utf-8').splitlines()
@@ -727,11 +732,8 @@ class ShellChecker(StyleChecker):
             line = results[nr + 1]
             msg = results[nr + 2]
 
-            # Determined, but not yet used
-            position = msg.find('^') + 1
-
             if line_number in line_numbers:
-                issues.append(StyleIssue(line_number, line, msg))
+                issues.append(StyleIssue(line_number, None, line, msg))
 
         return issues
 
@@ -972,6 +974,16 @@ def check_file(top_level, commit, filename, checkers):
             if issue.line is not None:
                 print('%s+%s%s' % (Colours.fg(Colours.Yellow), issue.line.rstrip(),
                                    Colours.reset()))
+
+                if issue.position is not None:
+                    # Align the position marker by using the original line with
+                    # all characters except for tabs replaced with spaces. This
+                    # ensures proper alignment regardless of how the code is
+                    # indented.
+                    start = issue.position[0]
+                    prefix = ''.join([c if c == '\t' else ' ' for c in issue.line[:start]])
+                    length = issue.position[1] - start - 1
+                    print(' ' + prefix + '^' + '~' * length)
 
     return len(formatted_diff) + len(issues)
 

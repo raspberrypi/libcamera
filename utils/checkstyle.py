@@ -568,7 +568,7 @@ class IncludeChecker(StyleChecker):
     headers = ('cassert', 'cctype', 'cerrno', 'cfenv', 'cfloat', 'cinttypes',
                'climits', 'clocale', 'csetjmp', 'csignal', 'cstdarg', 'cstddef',
                'cstdint', 'cstdio', 'cstdlib', 'cstring', 'ctime', 'cuchar',
-               'cwchar', 'cwctype')
+               'cwchar', 'cwctype', 'math.h')
     include_regex = re.compile(r'^#include <([a-z.]*)>')
 
     def __init__(self, content):
@@ -588,9 +588,15 @@ class IncludeChecker(StyleChecker):
             if header not in IncludeChecker.headers:
                 continue
 
-            header = header[1:] + '.h'
+            if header.endswith('.h'):
+                header_type = 'C++'
+                header = 'c' + header[:-2]
+            else:
+                header_type = 'C compatibility'
+                header = header[1:] + '.h'
+
             issues.append(StyleIssue(line_number, line,
-                                     'C compatibility header <%s> is preferred' % header))
+                                     f'{header_type} header <{header}> is preferred'))
 
         return issues
 

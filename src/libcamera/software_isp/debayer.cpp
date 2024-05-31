@@ -19,11 +19,6 @@ namespace libcamera {
  */
 
 /**
- * \var DebayerParams::kGain10
- * \brief const value for 1.0 gain
- */
-
-/**
  * \var DebayerParams::kRGBLookupSize
  * \brief Size of a color lookup table
  */

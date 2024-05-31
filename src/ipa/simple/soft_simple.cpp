@@ -289,8 +289,7 @@ void IPASoftSimple::processStats(const ControlList &sensorControls)
 
 	for (unsigned int i = 0; i < DebayerParams::kRGBLookupSize; i++) {
 		constexpr unsigned int div =
-			DebayerParams::kRGBLookupSize * DebayerParams::kGain10 /
-			kGammaLookupSize;
+			DebayerParams::kRGBLookupSize * 256 / kGammaLookupSize;
 		unsigned int idx;
 
 		/* Apply gamma after gain! */

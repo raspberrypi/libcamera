@@ -16,7 +16,6 @@
 namespace libcamera {
 
 struct DebayerParams {
-	static constexpr unsigned int kGain10 = 256;
 	static constexpr unsigned int kRGBLookupSize = 256;
 
 	using ColorLookupTable = std::array<uint8_t, kRGBLookupSize>;

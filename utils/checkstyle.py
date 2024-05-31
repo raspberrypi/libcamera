@@ -562,6 +562,34 @@ class StyleIssue(object):
         self.msg = msg
 
 
+class HexValueChecker(StyleChecker):
+    patterns = ('*.c', '*.cpp', '*.h')
+
+    regex = re.compile(r'\b0[xX][0-9a-fA-F]+\b')
+
+    def __init__(self, content):
+        super().__init__()
+        self.__content = content
+
+    def check(self, line_numbers):
+        issues = []
+
+        for line_number in line_numbers:
+            line = self.__content[line_number - 1]
+            match = HexValueChecker.regex.search(line)
+            if not match:
+                continue
+
+            value = match.group(0)
+            if value == value.lower():
+                continue
+
+            issues.append(StyleIssue(line_number, line,
+                                     f'Use lowercase hex constant {value.lower()}'))
+
+        return issues
+
+
 class IncludeChecker(StyleChecker):
     patterns = ('*.cpp', '*.h')
 

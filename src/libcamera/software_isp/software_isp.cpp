@@ -7,6 +7,8 @@
 
 #include "libcamera/internal/software_isp/software_isp.h"
 
+#include <cmath>
+#include <stdint.h>
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -18,6 +20,7 @@
 #include "libcamera/internal/framebuffer.h"
 #include "libcamera/internal/ipa_manager.h"
 #include "libcamera/internal/mapped_framebuffer.h"
+#include "libcamera/internal/software_isp/debayer_params.h"
 
 #include "debayer_cpu.h"
 
@@ -63,10 +66,25 @@ LOG_DEFINE_CATEGORY(SoftwareIsp)
  * handler
  */
 SoftwareIsp::SoftwareIsp(PipelineHandler *pipe, const CameraSensor *sensor)
-	: debayerParams_{ DebayerParams::kGain10, DebayerParams::kGain10,
-			  DebayerParams::kGain10, 0.5f, 0 },
-	  dmaHeap_(DmaHeap::DmaHeapFlag::Cma | DmaHeap::DmaHeapFlag::System)
+	: dmaHeap_(DmaHeap::DmaHeapFlag::Cma | DmaHeap::DmaHeapFlag::System)
 {
+	/*
+	 * debayerParams_ must be initialized because the initial value is used for
+	 * the first two frames, i.e. until stats processing starts providing its
+	 * own parameters.
+	 *
+	 * \todo This should be handled in the same place as the related
+	 * operations, in the IPA module.
+	 */
+	std::array<uint8_t, 256> gammaTable;
+	for (unsigned int i = 0; i < 256; i++)
+		gammaTable[i] = UINT8_MAX * std::pow(i / 256.0, 0.5);
+	for (unsigned int i = 0; i < DebayerParams::kRGBLookupSize; i++) {
+		debayerParams_.red[i] = gammaTable[i];
+		debayerParams_.green[i] = gammaTable[i];
+		debayerParams_.blue[i] = gammaTable[i];
+	}
+
 	if (!dmaHeap_.isValid()) {
 		LOG(SoftwareIsp, Error) << "Failed to create DmaHeap object";
 		return;

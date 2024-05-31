@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later */
 /*
  * Copyright (C) 2023, Linaro Ltd
- * Copyright (C) 2023, Red Hat Inc.
+ * Copyright (C) 2023, 2024 Red Hat Inc.
  *
  * Authors:
  * Hans de Goede <hdegoede@redhat.com>
@@ -24,29 +24,28 @@ namespace libcamera {
  */
 
 /**
- * \var DebayerParams::gainR
- * \brief Red gain
- *
- * 128 = 0.5, 256 = 1.0, 512 = 2.0, etc.
+ * \var DebayerParams::kRGBLookupSize
+ * \brief Size of a color lookup table
  */
 
 /**
- * \var DebayerParams::gainG
- * \brief Green gain
- *
- * 128 = 0.5, 256 = 1.0, 512 = 2.0, etc.
+ * \typedef DebayerParams::ColorLookupTable
+ * \brief Type of the lookup tables for red, green, blue values
  */
 
 /**
- * \var DebayerParams::gainB
- * \brief Blue gain
- *
- * 128 = 0.5, 256 = 1.0, 512 = 2.0, etc.
+ * \var DebayerParams::red
+ * \brief Lookup table for red color, mapping input values to output values
  */
 
 /**
- * \var DebayerParams::gamma
- * \brief Gamma correction, 1.0 is no correction
+ * \var DebayerParams::green
+ * \brief Lookup table for green color, mapping input values to output values
+ */
+
+/**
+ * \var DebayerParams::blue
+ * \brief Lookup table for blue color, mapping input values to output values
  */
 
 /**

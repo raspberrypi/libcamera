@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later */
 /*
- * Copyright (C) 2023, Red Hat Inc.
+ * Copyright (C) 2023, 2024 Red Hat Inc.
  *
  * Authors:
  * Hans de Goede <hdegoede@redhat.com>
@@ -10,20 +10,20 @@
 
 #pragma once
 
+#include <array>
+#include <stdint.h>
+
 namespace libcamera {
 
 struct DebayerParams {
 	static constexpr unsigned int kGain10 = 256;
+	static constexpr unsigned int kRGBLookupSize = 256;
 
-	unsigned int gainR;
-	unsigned int gainG;
-	unsigned int gainB;
+	using ColorLookupTable = std::array<uint8_t, kRGBLookupSize>;
 
-	float gamma;
-	/**
-	 * \brief Level of the black point, 0..255, 0 is no correction.
-	 */
-	unsigned int blackLevel;
+	ColorLookupTable red;
+	ColorLookupTable green;
+	ColorLookupTable blue;
 };
 
 } /* namespace libcamera */

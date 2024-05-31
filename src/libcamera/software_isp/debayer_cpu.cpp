@@ -11,7 +11,6 @@
 
 #include "debayer_cpu.h"
 
-#include <math.h>
 #include <stdlib.h>
 #include <time.h>
 
@@ -35,7 +34,7 @@ namespace libcamera {
  * \param[in] stats Pointer to the stats object to use
  */
 DebayerCpu::DebayerCpu(std::unique_ptr<SwStatsCpu> stats)
-	: stats_(std::move(stats)), gammaCorrection_(1.0), blackLevel_(0)
+	: stats_(std::move(stats))
 {
 	/*
 	 * Reading from uncached buffers may be very slow.
@@ -47,9 +46,9 @@ DebayerCpu::DebayerCpu(std::unique_ptr<SwStatsCpu> stats)
 	 */
 	enableInputMemcpy_ = true;
 
-	/* Initialize gamma to 1.0 curve */
-	for (unsigned int i = 0; i < kGammaLookupSize; i++)
-		gamma_[i] = i / (kGammaLookupSize / kRGBLookupSize);
+	/* Initialize color lookup tables */
+	for (unsigned int i = 0; i < DebayerParams::kRGBLookupSize; i++)
+		red_[i] = green_[i] = blue_[i] = i;
 
 	for (unsigned int i = 0; i < kMaxLineBuffers; i++)
 		lineBuffers_[i] = nullptr;
@@ -698,37 +697,9 @@ void DebayerCpu::process(FrameBuffer *input, FrameBuffer *output, DebayerParams 
 		clock_gettime(CLOCK_MONOTONIC_RAW, &frameStartTime);
 	}
 
-	/* Apply DebayerParams */
-	if (params.gamma != gammaCorrection_ || params.blackLevel != blackLevel_) {
-		const unsigned int blackIndex =
-			params.blackLevel * kGammaLookupSize / 256;
-		std::fill(gamma_.begin(), gamma_.begin() + blackIndex, 0);
-		const float divisor = kGammaLookupSize - blackIndex - 1.0;
-		for (unsigned int i = blackIndex; i < kGammaLookupSize; i++)
-			gamma_[i] = UINT8_MAX * powf((i - blackIndex) / divisor, params.gamma);
-
-		gammaCorrection_ = params.gamma;
-		blackLevel_ = params.blackLevel;
-	}
-
-	if (swapRedBlueGains_)
-		std::swap(params.gainR, params.gainB);
-
-	for (unsigned int i = 0; i < kRGBLookupSize; i++) {
-		constexpr unsigned int div =
-			kRGBLookupSize * DebayerParams::kGain10 / kGammaLookupSize;
-		unsigned int idx;
-
-		/* Apply gamma after gain! */
-		idx = std::min({ i * params.gainR / div, (kGammaLookupSize - 1) });
-		red_[i] = gamma_[idx];
-
-		idx = std::min({ i * params.gainG / div, (kGammaLookupSize - 1) });
-		green_[i] = gamma_[idx];
-
-		idx = std::min({ i * params.gainB / div, (kGammaLookupSize - 1) });
-		blue_[i] = gamma_[idx];
-	}
+	green_ = params.green;
+	red_ = swapRedBlueGains_ ? params.blue : params.red;
+	blue_ = swapRedBlueGains_ ? params.red : params.blue;
 
 	/* Copy metadata from the input buffer */
 	FrameMetadata &metadata = output->_d()->metadata();

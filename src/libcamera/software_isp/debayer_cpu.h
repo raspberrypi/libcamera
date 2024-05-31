@@ -122,15 +122,12 @@ private:
 	void process2(const uint8_t *src, uint8_t *dst);
 	void process4(const uint8_t *src, uint8_t *dst);
 
-	static constexpr unsigned int kGammaLookupSize = 1024;
-	static constexpr unsigned int kRGBLookupSize = 256;
 	/* Max. supported Bayer pattern height is 4, debayering this requires 5 lines */
 	static constexpr unsigned int kMaxLineBuffers = 5;
 
-	std::array<uint8_t, kGammaLookupSize> gamma_;
-	std::array<uint8_t, kRGBLookupSize> red_;
-	std::array<uint8_t, kRGBLookupSize> green_;
-	std::array<uint8_t, kRGBLookupSize> blue_;
+	DebayerParams::ColorLookupTable red_;
+	DebayerParams::ColorLookupTable green_;
+	DebayerParams::ColorLookupTable blue_;
 	debayerFn debayer0_;
 	debayerFn debayer1_;
 	debayerFn debayer2_;
@@ -146,8 +143,6 @@ private:
 	unsigned int xShift_; /* Offset of 0/1 applied to window_.x */
 	bool enableInputMemcpy_;
 	bool swapRedBlueGains_;
-	float gammaCorrection_;
-	unsigned int blackLevel_;
 	unsigned int measuredFrames_;
 	int64_t frameProcessTime_;
 	/* Skip 30 frames for things to stabilize then measure 30 frames */

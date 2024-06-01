@@ -21,10 +21,10 @@ using namespace ipa::rkisp1;
 class RkISP1UtilsTest : public Test
 {
 protected:
-	template<unsigned int intPrec, unsigned fracPrec, typename T>
+	template<unsigned int IntPrec, unsigned FracPrec, typename T>
 	int testSingleFixedPoint(double input, T expected)
 	{
-		T ret = utils::floatingToFixedPoint<intPrec, fracPrec, T>(input);
+		T ret = utils::floatingToFixedPoint<IntPrec, FracPrec, T>(input);
 		if (ret != expected) {
 			cerr << "Expected " << input << " to convert to "
 			     << expected << ", got " << ret << std::endl;
@@ -35,7 +35,7 @@ protected:
 		 * The precision check is fairly arbitrary but is based on what
 		 * the rkisp1 is capable of in the crosstalk module.
 		 */
-		double f = utils::fixedToFloatingPoint<intPrec, fracPrec, double>(ret);
+		double f = utils::fixedToFloatingPoint<IntPrec, FracPrec, double>(ret);
 		if (std::abs(f - input) > 0.005) {
 			cerr << "Reverse conversion expected " << ret
 			     << " to convert to " << input

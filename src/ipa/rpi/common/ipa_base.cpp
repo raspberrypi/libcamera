@@ -73,7 +73,7 @@ const ControlInfoMap::Map ipaControls{
 	{ &controls::ScalerCrop, ControlInfo(Rectangle{}, Rectangle(65535, 65535, 65535, 65535), Rectangle{}) },
 	{ &controls::FrameDurationLimits, ControlInfo(INT64_C(33333), INT64_C(120000)) },
 	{ &controls::draft::NoiseReductionMode, ControlInfo(controls::draft::NoiseReductionModeValues) },
-	{ &controls::rpi::StatsOutputEnable, ControlInfo(false, true) },
+	{ &controls::rpi::StatsOutputEnable, ControlInfo(false, true, false) },
 };
 
 /* IPA controls handled conditionally, if the sensor is not mono */
@@ -103,8 +103,9 @@ LOG_DEFINE_CATEGORY(IPARPI)
 namespace ipa::RPi {
 
 IpaBase::IpaBase()
-	: controller_(), frameLengths_(FrameLengthsQueueSize, 0s), stitchSwapBuffers_(false), frameCount_(0),
-	  mistrustCount_(0), lastRunTimestamp_(0), firstStart_(true), flickerState_({ 0, 0s })
+	: controller_(), frameLengths_(FrameLengthsQueueSize, 0s), statsMetadataOutput_(false),
+	  stitchSwapBuffers_(false), frameCount_(0), mistrustCount_(0), lastRunTimestamp_(0),
+	  firstStart_(true), flickerState_({ 0, 0s })
 {
 }
 

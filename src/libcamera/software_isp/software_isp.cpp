@@ -66,7 +66,8 @@ LOG_DEFINE_CATEGORY(SoftwareIsp)
  * handler
  */
 SoftwareIsp::SoftwareIsp(PipelineHandler *pipe, const CameraSensor *sensor)
-	: dmaHeap_(DmaHeap::DmaHeapFlag::Cma | DmaHeap::DmaHeapFlag::System)
+	: dmaHeap_(DmaBufAllocator::DmaBufAllocatorFlag::CmaHeap |
+		   DmaBufAllocator::DmaBufAllocatorFlag::SystemHeap)
 {
 	/*
 	 * debayerParams_ must be initialized because the initial value is used for
@@ -86,7 +87,7 @@ SoftwareIsp::SoftwareIsp(PipelineHandler *pipe, const CameraSensor *sensor)
 	}
 
 	if (!dmaHeap_.isValid()) {
-		LOG(SoftwareIsp, Error) << "Failed to create DmaHeap object";
+		LOG(SoftwareIsp, Error) << "Failed to create DmaBufAllocator object";
 		return;
 	}
 

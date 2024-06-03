@@ -12,7 +12,7 @@
 #include <libcamera/formats.h>
 
 #include "libcamera/internal/device_enumerator.h"
-#include "libcamera/internal/dma_heaps.h"
+#include "libcamera/internal/dma_buf_allocator.h"
 
 #include "../common/pipeline_base.h"
 #include "../common/rpi_stream.h"
@@ -86,7 +86,7 @@ public:
 	RPi::Device<Isp, 4> isp_;
 
 	/* DMAHEAP allocation helper. */
-	DmaHeap dmaHeap_;
+	DmaBufAllocator dmaHeap_;
 	SharedFD lsTable_;
 
 	struct Config {

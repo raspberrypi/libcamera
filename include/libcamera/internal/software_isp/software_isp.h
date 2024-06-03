@@ -27,7 +27,7 @@
 #include <libcamera/ipa/soft_ipa_proxy.h>
 
 #include "libcamera/internal/camera_sensor.h"
-#include "libcamera/internal/dma_heaps.h"
+#include "libcamera/internal/dma_buf_allocator.h"
 #include "libcamera/internal/pipeline_handler.h"
 #include "libcamera/internal/shared_mem_object.h"
 #include "libcamera/internal/software_isp/debayer_params.h"
@@ -91,7 +91,7 @@ private:
 	Thread ispWorkerThread_;
 	SharedMemObject<DebayerParams> sharedParams_;
 	DebayerParams debayerParams_;
-	DmaHeap dmaHeap_;
+	DmaBufAllocator dmaHeap_;
 
 	std::unique_ptr<ipa::soft::IPAProxySoft> ipa_;
 };

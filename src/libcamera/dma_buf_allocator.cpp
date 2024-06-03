@@ -11,10 +11,14 @@
 #include <array>
 #include <fcntl.h>
 #include <sys/ioctl.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 #include <linux/dma-buf.h>
 #include <linux/dma-heap.h>
+#include <linux/udmabuf.h>
 
 #include <libcamera/base/log.h>
 
@@ -32,7 +36,7 @@ struct DmaBufAllocatorInfo {
 };
 #endif
 
-static constexpr std::array<DmaBufAllocatorInfo, 3> providerInfos = { {
+static constexpr std::array<DmaBufAllocatorInfo, 4> providerInfos = { {
 	/*
 	 * /dev/dma_heap/linux,cma is the CMA dma-heap. When the cma heap size is
 	 * specified on the kernel command line, this gets renamed to "reserved".
@@ -40,6 +44,7 @@ static constexpr std::array<DmaBufAllocatorInfo, 3> providerInfos = { {
 	{ DmaBufAllocator::DmaBufAllocatorFlag::CmaHeap, "/dev/dma_heap/linux,cma" },
 	{ DmaBufAllocator::DmaBufAllocatorFlag::CmaHeap, "/dev/dma_heap/reserved" },
 	{ DmaBufAllocator::DmaBufAllocatorFlag::SystemHeap, "/dev/dma_heap/system" },
+	{ DmaBufAllocator::DmaBufAllocatorFlag::UDmaBuf, "/dev/udmabuf" },
 } };
 
 LOG_DEFINE_CATEGORY(DmaBufAllocator)
@@ -63,6 +68,8 @@ LOG_DEFINE_CATEGORY(DmaBufAllocator)
  * \brief Allocate from a CMA dma-heap, providing physically-contiguous memory
  * \var DmaBufAllocator::SystemHeap
  * \brief Allocate from the system dma-heap, using the page allocator
+ * \var DmaBufAllocator::UDmaBuf
+ * \brief Allocate using a memfd + /dev/udmabuf
  */
 
 /**
@@ -100,6 +107,7 @@ DmaBufAllocator::DmaBufAllocator(DmaBufAllocatorFlags type)
 
 		LOG(DmaBufAllocator, Debug) << "Using " << info.deviceNodeName;
 		providerHandle_ = UniqueFD(ret);
+		type_ = info.type;
 		break;
 	}
 
@@ -118,25 +126,66 @@ DmaBufAllocator::~DmaBufAllocator() = default;
  * \return True if the DmaBufAllocator is valid, false otherwise
  */
 
-/**
- * \brief Allocate a dma-buf from the DmaBufAllocator
- * \param [in] name The name to set for the allocated buffer
- * \param [in] size The size of the buffer to allocate
- *
- * Allocates a dma-buf with read/write access.
- *
- * If the allocation fails, return an invalid UniqueFD.
- *
- * \return The UniqueFD of the allocated buffer
- */
-UniqueFD DmaBufAllocator::alloc(const char *name, std::size_t size)
+UniqueFD DmaBufAllocator::allocFromUDmaBuf(const char *name, std::size_t size)
 {
-	int ret;
+	/* Size must be a multiple of the page size. Round it up. */
+	std::size_t pageMask = sysconf(_SC_PAGESIZE) - 1;
+	size = (size + pageMask) & ~pageMask;
 
-	if (!name)
+	int ret = memfd_create(name, MFD_ALLOW_SEALING);
+	if (ret < 0) {
+		ret = errno;
+		LOG(DmaBufAllocator, Error)
+			<< "Failed to allocate memfd storage for " << name
+			<< ": " << strerror(ret);
 		return {};
+	}
 
+	UniqueFD memfd(ret);
+
+	ret = ftruncate(memfd.get(), size);
+	if (ret < 0) {
+		ret = errno;
+		LOG(DmaBufAllocator, Error)
+			<< "Failed to set memfd size for " << name
+			<< ": " << strerror(ret);
+		return {};
+	}
+
+	/* udmabuf dma-buffers *must* have the F_SEAL_SHRINK seal. */
+	ret = fcntl(memfd.get(), F_ADD_SEALS, F_SEAL_SHRINK);
+	if (ret < 0) {
+		ret = errno;
+		LOG(DmaBufAllocator, Error)
+			<< "Failed to seal the memfd for " << name
+			<< ": " << strerror(ret);
+		return {};
+	}
+
+	struct udmabuf_create create;
+
+	create.memfd = memfd.get();
+	create.flags = UDMABUF_FLAGS_CLOEXEC;
+	create.offset = 0;
+	create.size = size;
+
+	ret = ::ioctl(providerHandle_.get(), UDMABUF_CREATE, &create);
+	if (ret < 0) {
+		ret = errno;
+		LOG(DmaBufAllocator, Error)
+			<< "Failed to create dma buf for " << name
+			<< ": " << strerror(ret);
+		return {};
+	}
+
+	/* The underlying memfd is kept as as a reference in the kernel. */
+	return UniqueFD(ret);
+}
+
+UniqueFD DmaBufAllocator::allocFromHeap(const char *name, std::size_t size)
+{
 	struct dma_heap_allocation_data alloc = {};
+	int ret;
 
 	alloc.len = size;
 	alloc.fd_flags = O_CLOEXEC | O_RDWR;
@@ -157,6 +206,28 @@ UniqueFD DmaBufAllocator::alloc(const char *name, std::size_t size)
 	}
 
 	return allocFd;
+}
+
+/**
+ * \brief Allocate a dma-buf from the DmaBufAllocator
+ * \param [in] name The name to set for the allocated buffer
+ * \param [in] size The size of the buffer to allocate
+ *
+ * Allocates a dma-buf with read/write access.
+ *
+ * If the allocation fails, return an invalid UniqueFD.
+ *
+ * \return The UniqueFD of the allocated buffer
+ */
+UniqueFD DmaBufAllocator::alloc(const char *name, std::size_t size)
+{
+	if (!name)
+		return {};
+
+	if (type_ == DmaBufAllocator::DmaBufAllocatorFlag::UDmaBuf)
+		return allocFromUDmaBuf(name, size);
+	else
+		return allocFromHeap(name, size);
 }
 
 } /* namespace libcamera */

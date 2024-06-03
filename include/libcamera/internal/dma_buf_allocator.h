@@ -20,6 +20,7 @@ public:
 	enum class DmaBufAllocatorFlag {
 		CmaHeap = 1 << 0,
 		SystemHeap = 1 << 1,
+		UDmaBuf = 1 << 2,
 	};
 
 	using DmaBufAllocatorFlags = Flags<DmaBufAllocatorFlag>;
@@ -30,7 +31,10 @@ public:
 	UniqueFD alloc(const char *name, std::size_t size);
 
 private:
+	UniqueFD allocFromHeap(const char *name, std::size_t size);
+	UniqueFD allocFromUDmaBuf(const char *name, std::size_t size);
 	UniqueFD providerHandle_;
+	DmaBufAllocatorFlag type_;
 };
 
 LIBCAMERA_FLAGS_ENABLE_OPERATORS(DmaBufAllocator::DmaBufAllocatorFlag)

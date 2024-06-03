@@ -21,7 +21,23 @@ using namespace ipa::rkisp1;
 class RkISP1UtilsTest : public Test
 {
 protected:
-	template<unsigned int IntPrec, unsigned FracPrec, typename T>
+	/* R for real, I for integer */
+	template<unsigned int IntPrec, unsigned int FracPrec, typename I, typename R>
+	int testFixedToFloat(I input, R expected)
+	{
+		R out = utils::fixedToFloatingPoint<IntPrec, FracPrec, R>(input);
+		R prec = 1.0 / (1 << FracPrec);
+		if (std::abs(out - expected) > prec) {
+			cerr << "Reverse conversion expected " << input
+			     << " to convert to " << expected
+			     << ", got " << out << std::endl;
+			return TestFail;
+		}
+
+		return TestPass;
+	}
+
+	template<unsigned int IntPrec, unsigned int FracPrec, typename T>
 	int testSingleFixedPoint(double input, T expected)
 	{
 		T ret = utils::floatingToFixedPoint<IntPrec, FracPrec, T>(input);
@@ -54,7 +70,6 @@ protected:
 		 */
 		std::map<double, uint16_t> testCases = {
 			{ 7.992, 0x3ff },
-			{ 7.992, 0xbff },
 			{   0.2, 0x01a },
 			{  -0.2, 0x7e6 },
 			{  -0.8, 0x79a },
@@ -71,6 +86,11 @@ protected:
 			if (ret != TestPass)
 				return ret;
 		}
+
+		/* Special case with a superfluous one in the unused bits */
+		ret = testFixedToFloat<4, 7, uint16_t, double>(0xbff, 7.992);
+		if (ret != TestPass)
+			return ret;
 
 		return TestPass;
 	}

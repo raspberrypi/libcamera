@@ -67,7 +67,8 @@ LOG_DEFINE_CATEGORY(SoftwareIsp)
  */
 SoftwareIsp::SoftwareIsp(PipelineHandler *pipe, const CameraSensor *sensor)
 	: dmaHeap_(DmaBufAllocator::DmaBufAllocatorFlag::CmaHeap |
-		   DmaBufAllocator::DmaBufAllocatorFlag::SystemHeap)
+		   DmaBufAllocator::DmaBufAllocatorFlag::SystemHeap |
+		   DmaBufAllocator::DmaBufAllocatorFlag::UDmaBuf)
 {
 	/*
 	 * debayerParams_ must be initialized because the initial value is used for

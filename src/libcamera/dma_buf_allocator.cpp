@@ -127,6 +127,14 @@ DmaBufAllocator::~DmaBufAllocator() = default;
  * \return True if the DmaBufAllocator is valid, false otherwise
  */
 
+/* uClibc doesn't provide the file sealing API. */
+#ifndef __DOXYGEN__
+#if not HAVE_FILE_SEALS
+#define F_ADD_SEALS		1033
+#define F_SEAL_SHRINK		0x0002
+#endif
+#endif
+
 UniqueFD DmaBufAllocator::allocFromUDmaBuf(const char *name, std::size_t size)
 {
 	/* Size must be a multiple of the page size. Round it up. */

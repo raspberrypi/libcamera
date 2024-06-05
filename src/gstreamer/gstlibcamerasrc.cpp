@@ -157,7 +157,12 @@ enum {
 	PROP_AUTO_FOCUS_MODE,
 };
 
+static void gst_libcamera_src_child_proxy_init(gpointer g_iface,
+					       gpointer iface_data);
+
 G_DEFINE_TYPE_WITH_CODE(GstLibcameraSrc, gst_libcamera_src, GST_TYPE_ELEMENT,
+			G_IMPLEMENT_INTERFACE(GST_TYPE_CHILD_PROXY,
+					      gst_libcamera_src_child_proxy_init)
 			GST_DEBUG_CATEGORY_INIT(source_debug, "libcamerasrc", 0,
 						"libcamera Source"))
 
@@ -865,8 +870,10 @@ gst_libcamera_src_init(GstLibcameraSrc *self)
 
 	g_mutex_init(&state->lock_);
 
-	state->srcpads_.push_back(gst_pad_new_from_template(templ, "src"));
-	gst_element_add_pad(GST_ELEMENT(self), state->srcpads_.back());
+	GstPad *pad = gst_pad_new_from_template(templ, "src");
+	state->srcpads_.push_back(pad);
+	gst_element_add_pad(GST_ELEMENT(self), pad);
+	gst_child_proxy_child_added(GST_CHILD_PROXY(self), G_OBJECT(pad), GST_OBJECT_NAME(pad));
 
 	GST_OBJECT_FLAG_SET(self, GST_ELEMENT_FLAG_SOURCE);
 
@@ -897,6 +904,8 @@ gst_libcamera_src_request_new_pad(GstElement *element, GstPadTemplate *templ,
 		return NULL;
 	}
 
+	gst_child_proxy_child_added(GST_CHILD_PROXY(self), G_OBJECT(pad), GST_OBJECT_NAME(pad));
+
 	return reinterpret_cast<GstPad *>(g_steal_pointer(&pad));
 }
 
@@ -904,6 +913,8 @@ static void
 gst_libcamera_src_release_pad(GstElement *element, GstPad *pad)
 {
 	GstLibcameraSrc *self = GST_LIBCAMERA_SRC(element);
+
+	gst_child_proxy_child_removed(GST_CHILD_PROXY(self), G_OBJECT(pad), GST_OBJECT_NAME(pad));
 
 	GST_DEBUG_OBJECT(self, "Pad %" GST_PTR_FORMAT " being released", pad);
 
@@ -964,4 +975,34 @@ gst_libcamera_src_class_init(GstLibcameraSrcClass *klass)
 				 static_cast<gint>(controls::AfModeManual),
 				 G_PARAM_WRITABLE);
 	g_object_class_install_property(object_class, PROP_AUTO_FOCUS_MODE, spec);
+}
+
+/* GstChildProxy implementation */
+static GObject *
+gst_libcamera_src_child_proxy_get_child_by_index(GstChildProxy *child_proxy,
+						 guint index)
+{
+	GLibLocker lock(GST_OBJECT(child_proxy));
+	GObject *obj = nullptr;
+
+	obj = reinterpret_cast<GObject *>(g_list_nth_data(GST_ELEMENT(child_proxy)->srcpads, index));
+	if (obj)
+		gst_object_ref(obj);
+
+	return obj;
+}
+
+static guint
+gst_libcamera_src_child_proxy_get_children_count(GstChildProxy *child_proxy)
+{
+	GLibLocker lock(GST_OBJECT(child_proxy));
+	return GST_ELEMENT_CAST(child_proxy)->numsrcpads;
+}
+
+static void
+gst_libcamera_src_child_proxy_init(gpointer g_iface, [[maybe_unused]] gpointer iface_data)
+{
+	GstChildProxyInterface *iface = reinterpret_cast<GstChildProxyInterface *>(g_iface);
+	iface->get_child_by_index = gst_libcamera_src_child_proxy_get_child_by_index;
+	iface->get_children_count = gst_libcamera_src_child_proxy_get_children_count;
 }

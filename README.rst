@@ -178,6 +178,22 @@ Which can be received on another device over the network with:
    gst-launch-1.0 tcpclientsrc host=$DEVICE_IP port=5000 ! \
         multipartdemux ! jpegdec ! autovideosink
 
+The GStreamer element also supports multiple streams. This is achieved by
+requesting additional source pads. Downstream caps filters can be used
+to choose specific parameters like resolution and pixel format. The pad
+property ``stream-role`` can be used to select a role.
+
+The following example displays a 640x480 view finder while streaming JPEG
+encoded 800x600 video. You can use the receiver pipeline above to view the
+remote stream from another device.
+
+.. code::
+
+   gst-launch-1.0 libcamerasrc name=cs src::stream-role=view-finder src_0::stream-role=video-recording \
+       cs.src ! queue ! video/x-raw,width=640,height=480 ! videoconvert ! autovideosink \
+       cs.src_0 ! queue ! video/x-raw,width=800,height=600 ! videoconvert ! \
+       jpegenc ! multipartmux ! tcpserversink host=0.0.0.0 port=5000
+
 .. section-end-getting-started
 
 Troubleshooting

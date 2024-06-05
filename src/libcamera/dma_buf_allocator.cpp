@@ -13,6 +13,7 @@
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <sys/syscall.h>
 #include <sys/types.h>
 #include <unistd.h>
 
@@ -132,7 +133,11 @@ UniqueFD DmaBufAllocator::allocFromUDmaBuf(const char *name, std::size_t size)
 	std::size_t pageMask = sysconf(_SC_PAGESIZE) - 1;
 	size = (size + pageMask) & ~pageMask;
 
+#if HAVE_MEMFD_CREATE
 	int ret = memfd_create(name, MFD_ALLOW_SEALING | MFD_CLOEXEC);
+#else
+	int ret = syscall(SYS_memfd_create, name, MFD_ALLOW_SEALING | MFD_CLOEXEC);
+#endif
 	if (ret < 0) {
 		ret = errno;
 		LOG(DmaBufAllocator, Error)

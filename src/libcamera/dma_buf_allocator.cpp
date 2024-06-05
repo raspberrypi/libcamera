@@ -132,7 +132,7 @@ UniqueFD DmaBufAllocator::allocFromUDmaBuf(const char *name, std::size_t size)
 	std::size_t pageMask = sysconf(_SC_PAGESIZE) - 1;
 	size = (size + pageMask) & ~pageMask;
 
-	int ret = memfd_create(name, MFD_ALLOW_SEALING);
+	int ret = memfd_create(name, MFD_ALLOW_SEALING | MFD_CLOEXEC);
 	if (ret < 0) {
 		ret = errno;
 		LOG(DmaBufAllocator, Error)

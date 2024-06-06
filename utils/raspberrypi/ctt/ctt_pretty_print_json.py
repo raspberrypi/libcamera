@@ -108,6 +108,7 @@ def pretty_print(in_json: dict, custom_elems={}) -> str:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter, description=
                     'Prettify a version 2.0 camera tuning config JSON file.')
+    parser.add_argument('-t', '--target', type=str, help='Target platform', choices=['pisp', 'vc4'], default='vc4')
     parser.add_argument('input', type=str, help='Input tuning file.')
     parser.add_argument('output', type=str, nargs='?',
                         help='Output converted tuning file. If not provided, the input file will be updated in-place.',
@@ -117,7 +118,12 @@ if __name__ == "__main__":
     with open(args.input, 'r') as f:
         in_json = json.load(f)
 
-    out_json = pretty_print(in_json)
+    if args.target == 'pisp':
+        from ctt_pisp import grid_size
+    elif args.target == 'vc4':
+        from ctt_vc4 import grid_size
+
+    out_json = pretty_print(in_json, custom_elems={'table': grid_size[0], 'luminance_lut': grid_size[0]})
 
     with open(args.output if args.output is not None else args.input, 'w') as f:
         f.write(out_json)

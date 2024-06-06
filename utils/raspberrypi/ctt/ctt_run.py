@@ -67,7 +67,7 @@ Camera object that is the backbone of the tuning tool.
 Input is the desired path of the output json.
 """
 class Camera:
-    def __init__(self, jfile):
+    def __init__(self, jfile, json):
         self.path = os.path.dirname(os.path.expanduser(__file__)) + '/'
         if self.path == '/':
             self.path = ''
@@ -79,127 +79,15 @@ class Camera:
         """
         initial json dict populated by uncalibrated values
         """
-        self.json = {
-            "rpi.black_level": {
-                "black_level": 4096
-            },
-            "rpi.dpc": {
-            },
-            "rpi.lux": {
-                "reference_shutter_speed": 10000,
-                "reference_gain": 1,
-                "reference_aperture": 1.0
-            },
-            "rpi.noise": {
-            },
-            "rpi.geq": {
-            },
-            "rpi.sdn": {
-            },
-            "rpi.awb": {
-                "priors": [
-                    {"lux": 0, "prior": [2000, 1.0, 3000, 0.0, 13000, 0.0]},
-                    {"lux": 800, "prior": [2000, 0.0, 6000, 2.0, 13000, 2.0]},
-                    {"lux": 1500, "prior": [2000, 0.0, 4000, 1.0, 6000, 6.0, 6500, 7.0, 7000, 1.0, 13000, 1.0]}
-                ],
-                "modes": {
-                    "auto": {"lo": 2500, "hi": 8000},
-                    "incandescent": {"lo": 2500, "hi": 3000},
-                    "tungsten": {"lo": 3000, "hi": 3500},
-                    "fluorescent": {"lo": 4000, "hi": 4700},
-                    "indoor": {"lo": 3000, "hi": 5000},
-                    "daylight": {"lo": 5500, "hi": 6500},
-                    "cloudy": {"lo": 7000, "hi": 8600}
-                },
-                "bayes": 1
-            },
-            "rpi.agc": {
-                "metering_modes": {
-                    "centre-weighted": {
-                        "weights": [3, 3, 3, 2, 2, 2, 2, 1, 1, 1, 1, 0, 0, 0, 0]
-                    },
-                    "spot": {
-                        "weights": [2, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-                    },
-                    "matrix": {
-                        "weights": [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-                    }
-                },
-                "exposure_modes": {
-                    "normal": {
-                        "shutter": [100, 10000, 30000, 60000, 120000],
-                        "gain": [1.0, 2.0, 4.0, 6.0, 6.0]
-                    },
-                    "short": {
-                        "shutter": [100, 5000, 10000, 20000, 120000],
-                        "gain": [1.0, 2.0, 4.0, 6.0, 6.0]
-                    }
-                },
-                "constraint_modes": {
-                    "normal": [
-                        {"bound": "LOWER", "q_lo": 0.98, "q_hi": 1.0, "y_target": [0, 0.5, 1000, 0.5]}
-                    ],
-                    "highlight": [
-                        {"bound": "LOWER", "q_lo": 0.98, "q_hi": 1.0, "y_target": [0, 0.5, 1000, 0.5]},
-                        {"bound": "UPPER", "q_lo": 0.98, "q_hi": 1.0, "y_target": [0, 0.8, 1000, 0.8]}
-                    ]
-                },
-                "y_target": [0, 0.16, 1000, 0.165, 10000, 0.17]
-            },
-            "rpi.alsc": {
-                'omega': 1.3,
-                'n_iter': 100,
-                'luminance_strength': 0.7,
-            },
-            "rpi.contrast": {
-                "ce_enable": 1,
-                "gamma_curve": [
-                    0,     0,
-                    1024,  5040,
-                    2048,  9338,
-                    3072,  12356,
-                    4096,  15312,
-                    5120,  18051,
-                    6144,  20790,
-                    7168,  23193,
-                    8192,  25744,
-                    9216,  27942,
-                    10240, 30035,
-                    11264, 32005,
-                    12288, 33975,
-                    13312, 35815,
-                    14336, 37600,
-                    15360, 39168,
-                    16384, 40642,
-                    18432, 43379,
-                    20480, 45749,
-                    22528, 47753,
-                    24576, 49621,
-                    26624, 51253,
-                    28672, 52698,
-                    30720, 53796,
-                    32768, 54876,
-                    36864, 57012,
-                    40960, 58656,
-                    45056, 59954,
-                    49152, 61183,
-                    53248, 62355,
-                    57344, 63419,
-                    61440, 64476,
-                    65535, 65535
-                ]
-            },
-            "rpi.ccm": {
-            },
-            "rpi.sharpen": {
-            }
-        }
+
+        self.json = json
+
 
     """
     Perform colour correction calibrations by comparing macbeth patch colours
     to standard macbeth chart colours.
     """
-    def ccm_cal(self, do_alsc_colour):
+    def ccm_cal(self, do_alsc_colour, grid_size):
         if 'rpi.ccm' in self.disable:
             return 1
         print('\nStarting CCM calibration')
@@ -245,7 +133,7 @@ class Camera:
         Do CCM calibration
         """
         try:
-            ccms = ccm(self, cal_cr_list, cal_cb_list)
+            ccms = ccm(self, cal_cr_list, cal_cb_list, grid_size)
         except ArithmeticError:
             print('ERROR: Matrix is singular!\nTake new pictures and try again...')
             self.log += '\nERROR: Singular matrix encountered during fit!'
@@ -263,7 +151,7 @@ class Camera:
     various colour temperatures, as well as providing a maximum 'wiggle room'
     distance from this curve (transverse_neg/pos).
     """
-    def awb_cal(self, greyworld, do_alsc_colour):
+    def awb_cal(self, greyworld, do_alsc_colour, grid_size):
         if 'rpi.awb' in self.disable:
             return 1
         print('\nStarting AWB calibration')
@@ -306,7 +194,7 @@ class Camera:
         call calibration function
         """
         plot = "rpi.awb" in self.plot
-        awb_out = awb(self, cal_cr_list, cal_cb_list, plot)
+        awb_out = awb(self, cal_cr_list, cal_cb_list, plot, grid_size)
         ct_curve, transverse_neg, transverse_pos = awb_out
         """
         write output to json
@@ -324,7 +212,7 @@ class Camera:
     colour channel seperately, and then partially corrects for vignetting.
     The extent of the correction depends on the 'luminance_strength' parameter.
     """
-    def alsc_cal(self, luminance_strength, do_alsc_colour):
+    def alsc_cal(self, luminance_strength, do_alsc_colour, grid_size):
         if 'rpi.alsc' in self.disable:
             return 1
         print('\nStarting ALSC calibration')
@@ -347,7 +235,7 @@ class Camera:
         call calibration function
         """
         plot = "rpi.alsc" in self.plot
-        alsc_out = alsc_all(self, do_alsc_colour, plot)
+        alsc_out = alsc_all(self, do_alsc_colour, plot, grid_size)
         cal_cr_list, cal_cb_list, luminance_lut, av_corn = alsc_out
         """
         write output to json and finish if not do_alsc_colour
@@ -393,7 +281,7 @@ class Camera:
         """
         obtain worst-case scenario residual sigmas
         """
-        sigma_r, sigma_b = get_sigma(self, cal_cr_list, cal_cb_list)
+        sigma_r, sigma_b = get_sigma(self, cal_cr_list, cal_cb_list, grid_size)
         """
         write output to json
         """
@@ -509,19 +397,20 @@ class Camera:
     """
     writes the json dictionary to the raw json file then make pretty
     """
-    def write_json(self):
+    def write_json(self, version=2.0, target='bcm2835', grid_size=(16, 12)):
         """
         Write json dictionary to file using our version 2 format
         """
 
         out_json = {
-            "version": 2.0,
-            'target': 'bcm2835',
+            "version": version,
+            'target': target if target != 'vc4' else 'bcm2835',
             "algorithms": [{name: data} for name, data in self.json.items()],
         }
 
         with open(self.jf, 'w') as f:
-            f.write(pretty_print(out_json))
+            f.write(pretty_print(out_json,
+                                 custom_elems={'table': grid_size[0], 'luminance_lut': grid_size[0]}))
 
     """
     add a new section to the log file
@@ -712,7 +601,7 @@ class Camera:
             return 0
 
 
-def run_ctt(json_output, directory, config, log_output, alsc_only=False):
+def run_ctt(json_output, directory, config, log_output, json_template, grid_size, target, alsc_only=False):
     """
     check input files are jsons
     """
@@ -748,7 +637,7 @@ def run_ctt(json_output, directory, config, log_output, alsc_only=False):
     greyworld = get_config(awb_d, "greyworld", 0, 'bool')
     alsc_d = get_config(configs, "alsc", {}, 'dict')
     do_alsc_colour = get_config(alsc_d, "do_alsc_colour", 1, 'bool')
-    luminance_strength = get_config(alsc_d, "luminance_strength", 0.5, 'num')
+    luminance_strength = get_config(alsc_d, "luminance_strength", 0.8, 'num')
     blacklevel = get_config(configs, "blacklevel", -1, 'num')
     macbeth_d = get_config(configs, "macbeth", {}, 'dict')
     mac_small = get_config(macbeth_d, "small", 0, 'bool')
@@ -772,7 +661,7 @@ def run_ctt(json_output, directory, config, log_output, alsc_only=False):
     initialise tuning tool and load images
     """
     try:
-        Cam = Camera(json_output)
+        Cam = Camera(json_output, json=json_template)
         Cam.log_user_input(json_output, directory, config, log_output)
         if alsc_only:
             disable = set(Cam.json.keys()).symmetric_difference({"rpi.alsc"})
@@ -794,14 +683,16 @@ def run_ctt(json_output, directory, config, log_output, alsc_only=False):
             Cam.json['rpi.black_level']['black_level'] = Cam.blacklevel_16
         Cam.json_remove(disable)
         print('\nSTARTING CALIBRATIONS')
-        Cam.alsc_cal(luminance_strength, do_alsc_colour)
+        Cam.alsc_cal(luminance_strength, do_alsc_colour, grid_size)
         Cam.geq_cal()
         Cam.lux_cal()
         Cam.noise_cal()
-        Cam.awb_cal(greyworld, do_alsc_colour)
-        Cam.ccm_cal(do_alsc_colour)
+        Cam.cac_cal(do_alsc_colour)
+        Cam.awb_cal(greyworld, do_alsc_colour, grid_size)
+        Cam.ccm_cal(do_alsc_colour, grid_size)
+
         print('\nFINISHED CALIBRATIONS')
-        Cam.write_json()
+        Cam.write_json(target=target, grid_size=grid_size)
         Cam.write_log(log_output)
         print('\nCalibrations written to: '+json_output)
         if log_output is None:
@@ -810,28 +701,3 @@ def run_ctt(json_output, directory, config, log_output, alsc_only=False):
         pass
     else:
         Cam.write_log(log_output)
-
-
-if __name__ == '__main__':
-    """
-    initialise calibration
-    """
-    if len(sys.argv) == 1:
-        print("""
-    Pisp Camera Tuning Tool version 1.0
-
-    Required Arguments:
-    '-i' : Calibration image directory.
-    '-o' : Name of output json file.
-
-    Optional Arguments:
-    '-c' : Config file for the CTT. If not passed, default parameters used.
-    '-l' : Name of output log file. If not passed, 'ctt_log.txt' used.
-              """)
-        quit(0)
-    else:
-        """
-        parse input arguments
-        """
-        json_output, directory, config, log_output = parse_input()
-        run_ctt(json_output, directory, config, log_output)

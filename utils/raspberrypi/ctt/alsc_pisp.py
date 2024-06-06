@@ -4,10 +4,13 @@
 #
 # Copyright (C) 2022, Raspberry Pi (Trading) Limited
 #
-# alsc tuning tool
+# alsc_only.py - alsc tuning tool
 
-from ctt import *
+import sys
 
+from ctt_pisp import json_template, grid_size, target
+from ctt_run import run_ctt
+from ctt_tools import parse_input
 
 if __name__ == '__main__':
     """
@@ -15,7 +18,7 @@ if __name__ == '__main__':
     """
     if len(sys.argv) == 1:
         print("""
-    Pisp Camera Tuning Tool version 1.0
+    PiSP Lens Shading Camera Tuning Tool version 1.0
 
     Required Arguments:
     '-i' : Calibration image directory.
@@ -31,4 +34,4 @@ if __name__ == '__main__':
         parse input arguments
         """
         json_output, directory, config, log_output = parse_input()
-        run_ctt(json_output, directory, config, log_output, alsc_only=True)
+        run_ctt(json_output, directory, config, log_output, json_template, grid_size, target, alsc_only=True)

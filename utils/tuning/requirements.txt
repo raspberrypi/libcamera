@@ -1,3 +1,4 @@
+coloredlogs
 matplotlib
 numpy
 opencv-python

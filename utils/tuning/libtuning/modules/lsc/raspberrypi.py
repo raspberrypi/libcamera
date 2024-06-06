@@ -12,7 +12,9 @@ import libtuning.utils as utils
 
 from numbers import Number
 import numpy as np
+import logging
 
+logger = logging.getLogger(__name__)
 
 class ALSCRaspberryPi(LSC):
     # Override the type name so that the parser can match the entry in the
@@ -35,7 +37,7 @@ class ALSCRaspberryPi(LSC):
 
     def validate_config(self, config: dict) -> bool:
         if self not in config:
-            utils.eprint(f'{self.type} not in config')
+            logger.error(f'{self.type} not in config')
             return False
 
         valid = True
@@ -46,14 +48,14 @@ class ALSCRaspberryPi(LSC):
         color_key = self.do_color.name
 
         if lum_key not in conf and self.luminance_strength.required:
-            utils.eprint(f'{lum_key} is not in config')
+            logger.error(f'{lum_key} is not in config')
             valid = False
 
         if lum_key in conf and (conf[lum_key] < 0 or conf[lum_key] > 1):
-            utils.eprint(f'Warning: {lum_key} is not in range [0, 1]; defaulting to 0.5')
+            logger.warning(f'{lum_key} is not in range [0, 1]; defaulting to 0.5')
 
         if color_key not in conf and self.do_color.required:
-            utils.eprint(f'{color_key} is not in config')
+            logger.error(f'{color_key} is not in config')
             valid = False
 
         return valid
@@ -235,7 +237,7 @@ class ALSCRaspberryPi(LSC):
         if count == 1:
             output['sigma'] = 0.005
             output['sigma_Cb'] = 0.005
-            utils.eprint('Warning: Only one alsc calibration found; standard sigmas used for adaptive algorithm.')
+            logger.warning('Only one alsc calibration found; standard sigmas used for adaptive algorithm.')
             return output
 
         # Obtain worst-case scenario residual sigmas

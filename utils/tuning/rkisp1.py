@@ -5,6 +5,8 @@
 #
 # Tuning script for rkisp1
 
+import coloredlogs
+import logging
 import sys
 
 import libtuning as lt
@@ -12,6 +14,9 @@ from libtuning.parsers import YamlParser
 from libtuning.generators import YamlOutput
 from libtuning.modules.lsc import LSCRkISP1
 from libtuning.modules.agc import AGCRkISP1
+
+
+coloredlogs.install(level=logging.INFO, fmt='%(name)s %(levelname)s %(message)s')
 
 tuner = lt.Tuner('RkISP1')
 tuner.add(LSCRkISP1(

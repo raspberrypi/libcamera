@@ -13,6 +13,9 @@ import re
 
 import libtuning as lt
 import libtuning.utils as utils
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Image:
@@ -25,13 +28,13 @@ class Image:
         try:
             self._load_metadata_exif()
         except Exception as e:
-            utils.eprint(f'Failed to load metadata from {self.path}: {e}')
+            logger.error(f'Failed to load metadata from {self.path}: {e}')
             raise e
 
         try:
             self._read_image_dng()
         except Exception as e:
-            utils.eprint(f'Failed to load image data from {self.path}: {e}')
+            logger.error(f'Failed to load image data from {self.path}: {e}')
             raise e
 
     @property

@@ -5,13 +5,14 @@
 # An infrastructure for camera tuning tools
 
 import argparse
+import logging
 
 import libtuning as lt
 import libtuning.utils as utils
-from libtuning.utils import eprint
 
 from enum import Enum, IntEnum
 
+logger = logging.getLogger(__name__)
 
 class Color(IntEnum):
     R = 0
@@ -112,10 +113,10 @@ class Tuner(object):
         for module_type in output_order:
             modules = [module for module in self.modules if module.type == module_type.type]
             if len(modules) > 1:
-                eprint(f'Multiple modules found for module type "{module_type.type}"')
+                logger.error(f'Multiple modules found for module type "{module_type.type}"')
                 return False
             if len(modules) < 1:
-                eprint(f'No module found for module type "{module_type.type}"')
+                logger.error(f'No module found for module type "{module_type.type}"')
                 return False
             self.output_order.append(modules[0])
 
@@ -124,19 +125,19 @@ class Tuner(object):
     # \todo Validate parser and generator at Tuner construction time?
     def _validate_settings(self):
         if self.parser is None:
-            eprint('Missing parser')
+            logger.error('Missing parser')
             return False
 
         if self.generator is None:
-            eprint('Missing generator')
+            logger.error('Missing generator')
             return False
 
         if len(self.modules) == 0:
-            eprint('No modules added')
+            logger.error('No modules added')
             return False
 
         if len(self.output_order) != len(self.modules):
-            eprint('Number of outputs does not match number of modules')
+            logger.error('Number of outputs does not match number of modules')
             return False
 
         return True
@@ -183,7 +184,7 @@ class Tuner(object):
 
         for module in self.modules:
             if not module.validate_config(self.config):
-                eprint(f'Config is invalid for module {module.type}')
+                logger.error(f'Config is invalid for module {module.type}')
                 return -1
 
         has_lsc = any(isinstance(m, lt.modules.lsc.LSC) for m in self.modules)
@@ -192,14 +193,14 @@ class Tuner(object):
 
         images = utils.load_images(args.input, self.config, not has_only_lsc, has_lsc)
         if images is None or len(images) == 0:
-            eprint(f'No images were found, or able to load')
+            logger.error(f'No images were found, or able to load')
             return -1
 
         # Do the tuning
         for module in self.modules:
             out = module.process(self.config, images, self.output)
             if out is None:
-                eprint(f'Module {module.name} failed to process, aborting')
+                logger.error(f'Module {module.hr_name} failed to process...')
                 break
             self.output[module] = out
 

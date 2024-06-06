@@ -9,8 +9,9 @@ from .generator import Generator
 from numbers import Number
 from pathlib import Path
 
-import libtuning.utils as utils
+import logging
 
+logger = logging.getLogger(__name__)
 
 class YamlOutput(Generator):
     def __init__(self):
@@ -112,7 +113,7 @@ class YamlOutput(Generator):
                 continue
 
             if not isinstance(output_dict[module], dict):
-                utils.eprint(f'Error: Output of {module.type} is not a dictionary')
+                logger.error(f'Error: Output of {module.type} is not a dictionary')
                 continue
 
             lines = self._stringify_dict(output_dict[module])

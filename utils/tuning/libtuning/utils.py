@@ -12,16 +12,15 @@ import os
 from pathlib import Path
 import re
 import sys
+import logging
 
 import libtuning as lt
 from libtuning.image import Image
 from libtuning.macbeth import locate_macbeth
 
+logger = logging.getLogger(__name__)
+
 # Utility functions
-
-
-def eprint(*args, **kwargs):
-    print(*args, file=sys.stderr, **kwargs)
 
 
 def get_module_by_type_name(modules, name):
@@ -45,7 +44,7 @@ def _list_image_files(directory):
 def _parse_image_filename(fn: Path):
     result = re.search(r'^(alsc_)?(\d+)[kK]_(\d+)?[lLuU]?.\w{3,4}$', fn.name)
     if result is None:
-        eprint(f'The file name of {fn.name} is incorrectly formatted')
+        logger.error(f'The file name of {fn.name} is incorrectly formatted')
         return None, None, None
 
     color = int(result.group(2))
@@ -72,7 +71,7 @@ def _validate_images(images):
 def load_images(input_dir: str, config: dict, load_nonlsc: bool, load_lsc: bool) -> list:
     files = _list_image_files(input_dir)
     if len(files) == 0:
-        eprint(f'No images found in {input_dir}')
+        logger.error(f'No images found in {input_dir}')
         return None
 
     images = []
@@ -83,19 +82,19 @@ def load_images(input_dir: str, config: dict, load_nonlsc: bool, load_lsc: bool)
 
         # Skip lsc image if we don't need it
         if lsc_only and not load_lsc:
-            eprint(f'Skipping {f.name} as this tuner has no LSC module')
+            logger.warning(f'Skipping {f.name} as this tuner has no LSC module')
             continue
 
         # Skip non-lsc image if we don't need it
         if not lsc_only and not load_nonlsc:
-            eprint(f'Skipping {f.name} as this tuner only has an LSC module')
+            logger.warning(f'Skipping {f.name} as this tuner only has an LSC module')
             continue
 
         # Load image
         try:
             image = Image(f)
         except Exception as e:
-            eprint(f'Failed to load image {f.name}: {e}')
+            logger.error(f'Failed to load image {f.name}: {e}')
             continue
 
         # Populate simple fields

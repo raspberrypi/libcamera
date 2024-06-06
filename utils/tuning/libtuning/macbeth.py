@@ -13,11 +13,14 @@ import os
 from pathlib import Path
 import numpy as np
 import warnings
+import logging
 from sklearn import cluster as cluster
 
 from .ctt_ransac import get_square_verts, get_square_centres
 
 from libtuning.image import Image
+
+logger = logging.getLogger(__name__)
 
 
 # Reshape image to fixed width without distorting returns image and scale
@@ -374,7 +377,7 @@ def get_macbeth_chart(img, ref_data):
 
     # Catch macbeth errors and continue with code
     except MacbethError as error:
-        eprint(error)
+        logger.warning(error)
         return (0, None, None, False)
 
 
@@ -497,7 +500,7 @@ def find_macbeth(img, mac_config):
 
     coords_fit = coords
     if cor < 0.75:
-        eprint(f'Warning: Low confidence {cor:.3f} for macbeth chart in {img.path.name}')
+        logger.warning(f'Low confidence {cor:.3f} for macbeth chart')
 
     if show:
         draw_macbeth_results(img, coords_fit)
@@ -510,18 +513,18 @@ def locate_macbeth(image: Image, config: dict):
     av_chan = (np.mean(np.array(image.channels), axis=0) / (2**16))
     av_val = np.mean(av_chan)
     if av_val < image.blacklevel_16 / (2**16) + 1 / 64:
-        eprint(f'Image {image.path.name} too dark')
+        logger.warning(f'Image {image.path.name} too dark')
         return None
 
     macbeth = find_macbeth(av_chan, config['general']['macbeth'])
 
     if macbeth is None:
-        eprint(f'No macbeth chart found in {image.path.name}')
+        logger.warning(f'No macbeth chart found in {image.path.name}')
         return None
 
     mac_cen_coords = macbeth[1]
     if not image.get_patches(mac_cen_coords):
-        eprint(f'Macbeth patches have saturated in {image.path.name}')
+        logger.warning(f'Macbeth patches have saturated in {image.path.name}')
         return None
 
     return macbeth

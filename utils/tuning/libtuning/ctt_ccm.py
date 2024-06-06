@@ -4,6 +4,8 @@
 #
 # camera tuning tool for CCM (colour correction matrix)
 
+import logging
+
 import numpy as np
 from scipy.optimize import minimize
 
@@ -11,6 +13,8 @@ from . import ctt_colors as colors
 from .image import Image
 from .ctt_awb import get_alsc_patches
 from .utils import visualise_macbeth_chart
+
+logger = logging.getLogger(__name__)
 
 """
 takes 8-bit macbeth chart values, degammas and returns 16 bit
@@ -129,7 +133,7 @@ def ccm(Cam, cal_cr_list, cal_cb_list):
     """
     ccm_tab = {}
     for Img in imgs:
-        Cam.log += '\nProcessing image: ' + Img.name
+        logger.info('Processing image: ' + Img.name)
         """
         get macbeth patches with alsc applied if alsc enabled.
         Note: if alsc is disabled then colour_cals will be set to None and no
@@ -154,7 +158,7 @@ def ccm(Cam, cal_cr_list, cal_cb_list):
         each channel for each patch
         """
         gain = np.mean(m_srgb) / np.mean((r, g, b))
-        Cam.log += '\nGain with respect to standard colours: {:.3f}'.format(gain)
+        logger.info(f'Gain with respect to standard colours: {gain:.3f}')
         r = np.mean(gain * r, axis=1)
         b = np.mean(gain * b, axis=1)
         g = np.mean(gain * g, axis=1)
@@ -192,15 +196,13 @@ def ccm(Cam, cal_cr_list, cal_cb_list):
         zero since the input data is imperfect
         '''
 
-        Cam.log += ("\n \n Optimised Matrix Below: \n \n")
         [r1, r2, g1, g2, b1, b2] = result.x
         # The new, optimised color correction matrix values
+        # This is the optimised Color Matrix (preserving greys by summing rows up to 1)
         optimised_ccm = [r1, r2, (1 - r1 - r2), g1, g2, (1 - g1 - g2), b1, b2, (1 - b1 - b2)]
 
-        # This is the optimised Color Matrix (preserving greys by summing rows up to 1)
-        Cam.log += str(optimised_ccm)
-        Cam.log += "\n Old Color Correction Matrix Below \n"
-        Cam.log += str(ccm)
+        logger.info(f'Optimized Matrix: {np.round(optimised_ccm, 4)}')
+        logger.info(f'Old Matrix:       {np.round(ccm, 4)}')
 
         formatted_ccm = np.array(original_ccm).reshape((3, 3))
 
@@ -229,7 +231,7 @@ def ccm(Cam, cal_cr_list, cal_cb_list):
         We now want to spit out some data that shows
         how the optimisation has improved the color matrices
         '''
-        Cam.log += "Here are the Improvements"
+        logger.info("Here are the Improvements")
 
         # CALCULATE WORST CASE delta e
         old_worst_delta_e = 0
@@ -244,8 +246,8 @@ def ccm(Cam, cal_cr_list, cal_cb_list):
             if new_delta_e > new_worst_delta_e:
                 new_worst_delta_e = new_delta_e
 
-        Cam.log += "Before color correction matrix was optimised, we got an average delta E of " + str(before_average) + " and a maximum delta E of " + str(old_worst_delta_e)
-        Cam.log += "After color correction matrix was optimised, we got an average delta E of " + str(after_average) + " and a maximum delta E of " + str(new_worst_delta_e)
+        logger.info(f'delta E optimized: average: {after_average:.2f}  max:{new_worst_delta_e:.2f}')
+        logger.info(f'delta E old:       average: {before_average:.2f}  max:{old_worst_delta_e:.2f}')
 
         visualise_macbeth_chart(m_rgb, optimised_ccm_rgb, after_gamma_rgb, str(Img.col) + str(matrix_selection_types[typenum]))
         '''
@@ -262,9 +264,8 @@ def ccm(Cam, cal_cr_list, cal_cb_list):
             ccm_tab[Img.col].append(optimised_ccm)
         else:
             ccm_tab[Img.col] = [optimised_ccm]
-        Cam.log += '\n'
 
-    Cam.log += '\nFinished processing images'
+    logger.info('Finished processing images')
     """
     average any ccms that share a colour temperature
     """
@@ -273,7 +274,7 @@ def ccm(Cam, cal_cr_list, cal_cb_list):
         tab = np.where((10000 * tab) % 1 <= 0.05, tab + 0.00001, tab)
         tab = np.where((10000 * tab) % 1 >= 0.95, tab - 0.00001, tab)
         ccm_tab[k] = list(np.round(tab, 5))
-        Cam.log += '\nMatrix calculated for colour temperature of {} K'.format(k)
+        logger.info(f'Matrix calculated for colour temperature of {k} K')
 
     """
     return all ccms with respective colour temperature in the correct format,

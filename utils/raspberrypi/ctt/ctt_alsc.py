@@ -13,7 +13,7 @@ from mpl_toolkits.mplot3d import Axes3D
 """
 preform alsc calibration on a set of images
 """
-def alsc_all(Cam, do_alsc_colour, plot, grid_size=(16, 12)):
+def alsc_all(Cam, do_alsc_colour, plot, grid_size=(16, 12), max_gain=8.0):
     imgs_alsc = Cam.imgs_alsc
     grid_w, grid_h = grid_size
     """
@@ -24,7 +24,7 @@ def alsc_all(Cam, do_alsc_colour, plot, grid_size=(16, 12)):
     list_cb = []
     list_cg = []
     for Img in imgs_alsc:
-        col, cr, cb, cg, size = alsc(Cam, Img, do_alsc_colour, plot, grid_size=grid_size)
+        col, cr, cb, cg, size = alsc(Cam, Img, do_alsc_colour, plot, grid_size=grid_size, max_gain=max_gain)
         list_col.append(col)
         list_cr.append(cr)
         list_cb.append(cb)
@@ -118,7 +118,7 @@ def alsc_all(Cam, do_alsc_colour, plot, grid_size=(16, 12)):
 """
 calculate g/r and g/b for 32x32 points arranged in a grid for a single image
 """
-def alsc(Cam, Img, do_alsc_colour, plot=False, grid_size=(16, 12)):
+def alsc(Cam, Img, do_alsc_colour, plot=False, grid_size=(16, 12), max_gain=8.0):
     Cam.log += '\nProcessing image: ' + Img.name
     grid_w, grid_h = grid_size
     """
@@ -153,9 +153,12 @@ def alsc(Cam, Img, do_alsc_colour, plot=False, grid_size=(16, 12)):
         median blur to remove peaks and save as float 64
         """
         cr = cv2.medianBlur(cr, 3).astype('float64')
+        cr = cr/np.min(cr)  # gain tables are easier for humans to read if the minimum is 1.0
         cb = cv2.medianBlur(cb, 3).astype('float64')
+        cb = cb/np.min(cb)
         cg = cv2.medianBlur(cg, 3).astype('float64')
         cg = cg/np.min(cg)
+        cg = [min(v, max_gain) for v in cg.flatten()]  # never exceed the max luminance gain
 
         """
         debugging code showing 2D surface plot of vignetting. Quite useful for
@@ -179,7 +182,7 @@ def alsc(Cam, Img, do_alsc_colour, plot=False, grid_size=(16, 12)):
             # print(Img.str)
             plt.show()
 
-        return Img.col, cr.flatten(), cb.flatten(), cg.flatten(), (w, h, dx, dy)
+        return Img.col, cr.flatten(), cb.flatten(), cg, (w, h, dx, dy)
 
     else:
         """
@@ -189,6 +192,7 @@ def alsc(Cam, Img, do_alsc_colour, plot=False, grid_size=(16, 12)):
         cg = np.reshape(1/g, (grid_h, grid_w)).astype('float32')
         cg = cv2.medianBlur(cg, 3).astype('float64')
         cg = cg/np.min(cg)
+        cg = [min(v, max_gain) for v in cg.flatten()]  # never exceed the max luminance gain
 
         if plot:
             hf = plt.figure(figssize=(8, 8))

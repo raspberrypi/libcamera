@@ -269,7 +269,7 @@ class Camera:
     colour channel seperately, and then partially corrects for vignetting.
     The extent of the correction depends on the 'luminance_strength' parameter.
     """
-    def alsc_cal(self, luminance_strength, do_alsc_colour, grid_size):
+    def alsc_cal(self, luminance_strength, do_alsc_colour, grid_size, max_gain=8.0):
         if 'rpi.alsc' in self.disable:
             return 1
         print('\nStarting ALSC calibration')
@@ -292,7 +292,7 @@ class Camera:
         call calibration function
         """
         plot = "rpi.alsc" in self.plot
-        alsc_out = alsc_all(self, do_alsc_colour, plot, grid_size)
+        alsc_out = alsc_all(self, do_alsc_colour, plot, grid_size, max_gain=max_gain)
         cal_cr_list, cal_cb_list, luminance_lut, av_corn = alsc_out
         """
         write output to json and finish if not do_alsc_colour
@@ -705,11 +705,13 @@ def run_ctt(json_output, directory, config, log_output, json_template, grid_size
     alsc_d = get_config(configs, "alsc", {}, 'dict')
     do_alsc_colour = get_config(alsc_d, "do_alsc_colour", 1, 'bool')
     luminance_strength = get_config(alsc_d, "luminance_strength", 0.8, 'num')
+    lsc_max_gain = get_config(alsc_d, "max_gain", 8.0, 'num')
     blacklevel = get_config(configs, "blacklevel", -1, 'num')
     macbeth_d = get_config(configs, "macbeth", {}, 'dict')
     mac_small = get_config(macbeth_d, "small", 0, 'bool')
     mac_show = get_config(macbeth_d, "show", 0, 'bool')
     mac_config = (mac_small, mac_show)
+    print("Read lsc_max_gain", lsc_max_gain)
 
     if blacklevel < -1 or blacklevel >= 2**16:
         print('\nInvalid blacklevel, defaulted to 64')
@@ -750,7 +752,7 @@ def run_ctt(json_output, directory, config, log_output, json_template, grid_size
             Cam.json['rpi.black_level']['black_level'] = Cam.blacklevel_16
         Cam.json_remove(disable)
         print('\nSTARTING CALIBRATIONS')
-        Cam.alsc_cal(luminance_strength, do_alsc_colour, grid_size)
+        Cam.alsc_cal(luminance_strength, do_alsc_colour, grid_size, max_gain=lsc_max_gain)
         Cam.geq_cal()
         Cam.lux_cal()
         Cam.noise_cal()

@@ -13,8 +13,8 @@
 #include <memory>
 #include <queue>
 #include <set>
-#include <string>
 #include <string.h>
+#include <string>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -37,7 +37,6 @@
 #include "libcamera/internal/software_isp/software_isp.h"
 #include "libcamera/internal/v4l2_subdevice.h"
 #include "libcamera/internal/v4l2_videodevice.h"
-
 
 namespace libcamera {
 

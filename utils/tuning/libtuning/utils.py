@@ -5,6 +5,7 @@
 #
 # Utilities for libtuning
 
+import cv2
 import decimal
 import math
 import numpy as np
@@ -162,6 +163,6 @@ def visualise_macbeth_chart(macbeth_rgb, original_rgb, new_rgb, output_filename)
                 for g in range(100):
                     image[xlocation + i, ylocation + g] = new_rgb[colorindex]
 
-    img = Image.fromarray(image, 'RGB')
-    img.save(str(output_filename) + 'Generated Macbeth Chart.png')
+    im_bgr = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+    cv2.imwrite(f'{output_filename} Generated Macbeth Chart.png', im_bgr)
 

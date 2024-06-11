@@ -112,7 +112,7 @@ void GammaOutCorrection::prepare(IPAContext &context,
 		64, 64, 64, 64, 128, 128, 128, 128, 256,
 		256, 256, 512, 512, 512, 512, 512, 0
 	};
-	auto gamma_y = params->others.goc_config.gamma_y;
+	__u16 *gamma_y = params->others.goc_config.gamma_y;
 
 	if (!frameContext.goc.update)
 		return;

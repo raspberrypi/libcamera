@@ -4,12 +4,14 @@
 #
 # camera tuning tool for CCM (colour correction matrix)
 
-from ctt_image_load import *
-from ctt_awb import get_alsc_patches
-import colors
-from scipy.optimize import minimize
-from ctt_visualise import visualise_macbeth_chart
 import numpy as np
+from scipy.optimize import minimize
+
+from . import ctt_colors as colors
+from .image import Image
+from .ctt_awb import get_alsc_patches
+from .utils import visualise_macbeth_chart
+
 """
 takes 8-bit macbeth chart values, degammas and returns 16 bit
 """

@@ -4,10 +4,12 @@
 #
 # camera tuning tool for AWB
 
-from ctt_image_load import *
 import matplotlib.pyplot as plt
 from bisect import bisect_left
 from scipy.optimize import fmin
+import numpy as np
+
+from .image import Image
 
 
 """

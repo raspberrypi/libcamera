@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 #
 # Copyright (C) 2019, Raspberry Pi Ltd
+# Copyright (C) 2024, Ideas on Board Oy
 #
 # Locate and extract Macbeth charts from images
 # (Copied from: ctt_macbeth_locator.py)
@@ -11,6 +12,10 @@ import cv2
 import os
 from pathlib import Path
 import numpy as np
+import warnings
+from sklearn import cluster as cluster
+
+from .ctt_ransac import get_square_verts, get_square_centres
 
 from libtuning.image import Image
 

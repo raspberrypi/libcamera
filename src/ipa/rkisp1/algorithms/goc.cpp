@@ -108,7 +108,7 @@ void GammaOutCorrection::prepare(IPAContext &context,
 	 * The logarithmic segments as specified in the reference.
 	 * Plus an additional 0 to make the loop easier
 	 */
-	std::array<unsigned, RKISP1_CIF_ISP_GAMMA_OUT_MAX_SAMPLES_V10> segments = {
+	static constexpr std::array<unsigned int, RKISP1_CIF_ISP_GAMMA_OUT_MAX_SAMPLES_V10> segments = {
 		64, 64, 64, 64, 128, 128, 128, 128, 256,
 		256, 256, 512, 512, 512, 512, 512, 0
 	};

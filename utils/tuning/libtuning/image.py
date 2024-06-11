@@ -24,6 +24,7 @@ class Image:
         self.lsc_only = False
         self.color = -1
         self.lux = -1
+        self.macbeth = None
 
         try:
             self._load_metadata_exif()

@@ -17,7 +17,7 @@ import logging
 
 import libtuning as lt
 from libtuning.image import Image
-from libtuning.macbeth import locate_macbeth
+from .macbeth import locate_macbeth
 
 logger = logging.getLogger(__name__)
 
@@ -127,7 +127,7 @@ def load_images(input_dir: str, config: dict, load_nonlsc: bool, load_lsc: bool)
             continue
 
         # Handle macbeth
-        macbeth = locate_macbeth(config)
+        macbeth = locate_macbeth(image, config)
         if macbeth is None:
             continue
 

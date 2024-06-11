@@ -17,10 +17,13 @@ import logging
 from sklearn import cluster as cluster
 
 from .ctt_ransac import get_square_verts, get_square_centres
-
-from libtuning.image import Image
+from .image import Image
 
 logger = logging.getLogger(__name__)
+
+
+class MacbethError(Exception):
+    pass
 
 
 # Reshape image to fixed width without distorting returns image and scale
@@ -377,7 +380,9 @@ def get_macbeth_chart(img, ref_data):
 
     # Catch macbeth errors and continue with code
     except MacbethError as error:
-        logger.warning(error)
+        # \todo: This happens so many times in a normal run, that it shadows
+        # all the relevant output
+        # logger.warning(error)
         return (0, None, None, False)
 
 
@@ -526,5 +531,7 @@ def locate_macbeth(image: Image, config: dict):
     if not image.get_patches(mac_cen_coords):
         logger.warning(f'Macbeth patches have saturated in {image.path.name}')
         return None
+
+    image.macbeth = macbeth
 
     return macbeth

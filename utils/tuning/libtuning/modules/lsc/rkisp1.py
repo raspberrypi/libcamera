@@ -80,7 +80,8 @@ class LSCRkISP1(LSC):
             tables = []
             for lis in [list_cr, list_cgr, list_cgb, list_cb]:
                 table = np.mean(lis[indices], axis=0)
-                table = output_map_func((1, 3.999), (1024, 4095), table)
+                table = output_map_func((1, 4), (1024, 4096), table)
+                table = np.clip(table, 1024, 4095)
                 table = np.round(table).astype('int32').tolist()
                 tables.append(table)
 

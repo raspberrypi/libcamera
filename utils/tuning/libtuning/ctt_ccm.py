@@ -62,9 +62,8 @@ FInds colour correction matrices for list of images
 """
 
 
-def ccm(Cam, cal_cr_list, cal_cb_list):
+def ccm(imgs, cal_cr_list, cal_cb_list):
     global matrix_selection_types, typenum
-    imgs = Cam.imgs
     """
     standard macbeth chart colour values
     """

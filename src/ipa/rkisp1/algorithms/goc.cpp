@@ -29,15 +29,16 @@ namespace ipa::rkisp1::algorithms {
  * \class GammaOutCorrection
  * \brief RkISP1 Gamma out correction
  *
- * This algorithm implements the gamma out curve for the RkISP1.
- * It defaults to a gamma value of 2.2
+ * This algorithm implements the gamma out curve for the RkISP1. It defaults to
+ * a gamma value of 2.2.
+ *
  * As gamma is internally represented as a piecewise linear function with only
  * 17 knots, the difference between gamma=2.2 and sRGB gamma is minimal.
  * Therefore sRGB gamma was not implemented as special case.
  *
  * Useful links:
- * https://www.cambridgeincolour.com/tutorials/gamma-correction.htm
- * https://en.wikipedia.org/wiki/SRGB
+ * - https://www.cambridgeincolour.com/tutorials/gamma-correction.htm
+ * - https://en.wikipedia.org/wiki/SRGB
  */
 
 LOG_DEFINE_CATEGORY(RkISP1Gamma)

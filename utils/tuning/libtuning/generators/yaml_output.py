@@ -107,6 +107,9 @@ class YamlOutput(Generator):
         ]
 
         for module in output_order:
+            if module not in output_dict:
+                continue
+
             out_lines.append(f'  - {module.out_name}:')
 
             if len(output_dict[module]) == 0:

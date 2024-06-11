@@ -200,8 +200,8 @@ class Tuner(object):
         for module in self.modules:
             out = module.process(self.config, images, self.output)
             if out is None:
-                logger.error(f'Module {module.hr_name} failed to process...')
-                break
+                logger.warning(f'Module {module.hr_name} failed to process...')
+                continue
             self.output[module] = out
 
         self.generator.write(args.output, self.output, self.output_order)

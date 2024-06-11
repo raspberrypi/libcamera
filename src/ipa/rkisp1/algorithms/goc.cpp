@@ -48,8 +48,7 @@ const float kDefaultGamma = 2.2f;
 /**
  * \copydoc libcamera::ipa::Algorithm::init
  */
-int GammaOutCorrection::init([[maybe_unused]] IPAContext &context,
-			     [[maybe_unused]] const YamlObject &tuningData)
+int GammaOutCorrection::init(IPAContext &context, const YamlObject &tuningData)
 {
 	if (context.hw->numGammaOutSamples !=
 	    RKISP1_CIF_ISP_GAMMA_OUT_MAX_SAMPLES_V10) {
@@ -81,8 +80,7 @@ int GammaOutCorrection::configure(IPAContext &context,
 /**
  * \copydoc libcamera::ipa::Algorithm::queueRequest
  */
-void GammaOutCorrection::queueRequest([[maybe_unused]] IPAContext &context,
-				      [[maybe_unused]] const uint32_t frame,
+void GammaOutCorrection::queueRequest(IPAContext &context, const uint32_t frame,
 				      IPAFrameContext &frameContext,
 				      const ControlList &controls)
 {
@@ -102,9 +100,9 @@ void GammaOutCorrection::queueRequest([[maybe_unused]] IPAContext &context,
 /**
  * \copydoc libcamera::ipa::Algorithm::prepare
  */
-void GammaOutCorrection::prepare([[maybe_unused]] IPAContext &context,
+void GammaOutCorrection::prepare(IPAContext &context,
 				 [[maybe_unused]] const uint32_t frame,
-				 [[maybe_unused]] IPAFrameContext &frameContext,
+				 IPAFrameContext &frameContext,
 				 rkisp1_params_cfg *params)
 {
 	ASSERT(context.hw->numGammaOutSamples ==

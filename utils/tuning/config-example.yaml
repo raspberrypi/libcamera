@@ -1,0 +1,12 @@
+general:
+  disable: []
+  plot: []
+  alsc:
+    do_alsc_colour: 1
+    luminance_strength: 0.5
+  awb:
+    greyworld: 0
+  macbeth:
+    small: 1
+    show: 0
+#  blacklevel: 32

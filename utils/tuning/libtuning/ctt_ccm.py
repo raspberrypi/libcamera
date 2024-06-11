@@ -249,7 +249,7 @@ def ccm(Cam, cal_cr_list, cal_cb_list):
         logger.info(f'delta E optimized: average: {after_average:.2f}  max:{new_worst_delta_e:.2f}')
         logger.info(f'delta E old:       average: {before_average:.2f}  max:{old_worst_delta_e:.2f}')
 
-        visualise_macbeth_chart(m_rgb, optimised_ccm_rgb, after_gamma_rgb, str(Img.col) + str(matrix_selection_types[typenum]))
+        visualise_macbeth_chart(m_rgb, optimised_ccm_rgb, after_gamma_rgb, str(Img.color) + str(matrix_selection_types[typenum]))
         '''
         The program will also save some visualisations of improvements.
         Very pretty to look at. Top rectangle is ideal, Left square is
@@ -260,10 +260,10 @@ def ccm(Cam, cal_cr_list, cal_cb_list):
         if a ccm has already been calculated for that temperature then don't
         overwrite but save both. They will then be averaged later on
         """  # Now going to use optimised color matrix, optimised_ccm
-        if Img.col in ccm_tab.keys():
-            ccm_tab[Img.col].append(optimised_ccm)
+        if Img.color in ccm_tab.keys():
+            ccm_tab[Img.color].append(optimised_ccm)
         else:
-            ccm_tab[Img.col] = [optimised_ccm]
+            ccm_tab[Img.color] = [optimised_ccm]
 
     logger.info('Finished processing images')
     """

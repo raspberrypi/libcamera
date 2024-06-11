@@ -107,6 +107,9 @@ class LSCRkISP1(LSC):
 
         output['sets'] = self._do_all_lsc(images)
 
+        if len(output['sets']) == 0:
+            return None
+
         # \todo Validate images from greyscale camera and force grescale mode
         # \todo Debug functionality
 

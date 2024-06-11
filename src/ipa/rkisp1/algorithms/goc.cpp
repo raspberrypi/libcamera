@@ -64,11 +64,7 @@ int GammaOutCorrection::init(IPAContext &context, const YamlObject &tuningData)
 }
 
 /**
- * \brief Configure the Gamma given a configInfo
- * \param[in] context The shared IPA context
- * \param[in] configInfo The IPA configuration data
- *
- * \return 0
+ * \copydoc libcamera::ipa::Algorithm::configure
  */
 int GammaOutCorrection::configure(IPAContext &context,
 				  [[maybe_unused]] const IPACameraSensorInfo &configInfo)

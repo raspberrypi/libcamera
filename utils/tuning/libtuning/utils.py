@@ -43,16 +43,30 @@ def _list_image_files(directory):
 
 
 def _parse_image_filename(fn: Path):
-    result = re.search(r'^(alsc_)?(\d+)[kK]_(\d+)?[lLuU]?.\w{3,4}$', fn.name)
-    if result is None:
-        logger.error(f'The file name of {fn.name} is incorrectly formatted')
-        return None, None, None
+    lsc_only = False
+    color_temperature = None
+    lux = None
 
-    color = int(result.group(2))
-    lsc_only = result.group(1) is not None
-    lux = None if lsc_only else int(result.group(3))
+    parts = fn.stem.split('_')
+    for part in parts:
+        if part == 'alsc':
+            lsc_only = True
+            continue
+        r = re.match(r'(\d+)[kK]', part)
+        if r:
+            color_temperature = int(r.group(1))
+            continue
+        r = re.match(r'(\d+)[lLuU]', part)
+        if r:
+            lux = int(r.group(1))
 
-    return color, lux, lsc_only
+    if color_temperature is None:
+        logger.error(f'The file name of "{fn.name}" does not contain a color temperature')
+
+    if lux is None and lsc_only is False:
+        logger.error(f'The file name of "{fn.name}" must either contain alsc or a lux level')
+
+    return color_temperature, lux, lsc_only
 
 
 # \todo Implement this from check_imgs() in ctt.py

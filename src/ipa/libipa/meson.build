@@ -25,3 +25,7 @@ libipa_includes = include_directories('..')
 libipa = static_library('ipa', [libipa_sources, libipa_headers],
                         include_directories : ipa_includes,
                         dependencies : libcamera_private)
+
+libipa_dep = declare_dependency(sources : libipa_headers,
+                                include_directories : libipa_includes,
+                                link_with : libipa)

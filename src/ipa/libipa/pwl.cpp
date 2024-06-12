@@ -459,4 +459,39 @@ std::string Pwl::toString() const
 
 } /* namespace ipa */
 
+#ifndef __DOXYGEN__
+/*
+ * The YAML data shall be a list of numerical values with an even number of
+ * elements. They are parsed in pairs into x and y points in the piecewise
+ * linear function, and added in order. x must be monotonically increasing.
+ */
+template<>
+std::optional<ipa::Pwl>
+YamlObject::Getter<ipa::Pwl>::get(const YamlObject &obj) const
+{
+	if (!obj.size() || obj.size() % 2)
+		return std::nullopt;
+
+	ipa::Pwl pwl;
+
+	const auto &list = obj.asList();
+
+	for (auto it = list.begin(); it != list.end(); it++) {
+		auto x = it->get<double>();
+		if (!x)
+			return std::nullopt;
+		auto y = (++it)->get<double>();
+		if (!y)
+			return std::nullopt;
+
+		pwl.append(*x, *y);
+	}
+
+	if (pwl.size() != obj.size() / 2)
+		return std::nullopt;
+
+	return pwl;
+}
+#endif /* __DOXYGEN__ */
+
 } /* namespace libcamera */

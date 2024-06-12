@@ -148,6 +148,23 @@ namespace ipa {
  * \return True if the two vectors are not equal, false otherwise
  */
 
+#ifndef __DOXYGEN__
+bool vectorValidateYaml(const YamlObject &obj, unsigned int size)
+{
+	if (!obj.isList())
+		return false;
+
+	if (obj.size() != size) {
+		LOG(Vector, Error)
+			<< "Wrong number of values in YAML vector: expected "
+			<< size << ", got " << obj.size();
+		return false;
+	}
+
+	return true;
+}
+#endif /* __DOXYGEN__ */
+
 } /* namespace ipa */
 
 } /* namespace libcamera */

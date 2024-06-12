@@ -180,6 +180,10 @@ bool operator!=(const Vector<T, Rows> &lhs, const Vector<T, Rows> &rhs)
 	return !(lhs == rhs);
 }
 
+#ifndef __DOXYGEN__
+bool vectorValidateYaml(const YamlObject &obj, unsigned int size);
+#endif /* __DOXYGEN__ */
+
 } /* namespace ipa */
 
 #ifndef __DOXYGEN__
@@ -195,6 +199,27 @@ std::ostream &operator<<(std::ostream &out, const ipa::Vector<T, Rows> &v)
 
 	return out;
 }
+
+template<typename T, unsigned int Rows>
+struct YamlObject::Getter<ipa::Vector<T, Rows>> {
+	std::optional<ipa::Vector<T, Rows>> get(const YamlObject &obj) const
+	{
+		if (!ipa::vectorValidateYaml(obj, Rows))
+			return std::nullopt;
+
+		ipa::Vector<T, Rows> vector;
+
+		unsigned int i = 0;
+		for (const YamlObject &entry : obj.asList()) {
+			const auto value = entry.get<T>();
+			if (!value)
+				return std::nullopt;
+			vector[i++] = *value;
+		}
+
+		return vector;
+	}
+};
 #endif /* __DOXYGEN__ */
 
 } /* namespace libcamera */

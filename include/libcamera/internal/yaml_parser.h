@@ -161,22 +161,7 @@ public:
 
 	std::size_t size() const;
 
-#ifndef __DOXYGEN__
-	template<typename T,
-		 std::enable_if_t<
-			 std::is_same_v<bool, T> ||
-			 std::is_same_v<double, T> ||
-			 std::is_same_v<int8_t, T> ||
-			 std::is_same_v<uint8_t, T> ||
-			 std::is_same_v<int16_t, T> ||
-			 std::is_same_v<uint16_t, T> ||
-			 std::is_same_v<int32_t, T> ||
-			 std::is_same_v<uint32_t, T> ||
-			 std::is_same_v<std::string, T> ||
-			 std::is_same_v<Size, T>> * = nullptr>
-#else
 	template<typename T>
-#endif
 	std::optional<T> get() const;
 
 	template<typename T, typename U>

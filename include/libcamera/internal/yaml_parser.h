@@ -179,10 +179,10 @@ public:
 #endif
 	std::optional<T> get() const;
 
-	template<typename T>
-	T get(const T &defaultValue) const
+	template<typename T, typename U>
+	T get(U &&defaultValue) const
 	{
-		return get<T>().value_or(defaultValue);
+		return get<T>().value_or(std::forward<U>(defaultValue));
 	}
 
 #ifndef __DOXYGEN__

@@ -104,7 +104,7 @@ std::size_t YamlObject::size() const
  */
 
 /**
- * \fn template<typename T> YamlObject::get<T>(const T &defaultValue) const
+ * \fn template<typename T, typename U> YamlObject::get<T>(U &&defaultValue) const
  * \brief Parse the YamlObject as a \a T value
  * \param[in] defaultValue The default value when failing to parse
  *

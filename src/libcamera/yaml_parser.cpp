@@ -118,14 +118,15 @@ std::size_t YamlObject::size() const
 #ifndef __DOXYGEN__
 
 template<>
-std::optional<bool> YamlObject::get() const
+std::optional<bool>
+YamlObject::Getter<bool>::get(const YamlObject &obj) const
 {
-	if (type_ != Type::Value)
+	if (obj.type_ != Type::Value)
 		return std::nullopt;
 
-	if (value_ == "true")
+	if (obj.value_ == "true")
 		return true;
-	else if (value_ == "false")
+	else if (obj.value_ == "false")
 		return false;
 
 	return std::nullopt;
@@ -182,14 +183,15 @@ bool parseUnsignedInteger(const std::string &str, unsigned long max,
 } /* namespace */
 
 template<>
-std::optional<int8_t> YamlObject::get() const
+std::optional<int8_t>
+YamlObject::Getter<int8_t>::get(const YamlObject &obj) const
 {
-	if (type_ != Type::Value)
+	if (obj.type_ != Type::Value)
 		return std::nullopt;
 
 	long value;
 
-	if (!parseSignedInteger(value_, std::numeric_limits<int8_t>::min(),
+	if (!parseSignedInteger(obj.value_, std::numeric_limits<int8_t>::min(),
 				std::numeric_limits<int8_t>::max(), &value))
 		return std::nullopt;
 
@@ -197,14 +199,15 @@ std::optional<int8_t> YamlObject::get() const
 }
 
 template<>
-std::optional<uint8_t> YamlObject::get() const
+std::optional<uint8_t>
+YamlObject::Getter<uint8_t>::get(const YamlObject &obj) const
 {
-	if (type_ != Type::Value)
+	if (obj.type_ != Type::Value)
 		return std::nullopt;
 
 	unsigned long value;
 
-	if (!parseUnsignedInteger(value_, std::numeric_limits<uint8_t>::max(),
+	if (!parseUnsignedInteger(obj.value_, std::numeric_limits<uint8_t>::max(),
 				  &value))
 		return std::nullopt;
 
@@ -212,14 +215,15 @@ std::optional<uint8_t> YamlObject::get() const
 }
 
 template<>
-std::optional<int16_t> YamlObject::get() const
+std::optional<int16_t>
+YamlObject::Getter<int16_t>::get(const YamlObject &obj) const
 {
-	if (type_ != Type::Value)
+	if (obj.type_ != Type::Value)
 		return std::nullopt;
 
 	long value;
 
-	if (!parseSignedInteger(value_, std::numeric_limits<int16_t>::min(),
+	if (!parseSignedInteger(obj.value_, std::numeric_limits<int16_t>::min(),
 				std::numeric_limits<int16_t>::max(), &value))
 		return std::nullopt;
 
@@ -227,14 +231,15 @@ std::optional<int16_t> YamlObject::get() const
 }
 
 template<>
-std::optional<uint16_t> YamlObject::get() const
+std::optional<uint16_t>
+YamlObject::Getter<uint16_t>::get(const YamlObject &obj) const
 {
-	if (type_ != Type::Value)
+	if (obj.type_ != Type::Value)
 		return std::nullopt;
 
 	unsigned long value;
 
-	if (!parseUnsignedInteger(value_, std::numeric_limits<uint16_t>::max(),
+	if (!parseUnsignedInteger(obj.value_, std::numeric_limits<uint16_t>::max(),
 				  &value))
 		return std::nullopt;
 
@@ -242,14 +247,15 @@ std::optional<uint16_t> YamlObject::get() const
 }
 
 template<>
-std::optional<int32_t> YamlObject::get() const
+std::optional<int32_t>
+YamlObject::Getter<int32_t>::get(const YamlObject &obj) const
 {
-	if (type_ != Type::Value)
+	if (obj.type_ != Type::Value)
 		return std::nullopt;
 
 	long value;
 
-	if (!parseSignedInteger(value_, std::numeric_limits<int32_t>::min(),
+	if (!parseSignedInteger(obj.value_, std::numeric_limits<int32_t>::min(),
 				std::numeric_limits<int32_t>::max(), &value))
 		return std::nullopt;
 
@@ -257,14 +263,15 @@ std::optional<int32_t> YamlObject::get() const
 }
 
 template<>
-std::optional<uint32_t> YamlObject::get() const
+std::optional<uint32_t>
+YamlObject::Getter<uint32_t>::get(const YamlObject &obj) const
 {
-	if (type_ != Type::Value)
+	if (obj.type_ != Type::Value)
 		return std::nullopt;
 
 	unsigned long value;
 
-	if (!parseUnsignedInteger(value_, std::numeric_limits<uint32_t>::max(),
+	if (!parseUnsignedInteger(obj.value_, std::numeric_limits<uint32_t>::max(),
 				  &value))
 		return std::nullopt;
 
@@ -272,18 +279,19 @@ std::optional<uint32_t> YamlObject::get() const
 }
 
 template<>
-std::optional<double> YamlObject::get() const
+std::optional<double>
+YamlObject::Getter<double>::get(const YamlObject &obj) const
 {
-	if (type_ != Type::Value)
+	if (obj.type_ != Type::Value)
 		return std::nullopt;
 
-	if (value_ == "")
+	if (obj.value_ == "")
 		return std::nullopt;
 
 	char *end;
 
 	errno = 0;
-	double value = utils::strtod(value_.c_str(), &end);
+	double value = utils::strtod(obj.value_.c_str(), &end);
 
 	if ('\0' != *end || errno == ERANGE)
 		return std::nullopt;
@@ -292,28 +300,30 @@ std::optional<double> YamlObject::get() const
 }
 
 template<>
-std::optional<std::string> YamlObject::get() const
+std::optional<std::string>
+YamlObject::Getter<std::string>::get(const YamlObject &obj) const
 {
-	if (type_ != Type::Value)
+	if (obj.type_ != Type::Value)
 		return std::nullopt;
 
-	return value_;
+	return obj.value_;
 }
 
 template<>
-std::optional<Size> YamlObject::get() const
+std::optional<Size>
+YamlObject::Getter<Size>::get(const YamlObject &obj) const
 {
-	if (type_ != Type::List)
+	if (obj.type_ != Type::List)
 		return std::nullopt;
 
-	if (list_.size() != 2)
+	if (obj.list_.size() != 2)
 		return std::nullopt;
 
-	auto width = list_[0].value->get<uint32_t>();
+	auto width = obj.list_[0].value->get<uint32_t>();
 	if (!width)
 		return std::nullopt;
 
-	auto height = list_[1].value->get<uint32_t>();
+	auto height = obj.list_[1].value->get<uint32_t>();
 	if (!height)
 		return std::nullopt;
 

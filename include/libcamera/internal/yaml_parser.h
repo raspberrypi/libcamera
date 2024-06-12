@@ -162,7 +162,10 @@ public:
 	std::size_t size() const;
 
 	template<typename T>
-	std::optional<T> get() const;
+	std::optional<T> get() const
+	{
+		return Getter<T>{}.get(*this);
+	}
 
 	template<typename T, typename U>
 	T get(U &&defaultValue) const
@@ -199,12 +202,19 @@ public:
 private:
 	LIBCAMERA_DISABLE_COPY_AND_MOVE(YamlObject)
 
+	template<typename T>
+	friend struct Getter;
 	friend class YamlParserContext;
 
 	enum class Type {
 		Dictionary,
 		List,
 		Value,
+	};
+
+	template<typename T>
+	struct Getter {
+		std::optional<T> get(const YamlObject &obj) const;
 	};
 
 	Type type_;

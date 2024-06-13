@@ -54,7 +54,7 @@ int convertContrastOrSaturation(const float v)
 /**
  * \copydoc libcamera::ipa::Algorithm::init
  */
-int ColorProcessing::init([[maybe_unused]] IPAContext &context,
+int ColorProcessing::init(IPAContext &context,
 			  [[maybe_unused]] const YamlObject &tuningData)
 {
 	auto &cmap = context.ctrlMap;
@@ -69,7 +69,7 @@ int ColorProcessing::init([[maybe_unused]] IPAContext &context,
 /**
  * \copydoc libcamera::ipa::Algorithm::configure
  */
-int ColorProcessing::configure([[maybe_unused]] IPAContext &context,
+int ColorProcessing::configure(IPAContext &context,
 			       [[maybe_unused]] const IPACameraSensorInfo &configInfo)
 {
 	auto &cproc = context.activeState.cproc;
@@ -85,7 +85,7 @@ int ColorProcessing::configure([[maybe_unused]] IPAContext &context,
  * \copydoc libcamera::ipa::Algorithm::queueRequest
  */
 void ColorProcessing::queueRequest(IPAContext &context,
-				   [[maybe_unused]] const uint32_t frame,
+				   const uint32_t frame,
 				   IPAFrameContext &frameContext,
 				   const ControlList &controls)
 {

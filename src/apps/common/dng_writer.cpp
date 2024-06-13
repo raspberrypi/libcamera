@@ -136,6 +136,14 @@ void packScanlineSBGGR8(void *output, const void *input, unsigned int width)
 	std::copy(in, in + width, out);
 }
 
+void packScanlineSBGGR16(void *output, const void *input, unsigned int width)
+{
+	const uint16_t *in = static_cast<const uint16_t *>(input);
+	uint16_t *out = static_cast<uint16_t *>(output);
+
+	std::copy(in, in + width, out);
+}
+
 void packScanlineSBGGR10P(void *output, const void *input, unsigned int width)
 {
 	const uint8_t *in = static_cast<const uint8_t *>(input);
@@ -307,6 +315,30 @@ const std::map<PixelFormat, FormatInfo> formatInfo = {
 		.bitsPerSample = 8,
 		.pattern = { CFAPatternRed, CFAPatternGreen, CFAPatternGreen, CFAPatternBlue },
 		.packScanline = packScanlineSBGGR8,
+		.thumbScanline = thumbScanlineSBGGRxxP,
+	} },
+	{ formats::SBGGR16, {
+		.bitsPerSample = 16,
+		.pattern = { CFAPatternBlue, CFAPatternGreen, CFAPatternGreen, CFAPatternRed },
+		.packScanline = packScanlineSBGGR16,
+		.thumbScanline = thumbScanlineSBGGRxxP,
+	} },
+	{ formats::SGBRG16, {
+		.bitsPerSample = 16,
+		.pattern = { CFAPatternGreen, CFAPatternBlue, CFAPatternRed, CFAPatternGreen },
+		.packScanline = packScanlineSBGGR16,
+		.thumbScanline = thumbScanlineSBGGRxxP,
+	} },
+	{ formats::SGRBG16, {
+		.bitsPerSample = 16,
+		.pattern = { CFAPatternGreen, CFAPatternRed, CFAPatternBlue, CFAPatternGreen },
+		.packScanline = packScanlineSBGGR16,
+		.thumbScanline = thumbScanlineSBGGRxxP,
+	} },
+	{ formats::SRGGB16, {
+		.bitsPerSample = 16,
+		.pattern = { CFAPatternRed, CFAPatternGreen, CFAPatternGreen, CFAPatternBlue },
+		.packScanline = packScanlineSBGGR16,
 		.thumbScanline = thumbScanlineSBGGRxxP,
 	} },
 	{ formats::SBGGR10_CSI2P, {

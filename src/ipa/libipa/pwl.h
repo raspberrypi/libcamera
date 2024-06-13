@@ -49,8 +49,6 @@ public:
 	Pwl(const std::vector<Point> &points);
 	Pwl(std::vector<Point> &&points);
 
-	int readYaml(const libcamera::YamlObject &params);
-
 	void append(double x, double y, double eps = 1e-6);
 
 	bool empty() const { return points_.empty(); }

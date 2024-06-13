@@ -126,44 +126,6 @@ Pwl::Pwl(std::vector<Point> &&points)
 }
 
 /**
- * \brief Populate the piecewise linear function from yaml data
- * \param[in] params Yaml data to populate the piecewise linear function with
- *
- * Any existing points in the piecewise linear function *will* be overwritten.
- *
- * The yaml data is expected to be a list with an even number of numerical
- * elements. These will be parsed in pairs into x and y points in the piecewise
- * linear function, and added in order. x must be monotonically increasing.
- *
- * \return 0 on success, negative error code otherwise
- */
-int Pwl::readYaml(const libcamera::YamlObject &params)
-{
-	if (!params.size() || params.size() % 2)
-		return -EINVAL;
-
-	const auto &list = params.asList();
-
-	points_.clear();
-
-	for (auto it = list.begin(); it != list.end(); it++) {
-		auto x = it->get<double>();
-		if (!x)
-			return -EINVAL;
-		if (it != list.begin() && *x <= points_.back().x())
-			return -EINVAL;
-
-		auto y = (++it)->get<double>();
-		if (!y)
-			return -EINVAL;
-
-		points_.push_back(Point({ *x, *y }));
-	}
-
-	return 0;
-}
-
-/**
  * \brief Append a point to the end of the piecewise linear function
  * \param[in] x x-coordinate of the point to add to the piecewise linear function
  * \param[in] y y-coordinate of the point to add to the piecewise linear function

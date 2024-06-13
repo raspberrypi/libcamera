@@ -51,7 +51,7 @@ public:
 
 	void append(double x, double y, double eps = 1e-6);
 
-	bool empty() const;
+	bool empty() const { return points_.empty(); }
 	Interval domain() const;
 	Interval range() const;
 

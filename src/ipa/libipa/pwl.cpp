@@ -183,6 +183,12 @@ void Pwl::prepend(double x, double y, const double eps)
 }
 
 /**
+ * \fn Pwl::empty() const
+ * \brief Check if the piecewise linear function is empty
+ * \return True if there are no points in the function, false otherwise
+ */
+
+/**
  * \brief Get the domain of the piecewise linear function
  * \return An interval representing the domain
  */
@@ -201,15 +207,6 @@ Pwl::Interval Pwl::range() const
 	for (auto &p : points_)
 		lo = std::min(lo, p.y()), hi = std::max(hi, p.y());
 	return Interval(lo, hi);
-}
-
-/**
- * \brief Check if the piecewise linear function is empty
- * \return True if there are no points in the function, false otherwise
- */
-bool Pwl::empty() const
-{
-	return points_.empty();
 }
 
 /**

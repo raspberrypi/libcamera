@@ -44,12 +44,7 @@ int convertBrightness(const float v)
 	return std::clamp<int>(std::lround(v * 128), -128, 127);
 }
 
-int convertContrast(const float v)
-{
-	return std::clamp<int>(std::lround(v * 128), 0, 255);
-}
-
-int convertSaturation(const float v)
+int convertContrastOrSaturation(const float v)
 {
 	return std::clamp<int>(std::lround(v * 128), 0, 255);
 }
@@ -80,8 +75,8 @@ int ColorProcessing::configure([[maybe_unused]] IPAContext &context,
 	auto &cproc = context.activeState.cproc;
 
 	cproc.brightness = convertBrightness(kDefaultBrightness);
-	cproc.contrast = convertContrast(kDefaultContrast);
-	cproc.saturation = convertSaturation(kDefaultSaturation);
+	cproc.contrast = convertContrastOrSaturation(kDefaultContrast);
+	cproc.saturation = convertContrastOrSaturation(kDefaultSaturation);
 
 	return 0;
 }
@@ -113,7 +108,7 @@ void ColorProcessing::queueRequest(IPAContext &context,
 
 	const auto &contrast = controls.get(controls::Contrast);
 	if (contrast) {
-		int value = convertContrast(*contrast);
+		int value = convertContrastOrSaturation(*contrast);
 		if (cproc.contrast != value) {
 			cproc.contrast = value;
 			update = true;
@@ -124,7 +119,7 @@ void ColorProcessing::queueRequest(IPAContext &context,
 
 	const auto saturation = controls.get(controls::Saturation);
 	if (saturation) {
-		int value = convertSaturation(*saturation);
+		int value = convertContrastOrSaturation(*saturation);
 		if (cproc.saturation != value) {
 			cproc.saturation = value;
 			update = true;

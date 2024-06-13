@@ -115,6 +115,17 @@ Pwl::Pwl(const std::vector<Point> &points)
 }
 
 /**
+ * \copydoc Pwl::Pwl(const std::vector<Point> &points)
+ *
+ * The contents of the \a points vector is moved to the newly constructed Pwl
+ * instance.
+ */
+Pwl::Pwl(std::vector<Point> &&points)
+	: points_(std::move(points))
+{
+}
+
+/**
  * \brief Populate the piecewise linear function from yaml data
  * \param[in] params Yaml data to populate the piecewise linear function with
  *

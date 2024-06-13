@@ -33,24 +33,28 @@ namespace ipa::rkisp1::algorithms {
 
 LOG_DEFINE_CATEGORY(RkISP1CProc)
 
+namespace {
+
 constexpr float kDefaultBrightness = 0.0f;
 constexpr float kDefaultContrast = 1.0f;
 constexpr float kDefaultSaturation = 1.0f;
 
-static int convertBrightness(const float v)
+int convertBrightness(const float v)
 {
 	return std::clamp<int>(std::lround(v * 128), -128, 127);
 }
 
-static int convertContrast(const float v)
+int convertContrast(const float v)
 {
 	return std::clamp<int>(std::lround(v * 128), 0, 255);
 }
 
-static int convertSaturation(const float v)
+int convertSaturation(const float v)
 {
 	return std::clamp<int>(std::lround(v * 128), 0, 255);
 }
+
+} /* namespace */
 
 /**
  * \copydoc libcamera::ipa::Algorithm::init

@@ -41,19 +41,6 @@ namespace ipa {
  */
 
 /**
- * \fn Vector::readYaml
- * \brief Populate the vector with yaml data
- * \param yaml Yaml data to populate the vector with
- *
- * Any existing data in the vector will be overwritten. The size of the data
- * read from \a yaml must be equal to the dimension size Rows of the vector.
- *
- * The yaml data is expected to be a list with elements of type T.
- *
- * \return 0 on success, negative error code otherwise
- */
-
-/**
  * \fn T Vector::operator[](size_t i) const
  * \brief Index to an element in the vector
  * \param i Index of element to retrieve

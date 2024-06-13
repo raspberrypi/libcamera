@@ -39,29 +39,6 @@ public:
 			data_[i] = data[i];
 	}
 
-	int readYaml(const libcamera::YamlObject &yaml)
-	{
-		if (yaml.size() != Rows) {
-			LOG(Vector, Error)
-				<< "Wrong number of values in vector: expected "
-				<< Rows << ", got " << yaml.size();
-			return -EINVAL;
-		}
-
-		unsigned int i = 0;
-		for (const auto &x : yaml.asList()) {
-			auto value = x.get<T>();
-			if (!value) {
-				LOG(Vector, Error) << "Failed to read vector value";
-				return -EINVAL;
-			}
-
-			data_[i++] = *value;
-		}
-
-		return 0;
-	}
-
 	const T &operator[](size_t i) const
 	{
 		ASSERT(i < data_.size());

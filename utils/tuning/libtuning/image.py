@@ -79,7 +79,7 @@ class Image:
         # is R, then G, then G, then B.
         bayer_case = {
             '0 1 1 2': (lt.Color.R, lt.Color.GR, lt.Color.GB, lt.Color.B),
-            '1 2 0 1': (lt.Color.GB, lt.Color.R, lt.Color.B, lt.Color.GR),
+            '1 2 0 1': (lt.Color.GB, lt.Color.B, lt.Color.R, lt.Color.GR),
             '2 1 1 0': (lt.Color.B, lt.Color.GB, lt.Color.GR, lt.Color.R),
             '1 0 2 1': (lt.Color.GR, lt.Color.R, lt.Color.B, lt.Color.GB)
         }

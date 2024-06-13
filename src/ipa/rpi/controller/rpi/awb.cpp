@@ -49,7 +49,8 @@ int AwbPrior::read(const libcamera::YamlObject &params)
 		return -EINVAL;
 	lux = *value;
 
-	return prior.readYaml(params["prior"]);
+	prior = params["prior"].get<ipa::Pwl>(ipa::Pwl{});
+	return prior.empty() ? -EINVAL : 0;
 }
 
 static int readCtCurve(ipa::Pwl &ctR, ipa::Pwl &ctB, const libcamera::YamlObject &params)

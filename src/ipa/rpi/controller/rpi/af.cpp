@@ -139,7 +139,7 @@ int Af::CfgParams::read(const libcamera::YamlObject &params)
 	readNumber<uint32_t>(skipFrames, params, "skip_frames");
 
 	if (params.contains("map"))
-		map.readYaml(params["map"]);
+		map = params["map"].get<ipa::Pwl>(ipa::Pwl{});
 	else
 		LOG(RPiAf, Warning) << "No map defined";
 

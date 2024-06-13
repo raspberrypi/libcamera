@@ -7,8 +7,9 @@
 
 #include <algorithm>
 #include <assert.h>
-#include <fstream>
 #include <cmath>
+#include <fstream>
+#include <memory>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -97,7 +98,7 @@ private:
 	void populateMetadata(const MdParser::RegisterMap &registers,
 			      Metadata &metadata) const override;
 
-	std::vector<uint8_t> savedInputTensor_;
+	std::unique_ptr<uint8_t[]> savedInputTensor_;
 };
 
 CamHelperImx500::CamHelperImx500()
@@ -219,9 +220,10 @@ void CamHelperImx500::parseInferenceData(libcamera::Span<const uint8_t> buffer,
 		return;
 
 	/* Cache the DNN metadata for fast parsing. */
-	std::vector<uint8_t> cache(buffer.data() + StartLine * bytesPerLine,
-				   buffer.data() + buffer.size());
-	Span<const uint8_t> tensors(cache.data(), cache.size());
+	unsigned int tensorBufferSize = buffer.size() - (StartLine * bytesPerLine);
+	std::unique_ptr<uint8_t[]> cache = std::make_unique<uint8_t[]>(tensorBufferSize);
+	memcpy(cache.get(), buffer.data() + StartLine * bytesPerLine, tensorBufferSize);
+	Span<const uint8_t> tensors(cache.get(), tensorBufferSize);
 
 	std::unordered_map<TensorType, IMX500Tensors> offsets = RPiController::imx500SplitTensors(tensors);
 	auto itIn = offsets.find(TensorType::InputTensor);
@@ -236,7 +238,7 @@ void CamHelperImx500::parseInferenceData(libcamera::Span<const uint8_t> buffer,
 		if (itIn->second.valid) {
 			if (itOut->second.valid) {
 				/* Valid input and output tensor, get the span directly from the current cache. */
-				inputTensor = Span<const uint8_t>(cache.data() + inputTensorOffset,
+				inputTensor = Span<const uint8_t>(cache.get() + inputTensorOffset,
 								  inputTensorSize);
 			} else if (!itOut->second.valid) {
 				/*
@@ -249,11 +251,11 @@ void CamHelperImx500::parseInferenceData(libcamera::Span<const uint8_t> buffer,
 				 * tensor is valid. This way, we ensure that both
 				 * valid input and output tensors are in lock-step.
 				 */
-				savedInputTensor_.resize(inputTensorSize, 0);
-				memcpy(savedInputTensor_.data(), cache.data() + inputTensorOffset,
+				savedInputTensor_ = std::make_unique<uint8_t[]>(inputTensorSize);
+				memcpy(savedInputTensor_.get(), cache.get() + inputTensorOffset,
 				       inputTensorSize);
 			}
-		} else if (itOut->second.valid && savedInputTensor_.size()) {
+		} else if (itOut->second.valid && savedInputTensor_) {
 			/*
 			 * Invalid input tensor with valid output tensor. This is
 			 * likely because the DNN takes longer than a frame time
@@ -262,8 +264,7 @@ void CamHelperImx500::parseInferenceData(libcamera::Span<const uint8_t> buffer,
 			 * In such cases, use the previously saved input tensor
 			 * if possible.
 			 */
-			inputTensor = Span<const uint8_t>(savedInputTensor_.data(),
-							  savedInputTensor_.size());
+			inputTensor = Span<const uint8_t>(savedInputTensor_.get(), inputTensorSize);
 		}
 
 		if (inputTensor.size()) {
@@ -290,14 +291,14 @@ void CamHelperImx500::parseInferenceData(libcamera::Span<const uint8_t> buffer,
 			}
 
 			/* We can now safely clear the saved input tensor. */
-			savedInputTensor_.clear();
+			savedInputTensor_.release();
 		}
 	}
 
 	if (itOut != offsets.end() && itOut->second.valid) {
 		unsigned int outputTensorOffset = itOut->second.offset;
-		Span<const uint8_t> outputTensor(cache.data() + outputTensorOffset,
-						 cache.size() - outputTensorOffset);
+		Span<const uint8_t> outputTensor(cache.get() + outputTensorOffset,
+						 tensorBufferSize - outputTensorOffset);
 
 		IMX500OutputTensorInfo outputTensorInfo;
 		if (!imx500ParseOutputTensor(outputTensorInfo, outputTensor)) {

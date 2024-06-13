@@ -5,6 +5,7 @@
  * imx500_tensor_parser.h - Parser for imx500 tensors
  */
 
+#include <memory>
 #include <stdint.h>
 #include <string>
 #include <unordered_map>
@@ -23,7 +24,7 @@ struct IMX500OutputTensorInfo {
 	uint32_t totalSize;
 	uint32_t numTensors;
 	std::string networkName;
-	std::vector<float> data;
+	std::unique_ptr<float[]> data;
 	std::vector<uint32_t> tensorDataNum;
 };
 
@@ -35,7 +36,7 @@ struct IMX500InputTensorInfo {
 	unsigned int channels;
 	unsigned int size;
 	std::string networkName;
-	std::vector<uint8_t> data;
+	std::unique_ptr<uint8_t[]> data;
 };
 
 struct IMX500Tensors {

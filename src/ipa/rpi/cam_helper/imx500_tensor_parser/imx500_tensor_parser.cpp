@@ -207,7 +207,7 @@ int populateOutputTensorInfo(IMX500OutputTensorInfo &outputTensorInfo,
 		return -1;
 	}
 
-	outputTensorInfo.data.resize(totalOutSize, 0.0f);
+	outputTensorInfo.data = std::make_unique<float[]>(totalOutSize);
 	unsigned int numOutputTensors = outputApParams.size();
 
 	if (!numOutputTensors) {
@@ -256,7 +256,7 @@ int parseOutputTensorBody(IMX500OutputTensorInfo &outputTensorInfo, const uint8_
 			  const std::vector<OutputTensorApParams> &outputApParams,
 			  const DnnHeader &dnnHeader)
 {
-	float *dst = outputTensorInfo.data.data();
+	float *dst = outputTensorInfo.data.get();
 	int ret = 0;
 
 	if (outputTensorInfo.totalSize > (std::numeric_limits<uint32_t>::max() / sizeof(float))) {
@@ -264,7 +264,7 @@ int parseOutputTensorBody(IMX500OutputTensorInfo &outputTensorInfo, const uint8_
 		return -1;
 	}
 
-	std::vector<float> tmpDst(outputTensorInfo.totalSize, 0.0f);
+	std::unique_ptr<float[]> tmpDst = std::make_unique<float[]>(outputTensorInfo.totalSize);
 	std::vector<uint16_t> numLinesVec(outputApParams.size());
 	std::vector<uint32_t> outSizes(outputApParams.size());
 	std::vector<uint32_t> offsets(outputApParams.size());
@@ -454,13 +454,13 @@ int parseOutputTensorBody(IMX500OutputTensorInfo &outputTensorInfo, const uint8_
 					}
 				} else {
 					if (param.bitsPerElement == 8)
-						memcpy(dst + toffset, tmpDst.data() + toffset,
+						memcpy(dst + toffset, tmpDst.get() + toffset,
 						       outputTensorSize * sizeof(float));
 					else if (param.bitsPerElement == 16)
-						memcpy(dst + toffset, tmpDst.data() + toffset,
+						memcpy(dst + toffset, tmpDst.get() + toffset,
 						       (outputTensorSize >> 1) * sizeof(float));
 					else if (param.bitsPerElement == 32)
-						memcpy(dst + toffset, tmpDst.data() + toffset,
+						memcpy(dst + toffset, tmpDst.get() + toffset,
 						       (outputTensorSize >> 2) * sizeof(float));
 					else {
 						LOG(IMX500, Error)
@@ -551,7 +551,7 @@ int parseInputTensorBody(IMX500InputTensorInfo &inputTensorInfo, const uint8_t *
 	unsigned int outSize = inputApParams.width * inputApParams.height * inputApParams.channel;
 	unsigned int outSizePadded = inputApParams.widthStride * inputApParams.heightStride * inputApParams.channel;
 	unsigned int numLines = std::ceil(outSizePadded / (float)dnnHeader.maxLineLen);
-	inputTensorInfo.data.resize(outSize);
+	inputTensorInfo.data = std::make_unique<uint8_t[]>(outSize);
 
 	unsigned int diff = 0, outLineIndex = 0, pixelIndex = 0, heightIndex = 0, size = 0, left = 0;
 	unsigned int wPad = inputApParams.widthStride - inputApParams.width;

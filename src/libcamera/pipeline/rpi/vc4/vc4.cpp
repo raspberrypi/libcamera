@@ -313,7 +313,7 @@ int PipelineHandlerVc4::prepareBuffers(Camera *camera)
 			 * if the application requests a greater number of raw
 			 * buffers, as these will be recycled quicker.
 			 */
-			numBuffers = 12;
+			numBuffers = 16;
 		} else if (stream == &data->isp_[Isp::Output0]) {
 			/* Buffer count for this is handled in the earlier loop above. */
 			numBuffers = minIspBuffers;

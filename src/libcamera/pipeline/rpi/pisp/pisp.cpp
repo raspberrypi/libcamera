@@ -974,7 +974,7 @@ int PipelineHandlerPiSP::prepareBuffers(Camera *camera)
 			 * Embedded data buffers are (currently) for internal use,
 			 * so allocate a reasonably large amount.
 			 */
-			numBuffers = 12;
+			numBuffers = 16;
 		} else if (stream == &data->cfe_[Cfe::Stats] ||
 			   stream == &data->cfe_[Cfe::Config]) {
 			numBuffers = data->config_.numCfeConfigStatsBuffers;

@@ -16,6 +16,8 @@
 
 #include "libcamera/internal/yaml_parser.h"
 
+#include "matrix.h"
+
 namespace libcamera {
 
 LOG_DECLARE_CATEGORY(Vector)
@@ -139,6 +141,21 @@ public:
 private:
 	std::array<T, Rows> data_;
 };
+
+template<typename T, unsigned int Rows, unsigned int Cols>
+Vector<T, Rows> operator*(const Matrix<T, Rows, Cols> &m, const Vector<T, Cols> &v)
+{
+	Vector<T, Rows> result;
+
+	for (unsigned int i = 0; i < Rows; i++) {
+		T sum = 0;
+		for (unsigned int j = 0; j < Cols; j++)
+			sum += m[i][j] * v[j];
+		result[i] = sum;
+	}
+
+	return result;
+}
 
 template<typename T, unsigned int Rows>
 bool operator==(const Vector<T, Rows> &lhs, const Vector<T, Rows> &rhs)

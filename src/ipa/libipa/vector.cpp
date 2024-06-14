@@ -124,6 +124,17 @@ namespace ipa {
  */
 
 /**
+ * \fn Vector<T, Rows> operator*(const Matrix<T, Rows, Cols> &m, const Vector<T, Cols> &v)
+ * \brief Multiply a matrix by a vector
+ * \tparam T Numerical type of the contents of the matrix and vector
+ * \tparam Rows The number of rows in the matrix
+ * \tparam Cols The number of columns in the matrix (= rows in the vector)
+ * \param m The matrix
+ * \param v The vector
+ * \return Product of matrix \a m and vector \a v
+ */
+
+/**
  * \fn bool operator==(const Vector<T, Rows> &lhs, const Vector<T, Rows> &rhs)
  * \brief Compare vectors for equality
  * \return True if the two vectors are equal, false otherwise

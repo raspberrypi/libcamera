@@ -64,7 +64,7 @@ class AGCRkISP1(AGC):
         return {'ConstraintNormal': normal, 'ConstraintHighlight': highlight}
 
     def _generate_y_target(self) -> list:
-        return 0.16
+        return 0.5
 
     def process(self, config: dict, images: list, outputs: dict) -> dict:
         output = {}

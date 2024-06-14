@@ -33,13 +33,13 @@ class LSCRkISP1(LSC):
     #         table, flattened array of (blue's) green calibration table
 
     def _do_single_lsc(self, image: lt.Image):
-        cgr, gr = self._lsc_single_channel(image.channels[lt.Color.GR], image)
-        cgb, gb = self._lsc_single_channel(image.channels[lt.Color.GB], image)
-
-        # \todo Should these ratio against the average of both greens or just
-        # each green like we've done here?
-        cr, _ = self._lsc_single_channel(image.channels[lt.Color.R], image, gr)
-        cb, _ = self._lsc_single_channel(image.channels[lt.Color.B], image, gb)
+        # Perform LSC on each colour channel independently. A future enhancement
+        # worth investigating would be splitting the luminance and chrominance
+        # LSC as done by Raspberry Pi.
+        cgr, _ = self._lsc_single_channel(image.channels[lt.Color.GR], image)
+        cgb, _ = self._lsc_single_channel(image.channels[lt.Color.GB], image)
+        cr, _ = self._lsc_single_channel(image.channels[lt.Color.R], image)
+        cb, _ = self._lsc_single_channel(image.channels[lt.Color.B], image)
 
         return image.color, cr.flatten(), cb.flatten(), cgr.flatten(), cgb.flatten()
 

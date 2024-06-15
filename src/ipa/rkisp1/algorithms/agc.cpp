@@ -42,11 +42,9 @@ LOG_DEFINE_CATEGORY(RkISP1Agc)
 
 int Agc::parseMeteringModes(IPAContext &context, const YamlObject &tuningData)
 {
-	if (!tuningData.isDictionary()) {
-		LOG(RkISP1Agc, Error)
+	if (!tuningData.isDictionary())
+		LOG(RkISP1Agc, Warning)
 			<< "'AeMeteringMode' parameter not found in tuning file";
-		return -EINVAL;
-	}
 
 	for (const auto &[key, value] : tuningData.asDict()) {
 		if (controls::AeMeteringModeNameValueMap.find(key) ==

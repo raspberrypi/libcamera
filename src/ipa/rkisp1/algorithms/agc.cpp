@@ -115,12 +115,7 @@ uint8_t Agc::computeHistogramPredivider(const Size &size,
 	int count = mode == RKISP1_CIF_ISP_HISTOGRAM_MODE_RGB_COMBINED ? 3 : 1;
 	double factor = size.width * size.height * count / 65536.0;
 	double root = std::sqrt(factor);
-	uint8_t predivider;
-
-	if (std::pow(std::floor(root), 2) < factor)
-		predivider = static_cast<uint8_t>(std::ceil(root));
-	else
-		predivider = static_cast<uint8_t>(std::floor(root));
+	uint8_t predivider = static_cast<uint8_t>(std::ceil(root));
 
 	return std::clamp<uint8_t>(predivider, 3, 127);
 }

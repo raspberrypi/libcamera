@@ -295,12 +295,30 @@ namespace libcamera::ipa::rkisp1 {
  * applied to the sensor in order to take effect for this frame.
  *
  * \var IPAFrameContext::agc.exposure
- * \brief Exposure time expressed as a number of lines
+ * \brief Exposure time expressed as a number of lines computed by the algorithm
  *
  * \var IPAFrameContext::agc.gain
- * \brief Analogue gain multiplier
+ * \brief Analogue gain multiplier computed by the algorithm
  *
  * The gain should be adapted to the sensor specific gain code before applying.
+ *
+ * \var IPAFrameContext::agc.autoEnabled
+ * \brief Manual/automatic AGC state as set by the AeEnable control
+ *
+ * \var IPAFrameContext::agc.constraintMode
+ * \brief Constraint mode as set by the AeConstraintMode control
+ *
+ * \var IPAFrameContext::agc.exposureMode
+ * \brief Exposure mode as set by the AeExposureMode control
+ *
+ * \var IPAFrameContext::agc.meteringMode
+ * \brief Metering mode as set by the AeMeteringMode control
+ *
+ * \var IPAFrameContext::agc.maxShutterSpeed
+ * \brief Maximum frame duration as set by the FrameDurationLimits control
+ *
+ * \var IPAFrameContext::agc.update
+ * \brief Indicate if new ISP parameters need to be applied
  */
 
 /**

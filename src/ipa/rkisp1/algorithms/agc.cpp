@@ -439,8 +439,8 @@ void Agc::process(IPAContext &context, [[maybe_unused]] const uint32_t frame,
 	utils::Duration shutterTime;
 	double aGain, dGain;
 	std::tie(shutterTime, aGain, dGain) =
-		calculateNewEv(context.activeState.agc.constraintMode,
-			       context.activeState.agc.exposureMode,
+		calculateNewEv(frameContext.agc.constraintMode,
+			       frameContext.agc.exposureMode,
 			       hist, effectiveExposureValue);
 
 	LOG(RkISP1Agc, Debug)

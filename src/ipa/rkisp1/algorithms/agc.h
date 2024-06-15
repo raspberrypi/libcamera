@@ -45,7 +45,7 @@ public:
 
 private:
 	int parseMeteringModes(IPAContext &context, const YamlObject &tuningData);
-	uint8_t computeHistogramPredivider(Size &size,
+	uint8_t computeHistogramPredivider(const Size &size,
 					   enum rkisp1_cif_isp_histogram_mode mode);
 
 	void fillMetadata(IPAContext &context, IPAFrameContext &frameContext,

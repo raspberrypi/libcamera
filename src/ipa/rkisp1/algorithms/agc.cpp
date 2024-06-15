@@ -84,7 +84,8 @@ int Agc::parseMeteringModes(IPAContext &context, const YamlObject &tuningData)
 	return 0;
 }
 
-uint8_t Agc::computeHistogramPredivider(Size &size, enum rkisp1_cif_isp_histogram_mode mode)
+uint8_t Agc::computeHistogramPredivider(const Size &size,
+					enum rkisp1_cif_isp_histogram_mode mode)
 {
 	/*
 	 * The maximum number of pixels that could potentially be in one bin is

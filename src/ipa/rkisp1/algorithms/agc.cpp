@@ -261,26 +261,21 @@ void Agc::queueRequest(IPAContext &context,
 	frameContext.agc.meteringMode = agc.meteringMode;
 
 	const auto &exposureMode = controls.get(controls::AeExposureMode);
-	if (exposureMode) {
-		frameContext.agc.update = agc.exposureMode != *exposureMode;
+	if (exposureMode)
 		agc.exposureMode =
 			static_cast<controls::AeExposureModeEnum>(*exposureMode);
-	}
 	frameContext.agc.exposureMode = agc.exposureMode;
 
 	const auto &constraintMode = controls.get(controls::AeConstraintMode);
-	if (constraintMode) {
-		frameContext.agc.update = agc.constraintMode != *constraintMode;
+	if (constraintMode)
 		agc.constraintMode =
 			static_cast<controls::AeConstraintModeEnum>(*constraintMode);
-	}
 	frameContext.agc.constraintMode = agc.constraintMode;
 
 	const auto &frameDurationLimits = controls.get(controls::FrameDurationLimits);
 	if (frameDurationLimits) {
 		utils::Duration maxShutterSpeed =
 			std::chrono::milliseconds((*frameDurationLimits).back());
-		frameContext.agc.update = agc.maxShutterSpeed != maxShutterSpeed;
 		agc.maxShutterSpeed = maxShutterSpeed;
 	}
 	frameContext.agc.maxShutterSpeed = agc.maxShutterSpeed;

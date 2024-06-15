@@ -148,6 +148,7 @@ int Agc::init(IPAContext &context, const YamlObject &tuningData)
 	if (ret)
 		return ret;
 
+	context.ctrlMap[&controls::AeEnable] = ControlInfo(false, true);
 	context.ctrlMap.merge(controls());
 
 	return 0;

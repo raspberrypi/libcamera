@@ -137,13 +137,43 @@ namespace libcamera::ipa::rkisp1 {
  * \var IPAActiveState::agc
  * \brief State for the Automatic Gain Control algorithm
  *
- * The exposure and gain are the latest values computed by the AGC algorithm.
+ * The \a automatic variables track the latest values computed by algorithm
+ * based on the latest processed statistics. All other variables track the
+ * consolidated controls requested in queued requests.
  *
- * \var IPAActiveState::agc.exposure
- * \brief Exposure time expressed as a number of lines
+ * \struct IPAActiveState::agc.manual
+ * \brief Manual exposure time and analog gain (set through requests)
  *
- * \var IPAActiveState::agc.gain
- * \brief Analogue gain multiplier
+ * \var IPAActiveState::agc.manual.exposure
+ * \brief Manual exposure time expressed as a number of lines as set by the
+ * ExposureTime control
+ *
+ * \var IPAActiveState::agc.manual.gain
+ * \brief Manual analogue gain as set by the AnalogueGain control
+ *
+ * \struct IPAActiveState::agc.automatic
+ * \brief Automatic exposure time and analog gain (computed by the algorithm)
+ *
+ * \var IPAActiveState::agc.automatic.exposure
+ * \brief Automatic exposure time expressed as a number of lines
+ *
+ * \var IPAActiveState::agc.automatic.gain
+ * \brief Automatic analogue gain multiplier
+ *
+ * \var IPAActiveState::agc.autoEnabled
+ * \brief Manual/automatic AGC state as set by the AeEnable control
+ *
+ * \var IPAActiveState::agc.constraintMode
+ * \brief Constraint mode as set by the AeConstraintMode control
+ *
+ * \var IPAActiveState::agc.exposureMode
+ * \brief Exposure mode as set by the AeExposureMode control
+ *
+ * \var IPAActiveState::agc.meteringMode
+ * \brief Metering mode as set by the AeMeteringMode control
+ *
+ * \var IPAActiveState::agc.maxShutterSpeed
+ * \brief Maximum frame duration as set by the FrameDurationLimits control
  */
 
 /**

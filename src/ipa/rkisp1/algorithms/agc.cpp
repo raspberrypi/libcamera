@@ -420,8 +420,10 @@ void Agc::process(IPAContext &context, [[maybe_unused]] const uint32_t frame,
 		       [](uint32_t x) { return x >> 4; });
 	expMeans_ = { params->ae.exp_mean, context.hw->numAeCells };
 
-	utils::Duration maxShutterSpeed = std::min(context.configuration.sensor.maxShutterSpeed,
-						   frameContext.agc.maxFrameDuration);
+	utils::Duration maxShutterSpeed =
+		std::clamp(frameContext.agc.maxFrameDuration,
+			   context.configuration.sensor.minShutterSpeed,
+			   context.configuration.sensor.maxShutterSpeed);
 	setLimits(context.configuration.sensor.minShutterSpeed,
 		  maxShutterSpeed,
 		  context.configuration.sensor.minAnalogueGain,

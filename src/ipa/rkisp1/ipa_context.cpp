@@ -172,7 +172,7 @@ namespace libcamera::ipa::rkisp1 {
  * \var IPAActiveState::agc.meteringMode
  * \brief Metering mode as set by the AeMeteringMode control
  *
- * \var IPAActiveState::agc.maxShutterSpeed
+ * \var IPAActiveState::agc.maxFrameDuration
  * \brief Maximum frame duration as set by the FrameDurationLimits control
  */
 
@@ -314,7 +314,7 @@ namespace libcamera::ipa::rkisp1 {
  * \var IPAFrameContext::agc.meteringMode
  * \brief Metering mode as set by the AeMeteringMode control
  *
- * \var IPAFrameContext::agc.maxShutterSpeed
+ * \var IPAFrameContext::agc.maxFrameDuration
  * \brief Maximum frame duration as set by the FrameDurationLimits control
  *
  * \var IPAFrameContext::agc.update

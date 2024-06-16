@@ -182,7 +182,7 @@ int Agc::configure(IPAContext &context, const IPACameraSensorInfo &configInfo)
 	 * except it's computed in the IPA and not here so we'd have to
 	 * recompute it.
 	 */
-	context.activeState.agc.maxShutterSpeed = context.configuration.sensor.maxShutterSpeed;
+	context.activeState.agc.maxFrameDuration = context.configuration.sensor.maxShutterSpeed;
 
 	/*
 	 * Define the measurement window for AGC as a centered rectangle
@@ -269,11 +269,11 @@ void Agc::queueRequest(IPAContext &context,
 
 	const auto &frameDurationLimits = controls.get(controls::FrameDurationLimits);
 	if (frameDurationLimits) {
-		utils::Duration maxShutterSpeed =
+		utils::Duration maxFrameDuration =
 			std::chrono::milliseconds((*frameDurationLimits).back());
-		agc.maxShutterSpeed = maxShutterSpeed;
+		agc.maxFrameDuration = maxFrameDuration;
 	}
-	frameContext.agc.maxShutterSpeed = agc.maxShutterSpeed;
+	frameContext.agc.maxFrameDuration = agc.maxFrameDuration;
 }
 
 /**
@@ -421,7 +421,7 @@ void Agc::process(IPAContext &context, [[maybe_unused]] const uint32_t frame,
 	expMeans_ = { params->ae.exp_mean, context.hw->numAeCells };
 
 	utils::Duration maxShutterSpeed = std::min(context.configuration.sensor.maxShutterSpeed,
-						   frameContext.agc.maxShutterSpeed);
+						   frameContext.agc.maxFrameDuration);
 	setLimits(context.configuration.sensor.minShutterSpeed,
 		  maxShutterSpeed,
 		  context.configuration.sensor.minAnalogueGain,

@@ -73,7 +73,7 @@ struct IPAActiveState {
 		controls::AeConstraintModeEnum constraintMode;
 		controls::AeExposureModeEnum exposureMode;
 		controls::AeMeteringModeEnum meteringMode;
-		utils::Duration maxShutterSpeed;
+		utils::Duration maxFrameDuration;
 	} agc;
 
 	struct {
@@ -122,7 +122,7 @@ struct IPAFrameContext : public FrameContext {
 		controls::AeConstraintModeEnum constraintMode;
 		controls::AeExposureModeEnum exposureMode;
 		controls::AeMeteringModeEnum meteringMode;
-		utils::Duration maxShutterSpeed;
+		utils::Duration maxFrameDuration;
 		bool update;
 	} agc;
 

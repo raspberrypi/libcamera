@@ -13,10 +13,9 @@
 #include <vector>
 
 #include <libcamera/base/log.h>
-
 #include <libcamera/control_ids.h>
-
 #include <libcamera/ipa/ipa_module_info.h>
+#include <libipa/pwl.h>
 
 #include "libpisp/backend/backend.hpp"
 #include "libpisp/frontend/frontend.hpp"
@@ -39,7 +38,6 @@
 #include "controller/hdr_status.h"
 #include "controller/lux_status.h"
 #include "controller/noise_status.h"
-#include "controller/pwl.h"
 #include "controller/saturation_status.h"
 #include "controller/sharpen_status.h"
 #include "controller/stitch_status.h"
@@ -73,7 +71,7 @@ inline int32_t clampField(double value, std::size_t fieldBits, std::size_t fracB
 	return val;
 }
 
-int generateLut(const RPiController::Pwl &pwl, uint32_t *lut, std::size_t lutSize,
+int generateLut(const ipa::Pwl &pwl, uint32_t *lut, std::size_t lutSize,
 		unsigned int SlopeBits = 14, unsigned int PosBits = 16)
 {
 	if (pwl.empty())
@@ -916,7 +914,7 @@ void IpaPiSP::setDefaultConfig()
 	 */
 	beGlobal.rgb_enables |= PISP_BE_RGB_ENABLE_YCBCR + PISP_BE_RGB_ENABLE_YCBCR_INVERSE;
 
-	if (!monoSensor_) {
+	if (!monoSensor()) {
 		beGlobal.bayer_enables |= PISP_BE_BAYER_ENABLE_DEMOSAIC;
 		beGlobal.rgb_enables |= PISP_BE_RGB_ENABLE_FALSE_COLOUR;
 	}
@@ -1056,7 +1054,7 @@ extern "C" {
 const IPAModuleInfo ipaModuleInfo = {
 	IPA_MODULE_API_VERSION,
 	1,
-	"PipelineHandlerPiSP",
+	"rpi/pisp",
 	"rpi/pisp",
 };
 

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021-2022, Ideas On Board
  *
- * lsc.h - RkISP1 Lens Shading Correction control
+ * RkISP1 Lens Shading Correction control
  */
 
 #pragma once

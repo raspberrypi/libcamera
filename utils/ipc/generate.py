@@ -4,7 +4,7 @@
 #
 # Author: Paul Elder <paul.elder@ideasonboard.com>
 #
-# generate.py - Run mojo code generator for generating libcamera IPC files
+# Run mojo code generator for generating libcamera IPC files
 
 import os
 import sys

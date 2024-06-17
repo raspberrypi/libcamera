@@ -4,7 +4,7 @@
  * Copyright (C) 2024 Andrei Konovalov
  * Copyright (C) 2024 Dennis Bonke
  *
- * shared_mem_object.h - Helpers for shared memory allocations
+ * Helpers for shared memory allocations
  */
 #pragma once
 
@@ -56,7 +56,7 @@ private:
 	Span<uint8_t> mem_;
 };
 
-template<class T>
+template<class T, typename = std::enable_if_t<std::is_standard_layout<T>::value>>
 class SharedMemObject : public SharedMem
 {
 public:

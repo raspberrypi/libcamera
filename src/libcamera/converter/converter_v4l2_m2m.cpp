@@ -3,7 +3,7 @@
  * Copyright (C) 2020, Laurent Pinchart
  * Copyright 2022 NXP
  *
- * converter_v4l2_m2m.cpp - V4L2 M2M Format converter
+ * V4L2 M2M Format converter
  */
 
 #include "libcamera/internal/converter/converter_v4l2_m2m.h"

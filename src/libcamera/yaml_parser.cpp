@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2022, Google Inc.
  *
- * yaml_parser.cpp - libcamera YAML parsing helper
+ * libcamera YAML parsing helper
  */
 
 #include "libcamera/internal/yaml_parser.h"
@@ -104,7 +104,7 @@ std::size_t YamlObject::size() const
  */
 
 /**
- * \fn template<typename T> YamlObject::get<T>(const T &defaultValue) const
+ * \fn template<typename T, typename U> YamlObject::get<T>(U &&defaultValue) const
  * \brief Parse the YamlObject as a \a T value
  * \param[in] defaultValue The default value when failing to parse
  *
@@ -468,10 +468,13 @@ bool YamlObject::contains(const std::string &key) const
  */
 const YamlObject &YamlObject::operator[](const std::string &key) const
 {
-	if (type_ != Type::Dictionary || !contains(key))
+	if (type_ != Type::Dictionary)
 		return empty;
 
 	auto iter = dictionary_.find(key);
+	if (iter == dictionary_.end())
+		return empty;
+
 	return *iter->second;
 }
 

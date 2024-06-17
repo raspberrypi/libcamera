@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * rkisp1.cpp - RkISP1 Image Processing Algorithms
+ * RkISP1 Image Processing Algorithms
  */
 
 #include <algorithm>
@@ -109,9 +109,6 @@ const ControlInfoMap::Map rkisp1Controls{
 	{ &controls::AeEnable, ControlInfo(false, true) },
 	{ &controls::AwbEnable, ControlInfo(false, true) },
 	{ &controls::ColourGains, ControlInfo(0.0f, 3.996f, 1.0f) },
-	{ &controls::Brightness, ControlInfo(-1.0f, 0.993f, 0.0f) },
-	{ &controls::Contrast, ControlInfo(0.0f, 1.993f, 1.0f) },
-	{ &controls::Saturation, ControlInfo(0.0f, 1.993f, 1.0f) },
 	{ &controls::Sharpness, ControlInfo(0.0f, 10.0f, 1.0f) },
 	{ &controls::draft::NoiseReductionMode, ControlInfo(controls::draft::NoiseReductionModeValues) },
 };
@@ -119,7 +116,7 @@ const ControlInfoMap::Map rkisp1Controls{
 } /* namespace */
 
 IPARkISP1::IPARkISP1()
-	: context_({ {}, {}, {}, { kMaxFrameContexts } })
+	: context_({ {}, {}, {}, { kMaxFrameContexts }, {} })
 {
 }
 
@@ -427,6 +424,7 @@ void IPARkISP1::updateControls(const IPACameraSensorInfo &sensorInfo,
 							      frameDurations[1],
 							      frameDurations[2]);
 
+	ctrlMap.insert(context_.ctrlMap.begin(), context_.ctrlMap.end());
 	*ipaControls = ControlInfoMap(std::move(ctrlMap), controls::controls);
 }
 
@@ -458,7 +456,7 @@ extern "C" {
 const struct IPAModuleInfo ipaModuleInfo = {
 	IPA_MODULE_API_VERSION,
 	1,
-	"PipelineHandlerRkISP1",
+	"rkisp1",
 	"rkisp1",
 };
 

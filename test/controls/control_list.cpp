@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * control_list.cpp - ControlList tests
+ * ControlList tests
  */
 
 #include <iostream>

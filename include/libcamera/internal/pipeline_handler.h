@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2018, Google Inc.
  *
- * pipeline_handler.h - Pipeline handler infrastructure
+ * Pipeline handler infrastructure
  */
 
 #pragma once
@@ -114,6 +114,7 @@ public:
 	const std::string &name() const { return name_; }
 
 	static std::vector<PipelineHandlerFactoryBase *> &factories();
+	static const PipelineHandlerFactoryBase *getFactoryByName(const std::string &name);
 
 private:
 	static void registerType(PipelineHandlerFactoryBase *factory);
@@ -140,7 +141,7 @@ public:
 	}
 };
 
-#define REGISTER_PIPELINE_HANDLER(handler) \
-static PipelineHandlerFactory<handler> global_##handler##Factory(#handler);
+#define REGISTER_PIPELINE_HANDLER(handler, name) \
+	static PipelineHandlerFactory<handler> global_##handler##Factory(name);
 
 } /* namespace libcamera */

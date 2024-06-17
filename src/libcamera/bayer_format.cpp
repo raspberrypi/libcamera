@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Raspberry Pi Ltd
  *
- * bayer_format.cpp - Class to represent Bayer formats
+ * Class to represent Bayer formats
  */
 
 #include "libcamera/internal/bayer_format.h"
@@ -61,6 +61,10 @@ namespace libcamera {
  * \brief Format uses MIPI CSI-2 style packing
  * \var BayerFormat::Packing::IPU3
  * \brief Format uses IPU3 style packing
+ * \var BayerFormat::Packing::PISP1
+ * \brief Format uses PISP mode 1 compression
+ * \var BayerFormat::Packing::PISP2
+ * \brief Format uses PISP mode 2 compression
  */
 
 namespace {

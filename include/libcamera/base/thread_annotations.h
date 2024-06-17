@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021, Google Inc.
  *
- * thread_annotation.h - Macro of Clang thread safety analysis
+ * Macro of Clang thread safety analysis
  */
 
 #pragma once

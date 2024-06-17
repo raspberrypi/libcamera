@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Raspberry Pi Ltd
  *
- * stream_options.cpp - Helper to parse options for streams
+ * Helper to parse options for streams
  */
 #include "stream_options.h"
 

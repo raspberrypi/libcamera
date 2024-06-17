@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * v4l2_subdevice.h - V4L2 Subdevice
+ * V4L2 Subdevice
  */
 
 #pragma once
@@ -175,6 +175,9 @@ private:
 	std::vector<unsigned int> enumPadCodes(const Stream &stream);
 	std::vector<SizeRange> enumPadSizes(const Stream &stream,
 					    unsigned int code);
+
+	int getRoutingLegacy(Routing *routing, Whence whence);
+	int setRoutingLegacy(Routing *routing, Whence whence);
 
 	const MediaEntity *entity_;
 

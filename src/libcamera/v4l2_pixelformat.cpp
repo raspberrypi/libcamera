@@ -3,7 +3,7 @@
  * Copyright (C) 2019, Google Inc.
  * Copyright (C) 2020, Raspberry Pi Ltd
  *
- * v4l2_pixelformat.cpp - V4L2 Pixel Format
+ * V4L2 Pixel Format
  */
 
 #include "libcamera/internal/v4l2_pixelformat.h"

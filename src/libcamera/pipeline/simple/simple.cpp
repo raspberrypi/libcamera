@@ -3,7 +3,7 @@
  * Copyright (C) 2020, Laurent Pinchart
  * Copyright (C) 2019, Martijn Braam
  *
- * simple.cpp - Pipeline handler for simple pipelines
+ * Pipeline handler for simple pipelines
  */
 
 #include <algorithm>
@@ -13,8 +13,8 @@
 #include <memory>
 #include <queue>
 #include <set>
-#include <string>
 #include <string.h>
+#include <string>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -37,7 +37,6 @@
 #include "libcamera/internal/software_isp/software_isp.h"
 #include "libcamera/internal/v4l2_subdevice.h"
 #include "libcamera/internal/v4l2_videodevice.h"
-
 
 namespace libcamera {
 
@@ -1732,6 +1731,6 @@ void SimplePipelineHandler::releasePipeline(SimpleCameraData *data)
 	}
 }
 
-REGISTER_PIPELINE_HANDLER(SimplePipelineHandler)
+REGISTER_PIPELINE_HANDLER(SimplePipelineHandler, "simple")
 
 } /* namespace libcamera */

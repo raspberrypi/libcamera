@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019-2021, Raspberry Pi Ltd
  *
- * device_status.h - device (image sensor) status
+ * device (image sensor) status
  */
 #pragma once
 

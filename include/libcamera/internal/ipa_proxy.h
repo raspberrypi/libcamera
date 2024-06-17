@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * ipa_proxy.h - Image Processing Algorithm proxy
+ * Image Processing Algorithm proxy
  */
 
 #pragma once

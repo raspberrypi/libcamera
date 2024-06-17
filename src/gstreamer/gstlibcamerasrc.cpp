@@ -3,7 +3,7 @@
  * Copyright (C) 2019, Collabora Ltd.
  *     Author: Nicolas Dufresne <nicolas.dufresne@collabora.com>
  *
- * gstlibcamerasrc.cpp - GStreamer Capture Element
+ * GStreamer Capture Element
  */
 
 /**
@@ -377,21 +377,22 @@ gst_libcamera_src_open(GstLibcameraSrc *self)
 	}
 
 	if (camera_name) {
-		cam = cm->get(self->camera_name);
+		cam = cm->get(camera_name);
 		if (!cam) {
 			GST_ELEMENT_ERROR(self, RESOURCE, NOT_FOUND,
-					  ("Could not find a camera named '%s'.", self->camera_name),
+					  ("Could not find a camera named '%s'.", camera_name),
 					  ("libcamera::CameraMananger::get() returned nullptr"));
 			return false;
 		}
 	} else {
-		if (cm->cameras().empty()) {
+		auto cameras = cm->cameras();
+		if (cameras.empty()) {
 			GST_ELEMENT_ERROR(self, RESOURCE, NOT_FOUND,
 					  ("Could not find any supported camera on this system."),
 					  ("libcamera::CameraMananger::cameras() is empty"));
 			return false;
 		}
-		cam = cm->cameras()[0];
+		cam = cameras[0];
 	}
 
 	GST_INFO_OBJECT(self, "Using camera '%s'", cam->id().c_str());

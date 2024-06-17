@@ -2,11 +2,11 @@
 /*
  * Copyright (C) 2019, Raspberry Pi Ltd
  *
- * contrast_status.h - contrast (gamma) control algorithm status
+ * contrast (gamma) control algorithm status
  */
 #pragma once
 
-#include "pwl.h"
+#include "libipa/pwl.h"
 
 /*
  * The "contrast" algorithm creates a gamma curve, optionally doing a little bit
@@ -14,7 +14,7 @@
  */
 
 struct ContrastStatus {
-	RPiController::Pwl gammaCurve;
+	libcamera::ipa::Pwl gammaCurve;
 	double brightness;
 	double contrast;
 };

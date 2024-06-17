@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * ipc_unixsocket.h - IPC mechanism based on Unix sockets
+ * IPC mechanism based on Unix sockets
  */
 
 #pragma once

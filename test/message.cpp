@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * message.cpp - Messages test
+ * Messages test
  */
 
 #include <chrono>

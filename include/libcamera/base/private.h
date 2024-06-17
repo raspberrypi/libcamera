@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021, Google Inc.
  *
- * private.h - Private Header Validation
+ * Private Header Validation
  *
  * A selection of internal libcamera headers are installed as part
  * of the libcamera package to allow sharing of a select subset of

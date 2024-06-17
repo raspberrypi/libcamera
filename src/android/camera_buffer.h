@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021, Google Inc.
  *
- * camera_buffer.h - Frame buffer handling interface definition
+ * Frame buffer handling interface definition
  */
 
 #pragma once

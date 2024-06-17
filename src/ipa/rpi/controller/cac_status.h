@@ -6,8 +6,6 @@
  */
 #pragma once
 
-#include "pwl.h"
-
 struct CacStatus {
 	std::vector<double> lutRx;
 	std::vector<double> lutRy;

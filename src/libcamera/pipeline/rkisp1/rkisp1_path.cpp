@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Google Inc.
  *
- * rkisp1path.cpp - Rockchip ISP1 path helper
+ * Rockchip ISP1 path helper
  */
 
 #include "rkisp1_path.h"

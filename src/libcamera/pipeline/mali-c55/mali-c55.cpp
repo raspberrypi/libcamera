@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2024, Ideas on Board Oy
  *
- * mali-c55.cpp - Pipeline Handler for ARM's Mali-C55 ISP
+ * Pipeline Handler for ARM's Mali-C55 ISP
  */
 
 #include <algorithm>
@@ -1061,6 +1061,6 @@ bool PipelineHandlerMaliC55::match(DeviceEnumerator *enumerator)
 	return true;
 }
 
-REGISTER_PIPELINE_HANDLER(PipelineHandlerMaliC55)
+REGISTER_PIPELINE_HANDLER(PipelineHandlerMaliC55, "mali-c55")
 
 } /* namespace libcamera */

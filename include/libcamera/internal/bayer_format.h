@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Raspberry Pi Ltd
  *
- * bayer_format.h - Bayer Pixel Format
+ * Bayer Pixel Format
  */
 
 #pragma once

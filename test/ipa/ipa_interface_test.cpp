@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * ipa_interface_test.cpp - Test the IPA interface
+ * Test the IPA interface
  */
 
 #include <fcntl.h>
@@ -56,7 +56,7 @@ protected:
 		const std::vector<PipelineHandlerFactoryBase *> &factories =
 			PipelineHandlerFactoryBase::factories();
 		for (const PipelineHandlerFactoryBase *factory : factories) {
-			if (factory->name() == "PipelineHandlerVimc") {
+			if (factory->name() == "vimc") {
 				pipe_ = factory->create(nullptr);
 				break;
 			}

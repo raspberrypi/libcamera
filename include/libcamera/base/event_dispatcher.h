@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * event_dispatcher.h - Event dispatcher
+ * Event dispatcher
  */
 
 #pragma once

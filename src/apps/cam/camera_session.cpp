@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * camera_session.cpp - Camera capture session
+ * Camera capture session
  */
 
 #include <iomanip>
@@ -39,9 +39,14 @@ CameraSession::CameraSession(CameraManager *cm,
 {
 	char *endptr;
 	unsigned long index = strtoul(cameraId.c_str(), &endptr, 10);
-	if (*endptr == '\0' && index > 0 && index <= cm->cameras().size())
-		camera_ = cm->cameras()[index - 1];
-	else
+
+	if (*endptr == '\0' && index > 0) {
+		auto cameras = cm->cameras();
+		if (index <= cameras.size())
+			camera_ = cameras[index - 1];
+	}
+
+	if (!camera_)
 		camera_ = cm->get(cameraId);
 
 	if (!camera_) {
@@ -377,7 +382,7 @@ void CameraSession::requestComplete(Request *request)
 	 * Defer processing of the completed request to the event loop, to avoid
 	 * blocking the camera manager thread.
 	 */
-	EventLoop::instance()->callLater([=]() { processRequest(request); });
+	EventLoop::instance()->callLater([this, request]() { processRequest(request); });
 }
 
 void CameraSession::processRequest(Request *request)

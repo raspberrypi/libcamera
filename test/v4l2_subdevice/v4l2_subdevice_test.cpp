@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * v4l2_subdevice_test.cpp - VIMC-based V4L2 subdevice test
+ * VIMC-based V4L2 subdevice test
  */
 
 #include <iostream>

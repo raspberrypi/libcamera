@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019-2023, Raspberry Pi Ltd
  *
- * vc4.cpp - Pipeline handler for VC4-based Raspberry Pi devices
+ * Pipeline handler for VC4-based Raspberry Pi devices
  */
 
 #include <linux/bcm2835-isp.h>
@@ -12,7 +12,7 @@
 #include <libcamera/formats.h>
 
 #include "libcamera/internal/device_enumerator.h"
-#include "libcamera/internal/dma_heaps.h"
+#include "libcamera/internal/dma_buf_allocator.h"
 
 #include "../common/pipeline_base.h"
 #include "../common/rpi_stream.h"
@@ -86,7 +86,7 @@ public:
 	RPi::Device<Isp, 4> isp_;
 
 	/* DMAHEAP allocation helper. */
-	DmaHeap dmaHeap_;
+	DmaBufAllocator dmaHeap_;
 	SharedFD lsTable_;
 
 	struct Config {
@@ -1070,6 +1070,6 @@ bool Vc4CameraData::findMatchingBuffers(BayerFrame &bayerFrame, FrameBuffer *&em
 	return true;
 }
 
-REGISTER_PIPELINE_HANDLER(PipelineHandlerVc4)
+REGISTER_PIPELINE_HANDLER(PipelineHandlerVc4, "rpi/vc4")
 
 } /* namespace libcamera */

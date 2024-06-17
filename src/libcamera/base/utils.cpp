@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * utils.cpp - Miscellaneous utility functions
+ * Miscellaneous utility functions
  */
 
 #include <libcamera/base/utils.h>
@@ -517,7 +517,7 @@ double strtod(const char *__restrict nptr, char **__restrict endptr)
 	 * If the libc implementation doesn't provide locale object support,
 	 * assume that strtod() is locale-independent.
 	 */
-	return strtod(nptr, endptr);
+	return ::strtod(nptr, endptr);
 #endif
 }
 

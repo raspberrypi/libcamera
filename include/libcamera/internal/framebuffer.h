@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Google Inc.
  *
- * framebuffer.h - Internal frame buffer handling
+ * Internal frame buffer handling
  */
 
 #pragma once

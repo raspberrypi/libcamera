@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * imgu.cpp - Intel IPU3 ImgU
+ * Intel IPU3 ImgU
  */
 
 #include "imgu.h"

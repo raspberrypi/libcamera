@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * event-thread.cpp - Threaded event test
+ * Threaded event test
  */
 
 #include <chrono>

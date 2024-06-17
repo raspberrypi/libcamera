@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Raspberry Pi Ltd
  *
- * rpi_stream.h - Raspberry Pi device stream abstraction class.
+ * Raspberry Pi device stream abstraction class.
  */
 
 #pragma once

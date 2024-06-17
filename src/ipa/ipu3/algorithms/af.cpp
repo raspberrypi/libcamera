@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021, Red Hat
  *
- * af.cpp - IPU3 auto focus algorithm
+ * IPU3 auto focus algorithm
  */
 
 #include "af.h"

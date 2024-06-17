@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * rkisp1.cpp - Pipeline handler for Rockchip ISP1
+ * Pipeline handler for Rockchip ISP1
  */
 
 #include <algorithm>
@@ -1322,6 +1322,6 @@ void PipelineHandlerRkISP1::statReady(FrameBuffer *buffer)
 				       data->delayedCtrls_->get(buffer->metadata().sequence));
 }
 
-REGISTER_PIPELINE_HANDLER(PipelineHandlerRkISP1)
+REGISTER_PIPELINE_HANDLER(PipelineHandlerRkISP1, "rkisp1")
 
 } /* namespace libcamera */

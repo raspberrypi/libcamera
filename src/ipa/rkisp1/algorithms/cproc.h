@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021-2022, Ideas On Board
  *
- * cproc.h - RkISP1 Color Processing control
+ * RkISP1 Color Processing control
  */
 
 #pragma once
@@ -21,6 +21,9 @@ public:
 	ColorProcessing() = default;
 	~ColorProcessing() = default;
 
+	int init(IPAContext &context, const YamlObject &tuningData) override;
+	int configure(IPAContext &context,
+		      const IPACameraSensorInfo &configInfo) override;
 	void queueRequest(IPAContext &context, const uint32_t frame,
 			  IPAFrameContext &frameContext,
 			  const ControlList &controls) override;

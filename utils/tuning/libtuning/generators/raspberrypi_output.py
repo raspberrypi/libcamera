@@ -2,7 +2,7 @@
 #
 # Copyright 2022 Raspberry Pi Ltd
 #
-# raspberrypi_output.py - Generate tuning file in Raspberry Pi's json format
+# Generate tuning file in Raspberry Pi's json format
 #
 # (Copied from ctt_pretty_print_json.py)
 

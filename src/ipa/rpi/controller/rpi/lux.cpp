@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Raspberry Pi Ltd
  *
- * lux.cpp - Lux control algorithm
+ * Lux control algorithm
  */
 #include <math.h>
 

@@ -72,19 +72,6 @@ stats in hardware, such as the i.MX7), but please keep it on your radar.
 
 ---
 
-4. Hide internal representation of gains from callers
-
-> struct DebayerParams {
-> 	static constexpr unsigned int kGain10 = 256;
-
-Forcing the caller to deal with the internal representation of gains
-isn't nice, especially given that it precludes implementing gains of
-different precisions in different backend. Wouldn't it be better to pass
-the values as floating point numbers, and convert them to the internal
-representation in the implementation of process() before using them ?
-
----
-
 5. Store ISP parameters in per-frame buffers
 
 > /**

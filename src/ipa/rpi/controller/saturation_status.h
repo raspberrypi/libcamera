@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2022 Raspberry Pi Ltd
  *
- * saturation_status.h - Saturation control algorithm status
+ * Saturation control algorithm status
  */
 #pragma once
 

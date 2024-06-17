@@ -61,10 +61,12 @@ protected:
 		if (ret)
 			return TestFail;
 
-		timeout.start(10000ms);
+		const unsigned int nFrames = 30;
+
+		timeout.start(500ms * nFrames);
 		while (timeout.isRunning()) {
 			dispatcher->processEvents();
-			if (frames > 30)
+			if (frames > nFrames)
 				break;
 		}
 
@@ -73,8 +75,9 @@ protected:
 			return TestFail;
 		}
 
-		if (frames < 30) {
-			std::cout << "Failed to capture 30 frames within timeout." << std::endl;
+		if (frames < nFrames) {
+			std::cout << "Failed to capture " << nFrames
+				  << " frames within timeout." << std::endl;
 			return TestFail;
 		}
 

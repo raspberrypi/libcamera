@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * thread.cpp - Thread support
+ * Thread support
  */
 
 #include <libcamera/base/thread.h>

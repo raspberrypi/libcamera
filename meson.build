@@ -2,7 +2,7 @@
 
 project('libcamera', 'c', 'cpp',
     meson_version : '>= 0.60',
-    version : '0.2.0',
+    version : '0.3.0',
     default_options : [
         'werror=true',
         'warning_level=2',
@@ -74,12 +74,20 @@ cc = meson.get_compiler('c')
 cxx = meson.get_compiler('cpp')
 config_h = configuration_data()
 
+if cc.has_header_symbol('fcntl.h', 'F_ADD_SEALS', prefix : '#define _GNU_SOURCE')
+    config_h.set('HAVE_FILE_SEALS', 1)
+endif
+
 if cc.has_header_symbol('unistd.h', 'issetugid')
     config_h.set('HAVE_ISSETUGID', 1)
 endif
 
 if cc.has_header_symbol('locale.h', 'locale_t', prefix : '#define _GNU_SOURCE')
     config_h.set('HAVE_LOCALE_T', 1)
+endif
+
+if cc.has_header_symbol('sys/mman.h', 'memfd_create', prefix : '#define _GNU_SOURCE')
+    config_h.set('HAVE_MEMFD_CREATE', 1)
 endif
 
 if cc.has_header_symbol('stdlib.h', 'secure_getenv', prefix : '#define _GNU_SOURCE')

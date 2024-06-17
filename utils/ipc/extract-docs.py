@@ -4,7 +4,7 @@
 #
 # Author: Paul Elder <paul.elder@ideasonboard.com>
 #
-# extract-docs.py - Extract doxygen documentation from mojom files
+# Extract doxygen documentation from mojom files
 
 import argparse
 import re
@@ -38,7 +38,7 @@ def main(argv):
 /*
  * Copyright (C) 2021, Google Inc.
  *
- * {pipeline}_ipa_interface.cpp - Docs file for generated {pipeline}.mojom
+ * Docs file for generated {pipeline}.mojom
  *
  * This file is auto-generated. Do not edit.
  */

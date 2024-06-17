@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2022 Raspberry Pi Ltd
  *
- * saturation.cpp - Saturation control algorithm
+ * Saturation control algorithm
  */
 #include "saturation.h"
 

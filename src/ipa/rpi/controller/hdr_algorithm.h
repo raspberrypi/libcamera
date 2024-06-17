@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2023, Raspberry Pi Ltd
  *
- * hdr_algorithm.h - HDR control algorithm interface
+ * HDR control algorithm interface
  */
 #pragma once
 

@@ -3,7 +3,7 @@
  * Copyright (C) 2020, Collabora Ltd.
  *     Author: Nicolas Dufresne <nicolas.dufresne@collabora.com>
  *
- * gstlibcamerapool.h - GStreamer Buffer Pool
+ * GStreamer Buffer Pool
  *
  * This is a partial implementation of GstBufferPool intended for internal use
  * only. This pool cannot be configured or activated.

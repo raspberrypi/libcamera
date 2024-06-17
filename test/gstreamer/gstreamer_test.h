@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021, Vedant Paranjape
  *
- * gstreamer_test.cpp - GStreamer test base class
+ * GStreamer test base class
  */
 
 #pragma once

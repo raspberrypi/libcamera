@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021, Google Inc.
  *
- * camera_sensor_helper.cpp - Helper class that performs sensor-specific
+ * Helper class that performs sensor-specific
  * parameter computations
  */
 #include "camera_sensor_helper.h"
@@ -369,30 +369,26 @@ static constexpr double expGainDb(double step)
 class CameraSensorHelperAr0521 : public CameraSensorHelper
 {
 public:
-	uint32_t gainCode(double gain) const override;
-	double gain(uint32_t gainCode) const override;
+	uint32_t gainCode(double gain) const override
+	{
+		gain = std::clamp(gain, 1.0, 15.5);
+		unsigned int coarse = std::log2(gain);
+		unsigned int fine = (gain / (1 << coarse) - 1) * kStep_;
+
+		return (coarse << 4) | (fine & 0xf);
+	}
+
+	double gain(uint32_t gainCode) const override
+	{
+		unsigned int coarse = gainCode >> 4;
+		unsigned int fine = gainCode & 0xf;
+
+		return (1 << coarse) * (1 + fine / kStep_);
+	}
 
 private:
 	static constexpr double kStep_ = 16;
 };
-
-uint32_t CameraSensorHelperAr0521::gainCode(double gain) const
-{
-	gain = std::clamp(gain, 1.0, 15.5);
-	unsigned int coarse = std::log2(gain);
-	unsigned int fine = (gain / (1 << coarse) - 1) * kStep_;
-
-	return (coarse << 4) | (fine & 0xf);
-}
-
-double CameraSensorHelperAr0521::gain(uint32_t gainCode) const
-{
-	unsigned int coarse = gainCode >> 4;
-	unsigned int fine = gainCode & 0xf;
-
-	return (1 << coarse) * (1 + fine / kStep_);
-}
-
 REGISTER_CAMERA_SENSOR_HELPER("ar0521", CameraSensorHelperAr0521)
 
 class CameraSensorHelperImx219 : public CameraSensorHelper
@@ -416,6 +412,17 @@ public:
 	}
 };
 REGISTER_CAMERA_SENSOR_HELPER("imx258", CameraSensorHelperImx258)
+
+class CameraSensorHelperImx283 : public CameraSensorHelper
+{
+public:
+	CameraSensorHelperImx283()
+	{
+		gainType_ = AnalogueGainLinear;
+		gainConstants_.linear = { 0, 2048, -1, 2048 };
+	}
+};
+REGISTER_CAMERA_SENSOR_HELPER("imx283", CameraSensorHelperImx283)
 
 class CameraSensorHelperImx290 : public CameraSensorHelper
 {
@@ -443,6 +450,28 @@ class CameraSensorHelperImx327 : public CameraSensorHelperImx290
 {
 };
 REGISTER_CAMERA_SENSOR_HELPER("imx327", CameraSensorHelperImx327)
+
+class CameraSensorHelperImx335 : public CameraSensorHelper
+{
+public:
+	CameraSensorHelperImx335()
+	{
+		gainType_ = AnalogueGainExponential;
+		gainConstants_.exp = { 1.0, expGainDb(0.3) };
+	}
+};
+REGISTER_CAMERA_SENSOR_HELPER("imx335", CameraSensorHelperImx335)
+
+class CameraSensorHelperImx415 : public CameraSensorHelper
+{
+public:
+	CameraSensorHelperImx415()
+	{
+		gainType_ = AnalogueGainExponential;
+		gainConstants_.exp = { 1.0, expGainDb(0.3) };
+	}
+};
+REGISTER_CAMERA_SENSOR_HELPER("imx415", CameraSensorHelperImx415)
 
 class CameraSensorHelperImx477 : public CameraSensorHelper
 {

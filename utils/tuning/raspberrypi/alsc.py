@@ -2,7 +2,7 @@
 #
 # Copyright (C) 2022, Paul Elder <paul.elder@ideasonboard.com>
 #
-# alsc.py - ALSC module instance for Raspberry Pi tuning scripts
+# ALSC module instance for Raspberry Pi tuning scripts
 
 import libtuning as lt
 from libtuning.modules.lsc import ALSCRaspberryPi

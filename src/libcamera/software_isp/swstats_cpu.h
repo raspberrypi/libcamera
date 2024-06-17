@@ -6,7 +6,7 @@
  * Authors:
  * Hans de Goede <hdegoede@redhat.com>
  *
- * swstats_cpu.h - CPU based software statistics implementation
+ * CPU based software statistics implementation
  */
 
 #pragma once

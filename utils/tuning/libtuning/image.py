@@ -2,7 +2,7 @@
 #
 # Copyright (C) 2019, Raspberry Pi Ltd
 #
-# image.py - Container for an image and associated metadata
+# Container for an image and associated metadata
 
 import binascii
 import numpy as np

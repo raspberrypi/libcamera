@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * event_dispatcher.cpp - Event dispatcher
+ * Event dispatcher
  */
 
 #include <libcamera/base/event_dispatcher.h>

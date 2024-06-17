@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Raspberry Pi Ltd
  *
- * controller.h - ISP controller interface
+ * ISP controller interface
  */
 #pragma once
 

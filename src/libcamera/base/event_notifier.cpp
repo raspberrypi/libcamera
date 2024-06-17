@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * event_notifier.cpp - File descriptor event notifier
+ * File descriptor event notifier
  */
 
 #include <libcamera/base/event_notifier.h>

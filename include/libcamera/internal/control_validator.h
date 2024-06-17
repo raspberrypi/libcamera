@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * control_validator.h - Control validator
+ * Control validator
  */
 
 #pragma once

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * formats.cpp - libcamera image formats
+ * libcamera image formats
  */
 
 #include "libcamera/internal/formats.h"
@@ -555,7 +555,7 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
 		.packed = true,
 		.pixelsPerGroup = 1,
-		.planes = {{ { 2, 1 }, { 0, 0 }, { 0, 0 } }},
+		.planes = {{ { 1, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
 
 	/* Bayer formats. */

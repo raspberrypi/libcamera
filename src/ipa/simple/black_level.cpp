@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2024, Red Hat Inc.
  *
- * black_level.cpp - black level handling
+ * black level handling
  */
 
 #include "black_level.h"
@@ -43,7 +43,7 @@ BlackLevel::BlackLevel()
  * \return The black level, in the range from 0 (minimum) to 255 (maximum).
  * If the black level couldn't be determined yet, return 0.
  */
-unsigned int BlackLevel::get() const
+uint8_t BlackLevel::get() const
 {
 	return blackLevelSet_ ? blackLevel_ : 0;
 }

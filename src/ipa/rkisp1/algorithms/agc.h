@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021-2022, Ideas On Board
  *
- * agc.h - RkISP1 AGC/AEC mean-based control algorithm
+ * RkISP1 AGC/AEC mean-based control algorithm
  */
 
 #pragma once
@@ -14,18 +14,22 @@
 
 #include <libcamera/geometry.h>
 
+#include "libipa/agc_mean_luminance.h"
+#include "libipa/histogram.h"
+
 #include "algorithm.h"
 
 namespace libcamera {
 
 namespace ipa::rkisp1::algorithms {
 
-class Agc : public Algorithm
+class Agc : public Algorithm, public AgcMeanLuminance
 {
 public:
 	Agc();
 	~Agc() = default;
 
+	int init(IPAContext &context, const YamlObject &tuningData) override;
 	int configure(IPAContext &context, const IPACameraSensorInfo &configInfo) override;
 	void queueRequest(IPAContext &context,
 			  const uint32_t frame,
@@ -40,17 +44,11 @@ public:
 		     ControlList &metadata) override;
 
 private:
-	void computeExposure(IPAContext &Context, IPAFrameContext &frameContext,
-			     double yGain, double iqMeanGain);
-	utils::Duration filterExposure(utils::Duration exposureValue);
-	double estimateLuminance(Span<const uint8_t> expMeans, double gain);
-	double measureBrightness(Span<const uint32_t> hist) const;
 	void fillMetadata(IPAContext &context, IPAFrameContext &frameContext,
 			  ControlList &metadata);
+	double estimateLuminance(double gain) const override;
 
-	uint64_t frameCount_;
-
-	utils::Duration filteredExposure_;
+	Span<const uint8_t> expMeans_;
 };
 
 } /* namespace ipa::rkisp1::algorithms */

@@ -3,7 +3,7 @@
 #
 # Copyright (C) 2022, Paul Elder <paul.elder@ideasonboard.com>
 #
-# raspberrypi_alsc_only.py - Tuning script for raspberrypi, ALSC only
+# Tuning script for raspberrypi, ALSC only
 
 import sys
 

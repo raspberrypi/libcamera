@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * ipa_controls.cpp - IPA control handling
+ * IPA control handling
  */
 
 #include <libcamera/ipa/ipa_controls.h>

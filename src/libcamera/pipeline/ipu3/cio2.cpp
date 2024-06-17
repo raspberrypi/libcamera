@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * cio2.cpp - Intel IPU3 CIO2
+ * Intel IPU3 CIO2
  */
 
 #include "cio2.h"

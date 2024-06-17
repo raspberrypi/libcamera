@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019-2021, Raspberry Pi Ltd
  *
- * md_parser_smia.cpp - SMIA specification based embedded data parser
+ * SMIA specification based embedded data parser
  */
 
 #include <libcamera/base/log.h>

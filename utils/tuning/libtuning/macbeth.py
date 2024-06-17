@@ -2,7 +2,7 @@
 #
 # Copyright (C) 2019, Raspberry Pi Ltd
 #
-# macbeth.py - Locate and extract Macbeth charts from images
+# Locate and extract Macbeth charts from images
 # (Copied from: ctt_macbeth_locator.py)
 
 # \todo Add debugging

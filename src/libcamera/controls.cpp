@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * controls.cpp - Control handling
+ * Control handling
  */
 
 #include <libcamera/controls.h>

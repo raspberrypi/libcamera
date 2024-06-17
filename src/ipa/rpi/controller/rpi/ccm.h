@@ -2,14 +2,15 @@
 /*
  * Copyright (C) 2019, Raspberry Pi Ltd
  *
- * ccm.h - CCM (colour correction matrix) control algorithm
+ * CCM (colour correction matrix) control algorithm
  */
 #pragma once
 
 #include <vector>
 
+#include <libipa/pwl.h>
+
 #include "../ccm_algorithm.h"
-#include "../pwl.h"
 
 namespace RPiController {
 
@@ -54,7 +55,7 @@ struct CtCcm {
 
 struct CcmConfig {
 	std::vector<CtCcm> ccms;
-	Pwl saturation;
+	libcamera::ipa::Pwl saturation;
 };
 
 class Ccm : public CcmAlgorithm

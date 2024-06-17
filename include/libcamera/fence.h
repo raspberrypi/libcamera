@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021, Google Inc.
  *
- * internal/fence.h - Synchronization fence
+ * Synchronization fence
  */
 
 #pragma once

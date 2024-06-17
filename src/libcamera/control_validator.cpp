@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * control_validator.cpp - Control validator
+ * Control validator
  */
 
 #include "libcamera/internal/control_validator.h"

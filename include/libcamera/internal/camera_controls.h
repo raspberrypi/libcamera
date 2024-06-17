@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * camera_controls.h - Camera controls
+ * Camera controls
  */
 
 #pragma once

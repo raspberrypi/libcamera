@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2023, Raspberry Pi Ltd
  *
- * ipa_base.h - Raspberry Pi IPA base class
+ * Raspberry Pi IPA base class
  */
 #pragma once
 
@@ -49,6 +49,11 @@ public:
 	void processStats(const ProcessParams &params) override;
 
 protected:
+	bool monoSensor() const
+	{
+		return monoSensor_;
+	}
+
 	/* Raspberry Pi controller specific defines. */
 	std::unique_ptr<RPiController::CamHelper> helper_;
 	RPiController::Controller controller_;
@@ -70,9 +75,6 @@ protected:
 
 	/* Whether the stitch block (if available) needs to swap buffers. */
 	bool stitchSwapBuffers_;
-
-	bool monoSensor_;
-	bool lensPresent_;
 
 private:
 	/* Number of metadata objects available in the context list. */
@@ -98,6 +100,9 @@ private:
 	void applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls);
 
 	std::map<unsigned int, MappedFrameBuffer> buffers_;
+
+	bool lensPresent_;
+	bool monoSensor_;
 
 	std::array<RPiController::Metadata, numMetadataContexts> rpiMetadata_;
 

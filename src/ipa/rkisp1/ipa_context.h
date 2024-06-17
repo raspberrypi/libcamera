@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021-2022, Ideas On Board
  *
- * ipa_context.h - RkISP1 IPA Context
+ * RkISP1 IPA Context
  *
  */
 
@@ -12,6 +12,7 @@
 
 #include <libcamera/base/utils.h>
 
+#include <libcamera/controls.h>
 #include <libcamera/geometry.h>
 
 #include <libipa/fc_queue.h>
@@ -67,6 +68,8 @@ struct IPAActiveState {
 		} automatic;
 
 		bool autoEnabled;
+		uint32_t constraintMode;
+		uint32_t exposureMode;
 	} agc;
 
 	struct {
@@ -101,6 +104,10 @@ struct IPAActiveState {
 		uint8_t denoise;
 		uint8_t sharpness;
 	} filter;
+
+	struct {
+		double gamma;
+	} goc;
 };
 
 struct IPAFrameContext : public FrameContext {
@@ -140,6 +147,11 @@ struct IPAFrameContext : public FrameContext {
 	} filter;
 
 	struct {
+		double gamma;
+		bool update;
+	} goc;
+
+	struct {
 		uint32_t exposure;
 		double gain;
 	} sensor;
@@ -151,6 +163,8 @@ struct IPAContext {
 	IPAActiveState activeState;
 
 	FCQueue<IPAFrameContext> frameContexts;
+
+	ControlInfoMap::Map ctrlMap;
 };
 
 } /* namespace ipa::rkisp1 */

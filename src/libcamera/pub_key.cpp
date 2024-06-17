@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2020, Google Inc.
  *
- * pub_key.cpp - Public key signature verification
+ * Public key signature verification
  */
 
 #include "libcamera/internal/pub_key.h"

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * file_sink.cpp - File Sink
+ * File Sink
  */
 
 #include <assert.h>

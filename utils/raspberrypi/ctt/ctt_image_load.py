@@ -2,7 +2,7 @@
 #
 # Copyright (C) 2019-2020, Raspberry Pi Ltd
 #
-# ctt_image_load.py - camera tuning tool image loading
+# camera tuning tool image loading
 
 from ctt_tools import *
 from ctt_macbeth_locator import *

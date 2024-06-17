@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * camera_ops.h - Android Camera HAL Operations
+ * Android Camera HAL Operations
  */
 
 #pragma once

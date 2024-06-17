@@ -2289,6 +2289,6 @@ void PiSPCameraData::tryRunPipeline()
 	ipa_->prepareIsp(params);
 }
 
-REGISTER_PIPELINE_HANDLER(PipelineHandlerPiSP)
+REGISTER_PIPELINE_HANDLER(PipelineHandlerPiSP, "rpi/pisp")
 
 } /* namespace libcamera */

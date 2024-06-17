@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021, Google Inc.
  *
- * unique_fd.cpp - File descriptor wrapper that owns a file descriptor
+ * File descriptor wrapper that owns a file descriptor
  */
 
 #include <libcamera/base/unique_fd.h>

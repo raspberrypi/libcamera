@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * camera-sensor.cpp - Camera sensor tests
+ * Camera sensor tests
  */
 
 #include <algorithm>

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2024, Ideas on Board Oy
  *
- * timer-fail.cpp - Threaded timer failure test
+ * Threaded timer failure test
  */
 
 #include <chrono>

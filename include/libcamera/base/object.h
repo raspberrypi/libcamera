@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * object.h - Base object
+ * Base object
  */
 
 #pragma once

@@ -5,7 +5,6 @@ rpi_ipa_controller_sources = files([
     'controller.cpp',
     'device_status.cpp',
     'histogram.cpp',
-    'pwl.cpp',
     'rpi/af.cpp',
     'rpi/agc.cpp',
     'rpi/agc_channel.cpp',
@@ -32,4 +31,5 @@ rpi_ipa_controller_deps = [
 ]
 
 rpi_ipa_controller_lib = static_library('rpi_ipa_controller', rpi_ipa_controller_sources,
+                                        include_directories : libipa_includes,
                                         dependencies : rpi_ipa_controller_deps)

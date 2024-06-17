@@ -89,6 +89,7 @@ foreach test : public_tests
 
     exe = executable(test['name'], test['sources'],
                      dependencies : deps,
+                     implicit_include_directories : false,
                      link_with : test_libraries,
                      include_directories : test_includes_public)
 
@@ -103,6 +104,7 @@ foreach test : internal_tests
 
     exe = executable(test['name'], test['sources'],
                      dependencies : deps,
+                     implicit_include_directories : false,
                      link_with : test_libraries,
                      include_directories : test_includes_internal)
 
@@ -117,6 +119,7 @@ foreach test : internal_non_parallel_tests
 
     exe = executable(test['name'], test['sources'],
                      dependencies : deps,
+                     implicit_include_directories : false,
                      link_with : test_libraries,
                      include_directories : test_includes_internal)
 

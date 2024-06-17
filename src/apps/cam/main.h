@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * main.h - Cam application
+ * Cam application
  */
 
 #pragma once

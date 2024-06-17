@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * camera_device.cpp - libcamera Android Camera Device
+ * libcamera Android Camera Device
  */
 
 #include "camera_device.h"
@@ -433,8 +433,6 @@ void CameraDevice::flush()
 void CameraDevice::stop()
 {
 	MutexLocker stateLock(stateMutex_);
-	if (state_ == State::Stopped)
-		return;
 
 	camera_->stop();
 

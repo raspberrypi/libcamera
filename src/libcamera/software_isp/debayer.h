@@ -6,7 +6,7 @@
  * Authors:
  * Hans de Goede <hdegoede@redhat.com>
  *
- * debayer.h - debayering base class
+ * debayering base class
  */
 
 #pragma once

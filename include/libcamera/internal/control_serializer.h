@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * control_serializer.h - Control (de)serializer
+ * Control (de)serializer
  */
 
 #pragma once

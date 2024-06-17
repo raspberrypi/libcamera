@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * camera_sensor.cpp - A camera sensor
+ * A camera sensor
  */
 
 #include "libcamera/internal/camera_sensor.h"

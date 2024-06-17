@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * process.h - Process object
+ * Process object
  */
 
 #pragma once

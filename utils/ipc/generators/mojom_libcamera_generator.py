@@ -4,7 +4,7 @@
 #
 # Author: Paul Elder <paul.elder@ideasonboard.com>
 #
-# mojom_libcamera_generator.py - Generates libcamera files from a mojom.Module.
+# Generates libcamera files from a mojom.Module.
 
 import argparse
 import datetime

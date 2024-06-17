@@ -2,7 +2,7 @@
 #
 # Copyright (C) 2022, Paul Elder <paul.elder@ideasonboard.com>
 #
-# libtuning.py - An infrastructure for camera tuning tools
+# An infrastructure for camera tuning tools
 
 import argparse
 

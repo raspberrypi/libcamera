@@ -3,7 +3,7 @@
  * Copyright (C) 2020, Google Inc.
  * Copyright (C) 2021, Collabora Ltd.
  *
- * capture_test.cpp - Test camera capture
+ * Test camera capture
  */
 
 #include "capture.h"

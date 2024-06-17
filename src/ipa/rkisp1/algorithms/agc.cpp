@@ -250,7 +250,7 @@ void Agc::queueRequest(IPAContext &context,
 
 	const auto &meteringMode = controls.get(controls::AeMeteringMode);
 	if (meteringMode) {
-		frameContext.agc.update = agc.meteringMode != *meteringMode;
+		frameContext.agc.updateMetering = agc.meteringMode != *meteringMode;
 		agc.meteringMode =
 			static_cast<controls::AeMeteringModeEnum>(*meteringMode);
 	}
@@ -288,7 +288,7 @@ void Agc::prepare(IPAContext &context, const uint32_t frame,
 		frameContext.agc.gain = context.activeState.agc.automatic.gain;
 	}
 
-	if (frame > 0 && !frameContext.agc.update)
+	if (frame > 0 && !frameContext.agc.updateMetering)
 		return;
 
 	/* Configure the measurement window. */

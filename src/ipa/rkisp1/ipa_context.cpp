@@ -317,8 +317,8 @@ namespace libcamera::ipa::rkisp1 {
  * \var IPAFrameContext::agc.maxFrameDuration
  * \brief Maximum frame duration as set by the FrameDurationLimits control
  *
- * \var IPAFrameContext::agc.update
- * \brief Indicate if new ISP parameters need to be applied
+ * \var IPAFrameContext::agc.updateMetering
+ * \brief Indicate if new ISP AGC metering parameters need to be applied
  */
 
 /**

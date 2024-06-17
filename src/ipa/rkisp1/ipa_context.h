@@ -123,7 +123,7 @@ struct IPAFrameContext : public FrameContext {
 		controls::AeExposureModeEnum exposureMode;
 		controls::AeMeteringModeEnum meteringMode;
 		utils::Duration maxFrameDuration;
-		bool update;
+		bool updateMetering;
 	} agc;
 
 	struct {

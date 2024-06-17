@@ -59,7 +59,7 @@ LIBCAMERA_PUBLIC int open64(const char *path, int oflag, ...)
 
 LIBCAMERA_PUBLIC int __open64_2(const char *path, int oflag)
 {
-	return open(path, oflag);
+	return open64(path, oflag);
 }
 #endif
 
@@ -90,7 +90,7 @@ LIBCAMERA_PUBLIC int openat64(int dirfd, const char *path, int oflag, ...)
 
 LIBCAMERA_PUBLIC int __openat64_2(int dirfd, const char *path, int oflag)
 {
-	return openat(dirfd, path, oflag);
+	return openat64(dirfd, path, oflag);
 }
 #endif
 

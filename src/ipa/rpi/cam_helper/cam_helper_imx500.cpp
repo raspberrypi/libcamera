@@ -59,6 +59,11 @@ struct IMX500InputTensorInfoExported {
 	uint32_t numChannels;
 };
 
+struct IMX500KpiExported {
+	uint32_t dnnRuntime;
+	uint32_t dspRuntime;
+};
+
 /*
  * We care about two gain registers and a pair of exposure registers. Their
  * I2C addresses from the Sony IMX500 datasheet:
@@ -124,7 +129,7 @@ double CamHelperImx500::gain(uint32_t gainCode) const
 }
 
 void CamHelperImx500::prepare(libcamera::Span<const uint8_t> buffer, Metadata &metadata,
-                              ControlList &libcameraMetadata)
+			      ControlList &libcameraMetadata)
 {
 	MdParser::RegisterMap registers;
 	DeviceStatus deviceStatus;
@@ -336,6 +341,28 @@ void CamHelperImx500::parseInferenceData(libcamera::Span<const uint8_t> buffer,
 							      sizeof(exported) };
 			libcameraMetadata.set(libcamera::controls::rpi::Imx500OutputTensorInfo,
 					      tensorInfo);
+
+			auto itKpi = offsets.find(TensorType::Kpi);
+			if (itKpi != offsets.end()) {
+				constexpr unsigned int DnnRuntimeOffset = 9;
+				constexpr unsigned int DspRuntimeOffset = 10;
+				IMX500KpiExported kpi;
+
+				uint8_t *k = cache.get() + itKpi->second.offset;
+				kpi.dnnRuntime = k[4 * DnnRuntimeOffset + 3] << 24 |
+						 k[4 * DnnRuntimeOffset + 2] << 16 |
+						 k[4 * DnnRuntimeOffset + 1] << 8 |
+						 k[4 * DnnRuntimeOffset];
+				kpi.dspRuntime = k[4 * DspRuntimeOffset + 3] << 24 |
+						 k[4 * DspRuntimeOffset + 2] << 16 |
+						 k[4 * DspRuntimeOffset + 1] << 8 |
+						 k[4 * DspRuntimeOffset];
+
+				const Span<const uint8_t> kpiInfo{ (const uint8_t *)&kpi,
+								   sizeof(kpi) };
+				libcameraMetadata.set(libcamera::controls::rpi::Imx500KpiInfo,
+						      kpiInfo);
+			}
 		}
 	}
 }

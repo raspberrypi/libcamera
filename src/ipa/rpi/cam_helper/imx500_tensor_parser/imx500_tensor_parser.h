@@ -17,7 +17,8 @@ namespace RPiController {
 
 enum TensorType {
 	InputTensor = 0,
-	OutputTensor
+	OutputTensor,
+	Kpi,
 };
 
 struct Dimensions {

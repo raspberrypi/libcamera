@@ -63,4 +63,9 @@ controls:
       description: |
         Input tensor info from the IMX500.
 
+  - Imx500KpiInfo:
+      type: uint8_t
+      size: [n]
+      description: |
+        KPI parameters for the IMX500 frame.
 ...

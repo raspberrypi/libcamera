@@ -706,8 +706,9 @@ std::unordered_map<TensorType, IMX500Tensors> RPiController::imx500SplitTensors(
 	 * Line [x, N-1): Output tensor
 	 * Line N-1: PQ params
 	 */
-	const uint8_t *src = tensors.data() + TensorStride;
+	offsets[TensorType::Kpi].offset = 0;
 
+	const uint8_t *src = tensors.data() + TensorStride;
 	inputHeader = *(DnnHeader *)src;
 	if (inputHeader.tensorType != TensorType::InputTensor) {
 		LOG(IMX500, Debug) << "Input tensor is invalid, arborting.";

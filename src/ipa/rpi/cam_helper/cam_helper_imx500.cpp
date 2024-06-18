@@ -37,12 +37,19 @@ LOG_DECLARE_CATEGORY(IPARPI)
  * Applications must cast the span to these structures exactly.
  */
 static constexpr unsigned int NetworkNameLen = 64;
-static constexpr unsigned int MaxNumTensors = 16;
+static constexpr unsigned int MaxNumTensors = 8;
+
+struct OutputTensorInfo {
+	uint32_t tensorDataNum;
+	uint16_t size;
+	uint8_t ordinal;
+	uint8_t serializationIndex;
+};
 
 struct IMX500OutputTensorInfoExported {
 	char networkName[NetworkNameLen];
-	uint32_t tensorDataNum[MaxNumTensors];
 	uint32_t numTensors;
+	OutputTensorInfo info[MaxNumTensors];
 };
 
 struct IMX500InputTensorInfoExported {
@@ -311,8 +318,12 @@ void CamHelperImx500::parseInferenceData(libcamera::Span<const uint8_t> buffer,
 			IMX500OutputTensorInfoExported exported{};
 			if (outputTensorInfo.numTensors < MaxNumTensors) {
 				exported.numTensors = outputTensorInfo.numTensors;
-				for (unsigned int i = 0; i < exported.numTensors; i++)
-					exported.tensorDataNum[i] = outputTensorInfo.tensorDataNum[i];
+				for (unsigned int i = 0; i < exported.numTensors; i++) {
+					exported.info[i].tensorDataNum = outputTensorInfo.tensorDataNum[i];
+					exported.info[i].size = outputTensorInfo.vecDim[i].size;
+					exported.info[i].ordinal = outputTensorInfo.vecDim[i].ordinal;
+					exported.info[i].serializationIndex = outputTensorInfo.vecDim[i].serializationIndex;
+				}
 			} else {
 				LOG(IPARPI, Debug)
 					<< "IMX500 output tensor info export failed, numTensors > MaxNumTensors";

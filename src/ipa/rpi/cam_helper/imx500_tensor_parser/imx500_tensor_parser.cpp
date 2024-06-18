@@ -49,13 +49,6 @@ struct DnnHeader {
 	uint8_t tensorType;
 };
 
-struct Dimensions {
-	uint8_t ordinal;
-	uint16_t size;
-	uint8_t serializationIndex;
-	uint8_t padding;
-};
-
 struct OutputTensorApParams {
 	uint8_t id;
 	std::string name;
@@ -224,6 +217,7 @@ int populateOutputTensorInfo(IMX500OutputTensorInfo &outputTensorInfo,
 	outputTensorInfo.numTensors = numOutputTensors;
 	outputTensorInfo.networkName = outputApParams[0].networkName;
 	outputTensorInfo.tensorDataNum.resize(numOutputTensors, 0);
+	outputTensorInfo.vecDim = outputApParams[0].vecDim;
 
 	return 0;
 }

@@ -20,12 +20,20 @@ enum TensorType {
 	OutputTensor
 };
 
+struct Dimensions {
+	uint8_t ordinal;
+	uint16_t size;
+	uint8_t serializationIndex;
+	uint8_t padding;
+};
+
 struct IMX500OutputTensorInfo {
 	uint32_t totalSize;
 	uint32_t numTensors;
 	std::string networkName;
 	std::unique_ptr<float[]> data;
 	std::vector<uint32_t> tensorDataNum;
+	std::vector<Dimensions> vecDim;
 };
 
 struct IMX500InputTensorInfo {

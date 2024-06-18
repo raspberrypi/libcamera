@@ -74,6 +74,8 @@ DebayerCpu::~DebayerCpu()
 	*dst++ = blue_[curr[x] / (div)];                                                      \
 	*dst++ = green_[(prev[x] + curr[x - p] + curr[x + n] + next[x]) / (4 * (div))];       \
 	*dst++ = red_[(prev[x - p] + prev[x + n] + next[x - p] + next[x + n]) / (4 * (div))]; \
+	if constexpr (addAlphaByte)                                                           \
+		*dst++ = 255;                                                                 \
 	x++;
 
 /*
@@ -85,6 +87,8 @@ DebayerCpu::~DebayerCpu()
 	*dst++ = blue_[(prev[x] + next[x]) / (2 * (div))];        \
 	*dst++ = green_[curr[x] / (div)];                         \
 	*dst++ = red_[(curr[x - p] + curr[x + n]) / (2 * (div))]; \
+	if constexpr (addAlphaByte)                               \
+		*dst++ = 255;                                     \
 	x++;
 
 /*
@@ -96,6 +100,8 @@ DebayerCpu::~DebayerCpu()
 	*dst++ = blue_[(curr[x - p] + curr[x + n]) / (2 * (div))]; \
 	*dst++ = green_[curr[x] / (div)];                          \
 	*dst++ = red_[(prev[x] + next[x]) / (2 * (div))];          \
+	if constexpr (addAlphaByte)                                \
+		*dst++ = 255;                                      \
 	x++;
 
 /*
@@ -107,8 +113,11 @@ DebayerCpu::~DebayerCpu()
 	*dst++ = blue_[(prev[x - p] + prev[x + n] + next[x - p] + next[x + n]) / (4 * (div))]; \
 	*dst++ = green_[(prev[x] + curr[x - p] + curr[x + n] + next[x]) / (4 * (div))];        \
 	*dst++ = red_[curr[x] / (div)];                                                        \
+	if constexpr (addAlphaByte)                                                            \
+		*dst++ = 255;                                                                  \
 	x++;
 
+template<bool addAlphaByte>
 void DebayerCpu::debayer8_BGBG_BGR888(uint8_t *dst, const uint8_t *src[])
 {
 	DECLARE_SRC_POINTERS(uint8_t)
@@ -119,6 +128,7 @@ void DebayerCpu::debayer8_BGBG_BGR888(uint8_t *dst, const uint8_t *src[])
 	}
 }
 
+template<bool addAlphaByte>
 void DebayerCpu::debayer8_GRGR_BGR888(uint8_t *dst, const uint8_t *src[])
 {
 	DECLARE_SRC_POINTERS(uint8_t)
@@ -129,6 +139,7 @@ void DebayerCpu::debayer8_GRGR_BGR888(uint8_t *dst, const uint8_t *src[])
 	}
 }
 
+template<bool addAlphaByte>
 void DebayerCpu::debayer10_BGBG_BGR888(uint8_t *dst, const uint8_t *src[])
 {
 	DECLARE_SRC_POINTERS(uint16_t)
@@ -140,6 +151,7 @@ void DebayerCpu::debayer10_BGBG_BGR888(uint8_t *dst, const uint8_t *src[])
 	}
 }
 
+template<bool addAlphaByte>
 void DebayerCpu::debayer10_GRGR_BGR888(uint8_t *dst, const uint8_t *src[])
 {
 	DECLARE_SRC_POINTERS(uint16_t)
@@ -151,6 +163,7 @@ void DebayerCpu::debayer10_GRGR_BGR888(uint8_t *dst, const uint8_t *src[])
 	}
 }
 
+template<bool addAlphaByte>
 void DebayerCpu::debayer12_BGBG_BGR888(uint8_t *dst, const uint8_t *src[])
 {
 	DECLARE_SRC_POINTERS(uint16_t)
@@ -162,6 +175,7 @@ void DebayerCpu::debayer12_BGBG_BGR888(uint8_t *dst, const uint8_t *src[])
 	}
 }
 
+template<bool addAlphaByte>
 void DebayerCpu::debayer12_GRGR_BGR888(uint8_t *dst, const uint8_t *src[])
 {
 	DECLARE_SRC_POINTERS(uint16_t)
@@ -173,6 +187,7 @@ void DebayerCpu::debayer12_GRGR_BGR888(uint8_t *dst, const uint8_t *src[])
 	}
 }
 
+template<bool addAlphaByte>
 void DebayerCpu::debayer10P_BGBG_BGR888(uint8_t *dst, const uint8_t *src[])
 {
 	const int widthInBytes = window_.width * 5 / 4;
@@ -198,6 +213,7 @@ void DebayerCpu::debayer10P_BGBG_BGR888(uint8_t *dst, const uint8_t *src[])
 	}
 }
 
+template<bool addAlphaByte>
 void DebayerCpu::debayer10P_GRGR_BGR888(uint8_t *dst, const uint8_t *src[])
 {
 	const int widthInBytes = window_.width * 5 / 4;
@@ -218,6 +234,7 @@ void DebayerCpu::debayer10P_GRGR_BGR888(uint8_t *dst, const uint8_t *src[])
 	}
 }
 
+template<bool addAlphaByte>
 void DebayerCpu::debayer10P_GBGB_BGR888(uint8_t *dst, const uint8_t *src[])
 {
 	const int widthInBytes = window_.width * 5 / 4;
@@ -238,6 +255,7 @@ void DebayerCpu::debayer10P_GBGB_BGR888(uint8_t *dst, const uint8_t *src[])
 	}
 }
 
+template<bool addAlphaByte>
 void DebayerCpu::debayer10P_RGRG_BGR888(uint8_t *dst, const uint8_t *src[])
 {
 	const int widthInBytes = window_.width * 5 / 4;
@@ -280,7 +298,12 @@ int DebayerCpu::getInputConfig(PixelFormat inputFormat, DebayerInputConfig &conf
 		config.bpp = (bayerFormat.bitDepth + 7) & ~7;
 		config.patternSize.width = 2;
 		config.patternSize.height = 2;
-		config.outputFormats = std::vector<PixelFormat>({ formats::RGB888, formats::BGR888 });
+		config.outputFormats = std::vector<PixelFormat>({ formats::RGB888,
+								  formats::XRGB8888,
+								  formats::ARGB8888,
+								  formats::BGR888,
+								  formats::XBGR8888,
+								  formats::ABGR8888 });
 		return 0;
 	}
 
@@ -290,7 +313,12 @@ int DebayerCpu::getInputConfig(PixelFormat inputFormat, DebayerInputConfig &conf
 		config.bpp = 10;
 		config.patternSize.width = 4; /* 5 bytes per *4* pixels */
 		config.patternSize.height = 2;
-		config.outputFormats = std::vector<PixelFormat>({ formats::RGB888, formats::BGR888 });
+		config.outputFormats = std::vector<PixelFormat>({ formats::RGB888,
+								  formats::XRGB8888,
+								  formats::ARGB8888,
+								  formats::BGR888,
+								  formats::XBGR8888,
+								  formats::ABGR8888 });
 		return 0;
 	}
 
@@ -303,6 +331,12 @@ int DebayerCpu::getOutputConfig(PixelFormat outputFormat, DebayerOutputConfig &c
 {
 	if (outputFormat == formats::RGB888 || outputFormat == formats::BGR888) {
 		config.bpp = 24;
+		return 0;
+	}
+
+	if (outputFormat == formats::XRGB8888 || outputFormat == formats::ARGB8888 ||
+	    outputFormat == formats::XBGR8888 || outputFormat == formats::ABGR8888) {
+		config.bpp = 32;
 		return 0;
 	}
 
@@ -341,6 +375,7 @@ int DebayerCpu::setDebayerFunctions(PixelFormat inputFormat, PixelFormat outputF
 {
 	BayerFormat bayerFormat =
 		BayerFormat::fromPixelFormat(inputFormat);
+	bool addAlphaByte = false;
 
 	xShift_ = 0;
 	swapRedBlueGains_ = false;
@@ -351,8 +386,16 @@ int DebayerCpu::setDebayerFunctions(PixelFormat inputFormat, PixelFormat outputF
 	};
 
 	switch (outputFormat) {
+	case formats::XRGB8888:
+	case formats::ARGB8888:
+		addAlphaByte = true;
+		[[fallthrough]];
 	case formats::RGB888:
 		break;
+	case formats::XBGR8888:
+	case formats::ABGR8888:
+		addAlphaByte = true;
+		[[fallthrough]];
 	case formats::BGR888:
 		/* Swap R and B in bayer order to generate BGR888 instead of RGB888 */
 		swapRedBlueGains_ = true;
@@ -383,16 +426,16 @@ int DebayerCpu::setDebayerFunctions(PixelFormat inputFormat, PixelFormat outputF
 	    isStandardBayerOrder(bayerFormat.order)) {
 		switch (bayerFormat.bitDepth) {
 		case 8:
-			debayer0_ = &DebayerCpu::debayer8_BGBG_BGR888;
-			debayer1_ = &DebayerCpu::debayer8_GRGR_BGR888;
+			debayer0_ = addAlphaByte ? &DebayerCpu::debayer8_BGBG_BGR888<true> : &DebayerCpu::debayer8_BGBG_BGR888<false>;
+			debayer1_ = addAlphaByte ? &DebayerCpu::debayer8_GRGR_BGR888<true> : &DebayerCpu::debayer8_GRGR_BGR888<false>;
 			break;
 		case 10:
-			debayer0_ = &DebayerCpu::debayer10_BGBG_BGR888;
-			debayer1_ = &DebayerCpu::debayer10_GRGR_BGR888;
+			debayer0_ = addAlphaByte ? &DebayerCpu::debayer10_BGBG_BGR888<true> : &DebayerCpu::debayer10_BGBG_BGR888<false>;
+			debayer1_ = addAlphaByte ? &DebayerCpu::debayer10_GRGR_BGR888<true> : &DebayerCpu::debayer10_GRGR_BGR888<false>;
 			break;
 		case 12:
-			debayer0_ = &DebayerCpu::debayer12_BGBG_BGR888;
-			debayer1_ = &DebayerCpu::debayer12_GRGR_BGR888;
+			debayer0_ = addAlphaByte ? &DebayerCpu::debayer12_BGBG_BGR888<true> : &DebayerCpu::debayer12_BGBG_BGR888<false>;
+			debayer1_ = addAlphaByte ? &DebayerCpu::debayer12_GRGR_BGR888<true> : &DebayerCpu::debayer12_GRGR_BGR888<false>;
 			break;
 		}
 		setupStandardBayerOrder(bayerFormat.order);
@@ -403,20 +446,20 @@ int DebayerCpu::setDebayerFunctions(PixelFormat inputFormat, PixelFormat outputF
 	    bayerFormat.packing == BayerFormat::Packing::CSI2) {
 		switch (bayerFormat.order) {
 		case BayerFormat::BGGR:
-			debayer0_ = &DebayerCpu::debayer10P_BGBG_BGR888;
-			debayer1_ = &DebayerCpu::debayer10P_GRGR_BGR888;
+			debayer0_ = addAlphaByte ? &DebayerCpu::debayer10P_BGBG_BGR888<true> : &DebayerCpu::debayer10P_BGBG_BGR888<false>;
+			debayer1_ = addAlphaByte ? &DebayerCpu::debayer10P_GRGR_BGR888<true> : &DebayerCpu::debayer10P_GRGR_BGR888<false>;
 			return 0;
 		case BayerFormat::GBRG:
-			debayer0_ = &DebayerCpu::debayer10P_GBGB_BGR888;
-			debayer1_ = &DebayerCpu::debayer10P_RGRG_BGR888;
+			debayer0_ = addAlphaByte ? &DebayerCpu::debayer10P_GBGB_BGR888<true> : &DebayerCpu::debayer10P_GBGB_BGR888<false>;
+			debayer1_ = addAlphaByte ? &DebayerCpu::debayer10P_RGRG_BGR888<true> : &DebayerCpu::debayer10P_RGRG_BGR888<false>;
 			return 0;
 		case BayerFormat::GRBG:
-			debayer0_ = &DebayerCpu::debayer10P_GRGR_BGR888;
-			debayer1_ = &DebayerCpu::debayer10P_BGBG_BGR888;
+			debayer0_ = addAlphaByte ? &DebayerCpu::debayer10P_GRGR_BGR888<true> : &DebayerCpu::debayer10P_GRGR_BGR888<false>;
+			debayer1_ = addAlphaByte ? &DebayerCpu::debayer10P_BGBG_BGR888<true> : &DebayerCpu::debayer10P_BGBG_BGR888<false>;
 			return 0;
 		case BayerFormat::RGGB:
-			debayer0_ = &DebayerCpu::debayer10P_RGRG_BGR888;
-			debayer1_ = &DebayerCpu::debayer10P_GBGB_BGR888;
+			debayer0_ = addAlphaByte ? &DebayerCpu::debayer10P_RGRG_BGR888<true> : &DebayerCpu::debayer10P_RGRG_BGR888<false>;
+			debayer1_ = addAlphaByte ? &DebayerCpu::debayer10P_GBGB_BGR888<true> : &DebayerCpu::debayer10P_GBGB_BGR888<false>;
 			return 0;
 		default:
 			break;

@@ -18,6 +18,7 @@
 #include <QMap>
 #include <QMutexLocker>
 #include <QPainter>
+#include <QResizeEvent>
 #include <QtDebug>
 
 #include "../common/image.h"
@@ -40,7 +41,7 @@ static const QMap<libcamera::PixelFormat, QImage::Format> nativeFormats
 };
 
 ViewFinderQt::ViewFinderQt(QWidget *parent)
-	: QWidget(parent), buffer_(nullptr)
+	: QWidget(parent), place_(rect()), buffer_(nullptr)
 {
 	icon_ = QIcon(":camera-off.svg");
 }
@@ -148,7 +149,7 @@ void ViewFinderQt::paintEvent(QPaintEvent *)
 
 	/* If we have an image, draw it. */
 	if (!image_.isNull()) {
-		painter.drawImage(rect(), image_, image_.rect());
+		painter.drawImage(place_, image_, image_.rect());
 		return;
 	}
 
@@ -180,4 +181,15 @@ void ViewFinderQt::paintEvent(QPaintEvent *)
 QSize ViewFinderQt::sizeHint() const
 {
 	return size_.isValid() ? size_ : QSize(640, 480);
+}
+
+void ViewFinderQt::resizeEvent(QResizeEvent *event)
+{
+	if (!size_.isValid())
+		return;
+
+	place_.setSize(size_.scaled(event->size(), Qt::KeepAspectRatio));
+	place_.moveCenter(rect().center());
+
+	QWidget::resizeEvent(event);
 }

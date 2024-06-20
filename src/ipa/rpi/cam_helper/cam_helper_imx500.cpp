@@ -303,7 +303,7 @@ void CamHelperImx500::parseInferenceData(libcamera::Span<const uint8_t> buffer,
 			}
 
 			/* We can now safely clear the saved input tensor. */
-			savedInputTensor_.release();
+			savedInputTensor_.reset();
 		}
 	}
 

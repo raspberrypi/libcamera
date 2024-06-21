@@ -122,8 +122,6 @@ namespace ipa {
  * \return Matrix sum of matrices \a m1 and \a m2
  */
 
-} /* namespace ipa */
-
 #ifndef __DOXYGEN__
 /*
  * The YAML data shall be a list of numerical values. Its size shall be equal
@@ -145,5 +143,7 @@ bool matrixValidateYaml(const YamlObject &obj, unsigned int size)
 	return true;
 }
 #endif /* __DOXYGEN__ */
+
+} /* namespace ipa */
 
 } /* namespace libcamera */

@@ -279,6 +279,13 @@ YamlObject::Getter<uint32_t>::get(const YamlObject &obj) const
 }
 
 template<>
+std::optional<float>
+YamlObject::Getter<float>::get(const YamlObject &obj) const
+{
+	return obj.get<double>();
+}
+
+template<>
 std::optional<double>
 YamlObject::Getter<double>::get(const YamlObject &obj) const
 {
@@ -349,6 +356,7 @@ YamlObject::Getter<Size>::get(const YamlObject &obj) const
 template<typename T,
 	 std::enable_if_t<
 		 std::is_same_v<bool, T> ||
+		 std::is_same_v<float, T> ||
 		 std::is_same_v<double, T> ||
 		 std::is_same_v<int8_t, T> ||
 		 std::is_same_v<uint8_t, T> ||
@@ -377,6 +385,7 @@ std::optional<std::vector<T>> YamlObject::getList() const
 }
 
 template std::optional<std::vector<bool>> YamlObject::getList<bool>() const;
+template std::optional<std::vector<float>> YamlObject::getList<float>() const;
 template std::optional<std::vector<double>> YamlObject::getList<double>() const;
 template std::optional<std::vector<int8_t>> YamlObject::getList<int8_t>() const;
 template std::optional<std::vector<uint8_t>> YamlObject::getList<uint8_t>() const;

@@ -177,6 +177,7 @@ public:
 	template<typename T,
 		 std::enable_if_t<
 			 std::is_same_v<bool, T> ||
+			 std::is_same_v<float, T> ||
 			 std::is_same_v<double, T> ||
 			 std::is_same_v<int8_t, T> ||
 			 std::is_same_v<uint8_t, T> ||

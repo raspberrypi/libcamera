@@ -37,6 +37,7 @@ namespace libcamera {
 class DebayerCpu;
 class FrameBuffer;
 class PixelFormat;
+class Stream;
 struct StreamConfiguration;
 
 LOG_DECLARE_CATEGORY(SoftwareIsp)
@@ -62,7 +63,7 @@ public:
 		      const std::vector<std::reference_wrapper<StreamConfiguration>> &outputCfgs,
 		      const ControlInfoMap &sensorControls);
 
-	int exportBuffers(unsigned int output, unsigned int count,
+	int exportBuffers(const Stream *stream, unsigned int count,
 			  std::vector<std::unique_ptr<FrameBuffer>> *buffers);
 
 	void processStats(const ControlList &sensorControls);
@@ -71,7 +72,7 @@ public:
 	void stop();
 
 	int queueBuffers(FrameBuffer *input,
-			 const std::map<unsigned int, FrameBuffer *> &outputs);
+			 const std::map<const Stream *, FrameBuffer *> &outputs);
 
 	void process(FrameBuffer *input, FrameBuffer *output);
 

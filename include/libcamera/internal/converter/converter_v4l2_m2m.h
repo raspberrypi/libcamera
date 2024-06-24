@@ -28,6 +28,7 @@ class FrameBuffer;
 class MediaDevice;
 class Size;
 class SizeRange;
+class Stream;
 struct StreamConfiguration;
 class V4L2M2MDevice;
 
@@ -47,20 +48,20 @@ public:
 
 	int configure(const StreamConfiguration &inputCfg,
 		      const std::vector<std::reference_wrapper<StreamConfiguration>> &outputCfg);
-	int exportBuffers(unsigned int output, unsigned int count,
+	int exportBuffers(const Stream *stream, unsigned int count,
 			  std::vector<std::unique_ptr<FrameBuffer>> *buffers);
 
 	int start();
 	void stop();
 
 	int queueBuffers(FrameBuffer *input,
-			 const std::map<unsigned int, FrameBuffer *> &outputs);
+			 const std::map<const Stream *, FrameBuffer *> &outputs);
 
 private:
 	class V4L2M2MStream : protected Loggable
 	{
 	public:
-		V4L2M2MStream(V4L2M2MConverter *converter, unsigned int index);
+		V4L2M2MStream(V4L2M2MConverter *converter, const Stream *stream);
 
 		bool isValid() const { return m2m_ != nullptr; }
 
@@ -82,7 +83,7 @@ private:
 		void outputBufferReady(FrameBuffer *buffer);
 
 		V4L2M2MConverter *converter_;
-		unsigned int index_;
+		const Stream *stream_;
 		std::unique_ptr<V4L2M2MDevice> m2m_;
 
 		unsigned int inputBufferCount_;
@@ -91,7 +92,7 @@ private:
 
 	std::unique_ptr<V4L2M2MDevice> m2m_;
 
-	std::vector<V4L2M2MStream> streams_;
+	std::map<const Stream *, std::unique_ptr<V4L2M2MStream>> streams_;
 	std::map<FrameBuffer *, unsigned int> queue_;
 };
 

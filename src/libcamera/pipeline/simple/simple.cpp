@@ -277,7 +277,7 @@ public:
 	std::map<PixelFormat, std::vector<const Configuration *>> formats_;
 
 	std::vector<std::unique_ptr<FrameBuffer>> conversionBuffers_;
-	std::queue<std::map<unsigned int, FrameBuffer *>> conversionQueue_;
+	std::queue<std::map<const Stream *, FrameBuffer *>> conversionQueue_;
 	bool useConversion_;
 
 	std::unique_ptr<Converter> converter_;
@@ -836,7 +836,7 @@ void SimpleCameraData::bufferReady(FrameBuffer *buffer)
 	Request *request = buffer->request();
 
 	if (useConversion_ && !conversionQueue_.empty()) {
-		const std::map<unsigned int, FrameBuffer *> &outputs =
+		const std::map<const Stream *, FrameBuffer *> &outputs =
 			conversionQueue_.front();
 		if (!outputs.empty()) {
 			FrameBuffer *outputBuffer = outputs.begin()->second;
@@ -1303,10 +1303,8 @@ int SimplePipelineHandler::exportFrameBuffers(Camera *camera, Stream *stream,
 	 */
 	if (data->useConversion_)
 		return data->converter_
-			       ? data->converter_->exportBuffers(data->streamIndex(stream),
-								 count, buffers)
-			       : data->swIsp_->exportBuffers(data->streamIndex(stream),
-							     count, buffers);
+			       ? data->converter_->exportBuffers(stream, count, buffers)
+			       : data->swIsp_->exportBuffers(stream, count, buffers);
 	else
 		return data->video_->exportBuffers(count, buffers);
 }
@@ -1398,7 +1396,7 @@ int SimplePipelineHandler::queueRequestDevice(Camera *camera, Request *request)
 	SimpleCameraData *data = cameraData(camera);
 	int ret;
 
-	std::map<unsigned int, FrameBuffer *> buffers;
+	std::map<const Stream *, FrameBuffer *> buffers;
 
 	for (auto &[stream, buffer] : request->buffers()) {
 		/*
@@ -1407,7 +1405,7 @@ int SimplePipelineHandler::queueRequestDevice(Camera *camera, Request *request)
 		 * completion handler.
 		 */
 		if (data->useConversion_) {
-			buffers.emplace(data->streamIndex(stream), buffer);
+			buffers.emplace(stream, buffer);
 		} else {
 			ret = data->video_->queueBuffer(buffer);
 			if (ret < 0)

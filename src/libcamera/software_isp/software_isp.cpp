@@ -241,19 +241,19 @@ int SoftwareIsp::configure(const StreamConfiguration &inputCfg,
 
 /**
  * \brief Export the buffers from the Software ISP
- * \param[in] output Output stream index exporting the buffers
+ * \param[in] stream Output stream exporting the buffers
  * \param[in] count Number of buffers to allocate
  * \param[out] buffers Vector to store the allocated buffers
  * \return The number of allocated buffers on success or a negative error code
  * otherwise
  */
-int SoftwareIsp::exportBuffers(unsigned int output, unsigned int count,
+int SoftwareIsp::exportBuffers(const Stream *stream, unsigned int count,
 			       std::vector<std::unique_ptr<FrameBuffer>> *buffers)
 {
 	ASSERT(debayer_ != nullptr);
 
 	/* single output for now */
-	if (output >= 1)
+	if (stream == nullptr)
 		return -EINVAL;
 
 	for (unsigned int i = 0; i < count; i++) {
@@ -280,12 +280,12 @@ int SoftwareIsp::exportBuffers(unsigned int output, unsigned int count,
 /**
  * \brief Queue buffers to Software ISP
  * \param[in] input The input framebuffer
- * \param[in] outputs The container holding the output stream indexes and
+ * \param[in] outputs The container holding the output stream pointers and
  * their respective frame buffer outputs
  * \return 0 on success, a negative errno on failure
  */
 int SoftwareIsp::queueBuffers(FrameBuffer *input,
-			      const std::map<unsigned int, FrameBuffer *> &outputs)
+			      const std::map<const Stream *, FrameBuffer *> &outputs)
 {
 	/*
 	 * Validate the outputs as a sanity check: at least one output is
@@ -294,14 +294,15 @@ int SoftwareIsp::queueBuffers(FrameBuffer *input,
 	if (outputs.empty())
 		return -EINVAL;
 
-	for (auto [index, buffer] : outputs) {
+	for (auto [stream, buffer] : outputs) {
 		if (!buffer)
 			return -EINVAL;
-		if (index >= 1) /* only single stream atm */
+		if (outputs.size() != 1) /* only single stream atm */
 			return -EINVAL;
 	}
 
-	process(input, outputs.at(0));
+	for (auto iter = outputs.begin(); iter != outputs.end(); iter++)
+		process(input, iter->second);
 
 	return 0;
 }

@@ -32,24 +32,24 @@ namespace libcamera {
 LOG_DECLARE_CATEGORY(Converter)
 
 /* -----------------------------------------------------------------------------
- * V4L2M2MConverter::Stream
+ * V4L2M2MConverter::V4L2M2MStream
  */
 
-V4L2M2MConverter::Stream::Stream(V4L2M2MConverter *converter, unsigned int index)
+V4L2M2MConverter::V4L2M2MStream::V4L2M2MStream(V4L2M2MConverter *converter, unsigned int index)
 	: converter_(converter), index_(index)
 {
 	m2m_ = std::make_unique<V4L2M2MDevice>(converter->deviceNode());
 
-	m2m_->output()->bufferReady.connect(this, &Stream::outputBufferReady);
-	m2m_->capture()->bufferReady.connect(this, &Stream::captureBufferReady);
+	m2m_->output()->bufferReady.connect(this, &V4L2M2MStream::outputBufferReady);
+	m2m_->capture()->bufferReady.connect(this, &V4L2M2MStream::captureBufferReady);
 
 	int ret = m2m_->open();
 	if (ret < 0)
 		m2m_.reset();
 }
 
-int V4L2M2MConverter::Stream::configure(const StreamConfiguration &inputCfg,
-					const StreamConfiguration &outputCfg)
+int V4L2M2MConverter::V4L2M2MStream::configure(const StreamConfiguration &inputCfg,
+					       const StreamConfiguration &outputCfg)
 {
 	V4L2PixelFormat videoFormat =
 		m2m_->output()->toV4L2PixelFormat(inputCfg.pixelFormat);
@@ -101,13 +101,13 @@ int V4L2M2MConverter::Stream::configure(const StreamConfiguration &inputCfg,
 	return 0;
 }
 
-int V4L2M2MConverter::Stream::exportBuffers(unsigned int count,
-					    std::vector<std::unique_ptr<FrameBuffer>> *buffers)
+int V4L2M2MConverter::V4L2M2MStream::exportBuffers(unsigned int count,
+						   std::vector<std::unique_ptr<FrameBuffer>> *buffers)
 {
 	return m2m_->capture()->exportBuffers(count, buffers);
 }
 
-int V4L2M2MConverter::Stream::start()
+int V4L2M2MConverter::V4L2M2MStream::start()
 {
 	int ret = m2m_->output()->importBuffers(inputBufferCount_);
 	if (ret < 0)
@@ -134,7 +134,7 @@ int V4L2M2MConverter::Stream::start()
 	return 0;
 }
 
-void V4L2M2MConverter::Stream::stop()
+void V4L2M2MConverter::V4L2M2MStream::stop()
 {
 	m2m_->capture()->streamOff();
 	m2m_->output()->streamOff();
@@ -142,7 +142,7 @@ void V4L2M2MConverter::Stream::stop()
 	m2m_->output()->releaseBuffers();
 }
 
-int V4L2M2MConverter::Stream::queueBuffers(FrameBuffer *input, FrameBuffer *output)
+int V4L2M2MConverter::V4L2M2MStream::queueBuffers(FrameBuffer *input, FrameBuffer *output)
 {
 	int ret = m2m_->output()->queueBuffer(input);
 	if (ret < 0)
@@ -155,12 +155,12 @@ int V4L2M2MConverter::Stream::queueBuffers(FrameBuffer *input, FrameBuffer *outp
 	return 0;
 }
 
-std::string V4L2M2MConverter::Stream::logPrefix() const
+std::string V4L2M2MConverter::V4L2M2MStream::logPrefix() const
 {
 	return "stream" + std::to_string(index_);
 }
 
-void V4L2M2MConverter::Stream::outputBufferReady(FrameBuffer *buffer)
+void V4L2M2MConverter::V4L2M2MStream::outputBufferReady(FrameBuffer *buffer)
 {
 	auto it = converter_->queue_.find(buffer);
 	if (it == converter_->queue_.end())
@@ -172,7 +172,7 @@ void V4L2M2MConverter::Stream::outputBufferReady(FrameBuffer *buffer)
 	}
 }
 
-void V4L2M2MConverter::Stream::captureBufferReady(FrameBuffer *buffer)
+void V4L2M2MConverter::V4L2M2MStream::captureBufferReady(FrameBuffer *buffer)
 {
 	converter_->outputBufferReady.emit(buffer);
 }
@@ -336,7 +336,7 @@ int V4L2M2MConverter::configure(const StreamConfiguration &inputCfg,
 	streams_.reserve(outputCfgs.size());
 
 	for (unsigned int i = 0; i < outputCfgs.size(); ++i) {
-		Stream &stream = streams_.emplace_back(this, i);
+		V4L2M2MStream &stream = streams_.emplace_back(this, i);
 
 		if (!stream.isValid()) {
 			LOG(Converter, Error)
@@ -377,7 +377,7 @@ int V4L2M2MConverter::start()
 {
 	int ret;
 
-	for (Stream &stream : streams_) {
+	for (V4L2M2MStream &stream : streams_) {
 		ret = stream.start();
 		if (ret < 0) {
 			stop();
@@ -393,7 +393,7 @@ int V4L2M2MConverter::start()
  */
 void V4L2M2MConverter::stop()
 {
-	for (Stream &stream : utils::reverse(streams_))
+	for (V4L2M2MStream &stream : utils::reverse(streams_))
 		stream.stop();
 }
 

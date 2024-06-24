@@ -57,10 +57,10 @@ public:
 			 const std::map<unsigned int, FrameBuffer *> &outputs);
 
 private:
-	class Stream : protected Loggable
+	class V4L2M2MStream : protected Loggable
 	{
 	public:
-		Stream(V4L2M2MConverter *converter, unsigned int index);
+		V4L2M2MStream(V4L2M2MConverter *converter, unsigned int index);
 
 		bool isValid() const { return m2m_ != nullptr; }
 
@@ -91,7 +91,7 @@ private:
 
 	std::unique_ptr<V4L2M2MDevice> m2m_;
 
-	std::vector<Stream> streams_;
+	std::vector<V4L2M2MStream> streams_;
 	std::map<FrameBuffer *, unsigned int> queue_;
 };
 

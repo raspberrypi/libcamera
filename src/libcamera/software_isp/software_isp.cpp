@@ -287,12 +287,9 @@ int SoftwareIsp::exportBuffers(unsigned int output, unsigned int count,
 int SoftwareIsp::queueBuffers(FrameBuffer *input,
 			      const std::map<unsigned int, FrameBuffer *> &outputs)
 {
-	unsigned int mask = 0;
-
 	/*
 	 * Validate the outputs as a sanity check: at least one output is
-	 * required, all outputs must reference a valid stream and no two
-	 * outputs can reference the same stream.
+	 * required, all outputs must reference a valid stream.
 	 */
 	if (outputs.empty())
 		return -EINVAL;
@@ -302,10 +299,6 @@ int SoftwareIsp::queueBuffers(FrameBuffer *input,
 			return -EINVAL;
 		if (index >= 1) /* only single stream atm */
 			return -EINVAL;
-		if (mask & (1 << index))
-			return -EINVAL;
-
-		mask |= 1 << index;
 	}
 
 	process(input, outputs.at(0));

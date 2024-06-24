@@ -126,6 +126,8 @@ struct Matrix3d {
 	float m[9];
 };
 
+namespace {
+
 void packScanlineSBGGR8(void *output, const void *input, unsigned int width)
 {
 	const uint8_t *in = static_cast<const uint8_t *>(input);
@@ -282,7 +284,7 @@ void thumbScanlineIPU3([[maybe_unused]] const FormatInfo &info, void *output,
 	}
 }
 
-static const std::map<PixelFormat, FormatInfo> formatInfo = {
+const std::map<PixelFormat, FormatInfo> formatInfo = {
 	{ formats::SBGGR8, {
 		.bitsPerSample = 8,
 		.pattern = { CFAPatternBlue, CFAPatternGreen, CFAPatternGreen, CFAPatternRed },
@@ -380,6 +382,8 @@ static const std::map<PixelFormat, FormatInfo> formatInfo = {
 		.thumbScanline = thumbScanlineIPU3,
 	} },
 };
+
+} /* namespace */
 
 int DNGWriter::write(const char *filename, const Camera *camera,
 		     const StreamConfiguration &config,

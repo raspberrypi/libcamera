@@ -94,6 +94,8 @@ void Contrast::prepare(Metadata *imageMetadata)
 	imageMetadata->set("contrast.status", status_);
 }
 
+namespace {
+
 ipa::Pwl computeStretchCurve(Histogram const &histogram,
 			ContrastConfig const &config)
 {
@@ -152,6 +154,8 @@ ipa::Pwl applyManualContrast(ipa::Pwl const &gammaCurve, double brightness,
 	});
 	return newGammaCurve;
 }
+
+} /* namespace */
 
 void Contrast::process(StatisticsPtr &stats,
 		       [[maybe_unused]] Metadata *imageMetadata)

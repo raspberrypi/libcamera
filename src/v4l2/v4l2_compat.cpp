@@ -11,9 +11,11 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <stdarg.h>
+#include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <unistd.h>
 
 #include <libcamera/base/utils.h>
 

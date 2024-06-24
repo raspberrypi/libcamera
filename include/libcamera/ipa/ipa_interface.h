@@ -33,8 +33,8 @@ public:
 	virtual ~IPAInterface() = default;
 };
 
-} /* namespace libcamera */
-
 extern "C" {
 libcamera::IPAInterface *ipaCreate();
 }
+
+} /* namespace libcamera */

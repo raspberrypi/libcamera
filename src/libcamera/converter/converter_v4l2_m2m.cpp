@@ -403,13 +403,13 @@ void V4L2M2MConverter::stop()
 int V4L2M2MConverter::queueBuffers(FrameBuffer *input,
 				   const std::map<unsigned int, FrameBuffer *> &outputs)
 {
-	unsigned int mask = 0;
+	std::set<FrameBuffer *> outputBufs;
 	int ret;
 
 	/*
 	 * Validate the outputs as a sanity check: at least one output is
 	 * required, all outputs must reference a valid stream and no two
-	 * outputs can reference the same stream.
+	 * streams can reference same output framebuffers.
 	 */
 	if (outputs.empty())
 		return -EINVAL;
@@ -419,11 +419,12 @@ int V4L2M2MConverter::queueBuffers(FrameBuffer *input,
 			return -EINVAL;
 		if (index >= streams_.size())
 			return -EINVAL;
-		if (mask & (1 << index))
-			return -EINVAL;
 
-		mask |= 1 << index;
+		outputBufs.insert(buffer);
 	}
+
+	if (outputBufs.size() != streams_.size())
+		return -EINVAL;
 
 	/* Queue the input and output buffers to all the streams. */
 	for (auto [index, buffer] : outputs) {

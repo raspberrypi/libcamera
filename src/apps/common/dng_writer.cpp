@@ -526,6 +526,23 @@ int DNGWriter::write(const char *filename, const Camera *camera,
 
 	TIFFWriteDirectory(tif);
 
+	/*
+	 * Workaround for a bug introduced in libtiff version 4.5.1 and no fix
+	 * released. In these versions the CFA* tags were missing in the field
+	 * info.
+	 * Introduced by: https://gitlab.com/libtiff/libtiff/-/commit/738e04099b13192bb1f654e74e9b5829313f3161
+	 * Fixed by: https://gitlab.com/libtiff/libtiff/-/commit/49856998c3d82e65444b47bb4fb11b7830a0c2be
+	 */
+	if (!TIFFFindField(tif, TIFFTAG_CFAREPEATPATTERNDIM, TIFF_ANY)) {
+		static const TIFFFieldInfo infos[] = {
+			{ TIFFTAG_CFAREPEATPATTERNDIM, 2, 2, TIFF_SHORT, FIELD_CUSTOM,
+			  1, 0, const_cast<char *>("CFARepeatPatternDim") },
+			{ TIFFTAG_CFAPATTERN, -1, -1, TIFF_BYTE, FIELD_CUSTOM,
+			  1, 1, const_cast<char *>("CFAPattern") },
+		};
+		TIFFMergeFieldInfo(tif, infos, 2);
+	}
+
 	/* Create a new IFD for the RAW image. */
 	const uint16_t cfaRepeatPatternDim[] = { 2, 2 };
 	const uint8_t cfaPlaneColor[] = {

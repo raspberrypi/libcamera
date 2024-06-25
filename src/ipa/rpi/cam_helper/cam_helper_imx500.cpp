@@ -38,12 +38,12 @@ LOG_DECLARE_CATEGORY(IPARPI)
  */
 static constexpr unsigned int NetworkNameLen = 64;
 static constexpr unsigned int MaxNumTensors = 8;
+static constexpr unsigned int MaxNumDimensions = 8;
 
 struct OutputTensorInfo {
 	uint32_t tensorDataNum;
-	uint16_t size;
-	uint8_t ordinal;
-	uint8_t serializationIndex;
+	uint32_t numDimensions;
+	uint16_t size[MaxNumDimensions];
 };
 
 struct IMX500OutputTensorInfoExported {
@@ -325,9 +325,9 @@ void CamHelperImx500::parseInferenceData(libcamera::Span<const uint8_t> buffer,
 				exported.numTensors = outputTensorInfo.numTensors;
 				for (unsigned int i = 0; i < exported.numTensors; i++) {
 					exported.info[i].tensorDataNum = outputTensorInfo.tensorDataNum[i];
-					exported.info[i].size = outputTensorInfo.vecDim[i].size;
-					exported.info[i].ordinal = outputTensorInfo.vecDim[i].ordinal;
-					exported.info[i].serializationIndex = outputTensorInfo.vecDim[i].serializationIndex;
+					exported.info[i].numDimensions = outputTensorInfo.numDimensions[i];
+					for (unsigned int j = 0; j < exported.info[i].numDimensions; j++)
+						exported.info[i].size[j] = outputTensorInfo.vecDim[i][j].size;
 				}
 			} else {
 				LOG(IPARPI, Debug)

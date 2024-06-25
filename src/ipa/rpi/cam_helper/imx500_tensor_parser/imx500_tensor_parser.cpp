@@ -217,7 +217,10 @@ int populateOutputTensorInfo(IMX500OutputTensorInfo &outputTensorInfo,
 	outputTensorInfo.numTensors = numOutputTensors;
 	outputTensorInfo.networkName = outputApParams[0].networkName;
 	outputTensorInfo.tensorDataNum.resize(numOutputTensors, 0);
-	outputTensorInfo.vecDim = outputApParams[0].vecDim;
+	for (auto const &p : outputApParams) {
+		outputTensorInfo.vecDim.push_back(p.vecDim);
+		outputTensorInfo.numDimensions.push_back(p.vecDim.size());
+	}
 
 	return 0;
 }

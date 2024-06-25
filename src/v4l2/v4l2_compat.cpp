@@ -7,6 +7,7 @@
 
 #include "v4l2_compat_manager.h"
 
+#include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdarg.h>
@@ -28,12 +29,25 @@ using namespace libcamera;
 	va_end(ap);			\
 }
 
+namespace {
+
+/*
+ * Determine if the flags require a further mode arguments that needs to be
+ * parsed from va_args.
+ */
+bool needs_mode(int flags)
+{
+	return (flags & O_CREAT) || ((flags & O_TMPFILE) == O_TMPFILE);
+}
+
+} /* namespace */
+
 extern "C" {
 
 LIBCAMERA_PUBLIC int open(const char *path, int oflag, ...)
 {
 	mode_t mode = 0;
-	if (oflag & O_CREAT || oflag & O_TMPFILE)
+	if (needs_mode(oflag))
 		extract_va_arg(mode_t, mode, oflag);
 
 	return V4L2CompatManager::instance()->openat(AT_FDCWD, path,
@@ -43,6 +57,7 @@ LIBCAMERA_PUBLIC int open(const char *path, int oflag, ...)
 /* _FORTIFY_SOURCE redirects open to __open_2 */
 LIBCAMERA_PUBLIC int __open_2(const char *path, int oflag)
 {
+	assert(!needs_mode(oflag));
 	return open(path, oflag);
 }
 
@@ -50,7 +65,7 @@ LIBCAMERA_PUBLIC int __open_2(const char *path, int oflag)
 LIBCAMERA_PUBLIC int open64(const char *path, int oflag, ...)
 {
 	mode_t mode = 0;
-	if (oflag & O_CREAT || oflag & O_TMPFILE)
+	if (needs_mode(oflag))
 		extract_va_arg(mode_t, mode, oflag);
 
 	return V4L2CompatManager::instance()->openat(AT_FDCWD, path,
@@ -59,6 +74,7 @@ LIBCAMERA_PUBLIC int open64(const char *path, int oflag, ...)
 
 LIBCAMERA_PUBLIC int __open64_2(const char *path, int oflag)
 {
+	assert(!needs_mode(oflag));
 	return open64(path, oflag);
 }
 #endif
@@ -66,7 +82,7 @@ LIBCAMERA_PUBLIC int __open64_2(const char *path, int oflag)
 LIBCAMERA_PUBLIC int openat(int dirfd, const char *path, int oflag, ...)
 {
 	mode_t mode = 0;
-	if (oflag & O_CREAT || oflag & O_TMPFILE)
+	if (needs_mode(oflag))
 		extract_va_arg(mode_t, mode, oflag);
 
 	return V4L2CompatManager::instance()->openat(dirfd, path, oflag, mode);
@@ -74,6 +90,7 @@ LIBCAMERA_PUBLIC int openat(int dirfd, const char *path, int oflag, ...)
 
 LIBCAMERA_PUBLIC int __openat_2(int dirfd, const char *path, int oflag)
 {
+	assert(!needs_mode(oflag));
 	return openat(dirfd, path, oflag);
 }
 
@@ -81,7 +98,7 @@ LIBCAMERA_PUBLIC int __openat_2(int dirfd, const char *path, int oflag)
 LIBCAMERA_PUBLIC int openat64(int dirfd, const char *path, int oflag, ...)
 {
 	mode_t mode = 0;
-	if (oflag & O_CREAT || oflag & O_TMPFILE)
+	if (needs_mode(oflag))
 		extract_va_arg(mode_t, mode, oflag);
 
 	return V4L2CompatManager::instance()->openat(dirfd, path,
@@ -90,6 +107,7 @@ LIBCAMERA_PUBLIC int openat64(int dirfd, const char *path, int oflag, ...)
 
 LIBCAMERA_PUBLIC int __openat64_2(int dirfd, const char *path, int oflag)
 {
+	assert(!needs_mode(oflag));
 	return openat64(dirfd, path, oflag);
 }
 #endif

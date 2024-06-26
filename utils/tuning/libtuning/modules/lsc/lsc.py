@@ -59,7 +59,10 @@ class LSC(Module):
     def _lsc_single_channel(self, channel: np.array,
                             image: lt.Image, green_grid: np.array = None):
         grid = self._get_grid(channel, image.w, image.h)
-        grid -= image.blacklevel_16
+        # Clamp the values to a small positive, so that the following 1/grid
+        # doesn't produce negative results.
+        grid = np.maximum(grid - image.blacklevel_16, 0.1)
+
         if green_grid is None:
             table = np.reshape(1 / grid, self.sector_shape[::-1])
         else:

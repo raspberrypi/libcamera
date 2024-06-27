@@ -92,6 +92,15 @@ const IPAHwSettings ipaHwSettingsV10{
 	RKISP1_CIF_ISP_HIST_BIN_N_MAX_V10,
 	RKISP1_CIF_ISP_HISTOGRAM_WEIGHT_GRIDS_SIZE_V10,
 	RKISP1_CIF_ISP_GAMMA_OUT_MAX_SAMPLES_V10,
+	false,
+};
+
+const IPAHwSettings ipaHwSettingsIMX8MP{
+	RKISP1_CIF_ISP_AE_MEAN_MAX_V10,
+	RKISP1_CIF_ISP_HIST_BIN_N_MAX_V10,
+	RKISP1_CIF_ISP_HISTOGRAM_WEIGHT_GRIDS_SIZE_V10,
+	RKISP1_CIF_ISP_GAMMA_OUT_MAX_SAMPLES_V10,
+	true,
 };
 
 const IPAHwSettings ipaHwSettingsV12{
@@ -99,6 +108,7 @@ const IPAHwSettings ipaHwSettingsV12{
 	RKISP1_CIF_ISP_HIST_BIN_N_MAX_V12,
 	RKISP1_CIF_ISP_HISTOGRAM_WEIGHT_GRIDS_SIZE_V12,
 	RKISP1_CIF_ISP_GAMMA_OUT_MAX_SAMPLES_V12,
+	false,
 };
 
 /* List of controls handled by the RkISP1 IPA */
@@ -129,8 +139,10 @@ int IPARkISP1::init(const IPASettings &settings, unsigned int hwRevision,
 	/* \todo Add support for other revisions */
 	switch (hwRevision) {
 	case RKISP1_V10:
-	case RKISP1_V_IMX8MP:
 		context_.hw = &ipaHwSettingsV10;
+		break;
+	case RKISP1_V_IMX8MP:
+		context_.hw = &ipaHwSettingsIMX8MP;
 		break;
 	case RKISP1_V12:
 		context_.hw = &ipaHwSettingsV12;

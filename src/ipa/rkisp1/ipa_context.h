@@ -31,6 +31,7 @@ struct IPAHwSettings {
 	unsigned int numHistogramBins;
 	unsigned int numHistogramWeights;
 	unsigned int numGammaOutSamples;
+	bool compand;
 };
 
 struct IPASessionConfiguration {

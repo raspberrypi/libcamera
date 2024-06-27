@@ -7,6 +7,8 @@
 
 #include "blc.h"
 
+#include <linux/videodev2.h>
+
 #include <libcamera/base/log.h>
 
 #include <libcamera/control_ids.h>
@@ -38,7 +40,6 @@ namespace ipa::rkisp1::algorithms {
 LOG_DEFINE_CATEGORY(RkISP1Blc)
 
 BlackLevelCorrection::BlackLevelCorrection()
-	: tuningParameters_(false)
 {
 	/*
 	 * This is a bit of a hack. In raw mode no black level correction
@@ -96,8 +97,6 @@ int BlackLevelCorrection::init(IPAContext &context, const YamlObject &tuningData
 		blackLevelBlue_ = *blackLevel;
 	}
 
-	tuningParameters_ = true;
-
 	LOG(RkISP1Blc, Debug)
 		<< "Black levels: red " << blackLevelRed_
 		<< ", green (red) " << blackLevelGreenR_
@@ -107,10 +106,27 @@ int BlackLevelCorrection::init(IPAContext &context, const YamlObject &tuningData
 	return 0;
 }
 
+int BlackLevelCorrection::configure(IPAContext &context,
+				    [[maybe_unused]] const IPACameraSensorInfo &configInfo)
+{
+	/*
+	 * BLC on ISP versions that include the companding block requires usage
+	 * of the extensible parameters format.
+	 */
+	supported_ = context.configuration.paramFormat == V4L2_META_FMT_RK_ISP1_EXT_PARAMS ||
+		     !context.hw->compand;
+
+	if (!supported_)
+		LOG(RkISP1Blc, Warning)
+			<< "BLC in companding block requires extensible parameters";
+
+	return 0;
+}
+
 /**
  * \copydoc libcamera::ipa::Algorithm::prepare
  */
-void BlackLevelCorrection::prepare([[maybe_unused]] IPAContext &context,
+void BlackLevelCorrection::prepare(IPAContext &context,
 				   const uint32_t frame,
 				   [[maybe_unused]] IPAFrameContext &frameContext,
 				   RkISP1Params *params)
@@ -121,18 +137,33 @@ void BlackLevelCorrection::prepare([[maybe_unused]] IPAContext &context,
 	if (frame > 0)
 		return;
 
-	if (!tuningParameters_)
+	if (!supported_)
 		return;
 
-	auto config = params->block<BlockType::Bls>();
-	config.setEnabled(true);
+	if (context.hw->compand) {
+		auto config = params->block<BlockType::CompandBls>();
+		config.setEnabled(true);
 
-	config->enable_auto = 0;
-	/* The rkisp1 uses 12bit based black levels. Scale down accordingly. */
-	config->fixed_val.r = blackLevelRed_ >> 4;
-	config->fixed_val.gr = blackLevelGreenR_ >> 4;
-	config->fixed_val.gb = blackLevelGreenB_ >> 4;
-	config->fixed_val.b = blackLevelBlue_ >> 4;
+		/*
+		 * Scale up to the 20-bit black levels used by the companding
+		 * block.
+		 */
+		config->r = blackLevelRed_ << 4;
+		config->gr = blackLevelGreenR_ << 4;
+		config->gb = blackLevelGreenB_ << 4;
+		config->b = blackLevelBlue_ << 4;
+	} else {
+		auto config = params->block<BlockType::Bls>();
+		config.setEnabled(true);
+
+		config->enable_auto = 0;
+
+		/* Scale down to the 12-bit black levels used by the BLS block. */
+		config->fixed_val.r = blackLevelRed_ >> 4;
+		config->fixed_val.gr = blackLevelGreenR_ >> 4;
+		config->fixed_val.gb = blackLevelGreenB_ >> 4;
+		config->fixed_val.b = blackLevelBlue_ >> 4;
+	}
 }
 
 /**

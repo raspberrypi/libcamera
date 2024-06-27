@@ -20,6 +20,8 @@ public:
 	~BlackLevelCorrection() = default;
 
 	int init(IPAContext &context, const YamlObject &tuningData) override;
+	int configure(IPAContext &context,
+		      const IPACameraSensorInfo &configInfo) override;
 	void prepare(IPAContext &context, const uint32_t frame,
 		     IPAFrameContext &frameContext,
 		     RkISP1Params *params) override;
@@ -29,7 +31,8 @@ public:
 		     ControlList &metadata) override;
 
 private:
-	bool tuningParameters_;
+	bool supported_;
+
 	int16_t blackLevelRed_;
 	int16_t blackLevelGreenR_;
 	int16_t blackLevelGreenB_;

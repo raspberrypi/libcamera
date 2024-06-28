@@ -136,6 +136,34 @@ void packScanlineRaw8(void *output, const void *input, unsigned int width)
 	std::copy(in, in + width, out);
 }
 
+void packScanlineRaw10(void *output, const void *input, unsigned int width)
+{
+	const uint16_t *in = static_cast<const uint16_t *>(input);
+	uint8_t *out = static_cast<uint8_t *>(output);
+
+	for (unsigned int i = 0; i < width; i += 4) {
+		*out++ = (in[0] & 0x3fc) >> 2;
+		*out++ = (in[0] & 0x003) << 6 | (in[1] & 0x3f0) >> 4;
+		*out++ = (in[1] & 0x00f) << 4 | (in[2] & 0x3c0) >> 6;
+		*out++ = (in[2] & 0x03f) << 2 | (in[3] & 0x300) >> 8;
+		*out++ = (in[3] & 0x0ff);
+		in += 4;
+	}
+}
+
+void packScanlineRaw12(void *output, const void *input, unsigned int width)
+{
+	const uint16_t *in = static_cast<const uint16_t *>(input);
+	uint8_t *out = static_cast<uint8_t *>(output);
+
+	for (unsigned int i = 0; i < width; i += 2) {
+		*out++ = (in[0] & 0xff0) >> 4;
+		*out++ = (in[0] & 0x00f) << 4 | (in[1] & 0xf00) >> 8;
+		*out++ = (in[1] & 0x0ff);
+		in += 2;
+	}
+}
+
 void packScanlineRaw16(void *output, const void *input, unsigned int width)
 {
 	const uint16_t *in = static_cast<const uint16_t *>(input);
@@ -339,6 +367,54 @@ const std::map<PixelFormat, FormatInfo> formatInfo = {
 		.pattern = { CFAPatternRed, CFAPatternGreen, CFAPatternGreen, CFAPatternBlue },
 		.packScanline = packScanlineRaw8,
 		.thumbScanline = thumbScanlineRaw_CSI2P,
+	} },
+	{ formats::SBGGR10, {
+		.bitsPerSample = 10,
+		.pattern = { CFAPatternBlue, CFAPatternGreen, CFAPatternGreen, CFAPatternRed },
+		.packScanline = packScanlineRaw10,
+		.thumbScanline = thumbScanlineRaw,
+	} },
+	{ formats::SGBRG10, {
+		.bitsPerSample = 10,
+		.pattern = { CFAPatternGreen, CFAPatternBlue, CFAPatternRed, CFAPatternGreen },
+		.packScanline = packScanlineRaw10,
+		.thumbScanline = thumbScanlineRaw,
+	} },
+	{ formats::SGRBG10, {
+		.bitsPerSample = 10,
+		.pattern = { CFAPatternGreen, CFAPatternRed, CFAPatternBlue, CFAPatternGreen },
+		.packScanline = packScanlineRaw10,
+		.thumbScanline = thumbScanlineRaw,
+	} },
+	{ formats::SRGGB10, {
+		.bitsPerSample = 10,
+		.pattern = { CFAPatternRed, CFAPatternGreen, CFAPatternGreen, CFAPatternBlue },
+		.packScanline = packScanlineRaw10,
+		.thumbScanline = thumbScanlineRaw,
+	} },
+	{ formats::SBGGR12, {
+		.bitsPerSample = 12,
+		.pattern = { CFAPatternBlue, CFAPatternGreen, CFAPatternGreen, CFAPatternRed },
+		.packScanline = packScanlineRaw12,
+		.thumbScanline = thumbScanlineRaw,
+	} },
+	{ formats::SGBRG12, {
+		.bitsPerSample = 12,
+		.pattern = { CFAPatternGreen, CFAPatternBlue, CFAPatternRed, CFAPatternGreen },
+		.packScanline = packScanlineRaw12,
+		.thumbScanline = thumbScanlineRaw,
+	} },
+	{ formats::SGRBG12, {
+		.bitsPerSample = 12,
+		.pattern = { CFAPatternGreen, CFAPatternRed, CFAPatternBlue, CFAPatternGreen },
+		.packScanline = packScanlineRaw12,
+		.thumbScanline = thumbScanlineRaw,
+	} },
+	{ formats::SRGGB12, {
+		.bitsPerSample = 12,
+		.pattern = { CFAPatternRed, CFAPatternGreen, CFAPatternGreen, CFAPatternBlue },
+		.packScanline = packScanlineRaw12,
+		.thumbScanline = thumbScanlineRaw,
 	} },
 	{ formats::SBGGR16, {
 		.bitsPerSample = 16,

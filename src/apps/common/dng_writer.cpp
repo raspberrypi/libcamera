@@ -144,6 +144,29 @@ void packScanlineRaw16(void *output, const void *input, unsigned int width)
 	std::copy(in, in + width, out);
 }
 
+/* Thumbnail function for raw data with each pixel aligned to 16bit. */
+void thumbScanlineRaw(const FormatInfo &info, void *output, const void *input,
+		      unsigned int width, unsigned int stride)
+{
+	const uint16_t *in = static_cast<const uint16_t *>(input);
+	const uint16_t *in2 = static_cast<const uint16_t *>(input) + stride / 2;
+	uint8_t *out = static_cast<uint8_t *>(output);
+
+	/* Shift down to 8. */
+	unsigned int shift = info.bitsPerSample - 8;
+
+	/* Simple averaging that produces greyscale RGB values. */
+	for (unsigned int x = 0; x < width; x++) {
+		uint16_t value = (in[0] + in[1] + in2[0] + in2[1]) >> 2;
+		value = value >> shift;
+		*out++ = value;
+		*out++ = value;
+		*out++ = value;
+		in += 16;
+		in2 += 16;
+	}
+}
+
 void packScanlineRaw10_CSI2P(void *output, const void *input, unsigned int width)
 {
 	const uint8_t *in = static_cast<const uint8_t *>(input);
@@ -321,25 +344,25 @@ const std::map<PixelFormat, FormatInfo> formatInfo = {
 		.bitsPerSample = 16,
 		.pattern = { CFAPatternBlue, CFAPatternGreen, CFAPatternGreen, CFAPatternRed },
 		.packScanline = packScanlineRaw16,
-		.thumbScanline = thumbScanlineRaw_CSI2P,
+		.thumbScanline = thumbScanlineRaw,
 	} },
 	{ formats::SGBRG16, {
 		.bitsPerSample = 16,
 		.pattern = { CFAPatternGreen, CFAPatternBlue, CFAPatternRed, CFAPatternGreen },
 		.packScanline = packScanlineRaw16,
-		.thumbScanline = thumbScanlineRaw_CSI2P,
+		.thumbScanline = thumbScanlineRaw,
 	} },
 	{ formats::SGRBG16, {
 		.bitsPerSample = 16,
 		.pattern = { CFAPatternGreen, CFAPatternRed, CFAPatternBlue, CFAPatternGreen },
 		.packScanline = packScanlineRaw16,
-		.thumbScanline = thumbScanlineRaw_CSI2P,
+		.thumbScanline = thumbScanlineRaw,
 	} },
 	{ formats::SRGGB16, {
 		.bitsPerSample = 16,
 		.pattern = { CFAPatternRed, CFAPatternGreen, CFAPatternGreen, CFAPatternBlue },
 		.packScanline = packScanlineRaw16,
-		.thumbScanline = thumbScanlineRaw_CSI2P,
+		.thumbScanline = thumbScanlineRaw,
 	} },
 	{ formats::SBGGR10_CSI2P, {
 		.bitsPerSample = 10,

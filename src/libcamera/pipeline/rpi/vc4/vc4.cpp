@@ -802,7 +802,7 @@ void Vc4CameraData::ispInputDequeue(FrameBuffer *buffer)
 void Vc4CameraData::ispOutputDequeue(FrameBuffer *buffer)
 {
 	RPi::Stream *stream = nullptr;
-	unsigned int index;
+	unsigned int index = 0;
 
 	if (!isRunning())
 		return;

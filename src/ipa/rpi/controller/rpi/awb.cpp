@@ -122,7 +122,7 @@ int AwbConfig::read(const libcamera::YamlObject &params)
 		}
 		if (priors.empty()) {
 			LOG(RPiAwb, Error) << "AwbConfig: no AWB priors configured";
-			return ret;
+			return -EINVAL;
 		}
 	}
 	if (params.contains("modes")) {

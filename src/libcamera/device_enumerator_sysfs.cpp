@@ -33,7 +33,7 @@ int DeviceEnumeratorSysfs::init()
 int DeviceEnumeratorSysfs::enumerate()
 {
 	struct dirent *ent;
-	DIR *dir;
+	DIR *dir = nullptr;
 
 	static const char * const sysfs_dirs[] = {
 		"/sys/subsystem/media/devices",

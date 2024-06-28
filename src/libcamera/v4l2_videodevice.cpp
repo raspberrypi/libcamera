@@ -1545,7 +1545,7 @@ int V4L2VideoDevice::releaseBuffers()
 }
 
 /**
- * \brief Queue a buffer to the video device
+ * \brief Queue a buffer to the video device if possible
  * \param[in] buffer The buffer to be queued
  *
  * For capture video devices the \a buffer will be filled with data by the
@@ -1559,18 +1559,256 @@ int V4L2VideoDevice::releaseBuffers()
  * Note that queueBuffer() will fail if the device is in the process of being
  * stopped from a streaming state through streamOff().
  *
+ * V4L2 only allows upto VIDEO_MAX_FRAME frames to be queued at a time, so if
+ * we reach this limit, store the framebuffers in a pending queue, and try to
+ * enqueue once a buffer has been dequeued.
+ *
  * \return 0 on success or a negative error code otherwise
  */
 int V4L2VideoDevice::queueBuffer(FrameBuffer *buffer)
 {
-	struct v4l2_plane v4l2Planes[VIDEO_MAX_PLANES] = {};
-	struct v4l2_buffer buf = {};
-	int ret;
-
 	if (state_ == State::Stopping) {
 		LOG(V4L2, Error) << "Device is in a stopping state.";
 		return -ESHUTDOWN;
 	}
+
+	if (queuedBuffers_.size() == VIDEO_MAX_FRAME) {
+		LOG(V4L2, Debug) << "V4L2 queue has " << VIDEO_MAX_FRAME
+				 << " already queued, differing queueing.";
+
+		pendingBuffersToQueue_.push(buffer);
+		return 0;
+	}
+
+	if (!pendingBuffersToQueue_.empty()) {
+		LOG(V4L2, Debug) << "Adding buffer " << buffer
+				 << " to the pending queue and replacing with "
+				 << pendingBuffersToQueue_.front();
+
+		pendingBuffersToQueue_.push(buffer);
+		buffer = pendingBuffersToQueue_.front();
+		pendingBuffersToQueue_.pop();
+	}
+
+	return queueToDevice(buffer);
+}
+
+/**
+ * \brief Slot to handle completed buffer events from the V4L2 video device
+ *
+ * When this slot is called, a Buffer has become available from the device, and
+ * will be emitted through the bufferReady Signal.
+ *
+ * For Capture video devices the FrameBuffer will contain valid data.
+ * For Output video devices the FrameBuffer can be considered empty.
+ */
+void V4L2VideoDevice::bufferAvailable()
+{
+	FrameBuffer *buffer = dequeueBuffer();
+	if (!buffer)
+		return;
+
+	/* Notify anyone listening to the device. */
+	bufferReady.emit(buffer);
+}
+
+/**
+ * \brief Dequeue the next available buffer from the video device
+ *
+ * This function dequeues the next available buffer from the device. If no
+ * buffer is available to be dequeued it will return nullptr immediately.
+ *
+ * Once a buffer is dequeued from the device, this function may also enqueue
+ * a buffer that has been placed in the pending queue (due to reaching the V4L2
+ * queue size limit. Note that if this enqueue fails, we log the error, but
+ * continue running this function to completion.
+ *
+ * \return A pointer to the dequeued buffer on success, or nullptr otherwise
+ */
+FrameBuffer *V4L2VideoDevice::dequeueBuffer()
+{
+	struct v4l2_buffer buf = {};
+	struct v4l2_plane planes[VIDEO_MAX_PLANES] = {};
+	int ret;
+
+	buf.type = bufferType_;
+	buf.memory = memoryType_;
+
+	bool multiPlanar = V4L2_TYPE_IS_MULTIPLANAR(buf.type);
+
+	if (multiPlanar) {
+		buf.length = VIDEO_MAX_PLANES;
+		buf.m.planes = planes;
+	}
+
+	ret = ioctl(VIDIOC_DQBUF, &buf);
+	if (ret < 0) {
+		LOG(V4L2, Error)
+			<< "Failed to dequeue buffer: " << strerror(-ret);
+		return nullptr;
+	}
+
+	LOG(V4L2, Debug) << "Dequeuing buffer " << buf.index;
+
+	/*
+	 * If the video node fails to stream-on successfully (which can occur
+	 * when queuing a buffer), a vb2 kernel bug can lead to the buffer which
+	 * returns a failure upon queuing being mistakenly kept in the kernel.
+	 * This leads to the kernel notifying us that a buffer is available to
+	 * dequeue, which we have no awareness of being queued, and thus we will
+	 * not find it in the queuedBuffers_ list.
+	 *
+	 * Whilst this kernel bug has been fixed in mainline, ensure that we
+	 * safely ignore buffers which are unexpected to prevent crashes on
+	 * older kernels.
+	 */
+	auto it = queuedBuffers_.find(buf.index);
+	if (it == queuedBuffers_.end()) {
+		LOG(V4L2, Error)
+			<< "Dequeued unexpected buffer index " << buf.index;
+
+		return nullptr;
+	}
+
+	cache_->put(buf.index);
+
+	FrameBuffer *buffer = it->second;
+	queuedBuffers_.erase(it);
+
+	if (!pendingBuffersToQueue_.empty()) {
+		FrameBuffer *pending = pendingBuffersToQueue_.front();
+
+		pendingBuffersToQueue_.pop();
+		/*
+		 * If the pending buffer enqueue fails, we must continue this
+		 * function to completion for the dequeue operation.
+		 */
+		if (queueToDevice(pending))
+			LOG(V4L2, Error)
+				<< "Failed to re-queue pending buffer "
+				<< pending;
+	}
+
+	if (queuedBuffers_.empty()) {
+		fdBufferNotifier_->setEnabled(false);
+		watchdog_.stop();
+	} else if (watchdogDuration_) {
+		/*
+		 * Restart the watchdog timer if there are buffers still queued
+		 * in the device.
+		 */
+		watchdog_.start(std::chrono::duration_cast<std::chrono::milliseconds>(watchdogDuration_));
+	}
+
+	FrameMetadata &metadata = buffer->_d()->metadata();
+
+	metadata.status = buf.flags & V4L2_BUF_FLAG_ERROR
+			? FrameMetadata::FrameError
+			: FrameMetadata::FrameSuccess;
+	metadata.sequence = buf.sequence;
+	metadata.timestamp = buf.timestamp.tv_sec * 1000000000ULL
+			   + buf.timestamp.tv_usec * 1000ULL;
+
+	if (V4L2_TYPE_IS_OUTPUT(buf.type))
+		return buffer;
+
+	/*
+	 * Detect kernel drivers which do not reset the sequence number to zero
+	 * on stream start.
+	 */
+	if (!firstFrame_) {
+		if (buf.sequence)
+			LOG(V4L2, Info)
+				<< "Zero sequence expected for first frame (got "
+				<< buf.sequence << ")";
+		firstFrame_ = buf.sequence;
+	}
+	metadata.sequence -= firstFrame_.value();
+
+	unsigned int numV4l2Planes = multiPlanar ? buf.length : 1;
+
+	if (numV4l2Planes != buffer->planes().size()) {
+		/*
+		 * If we have a multi-planar buffer with a V4L2
+		 * single-planar format, split the V4L2 buffer across
+		 * the buffer planes. Only the last plane may have less
+		 * bytes used than its length.
+		 */
+		if (numV4l2Planes != 1) {
+			LOG(V4L2, Error)
+				<< "Invalid number of planes (" << numV4l2Planes
+				<< " != " << buffer->planes().size() << ")";
+
+			metadata.status = FrameMetadata::FrameError;
+			return buffer;
+		}
+
+		/*
+		 * With a V4L2 single-planar format, all the data is stored in
+		 * a single memory plane. The number of bytes used is conveyed
+		 * through that plane when using the V4L2 multi-planar API, or
+		 * set directly in the buffer when using the V4L2 single-planar
+		 * API.
+		 */
+		unsigned int bytesused = multiPlanar ? planes[0].bytesused
+				       : buf.bytesused;
+		unsigned int remaining = bytesused;
+
+		for (auto [i, plane] : utils::enumerate(buffer->planes())) {
+			if (!remaining) {
+				LOG(V4L2, Error)
+					<< "Dequeued buffer (" << bytesused
+					<< " bytes) too small for plane lengths "
+					<< utils::join(buffer->planes(), "/",
+						       [](const FrameBuffer::Plane &p) {
+							       return p.length;
+						       });
+
+				metadata.status = FrameMetadata::FrameError;
+				return buffer;
+			}
+
+			metadata.planes()[i].bytesused =
+				std::min(plane.length, remaining);
+			remaining -= metadata.planes()[i].bytesused;
+		}
+	} else if (multiPlanar) {
+		/*
+		 * If we use the multi-planar API, fill in the planes.
+		 * The number of planes in the frame buffer and in the
+		 * V4L2 buffer is guaranteed to be equal at this point.
+		 */
+		for (unsigned int i = 0; i < numV4l2Planes; ++i)
+			metadata.planes()[i].bytesused = planes[i].bytesused;
+	} else {
+		metadata.planes()[0].bytesused = buf.bytesused;
+	}
+
+	return buffer;
+}
+
+/**
+ * \brief Queue a buffer to the video device if possible
+ * \param[in] buffer The buffer to be queued
+ *
+ * For capture video devices the \a buffer will be filled with data by the
+ * device. For output video devices the \a buffer shall contain valid data and
+ * will be processed by the device. Once the device has finished processing the
+ * buffer, it will be available for dequeue.
+ *
+ * The best available V4L2 buffer is picked for \a buffer using the V4L2 buffer
+ * cache.
+ *
+ * Note that queueToDevice() will fail if the device is in the process of being
+ * stopped from a streaming state through streamOff().
+ *
+ * \return 0 on success or a negative error code otherwise
+ */
+int V4L2VideoDevice::queueToDevice(FrameBuffer *buffer)
+{
+	struct v4l2_plane v4l2Planes[VIDEO_MAX_PLANES] = {};
+	struct v4l2_buffer buf = {};
+	int ret;
 
 	/*
 	 * Pipeline handlers should not requeue buffers after releasing the
@@ -1709,181 +1947,6 @@ int V4L2VideoDevice::queueBuffer(FrameBuffer *buffer)
 	queuedBuffers_[buf.index] = buffer;
 
 	return 0;
-}
-
-/**
- * \brief Slot to handle completed buffer events from the V4L2 video device
- *
- * When this slot is called, a Buffer has become available from the device, and
- * will be emitted through the bufferReady Signal.
- *
- * For Capture video devices the FrameBuffer will contain valid data.
- * For Output video devices the FrameBuffer can be considered empty.
- */
-void V4L2VideoDevice::bufferAvailable()
-{
-	FrameBuffer *buffer = dequeueBuffer();
-	if (!buffer)
-		return;
-
-	/* Notify anyone listening to the device. */
-	bufferReady.emit(buffer);
-}
-
-/**
- * \brief Dequeue the next available buffer from the video device
- *
- * This function dequeues the next available buffer from the device. If no
- * buffer is available to be dequeued it will return nullptr immediately.
- *
- * \return A pointer to the dequeued buffer on success, or nullptr otherwise
- */
-FrameBuffer *V4L2VideoDevice::dequeueBuffer()
-{
-	struct v4l2_buffer buf = {};
-	struct v4l2_plane planes[VIDEO_MAX_PLANES] = {};
-	int ret;
-
-	buf.type = bufferType_;
-	buf.memory = memoryType_;
-
-	bool multiPlanar = V4L2_TYPE_IS_MULTIPLANAR(buf.type);
-
-	if (multiPlanar) {
-		buf.length = VIDEO_MAX_PLANES;
-		buf.m.planes = planes;
-	}
-
-	ret = ioctl(VIDIOC_DQBUF, &buf);
-	if (ret < 0) {
-		LOG(V4L2, Error)
-			<< "Failed to dequeue buffer: " << strerror(-ret);
-		return nullptr;
-	}
-
-	LOG(V4L2, Debug) << "Dequeuing buffer " << buf.index;
-
-	/*
-	 * If the video node fails to stream-on successfully (which can occur
-	 * when queuing a buffer), a vb2 kernel bug can lead to the buffer which
-	 * returns a failure upon queuing being mistakenly kept in the kernel.
-	 * This leads to the kernel notifying us that a buffer is available to
-	 * dequeue, which we have no awareness of being queued, and thus we will
-	 * not find it in the queuedBuffers_ list.
-	 *
-	 * Whilst this kernel bug has been fixed in mainline, ensure that we
-	 * safely ignore buffers which are unexpected to prevent crashes on
-	 * older kernels.
-	 */
-	auto it = queuedBuffers_.find(buf.index);
-	if (it == queuedBuffers_.end()) {
-		LOG(V4L2, Error)
-			<< "Dequeued unexpected buffer index " << buf.index;
-
-		return nullptr;
-	}
-
-	cache_->put(buf.index);
-
-	FrameBuffer *buffer = it->second;
-	queuedBuffers_.erase(it);
-
-	if (queuedBuffers_.empty()) {
-		fdBufferNotifier_->setEnabled(false);
-		watchdog_.stop();
-	} else if (watchdogDuration_) {
-		/*
-		 * Restart the watchdog timer if there are buffers still queued
-		 * in the device.
-		 */
-		watchdog_.start(std::chrono::duration_cast<std::chrono::milliseconds>(watchdogDuration_));
-	}
-
-	FrameMetadata &metadata = buffer->_d()->metadata();
-
-	metadata.status = buf.flags & V4L2_BUF_FLAG_ERROR
-			? FrameMetadata::FrameError
-			: FrameMetadata::FrameSuccess;
-	metadata.sequence = buf.sequence;
-	metadata.timestamp = buf.timestamp.tv_sec * 1000000000ULL
-			   + buf.timestamp.tv_usec * 1000ULL;
-
-	if (V4L2_TYPE_IS_OUTPUT(buf.type))
-		return buffer;
-
-	/*
-	 * Detect kernel drivers which do not reset the sequence number to zero
-	 * on stream start.
-	 */
-	if (!firstFrame_) {
-		if (buf.sequence)
-			LOG(V4L2, Info)
-				<< "Zero sequence expected for first frame (got "
-				<< buf.sequence << ")";
-		firstFrame_ = buf.sequence;
-	}
-	metadata.sequence -= firstFrame_.value();
-
-	unsigned int numV4l2Planes = multiPlanar ? buf.length : 1;
-
-	if (numV4l2Planes != buffer->planes().size()) {
-		/*
-		 * If we have a multi-planar buffer with a V4L2
-		 * single-planar format, split the V4L2 buffer across
-		 * the buffer planes. Only the last plane may have less
-		 * bytes used than its length.
-		 */
-		if (numV4l2Planes != 1) {
-			LOG(V4L2, Error)
-				<< "Invalid number of planes (" << numV4l2Planes
-				<< " != " << buffer->planes().size() << ")";
-
-			metadata.status = FrameMetadata::FrameError;
-			return buffer;
-		}
-
-		/*
-		 * With a V4L2 single-planar format, all the data is stored in
-		 * a single memory plane. The number of bytes used is conveyed
-		 * through that plane when using the V4L2 multi-planar API, or
-		 * set directly in the buffer when using the V4L2 single-planar
-		 * API.
-		 */
-		unsigned int bytesused = multiPlanar ? planes[0].bytesused
-				       : buf.bytesused;
-		unsigned int remaining = bytesused;
-
-		for (auto [i, plane] : utils::enumerate(buffer->planes())) {
-			if (!remaining) {
-				LOG(V4L2, Error)
-					<< "Dequeued buffer (" << bytesused
-					<< " bytes) too small for plane lengths "
-					<< utils::join(buffer->planes(), "/",
-						       [](const FrameBuffer::Plane &p) {
-							       return p.length;
-						       });
-
-				metadata.status = FrameMetadata::FrameError;
-				return buffer;
-			}
-
-			metadata.planes()[i].bytesused =
-				std::min(plane.length, remaining);
-			remaining -= metadata.planes()[i].bytesused;
-		}
-	} else if (multiPlanar) {
-		/*
-		 * If we use the multi-planar API, fill in the planes.
-		 * The number of planes in the frame buffer and in the
-		 * V4L2 buffer is guaranteed to be equal at this point.
-		 */
-		for (unsigned int i = 0; i < numV4l2Planes; ++i)
-			metadata.planes()[i].bytesused = planes[i].bytesused;
-	} else {
-		metadata.planes()[0].bytesused = buf.bytesused;
-	}
-
-	return buffer;
 }
 
 /**

@@ -71,28 +71,38 @@ inline int32_t clampField(double value, std::size_t fieldBits, std::size_t fracB
 	return val;
 }
 
-int generateLut(const ipa::Pwl &pwl, uint32_t *lut, std::size_t lutSize,
+int generateLutValue(const ipa::Pwl &pwl, unsigned int i, int lastY)
+{
+	int x, y;
+
+	if (i < 32)
+		x = i * 512;
+	else if (i < 48)
+		x = (i - 32) * 1024 + 16384;
+	else
+		x = std::min(65535u, (i - 48) * 2048 + 32768);
+
+	y = pwl.eval(x);
+	if (y < 0 || (i && y < lastY)) {
+		LOG(IPARPI, Error)
+			<< "Malformed PWL for Gamma, disabling!";
+		return -1;
+	}
+
+	return y;
+}
+
+int generateLut(const ipa::Pwl &pwl, pisp_be_gamma_config &gamma,
 		unsigned int SlopeBits = 14, unsigned int PosBits = 16)
 {
 	if (pwl.empty())
 		return -EINVAL;
 
 	int lastY = 0;
-	for (unsigned int i = 0; i < lutSize; i++) {
-		int x, y;
-		if (i < 32)
-			x = i * 512;
-		else if (i < 48)
-			x = (i - 32) * 1024 + 16384;
-		else
-			x = std::min(65535u, (i - 48) * 2048 + 32768);
-
-		y = pwl.eval(x);
-		if (y < 0 || (i && y < lastY)) {
-			LOG(IPARPI, Error)
-				<< "Malformed PWL for Gamma, disabling!";
-			return -1;
-		}
+	for (unsigned int i = 0; i < PISP_BE_GAMMA_LUT_SIZE; i++) {
+		int y = generateLutValue(pwl, i, lastY);
+		if (y < 0)
+			return y;
 
 		if (i) {
 			unsigned int slope = y - lastY;
@@ -102,17 +112,47 @@ int generateLut(const ipa::Pwl &pwl, uint32_t *lut, std::size_t lutSize,
 					<< ("Maximum Gamma slope exceeded, adjusting!");
 				y = lastY + slope;
 			}
-			lut[i - 1] |= slope << PosBits;
+			gamma.lut[i - 1] |= slope << PosBits;
 		}
 
-		lut[i] = y;
+		gamma.lut[i] = y;
 		lastY = y;
 	}
 
 	return 0;
 }
 
-void packLscLut(uint32_t packed[NumLscVertexes][NumLscVertexes],
+int generateLut(const ipa::Pwl &pwl, pisp_be_tonemap_config &tonemap,
+		unsigned int SlopeBits = 14, unsigned int PosBits = 16)
+{
+	if (pwl.empty())
+		return -EINVAL;
+
+	int lastY = 0;
+	for (unsigned int i = 0; i < PISP_BE_TONEMAP_LUT_SIZE; i++) {
+		int y = generateLutValue(pwl, i, lastY);
+		if (y < 0)
+			return y;
+
+		if (i) {
+			unsigned int slope = y - lastY;
+			if (slope >= (1u << SlopeBits)) {
+				slope = (1u << SlopeBits) - 1;
+				LOG(IPARPI, Info)
+					<< ("Maximum Gamma slope exceeded, adjusting!");
+				y = lastY + slope;
+			}
+			tonemap.lut[i - 1] |= slope << PosBits;
+		}
+
+		tonemap.lut[i] = y;
+		lastY = y;
+	}
+
+	return 0;
+}
+
+void packLscLut(pisp_be_lsc_config &lsc,
 		double const rgb[3][NumLscVertexes][NumLscVertexes])
 {
 	for (unsigned int y = 0; y < NumLscVertexes; ++y) {
@@ -142,7 +182,7 @@ void packLscLut(uint32_t packed[NumLscVertexes][NumLscVertexes],
 			int r = clampField(offset + scale * rgb[0][y][x], 10);
 			int g = clampField(offset + scale * rgb[1][y][x], 10);
 			int b = clampField(offset + scale * rgb[2][y][x], 10);
-			packed[y][x] = (range << 30) | (b << 20) | (g << 10) | r;
+			lsc.lut_packed[y][x] = (range << 30) | (b << 20) | (g << 10) | r;
 		}
 	}
 }
@@ -566,7 +606,7 @@ void IpaPiSP::applyContrast(const ContrastStatus *contrastStatus,
 {
 	pisp_be_gamma_config gamma;
 
-	if (!generateLut(contrastStatus->gammaCurve, gamma.lut, PISP_BE_GAMMA_LUT_SIZE)) {
+	if (!generateLut(contrastStatus->gammaCurve, gamma)) {
 		be_->SetGamma(gamma);
 		global.rgb_enables |= PISP_BE_RGB_ENABLE_GAMMA;
 	}
@@ -639,7 +679,7 @@ void IpaPiSP::applyLensShading(const AlscStatus *alscStatus,
 		      alscStatus->g.data(), NumLscCells, NumLscCells);
 	resampleTable(&rgb[2][0][0], NumLscVertexes, NumLscVertexes,
 		      alscStatus->b.data(), NumLscCells, NumLscCells);
-	packLscLut(lsc.lut_packed, rgb);
+	packLscLut(lsc, rgb);
 	be_->SetLsc(lsc, lscExtra);
 	global.bayer_enables |= PISP_BE_BAYER_ENABLE_LSC;
 }
@@ -874,7 +914,7 @@ void IpaPiSP::applyTonemap(const TonemapStatus *tonemapStatus, pisp_be_global_co
 	tonemap.iir_strength = clampField(tonemapStatus->iirStrength, 12, 4);
 	tonemap.strength = clampField(tonemapStatus->strength, 12, 8);
 
-	if (!generateLut(tonemapStatus->tonemap, tonemap.lut, PISP_BE_TONEMAP_LUT_SIZE)) {
+	if (!generateLut(tonemapStatus->tonemap, tonemap)) {
 		be_->SetTonemap(tonemap);
 		global.bayer_enables |= PISP_BE_BAYER_ENABLE_TONEMAP;
 	}

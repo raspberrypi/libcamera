@@ -139,29 +139,29 @@ void packScanlineRaw8(void *output, const void *input, unsigned int width)
 
 void packScanlineRaw10(void *output, const void *input, unsigned int width)
 {
-	const uint16_t *in = static_cast<const uint16_t *>(input);
+	const uint8_t *in = static_cast<const uint8_t *>(input);
 	uint8_t *out = static_cast<uint8_t *>(output);
 
 	for (unsigned int i = 0; i < width; i += 4) {
-		*out++ = (in[0] & 0x3fc) >> 2;
-		*out++ = (in[0] & 0x003) << 6 | (in[1] & 0x3f0) >> 4;
-		*out++ = (in[1] & 0x00f) << 4 | (in[2] & 0x3c0) >> 6;
-		*out++ = (in[2] & 0x03f) << 2 | (in[3] & 0x300) >> 8;
-		*out++ = (in[3] & 0x0ff);
-		in += 4;
+		*out++ = in[1] << 6 | in[0] >> 2;
+		*out++ = in[0] << 6 | (in[3] & 0x03) << 4 | in[2] >> 4;
+		*out++ = in[2] << 4 | (in[5] & 0x03) << 2 | in[4] >> 6;
+		*out++ = in[4] << 2 | (in[7] & 0x03) << 0;
+		*out++ = in[6];
+		in += 8;
 	}
 }
 
 void packScanlineRaw12(void *output, const void *input, unsigned int width)
 {
-	const uint16_t *in = static_cast<const uint16_t *>(input);
+	const uint8_t *in = static_cast<const uint8_t *>(input);
 	uint8_t *out = static_cast<uint8_t *>(output);
 
 	for (unsigned int i = 0; i < width; i += 2) {
-		*out++ = (in[0] & 0xff0) >> 4;
-		*out++ = (in[0] & 0x00f) << 4 | (in[1] & 0xf00) >> 8;
-		*out++ = (in[1] & 0x0ff);
-		in += 2;
+		*out++ = in[1] << 4 | in[0] >> 4;
+		*out++ = in[0] << 4 | (in[3] & 0x0f);
+		*out++ = in[2];
+		in += 4;
 	}
 }
 

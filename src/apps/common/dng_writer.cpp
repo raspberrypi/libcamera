@@ -8,6 +8,7 @@
 #include "dng_writer.h"
 
 #include <algorithm>
+#include <endian.h>
 #include <iostream>
 #include <map>
 
@@ -185,7 +186,8 @@ void thumbScanlineRaw(const FormatInfo &info, void *output, const void *input,
 
 	/* Simple averaging that produces greyscale RGB values. */
 	for (unsigned int x = 0; x < width; x++) {
-		uint16_t value = (in[0] + in[1] + in2[0] + in2[1]) >> 2;
+		uint16_t value = (le16toh(in[0]) + le16toh(in[1]) +
+				  le16toh(in2[0]) + le16toh(in2[1])) >> 2;
 		value = value >> shift;
 		*out++ = value;
 		*out++ = value;

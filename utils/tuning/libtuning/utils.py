@@ -92,8 +92,12 @@ def load_images(input_dir: str, config: dict, load_nonlsc: bool, load_lsc: bool)
     images = []
     for f in files:
         color, lux, lsc_only = _parse_image_filename(f)
+
         if color is None:
+            logger.warning(f'Ignoring "{f.name}" as it has no associated color temperature')
             continue
+
+        logger.info(f'Process image "{f.name}" (color={color}, lux={lux}, lsc_only={lsc_only})')
 
         # Skip lsc image if we don't need it
         if lsc_only and not load_lsc:

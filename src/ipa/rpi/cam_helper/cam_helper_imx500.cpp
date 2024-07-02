@@ -111,10 +111,12 @@ private:
 			      Metadata &metadata) const override;
 
 	std::unique_ptr<uint8_t[]> savedInputTensor_;
+	bool enableInputTensor_;
 };
 
 CamHelperImx500::CamHelperImx500()
-	: CamHelper(std::make_unique<MdParserSmia>(registerList), frameIntegrationDiff)
+	: CamHelper(std::make_unique<MdParserSmia>(registerList), frameIntegrationDiff),
+	  enableInputTensor_(false)
 {
 }
 
@@ -231,6 +233,11 @@ void CamHelperImx500::parseInferenceData(libcamera::Span<const uint8_t> buffer,
 	if (buffer.size() <= StartLine * bytesPerLine)
 		return;
 
+	/* Check if an input tensor is needed - this is sticky! */
+	auto inputTensorCtrl = libcameraMetadata.get<bool>(libcamera::controls::rpi::Imx500EnableInputTensor);
+	if (inputTensorCtrl)
+		enableInputTensor_ = *inputTensorCtrl;
+
 	/* Cache the DNN metadata for fast parsing. */
 	unsigned int tensorBufferSize = buffer.size() - (StartLine * bytesPerLine);
 	std::unique_ptr<uint8_t[]> cache = std::make_unique<uint8_t[]>(tensorBufferSize);
@@ -282,12 +289,16 @@ void CamHelperImx500::parseInferenceData(libcamera::Span<const uint8_t> buffer,
 		if (inputTensor.size()) {
 			IMX500InputTensorInfo inputTensorInfo;
 			if (!imx500ParseInputTensor(inputTensorInfo, inputTensor)) {
-				Span<const uint8_t> parsedTensor{
-					(const uint8_t *)inputTensorInfo.data.get(), inputTensorInfo.size
-				};
-				libcameraMetadata.set(libcamera::controls::rpi::Imx500InputTensor,
-						      parsedTensor);
+				/* Only return the input tensor if requested... */
+				if (enableInputTensor_) {
+					Span<const uint8_t> parsedTensor{
+						(const uint8_t *)inputTensorInfo.data.get(), inputTensorInfo.size
+					};
+					libcameraMetadata.set(libcamera::controls::rpi::Imx500InputTensor,
+							      parsedTensor);
+				}
 
+				/* ...but always return the input tensor info for coordinate rescaling.  */
 				IMX500InputTensorInfoExported exported{};
 				exported.width = inputTensorInfo.width;
 				exported.height = inputTensorInfo.height;

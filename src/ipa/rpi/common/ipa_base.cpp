@@ -74,6 +74,7 @@ const ControlInfoMap::Map ipaControls{
 	{ &controls::FrameDurationLimits, ControlInfo(INT64_C(33333), INT64_C(120000)) },
 	{ &controls::draft::NoiseReductionMode, ControlInfo(controls::draft::NoiseReductionModeValues) },
 	{ &controls::rpi::StatsOutputEnable, ControlInfo(false, true, false) },
+	{ &controls::rpi::Imx500EnableInputTensor, ControlInfo(false, true, false) },
 };
 
 /* IPA controls handled conditionally, if the sensor is not mono */
@@ -1246,6 +1247,11 @@ void IpaBase::applyControls(const ControlList &controls)
 
 		case controls::rpi::STATS_OUTPUT_ENABLE:
 			statsMetadataOutput_ = ctrl.second.get<bool>();
+			break;
+
+		case controls::rpi::IMX500_ENABLE_INPUT_TENSOR:
+			libcameraMetadata_.set(controls::rpi::Imx500EnableInputTensor,
+					       ctrl.second.get<bool>());
 			break;
 
 		default:

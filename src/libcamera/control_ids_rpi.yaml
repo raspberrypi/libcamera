@@ -51,6 +51,11 @@ controls:
       description: |
         Output tensor info from the IMX500.
 
+  - Imx500EnableInputTensor:
+      type: bool
+      description: |
+        Enable input tensor parsing/output.
+
   - Imx500InputTensor:
       type: uint8_t
       size: [n]

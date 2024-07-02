@@ -200,7 +200,7 @@ int populateOutputTensorInfo(IMX500OutputTensorInfo &outputTensorInfo,
 		return -1;
 	}
 
-	outputTensorInfo.data = std::make_unique<float[]>(totalOutSize);
+	outputTensorInfo.data = std::shared_ptr<float[]>(new float[totalOutSize]);
 	unsigned int numOutputTensors = outputApParams.size();
 
 	if (!numOutputTensors) {
@@ -548,7 +548,7 @@ int parseInputTensorBody(IMX500InputTensorInfo &inputTensorInfo, const uint8_t *
 	unsigned int outSize = inputApParams.width * inputApParams.height * inputApParams.channel;
 	unsigned int outSizePadded = inputApParams.widthStride * inputApParams.heightStride * inputApParams.channel;
 	unsigned int numLines = std::ceil(outSizePadded / (float)dnnHeader.maxLineLen);
-	inputTensorInfo.data = std::make_unique<uint8_t[]>(outSize);
+	inputTensorInfo.data = std::shared_ptr<uint8_t[]>(new uint8_t[outSize]);
 
 	unsigned int diff = 0, outLineIndex = 0, pixelIndex = 0, heightIndex = 0, size = 0, left = 0;
 	unsigned int wPad = inputApParams.widthStride - inputApParams.width;

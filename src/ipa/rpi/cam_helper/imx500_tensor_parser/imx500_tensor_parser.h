@@ -32,7 +32,7 @@ struct IMX500OutputTensorInfo {
 	uint32_t totalSize;
 	uint32_t numTensors;
 	std::string networkName;
-	std::unique_ptr<float[]> data;
+	std::shared_ptr<float[]> data;
 	std::vector<uint32_t> tensorDataNum;
 	std::vector<std::vector<Dimensions>> vecDim;
 	std::vector<uint32_t> numDimensions;
@@ -46,7 +46,7 @@ struct IMX500InputTensorInfo {
 	unsigned int channels;
 	unsigned int size;
 	std::string networkName;
-	std::unique_ptr<uint8_t[]> data;
+	std::shared_ptr<uint8_t[]> data;
 };
 
 struct IMX500Tensors {

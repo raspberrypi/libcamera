@@ -39,38 +39,38 @@ controls:
 
   # Un-upstreamed controls go here.
   # Some of these will likely never be upstreamed.
-  - Imx500OutputTensor:
+  - CnnOutputTensor:
       type: float
       size: [n]
       description: |
-        Output tensor from the IMX500.
+        Output tensor from the CNN.
 
-  - Imx500OutputTensorInfo:
+  - CnnOutputTensorInfo:
       type: uint8_t
       size: [n]
       description: |
-        Output tensor info from the IMX500.
+        Output tensor info from the CNN.
 
-  - Imx500EnableInputTensor:
+  - CnnEnableInputTensor:
       type: bool
       description: |
         Enable input tensor parsing/output.
 
-  - Imx500InputTensor:
+  - CnnInputTensor:
       type: uint8_t
       size: [n]
       description: |
-        Input tensor from the IMX500.
+        Input tensor from the CNN.
 
-  - Imx500InputTensorInfo:
+  - CnnInputTensorInfo:
       type: uint8_t
       size: [n]
       description: |
-        Input tensor info from the IMX500.
+        Input tensor info from the CNN.
 
-  - Imx500KpiInfo:
+  - CnnKpiInfo:
       type: uint8_t
       size: [n]
       description: |
-        KPI parameters for the IMX500 frame.
+        KPI parameters for the CNN frame.
 ...

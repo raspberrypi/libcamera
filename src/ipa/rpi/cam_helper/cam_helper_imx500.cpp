@@ -17,10 +17,12 @@
 
 #include <libcamera/base/log.h>
 #include <libcamera/base/span.h>
+
 #include <libcamera/control_ids.h>
 
-#include "cam_helper.h"
 #include "imx500_tensor_parser/imx500_tensor_parser.h"
+
+#include "cam_helper.h"
 #include "md_parser.h"
 
 using namespace RPiController;
@@ -30,39 +32,6 @@ using libcamera::utils::Duration;
 namespace libcamera {
 LOG_DECLARE_CATEGORY(IPARPI)
 }
-
-/*
- * The following two structures are used to export the input/output tensor info
- * through the Imx500OutputTensorInfo and Imx500InputTensorInfo controls.
- * Applications must cast the span to these structures exactly.
- */
-static constexpr unsigned int NetworkNameLen = 64;
-static constexpr unsigned int MaxNumTensors = 8;
-static constexpr unsigned int MaxNumDimensions = 8;
-
-struct OutputTensorInfo {
-	uint32_t tensorDataNum;
-	uint32_t numDimensions;
-	uint16_t size[MaxNumDimensions];
-};
-
-struct IMX500OutputTensorInfoExported {
-	char networkName[NetworkNameLen];
-	uint32_t numTensors;
-	OutputTensorInfo info[MaxNumTensors];
-};
-
-struct IMX500InputTensorInfoExported {
-	char networkName[NetworkNameLen];
-	uint32_t width;
-	uint32_t height;
-	uint32_t numChannels;
-};
-
-struct IMX500KpiExported {
-	uint32_t dnnRuntime;
-	uint32_t dspRuntime;
-};
 
 /*
  * We care about two gain registers and a pair of exposure registers. Their
@@ -77,9 +46,8 @@ constexpr uint32_t frameLengthLoReg = 0x0341;
 constexpr uint32_t lineLengthHiReg = 0x0342;
 constexpr uint32_t lineLengthLoReg = 0x0343;
 constexpr uint32_t temperatureReg = 0x013a;
-constexpr std::initializer_list<uint32_t> registerList =
-	{ expHiReg, expLoReg, gainHiReg, gainLoReg, frameLengthHiReg, frameLengthLoReg,
-	  lineLengthHiReg, lineLengthLoReg, temperatureReg };
+constexpr std::initializer_list<uint32_t> registerList = { expHiReg, expLoReg, gainHiReg, gainLoReg, frameLengthHiReg, frameLengthLoReg,
+							   lineLengthHiReg, lineLengthLoReg, temperatureReg };
 
 class CamHelperImx500 : public CamHelper
 {
@@ -87,8 +55,7 @@ public:
 	CamHelperImx500();
 	uint32_t gainCode(double gain) const override;
 	double gain(uint32_t gainCode) const override;
-	void prepare(libcamera::Span<const uint8_t> buffer, Metadata &metadata,
-                     ControlList &libcameraMetadata) override;
+	void prepare(libcamera::Span<const uint8_t> buffer, Metadata &metadata) override;
 	std::pair<uint32_t, uint32_t> getBlanking(Duration &exposure, Duration minFrameDuration,
 						  Duration maxFrameDuration) const override;
 	void getDelays(int &exposureDelay, int &gainDelay,
@@ -106,17 +73,15 @@ private:
 	/* Largest long exposure scale factor given as a left shift on the frame length. */
 	static constexpr int longExposureShiftMax = 7;
 
-	void parseInferenceData(libcamera::Span<const uint8_t> buffer, ControlList &libcameraMetadata);
+	void parseInferenceData(libcamera::Span<const uint8_t> buffer, Metadata &metadata);
 	void populateMetadata(const MdParser::RegisterMap &registers,
 			      Metadata &metadata) const override;
 
 	std::unique_ptr<uint8_t[]> savedInputTensor_;
-	bool enableInputTensor_;
 };
 
 CamHelperImx500::CamHelperImx500()
-	: CamHelper(std::make_unique<MdParserSmia>(registerList), frameIntegrationDiff),
-	  enableInputTensor_(false)
+	: CamHelper(std::make_unique<MdParserSmia>(registerList), frameIntegrationDiff)
 {
 }
 
@@ -130,8 +95,7 @@ double CamHelperImx500::gain(uint32_t gainCode) const
 	return 1024.0 / (1024 - gainCode);
 }
 
-void CamHelperImx500::prepare(libcamera::Span<const uint8_t> buffer, Metadata &metadata,
-			      ControlList &libcameraMetadata)
+void CamHelperImx500::prepare(libcamera::Span<const uint8_t> buffer, Metadata &metadata)
 {
 	MdParser::RegisterMap registers;
 	DeviceStatus deviceStatus;
@@ -166,7 +130,7 @@ void CamHelperImx500::prepare(libcamera::Span<const uint8_t> buffer, Metadata &m
 				   << parsedDeviceStatus;
 	}
 
-	parseInferenceData(buffer, libcameraMetadata);
+	parseInferenceData(buffer, metadata);
 }
 
 std::pair<uint32_t, uint32_t> CamHelperImx500::getBlanking(Duration &exposure,
@@ -222,7 +186,7 @@ bool CamHelperImx500::sensorEmbeddedDataPresent() const
 }
 
 void CamHelperImx500::parseInferenceData(libcamera::Span<const uint8_t> buffer,
-					 ControlList &libcameraMetadata)
+					 Metadata &metadata)
 {
 	/* Inference data comes after 2 lines of embedded data. */
 	constexpr unsigned int StartLine = 2;
@@ -234,9 +198,8 @@ void CamHelperImx500::parseInferenceData(libcamera::Span<const uint8_t> buffer,
 		return;
 
 	/* Check if an input tensor is needed - this is sticky! */
-	auto inputTensorCtrl = libcameraMetadata.get<bool>(libcamera::controls::rpi::Imx500EnableInputTensor);
-	if (inputTensorCtrl)
-		enableInputTensor_ = *inputTensorCtrl;
+	bool enableInputTensor = false;
+	metadata.get("cnn.enable_input_tensor", enableInputTensor);
 
 	/* Cache the DNN metadata for fast parsing. */
 	unsigned int tensorBufferSize = buffer.size() - (StartLine * bytesPerLine);
@@ -289,28 +252,16 @@ void CamHelperImx500::parseInferenceData(libcamera::Span<const uint8_t> buffer,
 		if (inputTensor.size()) {
 			IMX500InputTensorInfo inputTensorInfo;
 			if (!imx500ParseInputTensor(inputTensorInfo, inputTensor)) {
-				/* Only return the input tensor if requested... */
-				if (enableInputTensor_) {
-					Span<const uint8_t> parsedTensor{
-						(const uint8_t *)inputTensorInfo.data.get(), inputTensorInfo.size
-					};
-					libcameraMetadata.set(libcamera::controls::rpi::Imx500InputTensor,
-							      parsedTensor);
-				}
-
-				/* ...but always return the input tensor info for coordinate rescaling.  */
-				IMX500InputTensorInfoExported exported{};
+				CnnInputTensorInfo exported{};
 				exported.width = inputTensorInfo.width;
 				exported.height = inputTensorInfo.height;
 				exported.numChannels = inputTensorInfo.channels;
 				strncpy(exported.networkName, inputTensorInfo.networkName.c_str(),
 					sizeof(exported.networkName));
 				exported.networkName[sizeof(exported.networkName) - 1] = '\0';
-
-				const Span<const uint8_t> tensorInfo{ (const uint8_t *)&exported,
-								      sizeof(exported) };
-				libcameraMetadata.set(libcamera::controls::rpi::Imx500InputTensorInfo,
-						      tensorInfo);
+				metadata.set("cnn.input_tensor_info", exported);
+				metadata.set("cnn.input_tensor", std::move(inputTensorInfo.data));
+				metadata.set("cnn.input_tensor_size", inputTensorInfo.size);
 			}
 
 			/* We can now safely clear the saved input tensor. */
@@ -325,13 +276,7 @@ void CamHelperImx500::parseInferenceData(libcamera::Span<const uint8_t> buffer,
 
 		IMX500OutputTensorInfo outputTensorInfo;
 		if (!imx500ParseOutputTensor(outputTensorInfo, outputTensor)) {
-			Span<const float> parsedTensor{
-				(const float *)outputTensorInfo.data.get(), outputTensorInfo.totalSize
-			};
-			libcameraMetadata.set(libcamera::controls::rpi::Imx500OutputTensor,
-					      parsedTensor);
-
-			IMX500OutputTensorInfoExported exported{};
+			CnnOutputTensorInfo exported{};
 			if (outputTensorInfo.numTensors < MaxNumTensors) {
 				exported.numTensors = outputTensorInfo.numTensors;
 				for (unsigned int i = 0; i < exported.numTensors; i++) {
@@ -347,17 +292,15 @@ void CamHelperImx500::parseInferenceData(libcamera::Span<const uint8_t> buffer,
 			strncpy(exported.networkName, outputTensorInfo.networkName.c_str(),
 				sizeof(exported.networkName));
 			exported.networkName[sizeof(exported.networkName) - 1] = '\0';
-
-			const Span<const uint8_t> tensorInfo{ (const uint8_t *)&exported,
-							      sizeof(exported) };
-			libcameraMetadata.set(libcamera::controls::rpi::Imx500OutputTensorInfo,
-					      tensorInfo);
+			metadata.set("cnn.output_tensor_info", exported);
+			metadata.set("cnn.output_tensor", std::move(outputTensorInfo.data));
+			metadata.set("cnn.output_tensor_size", outputTensorInfo.totalSize);
 
 			auto itKpi = offsets.find(TensorType::Kpi);
 			if (itKpi != offsets.end()) {
 				constexpr unsigned int DnnRuntimeOffset = 9;
 				constexpr unsigned int DspRuntimeOffset = 10;
-				IMX500KpiExported kpi;
+				CnnKpiInfo kpi;
 
 				uint8_t *k = cache.get() + itKpi->second.offset;
 				kpi.dnnRuntime = k[4 * DnnRuntimeOffset + 3] << 24 |
@@ -368,11 +311,7 @@ void CamHelperImx500::parseInferenceData(libcamera::Span<const uint8_t> buffer,
 						 k[4 * DspRuntimeOffset + 2] << 16 |
 						 k[4 * DspRuntimeOffset + 1] << 8 |
 						 k[4 * DspRuntimeOffset];
-
-				const Span<const uint8_t> kpiInfo{ (const uint8_t *)&kpi,
-								   sizeof(kpi) };
-				libcameraMetadata.set(libcamera::controls::rpi::Imx500KpiInfo,
-						      kpiInfo);
+				metadata.set("cnn.kpi_info", kpi);
 			}
 		}
 	}

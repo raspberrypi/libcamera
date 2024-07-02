@@ -80,7 +80,7 @@ public:
 	void setCameraMode(const CameraMode &mode);
 	void setHwConfig(const Controller::HardwareConfig &hwConfig);
 	virtual void prepare(libcamera::Span<const uint8_t> buffer,
-			     Metadata &metadata, libcamera::ControlList &libcameraMetadata);
+			     Metadata &metadata);
 	virtual void process(StatisticsPtr &stats, Metadata &metadata);
 	virtual uint32_t exposureLines(const libcamera::utils::Duration exposure,
 				       const libcamera::utils::Duration lineLength) const;

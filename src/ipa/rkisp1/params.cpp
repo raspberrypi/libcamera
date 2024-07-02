@@ -71,6 +71,9 @@ const std::map<BlockType, BlockTypeInfo> kBlockTypeInfo = {
 	RKISP1_BLOCK_TYPE_ENTRY_MEAS(Hst, HST, hst),
 	RKISP1_BLOCK_TYPE_ENTRY_MEAS(Aec, AEC, aec),
 	RKISP1_BLOCK_TYPE_ENTRY_MEAS(Afc, AFC, afc),
+	RKISP1_BLOCK_TYPE_ENTRY_EXT(CompandBls, COMPAND_BLS, compand_bls),
+	RKISP1_BLOCK_TYPE_ENTRY_EXT(CompandExpand, COMPAND_EXPAND, compand_curve),
+	RKISP1_BLOCK_TYPE_ENTRY_EXT(CompandCompress, COMPAND_COMPRESS, compand_curve),
 };
 
 } /* namespace */

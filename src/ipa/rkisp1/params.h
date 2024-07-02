@@ -37,6 +37,9 @@ enum class BlockType {
 	Hst,
 	Aec,
 	Afc,
+	CompandBls,
+	CompandExpand,
+	CompandCompress,
 };
 
 namespace details {
@@ -68,6 +71,9 @@ RKISP1_DEFINE_BLOCK_TYPE(Awb, awb_meas)
 RKISP1_DEFINE_BLOCK_TYPE(Hst, hst)
 RKISP1_DEFINE_BLOCK_TYPE(Aec, aec)
 RKISP1_DEFINE_BLOCK_TYPE(Afc, afc)
+RKISP1_DEFINE_BLOCK_TYPE(CompandBls, compand_bls)
+RKISP1_DEFINE_BLOCK_TYPE(CompandExpand, compand_curve)
+RKISP1_DEFINE_BLOCK_TYPE(CompandCompress, compand_curve)
 
 } /* namespace details */
 

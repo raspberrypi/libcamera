@@ -1856,7 +1856,7 @@ int PiSPCameraData::configureCfe()
 	input.format = image;
 	input.format.format = PISP_IMAGE_FORMAT_BPS_16;
 
-	if (PISP_IMAGE_FORMAT_compressed(image.format)) {
+	if (PISP_IMAGE_FORMAT_COMPRESSED(image.format)) {
 		pisp_compress_config compress;
 		compress.offset = DefaultCompressionOffset;
 		compress.mode =	(image.format & PISP_IMAGE_FORMAT_COMPRESSION_MASK) /
@@ -1935,7 +1935,7 @@ int PiSPCameraData::configureBe(const std::optional<ColorSpace> &yuvColorSpace)
 	global.bayer_order = toPiSPBayerOrder(cfeFormat.fourcc);
 
 	ispOutputTotal_ = 1; /* Config buffer */
-	if (PISP_IMAGE_FORMAT_compressed(inputFormat.format)) {
+	if (PISP_IMAGE_FORMAT_COMPRESSED(inputFormat.format)) {
 		pisp_decompress_config decompress;
 		decompress.offset = DefaultCompressionOffset;
 		decompress.mode = (inputFormat.format & PISP_IMAGE_FORMAT_COMPRESSION_MASK)
@@ -1999,7 +1999,7 @@ int PiSPCameraData::configureBe(const std::optional<ColorSpace> &yuvColorSpace)
 	be_->SetTdnOutputFormat(tdnFormat);
 	be_->SetTdnInputFormat(tdnFormat);
 
-	if (PISP_IMAGE_FORMAT_compressed(tdnFormat.format)) {
+	if (PISP_IMAGE_FORMAT_COMPRESSED(tdnFormat.format)) {
 		pisp_decompress_config tdnDecompress;
 		pisp_compress_config tdnCompress;
 
@@ -2018,7 +2018,7 @@ int PiSPCameraData::configureBe(const std::optional<ColorSpace> &yuvColorSpace)
 	be_->SetStitchOutputFormat(stitchFormat);
 	be_->SetStitchInputFormat(stitchFormat);
 
-	if (PISP_IMAGE_FORMAT_compressed(stitchFormat.format)) {
+	if (PISP_IMAGE_FORMAT_COMPRESSED(stitchFormat.format)) {
 		pisp_decompress_config stitchDecompress;
 		pisp_compress_config stitchCompress;
 

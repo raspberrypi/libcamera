@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include <memory>
+
 #include <linux/rkisp1-config.h>
 
 #include <libcamera/base/utils.h>
@@ -16,6 +18,7 @@
 #include <libcamera/controls.h>
 #include <libcamera/geometry.h>
 
+#include <libipa/camera_sensor_helper.h>
 #include <libipa/fc_queue.h>
 #include <libipa/matrix.h>
 
@@ -178,6 +181,9 @@ struct IPAContext {
 	FCQueue<IPAFrameContext> frameContexts;
 
 	ControlInfoMap::Map ctrlMap;
+
+	/* Interface to the Camera Helper */
+	std::unique_ptr<CameraSensorHelper> camHelper;
 };
 
 } /* namespace ipa::rkisp1 */

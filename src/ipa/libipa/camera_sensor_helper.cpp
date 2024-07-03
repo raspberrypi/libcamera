@@ -8,6 +8,7 @@
 #include "camera_sensor_helper.h"
 
 #include <cmath>
+#include <limits>
 
 #include <libcamera/base/log.h>
 
@@ -397,6 +398,99 @@ static constexpr double expGainDb(double step)
 	 */
 	return log2_10 * step / 20;
 }
+
+class CameraSensorHelperAr0144 : public CameraSensorHelper
+{
+public:
+	CameraSensorHelperAr0144()
+	{
+		/* Power-on default value: 168 at 12bits. */
+		blackLevel_ = 2688;
+	}
+
+	uint32_t gainCode(double gain) const override
+	{
+		/* The recommended minimum gain is 1.6842 to avoid artifacts. */
+		gain = std::clamp(gain, 1.0 / (1.0 - 13.0 / 32.0), 18.45);
+
+		/*
+		 * The analogue gain is made of a coarse exponential gain in
+		 * the range [2^0, 2^4] and a fine inversely linear gain in the
+		 * range [1.0, 2.0[. There is an additional fixed 1.153125
+		 * multiplier when the coarse gain reaches 2^2.
+		 */
+
+		if (gain > 4.0)
+			gain /= 1.153125;
+
+		unsigned int coarse = std::log2(gain);
+		unsigned int fine = (1 - (1 << coarse) / gain) * 32;
+
+		/* The fine gain rounding depends on the coarse gain. */
+		if (coarse == 1 || coarse == 3)
+			fine &= ~1;
+		else if (coarse == 4)
+			fine &= ~3;
+
+		return (coarse << 4) | (fine & 0xf);
+	}
+
+	double gain(uint32_t gainCode) const override
+	{
+		unsigned int coarse = gainCode >> 4;
+		unsigned int fine = gainCode & 0xf;
+		unsigned int d1;
+		double d2, m;
+
+		switch (coarse) {
+		default:
+		case 0:
+			d1 = 1;
+			d2 = 32.0;
+			m = 1.0;
+			break;
+		case 1:
+			d1 = 2;
+			d2 = 16.0;
+			m = 1.0;
+			break;
+		case 2:
+			d1 = 1;
+			d2 = 32.0;
+			m = 1.153125;
+			break;
+		case 3:
+			d1 = 2;
+			d2 = 16.0;
+			m = 1.153125;
+			break;
+		case 4:
+			d1 = 4;
+			d2 = 8.0;
+			m = 1.153125;
+			break;
+		}
+
+		/*
+		 * With infinite precision, the calculated gain would be exact,
+		 * and the reverse conversion with gainCode() would produce the
+		 * same gain code. In the real world, rounding errors may cause
+		 * the calculated gain to be lower by an amount negligible for
+		 * all purposes, except for the reverse conversion. Converting
+		 * the gain to a gain code could then return the quantized value
+		 * just lower than the original gain code. To avoid this, tests
+		 * showed that adding the machine epsilon to the multiplier m is
+		 * sufficient.
+		 */
+		m += std::numeric_limits<decltype(m)>::epsilon();
+
+		return m * (1 << coarse) / (1.0 - (fine / d1) / d2);
+	}
+
+private:
+	static constexpr double kStep_ = 16;
+};
+REGISTER_CAMERA_SENSOR_HELPER("ar0144", CameraSensorHelperAr0144)
 
 class CameraSensorHelperAr0521 : public CameraSensorHelper
 {

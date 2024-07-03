@@ -48,6 +48,33 @@ namespace ipa {
  */
 
 /**
+ * \fn CameraSensorHelper::blackLevel()
+ * \brief Fetch the black level of the sensor
+ *
+ * This function returns the black level of the sensor scaled to a 16bit pixel
+ * width. If it is unknown an empty optional is returned.
+ *
+ * \todo Fill the blanks and add pedestal values for all supported sensors. Once
+ * done, drop the std::optional<>.
+ *
+ * Black levels are typically the result of the following phenomena:
+ * - Pedestal added by the sensor to pixel values. They are typically fixed,
+ *   sometimes programmable and should be reported in datasheets (but
+ *   documentation is not always available).
+ * - Dark currents and other physical effects that add charge to pixels in the
+ *   absence of light. Those can depend on the integration time and the sensor
+ *   die temperature, and their contribution to pixel values depend on the
+ *   sensor gains.
+ *
+ * The pedestal is usually the value with the biggest contribution to the
+ * overall black level. In most cases it is either known before or in rare cases
+ * (there is not a single driver with such a control in the linux kernel) can be
+ * queried from the sensor. This function provides that fixed, known value.
+ *
+ * \return The black level of the sensor, or std::nullopt if not known
+ */
+
+/**
  * \brief Compute gain code from the analogue gain absolute value
  * \param[in] gain The real gain to pass
  *
@@ -202,6 +229,11 @@ double CameraSensorHelper::gain(uint32_t gainCode) const
  *
  * \var CameraSensorHelper::AnalogueGainConstants::exp
  * \brief Constants for the exponential gain model
+ */
+
+/**
+ * \var CameraSensorHelper::blackLevel_
+ * \brief The black level of the sensor
  */
 
 /**
@@ -396,6 +428,8 @@ class CameraSensorHelperImx219 : public CameraSensorHelper
 public:
 	CameraSensorHelperImx219()
 	{
+		/* From datasheet: 64 at 10bits. */
+		blackLevel_ = 4096;
 		gainType_ = AnalogueGainLinear;
 		gainConstants_.linear = { 0, 256, -1, 256 };
 	}
@@ -407,6 +441,8 @@ class CameraSensorHelperImx258 : public CameraSensorHelper
 public:
 	CameraSensorHelperImx258()
 	{
+		/* From datasheet: 0x40 at 10bits. */
+		blackLevel_ = 4096;
 		gainType_ = AnalogueGainLinear;
 		gainConstants_.linear = { 0, 512, -1, 512 };
 	}
@@ -456,6 +492,8 @@ class CameraSensorHelperImx335 : public CameraSensorHelper
 public:
 	CameraSensorHelperImx335()
 	{
+		/* From datasheet: 0x32 at 10bits. */
+		blackLevel_ = 3200;
 		gainType_ = AnalogueGainExponential;
 		gainConstants_.exp = { 1.0, expGainDb(0.3) };
 	}

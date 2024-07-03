@@ -140,19 +140,17 @@ void ColorProcessing::queueRequest(IPAContext &context,
 void ColorProcessing::prepare([[maybe_unused]] IPAContext &context,
 			      [[maybe_unused]] const uint32_t frame,
 			      IPAFrameContext &frameContext,
-			      rkisp1_params_cfg *params)
+			      RkISP1Params *params)
 {
 	/* Check if the algorithm configuration has been updated. */
 	if (!frameContext.cproc.update)
 		return;
 
-	params->others.cproc_config.brightness = frameContext.cproc.brightness;
-	params->others.cproc_config.contrast = frameContext.cproc.contrast;
-	params->others.cproc_config.sat = frameContext.cproc.saturation;
-
-	params->module_en_update |= RKISP1_CIF_ISP_MODULE_CPROC;
-	params->module_ens |= RKISP1_CIF_ISP_MODULE_CPROC;
-	params->module_cfg_update |= RKISP1_CIF_ISP_MODULE_CPROC;
+	auto config = params->block<BlockType::Cproc>();
+	config.setEnabled(true);
+	config->brightness = frameContext.cproc.brightness;
+	config->contrast = frameContext.cproc.contrast;
+	config->sat = frameContext.cproc.saturation;
 }
 
 REGISTER_IPA_ALGORITHM(ColorProcessing, "ColorProcessing")

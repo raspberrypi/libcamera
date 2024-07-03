@@ -185,18 +185,12 @@ int LensShadingCorrection::configure(IPAContext &context,
 	return 0;
 }
 
-void LensShadingCorrection::setParameters(rkisp1_params_cfg *params)
+void LensShadingCorrection::setParameters(rkisp1_cif_isp_lsc_config &config)
 {
-	struct rkisp1_cif_isp_lsc_config &config = params->others.lsc_config;
-
 	memcpy(config.x_grad_tbl, xGrad_, sizeof(config.x_grad_tbl));
 	memcpy(config.y_grad_tbl, yGrad_, sizeof(config.y_grad_tbl));
 	memcpy(config.x_size_tbl, xSizes_, sizeof(config.x_size_tbl));
 	memcpy(config.y_size_tbl, ySizes_, sizeof(config.y_size_tbl));
-
-	params->module_en_update |= RKISP1_CIF_ISP_MODULE_LSC;
-	params->module_ens |= RKISP1_CIF_ISP_MODULE_LSC;
-	params->module_cfg_update |= RKISP1_CIF_ISP_MODULE_LSC;
 }
 
 void LensShadingCorrection::copyTable(rkisp1_cif_isp_lsc_config &config,
@@ -248,10 +242,8 @@ void LensShadingCorrection::interpolateTable(rkisp1_cif_isp_lsc_config &config,
 void LensShadingCorrection::prepare(IPAContext &context,
 				    const uint32_t frame,
 				    [[maybe_unused]] IPAFrameContext &frameContext,
-				    rkisp1_params_cfg *params)
+				    RkISP1Params *params)
 {
-	struct rkisp1_cif_isp_lsc_config &config = params->others.lsc_config;
-
 	/*
 	 * If there is only one set, the configuration has already been done
 	 * for first frame.
@@ -264,8 +256,11 @@ void LensShadingCorrection::prepare(IPAContext &context,
 	 * never be relevant.
 	 */
 	if (sets_.size() == 1) {
-		setParameters(params);
-		copyTable(config, sets_.cbegin()->second);
+		auto config = params->block<BlockType::Lsc>();
+		config.setEnabled(true);
+
+		setParameters(*config);
+		copyTable(*config, sets_.cbegin()->second);
 		return;
 	}
 
@@ -294,13 +289,15 @@ void LensShadingCorrection::prepare(IPAContext &context,
 	    (lastCt_.adjusted <= ct && ct <= lastCt_.original))
 		return;
 
-	setParameters(params);
+	auto config = params->block<BlockType::Lsc>();
+	config.setEnabled(true);
+	setParameters(*config);
 
 	/*
 	 * The color temperature matches exactly one of the available LSC tables.
 	 */
 	if (sets_.count(ct)) {
-		copyTable(config, sets_[ct]);
+		copyTable(*config, sets_[ct]);
 		lastCt_ = { ct, ct };
 		return;
 	}
@@ -319,7 +316,7 @@ void LensShadingCorrection::prepare(IPAContext &context,
 	if (diff0 < threshold || diff1 < threshold) {
 		const Components &set = diff0 < diff1 ? set0 : set1;
 		LOG(RkISP1Lsc, Debug) << "using LSC table for " << set.ct;
-		copyTable(config, set);
+		copyTable(*config, set);
 		lastCt_ = { ct, set.ct };
 		return;
 	}
@@ -331,7 +328,7 @@ void LensShadingCorrection::prepare(IPAContext &context,
 	LOG(RkISP1Lsc, Debug)
 		<< "ct is " << ct << ", interpolating between "
 		<< ct0 << " and " << ct1;
-	interpolateTable(config, set0, set1, ct);
+	interpolateTable(*config, set0, set1, ct);
 	lastCt_ = { ct, ct };
 }
 

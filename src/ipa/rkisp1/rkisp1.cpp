@@ -31,6 +31,7 @@
 #include "algorithms/algorithm.h"
 
 #include "ipa_context.h"
+#include "params.h"
 
 namespace libcamera {
 
@@ -322,17 +323,13 @@ void IPARkISP1::fillParamsBuffer(const uint32_t frame, const uint32_t bufferId)
 {
 	IPAFrameContext &frameContext = context_.frameContexts.get(frame);
 
-	rkisp1_params_cfg *params =
-		reinterpret_cast<rkisp1_params_cfg *>(
-			mappedBuffers_.at(bufferId).planes()[0].data());
-
-	/* Prepare parameters buffer. */
-	memset(params, 0, sizeof(*params));
+	RkISP1Params params(context_.configuration.paramFormat,
+			    mappedBuffers_.at(bufferId).planes()[0]);
 
 	for (auto const &algo : algorithms())
-		algo->prepare(context_, frame, frameContext, params);
+		algo->prepare(context_, frame, frameContext, &params);
 
-	paramsBufferReady.emit(frame, sizeof(*params));
+	paramsBufferReady.emit(frame, params.size());
 }
 
 void IPARkISP1::processStatsBuffer(const uint32_t frame, const uint32_t bufferId,

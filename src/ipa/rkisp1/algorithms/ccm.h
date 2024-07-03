@@ -27,7 +27,7 @@ public:
 	int init(IPAContext &context, const YamlObject &tuningData) override;
 	void prepare(IPAContext &context, const uint32_t frame,
 		     IPAFrameContext &frameContext,
-		     rkisp1_params_cfg *params) override;
+		     RkISP1Params *params) override;
 	void process(IPAContext &context, const uint32_t frame,
 		     IPAFrameContext &frameContext,
 		     const rkisp1_stat_buffer *stats,
@@ -35,7 +35,7 @@ public:
 
 private:
 	void parseYaml(const YamlObject &tuningData);
-	void setParameters(rkisp1_params_cfg *params,
+	void setParameters(struct rkisp1_cif_isp_ctk_config &config,
 			   const Matrix<float, 3, 3> &matrix,
 			   const Matrix<int16_t, 3, 1> &offsets);
 

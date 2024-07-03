@@ -108,7 +108,7 @@ void Awb::queueRequest(IPAContext &context,
  * \copydoc libcamera::ipa::Algorithm::prepare
  */
 void Awb::prepare(IPAContext &context, const uint32_t frame,
-		  IPAFrameContext &frameContext, rkisp1_params_cfg *params)
+		  IPAFrameContext &frameContext, RkISP1Params *params)
 {
 	/*
 	 * This is the latest time we can read the active state. This is the
@@ -120,33 +120,30 @@ void Awb::prepare(IPAContext &context, const uint32_t frame,
 		frameContext.awb.gains.blue = context.activeState.awb.gains.automatic.blue;
 	}
 
-	params->others.awb_gain_config.gain_green_b =
-		std::clamp<int>(256 * frameContext.awb.gains.green, 0, 0x3ff);
-	params->others.awb_gain_config.gain_blue =
-		std::clamp<int>(256 * frameContext.awb.gains.blue, 0, 0x3ff);
-	params->others.awb_gain_config.gain_red =
-		std::clamp<int>(256 * frameContext.awb.gains.red, 0, 0x3ff);
-	params->others.awb_gain_config.gain_green_r =
-		std::clamp<int>(256 * frameContext.awb.gains.green, 0, 0x3ff);
+	auto gainConfig = params->block<BlockType::AwbGain>();
+	gainConfig.setEnabled(true);
 
-	/* Update the gains. */
-	params->module_cfg_update |= RKISP1_CIF_ISP_MODULE_AWB_GAIN;
+	gainConfig->gain_green_b = std::clamp<int>(256 * frameContext.awb.gains.green, 0, 0x3ff);
+	gainConfig->gain_blue = std::clamp<int>(256 * frameContext.awb.gains.blue, 0, 0x3ff);
+	gainConfig->gain_red = std::clamp<int>(256 * frameContext.awb.gains.red, 0, 0x3ff);
+	gainConfig->gain_green_r = std::clamp<int>(256 * frameContext.awb.gains.green, 0, 0x3ff);
 
 	/* If we have already set the AWB measurement parameters, return. */
 	if (frame > 0)
 		return;
 
-	rkisp1_cif_isp_awb_meas_config &awb_config = params->meas.awb_meas_config;
+	auto awbConfig = params->block<BlockType::Awb>();
+	awbConfig.setEnabled(true);
 
 	/* Configure the measure window for AWB. */
-	awb_config.awb_wnd = context.configuration.awb.measureWindow;
+	awbConfig->awb_wnd = context.configuration.awb.measureWindow;
 
 	/* Number of frames to use to estimate the means (0 means 1 frame). */
-	awb_config.frames = 0;
+	awbConfig->frames = 0;
 
 	/* Select RGB or YCbCr means measurement. */
 	if (rgbMode_) {
-		awb_config.awb_mode = RKISP1_CIF_ISP_AWB_MODE_RGB;
+		awbConfig->awb_mode = RKISP1_CIF_ISP_AWB_MODE_RGB;
 
 		/*
 		 * For RGB-based measurements, pixels are selected with maximum
@@ -154,19 +151,19 @@ void Awb::prepare(IPAContext &context, const uint32_t frame,
 		 * awb_ref_cr, awb_min_y and awb_ref_cb respectively. The other
 		 * values are not used, set them to 0.
 		 */
-		awb_config.awb_ref_cr = 250;
-		awb_config.min_y = 250;
-		awb_config.awb_ref_cb = 250;
+		awbConfig->awb_ref_cr = 250;
+		awbConfig->min_y = 250;
+		awbConfig->awb_ref_cb = 250;
 
-		awb_config.max_y = 0;
-		awb_config.min_c = 0;
-		awb_config.max_csum = 0;
+		awbConfig->max_y = 0;
+		awbConfig->min_c = 0;
+		awbConfig->max_csum = 0;
 	} else {
-		awb_config.awb_mode = RKISP1_CIF_ISP_AWB_MODE_YCBCR;
+		awbConfig->awb_mode = RKISP1_CIF_ISP_AWB_MODE_YCBCR;
 
 		/* Set the reference Cr and Cb (AWB target) to white. */
-		awb_config.awb_ref_cb = 128;
-		awb_config.awb_ref_cr = 128;
+		awbConfig->awb_ref_cb = 128;
+		awbConfig->awb_ref_cr = 128;
 
 		/*
 		 * Filter out pixels based on luminance and chrominance values.
@@ -174,20 +171,11 @@ void Awb::prepare(IPAContext &context, const uint32_t frame,
 		 * range, while the acceptable chroma values are specified with
 		 * a minimum of 16 and a maximum Cb+Cr sum of 250.
 		 */
-		awb_config.min_y = 16;
-		awb_config.max_y = 250;
-		awb_config.min_c = 16;
-		awb_config.max_csum = 250;
+		awbConfig->min_y = 16;
+		awbConfig->max_y = 250;
+		awbConfig->min_c = 16;
+		awbConfig->max_csum = 250;
 	}
-
-	/* Enable the AWB gains. */
-	params->module_en_update |= RKISP1_CIF_ISP_MODULE_AWB_GAIN;
-	params->module_ens |= RKISP1_CIF_ISP_MODULE_AWB_GAIN;
-
-	/* Update the AWB measurement parameters and enable the AWB module. */
-	params->module_cfg_update |= RKISP1_CIF_ISP_MODULE_AWB;
-	params->module_en_update |= RKISP1_CIF_ISP_MODULE_AWB;
-	params->module_ens |= RKISP1_CIF_ISP_MODULE_AWB;
 }
 
 uint32_t Awb::estimateCCT(double red, double green, double blue)

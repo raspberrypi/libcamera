@@ -71,12 +71,10 @@ int Ccm::init([[maybe_unused]] IPAContext &context, const YamlObject &tuningData
 	return 0;
 }
 
-void Ccm::setParameters(rkisp1_params_cfg *params,
+void Ccm::setParameters(struct rkisp1_cif_isp_ctk_config &config,
 			const Matrix<float, 3, 3> &matrix,
 			const Matrix<int16_t, 3, 1> &offsets)
 {
-	struct rkisp1_cif_isp_ctk_config &config = params->others.ctk_config;
-
 	/*
 	 * 4 bit integer and 7 bit fractional, ranging from -8 (0x400) to
 	 * +7.992 (0x3ff)
@@ -92,18 +90,13 @@ void Ccm::setParameters(rkisp1_params_cfg *params,
 
 	LOG(RkISP1Ccm, Debug) << "Setting matrix " << matrix;
 	LOG(RkISP1Ccm, Debug) << "Setting offsets " << offsets;
-
-	params->module_en_update |= RKISP1_CIF_ISP_MODULE_CTK;
-	params->module_ens |= RKISP1_CIF_ISP_MODULE_CTK;
-	params->module_cfg_update |= RKISP1_CIF_ISP_MODULE_CTK;
 }
 
 /**
  * \copydoc libcamera::ipa::Algorithm::prepare
  */
 void Ccm::prepare(IPAContext &context, const uint32_t frame,
-		  IPAFrameContext &frameContext,
-		  rkisp1_params_cfg *params)
+		  IPAFrameContext &frameContext, RkISP1Params *params)
 {
 	uint32_t ct = context.activeState.awb.temperatureK;
 
@@ -123,7 +116,9 @@ void Ccm::prepare(IPAContext &context, const uint32_t frame,
 	context.activeState.ccm.ccm = ccm;
 	frameContext.ccm.ccm = ccm;
 
-	setParameters(params, ccm, offsets);
+	auto config = params->block<BlockType::Ctk>();
+	config.setEnabled(true);
+	setParameters(*config, ccm, offsets);
 }
 
 /**

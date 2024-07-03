@@ -215,15 +215,21 @@ void Dpf::queueRequest(IPAContext &context,
  * \copydoc libcamera::ipa::Algorithm::prepare
  */
 void Dpf::prepare(IPAContext &context, const uint32_t frame,
-		  IPAFrameContext &frameContext, rkisp1_params_cfg *params)
+		  IPAFrameContext &frameContext, RkISP1Params *params)
 {
-	if (frame == 0) {
-		params->others.dpf_config = config_;
-		params->others.dpf_strength_config = strengthConfig_;
+	if (!frameContext.dpf.update && frame > 0)
+		return;
+
+	auto config = params->block<BlockType::Dpf>();
+	config.setEnabled(frameContext.dpf.denoise);
+
+	if (frameContext.dpf.denoise) {
+		*config = config_;
 
 		const auto &awb = context.configuration.awb;
 		const auto &lsc = context.configuration.lsc;
-		auto &mode = params->others.dpf_config.gain.mode;
+
+		auto &mode = config->gain.mode;
 
 		/*
 		 * The DPF needs to take into account the total amount of
@@ -241,15 +247,12 @@ void Dpf::prepare(IPAContext &context, const uint32_t frame,
 			mode = RKISP1_CIF_ISP_DPF_GAIN_USAGE_LSC_GAINS;
 		else
 			mode = RKISP1_CIF_ISP_DPF_GAIN_USAGE_DISABLED;
-
-		params->module_cfg_update |= RKISP1_CIF_ISP_MODULE_DPF |
-					     RKISP1_CIF_ISP_MODULE_DPF_STRENGTH;
 	}
 
-	if (frameContext.dpf.update) {
-		params->module_en_update |= RKISP1_CIF_ISP_MODULE_DPF;
-		if (frameContext.dpf.denoise)
-			params->module_ens |= RKISP1_CIF_ISP_MODULE_DPF;
+	if (frame == 0) {
+		auto strengthConfig = params->block<BlockType::DpfStrength>();
+		strengthConfig.setEnabled(true);
+		*strengthConfig = strengthConfig_;
 	}
 }
 

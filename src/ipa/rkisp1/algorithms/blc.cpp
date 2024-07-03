@@ -113,7 +113,7 @@ int BlackLevelCorrection::init(IPAContext &context, const YamlObject &tuningData
 void BlackLevelCorrection::prepare([[maybe_unused]] IPAContext &context,
 				   const uint32_t frame,
 				   [[maybe_unused]] IPAFrameContext &frameContext,
-				   rkisp1_params_cfg *params)
+				   RkISP1Params *params)
 {
 	if (context.configuration.raw)
 		return;
@@ -124,16 +124,15 @@ void BlackLevelCorrection::prepare([[maybe_unused]] IPAContext &context,
 	if (!tuningParameters_)
 		return;
 
-	params->others.bls_config.enable_auto = 0;
-	/* The rkisp1 uses 12bit based black levels. Scale down accordingly. */
-	params->others.bls_config.fixed_val.r = blackLevelRed_ >> 4;
-	params->others.bls_config.fixed_val.gr = blackLevelGreenR_ >> 4;
-	params->others.bls_config.fixed_val.gb = blackLevelGreenB_ >> 4;
-	params->others.bls_config.fixed_val.b = blackLevelBlue_ >> 4;
+	auto config = params->block<BlockType::Bls>();
+	config.setEnabled(true);
 
-	params->module_en_update |= RKISP1_CIF_ISP_MODULE_BLS;
-	params->module_ens |= RKISP1_CIF_ISP_MODULE_BLS;
-	params->module_cfg_update |= RKISP1_CIF_ISP_MODULE_BLS;
+	config->enable_auto = 0;
+	/* The rkisp1 uses 12bit based black levels. Scale down accordingly. */
+	config->fixed_val.r = blackLevelRed_ >> 4;
+	config->fixed_val.gr = blackLevelGreenR_ >> 4;
+	config->fixed_val.gb = blackLevelGreenB_ >> 4;
+	config->fixed_val.b = blackLevelBlue_ >> 4;
 }
 
 /**

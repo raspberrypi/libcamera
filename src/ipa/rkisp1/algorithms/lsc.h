@@ -25,7 +25,7 @@ public:
 	int configure(IPAContext &context, const IPACameraSensorInfo &configInfo) override;
 	void prepare(IPAContext &context, const uint32_t frame,
 		     IPAFrameContext &frameContext,
-		     rkisp1_params_cfg *params) override;
+		     RkISP1Params *params) override;
 
 private:
 	struct Components {
@@ -36,7 +36,7 @@ private:
 		std::vector<uint16_t> b;
 	};
 
-	void setParameters(rkisp1_params_cfg *params);
+	void setParameters(rkisp1_cif_isp_lsc_config &config);
 	void copyTable(rkisp1_cif_isp_lsc_config &config, const Components &set0);
 	void interpolateTable(rkisp1_cif_isp_lsc_config &config,
 			      const Components &set0, const Components &set1,

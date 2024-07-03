@@ -104,7 +104,7 @@ void Filter::queueRequest(IPAContext &context,
  */
 void Filter::prepare([[maybe_unused]] IPAContext &context,
 		     [[maybe_unused]] const uint32_t frame,
-		     IPAFrameContext &frameContext, rkisp1_params_cfg *params)
+		     IPAFrameContext &frameContext, RkISP1Params *params)
 {
 	/* Check if the algorithm configuration has been updated. */
 	if (!frameContext.filter.update)
@@ -160,23 +160,25 @@ void Filter::prepare([[maybe_unused]] IPAContext &context,
 
 	uint8_t denoise = frameContext.filter.denoise;
 	uint8_t sharpness = frameContext.filter.sharpness;
-	auto &flt_config = params->others.flt_config;
 
-	flt_config.fac_sh0 = filt_fac_sh0[sharpness];
-	flt_config.fac_sh1 = filt_fac_sh1[sharpness];
-	flt_config.fac_mid = filt_fac_mid[sharpness];
-	flt_config.fac_bl0 = filt_fac_bl0[sharpness];
-	flt_config.fac_bl1 = filt_fac_bl1[sharpness];
+	auto config = params->block<BlockType::Flt>();
+	config.setEnabled(true);
 
-	flt_config.lum_weight = kFiltLumWeightDefault;
-	flt_config.mode = kFiltModeDefault;
-	flt_config.thresh_sh0 = filt_thresh_sh0[denoise];
-	flt_config.thresh_sh1 = filt_thresh_sh1[denoise];
-	flt_config.thresh_bl0 = filt_thresh_bl0[denoise];
-	flt_config.thresh_bl1 = filt_thresh_bl1[denoise];
-	flt_config.grn_stage1 = stage1_select[denoise];
-	flt_config.chr_v_mode = filt_chr_v_mode[denoise];
-	flt_config.chr_h_mode = filt_chr_h_mode[denoise];
+	config->fac_sh0 = filt_fac_sh0[sharpness];
+	config->fac_sh1 = filt_fac_sh1[sharpness];
+	config->fac_mid = filt_fac_mid[sharpness];
+	config->fac_bl0 = filt_fac_bl0[sharpness];
+	config->fac_bl1 = filt_fac_bl1[sharpness];
+
+	config->lum_weight = kFiltLumWeightDefault;
+	config->mode = kFiltModeDefault;
+	config->thresh_sh0 = filt_thresh_sh0[denoise];
+	config->thresh_sh1 = filt_thresh_sh1[denoise];
+	config->thresh_bl0 = filt_thresh_bl0[denoise];
+	config->thresh_bl1 = filt_thresh_bl1[denoise];
+	config->grn_stage1 = stage1_select[denoise];
+	config->chr_v_mode = filt_chr_v_mode[denoise];
+	config->chr_h_mode = filt_chr_h_mode[denoise];
 
 	/*
 	 * Combined high denoising and high sharpening requires some
@@ -186,27 +188,23 @@ void Filter::prepare([[maybe_unused]] IPAContext &context,
 	 */
 	if (denoise == 9) {
 		if (sharpness > 3)
-			flt_config.grn_stage1 = 2;
+			config->grn_stage1 = 2;
 	} else if (denoise == 10) {
 		if (sharpness > 5)
-			flt_config.grn_stage1 = 2;
+			config->grn_stage1 = 2;
 		else if (sharpness > 3)
-			flt_config.grn_stage1 = 1;
+			config->grn_stage1 = 1;
 	}
 
 	if (denoise > 7) {
 		if (sharpness > 7) {
-			flt_config.fac_bl0 /= 2;
-			flt_config.fac_bl1 /= 4;
+			config->fac_bl0 /= 2;
+			config->fac_bl1 /= 4;
 		} else if (sharpness > 4) {
-			flt_config.fac_bl0 = flt_config.fac_bl0 * 3 / 4;
-			flt_config.fac_bl1 /= 2;
+			config->fac_bl0 = config->fac_bl0 * 3 / 4;
+			config->fac_bl1 /= 2;
 		}
 	}
-
-	params->module_en_update |= RKISP1_CIF_ISP_MODULE_FLT;
-	params->module_ens |= RKISP1_CIF_ISP_MODULE_FLT;
-	params->module_cfg_update |= RKISP1_CIF_ISP_MODULE_FLT;
 }
 
 REGISTER_IPA_ALGORITHM(Filter, "Filter")

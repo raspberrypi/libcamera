@@ -99,10 +99,13 @@ void GammaOutCorrection::queueRequest(IPAContext &context, const uint32_t frame,
 void GammaOutCorrection::prepare(IPAContext &context,
 				 [[maybe_unused]] const uint32_t frame,
 				 IPAFrameContext &frameContext,
-				 rkisp1_params_cfg *params)
+				 RkISP1Params *params)
 {
 	ASSERT(context.hw->numGammaOutSamples ==
 	       RKISP1_CIF_ISP_GAMMA_OUT_MAX_SAMPLES_V10);
+
+	if (!frameContext.goc.update)
+		return;
 
 	/*
 	 * The logarithmic segments as specified in the reference.
@@ -112,10 +115,11 @@ void GammaOutCorrection::prepare(IPAContext &context,
 		64, 64, 64, 64, 128, 128, 128, 128, 256,
 		256, 256, 512, 512, 512, 512, 512, 0
 	};
-	__u16 *gamma_y = params->others.goc_config.gamma_y;
 
-	if (!frameContext.goc.update)
-		return;
+	auto config = params->block<BlockType::Goc>();
+	config.setEnabled(true);
+
+	__u16 *gamma_y = config->gamma_y;
 
 	unsigned x = 0;
 	for (const auto [i, size] : utils::enumerate(segments)) {
@@ -123,10 +127,7 @@ void GammaOutCorrection::prepare(IPAContext &context,
 		x += size;
 	}
 
-	params->others.goc_config.mode = RKISP1_CIF_ISP_GOC_MODE_LOGARITHMIC;
-	params->module_cfg_update |= RKISP1_CIF_ISP_MODULE_GOC;
-	params->module_en_update |= RKISP1_CIF_ISP_MODULE_GOC;
-	params->module_ens |= RKISP1_CIF_ISP_MODULE_GOC;
+	config->mode = RKISP1_CIF_ISP_GOC_MODE_LOGARITHMIC;
 }
 
 /**

@@ -52,8 +52,7 @@ BlackLevelCorrection::BlackLevelCorrection()
 /**
  * \copydoc libcamera::ipa::Algorithm::init
  */
-int BlackLevelCorrection::init([[maybe_unused]] IPAContext &context,
-			       const YamlObject &tuningData)
+int BlackLevelCorrection::init(IPAContext &context, const YamlObject &tuningData)
 {
 	std::optional<int16_t> levelRed = tuningData["R"].get<int16_t>();
 	std::optional<int16_t> levelGreenR = tuningData["Gr"].get<int16_t>();

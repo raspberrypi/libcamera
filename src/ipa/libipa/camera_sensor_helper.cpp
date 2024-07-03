@@ -553,6 +553,8 @@ class CameraSensorHelperOv4689 : public CameraSensorHelper
 public:
 	CameraSensorHelperOv4689()
 	{
+		/* From datasheet: 0x40 at 12bits. */
+		blackLevel_ = 1024;
 		gainType_ = AnalogueGainLinear;
 		gainConstants_.linear = { 1, 0, 0, 128 };
 	}
@@ -564,6 +566,8 @@ class CameraSensorHelperOv5640 : public CameraSensorHelper
 public:
 	CameraSensorHelperOv5640()
 	{
+		/* From datasheet: 0x10 at 10bits. */
+		blackLevel_ = 1024;
 		gainType_ = AnalogueGainLinear;
 		gainConstants_.linear = { 1, 0, 0, 16 };
 	}

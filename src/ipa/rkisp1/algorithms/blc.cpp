@@ -9,6 +9,8 @@
 
 #include <libcamera/base/log.h>
 
+#include <libcamera/control_ids.h>
+
 #include "libcamera/internal/yaml_parser.h"
 
 /**
@@ -38,6 +40,13 @@ LOG_DEFINE_CATEGORY(RkISP1Blc)
 BlackLevelCorrection::BlackLevelCorrection()
 	: tuningParameters_(false)
 {
+	/*
+	 * This is a bit of a hack. In raw mode no black level correction
+	 * happens. This flag is used to ensure the metadata gets populated with
+	 * the black level which is needed to capture proper raw images for
+	 * tuning.
+	 */
+	supportsRaw_ = true;
 }
 
 /**
@@ -107,6 +116,9 @@ void BlackLevelCorrection::prepare([[maybe_unused]] IPAContext &context,
 				   [[maybe_unused]] IPAFrameContext &frameContext,
 				   rkisp1_params_cfg *params)
 {
+	if (context.configuration.raw)
+		return;
+
 	if (frame > 0)
 		return;
 
@@ -123,6 +135,22 @@ void BlackLevelCorrection::prepare([[maybe_unused]] IPAContext &context,
 	params->module_en_update |= RKISP1_CIF_ISP_MODULE_BLS;
 	params->module_ens |= RKISP1_CIF_ISP_MODULE_BLS;
 	params->module_cfg_update |= RKISP1_CIF_ISP_MODULE_BLS;
+}
+
+/**
+ * \copydoc libcamera::ipa::Algorithm::process
+ */
+void BlackLevelCorrection::process([[maybe_unused]] IPAContext &context,
+				   [[maybe_unused]] const uint32_t frame,
+				   [[maybe_unused]] IPAFrameContext &frameContext,
+				   [[maybe_unused]] const rkisp1_stat_buffer *stats,
+				   ControlList &metadata)
+{
+	metadata.set(controls::SensorBlackLevels,
+		     { static_cast<int32_t>(blackLevelRed_),
+		       static_cast<int32_t>(blackLevelGreenR_),
+		       static_cast<int32_t>(blackLevelGreenB_),
+		       static_cast<int32_t>(blackLevelBlue_) });
 }
 
 REGISTER_IPA_ALGORITHM(BlackLevelCorrection, "BlackLevelCorrection")

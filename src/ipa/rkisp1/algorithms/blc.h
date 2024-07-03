@@ -23,7 +23,10 @@ public:
 	void prepare(IPAContext &context, const uint32_t frame,
 		     IPAFrameContext &frameContext,
 		     rkisp1_params_cfg *params) override;
-
+	void process(IPAContext &context, const uint32_t frame,
+		     IPAFrameContext &frameContext,
+		     const rkisp1_stat_buffer *stats,
+		     ControlList &metadata) override;
 private:
 	bool tuningParameters_;
 	int16_t blackLevelRed_;

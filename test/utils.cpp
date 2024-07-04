@@ -176,6 +176,14 @@ protected:
 		std::ostringstream os;
 		std::string ref;
 
+		os << utils::hex(static_cast<int8_t>(0x42)) << " ";
+		ref += "0x42 ";
+		os << utils::hex(static_cast<uint8_t>(0x42)) << " ";
+		ref += "0x42 ";
+		os << utils::hex(static_cast<int16_t>(0x42)) << " ";
+		ref += "0x0042 ";
+		os << utils::hex(static_cast<uint16_t>(0x42)) << " ";
+		ref += "0x0042 ";
 		os << utils::hex(static_cast<int32_t>(0x42)) << " ";
 		ref += "0x00000042 ";
 		os << utils::hex(static_cast<uint32_t>(0x42)) << " ";
@@ -184,6 +192,15 @@ protected:
 		ref += "0x0000000000000042 ";
 		os << utils::hex(static_cast<uint64_t>(0x42)) << " ";
 		ref += "0x0000000000000042 ";
+
+		os << utils::hex(static_cast<int8_t>(0x42), 6) << " ";
+		ref += "0x000042 ";
+		os << utils::hex(static_cast<uint8_t>(0x42), 1) << " ";
+		ref += "0x42 ";
+		os << utils::hex(static_cast<int16_t>(0x42), 6) << " ";
+		ref += "0x000042 ";
+		os << utils::hex(static_cast<uint16_t>(0x42), 1) << " ";
+		ref += "0x42 ";
 		os << utils::hex(static_cast<int32_t>(0x42), 4) << " ";
 		ref += "0x0042 ";
 		os << utils::hex(static_cast<uint32_t>(0x42), 1) << " ";

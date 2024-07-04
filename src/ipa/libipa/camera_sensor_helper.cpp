@@ -235,6 +235,7 @@ double CameraSensorHelper::gain(uint32_t gainCode) const
 /**
  * \var CameraSensorHelper::blackLevel_
  * \brief The black level of the sensor
+ * \sa CameraSensorHelper::blackLevel()
  */
 
 /**

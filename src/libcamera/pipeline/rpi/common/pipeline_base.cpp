@@ -635,19 +635,23 @@ int PipelineHandlerBase::start(Camera *camera, const ControlList *controls)
 		data->applyScalerCrop(*controls);
 
 	/*
-	 * The configuration (tuning file) is made from the sensor name unless
-	 * the environment variable overrides it.
+	 * The configuration (tuning file) is made from the sensor name unless:
+	 * - controls::rpi::CameraTuningFile provides a custom tuning file, or
+	 * - the LIBCAMERA_RPI_TUNING_FILE environment variable overrides it.
 	 */
 	if (data->configurationFile_.empty()) {
-		std::string configurationFile;
+		auto const tuningFileCtrl = controls->get(controls::rpi::CameraTuningFile);
 		char const *configFromEnv = utils::secure_getenv("LIBCAMERA_RPI_TUNING_FILE");
-		if (!configFromEnv || *configFromEnv == '\0') {
+
+		if (tuningFileCtrl) {
+			data->configurationFile_ = *tuningFileCtrl;
+		} else if (configFromEnv && *configFromEnv != '\0') {
+			data->configurationFile_ = std::string(configFromEnv);
+		} else {
 			std::string model = data->sensor_->model();
 			if (isMonoSensor(data->sensor_))
 				model += "_mono";
 			data->configurationFile_ = data->ipa_->configurationFile(model + ".json");
-		} else {
-			data->configurationFile_ = std::string(configFromEnv);
 		}
 
 		ret = data->ipa_->setTuning(data->configurationFile_);

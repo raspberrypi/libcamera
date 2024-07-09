@@ -72,6 +72,8 @@ const ControlInfoMap::Map ipaControls{
 	{ &controls::FrameDurationLimits, ControlInfo(INT64_C(33333), INT64_C(120000)) },
 	{ &controls::draft::NoiseReductionMode, ControlInfo(controls::draft::NoiseReductionModeValues) },
 	{ &controls::rpi::StatsOutputEnable, ControlInfo(false, true, false) },
+	/* For string controls, min/max define the length of the string. */
+	{ &controls::rpi::CameraTuningFile, ControlInfo(0, 256, 0) },
 };
 
 /* IPA controls handled conditionally, if the sensor is not mono */

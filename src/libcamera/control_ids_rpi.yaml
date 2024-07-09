@@ -37,4 +37,12 @@ controls:
 
         \sa StatsOutputEnable
 
+  - CameraTuningFile:
+      type: string
+      description: |
+        Custom tuning configuration file to be used for the camera. This control
+        must be provided in Camera::start(). If this control is set, it will
+        override any custom tuning file provided through the LIBCAMERA_RPI_TUNING_FILE
+        environment variable.
+
 ...

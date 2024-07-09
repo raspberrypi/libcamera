@@ -33,6 +33,7 @@ mod = shared_module(ipa_name,
                     link_with : libipa,
                     link_whole : pisp_ipa_libs,
                     install : true,
+                    cpp_args : '-Wno-address-of-packed-member',
                     install_dir : ipa_install_dir)
 
 if ipa_sign_module

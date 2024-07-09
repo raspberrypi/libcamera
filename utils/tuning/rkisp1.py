@@ -45,15 +45,7 @@ lsc = LSCRkISP1(debug=[lt.Debug.Plot],
                 smoothing_function=lt.smoothing.MedianBlur(3),)
 
 tuner = lt.Tuner('RkISP1')
-tuner.add(agc)
-tuner.add(awb)
-tuner.add(blc)
-tuner.add(ccm)
-tuner.add(color_processing)
-tuner.add(filter)
-tuner.add(gamma_out)
-tuner.add(lsc)
-
+tuner.add([agc, awb, blc, ccm, color_processing, filter, gamma_out, lsc])
 tuner.set_input_parser(YamlParser())
 tuner.set_output_formatter(YamlOutput())
 tuner.set_output_order([agc, awb, blc, ccm, color_processing,

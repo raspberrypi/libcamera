@@ -62,6 +62,7 @@ public:
 	Algorithm *getAlgorithm(std::string const &name) const;
 	const std::string &getTarget() const;
 	const HardwareConfig &getHardwareConfig() const;
+	static const HardwareConfig &getHardwareConfig(const std::string &target);
 
 protected:
 	int createAlgorithm(const std::string &name, const libcamera::YamlObject &params);

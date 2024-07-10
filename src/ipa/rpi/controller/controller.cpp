@@ -209,7 +209,12 @@ const std::string &Controller::getTarget() const
 
 const Controller::HardwareConfig &Controller::getHardwareConfig() const
 {
-	auto cfg = HardwareConfigMap.find(getTarget());
+	return getHardwareConfig(getTarget());
+}
+
+const Controller::HardwareConfig &Controller::getHardwareConfig(const std::string &target)
+{
+	auto cfg = HardwareConfigMap.find(target);
 
 	/*
 	 * This really should not happen, the IPA ought to validate the target

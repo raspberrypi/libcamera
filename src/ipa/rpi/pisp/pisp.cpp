@@ -212,6 +212,12 @@ public:
 	}
 
 private:
+	const std::string &platformTarget() const override
+	{
+		static const std::string target("pisp");
+		return target;
+	}
+
 	int32_t platformInit(const InitParams &params, InitResult *result) override;
 	int32_t platformStart(const ControlList &controls, StartResult *result) override;
 	int32_t platformConfigure(const ConfigParams &params, ConfigResult *result) override;

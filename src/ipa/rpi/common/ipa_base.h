@@ -80,6 +80,7 @@ private:
 	/* Number of metadata objects available in the context list. */
 	static constexpr unsigned int numMetadataContexts = 16;
 
+	virtual const std::string &platformTarget() const = 0;
 	virtual int32_t platformInit(const InitParams &params, InitResult *result) = 0;
 	virtual int32_t platformStart(const ControlList &controls, StartResult *result) = 0;
 	virtual int32_t platformConfigure(const ConfigParams &params, ConfigResult *result) = 0;

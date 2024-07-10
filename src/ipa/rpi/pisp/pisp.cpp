@@ -276,14 +276,6 @@ private:
 int32_t IpaPiSP::platformInit(const InitParams &params,
 			      [[maybe_unused]] InitResult *result)
 {
-	const std::string &target = controller_.getTarget();
-	if (target != "pisp") {
-		LOG(IPARPI, Error)
-			<< "Tuning data file target returned \"" << target << "\""
-			<< ", expected \"pisp\"";
-		return -EINVAL;
-	}
-
 	/* Acquire the Frontend and Backend objects. */
 	feFD_ = std::move(params.fe);
 	beFD_ = std::move(params.be);
@@ -305,14 +297,16 @@ int32_t IpaPiSP::platformInit(const InitParams &params,
 		return -ENODEV;
 	}
 
-	setDefaultConfig();
-
 	return 0;
 }
 
 int32_t IpaPiSP::platformStart([[maybe_unused]] const ControlList &controls,
 			       [[maybe_unused]] StartResult *result)
 {
+	if (firstStart_)
+		setDefaultConfig();
+
+	setStatsAndDebin();
 	tdnReset_ = true;
 
 	/* Cause the stitch block to be reset correctly. */
@@ -324,7 +318,6 @@ int32_t IpaPiSP::platformStart([[maybe_unused]] const ControlList &controls,
 int32_t IpaPiSP::platformConfigure([[maybe_unused]] const ConfigParams &params,
 				   [[maybe_unused]] ConfigResult *result)
 {
-	setStatsAndDebin();
 	return 0;
 }
 

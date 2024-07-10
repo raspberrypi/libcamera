@@ -38,6 +38,7 @@ public:
 	int32_t init(const IPASettings &settings, const InitParams &params, InitResult *result) override;
 	int32_t configure(const IPACameraSensorInfo &sensorInfo, const ConfigParams &params,
 			  ConfigResult *result) override;
+	int32_t setTuning(const std::string &configurationFile) override;
 
 	void start(const ControlList &controls, StartResult *result) override;
 	void stop() override {}

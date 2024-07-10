@@ -139,18 +139,7 @@ int32_t IpaBase::init(const IPASettings &settings, const InitParams &params, Ini
 	result->sensorConfig.hblankDelay = hblankDelay;
 	result->sensorConfig.sensorMetadata = sensorMetadata;
 
-	/* Load the tuning file for this sensor. */
-	int ret = controller_.read(settings.configurationFile.c_str());
-	if (ret) {
-		LOG(IPARPI, Error)
-			<< "Failed to load tuning data file "
-			<< settings.configurationFile;
-		return ret;
-	}
-
 	lensPresent_ = params.lensPresent;
-
-	controller_.initialise();
 
 	/* Return the controls handled by the IPA */
 	ControlInfoMap::Map ctrlMap = ipaControls;
@@ -233,6 +222,32 @@ int32_t IpaBase::configure(const IPACameraSensorInfo &sensorInfo, const ConfigPa
 	result->controlInfo = ControlInfoMap(std::move(ctrlMap), controls::controls);
 
 	return platformConfigure(params, result);
+}
+
+int32_t IpaBase::setTuning(const std::string &configurationFile)
+{
+	LOG(IPARPI, Info) << "Loading tuning data file "
+			  << configurationFile;
+
+	/* Load the tuning file for this sensor. */
+	int ret = controller_.read(configurationFile.c_str());
+	if (ret) {
+		LOG(IPARPI, Error)
+			<< "Failed to load tuning data file "
+			<< configurationFile;
+		return ret;
+	}
+
+	if (controller_.getTarget() != platformTarget()) {
+		LOG(IPARPI, Error)
+			<< "Tuning data file target returned \"" << controller_.getTarget() << "\""
+			<< ", expected \"" << platformTarget() << "\"";
+		return -EINVAL;
+	}
+
+	controller_.initialise();
+
+	return 0;
 }
 
 void IpaBase::start(const ControlList &controls, StartResult *result)

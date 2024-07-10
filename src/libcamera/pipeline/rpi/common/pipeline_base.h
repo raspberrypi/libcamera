@@ -162,6 +162,7 @@ public:
 	};
 
 	Config config_;
+	std::string configurationFile_;
 
 protected:
 	void fillRequestMetadata(const ControlList &bufferControls,

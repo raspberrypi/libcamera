@@ -93,6 +93,8 @@ interface IPARPiInterface {
 	init(libcamera.IPASettings settings, InitParams params)
 		=> (int32 ret, InitResult result);
 
+	setTuning(string configurationFile) => (int32 ret);
+
 	/**
 	 * \fn start()
 	 * \brief Start the IPA

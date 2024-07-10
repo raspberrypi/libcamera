@@ -634,6 +634,29 @@ int PipelineHandlerBase::start(Camera *camera, const ControlList *controls)
 	if (controls)
 		data->applyScalerCrop(*controls);
 
+	/*
+	 * The configuration (tuning file) is made from the sensor name unless
+	 * the environment variable overrides it.
+	 */
+	if (data->configurationFile_.empty()) {
+		std::string configurationFile;
+		char const *configFromEnv = utils::secure_getenv("LIBCAMERA_RPI_TUNING_FILE");
+		if (!configFromEnv || *configFromEnv == '\0') {
+			std::string model = data->sensor_->model();
+			if (isMonoSensor(data->sensor_))
+				model += "_mono";
+			data->configurationFile_ = data->ipa_->configurationFile(model + ".json");
+		} else {
+			data->configurationFile_ = std::string(configFromEnv);
+		}
+
+		ret = data->ipa_->setTuning(data->configurationFile_);
+		if (ret) {
+			LOG(RPI, Error) << "Failed to set tuning file in the IPA library";
+			return ret;
+		}
+	}
+
 	/* Start the IPA. */
 	ipa::RPi::StartResult result;
 	data->ipa_->start(controls ? *controls : ControlList{ controls::controls },
@@ -1144,22 +1167,8 @@ int CameraData::loadIPA(ipa::RPi::InitResult *result)
 	if (!ipa_)
 		return -ENOENT;
 
-	/*
-	 * The configuration (tuning file) is made from the sensor name unless
-	 * the environment variable overrides it.
-	 */
-	std::string configurationFile;
-	char const *configFromEnv = utils::secure_getenv("LIBCAMERA_RPI_TUNING_FILE");
-	if (!configFromEnv || *configFromEnv == '\0') {
-		std::string model = sensor_->model();
-		if (isMonoSensor(sensor_))
-			model += "_mono";
-		configurationFile = ipa_->configurationFile(model + ".json");
-	} else {
-		configurationFile = std::string(configFromEnv);
-	}
-
-	IPASettings settings(configurationFile, sensor_->model());
+	/* The tuning file is set during PipelineHandlerBase::start(). */
+	IPASettings settings({}, sensor_->model());
 	ipa::RPi::InitParams params;
 
 	ret = sensor_->sensorInfo(&params.sensorInfo);

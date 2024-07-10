@@ -533,7 +533,8 @@ void IpaBase::setMode(const IPACameraSensorInfo &sensorInfo)
 	 * hardware capabilities. If it does, try adjusting the minimum line
 	 * length to compensate if possible.
 	 */
-	Duration minPixelTime = controller_.getHardwareConfig().minPixelProcessingTime;
+	Duration minPixelTime =
+		RPiController::Controller::getHardwareConfig(platformTarget()).minPixelProcessingTime;
 	Duration pixelTime = mode_.minLineLength / mode_.width;
 	if (minPixelTime && pixelTime < minPixelTime) {
 		Duration adjustedLineLength = minPixelTime * mode_.width;

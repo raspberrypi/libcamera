@@ -640,8 +640,10 @@ int PipelineHandlerBase::start(Camera *camera, const ControlList *controls)
 			  &result);
 
 	/* Apply any gain/exposure settings that the IPA may have passed back. */
-	if (!result.controls.empty())
-		data->setSensorControls(result.controls);
+	if (!result.sensorControls.empty())
+		data->setSensorControls(result.sensorControls);
+	if (!result.lensControls.empty())
+		data->setLensControls(result.lensControls);
 
 	/* Configure the number of dropped frames required on startup. */
 	data->dropFrameCount_ = data->config_.disableStartupFrameDrops
@@ -1204,11 +1206,6 @@ int CameraData::configureIPA(const CameraConfiguration *config, ipa::RPi::Config
 		LOG(RPI, Error) << "IPA configuration failed!";
 		return -EPIPE;
 	}
-
-	if (!result->sensorControls.empty())
-		setSensorControls(result->sensorControls);
-	if (!result->lensControls.empty())
-		setLensControls(result->lensControls);
 
 	return 0;
 }

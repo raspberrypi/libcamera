@@ -50,12 +50,11 @@ struct ConfigParams {
 struct ConfigResult {
 	float modeSensitivity;
 	libcamera.ControlInfoMap controlInfo;
-	libcamera.ControlList sensorControls;
-	libcamera.ControlList lensControls;
 };
 
 struct StartResult {
-	libcamera.ControlList controls;
+	libcamera.ControlList sensorControls;
+	libcamera.ControlList lensControls;	
 	int32 dropFrameCount;
 };
 

@@ -111,13 +111,16 @@ void Ccm::prepare(IPAContext &context, const uint32_t frame,
 	 * \todo The colour temperature will likely be noisy, add filtering to
 	 * avoid updating the CCM matrix all the time.
 	 */
-	if (frame > 0 && ct == ct_)
+	if (frame > 0 && ct == ct_) {
+		frameContext.ccm.ccm = context.activeState.ccm.ccm;
 		return;
+	}
 
 	ct_ = ct;
 	Matrix<float, 3, 3> ccm = ccm_.get(ct);
 	Matrix<int16_t, 3, 1> offsets = offsets_.get(ct);
 
+	context.activeState.ccm.ccm = ccm;
 	frameContext.ccm.ccm = ccm;
 
 	setParameters(params, ccm, offsets);

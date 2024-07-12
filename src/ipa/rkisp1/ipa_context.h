@@ -98,6 +98,10 @@ struct IPAActiveState {
 	} awb;
 
 	struct {
+		Matrix<float, 3, 3> ccm;
+	} ccm;
+
+	struct {
 		int8_t brightness;
 		uint8_t contrast;
 		uint8_t saturation;

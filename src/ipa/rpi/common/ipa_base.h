@@ -76,6 +76,9 @@ protected:
 	/* Whether the stitch block (if available) needs to swap buffers. */
 	bool stitchSwapBuffers_;
 
+	/* Distinguish the first camera start from others. */
+	bool firstStart_;
+
 private:
 	/* Number of metadata objects available in the context list. */
 	static constexpr unsigned int numMetadataContexts = 16;
@@ -124,9 +127,6 @@ private:
 
 	/* Do we run a Controller::process() for this frame? */
 	bool processPending_;
-
-	/* Distinguish the first camera start from others. */
-	bool firstStart_;
 
 	/* Frame duration (1/fps) limits. */
 	utils::Duration minFrameDuration_;

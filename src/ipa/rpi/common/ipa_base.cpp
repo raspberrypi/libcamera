@@ -102,8 +102,8 @@ namespace ipa::RPi {
 
 IpaBase::IpaBase()
 	: controller_(), frameLengths_(FrameLengthsQueueSize, 0s), statsMetadataOutput_(false),
-	  stitchSwapBuffers_(false), frameCount_(0), mistrustCount_(0), lastRunTimestamp_(0),
-	  firstStart_(true), flickerState_({ 0, 0s })
+	  stitchSwapBuffers_(false), firstStart_(true), frameCount_(0), mistrustCount_(0),
+	  lastRunTimestamp_(0), flickerState_({ 0, 0s })
 {
 }
 
@@ -330,10 +330,10 @@ void IpaBase::start(const ControlList &controls, StartResult *result)
 
 	result->dropFrameCount = dropFrameCount_;
 
+	platformStart(controls, result);
+
 	firstStart_ = false;
 	lastRunTimestamp_ = 0;
-
-	platformStart(controls, result);
 }
 
 void IpaBase::mapBuffers(const std::vector<IPABuffer> &buffers)

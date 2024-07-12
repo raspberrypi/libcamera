@@ -277,7 +277,6 @@ void Awb::process(IPAContext &context,
 	 */
 	if (redMean < kMeanMinThreshold && greenMean < kMeanMinThreshold &&
 	    blueMean < kMeanMinThreshold) {
-		frameContext.awb.temperatureK = activeState.awb.temperatureK;
 		return;
 	}
 
@@ -309,21 +308,19 @@ void Awb::process(IPAContext &context,
 	activeState.awb.gains.automatic.blue = blueGain;
 	activeState.awb.gains.automatic.green = 1.0;
 
-	frameContext.awb.temperatureK = activeState.awb.temperatureK;
-
 	metadata.set(controls::AwbEnable, frameContext.awb.autoEnabled);
 	metadata.set(controls::ColourGains, {
 			static_cast<float>(frameContext.awb.gains.red),
 			static_cast<float>(frameContext.awb.gains.blue)
 		});
-	metadata.set(controls::ColourTemperature, frameContext.awb.temperatureK);
+	metadata.set(controls::ColourTemperature, activeState.awb.temperatureK);
 
 	LOG(RkISP1Awb, Debug) << std::showpoint
 		<< "Means [" << redMean << ", " << greenMean << ", " << blueMean
 		<< "], gains [" << activeState.awb.gains.automatic.red << ", "
 		<< activeState.awb.gains.automatic.green << ", "
 		<< activeState.awb.gains.automatic.blue << "], temp "
-		<< frameContext.awb.temperatureK << "K";
+		<< activeState.awb.temperatureK << "K";
 }
 
 REGISTER_IPA_ALGORITHM(Awb, "Awb")

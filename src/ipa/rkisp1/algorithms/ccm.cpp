@@ -135,7 +135,7 @@ void Ccm::process([[maybe_unused]] IPAContext &context,
 	float m[9];
 	for (unsigned int i = 0; i < 3; i++) {
 		for (unsigned int j = 0; j < 3; j++)
-			m[i] = frameContext.ccm.ccm[i][j];
+			m[i * 3 + j] = frameContext.ccm.ccm[i][j];
 	}
 	metadata.set(controls::ColourCorrectionMatrix, m);
 }

@@ -120,10 +120,14 @@ void Awb::prepare(IPAContext &context, const uint32_t frame,
 		frameContext.awb.gains.blue = context.activeState.awb.gains.automatic.blue;
 	}
 
-	params->others.awb_gain_config.gain_green_b = 256 * frameContext.awb.gains.green;
-	params->others.awb_gain_config.gain_blue = 256 * frameContext.awb.gains.blue;
-	params->others.awb_gain_config.gain_red = 256 * frameContext.awb.gains.red;
-	params->others.awb_gain_config.gain_green_r = 256 * frameContext.awb.gains.green;
+	params->others.awb_gain_config.gain_green_b =
+		std::clamp<int>(256 * frameContext.awb.gains.green, 0, 0x3ff);
+	params->others.awb_gain_config.gain_blue =
+		std::clamp<int>(256 * frameContext.awb.gains.blue, 0, 0x3ff);
+	params->others.awb_gain_config.gain_red =
+		std::clamp<int>(256 * frameContext.awb.gains.red, 0, 0x3ff);
+	params->others.awb_gain_config.gain_green_r =
+		std::clamp<int>(256 * frameContext.awb.gains.green, 0, 0x3ff);
 
 	/* Update the gains. */
 	params->module_cfg_update |= RKISP1_CIF_ISP_MODULE_AWB_GAIN;

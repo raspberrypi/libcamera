@@ -222,6 +222,12 @@ void Awb::process(IPAContext &context,
 	double redMean;
 	double blueMean;
 
+	metadata.set(controls::AwbEnable, frameContext.awb.autoEnabled);
+	metadata.set(controls::ColourGains, {
+			static_cast<float>(frameContext.awb.gains.red),
+			static_cast<float>(frameContext.awb.gains.blue)
+		});
+
 	if (rgbMode_) {
 		greenMean = awb->awb_mean[0].mean_y_or_g;
 		redMean = awb->awb_mean[0].mean_cr_or_r;
@@ -277,10 +283,14 @@ void Awb::process(IPAContext &context,
 	 */
 	if (redMean < kMeanMinThreshold && greenMean < kMeanMinThreshold &&
 	    blueMean < kMeanMinThreshold) {
+		metadata.set(controls::ColourTemperature, activeState.awb.temperatureK);
 		return;
 	}
 
 	activeState.awb.temperatureK = estimateCCT(redMean, greenMean, blueMean);
+
+	/* Metadata shall contain the up to date measurement */
+	metadata.set(controls::ColourTemperature, activeState.awb.temperatureK);
 
 	/*
 	 * Estimate the red and blue gains to apply in a grey world. The green
@@ -307,13 +317,6 @@ void Awb::process(IPAContext &context,
 	activeState.awb.gains.automatic.red = redGain;
 	activeState.awb.gains.automatic.blue = blueGain;
 	activeState.awb.gains.automatic.green = 1.0;
-
-	metadata.set(controls::AwbEnable, frameContext.awb.autoEnabled);
-	metadata.set(controls::ColourGains, {
-			static_cast<float>(frameContext.awb.gains.red),
-			static_cast<float>(frameContext.awb.gains.blue)
-		});
-	metadata.set(controls::ColourTemperature, activeState.awb.temperatureK);
 
 	LOG(RkISP1Awb, Debug) << std::showpoint
 		<< "Means [" << redMean << ", " << greenMean << ", " << blueMean

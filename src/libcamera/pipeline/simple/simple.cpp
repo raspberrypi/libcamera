@@ -163,7 +163,7 @@ LOG_DEFINE_CATEGORY(SimplePipeline)
  * handler has no a priori knowledge of. The pipeline handler thus implements a
  * heuristic to handle sharing of hardware resources in a generic fashion.
  *
- * Two cameras are considered to be mutually exclusive if their share common
+ * Two cameras are considered to be mutually exclusive if they share common
  * pads along the pipeline from the camera sensor to the video node. An entity
  * can thus be used concurrently by multiple cameras, as long as pads are
  * distinct.

@@ -90,6 +90,15 @@ if cc.has_header_symbol('sys/mman.h', 'memfd_create', prefix : '#define _GNU_SOU
     config_h.set('HAVE_MEMFD_CREATE', 1)
 endif
 
+ioctl_posix_test = '''
+#include <sys/ioctl.h>
+int ioctl (int, int, ...);
+'''
+
+if cc.compiles(ioctl_posix_test)
+    config_h.set('HAVE_POSIX_IOCTL', 1)
+endif
+
 if cc.has_header_symbol('stdlib.h', 'secure_getenv', prefix : '#define _GNU_SOURCE')
     config_h.set('HAVE_SECURE_GETENV', 1)
 endif

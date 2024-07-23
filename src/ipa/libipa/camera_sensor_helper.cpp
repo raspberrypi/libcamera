@@ -601,6 +601,8 @@ class CameraSensorHelperOv5675 : public CameraSensorHelper
 public:
 	CameraSensorHelperOv5675()
 	{
+		/* From Linux kernel driver: 0x40 at 10bits. */
+		blackLevel_ = 4096;
 		gainType_ = AnalogueGainLinear;
 		gainConstants_.linear = { 1, 0, 0, 128 };
 	}

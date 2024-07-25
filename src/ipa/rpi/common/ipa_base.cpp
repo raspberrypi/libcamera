@@ -71,6 +71,7 @@ const ControlInfoMap::Map ipaControls{
 	{ &controls::HdrMode, ControlInfo(controls::HdrModeValues) },
 	{ &controls::Sharpness, ControlInfo(0.0f, 16.0f, 1.0f) },
 	{ &controls::ScalerCrop, ControlInfo(Rectangle{}, Rectangle(65535, 65535, 65535, 65535), Rectangle{}) },
+	{ &controls::rpi::ScalerCrops, ControlInfo(Rectangle{}, Rectangle(65535, 65535, 65535, 65535), Rectangle{}) },
 	{ &controls::FrameDurationLimits, ControlInfo(INT64_C(33333), INT64_C(120000)) },
 	{ &controls::draft::NoiseReductionMode, ControlInfo(controls::draft::NoiseReductionModeValues) },
 	{ &controls::rpi::StatsOutputEnable, ControlInfo(false, true, false) },
@@ -1070,6 +1071,7 @@ void IpaBase::applyControls(const ControlList &controls)
 			break;
 		}
 
+		case controls::rpi::SCALER_CROPS:
 		case controls::SCALER_CROP: {
 			/* We do nothing with this, but should avoid the warning below. */
 			break;

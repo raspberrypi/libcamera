@@ -30,4 +30,19 @@ controls:
 
         \sa StatsOutputEnable
 
+  - ScalerCrops:
+      type: Rectangle
+      size: [n]
+      description: |
+        An array of rectangles, where each singular value has identical functionality
+        to the ScalerCrop control. This control allows the Raspberry Pi pipeline
+        handler to control individual scaler crops per output stream.
+
+        The order of rectangles passed into the control must match the order of
+        streams configured by the application.
+
+        Note that using different crop rectangles for each output stream is only
+        applicable on the Pi5/PiSP platform.
+
+        \sa ScalerCrop
 ...

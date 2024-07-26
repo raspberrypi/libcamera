@@ -19,13 +19,19 @@ class Encoder(json.JSONEncoder):
         self.indentation_level = 0
         self.hard_break = 120
         self.custom_elems = {
+            'weights': 15,
             'table': 16,
             'luminance_lut': 16,
             'ct_curve': 3,
             'ccm': 3,
+            'lut_rx': 9,
+            'lut_bx': 9,
+            'lut_by': 9,
+            'lut_ry': 9,
             'gamma_curve': 2,
             'y_target': 2,
-            'prior': 2
+            'prior': 2,
+            'tonemap': 2
         }
 
     def encode(self, o, node_key=None):
@@ -87,7 +93,7 @@ class Encoder(json.JSONEncoder):
         return self.encode(o)
 
 
-def pretty_print(in_json: dict) -> str:
+def pretty_print(in_json: dict, custom_elems={}) -> str:
 
     if 'version' not in in_json or \
        'target' not in in_json or \
@@ -95,12 +101,15 @@ def pretty_print(in_json: dict) -> str:
        in_json['version'] < 2.0:
         raise RuntimeError('Incompatible JSON dictionary has been provided')
 
-    return json.dumps(in_json, cls=Encoder, indent=4, sort_keys=False)
+    encoder = Encoder(indent=4, sort_keys=False)
+    encoder.custom_elems |= custom_elems
+    return encoder.encode(in_json) #json.dumps(in_json, cls=Encoder, indent=4, sort_keys=False)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter, description=
                     'Prettify a version 2.0 camera tuning config JSON file.')
+    parser.add_argument('-t', '--target', type=str, help='Target platform', choices=['pisp', 'vc4'], default='vc4')
     parser.add_argument('input', type=str, help='Input tuning file.')
     parser.add_argument('output', type=str, nargs='?',
                         help='Output converted tuning file. If not provided, the input file will be updated in-place.',
@@ -110,7 +119,12 @@ if __name__ == "__main__":
     with open(args.input, 'r') as f:
         in_json = json.load(f)
 
-    out_json = pretty_print(in_json)
+    if args.target == 'pisp':
+        from ctt_pisp import grid_size
+    elif args.target == 'vc4':
+        from ctt_vc4 import grid_size
+
+    out_json = pretty_print(in_json, custom_elems={'table': grid_size[0], 'luminance_lut': grid_size[0]})
 
     with open(args.output if args.output is not None else args.input, 'w') as f:
         f.write(out_json)

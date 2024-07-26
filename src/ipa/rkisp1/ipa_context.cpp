@@ -137,13 +137,43 @@ namespace libcamera::ipa::rkisp1 {
  * \var IPAActiveState::agc
  * \brief State for the Automatic Gain Control algorithm
  *
- * The exposure and gain are the latest values computed by the AGC algorithm.
+ * The \a automatic variables track the latest values computed by algorithm
+ * based on the latest processed statistics. All other variables track the
+ * consolidated controls requested in queued requests.
  *
- * \var IPAActiveState::agc.exposure
- * \brief Exposure time expressed as a number of lines
+ * \struct IPAActiveState::agc.manual
+ * \brief Manual exposure time and analog gain (set through requests)
  *
- * \var IPAActiveState::agc.gain
- * \brief Analogue gain multiplier
+ * \var IPAActiveState::agc.manual.exposure
+ * \brief Manual exposure time expressed as a number of lines as set by the
+ * ExposureTime control
+ *
+ * \var IPAActiveState::agc.manual.gain
+ * \brief Manual analogue gain as set by the AnalogueGain control
+ *
+ * \struct IPAActiveState::agc.automatic
+ * \brief Automatic exposure time and analog gain (computed by the algorithm)
+ *
+ * \var IPAActiveState::agc.automatic.exposure
+ * \brief Automatic exposure time expressed as a number of lines
+ *
+ * \var IPAActiveState::agc.automatic.gain
+ * \brief Automatic analogue gain multiplier
+ *
+ * \var IPAActiveState::agc.autoEnabled
+ * \brief Manual/automatic AGC state as set by the AeEnable control
+ *
+ * \var IPAActiveState::agc.constraintMode
+ * \brief Constraint mode as set by the AeConstraintMode control
+ *
+ * \var IPAActiveState::agc.exposureMode
+ * \brief Exposure mode as set by the AeExposureMode control
+ *
+ * \var IPAActiveState::agc.meteringMode
+ * \brief Metering mode as set by the AeMeteringMode control
+ *
+ * \var IPAActiveState::agc.maxFrameDuration
+ * \brief Maximum frame duration as set by the FrameDurationLimits control
  */
 
 /**
@@ -218,6 +248,14 @@ namespace libcamera::ipa::rkisp1 {
  */
 
 /**
+ * \var IPAActiveState::goc
+ * \brief State for the goc algorithm
+ *
+ * \var IPAActiveState::goc.gamma
+ * \brief Gamma value applied as 1.0/gamma
+ */
+
+/**
  * \struct IPAFrameContext
  * \brief Per-frame context for algorithms
  *
@@ -257,12 +295,30 @@ namespace libcamera::ipa::rkisp1 {
  * applied to the sensor in order to take effect for this frame.
  *
  * \var IPAFrameContext::agc.exposure
- * \brief Exposure time expressed as a number of lines
+ * \brief Exposure time expressed as a number of lines computed by the algorithm
  *
  * \var IPAFrameContext::agc.gain
- * \brief Analogue gain multiplier
+ * \brief Analogue gain multiplier computed by the algorithm
  *
  * The gain should be adapted to the sensor specific gain code before applying.
+ *
+ * \var IPAFrameContext::agc.autoEnabled
+ * \brief Manual/automatic AGC state as set by the AeEnable control
+ *
+ * \var IPAFrameContext::agc.constraintMode
+ * \brief Constraint mode as set by the AeConstraintMode control
+ *
+ * \var IPAFrameContext::agc.exposureMode
+ * \brief Exposure mode as set by the AeExposureMode control
+ *
+ * \var IPAFrameContext::agc.meteringMode
+ * \brief Metering mode as set by the AeMeteringMode control
+ *
+ * \var IPAFrameContext::agc.maxFrameDuration
+ * \brief Maximum frame duration as set by the FrameDurationLimits control
+ *
+ * \var IPAFrameContext::agc.updateMetering
+ * \brief Indicate if new ISP AGC metering parameters need to be applied
  */
 
 /**
@@ -330,6 +386,18 @@ namespace libcamera::ipa::rkisp1 {
  *
  * \var IPAFrameContext::filter.updateParams
  * \brief Indicates if the filter parameters have been updated compared to the
+ * previous frame
+ */
+
+/**
+ * \var IPAFrameContext::goc
+ * \brief Gamma out correction parameters for this frame
+ *
+ * \var IPAFrameContext::goc.gamma
+ * \brief Gamma value applied as 1.0/gamma
+ *
+ * \var IPAFrameContext::goc.update
+ * \brief Indicates if the goc parameters have been updated compared to the
  * previous frame
  */
 

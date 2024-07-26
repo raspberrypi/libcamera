@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 #
 # Copyright (C) 2019, Raspberry Pi Ltd
+# Copyright (C) 2024, Ideas on Board Oy
 #
 # Locate and extract Macbeth charts from images
 # (Copied from: ctt_macbeth_locator.py)
@@ -11,8 +12,18 @@ import cv2
 import os
 from pathlib import Path
 import numpy as np
+import warnings
+import logging
+from sklearn import cluster as cluster
 
-from libtuning.image import Image
+from .ctt_ransac import get_square_verts, get_square_centres
+from .image import Image
+
+logger = logging.getLogger(__name__)
+
+
+class MacbethError(Exception):
+    pass
 
 
 # Reshape image to fixed width without distorting returns image and scale
@@ -369,7 +380,9 @@ def get_macbeth_chart(img, ref_data):
 
     # Catch macbeth errors and continue with code
     except MacbethError as error:
-        eprint(error)
+        # \todo: This happens so many times in a normal run, that it shadows
+        # all the relevant output
+        # logger.warning(error)
         return (0, None, None, False)
 
 
@@ -403,10 +416,15 @@ def find_macbeth(img, mac_config):
     # nothing more is tried as this is a high enough confidence to ensure
     # reliable macbeth square centre placement.
 
+    # Keep a list that will include this and any brightened up versions of
+    # the image for reuse.
+    all_images = [img]
+
     for brightness in [2, 4]:
         if cor >= 0.75:
             break
         img_br = cv2.convertScaleAbs(img, alpha=brightness, beta=0)
+        all_images.append(img_br)
         cor_b, mac_b, coords_b, ret_b = get_macbeth_chart(img_br, ref_data)
         if cor_b > cor:
             cor, mac, coords, ret = cor_b, mac_b, coords_b, ret_b
@@ -456,23 +474,24 @@ def find_macbeth(img, mac_config):
         w_inc = int(w * pair['inc'])
         h_inc = int(h * pair['inc'])
 
-        loop = ((1 - pair['sel']) / pair['inc']) + 1
+        loop = int(((1 - pair['sel']) / pair['inc']) + 1)
         # For each subselection, look for a macbeth chart
-        for i in range(loop):
-            for j in range(loop):
-                w_s, h_s = i * w_inc, j * h_inc
-                img_sel = img[w_s:w_s + w_sel, h_s:h_s + h_sel]
-                cor_ij, mac_ij, coords_ij, ret_ij = get_macbeth_chart(img_sel, ref_data)
+        for img_br in all_images:
+            for i in range(loop):
+                for j in range(loop):
+                    w_s, h_s = i * w_inc, j * h_inc
+                    img_sel = img_br[w_s:w_s + w_sel, h_s:h_s + h_sel]
+                    cor_ij, mac_ij, coords_ij, ret_ij = get_macbeth_chart(img_sel, ref_data)
 
-                # If the correlation is better than the best then record the
-                # scale and current subselection at which macbeth chart was
-                # found. Also record the coordinates, macbeth chart and message.
-                if cor_ij > cor:
-                    cor = cor_ij
-                    mac, coords, ret = mac_ij, coords_ij, ret_ij
-                    ii, jj = i, j
-                    w_best, h_best = w_inc, h_inc
-                    d_best = index + 1
+                    # If the correlation is better than the best then record the
+                    # scale and current subselection at which macbeth chart was
+                    # found. Also record the coordinates, macbeth chart and message.
+                    if cor_ij > cor:
+                        cor = cor_ij
+                        mac, coords, ret = mac_ij, coords_ij, ret_ij
+                        ii, jj = i, j
+                        w_best, h_best = w_inc, h_inc
+                        d_best = index + 1
 
     # Transform coordinates from subselection to original image
     if ii != -1:
@@ -486,7 +505,7 @@ def find_macbeth(img, mac_config):
 
     coords_fit = coords
     if cor < 0.75:
-        eprint(f'Warning: Low confidence {cor:.3f} for macbeth chart in {img.path.name}')
+        logger.warning(f'Low confidence {cor:.3f} for macbeth chart')
 
     if show:
         draw_macbeth_results(img, coords_fit)
@@ -499,18 +518,20 @@ def locate_macbeth(image: Image, config: dict):
     av_chan = (np.mean(np.array(image.channels), axis=0) / (2**16))
     av_val = np.mean(av_chan)
     if av_val < image.blacklevel_16 / (2**16) + 1 / 64:
-        eprint(f'Image {image.path.name} too dark')
+        logger.warning(f'Image {image.path.name} too dark')
         return None
 
     macbeth = find_macbeth(av_chan, config['general']['macbeth'])
 
     if macbeth is None:
-        eprint(f'No macbeth chart found in {image.path.name}')
+        logger.warning(f'No macbeth chart found in {image.path.name}')
         return None
 
     mac_cen_coords = macbeth[1]
     if not image.get_patches(mac_cen_coords):
-        eprint(f'Macbeth patches have saturated in {image.path.name}')
+        logger.warning(f'Macbeth patches have saturated in {image.path.name}')
         return None
+
+    image.macbeth = macbeth
 
     return macbeth

@@ -34,6 +34,8 @@ using namespace libcamera;
 using namespace std;
 using namespace std::chrono_literals;
 
+namespace {
+
 int calculateLength(int fd)
 {
 	lseek(fd, 0, 0);
@@ -42,6 +44,8 @@ int calculateLength(int fd)
 
 	return size;
 }
+
+} /* namespace */
 
 class UnixSocketTestSlave
 {

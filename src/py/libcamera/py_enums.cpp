@@ -9,6 +9,8 @@
 
 #include <pybind11/pybind11.h>
 
+#include "py_main.h"
+
 namespace py = pybind11;
 
 using namespace libcamera;

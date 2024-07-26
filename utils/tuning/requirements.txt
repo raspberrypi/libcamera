@@ -1,0 +1,9 @@
+coloredlogs
+matplotlib
+numpy
+opencv-python
+py3exiv2
+pyyaml
+rawpy
+scikit-learn
+scipy

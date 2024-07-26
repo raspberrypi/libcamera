@@ -6,8 +6,9 @@
  */
 #pragma once
 
+#include <libipa/pwl.h>
+
 #include "algorithm.h"
-#include "pwl.h"
 
 namespace RPiController {
 
@@ -16,7 +17,7 @@ struct TonemapConfig {
 	double detailSlope;
 	double iirStrength;
 	double strength;
-	Pwl tonemap;
+	libcamera::ipa::Pwl tonemap;
 };
 
 class Tonemap : public Algorithm

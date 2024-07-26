@@ -49,7 +49,7 @@ public:
 	void processStats(const ProcessParams &params) override;
 
 protected:
-	bool monoSensor()
+	bool monoSensor() const
 	{
 		return monoSensor_;
 	}

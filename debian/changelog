@@ -1,4 +1,4 @@
-libcamera (0.3.1-1) UNRELEASED; urgency=medium
+libcamera (0.3.1-1) unstable; urgency=medium
 
   * New upstream version 0.3.1
   * Switch from qtbase5-dev to qt6-base-dev in Build-Depends
@@ -6,7 +6,7 @@ libcamera (0.3.1-1) UNRELEASED; urgency=medium
   * Disable qcam on i386 for now because it fails to build with errors
       due to missing SSE2.
 
- -- Dylan Aïssi <daissi@debian.org>  Fri, 26 Jul 2024 10:21:40 +0200
+ -- Dylan Aïssi <daissi@debian.org>  Fri, 26 Jul 2024 10:55:50 +0200
 
 libcamera (0.3.0-2) unstable; urgency=medium
 

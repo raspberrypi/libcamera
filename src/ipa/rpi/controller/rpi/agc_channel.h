@@ -12,10 +12,11 @@
 
 #include <libcamera/base/utils.h>
 
+#include <libipa/pwl.h>
+
 #include "../agc_status.h"
 #include "../awb_status.h"
 #include "../controller.h"
-#include "../pwl.h"
 
 /* This is our implementation of AGC. */
 
@@ -40,7 +41,7 @@ struct AgcConstraint {
 	Bound bound;
 	double qLo;
 	double qHi;
-	Pwl yTarget;
+	libcamera::ipa::Pwl yTarget;
 	int read(const libcamera::YamlObject &params);
 };
 
@@ -61,7 +62,7 @@ struct AgcConfig {
 	std::map<std::string, AgcExposureMode> exposureModes;
 	std::map<std::string, AgcConstraintMode> constraintModes;
 	std::vector<AgcChannelConstraint> channelConstraints;
-	Pwl yTarget;
+	libcamera::ipa::Pwl yTarget;
 	double speed;
 	uint16_t startupFrames;
 	unsigned int convergenceFrames;

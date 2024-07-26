@@ -10,10 +10,13 @@
 #include <condition_variable>
 #include <thread>
 
+#include <libcamera/geometry.h>
+
 #include "../awb_algorithm.h"
-#include "../pwl.h"
 #include "../awb_status.h"
 #include "../statistics.h"
+
+#include "libipa/pwl.h"
 
 namespace RPiController {
 
@@ -28,7 +31,7 @@ struct AwbMode {
 struct AwbPrior {
 	int read(const libcamera::YamlObject &params);
 	double lux; /* lux level */
-	Pwl prior; /* maps CT to prior log likelihood for this lux level */
+	libcamera::ipa::Pwl prior; /* maps CT to prior log likelihood for this lux level */
 };
 
 struct AwbConfig {
@@ -41,10 +44,10 @@ struct AwbConfig {
 	unsigned int convergenceFrames; /* approx number of frames to converge */
 	double speed; /* IIR filter speed applied to algorithm results */
 	bool fast; /* "fast" mode uses a 16x16 rather than 32x32 grid */
-	Pwl ctR; /* function maps CT to r (= R/G) */
-	Pwl ctB; /* function maps CT to b (= B/G) */
-	Pwl ctRInverse; /* inverse of ctR */
-	Pwl ctBInverse; /* inverse of ctB */
+	libcamera::ipa::Pwl ctR; /* function maps CT to r (= R/G) */
+	libcamera::ipa::Pwl ctB; /* function maps CT to b (= B/G) */
+	libcamera::ipa::Pwl ctRInverse; /* inverse of ctR */
+	libcamera::ipa::Pwl ctBInverse; /* inverse of ctB */
 	/* table of illuminant priors at different lux levels */
 	std::vector<AwbPrior> priors;
 	/* AWB "modes" (determines the search range) */
@@ -161,11 +164,11 @@ private:
 	void awbGrey();
 	void prepareStats();
 	double computeDelta2Sum(double gainR, double gainB);
-	Pwl interpolatePrior();
-	double coarseSearch(Pwl const &prior);
-	void fineSearch(double &t, double &r, double &b, Pwl const &prior);
+	libcamera::ipa::Pwl interpolatePrior();
+	double coarseSearch(libcamera::ipa::Pwl const &prior);
+	void fineSearch(double &t, double &r, double &b, libcamera::ipa::Pwl const &prior);
 	std::vector<RGB> zones_;
-	std::vector<Pwl::Point> points_;
+	std::vector<libcamera::ipa::Pwl::Point> points_;
 	/* manual r setting */
 	double manualR_;
 	/* manual b setting */

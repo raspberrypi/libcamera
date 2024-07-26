@@ -7,6 +7,8 @@
 
 #include "libcamera/internal/software_isp/software_isp.h"
 
+#include <cmath>
+#include <stdint.h>
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -18,6 +20,7 @@
 #include "libcamera/internal/framebuffer.h"
 #include "libcamera/internal/ipa_manager.h"
 #include "libcamera/internal/mapped_framebuffer.h"
+#include "libcamera/internal/software_isp/debayer_params.h"
 
 #include "debayer_cpu.h"
 
@@ -63,12 +66,29 @@ LOG_DEFINE_CATEGORY(SoftwareIsp)
  * handler
  */
 SoftwareIsp::SoftwareIsp(PipelineHandler *pipe, const CameraSensor *sensor)
-	: debayerParams_{ DebayerParams::kGain10, DebayerParams::kGain10,
-			  DebayerParams::kGain10, 0.5f, 0 },
-	  dmaHeap_(DmaHeap::DmaHeapFlag::Cma | DmaHeap::DmaHeapFlag::System)
+	: dmaHeap_(DmaBufAllocator::DmaBufAllocatorFlag::CmaHeap |
+		   DmaBufAllocator::DmaBufAllocatorFlag::SystemHeap |
+		   DmaBufAllocator::DmaBufAllocatorFlag::UDmaBuf)
 {
+	/*
+	 * debayerParams_ must be initialized because the initial value is used for
+	 * the first two frames, i.e. until stats processing starts providing its
+	 * own parameters.
+	 *
+	 * \todo This should be handled in the same place as the related
+	 * operations, in the IPA module.
+	 */
+	std::array<uint8_t, 256> gammaTable;
+	for (unsigned int i = 0; i < 256; i++)
+		gammaTable[i] = UINT8_MAX * std::pow(i / 256.0, 0.5);
+	for (unsigned int i = 0; i < DebayerParams::kRGBLookupSize; i++) {
+		debayerParams_.red[i] = gammaTable[i];
+		debayerParams_.green[i] = gammaTable[i];
+		debayerParams_.blue[i] = gammaTable[i];
+	}
+
 	if (!dmaHeap_.isValid()) {
-		LOG(SoftwareIsp, Error) << "Failed to create DmaHeap object";
+		LOG(SoftwareIsp, Error) << "Failed to create DmaBufAllocator object";
 		return;
 	}
 
@@ -221,19 +241,19 @@ int SoftwareIsp::configure(const StreamConfiguration &inputCfg,
 
 /**
  * \brief Export the buffers from the Software ISP
- * \param[in] output Output stream index exporting the buffers
+ * \param[in] stream Output stream exporting the buffers
  * \param[in] count Number of buffers to allocate
  * \param[out] buffers Vector to store the allocated buffers
  * \return The number of allocated buffers on success or a negative error code
  * otherwise
  */
-int SoftwareIsp::exportBuffers(unsigned int output, unsigned int count,
+int SoftwareIsp::exportBuffers(const Stream *stream, unsigned int count,
 			       std::vector<std::unique_ptr<FrameBuffer>> *buffers)
 {
 	ASSERT(debayer_ != nullptr);
 
 	/* single output for now */
-	if (output >= 1)
+	if (stream == nullptr)
 		return -EINVAL;
 
 	for (unsigned int i = 0; i < count; i++) {
@@ -260,35 +280,29 @@ int SoftwareIsp::exportBuffers(unsigned int output, unsigned int count,
 /**
  * \brief Queue buffers to Software ISP
  * \param[in] input The input framebuffer
- * \param[in] outputs The container holding the output stream indexes and
+ * \param[in] outputs The container holding the output stream pointers and
  * their respective frame buffer outputs
  * \return 0 on success, a negative errno on failure
  */
 int SoftwareIsp::queueBuffers(FrameBuffer *input,
-			      const std::map<unsigned int, FrameBuffer *> &outputs)
+			      const std::map<const Stream *, FrameBuffer *> &outputs)
 {
-	unsigned int mask = 0;
-
 	/*
 	 * Validate the outputs as a sanity check: at least one output is
-	 * required, all outputs must reference a valid stream and no two
-	 * outputs can reference the same stream.
+	 * required, all outputs must reference a valid stream.
 	 */
 	if (outputs.empty())
 		return -EINVAL;
 
-	for (auto [index, buffer] : outputs) {
+	for (auto [stream, buffer] : outputs) {
 		if (!buffer)
 			return -EINVAL;
-		if (index >= 1) /* only single stream atm */
+		if (outputs.size() != 1) /* only single stream atm */
 			return -EINVAL;
-		if (mask & (1 << index))
-			return -EINVAL;
-
-		mask |= 1 << index;
 	}
 
-	process(input, outputs.at(0));
+	for (auto iter = outputs.begin(); iter != outputs.end(); iter++)
+		process(input, iter->second);
 
 	return 0;
 }

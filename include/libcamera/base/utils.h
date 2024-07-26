@@ -91,6 +91,30 @@ _hex hex(T value, unsigned int width = 0);
 
 #ifndef __DOXYGEN__
 template<>
+inline _hex hex<int8_t>(int8_t value, unsigned int width)
+{
+	return { static_cast<uint64_t>(value), width ? width : 2 };
+}
+
+template<>
+inline _hex hex<uint8_t>(uint8_t value, unsigned int width)
+{
+	return { static_cast<uint64_t>(value), width ? width : 2 };
+}
+
+template<>
+inline _hex hex<int16_t>(int16_t value, unsigned int width)
+{
+	return { static_cast<uint64_t>(value), width ? width : 4 };
+}
+
+template<>
+inline _hex hex<uint16_t>(uint16_t value, unsigned int width)
+{
+	return { static_cast<uint64_t>(value), width ? width : 4 };
+}
+
+template<>
 inline _hex hex<int32_t>(int32_t value, unsigned int width)
 {
 	return { static_cast<uint64_t>(value), width ? width : 8 };

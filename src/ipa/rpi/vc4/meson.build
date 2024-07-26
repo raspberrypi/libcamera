@@ -15,7 +15,6 @@ vc4_ipa_libs = [
 
 vc4_ipa_includes = [
     ipa_includes,
-    libipa_includes,
 ]
 
 vc4_ipa_sources = files([
@@ -28,8 +27,7 @@ mod = shared_module(ipa_name,
                     [vc4_ipa_sources, libcamera_generated_ipa_headers],
                     name_prefix : '',
                     include_directories : vc4_ipa_includes,
-                    dependencies : vc4_ipa_deps,
-                    link_with : libipa,
+                    dependencies : [vc4_ipa_deps, libipa_dep],
                     link_whole : vc4_ipa_libs,
                     install : true,
                     install_dir : ipa_install_dir)

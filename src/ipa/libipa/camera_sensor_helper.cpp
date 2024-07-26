@@ -8,6 +8,7 @@
 #include "camera_sensor_helper.h"
 
 #include <cmath>
+#include <limits>
 
 #include <libcamera/base/log.h>
 
@@ -45,6 +46,33 @@ namespace ipa {
  * CameraSensorHelper derived class instances shall never be constructed
  * manually but always through the CameraSensorHelperFactoryBase::create()
  * function.
+ */
+
+/**
+ * \fn CameraSensorHelper::blackLevel()
+ * \brief Fetch the black level of the sensor
+ *
+ * This function returns the black level of the sensor scaled to a 16bit pixel
+ * width. If it is unknown an empty optional is returned.
+ *
+ * \todo Fill the blanks and add pedestal values for all supported sensors. Once
+ * done, drop the std::optional<>.
+ *
+ * Black levels are typically the result of the following phenomena:
+ * - Pedestal added by the sensor to pixel values. They are typically fixed,
+ *   sometimes programmable and should be reported in datasheets (but
+ *   documentation is not always available).
+ * - Dark currents and other physical effects that add charge to pixels in the
+ *   absence of light. Those can depend on the integration time and the sensor
+ *   die temperature, and their contribution to pixel values depend on the
+ *   sensor gains.
+ *
+ * The pedestal is usually the value with the biggest contribution to the
+ * overall black level. In most cases it is either known before or in rare cases
+ * (there is not a single driver with such a control in the linux kernel) can be
+ * queried from the sensor. This function provides that fixed, known value.
+ *
+ * \return The black level of the sensor, or std::nullopt if not known
  */
 
 /**
@@ -202,6 +230,11 @@ double CameraSensorHelper::gain(uint32_t gainCode) const
  *
  * \var CameraSensorHelper::AnalogueGainConstants::exp
  * \brief Constants for the exponential gain model
+ */
+
+/**
+ * \var CameraSensorHelper::blackLevel_
+ * \brief The black level of the sensor
  */
 
 /**
@@ -366,33 +399,122 @@ static constexpr double expGainDb(double step)
 	return log2_10 * step / 20;
 }
 
-class CameraSensorHelperAr0521 : public CameraSensorHelper
+class CameraSensorHelperAr0144 : public CameraSensorHelper
 {
 public:
-	uint32_t gainCode(double gain) const override;
-	double gain(uint32_t gainCode) const override;
+	CameraSensorHelperAr0144()
+	{
+		/* Power-on default value: 168 at 12bits. */
+		blackLevel_ = 2688;
+	}
+
+	uint32_t gainCode(double gain) const override
+	{
+		/* The recommended minimum gain is 1.6842 to avoid artifacts. */
+		gain = std::clamp(gain, 1.0 / (1.0 - 13.0 / 32.0), 18.45);
+
+		/*
+		 * The analogue gain is made of a coarse exponential gain in
+		 * the range [2^0, 2^4] and a fine inversely linear gain in the
+		 * range [1.0, 2.0[. There is an additional fixed 1.153125
+		 * multiplier when the coarse gain reaches 2^2.
+		 */
+
+		if (gain > 4.0)
+			gain /= 1.153125;
+
+		unsigned int coarse = std::log2(gain);
+		unsigned int fine = (1 - (1 << coarse) / gain) * 32;
+
+		/* The fine gain rounding depends on the coarse gain. */
+		if (coarse == 1 || coarse == 3)
+			fine &= ~1;
+		else if (coarse == 4)
+			fine &= ~3;
+
+		return (coarse << 4) | (fine & 0xf);
+	}
+
+	double gain(uint32_t gainCode) const override
+	{
+		unsigned int coarse = gainCode >> 4;
+		unsigned int fine = gainCode & 0xf;
+		unsigned int d1;
+		double d2, m;
+
+		switch (coarse) {
+		default:
+		case 0:
+			d1 = 1;
+			d2 = 32.0;
+			m = 1.0;
+			break;
+		case 1:
+			d1 = 2;
+			d2 = 16.0;
+			m = 1.0;
+			break;
+		case 2:
+			d1 = 1;
+			d2 = 32.0;
+			m = 1.153125;
+			break;
+		case 3:
+			d1 = 2;
+			d2 = 16.0;
+			m = 1.153125;
+			break;
+		case 4:
+			d1 = 4;
+			d2 = 8.0;
+			m = 1.153125;
+			break;
+		}
+
+		/*
+		 * With infinite precision, the calculated gain would be exact,
+		 * and the reverse conversion with gainCode() would produce the
+		 * same gain code. In the real world, rounding errors may cause
+		 * the calculated gain to be lower by an amount negligible for
+		 * all purposes, except for the reverse conversion. Converting
+		 * the gain to a gain code could then return the quantized value
+		 * just lower than the original gain code. To avoid this, tests
+		 * showed that adding the machine epsilon to the multiplier m is
+		 * sufficient.
+		 */
+		m += std::numeric_limits<decltype(m)>::epsilon();
+
+		return m * (1 << coarse) / (1.0 - (fine / d1) / d2);
+	}
 
 private:
 	static constexpr double kStep_ = 16;
 };
+REGISTER_CAMERA_SENSOR_HELPER("ar0144", CameraSensorHelperAr0144)
 
-uint32_t CameraSensorHelperAr0521::gainCode(double gain) const
+class CameraSensorHelperAr0521 : public CameraSensorHelper
 {
-	gain = std::clamp(gain, 1.0, 15.5);
-	unsigned int coarse = std::log2(gain);
-	unsigned int fine = (gain / (1 << coarse) - 1) * kStep_;
+public:
+	uint32_t gainCode(double gain) const override
+	{
+		gain = std::clamp(gain, 1.0, 15.5);
+		unsigned int coarse = std::log2(gain);
+		unsigned int fine = (gain / (1 << coarse) - 1) * kStep_;
 
-	return (coarse << 4) | (fine & 0xf);
-}
+		return (coarse << 4) | (fine & 0xf);
+	}
 
-double CameraSensorHelperAr0521::gain(uint32_t gainCode) const
-{
-	unsigned int coarse = gainCode >> 4;
-	unsigned int fine = gainCode & 0xf;
+	double gain(uint32_t gainCode) const override
+	{
+		unsigned int coarse = gainCode >> 4;
+		unsigned int fine = gainCode & 0xf;
 
-	return (1 << coarse) * (1 + fine / kStep_);
-}
+		return (1 << coarse) * (1 + fine / kStep_);
+	}
 
+private:
+	static constexpr double kStep_ = 16;
+};
 REGISTER_CAMERA_SENSOR_HELPER("ar0521", CameraSensorHelperAr0521)
 
 class CameraSensorHelperImx219 : public CameraSensorHelper
@@ -400,6 +522,8 @@ class CameraSensorHelperImx219 : public CameraSensorHelper
 public:
 	CameraSensorHelperImx219()
 	{
+		/* From datasheet: 64 at 10bits. */
+		blackLevel_ = 4096;
 		gainType_ = AnalogueGainLinear;
 		gainConstants_.linear = { 0, 256, -1, 256 };
 	}
@@ -411,6 +535,8 @@ class CameraSensorHelperImx258 : public CameraSensorHelper
 public:
 	CameraSensorHelperImx258()
 	{
+		/* From datasheet: 0x40 at 10bits. */
+		blackLevel_ = 4096;
 		gainType_ = AnalogueGainLinear;
 		gainConstants_.linear = { 0, 512, -1, 512 };
 	}
@@ -460,6 +586,8 @@ class CameraSensorHelperImx335 : public CameraSensorHelper
 public:
 	CameraSensorHelperImx335()
 	{
+		/* From datasheet: 0x32 at 10bits. */
+		blackLevel_ = 3200;
 		gainType_ = AnalogueGainExponential;
 		gainConstants_.exp = { 1.0, expGainDb(0.3) };
 	}
@@ -519,6 +647,8 @@ class CameraSensorHelperOv4689 : public CameraSensorHelper
 public:
 	CameraSensorHelperOv4689()
 	{
+		/* From datasheet: 0x40 at 12bits. */
+		blackLevel_ = 1024;
 		gainType_ = AnalogueGainLinear;
 		gainConstants_.linear = { 1, 0, 0, 128 };
 	}
@@ -530,6 +660,8 @@ class CameraSensorHelperOv5640 : public CameraSensorHelper
 public:
 	CameraSensorHelperOv5640()
 	{
+		/* From datasheet: 0x10 at 10bits. */
+		blackLevel_ = 1024;
 		gainType_ = AnalogueGainLinear;
 		gainConstants_.linear = { 1, 0, 0, 16 };
 	}
@@ -563,6 +695,8 @@ class CameraSensorHelperOv5675 : public CameraSensorHelper
 public:
 	CameraSensorHelperOv5675()
 	{
+		/* From Linux kernel driver: 0x40 at 10bits. */
+		blackLevel_ = 4096;
 		gainType_ = AnalogueGainLinear;
 		gainConstants_.linear = { 1, 0, 0, 128 };
 	}

@@ -27,7 +27,7 @@
 #include <libcamera/ipa/soft_ipa_proxy.h>
 
 #include "libcamera/internal/camera_sensor.h"
-#include "libcamera/internal/dma_heaps.h"
+#include "libcamera/internal/dma_buf_allocator.h"
 #include "libcamera/internal/pipeline_handler.h"
 #include "libcamera/internal/shared_mem_object.h"
 #include "libcamera/internal/software_isp/debayer_params.h"
@@ -37,6 +37,7 @@ namespace libcamera {
 class DebayerCpu;
 class FrameBuffer;
 class PixelFormat;
+class Stream;
 struct StreamConfiguration;
 
 LOG_DECLARE_CATEGORY(SoftwareIsp)
@@ -62,7 +63,7 @@ public:
 		      const std::vector<std::reference_wrapper<StreamConfiguration>> &outputCfgs,
 		      const ControlInfoMap &sensorControls);
 
-	int exportBuffers(unsigned int output, unsigned int count,
+	int exportBuffers(const Stream *stream, unsigned int count,
 			  std::vector<std::unique_ptr<FrameBuffer>> *buffers);
 
 	void processStats(const ControlList &sensorControls);
@@ -71,7 +72,7 @@ public:
 	void stop();
 
 	int queueBuffers(FrameBuffer *input,
-			 const std::map<unsigned int, FrameBuffer *> &outputs);
+			 const std::map<const Stream *, FrameBuffer *> &outputs);
 
 	void process(FrameBuffer *input, FrameBuffer *output);
 
@@ -91,7 +92,7 @@ private:
 	Thread ispWorkerThread_;
 	SharedMemObject<DebayerParams> sharedParams_;
 	DebayerParams debayerParams_;
-	DmaHeap dmaHeap_;
+	DmaBufAllocator dmaHeap_;
 
 	std::unique_ptr<ipa::soft::IPAProxySoft> ipa_;
 };

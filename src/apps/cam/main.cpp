@@ -344,11 +344,15 @@ std::string CamApp::cameraName(const Camera *camera)
 	return name;
 }
 
+namespace {
+
 void signalHandler([[maybe_unused]] int signal)
 {
 	std::cout << "Exiting" << std::endl;
 	CamApp::instance()->quit();
 }
+
+} /* namespace */
 
 int main(int argc, char **argv)
 {

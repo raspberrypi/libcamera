@@ -1366,7 +1366,61 @@ void routeToKernel(const V4L2Subdevice::Route &route,
 	kroute.flags = route.flags;
 }
 
+/*
+ * Legacy routing support for pre-v6.10-rc1 kernels. Drop when v6.12-rc1 gets
+ * released.
+ */
+struct v4l2_subdev_routing_legacy {
+	__u32 which;
+	__u32 num_routes;
+	__u64 routes;
+	__u32 reserved[6];
+};
+
+#define VIDIOC_SUBDEV_G_ROUTING_LEGACY	_IOWR('V', 38, struct v4l2_subdev_routing_legacy)
+#define VIDIOC_SUBDEV_S_ROUTING_LEGACY	_IOWR('V', 39, struct v4l2_subdev_routing_legacy)
+
 } /* namespace */
+
+int V4L2Subdevice::getRoutingLegacy(Routing *routing, Whence whence)
+{
+	struct v4l2_subdev_routing_legacy rt = {};
+
+	rt.which = whence;
+
+	int ret = ioctl(VIDIOC_SUBDEV_G_ROUTING_LEGACY, &rt);
+	if (ret == 0 || ret == -ENOTTY)
+		return ret;
+
+	if (ret != -ENOSPC) {
+		LOG(V4L2, Error)
+			<< "Failed to retrieve number of routes: "
+			<< strerror(-ret);
+		return ret;
+	}
+
+	std::vector<struct v4l2_subdev_route> routes{ rt.num_routes };
+	rt.routes = reinterpret_cast<uintptr_t>(routes.data());
+
+	ret = ioctl(VIDIOC_SUBDEV_G_ROUTING_LEGACY, &rt);
+	if (ret) {
+		LOG(V4L2, Error)
+			<< "Failed to retrieve routes: " << strerror(-ret);
+		return ret;
+	}
+
+	if (rt.num_routes != routes.size()) {
+		LOG(V4L2, Error) << "Invalid number of routes";
+		return -EINVAL;
+	}
+
+	routing->resize(rt.num_routes);
+
+	for (const auto &[i, route] : utils::enumerate(routes))
+		routeFromKernel((*routing)[i], route);
+
+	return 0;
+}
 
 /**
  * \brief Retrieve the subdevice's internal routing table
@@ -1388,18 +1442,24 @@ int V4L2Subdevice::getRouting(Routing *routing, Whence whence)
 	rt.which = whence;
 
 	int ret = ioctl(VIDIOC_SUBDEV_G_ROUTING, &rt);
-	if (ret == 0 || ret == -ENOTTY)
-		return ret;
+	if (ret == -ENOTTY)
+		return V4L2Subdevice::getRoutingLegacy(routing, whence);
 
-	if (ret != -ENOSPC) {
+	if (ret) {
 		LOG(V4L2, Error)
 			<< "Failed to retrieve number of routes: "
 			<< strerror(-ret);
 		return ret;
 	}
 
+	if (!rt.num_routes)
+		return 0;
+
 	std::vector<struct v4l2_subdev_route> routes{ rt.num_routes };
 	rt.routes = reinterpret_cast<uintptr_t>(routes.data());
+
+	rt.len_routes = rt.num_routes;
+	rt.num_routes = 0;
 
 	ret = ioctl(VIDIOC_SUBDEV_G_ROUTING, &rt);
 	if (ret) {
@@ -1413,6 +1473,33 @@ int V4L2Subdevice::getRouting(Routing *routing, Whence whence)
 		return -EINVAL;
 	}
 
+	routing->resize(rt.num_routes);
+
+	for (const auto &[i, route] : utils::enumerate(routes))
+		routeFromKernel((*routing)[i], route);
+
+	return 0;
+}
+
+int V4L2Subdevice::setRoutingLegacy(Routing *routing, Whence whence)
+{
+	std::vector<struct v4l2_subdev_route> routes{ routing->size() };
+
+	for (const auto &[i, route] : utils::enumerate(*routing))
+		routeToKernel(route, routes[i]);
+
+	struct v4l2_subdev_routing_legacy rt = {};
+	rt.which = whence;
+	rt.num_routes = routes.size();
+	rt.routes = reinterpret_cast<uintptr_t>(routes.data());
+
+	int ret = ioctl(VIDIOC_SUBDEV_S_ROUTING_LEGACY, &rt);
+	if (ret) {
+		LOG(V4L2, Error) << "Failed to set routes: " << strerror(-ret);
+		return ret;
+	}
+
+	routes.resize(rt.num_routes);
 	routing->resize(rt.num_routes);
 
 	for (const auto &[i, route] : utils::enumerate(routes))
@@ -1447,16 +1534,43 @@ int V4L2Subdevice::setRouting(Routing *routing, Whence whence)
 
 	struct v4l2_subdev_routing rt = {};
 	rt.which = whence;
+	rt.len_routes = routes.size();
 	rt.num_routes = routes.size();
 	rt.routes = reinterpret_cast<uintptr_t>(routes.data());
 
 	int ret = ioctl(VIDIOC_SUBDEV_S_ROUTING, &rt);
+	if (ret == -ENOTTY)
+		return setRoutingLegacy(routing, whence);
+
 	if (ret) {
 		LOG(V4L2, Error) << "Failed to set routes: " << strerror(-ret);
 		return ret;
 	}
 
-	routes.resize(rt.num_routes);
+	/*
+	 * The kernel may want to return more routes than we have space for. In
+	 * that event, we must issue a VIDIOC_SUBDEV_G_ROUTING call to retrieve
+	 * the additional routes.
+	 */
+	if (rt.num_routes > routes.size()) {
+		routes.resize(rt.num_routes);
+
+		rt.len_routes = rt.num_routes;
+		rt.num_routes = 0;
+
+		ret = ioctl(VIDIOC_SUBDEV_G_ROUTING, &rt);
+		if (ret) {
+			LOG(V4L2, Error)
+				<< "Failed to retrieve routes: " << strerror(-ret);
+			return ret;
+		}
+	}
+
+	if (rt.num_routes != routes.size()) {
+		LOG(V4L2, Error) << "Invalid number of routes";
+		return -EINVAL;
+	}
+
 	routing->resize(rt.num_routes);
 
 	for (const auto &[i, route] : utils::enumerate(routes))

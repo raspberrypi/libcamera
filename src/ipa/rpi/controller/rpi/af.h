@@ -9,7 +9,8 @@
 #include "../af_algorithm.h"
 #include "../af_status.h"
 #include "../pdaf_data.h"
-#include "../pwl.h"
+
+#include "libipa/pwl.h"
 
 /*
  * This algorithm implements a hybrid of CDAF and PDAF, favouring PDAF.
@@ -100,7 +101,7 @@ private:
 		uint32_t confThresh;	       	/* PDAF confidence cell min (sensor-specific) */
 		uint32_t confClip;	       	/* PDAF confidence cell max (sensor-specific) */
 		uint32_t skipFrames;	       	/* frames to skip at start or modeswitch */
-		Pwl map;		       	/* converts dioptres -> lens driver position */
+		libcamera::ipa::Pwl map;       	/* converts dioptres -> lens driver position */
 
 		CfgParams();
 		int read(const libcamera::YamlObject &params);

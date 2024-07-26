@@ -85,18 +85,28 @@ private:
 	using debayerFn = void (DebayerCpu::*)(uint8_t *dst, const uint8_t *src[]);
 
 	/* 8-bit raw bayer format */
+	template<bool addAlphaByte>
 	void debayer8_BGBG_BGR888(uint8_t *dst, const uint8_t *src[]);
+	template<bool addAlphaByte>
 	void debayer8_GRGR_BGR888(uint8_t *dst, const uint8_t *src[]);
 	/* unpacked 10-bit raw bayer format */
+	template<bool addAlphaByte>
 	void debayer10_BGBG_BGR888(uint8_t *dst, const uint8_t *src[]);
+	template<bool addAlphaByte>
 	void debayer10_GRGR_BGR888(uint8_t *dst, const uint8_t *src[]);
 	/* unpacked 12-bit raw bayer format */
+	template<bool addAlphaByte>
 	void debayer12_BGBG_BGR888(uint8_t *dst, const uint8_t *src[]);
+	template<bool addAlphaByte>
 	void debayer12_GRGR_BGR888(uint8_t *dst, const uint8_t *src[]);
 	/* CSI-2 packed 10-bit raw bayer format (all the 4 orders) */
+	template<bool addAlphaByte>
 	void debayer10P_BGBG_BGR888(uint8_t *dst, const uint8_t *src[]);
+	template<bool addAlphaByte>
 	void debayer10P_GRGR_BGR888(uint8_t *dst, const uint8_t *src[]);
+	template<bool addAlphaByte>
 	void debayer10P_GBGB_BGR888(uint8_t *dst, const uint8_t *src[]);
+	template<bool addAlphaByte>
 	void debayer10P_RGRG_BGR888(uint8_t *dst, const uint8_t *src[]);
 
 	struct DebayerInputConfig {
@@ -122,15 +132,12 @@ private:
 	void process2(const uint8_t *src, uint8_t *dst);
 	void process4(const uint8_t *src, uint8_t *dst);
 
-	static constexpr unsigned int kGammaLookupSize = 1024;
-	static constexpr unsigned int kRGBLookupSize = 256;
 	/* Max. supported Bayer pattern height is 4, debayering this requires 5 lines */
 	static constexpr unsigned int kMaxLineBuffers = 5;
 
-	std::array<uint8_t, kGammaLookupSize> gamma_;
-	std::array<uint8_t, kRGBLookupSize> red_;
-	std::array<uint8_t, kRGBLookupSize> green_;
-	std::array<uint8_t, kRGBLookupSize> blue_;
+	DebayerParams::ColorLookupTable red_;
+	DebayerParams::ColorLookupTable green_;
+	DebayerParams::ColorLookupTable blue_;
 	debayerFn debayer0_;
 	debayerFn debayer1_;
 	debayerFn debayer2_;
@@ -146,8 +153,6 @@ private:
 	unsigned int xShift_; /* Offset of 0/1 applied to window_.x */
 	bool enableInputMemcpy_;
 	bool swapRedBlueGains_;
-	float gammaCorrection_;
-	unsigned int blackLevel_;
 	unsigned int measuredFrames_;
 	int64_t frameProcessTime_;
 	/* Skip 30 frames for things to stabilize then measure 30 frames */

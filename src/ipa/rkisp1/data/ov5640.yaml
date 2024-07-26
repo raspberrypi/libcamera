@@ -6,10 +6,6 @@ algorithms:
   - Agc:
   - Awb:
   - BlackLevelCorrection:
-      R:  256
-      Gr: 256
-      Gb: 256
-      B:  256
   - ColorProcessing:
   - GammaSensorLinearization:
       x-intervals: [ 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2 ]

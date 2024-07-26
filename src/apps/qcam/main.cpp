@@ -21,6 +21,8 @@
 
 using namespace libcamera;
 
+namespace {
+
 void signalHandler([[maybe_unused]] int signal)
 {
 	qInfo() << "Exiting";
@@ -51,6 +53,8 @@ OptionsParser::Options parseOptions(int argc, char *argv[])
 
 	return options;
 }
+
+} /* namespace */
 
 int main(int argc, char **argv)
 {

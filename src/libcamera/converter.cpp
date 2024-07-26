@@ -111,12 +111,12 @@ Converter::~Converter()
 /**
  * \fn Converter::exportBuffers()
  * \brief Export buffers from the converter device
- * \param[in] output Output stream index exporting the buffers
+ * \param[in] stream Output stream pointer exporting the buffers
  * \param[in] count Number of buffers to allocate
  * \param[out] buffers Vector to store allocated buffers
  *
  * This function operates similarly to V4L2VideoDevice::exportBuffers() on the
- * output stream indicated by the \a output index.
+ * output stream indicated by the \a output.
  *
  * \return The number of allocated buffers on success or a negative error code
  * otherwise
@@ -137,7 +137,7 @@ Converter::~Converter()
  * \fn Converter::queueBuffers()
  * \brief Queue buffers to converter device
  * \param[in] input The frame buffer to apply the conversion
- * \param[out] outputs The container holding the output stream indexes and
+ * \param[out] outputs The container holding the output stream pointers and
  * their respective frame buffer outputs.
  *
  * This function queues the \a input frame buffer on the output streams of the

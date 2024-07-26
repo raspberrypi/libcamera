@@ -1081,7 +1081,7 @@ int CameraCapabilities::initializeStaticMetadata()
 	}
 
 	{
-		const Span<const Rectangle> &rects =
+		const Span<const Rectangle> rects =
 			properties.get(properties::PixelArrayActiveAreas).value_or(Span<const Rectangle>{});
 		std::vector<int32_t> data{
 			static_cast<int32_t>(rects[0].x),

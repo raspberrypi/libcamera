@@ -6,10 +6,6 @@ algorithms:
   - Agc:
   - Awb:
   - BlackLevelCorrection:
-      R:  256
-      Gr: 256
-      Gb: 256
-      B:  256
   - LensShadingCorrection:
       x-size: [ 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625 ]
       y-size: [ 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625 ]

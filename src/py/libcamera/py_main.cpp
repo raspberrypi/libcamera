@@ -85,14 +85,6 @@ PYBIND11_DECLARE_HOLDER_TYPE(T, PyCameraSmartPtr<T>)
  */
 static std::weak_ptr<PyCameraManager> gCameraManager;
 
-void init_py_color_space(py::module &m);
-void init_py_controls_generated(py::module &m);
-void init_py_enums(py::module &m);
-void init_py_formats_generated(py::module &m);
-void init_py_geometry(py::module &m);
-void init_py_properties_generated(py::module &m);
-void init_py_transform(py::module &m);
-
 PYBIND11_MODULE(_libcamera, m)
 {
 	init_py_enums(m);

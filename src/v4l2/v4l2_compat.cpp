@@ -7,12 +7,15 @@
 
 #include "v4l2_compat_manager.h"
 
+#include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdarg.h>
+#include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <unistd.h>
 
 #include <libcamera/base/utils.h>
 
@@ -28,71 +31,97 @@ using namespace libcamera;
 	va_end(ap);			\
 }
 
+namespace {
+
+/*
+ * Determine if the flags require a further mode arguments that needs to be
+ * parsed from va_args.
+ */
+bool needs_mode(int flags)
+{
+	return (flags & O_CREAT) || ((flags & O_TMPFILE) == O_TMPFILE);
+}
+
+} /* namespace */
+
 extern "C" {
 
 LIBCAMERA_PUBLIC int open(const char *path, int oflag, ...)
 {
 	mode_t mode = 0;
-	if (oflag & O_CREAT || oflag & O_TMPFILE)
+	if (needs_mode(oflag))
 		extract_va_arg(mode_t, mode, oflag);
 
 	return V4L2CompatManager::instance()->openat(AT_FDCWD, path,
 						     oflag, mode);
 }
 
-/* _FORTIFY_SOURCE redirects open to __open_2 */
-LIBCAMERA_PUBLIC int __open_2(const char *path, int oflag)
-{
-	return open(path, oflag);
-}
-
 #ifndef open64
 LIBCAMERA_PUBLIC int open64(const char *path, int oflag, ...)
 {
 	mode_t mode = 0;
-	if (oflag & O_CREAT || oflag & O_TMPFILE)
+	if (needs_mode(oflag))
 		extract_va_arg(mode_t, mode, oflag);
 
 	return V4L2CompatManager::instance()->openat(AT_FDCWD, path,
 						     oflag | O_LARGEFILE, mode);
-}
-
-LIBCAMERA_PUBLIC int __open64_2(const char *path, int oflag)
-{
-	return open(path, oflag);
 }
 #endif
 
 LIBCAMERA_PUBLIC int openat(int dirfd, const char *path, int oflag, ...)
 {
 	mode_t mode = 0;
-	if (oflag & O_CREAT || oflag & O_TMPFILE)
+	if (needs_mode(oflag))
 		extract_va_arg(mode_t, mode, oflag);
 
 	return V4L2CompatManager::instance()->openat(dirfd, path, oflag, mode);
-}
-
-LIBCAMERA_PUBLIC int __openat_2(int dirfd, const char *path, int oflag)
-{
-	return openat(dirfd, path, oflag);
 }
 
 #ifndef openat64
 LIBCAMERA_PUBLIC int openat64(int dirfd, const char *path, int oflag, ...)
 {
 	mode_t mode = 0;
-	if (oflag & O_CREAT || oflag & O_TMPFILE)
+	if (needs_mode(oflag))
 		extract_va_arg(mode_t, mode, oflag);
 
 	return V4L2CompatManager::instance()->openat(dirfd, path,
 						     oflag | O_LARGEFILE, mode);
 }
+#endif
+
+/*
+ * _FORTIFY_SOURCE redirects open* to __open*_2. Disable the
+ * -Wmissing-declarations warnings, as the functions won't be declared if
+ *  _FORTIFY_SOURCE is not in use.
+ */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmissing-declarations"
+
+LIBCAMERA_PUBLIC int __open_2(const char *path, int oflag)
+{
+	assert(!needs_mode(oflag));
+	return open(path, oflag);
+}
+
+LIBCAMERA_PUBLIC int __open64_2(const char *path, int oflag)
+{
+	assert(!needs_mode(oflag));
+	return open64(path, oflag);
+}
+
+LIBCAMERA_PUBLIC int __openat_2(int dirfd, const char *path, int oflag)
+{
+	assert(!needs_mode(oflag));
+	return openat(dirfd, path, oflag);
+}
 
 LIBCAMERA_PUBLIC int __openat64_2(int dirfd, const char *path, int oflag)
 {
-	return openat(dirfd, path, oflag);
+	assert(!needs_mode(oflag));
+	return openat64(dirfd, path, oflag);
 }
-#endif
+
+#pragma GCC diagnostic pop
 
 LIBCAMERA_PUBLIC int dup(int oldfd)
 {
@@ -125,7 +154,11 @@ LIBCAMERA_PUBLIC int munmap(void *addr, size_t length)
 	return V4L2CompatManager::instance()->munmap(addr, length);
 }
 
+#if HAVE_POSIX_IOCTL
+LIBCAMERA_PUBLIC int ioctl(int fd, int request, ...)
+#else
 LIBCAMERA_PUBLIC int ioctl(int fd, unsigned long request, ...)
+#endif
 {
 	void *arg;
 	extract_va_arg(void *, arg, request);

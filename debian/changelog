@@ -1,6 +1,7 @@
 libcamera (0.3.1-1) UNRELEASED; urgency=medium
 
   * New upstream version 0.3.1
+  * Switch from qtbase5-dev to qt6-base-dev in Build-Depends
 
  -- Dylan Aïssi <daissi@debian.org>  Fri, 26 Jul 2024 10:21:40 +0200
 

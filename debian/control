@@ -36,7 +36,7 @@ Build-Depends: debhelper-compat (= 13),
                python3-pybind11 <!pkg.libcamera.nopython>,
                python3-sphinx <!nodoc>,
                python3-yaml,
-               qtbase5-dev <!pkg.libcamera.noqt>
+               qt6-base-dev <!pkg.libcamera.noqt>
 Standards-Version: 4.7.0
 Vcs-Browser: https://salsa.debian.org/multimedia-team/libcamera
 Vcs-Git: https://salsa.debian.org/multimedia-team/libcamera.git

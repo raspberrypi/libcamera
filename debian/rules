@@ -11,6 +11,12 @@ CONFFLAGS += \
 	-Dv4l2=true
 endif
 
+ifneq (,$(filter i386,$(DEB_HOST_ARCH)))
+QCAM=disabled
+else
+QCAM=enabled
+endif
+
 %:
 	dh $@
 
@@ -19,6 +25,7 @@ override_dh_auto_configure:
 		--libexecdir=lib/${DEB_HOST_MULTIARCH} \
 		-Dgstreamer=enabled \
 		-Dpycamera=enabled \
+		-Dqcam=$(QCAM) \
 		-Dtest=true \
 		$(CONFFLAGS) \
 		$(empty)

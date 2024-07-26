@@ -13,6 +13,7 @@ endif
 
 ifneq (,$(filter i386,$(DEB_HOST_ARCH)))
 QCAM=disabled
+# See https://bugs.debian.org/1076986
 else
 QCAM=enabled
 endif

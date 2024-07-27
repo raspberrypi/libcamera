@@ -37,6 +37,11 @@ LIBCAMERA_IPA_MODULE_PATH
 
    Example value: ``${HOME}/.libcamera/lib:/opt/libcamera/vendor/lib``
 
+LIBCAMERA_IPA_PROXY_PATH
+   Define custom full path for a proxy worker for a given executable name.
+   
+   Example value: ``${HOME}/.libcamera/proxy/worker:/opt/libcamera/vendor/proxy/worker``
+   
 LIBCAMERA_PIPELINES_MATCH_LIST
    Define an ordered list of pipeline names to be used to match the media
    devices in the system. The pipeline handler names used to populate the
@@ -49,6 +54,11 @@ LIBCAMERA_RPI_CONFIG_FILE
    Define a custom configuration file to use in the Raspberry Pi pipeline handler.
 
    Example value: ``/usr/local/share/libcamera/pipeline/rpi/vc4/minimal_mem.yaml``
+
+LIBCAMERA_RPI_TUNING_FILE
+   Define a custom JSON tuning file to use in the Raspberry Pi.
+
+   Example value: ``/usr/local/share/libcamera/ipa/rpi/vc4/custom_sensor.json``
 
 Further details
 ---------------

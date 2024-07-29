@@ -9,6 +9,7 @@
 #include <functional>
 #include <math.h>
 #include <numeric>
+#include <vector>
 
 #include <libcamera/base/log.h>
 #include <libcamera/base/span.h>
@@ -496,8 +497,9 @@ void resampleCalTable(const Array2D<double> &calTableIn,
 	 * Precalculate and cache the x sampling locations and phases to save
 	 * recomputing them on every row.
 	 */
-	int xLo[X], xHi[X];
-	double xf[X];
+	std::vector<int> xLo(X);
+	std::vector<int> xHi(X);
+	std::vector<double> xf(X);
 	double scaleX = cameraMode.sensorWidth /
 			(cameraMode.width * cameraMode.scaleX);
 	double xOff = cameraMode.cropX / (double)cameraMode.sensorWidth;

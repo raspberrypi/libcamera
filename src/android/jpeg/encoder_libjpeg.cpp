@@ -125,7 +125,7 @@ void EncoderLibJpeg::compressRGB(const std::vector<Span<uint8_t>> &planes)
  */
 void EncoderLibJpeg::compressNV(const std::vector<Span<uint8_t>> &planes)
 {
-	uint8_t tmprowbuf[compress_.image_width * 3];
+	std::vector<uint8_t> tmprowbuf(compress_.image_width * 3);
 
 	/*
 	 * \todo Use the raw api, and only unpack the cb/cr samples to new line
@@ -149,10 +149,10 @@ void EncoderLibJpeg::compressNV(const std::vector<Span<uint8_t>> &planes)
 	const unsigned char *src_c = planes[1].data();
 
 	JSAMPROW row_pointer[1];
-	row_pointer[0] = &tmprowbuf[0];
+	row_pointer[0] = tmprowbuf.data();
 
 	for (unsigned int y = 0; y < compress_.image_height; y++) {
-		unsigned char *dst = &tmprowbuf[0];
+		unsigned char *dst = tmprowbuf.data();
 
 		const unsigned char *src_y = src + y * y_stride;
 		const unsigned char *src_cb = src_c + (y / vertSubSample) * c_stride + cb_pos;

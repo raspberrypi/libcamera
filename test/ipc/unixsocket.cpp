@@ -15,6 +15,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <vector>
 
 #include <libcamera/base/event_dispatcher.h>
 #include <libcamera/base/thread.h>
@@ -340,14 +341,14 @@ protected:
 
 		for (unsigned int i = 0; i < std::size(strings); i++) {
 			unsigned int len = strlen(strings[i]);
-			char buf[len];
+			std::vector<char> buf(len);
 
 			close(fds[i]);
 
-			if (read(response.fds[0], &buf, len) <= 0)
+			if (read(response.fds[0], buf.data(), len) <= 0)
 				return TestFail;
 
-			if (memcmp(buf, strings[i], len))
+			if (memcmp(buf.data(), strings[i], len))
 				return TestFail;
 		}
 

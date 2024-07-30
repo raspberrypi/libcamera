@@ -219,7 +219,7 @@ pipelines_support = {
     'mali-c55':     arch_arm,
     'rkisp1':       arch_arm,
     'rpi/vc4':      arch_arm,
-    'simple':       arch_arm,
+    'simple':       ['any'],
     'uvcvideo':     ['any'],
     'vimc':         ['test'],
 }

@@ -13,9 +13,9 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/mman.h>
-#include <sys/syscall.h>
 #include <sys/types.h>
-#include <unistd.h>
+
+#include <libcamera/base/memfd.h>
 
 /**
  * \file shared_mem_object.cpp
@@ -58,22 +58,11 @@ SharedMem::SharedMem() = default;
  */
 SharedMem::SharedMem(const std::string &name, std::size_t size)
 {
-#if HAVE_MEMFD_CREATE
-	int fd = memfd_create(name.c_str(), MFD_CLOEXEC);
-#else
-	int fd = syscall(SYS_memfd_create, name.c_str(), MFD_CLOEXEC);
-#endif
-	if (fd < 0)
+	UniqueFD memfd = MemFd::create(name.c_str(), size);
+	if (!memfd.isValid())
 		return;
 
-	fd_ = SharedFD(std::move(fd));
-	if (!fd_.isValid())
-		return;
-
-	if (ftruncate(fd_.get(), size) < 0) {
-		fd_ = SharedFD();
-		return;
-	}
+	fd_ = SharedFD(std::move(memfd));
 
 	void *mem = mmap(nullptr, size, PROT_READ | PROT_WRITE, MAP_SHARED,
 			 fd_.get(), 0);

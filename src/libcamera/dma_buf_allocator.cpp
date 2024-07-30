@@ -13,7 +13,6 @@
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
-#include <sys/syscall.h>
 #include <sys/types.h>
 #include <unistd.h>
 
@@ -22,6 +21,7 @@
 #include <linux/udmabuf.h>
 
 #include <libcamera/base/log.h>
+#include <libcamera/base/memfd.h>
 
 /**
  * \file dma_buf_allocator.cpp
@@ -126,54 +126,16 @@ DmaBufAllocator::~DmaBufAllocator() = default;
  * \brief Check if the DmaBufAllocator instance is valid
  * \return True if the DmaBufAllocator is valid, false otherwise
  */
-
-/* uClibc doesn't provide the file sealing API. */
-#ifndef __DOXYGEN__
-#if not HAVE_FILE_SEALS
-#define F_ADD_SEALS		1033
-#define F_SEAL_SHRINK		0x0002
-#endif
-#endif
-
 UniqueFD DmaBufAllocator::allocFromUDmaBuf(const char *name, std::size_t size)
 {
 	/* Size must be a multiple of the page size. Round it up. */
 	std::size_t pageMask = sysconf(_SC_PAGESIZE) - 1;
 	size = (size + pageMask) & ~pageMask;
 
-#if HAVE_MEMFD_CREATE
-	int ret = memfd_create(name, MFD_ALLOW_SEALING | MFD_CLOEXEC);
-#else
-	int ret = syscall(SYS_memfd_create, name, MFD_ALLOW_SEALING | MFD_CLOEXEC);
-#endif
-	if (ret < 0) {
-		ret = errno;
-		LOG(DmaBufAllocator, Error)
-			<< "Failed to allocate memfd storage for " << name
-			<< ": " << strerror(ret);
-		return {};
-	}
-
-	UniqueFD memfd(ret);
-
-	ret = ftruncate(memfd.get(), size);
-	if (ret < 0) {
-		ret = errno;
-		LOG(DmaBufAllocator, Error)
-			<< "Failed to set memfd size for " << name
-			<< ": " << strerror(ret);
-		return {};
-	}
-
 	/* udmabuf dma-buffers *must* have the F_SEAL_SHRINK seal. */
-	ret = fcntl(memfd.get(), F_ADD_SEALS, F_SEAL_SHRINK);
-	if (ret < 0) {
-		ret = errno;
-		LOG(DmaBufAllocator, Error)
-			<< "Failed to seal the memfd for " << name
-			<< ": " << strerror(ret);
+	UniqueFD memfd = MemFd::create(name, size, MemFd::Seal::Shrink);
+	if (!memfd.isValid())
 		return {};
-	}
 
 	struct udmabuf_create create;
 
@@ -182,7 +144,7 @@ UniqueFD DmaBufAllocator::allocFromUDmaBuf(const char *name, std::size_t size)
 	create.offset = 0;
 	create.size = size;
 
-	ret = ::ioctl(providerHandle_.get(), UDMABUF_CREATE, &create);
+	int ret = ::ioctl(providerHandle_.get(), UDMABUF_CREATE, &create);
 	if (ret < 0) {
 		ret = errno;
 		LOG(DmaBufAllocator, Error)

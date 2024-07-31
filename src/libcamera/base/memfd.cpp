@@ -20,14 +20,25 @@
  * \brief Anonymous file creation
  */
 
-/* uClibc doesn't provide the file sealing API. */
 #ifndef __DOXYGEN__
+namespace {
+
+/* uClibc doesn't provide the file sealing API. */
 #if not HAVE_FILE_SEALS
 #define F_ADD_SEALS		1033
 #define F_SEAL_SHRINK		0x0002
 #define F_SEAL_GROW		0x0004
 #endif
+
+#if not HAVE_MEMFD_CREATE
+int memfd_create(const char *name, unsigned int flags)
+{
+	return syscall(SYS_memfd_create, name, flags);
+}
 #endif
+
+} /* namespace */
+#endif /* __DOXYGEN__ */
 
 namespace libcamera {
 
@@ -72,11 +83,7 @@ LOG_DECLARE_CATEGORY(File)
  */
 UniqueFD MemFd::create(const char *name, std::size_t size, Seals seals)
 {
-#if HAVE_MEMFD_CREATE
 	int ret = memfd_create(name, MFD_ALLOW_SEALING | MFD_CLOEXEC);
-#else
-	int ret = syscall(SYS_memfd_create, name, MFD_ALLOW_SEALING | MFD_CLOEXEC);
-#endif
 	if (ret < 0) {
 		ret = errno;
 		LOG(File, Error)

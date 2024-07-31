@@ -31,7 +31,7 @@ public:
 
 	bool isValid() const { return valid_; }
 
-	std::string configurationFile(const std::string &file) const;
+	std::string configurationFile(const std::string &name) const;
 
 protected:
 	std::string resolvePath(const std::string &file) const;

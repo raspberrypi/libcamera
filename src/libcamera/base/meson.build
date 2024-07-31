@@ -1,25 +1,28 @@
 # SPDX-License-Identifier: CC0-1.0
 
-libcamera_base_sources = files([
-    'backtrace.cpp',
-    'class.cpp',
+libcamera_base_public_sources = files([
     'bound_method.cpp',
+    'class.cpp',
+    'flags.cpp',
+    'object.cpp',
+    'shared_fd.cpp',
+    'signal.cpp',
+    'unique_fd.cpp',
+])
+
+libcamera_base_internal_sources = files([
+    'backtrace.cpp',
     'event_dispatcher.cpp',
     'event_dispatcher_poll.cpp',
     'event_notifier.cpp',
     'file.cpp',
-    'flags.cpp',
     'log.cpp',
     'memfd.cpp',
     'message.cpp',
     'mutex.cpp',
-    'object.cpp',
     'semaphore.cpp',
-    'shared_fd.cpp',
-    'signal.cpp',
     'thread.cpp',
     'timer.cpp',
-    'unique_fd.cpp',
     'utils.cpp',
 ])
 
@@ -50,7 +53,11 @@ libcamera_base_deps = [
 libcamera_base_args = [ '-DLIBCAMERA_BASE_PRIVATE' ]
 
 libcamera_base_lib = shared_library('libcamera-base',
-                                    [libcamera_base_sources, libcamera_base_headers],
+                                    [
+                                        libcamera_base_public_sources,
+                                        libcamera_base_internal_sources,
+                                        libcamera_base_headers,
+                                    ],
                                     version : libcamera_version,
                                     soversion : libcamera_soversion,
                                     name_prefix : '',

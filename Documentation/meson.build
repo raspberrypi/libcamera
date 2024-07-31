@@ -31,12 +31,14 @@ if doxygen.found() and dot.found()
     doxygen_input = [
         doxyfile,
         libcamera_base_headers,
-        libcamera_base_sources,
+        libcamera_base_public_sources,
+        libcamera_base_internal_sources,
         libcamera_internal_headers,
         libcamera_ipa_headers,
         libcamera_ipa_interfaces,
         libcamera_public_headers,
-        libcamera_sources,
+        libcamera_public_sources,
+        libcamera_internal_sources,
         libipa_headers,
         libipa_sources,
     ]

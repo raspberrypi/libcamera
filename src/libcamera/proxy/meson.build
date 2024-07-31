@@ -15,5 +15,5 @@ foreach mojom : ipa_mojoms
                               './' + '@INPUT@'
                           ])
 
-    libcamera_sources += proxy
+    libcamera_internal_sources += proxy
 endforeach

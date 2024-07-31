@@ -72,6 +72,7 @@ IPAProxy::~IPAProxy()
 /**
  * \brief Retrieve the absolute path to an IPA configuration file
  * \param[in] name The configuration file name
+ * \param[in] fallbackName The name of a fallback configuration file
  *
  * This function locates the configuration file for an IPA and returns its
  * absolute path. It searches the following directories, in order:
@@ -89,10 +90,14 @@ IPAProxy::~IPAProxy()
  * named after the IPA module name, as reported in IPAModuleInfo::name, and for
  * a file named \a name within that directory. The \a name is IPA-specific.
  *
+ * If the file named \a name is not found and \a fallbackName is non-empty then
+ * the whole search is repeated for \a fallbackName.
+ *
  * \return The full path to the IPA configuration file, or an empty string if
  * no configuration file can be found
  */
-std::string IPAProxy::configurationFile(const std::string &name) const
+std::string IPAProxy::configurationFile(const std::string &name,
+					const std::string &fallbackName) const
 {
 	struct stat statbuf;
 	int ret;
@@ -146,11 +151,18 @@ std::string IPAProxy::configurationFile(const std::string &name) const
 		}
 	}
 
-	LOG(IPAProxy, Error)
-		<< "Configuration file '" << name
-		<< "' not found for IPA module '" << ipaName << "'";
+	if (fallbackName.empty()) {
+		LOG(IPAProxy, Error)
+			<< "Configuration file '" << name
+			<< "' not found for IPA module '" << ipaName << "'";
+		return std::string();
+	}
 
-	return std::string();
+	LOG(IPAProxy, Warning)
+		<< "Configuration file '" << name
+		<< "' not found for IPA module '" << ipaName
+		<< "', falling back to '" << fallbackName << "'";
+	return configurationFile(fallbackName);
 }
 
 /**

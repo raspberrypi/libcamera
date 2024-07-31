@@ -1547,9 +1547,11 @@ bool SimplePipelineHandler::match(DeviceEnumerator *enumerator)
 	/* Locate the sensors. */
 	std::vector<MediaEntity *> sensors = locateSensors();
 	if (sensors.empty()) {
-		LOG(SimplePipeline, Error) << "No sensor found";
+		LOG(SimplePipeline, Info) << "No sensor found for " << media_->deviceNode();
 		return false;
 	}
+
+	LOG(SimplePipeline, Debug) << "Sensor found for " << media_->deviceNode();
 
 	/*
 	 * Create one camera data instance for each sensor and gather all

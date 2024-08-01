@@ -109,7 +109,7 @@ public:
 	Config config_;
 
 private:
-	void platformSetIspCrop(const Rectangle &ispCrop) override
+	void platformSetIspCrop([[maybe_unused]] unsigned int index, const Rectangle &ispCrop) override
 	{
 		Rectangle crop = ispCrop;
 		isp_[Isp::Input].dev()->setSelection(V4L2_SEL_TGT_CROP, &crop);
@@ -707,7 +707,7 @@ int Vc4CameraData::platformConfigure(const RPi::RPiCameraConfiguration *rpiConfi
 	Size size = unicamFormat.size.boundedToAspectRatio(maxSize);
 	Rectangle ispCrop = size.centeredTo(Rectangle(unicamFormat.size).center());
 
-	platformSetIspCrop(ispCrop);
+	platformSetIspCrop(0, ispCrop);
 	/*
 	 * Set the scaler crop to the value we are using (scaled to native sensor
 	 * coordinates).

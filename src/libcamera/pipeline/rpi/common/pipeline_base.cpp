@@ -561,11 +561,28 @@ int PipelineHandlerBase::configure(Camera *camera, CameraConfiguration *config)
 	for (auto const &c : result.controlInfo)
 		ctrlMap.emplace(c.first, c.second);
 
-	if (data->cropParams_.count(0)) {
-		/* Add the ScalerCrop control limits based on the current mode. */
+	if (data->cropParams_.size()) {
+		/*
+		 * Add the ScalerCrop control limits based on the current mode and
+		 * the first configured stream.
+		 */
 		Rectangle ispMinCrop = data->scaleIspCrop(Rectangle(data->cropParams_[0].ispMinCropSize));
 		ctrlMap[&controls::ScalerCrop] = ControlInfo(ispMinCrop, data->sensorInfo_.analogCrop,
 							     data->scaleIspCrop(data->cropParams_[0].ispCrop));
+		if (data->cropParams_.size() == 2) {
+			/*
+			 * The control map for rpi::ScalerCrops has the min value
+			 * as the default crop for stream 0, max value as the default
+			 * value for stream 1.
+			 */
+			ctrlMap[&controls::rpi::ScalerCrops] =
+				ControlInfo(data->scaleIspCrop(data->cropParams_[0].ispCrop),
+					    data->scaleIspCrop(data->cropParams_[1].ispCrop),
+					    ctrlMap[&controls::ScalerCrop].def());
+		} else {
+			/* Match the same ControlInfo for rpi::ScalerCrops. */
+			ctrlMap[&controls::rpi::ScalerCrops] = ctrlMap[&controls::ScalerCrop];
+		}
 	}
 
 	data->controlInfo_ = ControlInfoMap(std::move(ctrlMap), result.controlInfo.idmap());
@@ -1292,10 +1309,29 @@ Rectangle CameraData::scaleIspCrop(const Rectangle &ispCrop) const
 
 void CameraData::applyScalerCrop(const ControlList &controls)
 {
-	const auto &scalerCrop = controls.get<Rectangle>(controls::ScalerCrop);
-	if (scalerCrop && cropParams_.count(0)) {
-		CropParams &cropParams = cropParams_[0];
-		Rectangle nativeCrop = *scalerCrop;
+	const auto &scalerCropRPi = controls.get<Span<const Rectangle>>(controls::rpi::ScalerCrops);
+	const auto &scalerCropCore = controls.get<Rectangle>(controls::ScalerCrop);
+	std::vector<Rectangle> scalerCrops;
+
+	/*
+	 * First thing to do is create a vector of crops to apply to each ISP output
+	 * based on either controls::ScalerCrop or controls::rpi::ScalerCrops if
+	 * present.
+	 *
+	 * If controls::ScalerCrop is present, apply the same crop to all ISP output
+	 * streams. Otherwise if controls::rpi::ScalerCrops, apply the given crops
+	 * to the ISP output streams, indexed by the same order in which they had
+	 * been configured. This is not the same as the ISP output index.
+	 */
+	for (unsigned int i = 0; i < cropParams_.size(); i++) {
+		if (scalerCropRPi && i < scalerCropRPi->size())
+			scalerCrops.push_back(scalerCropRPi->data()[i]);
+		else if (scalerCropCore)
+			scalerCrops.push_back(*scalerCropCore);
+	}
+
+	for (auto const &[i, scalerCrop] : utils::enumerate(scalerCrops)) {
+		Rectangle nativeCrop = scalerCrop;
 
 		if (!nativeCrop.width || !nativeCrop.height)
 			nativeCrop = { 0, 0, 1, 1 };
@@ -1311,13 +1347,13 @@ void CameraData::applyScalerCrop(const ControlList &controls)
 		 * 2. With the same mid-point, if possible.
 		 * 3. But it can't go outside the sensor area.
 		 */
-		Size minSize = cropParams.ispMinCropSize.expandedToAspectRatio(nativeCrop.size());
+		Size minSize = cropParams_[i].ispMinCropSize.expandedToAspectRatio(nativeCrop.size());
 		Size size = ispCrop.size().expandedTo(minSize);
 		ispCrop = size.centeredTo(ispCrop.center()).enclosedIn(Rectangle(sensorInfo_.outputSize));
 
-		if (ispCrop != cropParams.ispCrop) {
-			cropParams.ispCrop = ispCrop;
-			platformSetIspCrop(cropParams.ispIndex, ispCrop);
+		if (ispCrop != cropParams_[i].ispCrop) {
+			cropParams_[i].ispCrop = ispCrop;
+			platformSetIspCrop(cropParams_[i].ispIndex, ispCrop);
 		}
 	}
 }
@@ -1474,9 +1510,16 @@ void CameraData::fillRequestMetadata(const ControlList &bufferControls, Request 
 	request->metadata().set(controls::SensorTimestamp,
 				bufferControls.get(controls::SensorTimestamp).value_or(0));
 
-	if (cropParams_.count(0))
-		request->metadata().set(controls::ScalerCrop,
-					scaleIspCrop(cropParams_[0].ispCrop));
+	if (cropParams_.size()) {
+		std::vector<Rectangle> crops;
+
+		for (auto const &[k, v] : cropParams_)
+			crops.push_back(scaleIspCrop(v.ispCrop));
+
+		request->metadata().set(controls::ScalerCrop, crops[0]);
+		request->metadata().set(controls::rpi::ScalerCrops,
+					Span<const Rectangle>(crops.data(), crops.size()));
+	}
 }
 
 } /* namespace libcamera */

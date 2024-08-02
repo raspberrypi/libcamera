@@ -135,8 +135,8 @@ public:
 	IPACameraSensorInfo sensorInfo_;
 
 	struct CropParams {
-		CropParams(Rectangle ispCrop_, Size ispMinCropSize_)
-			: ispCrop(ispCrop_), ispMinCropSize(ispMinCropSize_)
+		CropParams(Rectangle ispCrop_, Size ispMinCropSize_, unsigned int ispIndex_)
+			: ispCrop(ispCrop_), ispMinCropSize(ispMinCropSize_), ispIndex(ispIndex_)
 		{
 		}
 
@@ -148,6 +148,8 @@ public:
 		Rectangle ispCrop;
 		/* Minimum crop size in ISP output pixels */
 		Size ispMinCropSize;
+		/* Index of the ISP output channel for this crop */
+		unsigned int ispIndex;
 	};
 
 	/* Mapping of CropParams keyed by the stream index in CameraConfiguration */

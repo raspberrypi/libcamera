@@ -39,9 +39,9 @@ LIBCAMERA_IPA_MODULE_PATH
 
 LIBCAMERA_IPA_PROXY_PATH
    Define custom full path for a proxy worker for a given executable name.
-   
+
    Example value: ``${HOME}/.libcamera/proxy/worker:/opt/libcamera/vendor/proxy/worker``
-   
+
 LIBCAMERA_PIPELINES_MATCH_LIST
    Define an ordered list of pipeline names to be used to match the media
    devices in the system. The pipeline handler names used to populate the

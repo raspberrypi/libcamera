@@ -37,7 +37,7 @@ public:
 
 	const ControlInfoMap &controls() const { return controls_; }
 
-	ControlList getControls(const std::vector<uint32_t> &ids);
+	ControlList getControls(Span<const uint32_t> ids);
 	int setControls(ControlList *ctrls);
 
 	const struct v4l2_query_ext_ctrl *controlInfo(uint32_t id) const;

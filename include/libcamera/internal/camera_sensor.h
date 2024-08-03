@@ -14,6 +14,7 @@
 #include <vector>
 
 #include <libcamera/base/class.h>
+#include <libcamera/base/span.h>
 
 #include <libcamera/control_ids.h>
 #include <libcamera/controls.h>
@@ -74,7 +75,7 @@ public:
 	virtual BayerFormat::Order bayerOrder(Transform t) const = 0;
 
 	virtual const ControlInfoMap &controls() const = 0;
-	virtual ControlList getControls(const std::vector<uint32_t> &ids) = 0;
+	virtual ControlList getControls(Span<const uint32_t> ids) = 0;
 	virtual int setControls(ControlList *ctrls) = 0;
 
 	virtual const std::vector<controls::draft::TestPatternModeEnum> &

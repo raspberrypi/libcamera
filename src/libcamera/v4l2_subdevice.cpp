@@ -1725,7 +1725,7 @@ const std::string &V4L2Subdevice::model()
 	 * an I2C address, and use the full entity name otherwise.
 	 */
 	std::string entityName = entity_->name();
-	std::regex i2cRegex{ " [0-9]+-[0-9a-f]{4}" };
+	static const std::regex i2cRegex{ " [0-9]+-[0-9a-f]{4}" };
 	std::smatch match;
 
 	if (std::regex_search(entityName, match, i2cRegex))

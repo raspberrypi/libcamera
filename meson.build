@@ -146,16 +146,8 @@ if cc.get_id() == 'clang'
 endif
 
 if cc.get_id() == 'gcc'
-    if cc.version().version_compare('<8')
-        error('gcc version is too old, libcamera requires 8.0 or newer')
-    endif
-
-    # On gcc 8, the file system library is provided in a separate static
-    # library.
     if cc.version().version_compare('<9')
-        cpp_arguments += [
-            '-lstdc++fs',
-        ]
+        error('gcc version is too old, libcamera requires 9.0 or newer')
     endif
 
     # gcc 13 implements the C++23 version of automatic move from local

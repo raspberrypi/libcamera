@@ -146,7 +146,7 @@ private:
 	DebayerInputConfig inputConfig_;
 	DebayerOutputConfig outputConfig_;
 	std::unique_ptr<SwStatsCpu> stats_;
-	uint8_t *lineBuffers_[kMaxLineBuffers];
+	std::vector<uint8_t> lineBuffers_[kMaxLineBuffers];
 	unsigned int lineBufferLength_;
 	unsigned int lineBufferPadding_;
 	unsigned int lineBufferIndex_;

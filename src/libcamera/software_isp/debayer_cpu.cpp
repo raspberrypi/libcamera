@@ -49,16 +49,9 @@ DebayerCpu::DebayerCpu(std::unique_ptr<SwStatsCpu> stats)
 	/* Initialize color lookup tables */
 	for (unsigned int i = 0; i < DebayerParams::kRGBLookupSize; i++)
 		red_[i] = green_[i] = blue_[i] = i;
-
-	for (unsigned int i = 0; i < kMaxLineBuffers; i++)
-		lineBuffers_[i] = nullptr;
 }
 
-DebayerCpu::~DebayerCpu()
-{
-	for (unsigned int i = 0; i < kMaxLineBuffers; i++)
-		free(lineBuffers_[i]);
-}
+DebayerCpu::~DebayerCpu() = default;
 
 #define DECLARE_SRC_POINTERS(pixel_t)                            \
 	const pixel_t *prev = (const pixel_t *)src[0] + xShift_; \
@@ -526,13 +519,10 @@ int DebayerCpu::configure(const StreamConfiguration &inputCfg,
 	lineBufferPadding_ = inputConfig_.patternSize.width * inputConfig_.bpp / 8;
 	lineBufferLength_ = window_.width * inputConfig_.bpp / 8 +
 			    2 * lineBufferPadding_;
-	for (unsigned int i = 0;
-	     i < (inputConfig_.patternSize.height + 1) && enableInputMemcpy_;
-	     i++) {
-		free(lineBuffers_[i]);
-		lineBuffers_[i] = (uint8_t *)malloc(lineBufferLength_);
-		if (!lineBuffers_[i])
-			return -ENOMEM;
+
+	if (enableInputMemcpy_) {
+		for (unsigned int i = 0; i <= inputConfig_.patternSize.height; i++)
+			lineBuffers_[i].resize(lineBufferLength_);
 	}
 
 	measuredFrames_ = 0;
@@ -587,9 +577,10 @@ void DebayerCpu::setupInputMemcpy(const uint8_t *linePointers[])
 		return;
 
 	for (unsigned int i = 0; i < patternHeight; i++) {
-		memcpy(lineBuffers_[i], linePointers[i + 1] - lineBufferPadding_,
+		memcpy(lineBuffers_[i].data(),
+		       linePointers[i + 1] - lineBufferPadding_,
 		       lineBufferLength_);
-		linePointers[i + 1] = lineBuffers_[i] + lineBufferPadding_;
+		linePointers[i + 1] = lineBuffers_[i].data() + lineBufferPadding_;
 	}
 
 	/* Point lineBufferIndex_ to first unused lineBuffer */
@@ -614,9 +605,11 @@ void DebayerCpu::memcpyNextLine(const uint8_t *linePointers[])
 	if (!enableInputMemcpy_)
 		return;
 
-	memcpy(lineBuffers_[lineBufferIndex_], linePointers[patternHeight] - lineBufferPadding_,
+	memcpy(lineBuffers_[lineBufferIndex_].data(),
+	       linePointers[patternHeight] - lineBufferPadding_,
 	       lineBufferLength_);
-	linePointers[patternHeight] = lineBuffers_[lineBufferIndex_] + lineBufferPadding_;
+	linePointers[patternHeight] = lineBuffers_[lineBufferIndex_].data()
+				    + lineBufferPadding_;
 
 	lineBufferIndex_ = (lineBufferIndex_ + 1) % (patternHeight + 1);
 }

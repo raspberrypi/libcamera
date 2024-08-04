@@ -11,8 +11,6 @@ libcamera_ipa_headers = files([
 install_headers(libcamera_ipa_headers,
                 subdir : libcamera_ipa_include_dir)
 
-libcamera_generated_ipa_headers = []
-
 ipa_headers_install_dir = get_option('includedir') / libcamera_ipa_include_dir
 
 #
@@ -31,7 +29,7 @@ ipa_mojom_core = custom_target(core_mojom_file.split('.')[0] + '_mojom_module',
                                ])
 
 # core_ipa_interface.h
-libcamera_generated_ipa_headers += custom_target('core_ipa_interface_h',
+libcamera_ipa_headers += custom_target('core_ipa_interface_h',
                   input : ipa_mojom_core,
                   output : 'core_ipa_interface.h',
                   depends : mojom_templates,
@@ -47,7 +45,7 @@ libcamera_generated_ipa_headers += custom_target('core_ipa_interface_h',
                   ])
 
 # core_ipa_serializer.h
-libcamera_generated_ipa_headers += custom_target('core_ipa_serializer_h',
+libcamera_ipa_headers += custom_target('core_ipa_serializer_h',
                   input : ipa_mojom_core,
                   output : 'core_ipa_serializer.h',
                   depends : mojom_templates,
@@ -152,7 +150,7 @@ foreach pipeline, file : pipeline_ipa_mojom_mapping
         'mojom': mojom,
     }
 
-    libcamera_generated_ipa_headers += [header, serializer, proxy_header]
+    libcamera_ipa_headers += [header, serializer, proxy_header]
 endforeach
 
 ipa_mojom_files = []

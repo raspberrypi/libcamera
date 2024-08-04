@@ -55,7 +55,6 @@ libcamera_internal_sources = files([
 ])
 
 libcamera_public_sources += libcamera_public_headers
-libcamera_internal_sources += libcamera_tracepoint_header
 
 includes = [
     libcamera_includes,
@@ -196,6 +195,7 @@ libcamera = shared_library('libcamera',
                            [
                                libcamera_public_sources,
                                libcamera_ipa_headers,
+                               libcamera_internal_headers,
                                libcamera_internal_sources,
                            ],
                            version : libcamera_version,

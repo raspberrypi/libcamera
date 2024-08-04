@@ -11,7 +11,7 @@
 #include <string>
 
 /**
- * \file libcamera/orientation.h
+ * \file orientation.h
  * \brief Image orientation definition
  */
 

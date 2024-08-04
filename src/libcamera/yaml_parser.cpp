@@ -18,7 +18,7 @@
 #include <yaml.h>
 
 /**
- * \file libcamera/internal/yaml_parser.h
+ * \file yaml_parser.h
  * \brief A YAML parser helper
  */
 

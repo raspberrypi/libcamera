@@ -16,7 +16,7 @@
 #include <libcamera/base/log.h>
 
 /**
- * \file libcamera/internal/mapped_framebuffer.h
+ * \file mapped_framebuffer.h
  * \brief Frame buffer memory mapping support
  */
 

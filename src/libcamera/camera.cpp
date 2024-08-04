@@ -565,6 +565,7 @@ CameraConfiguration::Status CameraConfiguration::validateColorSpaces(ColorSpaceF
  * \brief The vector of stream configurations
  */
 
+#ifndef __DOXYGEN_PUBLIC__
 /**
  * \class Camera::Private
  * \brief Base class for camera private data
@@ -725,6 +726,7 @@ void Camera::Private::setState(State state)
 {
 	state_.store(state, std::memory_order_release);
 }
+#endif /* __DOXYGEN_PUBLIC__ */
 
 /**
  * \class Camera

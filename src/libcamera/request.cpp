@@ -38,6 +38,7 @@ namespace libcamera {
 
 LOG_DEFINE_CATEGORY(Request)
 
+#ifndef __DOXYGEN_PUBLIC__
 /**
  * \class Request::Private
  * \brief Request private data
@@ -306,6 +307,7 @@ void Request::Private::timeout()
 
 	emitPrepareCompleted();
 }
+#endif /* __DOXYGEN_PUBLIC__ */
 
 /**
  * \enum Request::Status

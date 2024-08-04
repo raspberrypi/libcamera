@@ -35,6 +35,7 @@ namespace libcamera {
 
 LOG_DEFINE_CATEGORY(Camera)
 
+#ifndef __DOXYGEN_PUBLIC__
 CameraManager::Private::Private()
 	: initialized_(false)
 {
@@ -249,6 +250,7 @@ void CameraManager::Private::removeCamera(std::shared_ptr<Camera> camera)
 	CameraManager *const o = LIBCAMERA_O_PTR();
 	o->cameraRemoved.emit(camera);
 }
+#endif /* __DOXYGEN_PUBLIC__ */
 
 /**
  * \class CameraManager

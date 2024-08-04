@@ -107,6 +107,7 @@ LOG_DEFINE_CATEGORY(Buffer)
  * \return The array of per-plane metadata
  */
 
+#ifndef __DOXYGEN_PUBLIC__
 /**
  * \class FrameBuffer::Private
  * \brief Base class for FrameBuffer private data
@@ -209,6 +210,7 @@ FrameBuffer::Private::~Private()
  * \brief Retrieve the dynamic metadata
  * \return Dynamic metadata for the frame contained in the buffer
  */
+#endif /* __DOXYGEN_PUBLIC__ */
 
 /**
  * \class FrameBuffer

@@ -10,6 +10,7 @@
 #include <iterator>
 #include <map>
 #include <optional>
+#include <stdint.h>
 #include <string>
 #include <vector>
 

@@ -493,6 +493,8 @@ class TrailersChecker(CommitChecker):
     def check(cls, commit, top_level):
         issues = []
 
+        sob_found = False
+
         for trailer in commit.trailers:
             match = TrailersChecker.trailer_regex.fullmatch(trailer)
             if not match:
@@ -514,6 +516,12 @@ class TrailersChecker(CommitChecker):
             if not valid:
                 issues.append(CommitIssue(f"Malformed value '{value}' for commit trailer '{key}'"))
                 continue
+
+            if key == 'Signed-off-by':
+                sob_found = True
+
+        if not sob_found:
+            issues.append(CommitIssue(f"No valid 'Signed-off-by' trailer found, see Documentation/contributing.rst"))
 
         return issues
 

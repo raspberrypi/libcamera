@@ -120,7 +120,8 @@ libcamera_version_config.set('LIBCAMERA_VERSION_MAJOR', version[0])
 libcamera_version_config.set('LIBCAMERA_VERSION_MINOR', version[1])
 libcamera_version_config.set('LIBCAMERA_VERSION_PATCH', version[2])
 
-configure_file(input : 'version.h.in',
-               output : 'version.h',
-               configuration : libcamera_version_config,
-               install_dir : libcamera_headers_install_dir)
+version_h = configure_file(input : 'version.h.in',
+                           output : 'version.h',
+                           configuration : libcamera_version_config,
+                           install_dir : libcamera_headers_install_dir)
+libcamera_public_headers += version_h

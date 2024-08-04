@@ -28,6 +28,11 @@
  * \brief Describes a frame capture request to be processed by a camera
  */
 
+/**
+ * \file libcamera/internal/request.h
+ * \brief Internal support for request handling
+ */
+
 namespace libcamera {
 
 LOG_DEFINE_CATEGORY(Request)

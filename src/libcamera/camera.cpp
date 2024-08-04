@@ -117,6 +117,11 @@
  * of view is affected by the pipeline.
  */
 
+/**
+ * \file libcamera/internal/camera.h
+ * \brief Internal camera device handling
+ */
+
 namespace libcamera {
 
 LOG_DECLARE_CATEGORY(Camera)

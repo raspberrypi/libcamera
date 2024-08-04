@@ -16,7 +16,10 @@
 /**
  * \file libcamera/framebuffer.h
  * \brief Frame buffer handling
- *
+ */
+
+/**
+ * \internal
  * \file libcamera/internal/framebuffer.h
  * \brief Internal frame buffer handling support
  */

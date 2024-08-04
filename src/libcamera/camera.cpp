@@ -118,6 +118,7 @@
  */
 
 /**
+ * \internal
  * \file libcamera/internal/camera.h
  * \brief Internal camera device handling
  */

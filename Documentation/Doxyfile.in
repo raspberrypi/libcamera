@@ -17,6 +17,7 @@ EXTENSION_MAPPING      = h=C++
 
 TOC_INCLUDE_HEADINGS   = 0
 
+INTERNAL_DOCS          = YES
 CASE_SENSE_NAMES       = YES
 
 QUIET                  = YES

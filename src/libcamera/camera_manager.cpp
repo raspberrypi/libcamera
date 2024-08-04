@@ -23,6 +23,7 @@
  */
 
 /**
+ * \internal
  * \file libcamera/internal/camera_manager.h
  * \brief Internal camera manager support
  */

@@ -29,6 +29,7 @@
  */
 
 /**
+ * \internal
  * \file libcamera/internal/request.h
  * \brief Internal support for request handling
  */

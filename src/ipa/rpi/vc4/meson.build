@@ -23,8 +23,7 @@ vc4_ipa_sources = files([
 
 vc4_ipa_includes += include_directories('..')
 
-mod = shared_module(ipa_name,
-                    [vc4_ipa_sources, libcamera_generated_ipa_headers],
+mod = shared_module(ipa_name, vc4_ipa_sources,
                     name_prefix : '',
                     include_directories : vc4_ipa_includes,
                     dependencies : [vc4_ipa_deps, libipa_dep],

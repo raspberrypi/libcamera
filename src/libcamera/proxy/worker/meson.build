@@ -17,8 +17,7 @@ foreach mojom : ipa_mojoms
                                './' + '@INPUT@'
                            ])
 
-    proxy = executable(mojom['name'] + '_ipa_proxy',
-                       [worker, libcamera_generated_ipa_headers],
+    proxy = executable(mojom['name'] + '_ipa_proxy', worker,
                        install : true,
                        install_dir : proxy_install_dir,
                        dependencies : libcamera_private)

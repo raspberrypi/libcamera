@@ -54,8 +54,6 @@ libcamera_internal_sources = files([
     'yaml_parser.cpp',
 ])
 
-libcamera_public_sources += libcamera_public_headers
-
 includes = [
     libcamera_includes,
 ]
@@ -193,6 +191,7 @@ libcamera_deps += [
 
 libcamera = shared_library('libcamera',
                            [
+                               libcamera_public_headers,
                                libcamera_public_sources,
                                libcamera_ipa_headers,
                                libcamera_internal_headers,

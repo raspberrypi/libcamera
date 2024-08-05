@@ -216,28 +216,28 @@ class Commit:
         self._trailers = []
         self._parse()
 
-    def _parse_trailers(self, lines):
-        for index in range(2, len(lines)):
-            line = lines[index]
-            if not line:
-                break
+    def _parse_trailers(self):
+        proc_show = subprocess.run(['git', 'show', '--format=%b',
+                                    '--no-patch', self.commit],
+                                   stdout=subprocess.PIPE)
+        trailers = subprocess.run(['git', 'interpret-trailers', '--parse'],
+                                  input=proc_show.stdout,
+                                  stdout=subprocess.PIPE).stdout.decode('utf-8')
 
-            self._trailers.append(line)
-
-        return index
+        self._trailers = trailers.splitlines()
 
     def _parse(self):
         # Get the commit title and list of files.
-        ret = subprocess.run(['git', 'show', '--format=%an <%ae>%n%s%n%(trailers:only,unfold)',
+        ret = subprocess.run(['git', 'show', '--format=%an <%ae>%n%s',
                               '--name-status', self.commit],
                              stdout=subprocess.PIPE).stdout.decode('utf-8')
         lines = ret.splitlines()
 
         self._author = lines[0]
         self._title = lines[1]
+        self._files = [CommitFile(f) for f in lines[2:] if f]
 
-        index = self._parse_trailers(lines)
-        self._files = [CommitFile(f) for f in lines[index:] if f]
+        self._parse_trailers()
 
     def files(self, filter='AMR'):
         return [f.filename for f in self._files if f.status in filter]
@@ -288,7 +288,7 @@ class Amendment(Commit):
 
     def _parse(self):
         # Create a title using HEAD commit and parse the trailers.
-        ret = subprocess.run(['git', 'show', '--format=%an <%ae>%n%H %s%n%(trailers:only,unfold)',
+        ret = subprocess.run(['git', 'show', '--format=%an <%ae>%n%H %s',
                              '--no-patch'],
                              stdout=subprocess.PIPE).stdout.decode('utf-8')
         lines = ret.splitlines()
@@ -296,7 +296,7 @@ class Amendment(Commit):
         self._author = lines[0]
         self._title = 'Amendment of ' + lines[1]
 
-        self._parse_trailers(lines)
+        self._parse_trailers()
 
         # Extract the list of modified files
         ret = subprocess.run(['git', 'diff', '--staged', '--name-status', 'HEAD~'],

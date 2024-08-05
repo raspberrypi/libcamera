@@ -951,7 +951,7 @@ gst_libcamera_src_class_init(GstLibcameraSrcClass *klass)
 	gst_element_class_set_metadata(element_class,
 				       "libcamera Source", "Source/Video",
 				       "Linux Camera source using libcamera",
-				       "Nicolas Dufresne <nicolas.dufresne@collabora.com");
+				       "Nicolas Dufresne <nicolas.dufresne@collabora.com>");
 	gst_element_class_add_static_pad_template_with_gtype(element_class,
 							     &src_template,
 							     GST_TYPE_LIBCAMERA_PAD);

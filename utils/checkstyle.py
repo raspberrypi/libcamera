@@ -525,10 +525,11 @@ class TrailersChecker(CommitChecker):
                 continue
 
             if key == 'Signed-off-by':
-                sob_found = True
+                if value == commit.author:
+                    sob_found = True
 
         if not sob_found:
-            issues.append(CommitIssue(f"No valid 'Signed-off-by' trailer found, see Documentation/contributing.rst"))
+            issues.append(CommitIssue(f"No 'Signed-off-by' trailer matching author '{commit.author}', see Documentation/contributing.rst"))
 
         return issues
 

@@ -36,6 +36,8 @@
 #include <libcamera/control_ids.h>
 
 #include <gst/base/base.h>
+#define GST_USE_UNSTABLE_API
+#include <gst/interfaces/photography.h>
 
 #include "gstlibcameraallocator.h"
 #include "gstlibcamerapad.h"
@@ -133,6 +135,19 @@ struct GstLibcameraSrcState {
 	void requestCompleted(Request *request);
 	int processRequest();
 	void clearRequests();
+
+	/* Controls state */
+	controls::AfModeEnum auto_focus_mode = controls::AfModeManual;
+
+	controls::AeExposureModeEnum exposure_mode = controls::ExposureNormal;
+	int32_t exposure_time;
+	float exposure_value;
+	controls::AwbModeEnum awb_mode = controls::AwbAuto;
+	float analog_gain;
+
+	/* GstPhotography interface implementation */
+	GstPhotographyCaps capabilities;
+	ControlList pendingControls_;
 };
 
 struct _GstLibcameraSrc {
@@ -142,7 +157,6 @@ struct _GstLibcameraSrc {
 	GstTask *task;
 
 	gchar *camera_name;
-	controls::AfModeEnum auto_focus_mode = controls::AfModeManual;
 
 	std::atomic<GstEvent *> pending_eos;
 
@@ -155,19 +169,55 @@ enum {
 	PROP_0,
 	PROP_CAMERA_NAME,
 	PROP_AUTO_FOCUS_MODE,
+	PROP_WB_MODE,
+	PROP_COLOUR_TONE,
+	PROP_SCENE_MODE,
+	PROP_FLASH_MODE,
+	PROP_NOISE_REDUCTION,
+	PROP_CAPABILITIES,
+	PROP_EV_COMP,
+	PROP_ISO_SPEED,
+	PROP_APERTURE,
+	PROP_EXPOSURE_MODE,
+	PROP_IMAGE_CAPTURE_SUPPORTED_CAPS,
+	PROP_IMAGE_PREVIEW_SUPPORTED_CAPS,
+	PROP_FLICKER_MODE,
+	PROP_FOCUS_MODE,
+	PROP_ZOOM,
+	PROP_SMOOTH_ZOOM,
+	PROP_WHITE_POINT,
+	PROP_MIN_EXPOSURE_TIME,
+	PROP_MAX_EXPOSURE_TIME,
+	PROP_LENS_FOCUS,
+	PROP_EXPOSURE_TIME,
+	PROP_COLOR_TEMPERATURE,
+	PROP_ANALOG_GAIN,
 };
 
 static void gst_libcamera_src_child_proxy_init(gpointer g_iface,
 					       gpointer iface_data);
+static const struct
+{
+	const GstPhotographyCaps pcap;
+	const ControlId *id;
+} controls_map[] = {
+	{ GST_PHOTOGRAPHY_CAPS_FOCUS, &controls::AfMode },
+	{ GST_PHOTOGRAPHY_CAPS_EXPOSURE, &controls::ExposureTime },
+	{ GST_PHOTOGRAPHY_CAPS_EXPOSURE, &controls::ExposureValue },
+	{ GST_PHOTOGRAPHY_CAPS_EXPOSURE, &controls::AnalogueGain },
+	{ GST_PHOTOGRAPHY_CAPS_WB_MODE, &controls::AwbEnable },
+};
+
+static void gst_libcamera_src_photography_init(gpointer g_iface);
 
 G_DEFINE_TYPE_WITH_CODE(GstLibcameraSrc, gst_libcamera_src, GST_TYPE_ELEMENT,
 			G_IMPLEMENT_INTERFACE(GST_TYPE_CHILD_PROXY,
 					      gst_libcamera_src_child_proxy_init)
 			GST_DEBUG_CATEGORY_INIT(source_debug, "libcamerasrc", 0,
-						"libcamera Source"))
-
+						"libcamera Source");
+			G_IMPLEMENT_INTERFACE(GST_TYPE_PHOTOGRAPHY,
+					      gst_libcamera_src_photography_init))
 #define TEMPLATE_CAPS GST_STATIC_CAPS("video/x-raw; image/jpeg; video/x-bayer")
-
 /* For the simple case, we have a src pad that is always present. */
 GstStaticPadTemplate src_template = {
 	"src", GST_PAD_SRC, GST_PAD_ALWAYS, TEMPLATE_CAPS
@@ -187,6 +237,15 @@ int GstLibcameraSrcState::queueRequest()
 
 	std::unique_ptr<RequestWrap> wrap =
 		std::make_unique<RequestWrap>(std::move(request));
+
+	{
+		GLibLocker locker(&lock_);
+		if (pendingControls_.size()) {
+			GST_LOG_OBJECT(src_, "Setting %" G_GSIZE_FORMAT " pending controls", pendingControls_.size());
+			wrap->request_->controls() = pendingControls_;
+			pendingControls_.clear();
+		}
+	}
 
 	for (GstPad *srcpad : srcpads_) {
 		Stream *stream = gst_libcamera_pad_get_stream(srcpad);
@@ -219,8 +278,7 @@ int GstLibcameraSrcState::queueRequest()
 	return 0;
 }
 
-void
-GstLibcameraSrcState::requestCompleted(Request *request)
+void GstLibcameraSrcState::requestCompleted(Request *request)
 {
 	GST_DEBUG_OBJECT(src_, "buffers are ready");
 
@@ -412,9 +470,24 @@ gst_libcamera_src_open(GstLibcameraSrc *self)
 
 	cam->requestCompleted.connect(self->state, &GstLibcameraSrcState::requestCompleted);
 
-	/* No need to lock here, we didn't start our threads yet. */
+	/* Lock before exposing the camera into the state */
+	GLibLocker locker(&self->state->lock_);
+
 	self->state->cm_ = cm;
 	self->state->cam_ = cam;
+
+	/* Update GstPhotography caps */
+	{
+		int pcaps = GST_PHOTOGRAPHY_CAPS_NONE;
+		const ControlInfoMap &infoMap = cam->controls();
+
+		for (gsize i = 0; i < G_N_ELEMENTS(controls_map); i++) {
+			if (infoMap.find(controls_map[i].id) != infoMap.end()) {
+				pcaps = pcaps | controls_map[i].pcap;
+			}
+		}
+		self->state->capabilities = (GstPhotographyCaps)pcaps;
+	}
 
 	return true;
 }
@@ -656,17 +729,23 @@ gst_libcamera_src_task_enter(GstTask *task, [[maybe_unused]] GThread *thread,
 	self->flow_combiner = gst_flow_combiner_new();
 	for (GstPad *srcpad : state->srcpads_) {
 		gst_flow_combiner_add_pad(self->flow_combiner, srcpad);
-
 		/* Send an open segment event with time format. */
 		GstSegment segment;
 		gst_segment_init(&segment, GST_FORMAT_TIME);
 		gst_pad_push_event(srcpad, gst_event_new_segment(&segment));
 	}
 
-	if (self->auto_focus_mode != controls::AfModeManual) {
+	if (state->pendingControls_.size()) {
+		/* Merge any pending controls into the initial control set */
+		state->initControls_.merge(state->pendingControls_);
+	}
+
+
+
+	if (state->auto_focus_mode != controls::AfModeManual) {
 		const ControlInfoMap &infoMap = state->cam_->controls();
 		if (infoMap.find(&controls::AfMode) != infoMap.end()) {
-			state->initControls_.set(controls::AfMode, self->auto_focus_mode);
+			state->initControls_.set(controls::AfMode, state->auto_focus_mode);
 		} else {
 			GST_ELEMENT_ERROR(self, RESOURCE, SETTINGS,
 					  ("Failed to enable auto focus"),
@@ -675,6 +754,8 @@ gst_libcamera_src_task_enter(GstTask *task, [[maybe_unused]] GThread *thread,
 		}
 	}
 
+	GST_LOG_OBJECT(state->src_,
+		       "Setting %" G_GSIZE_FORMAT " initial controls", state->initControls_.size());
 	ret = state->cam_->start(&state->initControls_);
 	if (ret) {
 		GST_ELEMENT_ERROR(self, RESOURCE, SETTINGS,
@@ -743,7 +824,55 @@ gst_libcamera_src_set_property(GObject *object, guint prop_id,
 		self->camera_name = g_value_dup_string(value);
 		break;
 	case PROP_AUTO_FOCUS_MODE:
-		self->auto_focus_mode = static_cast<controls::AfModeEnum>(g_value_get_enum(value));
+		self->state->auto_focus_mode = static_cast<controls::AfModeEnum>(g_value_get_enum(value));
+		break;
+	case PROP_CAPABILITIES:
+		break;
+	case PROP_WB_MODE:
+		gst_photography_set_white_balance_mode(GST_PHOTOGRAPHY(self),
+						       (GstPhotographyWhiteBalanceMode)g_value_get_enum(value));
+		break;
+	case PROP_EXPOSURE_MODE: {
+		GstPhotographyInterface *iface = GST_PHOTOGRAPHY_GET_INTERFACE(self);
+		if (iface->set_exposure_mode != NULL) {
+			iface->set_exposure_mode(GST_PHOTOGRAPHY(self),
+						 (GstPhotographyExposureMode)g_value_get_enum(value));
+		}
+		break;
+	}
+	case PROP_EXPOSURE_TIME:
+		gst_photography_set_exposure(GST_PHOTOGRAPHY(self),
+					     g_value_get_uint(value));
+		break;
+	case PROP_EV_COMP:
+		gst_photography_set_ev_compensation(GST_PHOTOGRAPHY(self),
+						    g_value_get_float(value));
+		break;
+	case PROP_ANALOG_GAIN: {
+		GstPhotographyInterface *iface = GST_PHOTOGRAPHY_GET_INTERFACE(self);
+		if (iface->set_analog_gain != NULL) {
+			iface->set_analog_gain(GST_PHOTOGRAPHY(self),
+					       g_value_get_float(value));
+		}
+		break;
+	}
+	case PROP_COLOUR_TONE:
+	case PROP_SCENE_MODE:
+	case PROP_FLASH_MODE:
+	case PROP_NOISE_REDUCTION:
+	case PROP_ISO_SPEED:
+	case PROP_APERTURE:
+	case PROP_IMAGE_CAPTURE_SUPPORTED_CAPS:
+	case PROP_IMAGE_PREVIEW_SUPPORTED_CAPS:
+	case PROP_FLICKER_MODE:
+	case PROP_FOCUS_MODE:
+	case PROP_ZOOM:
+	case PROP_SMOOTH_ZOOM:
+	case PROP_WHITE_POINT:
+	case PROP_MIN_EXPOSURE_TIME:
+	case PROP_MAX_EXPOSURE_TIME:
+	case PROP_LENS_FOCUS:
+	case PROP_COLOR_TEMPERATURE:
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
@@ -763,7 +892,71 @@ gst_libcamera_src_get_property(GObject *object, guint prop_id, GValue *value,
 		g_value_set_string(value, self->camera_name);
 		break;
 	case PROP_AUTO_FOCUS_MODE:
-		g_value_set_enum(value, static_cast<gint>(self->auto_focus_mode));
+		g_value_set_enum(value,
+				 static_cast<gint>(self->state->auto_focus_mode));
+		break;
+	case PROP_CAPABILITIES:
+		g_value_set_ulong(value,
+				  (gulong)gst_photography_get_capabilities(GST_PHOTOGRAPHY(self)));
+		break;
+	case PROP_WB_MODE: {
+		GstPhotographyWhiteBalanceMode wb;
+
+		if (gst_photography_get_white_balance_mode(GST_PHOTOGRAPHY(self), &wb)) {
+			g_value_set_enum(value, wb);
+		}
+		break;
+	}
+	case PROP_EXPOSURE_MODE: {
+		GstPhotographyExposureMode exposure_mode;
+		GstPhotographyInterface *iface = GST_PHOTOGRAPHY_GET_INTERFACE(self);
+		if (iface->get_exposure_mode != NULL && iface->get_exposure_mode(GST_PHOTOGRAPHY(self),
+										 &exposure_mode)) {
+			g_value_set_enum(value, exposure_mode);
+		}
+		break;
+	}
+	case PROP_EXPOSURE_TIME: {
+		guint32 exposure_time;
+		if (gst_photography_get_exposure(GST_PHOTOGRAPHY(self), &exposure_time)) {
+			g_value_set_uint(value, exposure_time);
+		}
+		break;
+	}
+	case PROP_EV_COMP: {
+		gfloat exposure_value;
+		if (gst_photography_get_ev_compensation(GST_PHOTOGRAPHY(self),
+							&exposure_value)) {
+			g_value_set_float(value, exposure_value);
+		}
+		break;
+	}
+	case PROP_ANALOG_GAIN: {
+		gfloat gain;
+
+		GstPhotographyInterface *iface = GST_PHOTOGRAPHY_GET_INTERFACE(self);
+		if (iface->get_analog_gain != NULL && iface->get_analog_gain(GST_PHOTOGRAPHY(self), &gain)) {
+			g_value_set_float(value, gain);
+		}
+		break;
+	}
+	case PROP_COLOUR_TONE:
+	case PROP_SCENE_MODE:
+	case PROP_FLASH_MODE:
+	case PROP_NOISE_REDUCTION:
+	case PROP_ISO_SPEED:
+	case PROP_APERTURE:
+	case PROP_IMAGE_CAPTURE_SUPPORTED_CAPS:
+	case PROP_IMAGE_PREVIEW_SUPPORTED_CAPS:
+	case PROP_FLICKER_MODE:
+	case PROP_FOCUS_MODE:
+	case PROP_ZOOM:
+	case PROP_SMOOTH_ZOOM:
+	case PROP_WHITE_POINT:
+	case PROP_MIN_EXPOSURE_TIME:
+	case PROP_MAX_EXPOSURE_TIME:
+	case PROP_LENS_FOCUS:
+	case PROP_COLOR_TEMPERATURE:
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
@@ -961,10 +1154,7 @@ gst_libcamera_src_class_init(GstLibcameraSrcClass *klass)
 
 	GParamSpec *spec = g_param_spec_string("camera-name", "Camera Name",
 					       "Select by name which camera to use.", nullptr,
-					       (GParamFlags)(GST_PARAM_MUTABLE_READY
-							     | G_PARAM_CONSTRUCT
-							     | G_PARAM_READWRITE
-							     | G_PARAM_STATIC_STRINGS));
+					       (GParamFlags)(GST_PARAM_MUTABLE_READY | G_PARAM_CONSTRUCT | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 	g_object_class_install_property(object_class, PROP_CAMERA_NAME, spec);
 
 	spec = g_param_spec_enum("auto-focus-mode",
@@ -975,6 +1165,481 @@ gst_libcamera_src_class_init(GstLibcameraSrcClass *klass)
 				 static_cast<gint>(controls::AfModeManual),
 				 G_PARAM_WRITABLE);
 	g_object_class_install_property(object_class, PROP_AUTO_FOCUS_MODE, spec);
+
+	/* Override GstPhotography properties */
+	g_object_class_override_property(object_class, PROP_WB_MODE,
+					 GST_PHOTOGRAPHY_PROP_WB_MODE);
+
+	g_object_class_override_property(object_class, PROP_COLOUR_TONE,
+					 GST_PHOTOGRAPHY_PROP_COLOR_TONE);
+
+	g_object_class_override_property(object_class, PROP_SCENE_MODE,
+					 GST_PHOTOGRAPHY_PROP_SCENE_MODE);
+
+	g_object_class_override_property(object_class, PROP_FLASH_MODE,
+					 GST_PHOTOGRAPHY_PROP_FLASH_MODE);
+
+	g_object_class_override_property(object_class, PROP_NOISE_REDUCTION,
+					 GST_PHOTOGRAPHY_PROP_NOISE_REDUCTION);
+
+	g_object_class_override_property(object_class, PROP_CAPABILITIES,
+					 GST_PHOTOGRAPHY_PROP_CAPABILITIES);
+
+	g_object_class_override_property(object_class, PROP_EV_COMP,
+					 GST_PHOTOGRAPHY_PROP_EV_COMP);
+
+	g_object_class_override_property(object_class, PROP_ISO_SPEED,
+					 GST_PHOTOGRAPHY_PROP_ISO_SPEED);
+
+	g_object_class_override_property(object_class, PROP_APERTURE,
+					 GST_PHOTOGRAPHY_PROP_APERTURE);
+
+	g_object_class_override_property(object_class, PROP_EXPOSURE_MODE,
+					 GST_PHOTOGRAPHY_PROP_EXPOSURE_MODE);
+
+	g_object_class_override_property(object_class,
+					 PROP_IMAGE_CAPTURE_SUPPORTED_CAPS,
+					 GST_PHOTOGRAPHY_PROP_IMAGE_CAPTURE_SUPPORTED_CAPS);
+
+	g_object_class_override_property(object_class,
+					 PROP_IMAGE_PREVIEW_SUPPORTED_CAPS,
+					 GST_PHOTOGRAPHY_PROP_IMAGE_PREVIEW_SUPPORTED_CAPS);
+
+	g_object_class_override_property(object_class, PROP_FLICKER_MODE,
+					 GST_PHOTOGRAPHY_PROP_FLICKER_MODE);
+
+	g_object_class_override_property(object_class, PROP_FOCUS_MODE,
+					 GST_PHOTOGRAPHY_PROP_FOCUS_MODE);
+
+	g_object_class_override_property(object_class, PROP_ZOOM,
+					 GST_PHOTOGRAPHY_PROP_ZOOM);
+
+	g_object_class_override_property(object_class, PROP_WHITE_POINT,
+					 GST_PHOTOGRAPHY_PROP_WHITE_POINT);
+
+	g_object_class_override_property(object_class, PROP_MIN_EXPOSURE_TIME,
+					 GST_PHOTOGRAPHY_PROP_MIN_EXPOSURE_TIME);
+
+	g_object_class_override_property(object_class, PROP_MAX_EXPOSURE_TIME,
+					 GST_PHOTOGRAPHY_PROP_MAX_EXPOSURE_TIME);
+
+	g_object_class_override_property(object_class, PROP_LENS_FOCUS,
+					 GST_PHOTOGRAPHY_PROP_LENS_FOCUS);
+
+	g_object_class_override_property(object_class, PROP_EXPOSURE_TIME,
+					 GST_PHOTOGRAPHY_PROP_EXPOSURE_TIME);
+
+	g_object_class_override_property(object_class, PROP_COLOR_TEMPERATURE,
+					 GST_PHOTOGRAPHY_PROP_COLOR_TEMPERATURE);
+
+	g_object_class_override_property(object_class, PROP_ANALOG_GAIN,
+					 GST_PHOTOGRAPHY_PROP_ANALOG_GAIN);
+}
+
+static GstPhotographyCaps
+gst_libcamera_src_get_capabilities(GstPhotography *p)
+{
+	GstLibcameraSrc *self = GST_LIBCAMERA_SRC(p);
+	GstLibcameraSrcState *state = self->state;
+	GLibLocker locker(&state->lock_);
+
+	return self->state->capabilities;
+}
+
+static void
+gst_libcamera_src_set_autofocus(GstPhotography *p, gboolean on)
+{
+	GstLibcameraSrc *self = GST_LIBCAMERA_SRC(p);
+	GstLibcameraSrcState *state = self->state;
+	GLibLocker locker(&state->lock_);
+
+	if (on)
+		state->auto_focus_mode = controls::AfModeAuto;
+	else
+		state->auto_focus_mode = controls::AfModeManual;
+}
+
+static gboolean
+gst_libcamera_src_get_focus_mode(GstPhotography *p,
+				 GstPhotographyFocusMode *focus_mode)
+{
+	GstLibcameraSrc *self = GST_LIBCAMERA_SRC(p);
+	GstLibcameraSrcState *state = self->state;
+	GLibLocker locker(&state->lock_);
+	gboolean ret = FALSE;
+
+	switch (state->auto_focus_mode) {
+	case controls::AfModeAuto:
+		*focus_mode = GST_PHOTOGRAPHY_FOCUS_MODE_AUTO;
+		ret = TRUE;
+		break;
+	case controls::AfModeContinuous:
+		*focus_mode = GST_PHOTOGRAPHY_FOCUS_MODE_CONTINUOUS_NORMAL;
+		ret = TRUE;
+		break;
+	case controls::AfModeManual:
+		*focus_mode = GST_PHOTOGRAPHY_FOCUS_MODE_MANUAL;
+		ret = TRUE;
+		break;
+	}
+
+	return ret;
+}
+
+static gboolean
+gst_libcamera_src_set_focus_mode(GstPhotography *p,
+				 GstPhotographyFocusMode focus_mode)
+{
+	GstLibcameraSrc *self = GST_LIBCAMERA_SRC(p);
+	GstLibcameraSrcState *state = self->state;
+
+	controls::AfModeEnum auto_focus_mode = controls::AfModeAuto;
+
+	switch (focus_mode) {
+	case GST_PHOTOGRAPHY_FOCUS_MODE_AUTO:
+		auto_focus_mode = controls::AfModeAuto;
+		break;
+	case GST_PHOTOGRAPHY_FOCUS_MODE_CONTINUOUS_NORMAL:
+		auto_focus_mode = controls::AfModeContinuous;
+		break;
+	case GST_PHOTOGRAPHY_FOCUS_MODE_MANUAL:
+		auto_focus_mode = controls::AfModeManual;
+		break;
+	default:
+		break; /* Ignore unhandled modes */
+	}
+
+	GLibLocker locker(&state->lock_);
+	if (state->cam_ != NULL) {
+		/* If the camera is opened, check whether we can actually set the control */
+		const ControlInfoMap &infoMap = state->cam_->controls();
+		if (infoMap.find(&controls::AfMode) == infoMap.end()) {
+			return FALSE;
+		}
+	}
+
+	if (state->auto_focus_mode != auto_focus_mode) {
+		GST_LOG_OBJECT(self, "Setting autofocus mode %u", auto_focus_mode);
+		state->auto_focus_mode = auto_focus_mode;
+		state->pendingControls_.set(controls::AfMode, state->auto_focus_mode);
+	}
+
+	return TRUE;
+}
+
+static gboolean
+gst_libcamera_src_set_exposure(GstPhotography *p, guint32 exposure)
+{
+	GstLibcameraSrc *self = GST_LIBCAMERA_SRC(p);
+	GstLibcameraSrcState *state = self->state;
+	GLibLocker locker(&state->lock_);
+
+	if (state->cam_ != NULL) {
+		/* If the camera is opened, check whether we can actually set the control */
+		const ControlInfoMap &infoMap = state->cam_->controls();
+		if (infoMap.find(&controls::ExposureTime) == infoMap.end())
+			return FALSE;
+	}
+
+	if (state->exposure_time != (int32_t)exposure) {
+		GST_LOG_OBJECT(self, "Setting exposure time %u", exposure);
+		state->exposure_time = exposure;
+		state->pendingControls_.set(controls::ExposureTime,
+					    state->exposure_time);
+	}
+
+	return TRUE;
+}
+
+static gboolean
+gst_libcamera_src_get_exposure(GstPhotography *p, guint32 *exposure)
+{
+	GstLibcameraSrc *self = GST_LIBCAMERA_SRC(p);
+	GstLibcameraSrcState *state = self->state;
+	gboolean ret = FALSE;
+	GLibLocker locker(&state->lock_);
+	if (state->cam_ == NULL)
+		return FALSE;
+
+	const ControlInfoMap &infoMap = state->cam_->controls();
+	if (infoMap.find(&controls::ExposureTime) != infoMap.end()) {
+		*exposure = (guint32)state->exposure_time;
+		ret = TRUE;
+	}
+
+	return ret;
+}
+
+static gboolean
+gst_libcamera_src_set_white_balance_mode(GstPhotography *p,
+					 GstPhotographyWhiteBalanceMode wb_mode)
+{
+	GstLibcameraSrc *self = GST_LIBCAMERA_SRC(p);
+	GstLibcameraSrcState *state = self->state;
+
+	controls::AwbModeEnum awb_mode = controls::AwbAuto;
+	switch (wb_mode) {
+	case GST_PHOTOGRAPHY_WB_MODE_AUTO:
+	case GST_PHOTOGRAPHY_WB_MODE_SUNSET:
+		awb_mode = controls::AwbAuto;
+		break;
+	case GST_PHOTOGRAPHY_WB_MODE_DAYLIGHT:
+		awb_mode = controls::AwbDaylight;
+		break;
+	case GST_PHOTOGRAPHY_WB_MODE_CLOUDY:
+		awb_mode = controls::AwbCloudy;
+		break;
+	case GST_PHOTOGRAPHY_WB_MODE_TUNGSTEN:
+		awb_mode = controls::AwbTungsten;
+		break;
+	case GST_PHOTOGRAPHY_WB_MODE_FLUORESCENT:
+		awb_mode = controls::AwbFluorescent;
+		break;
+	case GST_PHOTOGRAPHY_WB_MODE_WARM_FLUORESCENT:
+		awb_mode = controls::AwbIncandescent;
+		break;
+	case GST_PHOTOGRAPHY_WB_MODE_SHADE:
+		awb_mode = controls::AwbIndoor;
+		break;
+	default:
+		break; /* Ignore unhandled modes */
+	}
+
+	GLibLocker locker(&state->lock_);
+	if (state->cam_ != NULL) {
+		/* If the camera is opened, check whether we can actually set the control */
+		const ControlInfoMap &infoMap = state->cam_->controls();
+		if (infoMap.find(&controls::AwbMode) == infoMap.end())
+			return FALSE;
+	}
+
+	if (state->awb_mode != awb_mode) {
+		GST_LOG_OBJECT(self, "Setting AWB mode %u", awb_mode);
+		state->awb_mode = awb_mode;
+		state->pendingControls_.set(controls::AwbMode, state->awb_mode);
+	}
+
+	return TRUE;
+}
+
+static gboolean
+gst_libcamera_src_get_white_balance_mode(GstPhotography *p,
+					 GstPhotographyWhiteBalanceMode *wb_mode)
+{
+	GstLibcameraSrc *self = GST_LIBCAMERA_SRC(p);
+	GstLibcameraSrcState *state = self->state;
+	GLibLocker locker(&state->lock_);
+	gboolean ret = FALSE;
+
+	switch (state->awb_mode) {
+	case controls::AwbAuto:
+		*wb_mode = GST_PHOTOGRAPHY_WB_MODE_AUTO;
+		ret = TRUE;
+		break;
+	case controls::AwbDaylight:
+		*wb_mode = GST_PHOTOGRAPHY_WB_MODE_DAYLIGHT;
+		ret = TRUE;
+		break;
+	case controls::AwbCloudy:
+		*wb_mode = GST_PHOTOGRAPHY_WB_MODE_CLOUDY;
+		ret = TRUE;
+		break;
+	case controls::AwbTungsten:
+		*wb_mode = GST_PHOTOGRAPHY_WB_MODE_TUNGSTEN;
+		ret = TRUE;
+		break;
+	case controls::AwbFluorescent:
+		*wb_mode = GST_PHOTOGRAPHY_WB_MODE_FLUORESCENT;
+		ret = TRUE;
+		break;
+	case controls::AwbIncandescent:
+		*wb_mode = GST_PHOTOGRAPHY_WB_MODE_WARM_FLUORESCENT;
+		ret = TRUE;
+		break;
+	case controls::AwbIndoor:
+		*wb_mode = GST_PHOTOGRAPHY_WB_MODE_SHADE;
+		ret = TRUE;
+		break;
+	default:
+		break; /* Ignore unhandled modes */
+	}
+
+	return ret;
+}
+
+static gboolean
+gst_libcamera_src_set_ev_compensation(GstPhotography *p, gfloat ev_comp)
+{
+	GstLibcameraSrc *self = GST_LIBCAMERA_SRC(p);
+	GstLibcameraSrcState *state = self->state;
+	GLibLocker locker(&state->lock_);
+
+	if (state->cam_ != NULL) {
+		/* If the camera is opened, check whether we can actually set the control */
+		const ControlInfoMap &infoMap = state->cam_->controls();
+		if (infoMap.find(&controls::ExposureValue) == infoMap.end())
+			return FALSE;
+	}
+
+	if (state->exposure_value != ev_comp) {
+		GST_LOG_OBJECT(self, "Setting exposure value %f", ev_comp);
+		state->exposure_value = ev_comp;
+		state->pendingControls_.set(controls::ExposureValue,
+					    state->exposure_value);
+	}
+
+	return TRUE;
+}
+
+static gboolean
+gst_libcamera_src_get_ev_compensation(GstPhotography *p, gfloat *ev_comp)
+{
+	GstLibcameraSrc *self = GST_LIBCAMERA_SRC(p);
+	GstLibcameraSrcState *state = self->state;
+	gboolean ret = FALSE;
+	GLibLocker locker(&state->lock_);
+	if (state->cam_ == NULL)
+		return FALSE;
+
+	const ControlInfoMap &infoMap = state->cam_->controls();
+	if (infoMap.find(&controls::ExposureValue) != infoMap.end()) {
+		*ev_comp = state->exposure_value;
+		ret = TRUE;
+	}
+
+	return ret;
+}
+
+static gboolean
+gst_libcamera_src_set_exposure_mode(GstPhotography *p,
+				    GstPhotographyExposureMode exposure_mode)
+{
+	GstLibcameraSrc *self = GST_LIBCAMERA_SRC(p);
+	GstLibcameraSrcState *state = self->state;
+
+	controls::AeExposureModeEnum ae_mode = controls::ExposureNormal;
+
+	switch (exposure_mode) {
+	case GST_PHOTOGRAPHY_EXPOSURE_MODE_AUTO:
+		ae_mode = controls::ExposureNormal;
+		break;
+	case GST_PHOTOGRAPHY_EXPOSURE_MODE_MANUAL:
+		ae_mode = controls::ExposureCustom;
+		break;
+	default:
+		break; /* Ignore unhandled modes */
+	}
+
+	GLibLocker locker(&state->lock_);
+	if (state->cam_ != NULL) {
+		/* If the camera is opened, check whether we can actually set the control */
+		const ControlInfoMap &infoMap = state->cam_->controls();
+		if (infoMap.find(&controls::AeExposureMode) == infoMap.end())
+			return FALSE;
+	}
+
+	if (state->exposure_mode != ae_mode) {
+		GST_LOG_OBJECT(self, "Setting auto exposure mode %u", ae_mode);
+
+		state->exposure_mode = ae_mode;
+		state->pendingControls_.set(controls::AeExposureMode,
+					    state->exposure_mode);
+	}
+
+	return TRUE;
+}
+
+static gboolean
+gst_libcamera_src_get_exposure_mode(GstPhotography *p,
+				    GstPhotographyExposureMode *exposure_mode)
+{
+	GstLibcameraSrc *self = GST_LIBCAMERA_SRC(p);
+	GstLibcameraSrcState *state = self->state;
+	GLibLocker locker(&state->lock_);
+	gboolean ret = FALSE;
+
+	switch (state->exposure_mode) {
+	case controls::ExposureNormal:
+	case controls::ExposureLong:
+	case controls::ExposureShort:
+		*exposure_mode = GST_PHOTOGRAPHY_EXPOSURE_MODE_AUTO;
+		ret = TRUE;
+		break;
+	case controls::ExposureCustom:
+		*exposure_mode = GST_PHOTOGRAPHY_EXPOSURE_MODE_MANUAL;
+		ret = TRUE;
+		break;
+	}
+
+	return ret;
+}
+
+static gboolean
+gst_libcamera_src_set_analog_gain(GstPhotography *p, gfloat analog_gain)
+{
+	GstLibcameraSrc *self = GST_LIBCAMERA_SRC(p);
+	GstLibcameraSrcState *state = self->state;
+	GLibLocker locker(&state->lock_);
+
+	if (state->cam_ != NULL) {
+		/* If the camera is opened, check whether we can actually set the control */
+		const ControlInfoMap &infoMap = state->cam_->controls();
+		if (infoMap.find(&controls::AnalogueGain) == infoMap.end())
+			return FALSE;
+	}
+
+	if (state->analog_gain != analog_gain) {
+		GST_LOG_OBJECT(self, "Setting analog gain %f", analog_gain);
+		state->analog_gain = analog_gain;
+		state->pendingControls_.set(controls::AnalogueGain, state->analog_gain);
+	}
+
+	return TRUE;
+}
+
+static gboolean
+gst_libcamera_src_get_analog_gain(GstPhotography *p, gfloat *analog_gain)
+{
+	GstLibcameraSrc *self = GST_LIBCAMERA_SRC(p);
+	GstLibcameraSrcState *state = self->state;
+	gboolean ret = FALSE;
+	GLibLocker locker(&state->lock_);
+	if (state->cam_ == NULL)
+		return FALSE;
+
+	const ControlInfoMap &infoMap = state->cam_->controls();
+	if (infoMap.find(&controls::AnalogueGain) != infoMap.end()) {
+		*analog_gain = state->analog_gain;
+		ret = TRUE;
+	}
+
+	return ret;
+}
+
+static void
+gst_libcamera_src_photography_init(gpointer g_iface)
+{
+	GstPhotographyInterface *iface = (GstPhotographyInterface *)g_iface;
+
+	iface->get_capabilities = gst_libcamera_src_get_capabilities;
+	iface->set_autofocus = gst_libcamera_src_set_autofocus;
+	iface->get_focus_mode = gst_libcamera_src_get_focus_mode;
+	iface->set_focus_mode = gst_libcamera_src_set_focus_mode;
+
+	iface->set_exposure = gst_libcamera_src_set_exposure;
+	iface->get_exposure = gst_libcamera_src_get_exposure;
+
+	iface->set_white_balance_mode = gst_libcamera_src_set_white_balance_mode;
+	iface->get_white_balance_mode = gst_libcamera_src_get_white_balance_mode;
+
+	iface->set_ev_compensation = gst_libcamera_src_set_ev_compensation;
+	iface->get_ev_compensation = gst_libcamera_src_get_ev_compensation;
+
+	iface->set_exposure_mode = gst_libcamera_src_set_exposure_mode;
+	iface->get_exposure_mode = gst_libcamera_src_get_exposure_mode;
+
+	iface->set_analog_gain = gst_libcamera_src_set_analog_gain;
+	iface->get_analog_gain = gst_libcamera_src_get_analog_gain;
 }
 
 /* GstChildProxy implementation */

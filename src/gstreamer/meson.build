@@ -7,8 +7,9 @@ gstvideo_dep = dependency('gstreamer-video-1.0', version : gst_dep_version,
                           required : get_option('gstreamer'))
 gstallocator_dep = dependency('gstreamer-allocators-1.0', version : gst_dep_version,
                               required : get_option('gstreamer'))
-
-if not glib_dep.found() or not gstvideo_dep.found() or not gstallocator_dep.found()
+gstphotography_dep = dependency('gstreamer-photography-1.0', version : gst_dep_version,
+                              required : get_option('gstreamer'))
+if not glib_dep.found() or not gstvideo_dep.found() or not gstallocator_dep.found() or not gstphotography_dep.found()
     gst_enabled = false
     subdir_done()
 endif
@@ -42,7 +43,7 @@ endif
 libcamera_gst = shared_library('gstlibcamera',
     libcamera_gst_sources,
     cpp_args : libcamera_gst_cpp_args,
-    dependencies : [libcamera_public, gstvideo_dep, gstallocator_dep],
+    dependencies : [libcamera_public, gstvideo_dep, gstallocator_dep, gstphotography_dep],
     install : true,
     install_dir : '@0@/gstreamer-1.0'.format(get_option('libdir')),
 )

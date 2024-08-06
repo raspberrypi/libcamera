@@ -134,7 +134,6 @@ public:
 	/* For handling digital zoom. */
 	IPACameraSensorInfo sensorInfo_;
 	Rectangle ispCrop_; /* crop in ISP (camera mode) pixels */
-	Rectangle scalerCrop_; /* crop in sensor native pixels */
 	Size ispMinCropSize_;
 
 	unsigned int dropFrameCount_;

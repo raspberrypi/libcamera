@@ -561,10 +561,12 @@ int PipelineHandlerBase::configure(Camera *camera, CameraConfiguration *config)
 	for (auto const &c : result.controlInfo)
 		ctrlMap.emplace(c.first, c.second);
 
-	/* Add the ScalerCrop control limits based on the current mode. */
-	Rectangle ispMinCrop = data->scaleIspCrop(Rectangle(data->ispMinCropSize_));
-	ctrlMap[&controls::ScalerCrop] = ControlInfo(ispMinCrop, data->sensorInfo_.analogCrop,
-						     data->scaleIspCrop(data->ispCrop_));
+	if (data->cropParams_.count(0)) {
+		/* Add the ScalerCrop control limits based on the current mode. */
+		Rectangle ispMinCrop = data->scaleIspCrop(Rectangle(data->cropParams_[0].ispMinCropSize));
+		ctrlMap[&controls::ScalerCrop] = ControlInfo(ispMinCrop, data->sensorInfo_.analogCrop,
+							     data->scaleIspCrop(data->cropParams_[0].ispCrop));
+	}
 
 	data->controlInfo_ = ControlInfoMap(std::move(ctrlMap), result.controlInfo.idmap());
 
@@ -1291,7 +1293,8 @@ Rectangle CameraData::scaleIspCrop(const Rectangle &ispCrop) const
 void CameraData::applyScalerCrop(const ControlList &controls)
 {
 	const auto &scalerCrop = controls.get<Rectangle>(controls::ScalerCrop);
-	if (scalerCrop) {
+	if (scalerCrop && cropParams_.count(0)) {
+		CropParams &cropParams = cropParams_[0];
 		Rectangle nativeCrop = *scalerCrop;
 
 		if (!nativeCrop.width || !nativeCrop.height)
@@ -1308,12 +1311,12 @@ void CameraData::applyScalerCrop(const ControlList &controls)
 		 * 2. With the same mid-point, if possible.
 		 * 3. But it can't go outside the sensor area.
 		 */
-		Size minSize = ispMinCropSize_.expandedToAspectRatio(nativeCrop.size());
+		Size minSize = cropParams.ispMinCropSize.expandedToAspectRatio(nativeCrop.size());
 		Size size = ispCrop.size().expandedTo(minSize);
 		ispCrop = size.centeredTo(ispCrop.center()).enclosedIn(Rectangle(sensorInfo_.outputSize));
 
-		if (ispCrop != ispCrop_) {
-			ispCrop_ = ispCrop;
+		if (ispCrop != cropParams.ispCrop) {
+			cropParams.ispCrop = ispCrop;
 			platformSetIspCrop(ispCrop);
 		}
 	}
@@ -1471,7 +1474,9 @@ void CameraData::fillRequestMetadata(const ControlList &bufferControls, Request 
 	request->metadata().set(controls::SensorTimestamp,
 				bufferControls.get(controls::SensorTimestamp).value_or(0));
 
-	request->metadata().set(controls::ScalerCrop, scaleIspCrop(ispCrop_));
+	if (cropParams_.count(0))
+		request->metadata().set(controls::ScalerCrop,
+					scaleIspCrop(cropParams_[0].ispCrop));
 }
 
 } /* namespace libcamera */

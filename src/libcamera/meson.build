@@ -151,7 +151,8 @@ foreach mode, inout_files : controls_mode_files
                                      output : output_file,
                                      command : [gen_controls, '-o', '@OUTPUT@',
                                                 '--mode', mode, '-t', template_file,
-                                                '-r', ranges_file, '@INPUT@'])
+                                                '-r', ranges_file, '@INPUT@'],
+                                     env : py_build_env)
 endforeach
 
 libcamera_public_sources += control_sources

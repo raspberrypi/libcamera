@@ -47,7 +47,9 @@ controls_map = {
 
 control_headers = []
 controls_files = []
+controls_files_names = []
 properties_files = []
+properties_files_names = []
 
 foreach mode, entry : controls_map
     files_list = []
@@ -70,10 +72,12 @@ foreach mode, entry : controls_map
     outfile = ''
     if mode == 'controls'
         outfile = 'control_ids.h'
-        controls_files += files_list
+        controls_files += input_files
+        controls_files_names += files_list
     else
         outfile = 'property_ids.h'
-        properties_files += files_list
+        properties_files += input_files
+        properties_files_names += files_list
     endif
 
     template_file = files(outfile + '.in')

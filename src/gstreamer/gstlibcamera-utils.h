@@ -8,8 +8,10 @@
 
 #pragma once
 
+#include <libcamera/camera.h>
 #include <libcamera/camera_manager.h>
 #include <libcamera/controls.h>
+#include <libcamera/formats.h>
 #include <libcamera/stream.h>
 
 #include <gst/gst.h>
@@ -24,6 +26,9 @@ void gst_libcamera_clamp_and_set_frameduration(libcamera::ControlList &controls,
 					       const libcamera::ControlInfoMap &camera_controls,
 					       GstStructure *element_caps);
 void gst_libcamera_framerate_to_caps(GstCaps *caps, const GstStructure *element_caps);
+unsigned int
+pixel_format_to_depth(const libcamera::PixelFormat &format);
+void gst_libcamera_find_best_format_with_framerate(GstCaps *element_caps, GstCaps *sensor_modes, libcamera::CameraConfiguration &cam_cfg);
 
 #if !GST_CHECK_VERSION(1, 16, 0)
 static inline void gst_clear_event(GstEvent **event_ptr)

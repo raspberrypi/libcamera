@@ -20,6 +20,9 @@ G_DECLARE_FINAL_TYPE(GstLibcameraSrc, gst_libcamera_src,
 
 G_END_DECLS
 
+GstCaps *
+gst_libcamera_src_enumerate_sensor_modes(GstLibcameraSrc *self);
+
 inline GType
 gst_libcamera_auto_focus_get_type()
 {

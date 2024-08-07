@@ -28,21 +28,22 @@
 #include "gstlibcamerasrc.h"
 
 #include <atomic>
-#include <queue>
 #include <vector>
 
 #include <libcamera/camera.h>
 #include <libcamera/camera_manager.h>
 #include <libcamera/control_ids.h>
+#include <libcamera/formats.h>
 
 #include <gst/base/base.h>
+#include <queue>
 #define GST_USE_UNSTABLE_API
 #include <gst/interfaces/photography.h>
 
+#include "gstlibcamera-utils.h"
 #include "gstlibcameraallocator.h"
 #include "gstlibcamerapad.h"
 #include "gstlibcamerapool.h"
-#include "gstlibcamera-utils.h"
 
 using namespace libcamera;
 
@@ -111,6 +112,9 @@ struct GstLibcameraSrcState {
 	std::shared_ptr<CameraManager> cm_;
 	std::shared_ptr<Camera> cam_;
 	std::unique_ptr<CameraConfiguration> config_;
+
+	GstCaps *sensor_modes_;
+	std::optional<libcamera::SensorConfiguration> override_sensor_configuration_;
 
 	std::vector<GstPad *> srcpads_; /* Protected by stream_lock */
 
@@ -192,6 +196,7 @@ enum {
 	PROP_EXPOSURE_TIME,
 	PROP_COLOR_TEMPERATURE,
 	PROP_ANALOG_GAIN,
+	PROP_OVERRIDE_SENSOR_MODE,
 };
 
 static void gst_libcamera_src_child_proxy_init(gpointer g_iface,
@@ -420,6 +425,7 @@ gst_libcamera_src_open(GstLibcameraSrc *self)
 {
 	std::shared_ptr<CameraManager> cm;
 	std::shared_ptr<Camera> cam;
+
 	gint ret;
 
 	GST_DEBUG_OBJECT(self, "Opening camera device ...");
@@ -475,6 +481,7 @@ gst_libcamera_src_open(GstLibcameraSrc *self)
 
 	self->state->cm_ = cm;
 	self->state->cam_ = cam;
+	self->state->sensor_modes_ = gst_libcamera_src_enumerate_sensor_modes(self);
 
 	/* Update GstPhotography caps */
 	{
@@ -513,7 +520,19 @@ gst_libcamera_src_negotiate(GstLibcameraSrc *self)
 		/* Fixate caps and configure the stream. */
 		caps = gst_caps_make_writable(caps);
 		gst_libcamera_configure_stream_from_caps(stream_cfg, caps);
+		// fixme: later caps from pads will override the framerate from earlier caps
 		gst_libcamera_get_framerate_from_caps(caps, element_caps);
+	}
+
+	// Override the sensorconfiguration
+	if (state->override_sensor_configuration_) {
+		GST_DEBUG_OBJECT(self, "Overriding sensor mode/configuration based on set property");
+		state->config_->sensorConfig = state->override_sensor_configuration_;
+	} else {
+		// Libcamera selects the actual sensor mode based on the stream size (width, height) and the bitdepth. It ignores the framerate.
+		// We run a modificated version of the sensor mode selection which does consider framerate.
+		// We then set the optional sensorConfig in the CameraConfiguration based on the selected sensor mode
+		// gst_libcamera_find_best_format_with_framerate(element_caps, state->sensor_modes_, state->config_);
 	}
 
 	/* Validate the configuration. */
@@ -708,7 +727,7 @@ gst_libcamera_src_task_enter(GstTask *task, [[maybe_unused]] GThread *thread,
 		roles.push_back(gst_libcamera_pad_get_role(srcpad));
 	}
 
-	/* Generate the stream configurations, there should be one per pad. */
+	/* Generate the default stream configurations, there should be one per pad. */
 	state->config_ = state->cam_->generateConfiguration(roles);
 	if (state->config_ == nullptr) {
 		GST_ELEMENT_ERROR(self, RESOURCE, SETTINGS,
@@ -739,8 +758,6 @@ gst_libcamera_src_task_enter(GstTask *task, [[maybe_unused]] GThread *thread,
 		/* Merge any pending controls into the initial control set */
 		state->initControls_.merge(state->pendingControls_);
 	}
-
-
 
 	if (state->auto_focus_mode != controls::AfModeManual) {
 		const ControlInfoMap &infoMap = state->cam_->controls();
@@ -873,7 +890,31 @@ gst_libcamera_src_set_property(GObject *object, guint prop_id,
 	case PROP_MAX_EXPOSURE_TIME:
 	case PROP_LENS_FOCUS:
 	case PROP_COLOR_TEMPERATURE:
+	case PROP_OVERRIDE_SENSOR_MODE: {
+		const gchar *prop_string = g_value_get_string(value);
+		if (prop_string) {
+			auto prop_array = g_strsplit(prop_string, ":", 4);
+
+			if (g_strv_length(prop_array) >= 3) {
+				guint width, height, bit_depth;
+
+				width = static_cast<guint>(g_ascii_strtoull(prop_array[0], nullptr, 10));
+				height = static_cast<guint>(g_ascii_strtoull(prop_array[1], nullptr, 10));
+				bit_depth = static_cast<guint>(g_ascii_strtoull(prop_array[2], nullptr, 10));
+
+				libcamera::SensorConfiguration sensorconfig = libcamera::SensorConfiguration();
+				sensorconfig.outputSize = { width, height };
+				sensorconfig.bitDepth = bit_depth;
+				self->state->override_sensor_configuration_ = sensorconfig;
+
+				GST_DEBUG_OBJECT(self, "Setting %s to %d:%d:%d", pspec->name, width, height, bit_depth);
+			} else {
+				GST_ERROR_OBJECT(self, "Invalid format for property %s, should begin with: 'width:height:bit_depth', got %s", pspec->name, prop_string);
+			}
+			g_strfreev(prop_array);
+		}
 		break;
+	}
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
 		break;
@@ -957,7 +998,15 @@ gst_libcamera_src_get_property(GObject *object, guint prop_id, GValue *value,
 	case PROP_MAX_EXPOSURE_TIME:
 	case PROP_LENS_FOCUS:
 	case PROP_COLOR_TEMPERATURE:
-		break;
+	case PROP_OVERRIDE_SENSOR_MODE: {
+		if (self->state->override_sensor_configuration_) {
+			// Construct the width:height:bitdepth string
+			gchar *prop_string = g_strdup_printf("%d:%d:%d", self->state->override_sensor_configuration_->outputSize.width, self->state->override_sensor_configuration_->outputSize.height, self->state->override_sensor_configuration_->bitDepth);
+			g_value_set_string(value, prop_string);
+		} else {
+			g_value_set_string(value, "false");
+		}
+	} break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
 		break;
@@ -1234,6 +1283,73 @@ gst_libcamera_src_class_init(GstLibcameraSrcClass *klass)
 
 	g_object_class_override_property(object_class, PROP_ANALOG_GAIN,
 					 GST_PHOTOGRAPHY_PROP_ANALOG_GAIN);
+
+	spec = g_param_spec_string("override-sensormode", "Override sensor mode",
+				   "You can override the sensor mode using the former mmal '-mode' syntax: 'width:height:bitDepth. Defaults to no override", NULL,
+				   (GParamFlags)(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property(object_class, PROP_OVERRIDE_SENSOR_MODE, spec);
+}
+
+// We're going to make a list of all the available sensor modes.
+GstCaps *
+gst_libcamera_src_enumerate_sensor_modes(GstLibcameraSrc *self)
+{
+	GST_DEBUG_OBJECT(self, "Enumerating sensor modes");
+
+	GstCaps *modes = gst_caps_new_empty();
+	std::unique_ptr<CameraConfiguration> config = self->state->cam_->generateConfiguration({ libcamera::StreamRole::Raw });
+	if (config == nullptr) {
+		GST_ERROR_OBJECT(self, "Failed to generate config for camera, could not enumerate stream modes");
+		return modes;
+	}
+	const libcamera::StreamFormats &formats = config->at(0).formats();
+
+	for (const auto &pix : formats.pixelformats()) {
+		for (const auto &size : formats.sizes(pix)) {
+			config->at(0).size = size;
+			config->at(0).pixelFormat = pix;
+			config->sensorConfig = libcamera::SensorConfiguration();
+			config->sensorConfig->outputSize = size;
+			config->sensorConfig->bitDepth = pixel_format_to_depth(pix);
+			if (config->validate() == CameraConfiguration::Invalid) {
+				GST_WARNING_OBJECT(self, "Skipping unsupported sensor mode %dx%d@%s, found bitDepth %d",
+						   size.width, size.height, pix.toString().c_str(), config->sensorConfig->bitDepth);
+				continue;
+			}
+
+			GST_DEBUG_OBJECT(self, "Configuring camera with a validated config to get FrameDurationLimits");
+			self->state->cam_->configure(config.get());
+
+			auto fd_ctrl = self->state->cam_->controls().find(&controls::FrameDurationLimits);
+			// todo: Consider checking if we got a FrameDurationLimits
+
+			double min_framerate = gst_util_guint64_to_gdouble(1.0e6) /
+					       gst_util_guint64_to_gdouble(fd_ctrl->second.max().get<int64_t>());
+			double max_framerate = gst_util_guint64_to_gdouble(1.0e6) /
+					       gst_util_guint64_to_gdouble(fd_ctrl->second.min().get<int64_t>());
+
+			int minrate_num, minrate_denom;
+			int maxrate_num, maxrate_denom;
+			gst_util_double_to_fraction(min_framerate, &minrate_num, &minrate_denom);
+			gst_util_double_to_fraction(max_framerate, &maxrate_num, &maxrate_denom);
+
+			// todo: Consider changing the format to gst formats
+			GstStructure *s = gst_structure_new("sensor/mode",
+							    "format", G_TYPE_STRING, pix.toString().c_str(),
+							    "width", G_TYPE_INT, size.width,
+							    "height", G_TYPE_INT, size.height,
+							    "framerate", GST_TYPE_FRACTION_RANGE,
+							    minrate_num, minrate_denom,
+							    maxrate_num, maxrate_denom,
+							    nullptr);
+			GST_INFO_OBJECT(self, "Found Sensor mode: %" GST_PTR_FORMAT, s);
+			GST_INFO_OBJECT(self, "Select this mode using the mmal -mode style string: %d:%d:%d with the 'override-sensormode' property", size.width, size.height, config->sensorConfig->bitDepth);
+			self->state->cam_->configure(config.get());
+			gst_caps_append_structure(modes, s);
+		}
+	}
+	GST_INFO_OBJECT(self, "Camera sensor modes: %" GST_PTR_FORMAT, modes);
+	return modes;
 }
 
 static GstPhotographyCaps

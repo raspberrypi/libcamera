@@ -9,77 +9,89 @@
 #include "gstlibcamera-utils.h"
 
 #include <libcamera/control_ids.h>
-#include <libcamera/formats.h>
 
 using namespace libcamera;
 
 static struct {
 	GstVideoFormat gst_format;
 	PixelFormat format;
+	unsigned int depth;
 } format_map[] = {
 	/* Compressed */
-	{ GST_VIDEO_FORMAT_ENCODED, formats::MJPEG },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::MJPEG, 0 },
 
 	/* Bayer formats, gstreamer only supports 8-bit */
-	{ GST_VIDEO_FORMAT_ENCODED, formats::SBGGR8 },
-	{ GST_VIDEO_FORMAT_ENCODED, formats::SGBRG8 },
-	{ GST_VIDEO_FORMAT_ENCODED, formats::SGRBG8 },
-	{ GST_VIDEO_FORMAT_ENCODED, formats::SRGGB8 },
-	{ GST_VIDEO_FORMAT_ENCODED, formats::SBGGR10 },
-	{ GST_VIDEO_FORMAT_ENCODED, formats::SGBRG10 },
-	{ GST_VIDEO_FORMAT_ENCODED, formats::SGRBG10 },
-	{ GST_VIDEO_FORMAT_ENCODED, formats::SRGGB10 },
-	{ GST_VIDEO_FORMAT_ENCODED, formats::SBGGR12 },
-	{ GST_VIDEO_FORMAT_ENCODED, formats::SGBRG12 },
-	{ GST_VIDEO_FORMAT_ENCODED, formats::SGRBG12 },
-	{ GST_VIDEO_FORMAT_ENCODED, formats::SRGGB12 },
-	{ GST_VIDEO_FORMAT_ENCODED, formats::SBGGR14 },
-	{ GST_VIDEO_FORMAT_ENCODED, formats::SGBRG14 },
-	{ GST_VIDEO_FORMAT_ENCODED, formats::SGRBG14 },
-	{ GST_VIDEO_FORMAT_ENCODED, formats::SRGGB14 },
-	{ GST_VIDEO_FORMAT_ENCODED, formats::SBGGR16 },
-	{ GST_VIDEO_FORMAT_ENCODED, formats::SGBRG16 },
-	{ GST_VIDEO_FORMAT_ENCODED, formats::SGRBG16 },
-	{ GST_VIDEO_FORMAT_ENCODED, formats::SRGGB16 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SBGGR8, 8 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SGBRG8, 8 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SGRBG8, 8 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SRGGB8, 8 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SBGGR10, 10 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SGBRG10, 10 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SGRBG10, 10 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SRGGB10, 10 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SBGGR12, 12 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SGBRG12, 12 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SGRBG12, 12 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SRGGB12, 12 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SBGGR14, 14 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SGBRG14, 14 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SGRBG14, 14 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SRGGB14, 14 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SBGGR16, 16 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SGBRG16, 16 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SGRBG16, 16 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SRGGB16, 16 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SBGGR10_CSI2P, 10 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SGBRG10_CSI2P, 10 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SGRBG10_CSI2P, 10 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SRGGB10_CSI2P, 10 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SBGGR12_CSI2P, 12 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SGBRG12_CSI2P, 12 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SGRBG12_CSI2P, 12 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SRGGB12_CSI2P, 12 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SBGGR14_CSI2P, 14 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SGBRG14_CSI2P, 14 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SGRBG14_CSI2P, 14 },
+	{ GST_VIDEO_FORMAT_ENCODED, formats::SRGGB14_CSI2P, 14 },
 
 	/* Monochrome */
-	{ GST_VIDEO_FORMAT_GRAY8, formats::R8 },
-	{ GST_VIDEO_FORMAT_GRAY16_LE, formats::R16 },
+	{ GST_VIDEO_FORMAT_GRAY8, formats::R8, 8 },
+	{ GST_VIDEO_FORMAT_GRAY16_LE, formats::R16, 16 },
 
 	/* RGB16 */
-	{ GST_VIDEO_FORMAT_RGB16, formats::RGB565 },
+	{ GST_VIDEO_FORMAT_RGB16, formats::RGB565, 16 },
 
 	/* RGB24 */
-	{ GST_VIDEO_FORMAT_RGB, formats::BGR888 },
-	{ GST_VIDEO_FORMAT_BGR, formats::RGB888 },
+	{ GST_VIDEO_FORMAT_RGB, formats::BGR888, 8 },
+	{ GST_VIDEO_FORMAT_BGR, formats::RGB888, 8 },
 
 	/* RGB32 */
-	{ GST_VIDEO_FORMAT_BGRx, formats::XRGB8888 },
-	{ GST_VIDEO_FORMAT_RGBx, formats::XBGR8888 },
-	{ GST_VIDEO_FORMAT_xBGR, formats::RGBX8888 },
-	{ GST_VIDEO_FORMAT_xRGB, formats::BGRX8888 },
-	{ GST_VIDEO_FORMAT_BGRA, formats::ARGB8888 },
-	{ GST_VIDEO_FORMAT_RGBA, formats::ABGR8888 },
-	{ GST_VIDEO_FORMAT_ABGR, formats::RGBA8888 },
-	{ GST_VIDEO_FORMAT_ARGB, formats::BGRA8888 },
+	{ GST_VIDEO_FORMAT_BGRx, formats::XRGB8888, 8 },
+	{ GST_VIDEO_FORMAT_RGBx, formats::XBGR8888, 8 },
+	{ GST_VIDEO_FORMAT_xBGR, formats::RGBX8888, 8 },
+	{ GST_VIDEO_FORMAT_xRGB, formats::BGRX8888, 8 },
+	{ GST_VIDEO_FORMAT_BGRA, formats::ARGB8888, 8 },
+	{ GST_VIDEO_FORMAT_RGBA, formats::ABGR8888, 8 },
+	{ GST_VIDEO_FORMAT_ABGR, formats::RGBA8888, 8 },
+	{ GST_VIDEO_FORMAT_ARGB, formats::BGRA8888, 8 },
 
 	/* YUV Semiplanar */
-	{ GST_VIDEO_FORMAT_NV12, formats::NV12 },
-	{ GST_VIDEO_FORMAT_NV21, formats::NV21 },
-	{ GST_VIDEO_FORMAT_NV16, formats::NV16 },
-	{ GST_VIDEO_FORMAT_NV61, formats::NV61 },
-	{ GST_VIDEO_FORMAT_NV24, formats::NV24 },
+	{ GST_VIDEO_FORMAT_NV12, formats::NV12, 8 },
+	{ GST_VIDEO_FORMAT_NV21, formats::NV21, 8 },
+	{ GST_VIDEO_FORMAT_NV16, formats::NV16, 8 },
+	{ GST_VIDEO_FORMAT_NV61, formats::NV61, 8 },
+	{ GST_VIDEO_FORMAT_NV24, formats::NV24, 8 },
 
 	/* YUV Planar */
-	{ GST_VIDEO_FORMAT_I420, formats::YUV420 },
-	{ GST_VIDEO_FORMAT_YV12, formats::YVU420 },
-	{ GST_VIDEO_FORMAT_Y42B, formats::YUV422 },
+	{ GST_VIDEO_FORMAT_I420, formats::YUV420, 8 },
+	{ GST_VIDEO_FORMAT_YV12, formats::YVU420, 8 },
+	{ GST_VIDEO_FORMAT_Y42B, formats::YUV422, 8 },
 
 	/* YUV Packed */
-	{ GST_VIDEO_FORMAT_UYVY, formats::UYVY },
-	{ GST_VIDEO_FORMAT_VYUY, formats::VYUY },
-	{ GST_VIDEO_FORMAT_YUY2, formats::YUYV },
-	{ GST_VIDEO_FORMAT_YVYU, formats::YVYU },
+	{ GST_VIDEO_FORMAT_UYVY, formats::UYVY, 8 },
+	{ GST_VIDEO_FORMAT_VYUY, formats::VYUY, 8 },
+	{ GST_VIDEO_FORMAT_YUY2, formats::YUYV, 8 },
+	{ GST_VIDEO_FORMAT_YVYU, formats::YVYU, 8 },
 
 	/* \todo NV42 is used in libcamera but is not mapped in GStreamer yet. */
 };
@@ -240,6 +252,29 @@ pixel_format_to_gst_format(const PixelFormat &format)
 			return item.gst_format;
 	}
 	return GST_VIDEO_FORMAT_UNKNOWN;
+}
+
+unsigned int
+pixel_format_to_depth(const PixelFormat &format)
+{
+	for (const auto &item : format_map) {
+		if (item.format == format)
+			return item.depth;
+	}
+	return 0;
+}
+
+unsigned int
+gst_format_to_depth(GstVideoFormat gst_format)
+{
+	if (gst_format == GST_VIDEO_FORMAT_ENCODED)
+		return 0;
+
+	for (const auto &item : format_map) {
+		if (item.gst_format == gst_format)
+			return item.depth;
+	}
+	return 0;
 }
 
 static PixelFormat
@@ -407,9 +442,8 @@ gst_libcamera_stream_configuration_to_caps(const StreamConfiguration &stream_cfg
 	return caps;
 }
 
-void
-gst_libcamera_configure_stream_from_caps(StreamConfiguration &stream_cfg,
-					 GstCaps *caps)
+void gst_libcamera_configure_stream_from_caps(StreamConfiguration &stream_cfg,
+					      GstCaps *caps)
 {
 	GstVideoFormat gst_format = pixel_format_to_gst_format(stream_cfg.pixelFormat);
 	guint i;
@@ -497,6 +531,7 @@ gst_libcamera_configure_stream_from_caps(StreamConfiguration &stream_cfg,
 		stream_cfg.colorSpace = colorspace_from_colorimetry(colorimetry);
 	}
 }
+
 
 void gst_libcamera_get_framerate_from_caps(GstCaps *caps,
 					   GstStructure *element_caps)

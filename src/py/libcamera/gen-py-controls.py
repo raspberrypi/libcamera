@@ -8,6 +8,8 @@ import string
 import sys
 import yaml
 
+from controls import Control
+
 
 def find_common_prefix(strings):
     prefix = strings[0]
@@ -28,9 +30,7 @@ def generate_py(controls, mode):
     vendor_defs = []
     vendors = []
     for vendor, ctrl_list in controls.items():
-        for ctrls in ctrl_list:
-            name, ctrl = ctrls.popitem()
-
+        for ctrl in ctrl_list:
             if vendor not in vendors and vendor != 'libcamera':
                 vendor_mode_str = f'{vendor.capitalize()}{mode.capitalize()}'
                 vendors_class_def.append('class Py{}\n{{\n}};\n'.format(vendor_mode_str))
@@ -44,29 +44,28 @@ def generate_py(controls, mode):
                 ns = 'libcamera::{}::'.format(mode)
                 container = 'controls'
 
-            out += f'\t{container}.def_readonly_static("{name}", static_cast<const libcamera::ControlId *>(&{ns}{name}));\n\n'
+            out += f'\t{container}.def_readonly_static("{ctrl.name}", static_cast<const libcamera::ControlId *>(&{ns}{ctrl.name}));\n\n'
 
-            enum = ctrl.get('enum')
-            if not enum:
+            if not ctrl.is_enum:
                 continue
 
-            cpp_enum = name + 'Enum'
+            cpp_enum = ctrl.name + 'Enum'
 
             out += '\tpy::enum_<{}{}>({}, \"{}\")\n'.format(ns, cpp_enum, container, cpp_enum)
 
             if mode == 'controls':
                 # Adjustments for controls
-                if name == 'LensShadingMapMode':
+                if ctrl.name == 'LensShadingMapMode':
                     prefix = 'LensShadingMapMode'
                 else:
-                    prefix = find_common_prefix([e['name'] for e in enum])
+                    prefix = find_common_prefix([e.name for e in ctrl.enum_values])
             else:
                 # Adjustments for properties
-                prefix = find_common_prefix([e['name'] for e in enum])
+                prefix = find_common_prefix([e.name for e in ctrl.enum_values])
 
-            for entry in enum:
-                cpp_enum = entry['name']
-                py_enum = entry['name'][len(prefix):]
+            for entry in ctrl.enum_values:
+                cpp_enum = entry.name
+                py_enum = entry.name[len(prefix):]
 
                 out += '\t\t.value(\"{}\", {}{})\n'.format(py_enum, ns, cpp_enum)
 
@@ -103,9 +102,10 @@ def main(argv):
 
     controls = {}
     for input in args.input:
-        data = open(input, 'rb').read()
-        vendor = yaml.safe_load(data)['vendor']
-        controls[vendor] = yaml.safe_load(data)['controls']
+        data = yaml.safe_load(open(input, 'rb').read())
+        vendor = data['vendor']
+        ctrls = data['controls']
+        controls[vendor] = [Control(*ctrl.popitem(), vendor) for ctrl in ctrls]
 
     data = generate_py(controls, args.mode)
 

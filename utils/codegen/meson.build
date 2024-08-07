@@ -5,6 +5,7 @@
 py_build_env = environment()
 # \todo Investigate usage of PYTHONPYCACHEPREFIX for Python >= 3.8
 py_build_env.set('PYTHONDONTWRITEBYTECODE', '1')
+py_build_env.prepend('PYTHONPATH', meson.current_source_dir())
 
 py_modules += ['jinja2', 'yaml']
 

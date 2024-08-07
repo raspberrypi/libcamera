@@ -35,7 +35,8 @@ pycamera_sources += custom_target('py_gen_controls',
                                   input : controls_files,
                                   output : ['py_controls_generated.cpp'],
                                   command : [gen_py_controls, '--mode', 'controls', '-o', '@OUTPUT@',
-                                             '-t', gen_py_controls_template, '@INPUT@'])
+                                             '-t', gen_py_controls_template, '@INPUT@'],
+                                  env : py_build_env)
 
 # Generate properties
 
@@ -45,7 +46,8 @@ pycamera_sources += custom_target('py_gen_properties',
                                   input : properties_files,
                                   output : ['py_properties_generated.cpp'],
                                   command : [gen_py_controls, '--mode', 'properties', '-o', '@OUTPUT@',
-                                             '-t', gen_py_properties_template, '@INPUT@'])
+                                             '-t', gen_py_properties_template, '@INPUT@'],
+                                  env : py_build_env)
 
 # Generate formats
 

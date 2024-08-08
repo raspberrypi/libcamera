@@ -83,7 +83,7 @@ public:
 
 	Rectangle scaleIspCrop(const Rectangle &ispCrop) const;
 	void applyScalerCrop(const ControlList &controls);
-	virtual void platformSetIspCrop() = 0;
+	virtual void platformSetIspCrop(const Rectangle &ispCrop) = 0;
 
 	void cameraTimeout();
 	void frameStarted(uint32_t sequence);

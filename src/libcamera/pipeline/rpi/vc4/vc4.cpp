@@ -109,9 +109,10 @@ public:
 	Config config_;
 
 private:
-	void platformSetIspCrop() override
+	void platformSetIspCrop(const Rectangle &ispCrop) override
 	{
-		isp_[Isp::Input].dev()->setSelection(V4L2_SEL_TGT_CROP, &ispCrop_);
+		Rectangle crop = ispCrop;
+		isp_[Isp::Input].dev()->setSelection(V4L2_SEL_TGT_CROP, &crop);
 	}
 
 	int platformConfigure(const RPi::RPiCameraConfiguration *rpiConfig) override;
@@ -707,7 +708,7 @@ int Vc4CameraData::platformConfigure(const RPi::RPiCameraConfiguration *rpiConfi
 	Size size = unicamFormat.size.boundedToAspectRatio(maxSize);
 	ispCrop_ = size.centeredTo(Rectangle(unicamFormat.size).center());
 
-	platformSetIspCrop();
+	platformSetIspCrop(ispCrop_);
 
 	return 0;
 }

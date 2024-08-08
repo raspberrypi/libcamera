@@ -252,7 +252,6 @@ void CameraManager::Private::removeCamera(std::shared_ptr<Camera> camera)
 	CameraManager *const o = LIBCAMERA_O_PTR();
 	o->cameraRemoved.emit(camera);
 }
-#endif /* __DOXYGEN_PUBLIC__ */
 
 /**
  * \fn CameraManager::Private::ipaManager() const
@@ -260,6 +259,7 @@ void CameraManager::Private::removeCamera(std::shared_ptr<Camera> camera)
  * \context This function is \threadsafe.
  * \return The IPAManager for this CameraManager
  */
+#endif /* __DOXYGEN_PUBLIC__ */
 
 /**
  * \class CameraManager

@@ -17,20 +17,10 @@ EXTENSION_MAPPING      = h=C++
 
 TOC_INCLUDE_HEADINGS   = 0
 
-ENABLED_SECTIONS       = internal
-INTERNAL_DOCS          = YES
 CASE_SENSE_NAMES       = YES
 
 QUIET                  = YES
 WARN_AS_ERROR          = @WARN_AS_ERROR@
-
-INPUT                  = "@TOP_SRCDIR@/Documentation" \
-                         "@TOP_SRCDIR@/include/libcamera" \
-                         "@TOP_SRCDIR@/src/ipa/ipu3" \
-                         "@TOP_SRCDIR@/src/ipa/libipa" \
-                         "@TOP_SRCDIR@/src/libcamera" \
-                         "@TOP_BUILDDIR@/include/libcamera" \
-                         "@TOP_BUILDDIR@/src/libcamera"
 
 FILE_PATTERNS          = *.c \
                          *.cpp \
@@ -38,19 +28,6 @@ FILE_PATTERNS          = *.c \
                          *.h
 
 RECURSIVE              = YES
-
-EXCLUDE                = @TOP_SRCDIR@/include/libcamera/base/span.h \
-                         @TOP_SRCDIR@/include/libcamera/internal/device_enumerator_sysfs.h \
-                         @TOP_SRCDIR@/include/libcamera/internal/device_enumerator_udev.h \
-                         @TOP_SRCDIR@/include/libcamera/internal/ipc_pipe_unixsocket.h \
-                         @TOP_SRCDIR@/src/libcamera/device_enumerator_sysfs.cpp \
-                         @TOP_SRCDIR@/src/libcamera/device_enumerator_udev.cpp \
-                         @TOP_SRCDIR@/src/libcamera/ipc_pipe_unixsocket.cpp \
-                         @TOP_SRCDIR@/src/libcamera/pipeline/ \
-                         @TOP_SRCDIR@/src/libcamera/tracepoints.cpp \
-                         @TOP_BUILDDIR@/include/libcamera/internal/tracepoints.h \
-                         @TOP_BUILDDIR@/include/libcamera/ipa/soft_ipa_interface.h \
-                         @TOP_BUILDDIR@/src/libcamera/proxy/
 
 EXCLUDE_PATTERNS       = @TOP_BUILDDIR@/include/libcamera/ipa/*_serializer.h \
                          @TOP_BUILDDIR@/include/libcamera/ipa/*_proxy.h \
@@ -73,8 +50,6 @@ EXCLUDE_SYMBOLS        = libcamera::BoundMethodArgs \
                          std::*
 
 EXCLUDE_SYMLINKS       = YES
-
-HTML_OUTPUT            = api-html
 
 GENERATE_LATEX         = NO
 

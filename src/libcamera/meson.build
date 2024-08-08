@@ -143,9 +143,10 @@ foreach mode, inout_files : controls_mode_files
     input_files = inout_files[0]
     output_file = inout_files[1]
 
-    template_file = files(output_file + '.in')
+    template_file = files('control_ids.cpp.in')
     ranges_file = files('control_ranges.yaml')
-    control_sources += custom_target(mode + '_cpp',
+
+    control_sources += custom_target(mode + '_ids_cpp',
                                      input : input_files,
                                      output : output_file,
                                      command : [gen_controls, '-o', '@OUTPUT@',

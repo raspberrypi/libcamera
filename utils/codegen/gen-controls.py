@@ -7,12 +7,10 @@
 # Generate control definitions from YAML
 
 import argparse
-from functools import reduce
-import operator
-import string
+import jinja2
+import os
 import sys
 import yaml
-import os
 
 
 class ControlEnum(object):
@@ -82,6 +80,13 @@ class Control(object):
             yield enum
 
     @property
+    def enum_values_count(self):
+        """The number of enum values, if the control is an enumeration"""
+        if self.__enum_values is None:
+            return 0
+        return len(self.__enum_values)
+
+    @property
     def is_enum(self):
         """Is the control an enumeration"""
         return self.__enum_values is not None
@@ -119,221 +124,21 @@ def snake_case(s):
 
 def format_description(description):
     description = description.strip('\n').split('\n')
-    description[0] = '\\brief ' + description[0]
-    return '\n'.join([(line and ' * ' or ' *') + line for line in description])
+    for i in range(1, len(description)):
+        line = description[i]
+        description[i] = (line and ' * ' or ' *') + line
+    return '\n'.join(description)
 
 
-def generate_cpp(controls):
-    enum_doc_start_template = string.Template('''/**
- * \\enum ${name}Enum
- * \\brief Supported ${name} values''')
-    enum_doc_value_template = string.Template(''' * \\var ${value}
-${description}''')
-    doc_template = string.Template('''/**
- * \\var ${name}
-${description}
- */''')
-    def_template = string.Template('extern const Control<${type}> ${name}(${id_name}, "${name}");')
-    enum_values_doc = string.Template('''/**
- * \\var ${name}Values
- * \\brief List of all $name supported values
- */''')
-    enum_values_start = string.Template('''extern const std::array<const ControlValue, ${size}> ${name}Values = {''')
-    enum_values_values = string.Template('''\tstatic_cast<int32_t>(${name}),''')
-    name_value_map_doc = string.Template('''/**
- * \\var ${name}NameValueMap
- * \\brief Map of all $name supported value names (in std::string format) to value
- */''')
-    name_value_map_start = string.Template('''extern const std::map<std::string, ${type}> ${name}NameValueMap = {''')
-    name_value_values = string.Template('''\t{ "${name}", ${name} },''')
+def extend_control(ctrl, id, ranges):
+    ctrl.id = ranges[ctrl.vendor] + id + 1
 
-    ctrls_doc = {}
-    ctrls_def = {}
-    ctrls_map = []
+    if ctrl.vendor != 'libcamera':
+        ctrl.namespace = f'{ctrl.vendor}::'
+    else:
+        ctrl.namespace = ''
 
-    for ctrl in controls:
-        id_name = snake_case(ctrl.name).upper()
-
-        vendor = ctrl.vendor
-        if vendor not in ctrls_doc:
-            ctrls_doc[vendor] = []
-            ctrls_def[vendor] = []
-
-        info = {
-            'name': ctrl.name,
-            'type': ctrl.type,
-            'description': format_description(ctrl.description),
-            'id_name': id_name,
-        }
-
-        target_doc = ctrls_doc[vendor]
-        target_def = ctrls_def[vendor]
-
-        if ctrl.is_enum:
-            enum_doc = []
-            enum_doc.append(enum_doc_start_template.substitute(info))
-
-            num_entries = 0
-            for enum in ctrl.enum_values:
-                value_info = {
-                    'name': ctrl.name,
-                    'value': enum.name,
-                    'description': format_description(enum.description),
-                }
-                enum_doc.append(enum_doc_value_template.substitute(value_info))
-                num_entries += 1
-
-            enum_doc = '\n *\n'.join(enum_doc)
-            enum_doc += '\n */'
-            target_doc.append(enum_doc)
-
-            values_info = {
-                'name': info['name'],
-                'type': ctrl.type,
-                'size': num_entries,
-            }
-            target_doc.append(enum_values_doc.substitute(values_info))
-            target_def.append(enum_values_start.substitute(values_info))
-            for enum in ctrl.enum_values:
-                value_info = {
-                    'name': enum.name
-                }
-                target_def.append(enum_values_values.substitute(value_info))
-            target_def.append("};")
-
-            target_doc.append(name_value_map_doc.substitute(values_info))
-            target_def.append(name_value_map_start.substitute(values_info))
-            for enum in ctrl.enum_values:
-                value_info = {
-                    'name': enum.name
-                }
-                target_def.append(name_value_values.substitute(value_info))
-            target_def.append("};")
-
-        target_doc.append(doc_template.substitute(info))
-        target_def.append(def_template.substitute(info))
-
-        vendor_ns = vendor + '::' if vendor != "libcamera" else ''
-        ctrls_map.append('\t{ ' + vendor_ns + id_name + ', &' + vendor_ns + ctrl.name + ' },')
-
-    vendor_ctrl_doc_sub = []
-    vendor_ctrl_template = string.Template('''
-/**
- * \\brief Namespace for ${vendor} controls
- */
-namespace ${vendor} {
-
-${vendor_controls_str}
-
-} /* namespace ${vendor} */''')
-
-    for vendor in [v for v in ctrls_doc.keys() if v not in ['libcamera']]:
-        vendor_ctrl_doc_sub.append(vendor_ctrl_template.substitute({'vendor': vendor, 'vendor_controls_str': '\n\n'.join(ctrls_doc[vendor])}))
-
-    vendor_ctrl_def_sub = []
-    for vendor in [v for v in ctrls_def.keys() if v not in ['libcamera']]:
-        vendor_ctrl_def_sub.append(vendor_ctrl_template.substitute({'vendor': vendor, 'vendor_controls_str': '\n'.join(ctrls_def[vendor])}))
-
-    return {
-        'controls_doc': '\n\n'.join(ctrls_doc['libcamera']),
-        'controls_def': '\n'.join(ctrls_def['libcamera']),
-        'controls_map': '\n'.join(ctrls_map),
-        'vendor_controls_doc': '\n'.join(vendor_ctrl_doc_sub),
-        'vendor_controls_def': '\n'.join(vendor_ctrl_def_sub),
-    }
-
-
-def generate_h(controls, mode, ranges):
-    enum_template_start = string.Template('''enum ${name}Enum {''')
-    enum_value_template = string.Template('''\t${name} = ${value},''')
-    enum_values_template = string.Template('''extern const std::array<const ControlValue, ${size}> ${name}Values;''')
-    name_value_map_template = string.Template('''extern const std::map<std::string, ${type}> ${name}NameValueMap;''')
-    template = string.Template('''extern const Control<${type}> ${name};''')
-
-    ctrls = {}
-    ids = {}
-    id_value = {}
-
-    for ctrl in controls:
-        id_name = snake_case(ctrl.name).upper()
-
-        vendor = ctrl.vendor
-        if vendor not in ctrls:
-            if vendor not in ranges.keys():
-                raise RuntimeError(f'Control id range is not defined for vendor {vendor}')
-            id_value[vendor] = ranges[vendor] + 1
-            ids[vendor] = []
-            ctrls[vendor] = []
-
-        target_ids = ids[vendor]
-        target_ids.append('\t' + id_name + ' = ' + str(id_value[vendor]) + ',')
-
-        info = {
-            'name': ctrl.name,
-            'type': ctrl.type,
-        }
-
-        target_ctrls = ctrls[vendor]
-
-        if ctrl.is_enum:
-            target_ctrls.append(enum_template_start.substitute(info))
-
-            num_entries = 0
-            for enum in ctrl.enum_values:
-                value_info = {
-                    'name': enum.name,
-                    'value': enum.value,
-                }
-                target_ctrls.append(enum_value_template.substitute(value_info))
-                num_entries += 1
-            target_ctrls.append("};")
-
-            values_info = {
-                'name': info['name'],
-                'type': ctrl.type,
-                'size': num_entries,
-            }
-            target_ctrls.append(enum_values_template.substitute(values_info))
-            target_ctrls.append(name_value_map_template.substitute(values_info))
-
-        target_ctrls.append(template.substitute(info))
-        id_value[vendor] += 1
-
-    vendor_template = string.Template('''
-namespace ${vendor} {
-
-#define LIBCAMERA_HAS_${vendor_def}_VENDOR_${mode}
-
-enum {
-${vendor_enums}
-};
-
-${vendor_controls}
-
-} /* namespace ${vendor} */
-''')
-
-    vendor_sub = []
-    for vendor in [v for v in ctrls.keys() if v != 'libcamera']:
-        vendor_sub.append(vendor_template.substitute({'mode': mode.upper(),
-                                                      'vendor': vendor,
-                                                      'vendor_def': vendor.upper(),
-                                                      'vendor_enums': '\n'.join(ids[vendor]),
-                                                      'vendor_controls': '\n'.join(ctrls[vendor])}))
-
-    return {
-        'ids': '\n'.join(ids['libcamera']),
-        'controls': '\n'.join(ctrls['libcamera']),
-        'vendor_controls': '\n'.join(vendor_sub)
-    }
-
-
-def fill_template(template, data):
-
-    template = open(template, 'rb').read()
-    template = template.decode('utf-8')
-    template = string.Template(template)
-    return template.substitute(data)
+    return ctrl
 
 
 def main(argv):
@@ -358,29 +163,47 @@ def main(argv):
         data = open(args.ranges, 'rb').read()
         ranges = yaml.safe_load(data)['ranges']
 
-    controls = []
+    controls = {}
     for input in args.input:
-        with open(input, 'rb') as f:
-            data = f.read()
-            vendor = yaml.safe_load(data)['vendor']
-            ctrls = yaml.safe_load(data)['controls']
-            controls = controls + [Control(*ctrl.popitem(), vendor) for ctrl in ctrls]
+        data = yaml.safe_load(open(input, 'rb').read())
 
-    if args.template.endswith('.cpp.in'):
-        data = generate_cpp(controls)
-    elif args.template.endswith('.h.in'):
-        data = generate_h(controls, args.mode, ranges)
-    else:
-        raise RuntimeError('Unknown template type')
+        vendor = data['vendor']
+        if vendor not in ranges.keys():
+            raise RuntimeError(f'Control id range is not defined for vendor {vendor}')
 
-    data = fill_template(args.template, data)
+        ctrls = controls.setdefault(vendor, [])
+
+        for i, ctrl in enumerate(data['controls']):
+            ctrl = Control(*ctrl.popitem(), vendor)
+            ctrls.append(extend_control(ctrl, i, ranges))
+
+    # Sort the vendors by range numerical value
+    controls = [[vendor, ctrls] for vendor, ctrls in controls.items()]
+    controls.sort(key=lambda item: ranges[item[0]])
+
+    filename = {
+        'controls': 'control_ids',
+        'properties': 'property_ids',
+    }[args.mode]
+
+    data = {
+        'filename': filename,
+        'mode': args.mode,
+        'controls': controls,
+    }
+
+    env = jinja2.Environment()
+    env.filters['format_description'] = format_description
+    env.filters['snake_case'] = snake_case
+    template = env.from_string(open(args.template, 'r', encoding='utf-8').read())
+    string = template.render(data)
 
     if args.output:
-        output = open(args.output, 'wb')
-        output.write(data.encode('utf-8'))
+        output = open(args.output, 'w', encoding='utf-8')
+        output.write(string)
         output.close()
     else:
-        sys.stdout.write(data)
+        sys.stdout.write(string)
 
     return 0
 

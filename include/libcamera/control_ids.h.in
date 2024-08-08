@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * Control ID list
+ * {{mode|capitalize}} ID list
  *
  * This file is auto-generated. Do not edit.
  */
@@ -18,18 +18,42 @@
 
 namespace libcamera {
 
-namespace controls {
+namespace {{mode}} {
+
+extern const ControlIdMap {{mode}};
+
+{%- for vendor, ctrls in controls -%}
+
+{% if vendor != 'libcamera' %}
+namespace {{vendor}} {
+
+#define LIBCAMERA_HAS_{{vendor|upper}}_VENDOR_{{mode|upper}}
+{%- endif %}
 
 enum {
-${ids}
+{%- for ctrl in ctrls %}
+	{{ctrl.name|snake_case|upper}} = {{ctrl.id}},
+{%- endfor %}
 };
 
-${controls}
+{% for ctrl in ctrls -%}
+{% if ctrl.is_enum -%}
+enum {{ctrl.name}}Enum {
+{%- for enum in ctrl.enum_values %}
+	{{enum.name}} = {{enum.value}},
+{%- endfor %}
+};
+extern const std::array<const ControlValue, {{ctrl.enum_values_count}}> {{ctrl.name}}Values;
+extern const std::map<std::string, {{ctrl.type}}> {{ctrl.name}}NameValueMap;
+{% endif -%}
+extern const Control<{{ctrl.type}}> {{ctrl.name}};
+{% endfor -%}
 
-extern const ControlIdMap controls;
+{% if vendor != 'libcamera' %}
+} /* namespace {{vendor}} */
+{% endif -%}
 
-${vendor_controls}
-
-} /* namespace controls */
+{% endfor %}
+} /* namespace {{mode}} */
 
 } /* namespace libcamera */

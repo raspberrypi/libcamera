@@ -80,7 +80,7 @@ foreach mode, entry : controls_map
         properties_files_names += files_list
     endif
 
-    template_file = files(outfile + '.in')
+    template_file = files('control_ids.h.in')
     ranges_file = files('../../src/libcamera/control_ranges.yaml')
     control_headers += custom_target(header + '_h',
                                      input : input_files,

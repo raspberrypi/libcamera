@@ -2,51 +2,120 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * Control ID list
+ * {{mode}} ID list
  *
  * This file is auto-generated. Do not edit.
  */
 
-#include <libcamera/control_ids.h>
+#include <libcamera/{{filename}}.h>
 #include <libcamera/controls.h>
 
 /**
- * \file control_ids.h
- * \brief Camera control identifiers
+ * \file {{filename}}.h
+ * \brief Camera {{mode}} identifiers
  */
 
 namespace libcamera {
 
 /**
- * \brief Namespace for libcamera controls
+ * \brief Namespace for libcamera {{mode}}
  */
-namespace controls {
+namespace {{mode}} {
 
-${controls_doc}
+{%- for vendor, ctrls in controls -%}
 
-${vendor_controls_doc}
+{%- if vendor != 'libcamera' %}
+/**
+ * \brief Namespace for {{vendor}} {{mode}}
+ */
+namespace {{vendor}} {
+{%- endif -%}
+
+{% for ctrl in ctrls %}
+
+{% if ctrl.is_enum -%}
+/**
+ * \enum {{ctrl.name}}Enum
+ * \brief Supported {{ctrl.name}} values
+{%- for enum in ctrl.enum_values %}
+ *
+ * \var {{enum.name}}
+ * \brief {{enum.description|format_description}}
+{%- endfor %}
+ */
+
+/**
+ * \var {{ctrl.name}}Values
+ * \brief List of all {{ctrl.name}} supported values
+ */
+
+/**
+ * \var {{ctrl.name}}NameValueMap
+ * \brief Map of all {{ctrl.name}} supported value names (in std::string format) to value
+ */
+
+{% endif -%}
+/**
+ * \var {{ctrl.name}}
+ * \brief {{ctrl.description|format_description}}
+ */
+{%- endfor %}
+{% if vendor != 'libcamera' %}
+} /* namespace {{vendor}} */
+{% endif -%}
+
+{%- endfor %}
 
 #ifndef __DOXYGEN__
 /*
- * Keep the controls definitions hidden from doxygen as it incorrectly parses
+ * Keep the {{mode}} definitions hidden from doxygen as it incorrectly parses
  * them as functions.
  */
-${controls_def}
+{% for vendor, ctrls in controls -%}
 
-${vendor_controls_def}
+{% if vendor != 'libcamera' %}
+namespace {{vendor}} {
+{% endif %}
 
-#endif
+{%- for ctrl in ctrls %}
+{% if ctrl.is_enum -%}
+extern const std::array<const ControlValue, {{ctrl.enum_values_count}}> {{ctrl.name}}Values = {
+{%- for enum in ctrl.enum_values %}
+	static_cast<{{ctrl.type}}>({{enum.name}}),
+{%- endfor %}
+};
+extern const std::map<std::string, {{ctrl.type}}> {{ctrl.name}}NameValueMap = {
+{%- for enum in ctrl.enum_values %}
+	{ "{{enum.name}}", {{enum.name}} },
+{%- endfor %}
+};
+{% endif -%}
+extern const Control<{{ctrl.type}}> {{ctrl.name}}({{ctrl.name|snake_case|upper}}, "{{ctrl.name}}");
+{%- endfor %}
+
+{% if vendor != 'libcamera' %}
+} /* namespace {{vendor}} */
+{% endif -%}
+
+{%- endfor %}
+#endif /* __DOXYGEN__ */
 
 /**
- * \brief List of all supported libcamera controls
+ * \brief List of all supported libcamera {{mode}}
+{%- if mode == 'controls' %}
  *
  * Unless otherwise stated, all controls are bi-directional, i.e. they can be
  * set through Request::controls() and returned out through Request::metadata().
+{%- endif %}
  */
-extern const ControlIdMap controls {
-${controls_map}
+extern const ControlIdMap {{mode}} {
+{%- for vendor, ctrls in controls -%}
+{%- for ctrl in ctrls %}
+	{ {{ctrl.namespace}}{{ctrl.name|snake_case|upper}}, &{{ctrl.namespace}}{{ctrl.name}} },
+{%- endfor -%}
+{%- endfor %}
 };
 
-} /* namespace controls */
+} /* namespace {{mode}} */
 
 } /* namespace libcamera */

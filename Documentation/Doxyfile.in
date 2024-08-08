@@ -17,13 +17,15 @@ EXTENSION_MAPPING      = h=C++
 
 TOC_INCLUDE_HEADINGS   = 0
 
+ENABLED_SECTIONS       = internal
 INTERNAL_DOCS          = YES
 CASE_SENSE_NAMES       = YES
 
 QUIET                  = YES
 WARN_AS_ERROR          = @WARN_AS_ERROR@
 
-INPUT                  = "@TOP_SRCDIR@/include/libcamera" \
+INPUT                  = "@TOP_SRCDIR@/Documentation" \
+                         "@TOP_SRCDIR@/include/libcamera" \
                          "@TOP_SRCDIR@/src/ipa/ipu3" \
                          "@TOP_SRCDIR@/src/ipa/libipa" \
                          "@TOP_SRCDIR@/src/libcamera" \
@@ -32,6 +34,7 @@ INPUT                  = "@TOP_SRCDIR@/include/libcamera" \
 
 FILE_PATTERNS          = *.c \
                          *.cpp \
+                         *.dox \
                          *.h
 
 RECURSIVE              = YES

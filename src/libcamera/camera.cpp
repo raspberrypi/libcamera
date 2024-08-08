@@ -821,6 +821,7 @@ void Camera::Private::setState(State state)
  */
 
 /**
+ * \internal
  * \brief Create a camera instance
  * \param[in] d Camera private data
  * \param[in] id The ID of the camera device

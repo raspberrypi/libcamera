@@ -28,27 +28,34 @@ if doxygen.found() and dot.found()
                               output : 'Doxyfile',
                               configuration : cdata)
 
-    doxygen_input = [
-        doxyfile,
-        libcamera_base_headers,
+    doxygen_public_input = [
+        libcamera_base_public_headers,
         libcamera_base_public_sources,
-        libcamera_base_internal_sources,
-        libcamera_internal_headers,
-        libcamera_ipa_headers,
-        libcamera_ipa_interfaces,
         libcamera_public_headers,
         libcamera_public_sources,
+    ]
+
+    doxygen_internal_input = [
+        libcamera_base_private_headers,
+        libcamera_base_internal_sources,
+        libcamera_internal_headers,
         libcamera_internal_sources,
+        libcamera_ipa_headers,
+        libcamera_ipa_interfaces,
         libipa_headers,
         libipa_sources,
     ]
 
     if is_variable('ipu3_ipa_sources')
-        doxygen_input += [ipu3_ipa_sources]
+        doxygen_internal_input += [ipu3_ipa_sources]
     endif
 
     custom_target('doxygen',
-                  input : doxygen_input,
+                  input : [
+                      doxyfile,
+                      doxygen_public_input,
+                      doxygen_internal_input,
+                  ],
                   output : 'api-html',
                   command : [doxygen, doxyfile],
                   install : true,

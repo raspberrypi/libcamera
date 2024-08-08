@@ -26,7 +26,7 @@ pycamera_sources = files([
     'py_transform.cpp',
 ])
 
-# Generate controls
+# Generate controls and properties
 
 gen_py_controls_template = files('py_controls_generated.cpp.in')
 gen_py_controls = files('gen-py-controls.py')
@@ -38,15 +38,11 @@ pycamera_sources += custom_target('py_gen_controls',
                                              '-t', gen_py_controls_template, '@INPUT@'],
                                   env : py_build_env)
 
-# Generate properties
-
-gen_py_properties_template = files('py_properties_generated.cpp.in')
-
 pycamera_sources += custom_target('py_gen_properties',
                                   input : properties_files,
                                   output : ['py_properties_generated.cpp'],
                                   command : [gen_py_controls, '--mode', 'properties', '-o', '@OUTPUT@',
-                                             '-t', gen_py_properties_template, '@INPUT@'],
+                                             '-t', gen_py_controls_template, '@INPUT@'],
                                   env : py_build_env)
 
 # Generate formats

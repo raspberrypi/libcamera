@@ -2,12 +2,12 @@
 /*
  * Copyright (C) 2022, Tomi Valkeinen <tomi.valkeinen@ideasonboard.com>
  *
- * Python bindings - Auto-generated controls
+ * Python bindings - Auto-generated {{mode}}
  *
  * This file is auto-generated. Do not edit.
  */
 
-#include <libcamera/control_ids.h>
+#include <libcamera/{{header}}>
 
 #include <pybind11/pybind11.h>
 
@@ -15,16 +15,33 @@
 
 namespace py = pybind11;
 
-class PyControls
+class Py{{mode|capitalize}}
 {
 };
 
-${vendors_class_def}
-
-void init_py_controls_generated(py::module& m)
+{% for vendor in vendors -%}
+class Py{{vendor|capitalize}}{{mode|capitalize}}
 {
-	auto controls = py::class_<PyControls>(m, "controls");
-${vendors_defs}
+};
 
-${controls}
+{% endfor -%}
+
+void init_py_{{mode}}_generated(py::module& m)
+{
+	auto {{mode}} = py::class_<Py{{mode|capitalize}}>(m, "{{mode}}");
+{%- for vendor in vendors %}
+	auto {{vendor}} = py::class_<Py{{vendor|capitalize}}{{mode|capitalize}}>({{mode}}, "{{vendor}}");
+{%- endfor %}
+
+{% for ctrl in controls %}
+        {{ctrl.klass}}.def_readonly_static("{{ctrl.name}}", static_cast<const libcamera::ControlId *>(&libcamera::{{mode}}::{{ctrl.namespace}}{{ctrl.name}}));
+{%- if ctrl.is_enum %}
+
+        py::enum_<libcamera::{{mode}}::{{ctrl.namespace}}{{ctrl.name}}Enum>({{ctrl.klass}}, "{{ctrl.name}}Enum")
+{%- for enum in ctrl.enum_values %}
+                .value("{{enum.py_name}}", libcamera::{{mode}}::{{ctrl.namespace}}{{enum.name}})
+{%- endfor %}
+        ;
+{%- endif %}
+{% endfor -%}
 }

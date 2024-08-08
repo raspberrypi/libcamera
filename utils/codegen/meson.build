@@ -2,6 +2,10 @@
 
 ## Code generation
 
+py_build_env = environment()
+# \todo Investigate usage of PYTHONPYCACHEPREFIX for Python >= 3.8
+py_build_env.set('PYTHONDONTWRITEBYTECODE', '1')
+
 py_modules += ['jinja2', 'yaml']
 
 gen_controls = files('gen-controls.py')

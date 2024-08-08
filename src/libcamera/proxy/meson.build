@@ -13,7 +13,8 @@ foreach mojom : ipa_mojoms
                               '--libcamera_generate_proxy_cpp',
                               '--libcamera_output_path=@OUTPUT@',
                               './' + '@INPUT@'
-                          ])
+                          ],
+                          env : py_build_env)
 
     libcamera_internal_sources += proxy
 endforeach

@@ -532,7 +532,6 @@ void gst_libcamera_configure_stream_from_caps(StreamConfiguration &stream_cfg,
 	}
 }
 
-
 void gst_libcamera_get_framerate_from_caps(GstCaps *caps,
 					   GstStructure *element_caps)
 {

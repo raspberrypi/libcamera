@@ -30,7 +30,6 @@
 #include <atomic>
 #include <vector>
 
-#include <libcamera/camera.h>
 #include <libcamera/camera_manager.h>
 #include <libcamera/control_ids.h>
 #include <libcamera/formats.h>
@@ -111,9 +110,9 @@ struct GstLibcameraSrcState {
 
 	std::shared_ptr<CameraManager> cm_;
 	std::shared_ptr<Camera> cam_;
-	std::unique_ptr<CameraConfiguration> config_;
+	std::shared_ptr<CameraConfiguration> config_;
 
-	GstCaps *sensor_modes_;
+	std::shared_ptr<std::vector<GstLibcameraSrcSensorModes>> sensor_modes_;
 	std::optional<libcamera::SensorConfiguration> override_sensor_configuration_;
 
 	std::vector<GstPad *> srcpads_; /* Protected by stream_lock */
@@ -420,6 +419,202 @@ void GstLibcameraSrcState::clearRequests()
 	completedRequests_ = {};
 }
 
+// We're going to make a list of all the available sensor modes.
+std::vector<GstLibcameraSrcSensorModes> gst_libcamera_src_enumerate_sensor_modes(GstLibcameraSrc *self)
+{
+	GST_DEBUG_OBJECT(self, "Enumerating sensor modes");
+
+	std::vector<GstLibcameraSrcSensorModes> modes;
+	std::unique_ptr<CameraConfiguration> config = self->state->cam_->generateConfiguration({ libcamera::StreamRole::Raw });
+	if (config == nullptr) {
+		GST_ERROR_OBJECT(self, "Failed to generate config for camera, could not enumerate stream modes");
+		return modes;
+	}
+	libcamera::StreamConfiguration &stream = config->at(0);
+	const libcamera::StreamFormats &formats = stream.formats();
+
+	for (const auto &pix : formats.pixelformats()) {
+		for (const auto &size : formats.sizes(pix)) {
+			config->at(0).size = size;
+			config->at(0).pixelFormat = pix;
+			if (config->validate() == CameraConfiguration::Invalid) {
+				GST_WARNING_OBJECT(self, "Skipping unsupported sensor mode %dx%d@%s, found bitDepth %d",
+						   size.width, size.height, pix.toString().c_str(), config->sensorConfig->bitDepth);
+				continue;
+			}
+
+			GST_DEBUG_OBJECT(self, "Configuring camera with a validated config to get FrameDurationLimits");
+			self->state->cam_->configure(config.get());
+
+			auto fd_ctrl = self->state->cam_->controls().find(&controls::FrameDurationLimits);
+
+			gdouble min_framerate = gst_util_guint64_to_gdouble(1.0e6) /
+						gst_util_guint64_to_gdouble(fd_ctrl->second.max().get<int64_t>());
+			gdouble max_framerate = gst_util_guint64_to_gdouble(1.0e6) /
+						gst_util_guint64_to_gdouble(fd_ctrl->second.min().get<int64_t>());
+
+			// Storing our sensorMode in a struct to be added to the list of available sensor modes.
+			GstLibcameraSrcSensorModes current_mode;
+			current_mode.size = size;
+			current_mode.pixel_format = pix;
+			current_mode.bit_depth = pixel_format_to_depth(pix);
+			current_mode.min_framerate = min_framerate;
+			current_mode.max_framerate = max_framerate;
+			modes.push_back(current_mode);
+
+			GST_DEBUG_OBJECT(self, "Found Sensor mode of max_width: %d, max_height: %d, format: %s, min_framerate: %.1f, max_framerate: %.1f",
+					current_mode.size.height,
+					current_mode.size.width,
+					current_mode.pixel_format.toString().c_str(),
+					current_mode.min_framerate,
+					current_mode.max_framerate);
+
+			GST_DEBUG_OBJECT(self, "Select this mode using the 'mmal -mode style' string: 'libcamera override-sensormode=%d:%d:%d ",
+					current_mode.size.width,
+					current_mode.size.height,
+					current_mode.bit_depth);
+		}
+	}
+
+	return modes;
+}
+
+/**
+ * @brief
+ *   Configure a sensor mode based on aspect ratio, size and framerate.
+ *   Similar scoring mechanism that the libcamera pipeline handler does internally, but considers the framerate as well.
+ * @param element_caps A GstStructure that contains the framerate of the last pad considered in the loop above. (fixme)
+ * @param sensor_modes A vector of GstLibcameraSrcSensorModes, which contains the available sensor modes including their size, pixelformat and framerate.
+ * @param cam_cfg A CameraConfiguration, which contains a list of StreamConfigurations. We assume these have been configured based on caps using `gst_libcamera_configure_stream_from_caps`
+ */
+void gst_libcamera_find_best_format_with_framerate(GstLibcameraSrc *self, std::shared_ptr<std::vector<GstLibcameraSrcSensorModes>> available_sensor_modes,
+						   GstStructure *element_caps,
+						   std::shared_ptr<libcamera::CameraConfiguration> cam_cfg_from_pads)
+{
+	// Scoring mechanism for 2D values.
+	auto scoreFormat = [](double desired, double actual) -> double {
+		double score = desired - actual;
+		// Smaller desired dimensions are preferred.
+		if (score < 0.0)
+			score = (-score) / 8;
+		// Penalise non-exact matches.
+		if (actual != desired)
+			score *= 2;
+
+		return score;
+	};
+
+	// sort the streamconfigurations inside cam_cfg_from_pads by their size.
+	std::sort(cam_cfg_from_pads->begin(), cam_cfg_from_pads->end(),
+		  [](auto &l, auto &r) { return l.size > r.size; });
+
+	// print all streamconfigurations inside cam_cfg_from_pads
+	for (auto &stream_cfg : *cam_cfg_from_pads) {
+		GST_INFO_OBJECT(self, "StreamConfigurations in camera config: size: %dx%d, pixelformat: %s. Will only consider the first/largest one.", stream_cfg.size.width, stream_cfg.size.height, stream_cfg.pixelFormat.toString().c_str());
+	}
+
+	// We only consider the largest video size going forward.
+	auto requested_stream_cfg = cam_cfg_from_pads->at(0);
+
+	// Determine the aspect ratio of the requested caps.
+	//
+	double req_aspect_ratio = static_cast<double>(requested_stream_cfg.size.width) / requested_stream_cfg.size.height;
+
+	// Determine the framerate of the requested caps.
+	// todo: handle framerate for every streamconfiguration. Right now the loop creating the streamconfigurations will always override the framerate in the element_caps
+
+	// The sensor configuration that is happen in the pipeline works fine as long as we don't care about framerate.
+	// Therefore, if no framerate is specified in the requested caps, we don't touch the StreamConfiguration.
+	gint req_fps_n = 30, req_fps_d = 1;
+	gdouble req_fps = 30.0;
+	if (gst_structure_has_field_typed(element_caps, "framerate", GST_TYPE_FRACTION)) {
+		if (!gst_structure_get_fraction(element_caps, "framerate", &req_fps_n, &req_fps_d)) {
+			GST_WARNING_OBJECT(self, "Invalid framerate in the requested caps, not touching StreamConfiguration");
+			return;
+		} else {
+			gst_util_fraction_to_double(req_fps_n, req_fps_d, &req_fps);
+		}
+	} else {
+		GST_WARNING_OBJECT(self, "No framerate in the requested caps, not touching StreamConfiguration");
+		return;
+	}
+
+	// Determine the bit depth of the requested stream.
+	unsigned int req_bit_depth = pixel_format_to_depth(requested_stream_cfg.pixelFormat);
+
+	constexpr float penalty_AR = 1500.0;
+	constexpr float penalty_BD = 500.0;
+	constexpr float penalty_FPS = 2000.0;
+
+	std::optional<GstLibcameraSrcSensorModes> best_mode;
+	double best_score = std::numeric_limits<double>::max();
+	double score = std::numeric_limits<double>::max();
+
+	// Iterate over the sensor_modes
+	for (auto &sensor_mode : *available_sensor_modes) {
+		// Compute a penalty based on the difference in width and height between the requested one and the one supported by the sensor mode.
+
+		score = scoreFormat(requested_stream_cfg.size.width, sensor_mode.size.width);
+		GST_DEBUG_OBJECT(self, "Sensor mode has width of %d, requested width is %d. Score is %.1f", sensor_mode.size.width, requested_stream_cfg.size.width, score);
+		score = scoreFormat(requested_stream_cfg.size.height, sensor_mode.size.height);
+		GST_DEBUG_OBJECT(self, "Sensor mode has height of %d, requested height is %d. Score is now %.1f", sensor_mode.size.height, requested_stream_cfg.size.height, score);
+
+		// Compute a penalty based on the difference in aspect ration between the requested one and the one supported by the sensor mode.
+		double sm_aspect_ratio = static_cast<double>(sensor_mode.size.width) / sensor_mode.size.height;
+		score += penalty_AR * scoreFormat(req_aspect_ratio, sm_aspect_ratio);
+		GST_DEBUG_OBJECT(self, "Sensor mode has aspect ratio of %.1f, requested aspect ratio is %.1f. Score is now %.1f", sm_aspect_ratio, req_aspect_ratio, score);
+
+		// Compute a penalty based on the framerate difference between the requested one and the one supported by the sensor mode.
+		score += penalty_FPS * std::abs(req_fps - std::min(sensor_mode.max_framerate, req_fps));
+		GST_DEBUG_OBJECT(self, "Sensor mode has max framerate of %.1f, requested framerate is %.1f. Score is now %.1f", sensor_mode.max_framerate, req_fps, score);
+
+		// Compute a penalty based on the bit depth difference between the requested one and the one supported by the sensor mode.
+		// If no bit depth is requested, we don't apply a penalty.
+		if (req_bit_depth != 0) {
+			score += penalty_BD * abs((int)(req_bit_depth - sensor_mode.bit_depth));
+		}
+		GST_DEBUG_OBJECT(self, "Sensor mode has bit_depth of %d (%s), requested bit_depth is %d (%s). Score is now %.1f",
+				 sensor_mode.bit_depth,
+				 sensor_mode.pixel_format.toString().c_str(),
+				 req_bit_depth,
+				 requested_stream_cfg.pixelFormat.toString().c_str(),
+				 score);
+		GST_DEBUG_OBJECT(self, "Scoring of this sensor mode has concluded. Score is now %.1f", score);
+
+		// Smaller score is better.
+		if (score <= best_score) {
+			best_score = score;
+			best_mode = GstLibcameraSrcSensorModes{
+				.size = sensor_mode.size,
+				.pixel_format = sensor_mode.pixel_format,
+				.bit_depth = sensor_mode.bit_depth,
+				.min_framerate = sensor_mode.min_framerate,
+				.max_framerate = sensor_mode.max_framerate
+			};
+
+			GST_DEBUG_OBJECT(self, "New best mode found: width: %d, height: %d, bit_depth: %d, pixel_format: %s. Score: %.1f",
+					 sensor_mode.size.width,
+					 sensor_mode.size.height,
+					 sensor_mode.bit_depth,
+					 sensor_mode.pixel_format.toString().c_str(),
+					 score);
+		}
+	}
+
+	// Apply the best mode found.
+	if (best_mode) {
+		GST_INFO_OBJECT(self, "Applying best mode: width: %d, height: %d, bit_depth: %d, pixel_format: %s.",
+				best_mode->size.width,
+				best_mode->size.height,
+				best_mode->bit_depth,
+				best_mode->pixel_format.toString().c_str());
+		libcamera::SensorConfiguration sensorconfig = libcamera::SensorConfiguration();
+		sensorconfig.outputSize = best_mode->size;
+		sensorconfig.bitDepth = best_mode->bit_depth;
+		cam_cfg_from_pads->sensorConfig = sensorconfig;
+	}
+}
+
 static bool
 gst_libcamera_src_open(GstLibcameraSrc *self)
 {
@@ -481,8 +676,9 @@ gst_libcamera_src_open(GstLibcameraSrc *self)
 
 	self->state->cm_ = cm;
 	self->state->cam_ = cam;
-	self->state->sensor_modes_ = gst_libcamera_src_enumerate_sensor_modes(self);
 
+	self->state->sensor_modes_ = std::make_shared<std::vector<GstLibcameraSrcSensorModes>>(
+		gst_libcamera_src_enumerate_sensor_modes(self));
 	/* Update GstPhotography caps */
 	{
 		int pcaps = GST_PHOTOGRAPHY_CAPS_NONE;
@@ -528,11 +724,13 @@ gst_libcamera_src_negotiate(GstLibcameraSrc *self)
 	if (state->override_sensor_configuration_) {
 		GST_DEBUG_OBJECT(self, "Overriding sensor mode/configuration based on set property");
 		state->config_->sensorConfig = state->override_sensor_configuration_;
-	} else {
+	} else
+	//todo: consider turning this into an else if, handling the case of the override_sensormode property string to be set to framerate
+	{
 		// Libcamera selects the actual sensor mode based on the stream size (width, height) and the bitdepth. It ignores the framerate.
 		// We run a modificated version of the sensor mode selection which does consider framerate.
 		// We then set the optional sensorConfig in the CameraConfiguration based on the selected sensor mode
-		// gst_libcamera_find_best_format_with_framerate(element_caps, state->sensor_modes_, state->config_);
+		gst_libcamera_find_best_format_with_framerate(self, state->sensor_modes_, element_caps, state->config_);
 	}
 
 	/* Validate the configuration. */
@@ -560,6 +758,7 @@ gst_libcamera_src_negotiate(GstLibcameraSrc *self)
 		const StreamConfiguration &stream_cfg = state->config_->at(i);
 
 		g_autoptr(GstCaps) caps = gst_libcamera_stream_configuration_to_caps(stream_cfg);
+		// fixme: This will set the same framerate for all streams, based on the last pad considered in the loop above.
 		gst_libcamera_framerate_to_caps(caps, element_caps);
 
 		if (!gst_pad_push_event(srcpad, gst_event_new_caps(caps)))
@@ -1288,68 +1487,6 @@ gst_libcamera_src_class_init(GstLibcameraSrcClass *klass)
 				   "You can override the sensor mode using the former mmal '-mode' syntax: 'width:height:bitDepth. Defaults to no override", NULL,
 				   (GParamFlags)(G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS));
 	g_object_class_install_property(object_class, PROP_OVERRIDE_SENSOR_MODE, spec);
-}
-
-// We're going to make a list of all the available sensor modes.
-GstCaps *
-gst_libcamera_src_enumerate_sensor_modes(GstLibcameraSrc *self)
-{
-	GST_DEBUG_OBJECT(self, "Enumerating sensor modes");
-
-	GstCaps *modes = gst_caps_new_empty();
-	std::unique_ptr<CameraConfiguration> config = self->state->cam_->generateConfiguration({ libcamera::StreamRole::Raw });
-	if (config == nullptr) {
-		GST_ERROR_OBJECT(self, "Failed to generate config for camera, could not enumerate stream modes");
-		return modes;
-	}
-	const libcamera::StreamFormats &formats = config->at(0).formats();
-
-	for (const auto &pix : formats.pixelformats()) {
-		for (const auto &size : formats.sizes(pix)) {
-			config->at(0).size = size;
-			config->at(0).pixelFormat = pix;
-			config->sensorConfig = libcamera::SensorConfiguration();
-			config->sensorConfig->outputSize = size;
-			config->sensorConfig->bitDepth = pixel_format_to_depth(pix);
-			if (config->validate() == CameraConfiguration::Invalid) {
-				GST_WARNING_OBJECT(self, "Skipping unsupported sensor mode %dx%d@%s, found bitDepth %d",
-						   size.width, size.height, pix.toString().c_str(), config->sensorConfig->bitDepth);
-				continue;
-			}
-
-			GST_DEBUG_OBJECT(self, "Configuring camera with a validated config to get FrameDurationLimits");
-			self->state->cam_->configure(config.get());
-
-			auto fd_ctrl = self->state->cam_->controls().find(&controls::FrameDurationLimits);
-			// todo: Consider checking if we got a FrameDurationLimits
-
-			double min_framerate = gst_util_guint64_to_gdouble(1.0e6) /
-					       gst_util_guint64_to_gdouble(fd_ctrl->second.max().get<int64_t>());
-			double max_framerate = gst_util_guint64_to_gdouble(1.0e6) /
-					       gst_util_guint64_to_gdouble(fd_ctrl->second.min().get<int64_t>());
-
-			int minrate_num, minrate_denom;
-			int maxrate_num, maxrate_denom;
-			gst_util_double_to_fraction(min_framerate, &minrate_num, &minrate_denom);
-			gst_util_double_to_fraction(max_framerate, &maxrate_num, &maxrate_denom);
-
-			// todo: Consider changing the format to gst formats
-			GstStructure *s = gst_structure_new("sensor/mode",
-							    "format", G_TYPE_STRING, pix.toString().c_str(),
-							    "width", G_TYPE_INT, size.width,
-							    "height", G_TYPE_INT, size.height,
-							    "framerate", GST_TYPE_FRACTION_RANGE,
-							    minrate_num, minrate_denom,
-							    maxrate_num, maxrate_denom,
-							    nullptr);
-			GST_INFO_OBJECT(self, "Found Sensor mode: %" GST_PTR_FORMAT, s);
-			GST_INFO_OBJECT(self, "Select this mode using the mmal -mode style string: %d:%d:%d with the 'override-sensormode' property", size.width, size.height, config->sensorConfig->bitDepth);
-			self->state->cam_->configure(config.get());
-			gst_caps_append_structure(modes, s);
-		}
-	}
-	GST_INFO_OBJECT(self, "Camera sensor modes: %" GST_PTR_FORMAT, modes);
-	return modes;
 }
 
 static GstPhotographyCaps

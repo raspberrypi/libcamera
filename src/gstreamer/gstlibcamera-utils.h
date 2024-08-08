@@ -17,6 +17,14 @@
 #include <gst/gst.h>
 #include <gst/video/video.h>
 
+struct GstLibcameraSrcSensorModes {
+	libcamera::Size size;
+	libcamera::PixelFormat pixel_format;
+	guint bit_depth;
+	gdouble min_framerate = 0.0;
+	gdouble max_framerate = 0.0;
+};
+
 GstCaps *gst_libcamera_stream_formats_to_caps(const libcamera::StreamFormats &formats);
 GstCaps *gst_libcamera_stream_configuration_to_caps(const libcamera::StreamConfiguration &stream_cfg);
 void gst_libcamera_configure_stream_from_caps(libcamera::StreamConfiguration &stream_cfg,
@@ -28,7 +36,7 @@ void gst_libcamera_clamp_and_set_frameduration(libcamera::ControlList &controls,
 void gst_libcamera_framerate_to_caps(GstCaps *caps, const GstStructure *element_caps);
 unsigned int
 pixel_format_to_depth(const libcamera::PixelFormat &format);
-void gst_libcamera_find_best_format_with_framerate(GstCaps *element_caps, GstCaps *sensor_modes, libcamera::CameraConfiguration &cam_cfg);
+
 
 #if !GST_CHECK_VERSION(1, 16, 0)
 static inline void gst_clear_event(GstEvent **event_ptr)

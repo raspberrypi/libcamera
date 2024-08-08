@@ -1840,7 +1840,7 @@ FrameBuffer *V4L2VideoDevice::dequeueBuffer()
 	 * Detect kernel drivers which do not reset the sequence number to zero
 	 * on stream start.
 	 */
-	if (!firstFrame_) {
+	if (!firstFrame_.has_value()) {
 		if (buf.sequence)
 			LOG(V4L2, Info)
 				<< "Zero sequence expected for first frame (got "

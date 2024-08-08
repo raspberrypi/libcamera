@@ -550,6 +550,8 @@ class CameraSensorHelperImx283 : public CameraSensorHelper
 public:
 	CameraSensorHelperImx283()
 	{
+		/* From datasheet: 0x32 at 10bits. */
+		blackLevel_ = 3200;
 		gainType_ = AnalogueGainLinear;
 		gainConstants_.linear = { 0, 2048, -1, 2048 };
 	}

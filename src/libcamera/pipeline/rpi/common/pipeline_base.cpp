@@ -1314,8 +1314,7 @@ void CameraData::applyScalerCrop(const ControlList &controls)
 
 		if (ispCrop != ispCrop_) {
 			ispCrop_ = ispCrop;
-			platformSetIspCrop();
-
+			platformSetIspCrop(ispCrop);
 		}
 	}
 }

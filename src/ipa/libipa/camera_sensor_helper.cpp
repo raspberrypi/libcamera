@@ -41,6 +41,7 @@ namespace ipa {
  */
 
 /**
+ * \fn CameraSensorHelper::CameraSensorHelper()
  * \brief Construct a CameraSensorHelper instance
  *
  * CameraSensorHelper derived class instances shall never be constructed

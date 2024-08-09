@@ -211,33 +211,42 @@ class CommitFile:
 
 class Commit:
     def __init__(self, commit):
-        self.commit = commit
+        self._commit = commit
         self._author = None
         self._trailers = []
         self._parse()
 
-    def _parse_trailers(self):
-        proc_show = subprocess.run(['git', 'show', '--format=%b',
-                                    '--no-patch', self.commit],
-                                   stdout=subprocess.PIPE)
+    def _parse_commit(self):
+        # Get and parse the commit message.
+        ret = subprocess.run(['git', 'show', '--format=%H%n%an <%ae>%n%s%n%b',
+                              '--no-patch', self.commit],
+                             stdout=subprocess.PIPE).stdout.decode('utf-8')
+        lines = ret.splitlines()
+
+        self._commit = lines[0]
+        self._author = lines[1]
+        self._title = lines[2]
+        self._body = lines[3:]
+
+        # Parse the trailers. Feed git-interpret-trailers with a full commit
+        # message that includes both the title and the body, as it otherwise
+        # fails to find trailers when the body contains trailers only.
+        message = self._title + '\n\n' + '\n'.join(self._body)
         trailers = subprocess.run(['git', 'interpret-trailers', '--parse'],
-                                  input=proc_show.stdout,
+                                  input=message.encode('utf-8'),
                                   stdout=subprocess.PIPE).stdout.decode('utf-8')
 
         self._trailers = trailers.splitlines()
 
     def _parse(self):
-        # Get the commit title and list of files.
-        ret = subprocess.run(['git', 'show', '--format=%an <%ae>%n%s',
-                              '--name-status', self.commit],
+        self._parse_commit()
+
+        # Get the list of files. Use an empty format specifier to suppress the
+        # commit message completely.
+        ret = subprocess.run(['git', 'show', '--format=', '--name-status',
+                              self.commit],
                              stdout=subprocess.PIPE).stdout.decode('utf-8')
-        lines = ret.splitlines()
-
-        self._author = lines[0]
-        self._title = lines[1]
-        self._files = [CommitFile(f) for f in lines[2:] if f]
-
-        self._parse_trailers()
+        self._files = [CommitFile(f) for f in ret.splitlines()]
 
     def files(self, filter='AMR'):
         return [f.filename for f in self._files if f.status in filter]
@@ -245,6 +254,10 @@ class Commit:
     @property
     def author(self):
         return self._author
+
+    @property
+    def commit(self):
+        return self._commit
 
     @property
     def title(self):
@@ -284,21 +297,14 @@ class StagedChanges(Commit):
 
 class Amendment(Commit):
     def __init__(self):
-        Commit.__init__(self, '')
+        Commit.__init__(self, 'HEAD')
 
     def _parse(self):
-        # Create a title using HEAD commit and parse the trailers.
-        ret = subprocess.run(['git', 'show', '--format=%an <%ae>%n%H %s',
-                             '--no-patch'],
-                             stdout=subprocess.PIPE).stdout.decode('utf-8')
-        lines = ret.splitlines()
+        self._parse_commit()
 
-        self._author = lines[0]
-        self._title = 'Amendment of ' + lines[1]
+        self._title = f'Amendment of "{self.title}"'
 
-        self._parse_trailers()
-
-        # Extract the list of modified files
+        # Extract the list of modified files.
         ret = subprocess.run(['git', 'diff', '--staged', '--name-status', 'HEAD~'],
                              stdout=subprocess.PIPE).stdout.decode('utf-8')
         self._files = [CommitFile(f) for f in ret.splitlines()]

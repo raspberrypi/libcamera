@@ -107,16 +107,6 @@ formats_h = custom_target('formats_h',
                           install_dir : libcamera_headers_install_dir)
 libcamera_public_headers += formats_h
 
-# libcamera.h
-libcamera_h = custom_target('gen-header',
-                            input : 'meson.build',
-                            output : 'libcamera.h',
-                            command : [gen_header, meson.current_source_dir(), '@OUTPUT@'],
-                            install : true,
-                            install_dir : libcamera_headers_install_dir)
-
-libcamera_public_headers += libcamera_h
-
 # version.h
 version = libcamera_version.split('.')
 libcamera_version_config = configuration_data()
@@ -129,3 +119,13 @@ version_h = configure_file(input : 'version.h.in',
                            configuration : libcamera_version_config,
                            install_dir : libcamera_headers_install_dir)
 libcamera_public_headers += version_h
+
+# libcamera.h
+libcamera_h = custom_target('gen-header',
+                            input : 'meson.build',
+                            output : 'libcamera.h',
+                            command : [gen_header, '@OUTPUT@', libcamera_public_headers],
+                            install : true,
+                            install_dir : libcamera_headers_install_dir)
+
+libcamera_public_headers += libcamera_h

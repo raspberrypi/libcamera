@@ -1,7 +1,7 @@
 #!/bin/sh
 
-src_dir="$1"
-dst_file="$2"
+dst_file="$1"
+shift
 
 cat <<EOF > "$dst_file"
 /* SPDX-License-Identifier: LGPL-2.1-or-later */
@@ -16,9 +16,8 @@ cat <<EOF > "$dst_file"
 
 EOF
 
-headers=$(for header in "$src_dir"/*.h "$src_dir"/*.h.in ; do
+headers=$(for header in "$@" ; do
 	header=$(basename "$header")
-	header="${header%.in}"
 	echo "$header"
 done | sort)
 

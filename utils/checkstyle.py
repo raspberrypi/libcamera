@@ -344,11 +344,16 @@ class CommitChecker(metaclass=ClassRegistry):
     # Class methods
     #
     @classmethod
-    def checkers(cls, names):
+    def checkers(cls, commit, names):
         for checker in cls.subclasses:
             if names and checker.__name__ not in names:
                 continue
-            yield checker
+            if checker.supports(commit):
+                yield checker
+
+    @classmethod
+    def supports(cls, commit):
+        return type(commit) in cls.commit_types
 
 
 class CommitIssue(object):
@@ -357,6 +362,8 @@ class CommitIssue(object):
 
 
 class HeaderAddChecker(CommitChecker):
+    commit_types = (Commit, StagedChanges, Amendment)
+
     @classmethod
     def check(cls, commit, top_level):
         issues = []
@@ -401,17 +408,14 @@ class HeaderAddChecker(CommitChecker):
 
 
 class TitleChecker(CommitChecker):
+    commit_types = (Commit,)
+
     prefix_regex = re.compile(r'^([a-zA-Z0-9_.-]+: )+')
     release_regex = re.compile(r'libcamera v[0-9]+\.[0-9]+\.[0-9]+')
 
     @classmethod
     def check(cls, commit, top_level):
         title = commit.title
-
-        # Skip the check when validating staged changes (as done through a
-        # pre-commit hook) as there is no title to check in that case.
-        if isinstance(commit, StagedChanges):
-            return []
 
         # Ignore release commits, they don't need a prefix.
         if TitleChecker.release_regex.fullmatch(title):
@@ -468,6 +472,8 @@ class TitleChecker(CommitChecker):
 
 
 class TrailersChecker(CommitChecker):
+    commit_types = (Commit,)
+
     commit_regex = re.compile(r'[0-9a-f]{12}[0-9a-f]* \(".*"\)')
 
     coverity_regex = re.compile(r'Coverity CID=.*')
@@ -1020,7 +1026,7 @@ def check_style(top_level, commit, checkers):
     issues = 0
 
     # Apply the commit checkers first.
-    for checker in CommitChecker.checkers(checkers):
+    for checker in CommitChecker.checkers(commit, checkers):
         for issue in checker.check(commit, top_level):
             print('%s%s%s' % (Colours.fg(Colours.Yellow), issue.msg, Colours.reset()))
             issues += 1

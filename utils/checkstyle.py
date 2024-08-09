@@ -248,6 +248,17 @@ class Commit:
                              stdout=subprocess.PIPE).stdout.decode('utf-8')
         self._files = [CommitFile(f) for f in ret.splitlines()]
 
+    def __repr__(self):
+        return '\n'.join([
+            f'commit {self.commit}',
+            f'Author: {self.author}',
+            f'',
+            f'    {self.title}',
+            '',
+            '\n'.join([line and f'    {line}' or '' for line in self._body]),
+            'Trailers:',
+        ] + self.trailers)
+
     def files(self, filter='AMR'):
         return [f.filename for f in self._files if f.status in filter]
 

@@ -2,7 +2,7 @@
 # Copyright (C) 2022, Tomi Valkeinen <tomi.valkeinen@ideasonboard.com>
 
 from helpers import mfb_to_rgb
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt6 import QtCore, QtGui, QtWidgets
 import libcamera as libcam
 import libcamera.utils
 import sys
@@ -63,10 +63,10 @@ class QtRenderer:
         self.buf_mmap_map = buf_mmap_map
 
     def run(self):
-        camnotif = QtCore.QSocketNotifier(self.cm.event_fd, QtCore.QSocketNotifier.Read)
+        camnotif = QtCore.QSocketNotifier(self.cm.event_fd, QtCore.QSocketNotifier.Type.Read)
         camnotif.activated.connect(lambda _: self.readcam())
 
-        keynotif = QtCore.QSocketNotifier(sys.stdin.fileno(), QtCore.QSocketNotifier.Read)
+        keynotif = QtCore.QSocketNotifier(sys.stdin.fileno(), QtCore.QSocketNotifier.Type.Read)
         keynotif.activated.connect(lambda _: self.readkey())
 
         print('Capturing...')

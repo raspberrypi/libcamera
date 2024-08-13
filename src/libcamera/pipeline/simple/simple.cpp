@@ -1616,8 +1616,8 @@ bool SimplePipelineHandler::match(DeviceEnumerator *enumerator)
 			if (subdev->caps().hasStreams()) {
 				/*
 				 * Reset the routing table to its default state
-				 * to make sure entities are enumerate according
-				 * to the defaul routing configuration.
+				 * to make sure entities are enumerated according
+				 * to the default routing configuration.
 				 */
 				ret = resetRoutingTable(subdev.get());
 				if (ret) {

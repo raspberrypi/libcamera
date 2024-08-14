@@ -35,10 +35,8 @@ support a new platform with the `Pipeline Handler Writers Guide`_ and for those
 looking to make use of the libcamera native API an `Application Writers Guide`_
 provides a tutorial of the key APIs exposed by libcamera.
 
-.. _Pipeline Handler Writers Guide: pipeline-handler.html
-.. _Application Writers Guide: application-developer.html
-
-.. TODO: Correctly link to the other articles of the guide
+.. _Pipeline Handler Writers Guide: pipeline-handler.rst
+.. _Application Writers Guide: application-developer.rst
 
 Camera Stack
 ------------

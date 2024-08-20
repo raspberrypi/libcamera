@@ -44,6 +44,13 @@ To make changes, checkout branches and push as normal.
   git add .
   git commit -am "new commit"
   git push origin new_branch
+  # make sure you do not use the -u argument for git push!!
+
+When creating a pull request, play around with the options to make sure that
+you're not creating a pull request into the raspberrypi/libcamera repository,
+but rather this libcamera repository. The option didn't appear for me by default
+so I had to manually select which branch I wanted to create a pull request into
+on GitHub.
 
 When pulling changes, it is also good to fetch changes from the RaspberryPi
 libcamera repository. This will automatically merge the official main branch

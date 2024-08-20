@@ -79,10 +79,8 @@ into our own repository, so always double check that you are merging into
 
 The rest of this readme comes directly from the libcamera readme.
 
-..section-end-forksetup
-
-
-..section-begin-libcamera
+.. section-end-forksetup
+.. section-begin-libcamera
 
 ===========
  libcamera

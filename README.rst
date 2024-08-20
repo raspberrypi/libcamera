@@ -1,5 +1,69 @@
 .. SPDX-License-Identifier: CC-BY-SA-4.0
 
+.. section-begin-preamble
+============================================
+  A fork of libcamera for COMP3888 Capstone
+============================================
+
+This fork of libcamera exists to try and remove circumvent the synchronous
+nature of ``libcamera``. Currently, libcamera does not allow multiple sources
+to read from the same camera stream. This fork aims to change this in an attempt
+to restore functionality found in the now defunct ``RaspiMJPEG``.
+
+By creating a separate fork of libcamera, the hope is that this project can
+continue to function as libcamera is updated.
+
+.. section-end-preamble
+.. section-begin-forksetup
+
+Setting up the fork
+-------------------
+
+To start working on the fork, you will need to configure your git repository
+to allow it to continue receiving updates from the original libcamera.
+
+.. code::
+
+  git clone https://github.com/goombado/libcamera-async
+  cd libcamera-async
+  git remote add upstream https://github.com/raspberrypi/libcamera
+
+To confirm this has worked, run ``git remote -v``. You should see the following:
+
+.. code::
+
+  origin  https://github.com/goombado/libcamera-async (fetch)
+  origin  https://github.com/goombado/libcamera-async (push)
+  upstream        https://github.com/raspberrypi/libcamera (fetch)
+  upstream        https://github.com/raspberrypi/libcamera (push)
+
+To make changes, checkout branches and push as normal.
+
+.. code::
+  git checkout -b new_branch
+  git add .
+  git commit -am "new commit"
+  git push -u origin new_branch
+
+When pulling changes, it is also good to fetch changes from the RaspberryPi
+libcamera repository. This will automatically merge the official main branch
+with your own **local** repository, so make sure to push these changes.
+
+.. code::
+  # this can be run from any branch, not just main
+  git pull
+  git merge upstream/main
+  git commit -am "fetched upstream changes"
+  git push
+
+Following all of these steps shouldn't cause any issues, but if it does then
+ruh roh.
+
+The rest of this readme comes directly from the libcamera readme.
+
+..section-end-forksetup
+
+
 .. section-begin-libcamera
 
 ===========
@@ -31,7 +95,7 @@ Getting Started
 Only build ``libcamera`` from scratch if you need custom behaviour or the latest features that have not yet reached ``apt`` repositories.
 
 If you run ``Raspberry Pi OS Lite``, begin by installing the following packages:
-  
+
 .. code::
 
   sudo apt install -y python-pip git python3-jinja2
@@ -61,7 +125,7 @@ You can disable the ``gstreamer`` plugin by replacing ``-Dgstreamer=enabled`` wi
 If you disable ``gstreamer``, there is no need to install the ``libglib2.0-dev`` and ``libgstreamer-plugins-base1.0-dev`` dependencies.
 
 On devices with 1GB of memory or less, the build may exceed available memory. Append the ``-j 1`` flag to ``ninja`` commands to limit the build to a single process.
-This should prevent the build from exceeding available memory on devices like the Raspberry Pi Zero and the Raspberry Pi 3. 
+This should prevent the build from exceeding available memory on devices like the Raspberry Pi Zero and the Raspberry Pi 3.
 
 ``libcamera`` does not yet have a stable binary interface. Always build ``rpicam-apps`` after you build ``libcamera``.
 

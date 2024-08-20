@@ -14,14 +14,14 @@
    Contribute <contributing>
    Getting Started <getting-started>
 
-   Developer Guide <guides/introduction>
    Application Writer's Guide <guides/application-developer>
-   Pipeline Handler Writer's Guide <guides/pipeline-handler>
-   IPA Writer's guide <guides/ipa>
-   Tracing guide <guides/tracing>
-   Environment variables <environment_variables>
-   Sensor driver requirements <sensor_driver_requirements>
-   Lens driver requirements <lens_driver_requirements>
-   Python Bindings <python-bindings>
    Camera Sensor Model <camera-sensor-model>
+   Developer Guide <guides/introduction>
+   Environment variables <environment_variables>
+   IPA Writer's guide <guides/ipa>
+   Lens driver requirements <lens_driver_requirements>
+   Pipeline Handler Writer's Guide <guides/pipeline-handler>
+   Python Bindings <python-bindings>
+   Sensor driver requirements <sensor_driver_requirements>
    SoftwareISP Benchmarking <software-isp-benchmarking>
+   Tracing guide <guides/tracing>

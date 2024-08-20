@@ -40,6 +40,7 @@ To confirm this has worked, run ``git remote -v``. You should see the following:
 To make changes, checkout branches and push as normal.
 
 .. code::
+
   git checkout -b new_branch
   git add .
   git commit -am "new commit"
@@ -71,7 +72,7 @@ The rest of this readme comes directly from the libcamera readme.
 ..section-end-forksetup
 
 
-.. section-begin-libcamera
+..section-begin-libcamera
 
 ===========
  libcamera

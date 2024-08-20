@@ -18,8 +18,10 @@
    Camera Sensor Model <camera-sensor-model>
    Developer Guide <guides/introduction>
    Environment variables <environment_variables>
+   Feature Requirements <feature_requirements>
    IPA Writer's guide <guides/ipa>
    Lens driver requirements <lens_driver_requirements>
+   libcamera Architecture <libcamera_architecture>
    Pipeline Handler Writer's Guide <guides/pipeline-handler>
    Python Bindings <python-bindings>
    Sensor driver requirements <sensor_driver_requirements>

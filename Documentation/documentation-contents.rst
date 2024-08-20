@@ -7,12 +7,14 @@
    * :doc:`/code-of-conduct`
    * :doc:`/coding-style`
    * :doc:`/environment_variables`
+   * :doc:`/feature_requirements`
    * :doc:`/guides/application-developer`
    * :doc:`/guides/introduction`
    * :doc:`/guides/ipa`
    * :doc:`/guides/pipeline-handler`
    * :doc:`/guides/tracing`
    * :doc:`/lens_driver_requirements`
+   * :doc:`/libcamera_architecture`
    * :doc:`/python-bindings`
    * :doc:`/sensor_driver_requirements`
    * :doc:`/software-isp-benchmarking`

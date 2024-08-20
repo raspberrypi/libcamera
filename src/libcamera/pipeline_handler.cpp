@@ -205,10 +205,10 @@ void PipelineHandler::release(Camera *camera)
 
 	ASSERT(useCount_);
 
+	releaseDevice(camera);
+
 	if (useCount_ == 1)
 		unlockMediaDevices();
-
-	releaseDevice(camera);
 
 	--useCount_;
 }

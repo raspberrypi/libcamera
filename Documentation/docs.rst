@@ -3,6 +3,8 @@
 .. contents::
    :local:
 
+.. include:: documentation-contents.rst
+
 *************
 Documentation
 *************

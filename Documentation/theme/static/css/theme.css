@@ -289,3 +289,7 @@ div#signature {
 	padding: 0px;
 	visibility: hidden;
 }
+
+.documentation-nav {
+	display: none;
+}

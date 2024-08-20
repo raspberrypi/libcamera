@@ -2,22 +2,28 @@
 
 .. container:: documentation-nav
 
-   * :doc:`/api-html/index`
-   * :doc:`/internal-api-html/index`
-   * :doc:`/camera-sensor-model`
-   * :doc:`/code-of-conduct`
-   * :doc:`/coding-style`
-   * :doc:`/environment_variables`
+   * **Documentation for Users**
+   * :doc:`Introduction </introduction>`
    * :doc:`/feature_requirements`
    * :doc:`/guides/application-developer`
-   * :doc:`/guides/ipa`
-   * :doc:`/guides/pipeline-handler`
-   * :doc:`/guides/tracing`
-   * :doc:`/lens_driver_requirements`
-   * :doc:`/libcamera_architecture`
    * :doc:`/python-bindings`
-   * :doc:`/sensor_driver_requirements`
+   * :doc:`/environment_variables`
+   * :doc:`/api-html/index`
+   * :doc:`/code-of-conduct`
+   * |
+   * **Documentation for Developers**
+   * :doc:`/libcamera_architecture`
+   * :doc:`/guides/pipeline-handler`
+   * :doc:`/guides/ipa`
+   * :doc:`/camera-sensor-model`
+   * :doc:`/guides/tracing`
    * :doc:`/software-isp-benchmarking`
+   * :doc:`/coding-style`
+   * :doc:`/internal-api-html/index`
+   * |
+   * **Documentation for System Integrators**
+   * :doc:`/lens_driver_requirements`
+   * :doc:`/sensor_driver_requirements`
 
 ..
    The following directive adds the "documentation" class to all of the pages

@@ -26,8 +26,7 @@ desirable results from the camera.
 .. _Media Controller: https://www.linuxtv.org/downloads/v4l-dvb-apis-new/userspace-api/mediactl/media-controller.html
 
 
-In this developers guide, we will explore the `Camera Stack`_ and how it is
-can be visualised at a high level, and explore the internal `Architecture`_ of
+In this developers guide, we will explore the internal `Architecture`_ of
 the libcamera library with its components. The current `Platform Support`_ is
 detailed, as well as an overview of the `Licensing`_ requirements of the
 project.
@@ -41,112 +40,6 @@ provides a tutorial of the key APIs exposed by libcamera.
 .. _Application Writers Guide: application-developer.html
 
 .. TODO: Correctly link to the other articles of the guide
-
-Camera Stack
-------------
-
-The libcamera library is implemented in userspace, and makes use of underlying
-kernel drivers that directly interact with hardware.
-
-Applications can make use of libcamera through the native `libcamera API`_'s or
-through an adaptation layer integrating libcamera into a larger framework.
-
-.. _libcamera API: https://www.libcamera.org/api-html/index.html
-
-::
-
-    Application Layer
-     /    +--------------+  +--------------+  +--------------+  +--------------+
-     |    |    Native    |  |   Framework  |  |    Native    |  |   Android    |
-     |    |     V4L2     |  |  Application |  |   libcamera  |  |   Camera     |
-     |    |  Application |  |  (gstreamer) |  |  Application |  |  Framework   |
-     \    +--------------+  +--------------+  +--------------+  +--------------+
-
-                 ^                 ^                 ^                 ^
-                 |                 |                 |                 |
-                 |                 |                 |                 |
-                 v                 v                 |                 v
-    Adaptation Layer                                 |
-     /    +--------------+  +--------------+         |          +--------------+
-     |    |    V4L2      |  |  gstreamer   |         |          |   Android    |
-     |    | Compatibility|  |   element    |         |          |   Camera     |
-     |    |  (preload)   |  |(libcamerasrc)|         |          |     HAL      |
-     \    +--------------+  +--------------+         |          +--------------+
-                                                     |
-                 ^                 ^                 |                 ^
-                 |                 |                 |                 |
-                 |                 |                 |                 |
-                 v                 v                 v                 v
-    libcamera Framework
-     /    +--------------------------------------------------------------------+
-     |    |                                                                    |
-     |    |                             libcamera                              |
-     |    |                                                                    |
-     \    +--------------------------------------------------------------------+
-
-                         ^                  ^                  ^
-    Userspace            |                  |                  |
-   --------------------- | ---------------- | ---------------- | ---------------
-    Kernel               |                  |                  |
-                         v                  v                  v
-
-                   +-----------+      +-----------+      +-----------+
-                   |   Media   | <--> |   Video   | <--> |   V4L2    |
-                   |  Device   |      |  Device   |      |  Subdev   |
-                   +-----------+      +-----------+      +-----------+
-
-The camera stack comprises of four software layers. From bottom to top:
-
-* The kernel drivers control the camera hardware and expose a low-level
-  interface to userspace through the Linux kernel V4L2 family of APIs
-  (Media Controller API, V4L2 Video Device API and V4L2 Subdev API).
-
-* The libcamera framework is the core part of the stack. It handles all control
-  of the camera devices in its core component, libcamera, and exposes a native
-  C++ API to upper layers.
-
-* The libcamera adaptation layer is an umbrella term designating the components
-  that interface to libcamera in other frameworks. Notable examples are the V4L2
-  compatibility layer, the gstreamer libcamera element, and the Android camera
-  HAL implementation based on libcamera which are provided as a part of the
-  libcamera project.
-
-* The applications and upper level frameworks are based on the libcamera
-  framework or libcamera adaptation, and are outside of the scope of the
-  libcamera project, however example native applications (cam, qcam) are
-  provided for testing.
-
-
-V4L2 Compatibility Layer
-  V4L2 compatibility is achieved through a shared library that traps all
-  accesses to camera devices and routes them to libcamera to emulate high-level
-  V4L2 camera devices. It is injected in a process address space through
-  ``LD_PRELOAD`` and is completely transparent for applications.
-
-  The compatibility layer exposes camera device features on a best-effort basis,
-  and aims for the level of features traditionally available from a UVC camera
-  designed for video conferencing.
-
-Android Camera HAL
-  Camera support for Android is achieved through a generic Android camera HAL
-  implementation on top of libcamera. The HAL implements features required by
-  Android and out of scope from libcamera, such as JPEG encoding support.
-
-  This component is used to provide support for ChromeOS platforms
-
-GStreamer element (gstlibcamerasrc)
-  A `GStreamer element`_ is provided to allow capture from libcamera supported
-  devices through GStreamer pipelines, and connect to other elements for further
-  processing.
-
-  Development of this element is ongoing and is limited to a single stream.
-
-Native libcamera API
-  Applications can make use of the libcamera API directly using the C++
-  API. An example application and walkthrough using the libcamera API can be
-  followed in the `Application Writers Guide`_
-
-.. _GStreamer element: https://gstreamer.freedesktop.org/documentation/application-development/basics/elements.html
 
 Architecture
 ------------

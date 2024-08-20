@@ -239,6 +239,34 @@ The camera stack comprises four software layers. From bottom to top:
   libcamera framework or libcamera adaptation, and are outside of
   the scope of the libcamera project.
 
+V4L2 Compatibility Layer
+  V4L2 compatibility is achieved through a shared library that traps all
+  accesses to camera devices and routes them to libcamera to emulate high-level
+  V4L2 camera devices. It is injected in a process address space through
+  ``LD_PRELOAD`` and is completely transparent for applications.
+
+  The compatibility layer exposes camera device features on a best-effort basis,
+  and aims for the level of features traditionally available from a UVC camera
+  designed for video conferencing.
+
+Android Camera HAL
+  Camera support for Android is achieved through a generic Android camera HAL
+  implementation on top of libcamera. The HAL implements features required by
+  Android and out of scope from libcamera, such as JPEG encoding support.
+
+  This component is used to provide support for ChromeOS platforms.
+
+GStreamer element (gstlibcamerasrc)
+  A `GStreamer element`_ is provided to allow capture from libcamera supported
+  devices through GStreamer pipelines, and connect to other elements for further
+  processing.
+
+Native libcamera API
+  Applications can make use of the libcamera API directly using the C++
+  API. An example application and walkthrough using the libcamera API can be
+  followed in the :doc:`Application writer's guide </guides/application-developer>`
+
+.. _GStreamer element: https://gstreamer.freedesktop.org/documentation/application-development/basics/elements.html
 
 libcamera Architecture
 ======================
@@ -374,29 +402,3 @@ Helpers and Support Classes
   self-contained support classes, even if such code is present only once in the
   code base, in order to keep the source code clean and easy to read. This
   should be the case for instance for plugin management.
-
-
-V4L2 Compatibility Layer
-------------------------
-
-V4L2 compatibility is achieved through a shared library that traps all
-accesses to camera devices and routes them to libcamera to emulate high-level
-V4L2 camera devices. It is injected in a process address space through
-`LD_PRELOAD` and is completely transparent for applications.
-
-The compatibility layer exposes camera device features on a best-effort basis,
-and aims for the level of features traditionally available from a UVC camera
-designed for video conferencing.
-
-
-Android Camera HAL
-------------------
-
-Camera support for Android is achieved through a generic Android
-camera HAL implementation on top of libcamera. The HAL will implement internally
-features required by Android and missing from libcamera, such as JPEG encoding
-support.
-
-The Android camera HAL implementation will initially target the
-LIMITED hardware level, with support for the FULL level then being gradually
-implemented.

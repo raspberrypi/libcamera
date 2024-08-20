@@ -1,16 +1,12 @@
 .. SPDX-License-Identifier: CC-BY-SA-4.0
 
-.. Front page matter is defined in the project README file.
-.. include:: ../README.rst
-   :start-after: .. section-begin-libcamera
-   :end-before: .. section-end-libcamera
+.. include:: introduction.rst
 
 .. toctree::
    :maxdepth: 1
    :caption: Contents:
 
    Home <self>
-   Introduction <introduction>
    Contribute <contributing>
    Getting Started <getting-started>
 
@@ -26,3 +22,8 @@
    Sensor driver requirements <sensor_driver_requirements>
    SoftwareISP Benchmarking <software-isp-benchmarking>
    Tracing guide <guides/tracing>
+
+.. toctree::
+   :hidden:
+
+   introduction

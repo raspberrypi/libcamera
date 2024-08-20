@@ -52,6 +52,7 @@ libcamera repository. This will automatically merge the official main branch
 with your own **local** repository, so make sure to push these changes.
 
 .. code::
+
   # this can be run from any branch, not just main
   git pull
   git merge upstream/main

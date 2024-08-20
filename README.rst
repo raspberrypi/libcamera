@@ -40,23 +40,19 @@ To confirm this has worked, run ``git remote -v``. You should see the following:
 To make changes, checkout branches and push as normal.
 
 .. code::
+
   git checkout -b new_branch
   git add .
   git commit -am "new commit"
   git push origin new_branch
   # make sure you do not use the -u argument for git push!!
 
-When creating a pull request, play around with the options to make sure that
-you're not creating a pull request into the raspberrypi/libcamera repository,
-but rather this libcamera repository. The option didn't appear for me by default
-so I had to manually select which branch I wanted to create a pull request into
-on GitHub.
-
 When pulling changes, it is also good to fetch changes from the RaspberryPi
 libcamera repository. This will automatically merge the official main branch
 with your own **local** repository, so make sure to push these changes.
 
 .. code::
+
   # this can be run from any branch, not just main
   git pull
   git merge upstream/main
@@ -66,11 +62,24 @@ with your own **local** repository, so make sure to push these changes.
 Following all of these steps shouldn't cause any issues, but if it does then
 ruh roh.
 
+Pull Requests
+-------------
+
+When creating a pull request, play around with the options to make sure that
+you're not creating a pull request into the raspberrypi/libcamera repository,
+but rather this libcamera repository. The option didn't appear for me by default
+so I had to manually select which branch I wanted to create a pull request into
+on GitHub.
+
+As of now, any pushes we make for some reason create a notification
+on the original git repository as well as our own. The default setting
+when making a new pull request is to merge into raspberrypi/libcamera rather than
+into our own repository, so always double check that you are merging into
+**this** repository.
+
 The rest of this readme comes directly from the libcamera readme.
 
-..section-end-forksetup
-
-
+.. section-end-forksetup
 .. section-begin-libcamera
 
 ===========

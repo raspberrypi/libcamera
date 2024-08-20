@@ -13,6 +13,7 @@ Documentation
    :hidden:
 
    API <api-html/index>
+   Internal API <internal-api-html/index>
 
 What is libcamera?
 ==================

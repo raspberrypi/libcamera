@@ -3,6 +3,7 @@
 .. container:: documentation-nav
 
    * :doc:`/api-html/index`
+   * :doc:`/internal-api-html/index`
    * :doc:`/camera-sensor-model`
    * :doc:`/code-of-conduct`
    * :doc:`/coding-style`

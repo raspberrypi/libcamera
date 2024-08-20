@@ -43,7 +43,7 @@ To make changes, checkout branches and push as normal.
   git checkout -b new_branch
   git add .
   git commit -am "new commit"
-  git push -u origin new_branch
+  git push origin new_branch
 
 When pulling changes, it is also good to fetch changes from the RaspberryPi
 libcamera repository. This will automatically merge the official main branch

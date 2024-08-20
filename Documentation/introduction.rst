@@ -2,9 +2,9 @@
 
 .. include:: documentation-contents.rst
 
-*************
-Documentation
-*************
+************
+Introduction
+************
 
 .. toctree::
    :hidden:

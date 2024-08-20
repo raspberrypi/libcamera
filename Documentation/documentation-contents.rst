@@ -9,7 +9,6 @@
    * :doc:`/environment_variables`
    * :doc:`/feature_requirements`
    * :doc:`/guides/application-developer`
-   * :doc:`/guides/introduction`
    * :doc:`/guides/ipa`
    * :doc:`/guides/pipeline-handler`
    * :doc:`/guides/tracing`

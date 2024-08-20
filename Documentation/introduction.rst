@@ -14,12 +14,90 @@ Documentation
 
    API <api-html/index>
 
-API
-===
+What is libcamera?
+==================
 
-The libcamera API is extensively documented using Doxygen. The :ref:`API
-nightly build <api>` contains the most up-to-date API documentation, built from
-the latest master branch.
+libcamera is an open source complex camera support library for Linux, Android
+and ChromeOS. The library interfaces with Linux kernel device drivers and
+provides an intuitive API to developers in order to simplify the complexity
+involved in capturing images from complex cameras on Linux systems.
+
+What is a "complex camera"?
+===========================
+
+A modern "camera" tends to infact be several different pieces of hardware which
+must all be controlled together in order to produce and capture images of
+appropriate quality. A hardware pipeline typically consists of a camera sensor
+that captures raw frames and transmits them on a bus, a receiver that decodes
+the bus signals, and an image signal processor that processes raw frames to
+produce usable images in a standard format. The Linux kernel handles these
+multimedia devices through the 'Linux media' subsystem and provides a set of
+application programming interfaces known collectively as the
+V4L2 (`Video for Linux 2`_) and the `Media Controller`_ APIs, which provide an
+interface to interact and control media devices.
+
+.. _Video for Linux 2: https://www.linuxtv.org/downloads/v4l-dvb-apis-new/userspace-api/v4l/v4l2.html
+.. _Media Controller: https://www.linuxtv.org/downloads/v4l-dvb-apis-new/userspace-api/mediactl/media-controller.html
+
+Included in this subsystem are drivers for camera sensors, CSI2 (Camera
+Serial Interface) receivers, and ISPs (Image Signal Processors).
+
+The usage of these drivers to provide a functioning camera stack is a
+responsibility that lies in userspace, and is commonly implemented separately
+by vendors without a common architecture or API for application developers. This
+adds a lot of complexity to the task, particularly when considering that the
+differences in hardware pipelines and their representation in the kernel's APIs
+often necessitate bespoke handling.
+
+What is libcamera for?
+======================
+
+libcamera provides a complete camera stack for Linux-based systems to abstract
+the configuration of hardware and image control algorithms required to obtain
+desirable results from the camera through the kernel's APIs, reducing those
+operations to a simple and consistent method for developers. In short instead of
+having to deal with this:
+
+.. graphviz:: mali-c55.dot
+
+you can instead simply deal with:
+
+.. code-block:: python
+
+  >>> import libcamera as lc
+  >>> camera_manager = lc.CameraManager.singleton()
+  [0:15:59.582029920] [504]  INFO Camera camera_manager.cpp:313 libcamera v0.3.0+182-01e57380
+  >>> for camera in camera_manager.cameras:
+  ...     print(f' - {camera.id}')
+  ...
+   - mali-c55 tpg
+   - imx415 1-001a
+
+The library handles the rest for you. These documentary pages give more
+information on the internal workings of libcamera (and the kernel camera stack
+that lies behind it) as well as guidance on using libcamera in an application or
+extending the library with support for your hardware (through the pipeline
+handler and IPA module writer's guides).
+
+How should I use it?
+====================
+
+There are a few ways you might want to use libcamera, depending on your
+application. It's always possible to use the library directly, and you can find
+detailed information on how to do so in the
+:doc:`application writer's guide <guides/application-developer>`.
+
+It is often more appropriate to use one of the frameworks with libcamera
+support. For example an application powering an embedded media device
+incorporating capture, encoding and streaming of both video and audio would
+benefit from using `GStreamer`_, for which libcamera provides a plugin.
+Similarly an application for user-facing devices like a laptop would likely
+benefit accessing cameras through the XDG camera portal and `pipewire`_, which
+brings the advantages of resource sharing (multiple applications accessing the
+stream at the same time) and access control.
+
+.. _GStreamer: https://gstreamer.freedesktop.org/
+.. _pipewire: https://pipewire.org/
 
 Camera Stack
 ============
@@ -124,3 +202,25 @@ Native libcamera API
   followed in the :doc:`Application writer's guide </guides/application-developer>`
 
 .. _GStreamer element: https://gstreamer.freedesktop.org/documentation/application-development/basics/elements.html
+
+Licensing
+=========
+
+The libcamera core is covered by the `LGPL-2.1-or-later`_ license. Pipeline
+Handlers are a part of the libcamera code base and need to be contributed
+upstream by device vendors. IPA modules included in libcamera are covered by a
+free software license, however third-parties may develop IPA modules outside of
+libcamera and distribute them under a closed-source license, provided they do
+not include source code from the libcamera project.
+
+The libcamera project itself contains multiple libraries, applications and
+utilities. Licenses are expressed through SPDX tags in text-based files that
+support comments, and through the .reuse/dep5 file otherwise. A copy of all
+licenses are stored in the LICENSES directory, and a full summary of the
+licensing used throughout the project can be found in the COPYING.rst document.
+
+Applications which link dynamically against libcamera and use only the public
+API are an independent work of the authors and have no license restrictions
+imposed upon them from libcamera.
+
+.. _LGPL-2.1-or-later: https://spdx.org/licenses/LGPL-2.1-or-later.html

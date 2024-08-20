@@ -10,13 +10,12 @@
    :caption: Contents:
 
    Home <self>
-   Docs <docs>
+   Introduction <introduction>
    Contribute <contributing>
    Getting Started <getting-started>
 
    Application Writer's Guide <guides/application-developer>
    Camera Sensor Model <camera-sensor-model>
-   Developer Guide <guides/introduction>
    Environment variables <environment_variables>
    Feature Requirements <feature_requirements>
    IPA Writer's guide <guides/ipa>

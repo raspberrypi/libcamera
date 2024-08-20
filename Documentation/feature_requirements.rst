@@ -90,10 +90,15 @@ on top of the minimum required set for the profile they expose.
 3A and Image Enhancement Algorithms
 -----------------------------------
 
-The camera devices shall implement auto exposure, auto gain and auto white
-balance. Camera devices that include a focus lens shall implement auto
-focus. Additional image enhancement algorithms, such as noise reduction or
-video stabilization, may be implemented.
+The library shall provide a basic implementation of Image Processing Algorithms
+to serve as a reference for the internal API. This shall including auto exposure
+and gain and auto white balance. Camera devices that include a focus lens shall
+implement auto focus. Additional image enhancement algorithms, such as noise
+reduction or video stabilization, may be implemented. Device vendors are
+expected to provide a fully-fledged implementation compatible with their
+Pipeline Handler. One goal of the libcamera project is to create an environment
+in which the community will be able to compete with the closed-source vendor
+biaries and develop a high quality open source implementation.
 
 All algorithms may be implemented in hardware or firmware outside of the
 library, or in software in the library. They shall all be controllable by

@@ -1,8 +1,5 @@
 .. SPDX-License-Identifier: CC-BY-SA-4.0
 
-.. contents::
-   :local:
-
 .. include:: documentation-contents.rst
 
 *************

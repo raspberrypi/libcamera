@@ -24,6 +24,36 @@
 
 namespace libcamera {
 
+namespace ipa {
+
+constexpr int kColourTemperatureChangeThreshhold = 10;
+
+template<typename T>
+void interpolateVector(const std::vector<T> &a, const std::vector<T> &b,
+		       std::vector<T> &dest, double lambda)
+{
+	assert(a.size() == b.size());
+	dest.resize(a.size());
+	for (size_t i = 0; i < a.size(); i++) {
+		dest[i] = a[i] * (1.0 - lambda) + b[i] * lambda;
+	}
+}
+
+template<>
+void Interpolator<rkisp1::algorithms::LensShadingCorrection::Components>::
+	interpolate(const rkisp1::algorithms::LensShadingCorrection::Components &a,
+		    const rkisp1::algorithms::LensShadingCorrection::Components &b,
+		    rkisp1::algorithms::LensShadingCorrection::Components &dest,
+		    double lambda)
+{
+	interpolateVector(a.r, b.r, dest.r, lambda);
+	interpolateVector(a.gr, b.gr, dest.gr, lambda);
+	interpolateVector(a.gb, b.gb, dest.gb, lambda);
+	interpolateVector(a.b, b.b, dest.b, lambda);
+}
+
+} /* namespace ipa */
+
 namespace ipa::rkisp1::algorithms {
 
 /**
@@ -90,8 +120,9 @@ static std::vector<uint16_t> parseTable(const YamlObject &tuningData,
 }
 
 LensShadingCorrection::LensShadingCorrection()
-	: lastCt_({ 0, 0 })
+	: lastAppliedCt_(0), lastAppliedQuantizedCt_(0)
 {
+	sets_.setQuantization(kColourTemperatureChangeThreshhold);
 }
 
 /**
@@ -115,17 +146,18 @@ int LensShadingCorrection::init([[maybe_unused]] IPAContext &context,
 	}
 
 	const auto &sets = yamlSets.asList();
+	std::map<unsigned int, Components> lscData;
 	for (const auto &yamlSet : sets) {
 		uint32_t ct = yamlSet["ct"].get<uint32_t>(0);
 
-		if (sets_.count(ct)) {
+		if (lscData.count(ct)) {
 			LOG(RkISP1Lsc, Error)
 				<< "Multiple sets found for color temperature "
 				<< ct;
 			return -EINVAL;
 		}
 
-		Components &set = sets_[ct];
+		Components &set = lscData[ct];
 
 		set.ct = ct;
 		set.r = parseTable(yamlSet, "r");
@@ -142,10 +174,12 @@ int LensShadingCorrection::init([[maybe_unused]] IPAContext &context,
 		}
 	}
 
-	if (sets_.empty()) {
+	if (lscData.empty()) {
 		LOG(RkISP1Lsc, Error) << "Failed to load any sets";
 		return -EINVAL;
 	}
+
+	sets_.setData(std::move(lscData));
 
 	return 0;
 }
@@ -202,134 +236,34 @@ void LensShadingCorrection::copyTable(rkisp1_cif_isp_lsc_config &config,
 	std::copy(set.b.begin(), set.b.end(), &config.b_data_tbl[0][0]);
 }
 
-/*
- * Interpolate LSC parameters based on color temperature value.
- */
-void LensShadingCorrection::interpolateTable(rkisp1_cif_isp_lsc_config &config,
-					     const Components &set0,
-					     const Components &set1,
-					     const uint32_t ct)
-{
-	double coeff0 = (set1.ct - ct) / static_cast<double>(set1.ct - set0.ct);
-	double coeff1 = (ct - set0.ct) / static_cast<double>(set1.ct - set0.ct);
-
-	for (unsigned int i = 0; i < RKISP1_CIF_ISP_LSC_SAMPLES_MAX; ++i) {
-		for (unsigned int j = 0; j < RKISP1_CIF_ISP_LSC_SAMPLES_MAX; ++j) {
-			unsigned int sample = i * RKISP1_CIF_ISP_LSC_SAMPLES_MAX + j;
-
-			config.r_data_tbl[i][j] =
-				set0.r[sample] * coeff0 +
-				set1.r[sample] * coeff1;
-
-			config.gr_data_tbl[i][j] =
-				set0.gr[sample] * coeff0 +
-				set1.gr[sample] * coeff1;
-
-			config.gb_data_tbl[i][j] =
-				set0.gb[sample] * coeff0 +
-				set1.gb[sample] * coeff1;
-
-			config.b_data_tbl[i][j] =
-				set0.b[sample] * coeff0 +
-				set1.b[sample] * coeff1;
-		}
-	}
-}
-
 /**
  * \copydoc libcamera::ipa::Algorithm::prepare
  */
 void LensShadingCorrection::prepare(IPAContext &context,
-				    const uint32_t frame,
+				    [[maybe_unused]] const uint32_t frame,
 				    [[maybe_unused]] IPAFrameContext &frameContext,
 				    RkISP1Params *params)
 {
-	/*
-	 * If there is only one set, the configuration has already been done
-	 * for first frame.
-	 */
-	if (sets_.size() == 1 && frame > 0)
-		return;
-
-	/*
-	 * If there is only one set, pick it. We can ignore lastCt_, as it will
-	 * never be relevant.
-	 */
-	if (sets_.size() == 1) {
-		auto config = params->block<BlockType::Lsc>();
-		config.setEnabled(true);
-
-		setParameters(*config);
-		copyTable(*config, sets_.cbegin()->second);
-		return;
-	}
-
 	uint32_t ct = context.activeState.awb.temperatureK;
-	ct = std::clamp(ct, sets_.cbegin()->first, sets_.crbegin()->first);
-
-	/*
-	 * If the original is the same, then it means the same adjustment would
-	 * be made. If the adjusted is the same, then it means that it's the
-	 * same as what was actually applied. Thus in these cases we can skip
-	 * reprogramming the LSC.
-	 *
-	 * original == adjusted can only happen if an interpolation
-	 * happened, or if original has an exact entry in sets_. This means
-	 * that if original != adjusted, then original was adjusted to
-	 * the nearest available entry in sets_, resulting in adjusted.
-	 * Clearly, any ct value that is in between original and adjusted
-	 * will be adjusted to the same adjusted value, so we can skip
-	 * reprogramming the LSC table.
-	 *
-	 * We also skip updating the original value, as the last one had a
-	 * larger bound and thus a larger range of ct values that will be
-	 * adjusted to the same adjusted.
-	 */
-	if ((lastCt_.original <= ct && ct <= lastCt_.adjusted) ||
-	    (lastCt_.adjusted <= ct && ct <= lastCt_.original))
+	if (std::abs(static_cast<int>(ct) - static_cast<int>(lastAppliedCt_)) <
+	    kColourTemperatureChangeThreshhold)
+		return;
+	unsigned int quantizedCt;
+	const Components &set = sets_.getInterpolated(ct, &quantizedCt);
+	if (lastAppliedQuantizedCt_ == quantizedCt)
 		return;
 
 	auto config = params->block<BlockType::Lsc>();
 	config.setEnabled(true);
 	setParameters(*config);
+	copyTable(*config, set);
 
-	/*
-	 * The color temperature matches exactly one of the available LSC tables.
-	 */
-	if (sets_.count(ct)) {
-		copyTable(*config, sets_[ct]);
-		lastCt_ = { ct, ct };
-		return;
-	}
+	lastAppliedCt_ = ct;
+	lastAppliedQuantizedCt_ = quantizedCt;
 
-	/* No shortcuts left; we need to round or interpolate */
-	auto iter = sets_.upper_bound(ct);
-	const Components &set1 = iter->second;
-	const Components &set0 = (--iter)->second;
-	uint32_t ct0 = set0.ct;
-	uint32_t ct1 = set1.ct;
-	uint32_t diff0 = ct - ct0;
-	uint32_t diff1 = ct1 - ct;
-	static constexpr double kThreshold = 0.1;
-	float threshold = kThreshold * (ct1 - ct0);
-
-	if (diff0 < threshold || diff1 < threshold) {
-		const Components &set = diff0 < diff1 ? set0 : set1;
-		LOG(RkISP1Lsc, Debug) << "using LSC table for " << set.ct;
-		copyTable(*config, set);
-		lastCt_ = { ct, set.ct };
-		return;
-	}
-
-	/*
-	 * ct is not within 10% of the difference between the neighbouring
-	 * color temperatures, so we need to interpolate.
-	 */
 	LOG(RkISP1Lsc, Debug)
-		<< "ct is " << ct << ", interpolating between "
-		<< ct0 << " and " << ct1;
-	interpolateTable(*config, set0, set1, ct);
-	lastCt_ = { ct, ct };
+		<< "ct is " << ct << ", quantized to "
+		<< quantizedCt;
 }
 
 REGISTER_IPA_ALGORITHM(LensShadingCorrection, "LensShadingCorrection")

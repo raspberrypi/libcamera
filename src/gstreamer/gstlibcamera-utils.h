@@ -36,10 +36,10 @@ void gst_libcamera_clamp_and_set_frameduration(libcamera::ControlList &controls,
 void gst_libcamera_framerate_to_caps(GstCaps *caps, const GstStructure *element_caps);
 unsigned int
 pixel_format_to_depth(const libcamera::PixelFormat &format);
-
+unsigned int gst_format_to_depth(GstVideoFormat);
 
 #if !GST_CHECK_VERSION(1, 16, 0)
-static inline void gst_clear_event(GstEvent **event_ptr)
+	static inline void gst_clear_event(GstEvent **event_ptr)
 {
 	g_clear_pointer(event_ptr, gst_mini_object_unref);
 }

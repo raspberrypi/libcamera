@@ -11,6 +11,8 @@
 #include <libcamera/control_ids.h>
 
 #include <gst/gst.h>
+#include "gstlibcamera-utils.h"
+
 
 G_BEGIN_DECLS
 
@@ -20,8 +22,12 @@ G_DECLARE_FINAL_TYPE(GstLibcameraSrc, gst_libcamera_src,
 
 G_END_DECLS
 
+std::vector<GstLibcameraSrcSensorModes> gst_libcamera_src_enumerate_sensor_modes(GstLibcameraSrc *);
+
+void gst_libcamera_find_best_format_with_framerate(GstLibcameraSrc *, std::shared_ptr<std::vector<GstLibcameraSrcSensorModes>>, GstStructure *, std::shared_ptr<libcamera::CameraConfiguration>) ;
+
 inline GType
-gst_libcamera_auto_focus_get_type()
+	gst_libcamera_auto_focus_get_type()
 {
 	static GType type = 0;
 	static const GEnumValue values[] = {
@@ -48,3 +54,4 @@ gst_libcamera_auto_focus_get_type()
 
 	return type;
 }
+

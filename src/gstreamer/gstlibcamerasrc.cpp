@@ -147,6 +147,7 @@ struct GstLibcameraSrcState {
 	float exposure_value;
 	controls::AwbModeEnum awb_mode = controls::AwbAuto;
 	float analog_gain;
+	float saturation = 1.0;
 
 	/* GstPhotography interface implementation */
 	GstPhotographyCaps capabilities;
@@ -196,6 +197,7 @@ enum {
 	PROP_COLOR_TEMPERATURE,
 	PROP_ANALOG_GAIN,
 	PROP_OVERRIDE_SENSOR_MODE,
+	PROP_SATURATION,
 };
 
 static void gst_libcamera_src_child_proxy_init(gpointer g_iface,
@@ -209,6 +211,7 @@ static const struct
 	{ GST_PHOTOGRAPHY_CAPS_EXPOSURE, &controls::ExposureTime },
 	{ GST_PHOTOGRAPHY_CAPS_EXPOSURE, &controls::ExposureValue },
 	{ GST_PHOTOGRAPHY_CAPS_EXPOSURE, &controls::AnalogueGain },
+	{ GST_PHOTOGRAPHY_CAPS_SATURATION, &controls::Saturation },
 	{ GST_PHOTOGRAPHY_CAPS_WB_MODE, &controls::AwbEnable },
 };
 
@@ -224,7 +227,10 @@ G_DEFINE_TYPE_WITH_CODE(GstLibcameraSrc, gst_libcamera_src, GST_TYPE_ELEMENT,
 #define TEMPLATE_CAPS GST_STATIC_CAPS("video/x-raw; image/jpeg; video/x-bayer")
 /* For the simple case, we have a src pad that is always present. */
 GstStaticPadTemplate src_template = {
-	"src", GST_PAD_SRC, GST_PAD_ALWAYS, TEMPLATE_CAPS
+	"src",
+	GST_PAD_SRC,
+	GST_PAD_ALWAYS,
+	TEMPLATE_CAPS
 };
 
 /* More pads can be requested in state < PAUSED */
@@ -426,20 +432,32 @@ std::vector<GstLibcameraSrcSensorModes> gst_libcamera_src_enumerate_sensor_modes
 
 	std::vector<GstLibcameraSrcSensorModes> modes;
 	std::unique_ptr<CameraConfiguration> config = self->state->cam_->generateConfiguration({ libcamera::StreamRole::Raw });
+
 	if (config == nullptr) {
 		GST_ERROR_OBJECT(self, "Failed to generate config for camera, could not enumerate stream modes");
 		return modes;
 	}
 	libcamera::StreamConfiguration &stream = config->at(0);
+
 	const libcamera::StreamFormats &formats = stream.formats();
 
 	for (const auto &pix : formats.pixelformats()) {
 		for (const auto &size : formats.sizes(pix)) {
+			GST_DEBUG_OBJECT(self, "Inspecting sensor mode %dx%d@%s",
+					 size.width, size.height, pix.toString().c_str());
+
 			config->at(0).size = size;
 			config->at(0).pixelFormat = pix;
+			// if (is_pixel_format_mjpeg(pix)) {
+			// 	GST_WARNING_OBJECT(self, "Skipping MJPEG sensor mode %dx%d@%s",
+			// 			   size.width, size.height, pix.toString().c_str());
+			// 	continue;
+			// }
+			config->validate();
+
 			if (config->validate() == CameraConfiguration::Invalid) {
-				GST_WARNING_OBJECT(self, "Skipping unsupported sensor mode %dx%d@%s, found bitDepth %d",
-						   size.width, size.height, pix.toString().c_str(), config->sensorConfig->bitDepth);
+				GST_WARNING_OBJECT(self, "Skipping unsupported sensor mode %dx%d@%s",
+						   size.width, size.height, pix.toString().c_str());
 				continue;
 			}
 
@@ -447,11 +465,17 @@ std::vector<GstLibcameraSrcSensorModes> gst_libcamera_src_enumerate_sensor_modes
 			self->state->cam_->configure(config.get());
 
 			auto fd_ctrl = self->state->cam_->controls().find(&controls::FrameDurationLimits);
-
-			gdouble min_framerate = gst_util_guint64_to_gdouble(1.0e6) /
+			gdouble min_framerate = 0.0;
+			gdouble max_framerate = 0.0;
+			// check if the optional FrameDurationLimits control is available
+			if (fd_ctrl != self->state->cam_->controls().end()) {
+				min_framerate = gst_util_guint64_to_gdouble(1.0e6) /
 						gst_util_guint64_to_gdouble(fd_ctrl->second.max().get<int64_t>());
-			gdouble max_framerate = gst_util_guint64_to_gdouble(1.0e6) /
+				max_framerate = gst_util_guint64_to_gdouble(1.0e6) /
 						gst_util_guint64_to_gdouble(fd_ctrl->second.min().get<int64_t>());
+			} else {
+				GST_DEBUG_OBJECT(self, "mode has no FrameDurationLimits,leaving min and max at 0.0");
+			}
 
 			// Storing our sensorMode in a struct to be added to the list of available sensor modes.
 			GstLibcameraSrcSensorModes current_mode;
@@ -463,16 +487,16 @@ std::vector<GstLibcameraSrcSensorModes> gst_libcamera_src_enumerate_sensor_modes
 			modes.push_back(current_mode);
 
 			GST_DEBUG_OBJECT(self, "Found Sensor mode of max_width: %d, max_height: %d, format: %s, min_framerate: %.1f, max_framerate: %.1f",
-					current_mode.size.height,
-					current_mode.size.width,
-					current_mode.pixel_format.toString().c_str(),
-					current_mode.min_framerate,
-					current_mode.max_framerate);
+					 current_mode.size.height,
+					 current_mode.size.width,
+					 current_mode.pixel_format.toString().c_str(),
+					 current_mode.min_framerate,
+					 current_mode.max_framerate);
 
 			GST_DEBUG_OBJECT(self, "Select this mode using the 'mmal -mode style' string: 'libcamera override-sensormode=%d:%d:%d ",
-					current_mode.size.width,
-					current_mode.size.height,
-					current_mode.bit_depth);
+					 current_mode.size.width,
+					 current_mode.size.height,
+					 current_mode.bit_depth);
 		}
 	}
 
@@ -1114,6 +1138,14 @@ gst_libcamera_src_set_property(GObject *object, guint prop_id,
 		}
 		break;
 	}
+	case PROP_SATURATION: {
+		GstPhotographyInterface *iface = GST_PHOTOGRAPHY_GET_INTERFACE(self);
+		if (iface->set_saturation != NULL) {
+			iface->set_saturation(GST_PHOTOGRAPHY(self),
+					      g_value_get_float(value));
+		}
+		break;
+	}
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
 		break;
@@ -1206,6 +1238,15 @@ gst_libcamera_src_get_property(GObject *object, guint prop_id, GValue *value,
 			g_value_set_string(value, "false");
 		}
 	} break;
+	case PROP_SATURATION: {
+		gfloat saturation;
+
+		GstPhotographyInterface *iface = GST_PHOTOGRAPHY_GET_INTERFACE(self);
+		if (iface->get_saturation != NULL && iface->get_saturation(GST_PHOTOGRAPHY(self), &saturation)) {
+			g_value_set_float(value, saturation);
+		}
+		break;
+	}
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
 		break;
@@ -1392,7 +1433,7 @@ gst_libcamera_src_class_init(GstLibcameraSrcClass *klass)
 	gst_element_class_set_metadata(element_class,
 				       "libcamera Source", "Source/Video",
 				       "Linux Camera source using libcamera",
-				       "Nicolas Dufresne <nicolas.dufresne@collabora.com>");
+				       "Nicolas Dufresne <nicolas.dufresne@collabora.com>, Raphael Dürscheid <raphael.duerscheid@aivero.com>");
 	gst_element_class_add_static_pad_template_with_gtype(element_class,
 							     &src_template,
 							     GST_TYPE_LIBCAMERA_PAD);
@@ -1482,6 +1523,9 @@ gst_libcamera_src_class_init(GstLibcameraSrcClass *klass)
 
 	g_object_class_override_property(object_class, PROP_ANALOG_GAIN,
 					 GST_PHOTOGRAPHY_PROP_ANALOG_GAIN);
+
+	g_object_class_override_property(object_class, PROP_SATURATION,
+					 GST_PHOTOGRAPHY_PROP_SATURATION);
 
 	spec = g_param_spec_string("override-sensormode", "Override sensor mode",
 				   "You can override the sensor mode using the former mmal '-mode' syntax: 'width:height:bitDepth. Defaults to no override", NULL,
@@ -1869,6 +1913,48 @@ gst_libcamera_src_get_analog_gain(GstPhotography *p, gfloat *analog_gain)
 	return ret;
 }
 
+static gboolean
+gst_libcamera_src_set_saturation(GstPhotography *p, gfloat saturation)
+{
+	GstLibcameraSrc *self = GST_LIBCAMERA_SRC(p);
+	GstLibcameraSrcState *state = self->state;
+	GLibLocker locker(&state->lock_);
+
+	if (state->cam_ != NULL) {
+		/* If the camera is opened, check whether we can actually set the control */
+		const ControlInfoMap &infoMap = state->cam_->controls();
+		if (infoMap.find(&controls::Saturation) == infoMap.end())
+			return FALSE;
+	}
+
+	if (state->saturation != saturation) {
+		GST_LOG_OBJECT(self, "Setting saturation %f", saturation);
+		state->saturation = saturation;
+		state->pendingControls_.set(controls::Saturation, state->saturation);
+	}
+
+	return TRUE;
+}
+
+static gboolean
+gst_libcamera_src_get_saturation(GstPhotography *p, gfloat *saturation)
+{
+	GstLibcameraSrc *self = GST_LIBCAMERA_SRC(p);
+	GstLibcameraSrcState *state = self->state;
+	gboolean ret = FALSE;
+	GLibLocker locker(&state->lock_);
+	if (state->cam_ == NULL)
+		return FALSE;
+
+	const ControlInfoMap &infoMap = state->cam_->controls();
+	if (infoMap.find(&controls::Saturation) != infoMap.end()) {
+		*saturation = state->saturation;
+		ret = TRUE;
+	}
+
+	return ret;
+}
+
 static void
 gst_libcamera_src_photography_init(gpointer g_iface)
 {
@@ -1893,6 +1979,9 @@ gst_libcamera_src_photography_init(gpointer g_iface)
 
 	iface->set_analog_gain = gst_libcamera_src_set_analog_gain;
 	iface->get_analog_gain = gst_libcamera_src_get_analog_gain;
+
+	iface->set_saturation = gst_libcamera_src_set_saturation;
+	iface->get_saturation = gst_libcamera_src_get_saturation;
 }
 
 /* GstChildProxy implementation */

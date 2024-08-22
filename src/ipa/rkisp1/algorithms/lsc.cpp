@@ -70,6 +70,70 @@ namespace ipa::rkisp1::algorithms {
 
 LOG_DEFINE_CATEGORY(RkISP1Lsc)
 
+class LscTableLoader
+{
+public:
+	int parseLscData(const YamlObject &yamlSets,
+			 std::map<unsigned int, LensShadingCorrection::Components> &lscData)
+	{
+		const auto &sets = yamlSets.asList();
+
+		for (const auto &yamlSet : sets) {
+			uint32_t ct = yamlSet["ct"].get<uint32_t>(0);
+
+			if (lscData.count(ct)) {
+				LOG(RkISP1Lsc, Error)
+					<< "Multiple sets found for color temperature "
+					<< ct;
+				return -EINVAL;
+			}
+
+			LensShadingCorrection::Components &set = lscData[ct];
+
+			set.ct = ct;
+			set.r = parseTable(yamlSet, "r");
+			set.gr = parseTable(yamlSet, "gr");
+			set.gb = parseTable(yamlSet, "gb");
+			set.b = parseTable(yamlSet, "b");
+
+			if (set.r.empty() || set.gr.empty() ||
+			    set.gb.empty() || set.b.empty()) {
+				LOG(RkISP1Lsc, Error)
+					<< "Set for color temperature " << ct
+					<< " is missing tables";
+				return -EINVAL;
+			}
+		}
+
+		if (lscData.empty()) {
+			LOG(RkISP1Lsc, Error) << "Failed to load any sets";
+			return -EINVAL;
+		}
+
+		return 0;
+	}
+
+private:
+	std::vector<uint16_t> parseTable(const YamlObject &tuningData,
+					 const char *prop)
+	{
+		static constexpr unsigned int kLscNumSamples =
+			RKISP1_CIF_ISP_LSC_SAMPLES_MAX * RKISP1_CIF_ISP_LSC_SAMPLES_MAX;
+
+		std::vector<uint16_t> table =
+			tuningData[prop].getList<uint16_t>().value_or(std::vector<uint16_t>{});
+		if (table.size() != kLscNumSamples) {
+			LOG(RkISP1Lsc, Error)
+				<< "Invalid '" << prop << "' values: expected "
+				<< kLscNumSamples
+				<< " elements, got " << table.size();
+			return {};
+		}
+
+		return table;
+	}
+};
+
 static std::vector<double> parseSizes(const YamlObject &tuningData,
 				      const char *prop)
 {
@@ -100,25 +164,6 @@ static std::vector<double> parseSizes(const YamlObject &tuningData,
 	return sizes;
 }
 
-static std::vector<uint16_t> parseTable(const YamlObject &tuningData,
-					const char *prop)
-{
-	static constexpr unsigned int kLscNumSamples =
-		RKISP1_CIF_ISP_LSC_SAMPLES_MAX * RKISP1_CIF_ISP_LSC_SAMPLES_MAX;
-
-	std::vector<uint16_t> table =
-		tuningData[prop].getList<uint16_t>().value_or(std::vector<uint16_t>{});
-	if (table.size() != kLscNumSamples) {
-		LOG(RkISP1Lsc, Error)
-			<< "Invalid '" << prop << "' values: expected "
-			<< kLscNumSamples
-			<< " elements, got " << table.size();
-		return {};
-	}
-
-	return table;
-}
-
 LensShadingCorrection::LensShadingCorrection()
 	: lastAppliedCt_(0), lastAppliedQuantizedCt_(0)
 {
@@ -145,39 +190,12 @@ int LensShadingCorrection::init([[maybe_unused]] IPAContext &context,
 		return -EINVAL;
 	}
 
-	const auto &sets = yamlSets.asList();
 	std::map<unsigned int, Components> lscData;
-	for (const auto &yamlSet : sets) {
-		uint32_t ct = yamlSet["ct"].get<uint32_t>(0);
-
-		if (lscData.count(ct)) {
-			LOG(RkISP1Lsc, Error)
-				<< "Multiple sets found for color temperature "
-				<< ct;
-			return -EINVAL;
-		}
-
-		Components &set = lscData[ct];
-
-		set.ct = ct;
-		set.r = parseTable(yamlSet, "r");
-		set.gr = parseTable(yamlSet, "gr");
-		set.gb = parseTable(yamlSet, "gb");
-		set.b = parseTable(yamlSet, "b");
-
-		if (set.r.empty() || set.gr.empty() ||
-		    set.gb.empty() || set.b.empty()) {
-			LOG(RkISP1Lsc, Error)
-				<< "Set for color temperature " << ct
-				<< " is missing tables";
-			return -EINVAL;
-		}
-	}
-
-	if (lscData.empty()) {
-		LOG(RkISP1Lsc, Error) << "Failed to load any sets";
-		return -EINVAL;
-	}
+	int res = 0;
+	auto loader = LscTableLoader();
+	res = loader.parseLscData(yamlSets, lscData);
+	if (res)
+		return res;
 
 	sets_.setData(std::move(lscData));
 

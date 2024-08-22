@@ -17,6 +17,7 @@
 #include <libcamera/control_ids.h>
 #include <libcamera/controls.h>
 #include <libcamera/geometry.h>
+#include <libcamera/ipa/core_ipa_interface.h>
 
 #include <libipa/camera_sensor_helper.h>
 #include <libipa/fc_queue.h>
@@ -180,6 +181,7 @@ struct IPAFrameContext : public FrameContext {
 
 struct IPAContext {
 	const IPAHwSettings *hw;
+	IPACameraSensorInfo sensorInfo;
 	IPASessionConfiguration configuration;
 	IPAActiveState activeState;
 

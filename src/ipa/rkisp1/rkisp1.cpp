@@ -124,7 +124,7 @@ const ControlInfoMap::Map rkisp1Controls{
 } /* namespace */
 
 IPARkISP1::IPARkISP1()
-	: context_({ {}, {}, {}, { kMaxFrameContexts }, {}, {} })
+	: context_({ {}, {}, {}, {}, { kMaxFrameContexts }, {}, {} })
 {
 }
 
@@ -157,6 +157,8 @@ int IPARkISP1::init(const IPASettings &settings, unsigned int hwRevision,
 	}
 
 	LOG(IPARkISP1, Debug) << "Hardware revision is " << hwRevision;
+
+	context_.sensorInfo = sensorInfo;
 
 	context_.camHelper = CameraSensorHelperFactoryBase::create(settings.sensorModel);
 	if (!context_.camHelper) {

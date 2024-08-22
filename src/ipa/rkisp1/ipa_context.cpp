@@ -424,6 +424,9 @@ namespace libcamera::ipa::rkisp1 {
  * \var IPAContext::hw
  * \brief RkISP1 version-specific hardware parameters
  *
+ * \var IPAContext::sensorInfo
+ * \brief The IPA session sensorInfo, immutable during the session
+ *
  * \var IPAContext::configuration
  * \brief The IPA session configuration, immutable during the session
  *

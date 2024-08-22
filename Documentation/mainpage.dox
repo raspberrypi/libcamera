@@ -12,8 +12,8 @@ library's concepts.
 \if internal
 
 As a follow-on to the developer's guide, to assist you in adding support for
-your platform the [pipeline handler writer's guide](../html/guides/pipeline-handler.html)
-and the [ipa module writer's guide](../html/guides/ipa.html) should be helpful.
+your platform the [pipeline handler writer's guide](../guides/pipeline-handler.html)
+and the [ipa module writer's guide](../guides/ipa.html) should be helpful.
 
 The full libcamera API is documented here. If you wish to see only the public
 part of the API you can use [these pages](../api-html/index.html) instead.
@@ -21,7 +21,7 @@ part of the API you can use [these pages](../api-html/index.html) instead.
 \else
 
 As a follow-on to the developer's guide, to assist you in using libcamera within
-your project the [application developer's guide](../html/guides/application-developer.html)
+your project the [application developer's guide](../guides/application-developer.html)
 gives an overview on how to achieve that.
 
 Only the public part of the libcamera API is documented here; if you are a

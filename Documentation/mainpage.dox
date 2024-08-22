@@ -5,7 +5,7 @@ Welcome to the API reference for <a href="https://libcamera.org/">libcamera</a>,
 a complex camera support library for Linux, Android and ChromeOS. These pages
 are automatically generated from the libcamera source code and describe the API
 in detail - if this is your first interaction with libcamera then you may find
-it useful to visit the [developer's guide](../html/guides/introduction.html) in
+it useful to visit the [documentation](../introduction.html) in
 the first instance, which can provide a more generic introduction to the
 library's concepts.
 

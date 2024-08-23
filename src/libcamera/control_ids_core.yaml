@@ -127,7 +127,7 @@ controls:
         enabled.
 
         By convention EV adjusts the exposure as log2. For example
-        EV = [-2, -1, 0.5, 0, 0.5, 1, 2] results in an exposure adjustment
+        EV = [-2, -1, -0.5, 0, 0.5, 1, 2] results in an exposure adjustment
         of [1/4x, 1/2x, 1/sqrt(2)x, 1x, sqrt(2)x, 2x, 4x].
 
         \sa AeEnable

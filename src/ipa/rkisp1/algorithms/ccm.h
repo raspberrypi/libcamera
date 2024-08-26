@@ -9,8 +9,8 @@
 
 #include <linux/rkisp1-config.h>
 
+#include "libipa/interpolator.h"
 #include "libipa/matrix.h"
-#include "libipa/matrix_interpolator.h"
 
 #include "algorithm.h"
 
@@ -40,8 +40,8 @@ private:
 			   const Matrix<int16_t, 3, 1> &offsets);
 
 	unsigned int ct_;
-	MatrixInterpolator<float, 3, 3> ccm_;
-	MatrixInterpolator<int16_t, 3, 1> offsets_;
+	Interpolator<Matrix<float, 3, 3>> ccm_;
+	Interpolator<Matrix<int16_t, 3, 1>> offsets_;
 };
 
 } /* namespace ipa::rkisp1::algorithms */

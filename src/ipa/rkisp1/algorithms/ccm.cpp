@@ -19,7 +19,7 @@
 #include "libcamera/internal/yaml_parser.h"
 
 #include "../utils.h"
-#include "libipa/matrix_interpolator.h"
+#include "libipa/interpolator.h"
 
 /**
  * \file ccm.h
@@ -46,7 +46,7 @@ int Ccm::init([[maybe_unused]] IPAContext &context, const YamlObject &tuningData
 		LOG(RkISP1Ccm, Warning)
 			<< "Failed to parse 'ccm' "
 			<< "parameter from tuning file; falling back to unit matrix";
-		ccm_.reset();
+		ccm_.setData({ { 0, Matrix<float, 3, 3>::identity() } });
 	}
 
 	ret = offsets_.readYaml(tuningData["ccms"], "ct", "offsets");
@@ -54,14 +54,8 @@ int Ccm::init([[maybe_unused]] IPAContext &context, const YamlObject &tuningData
 		LOG(RkISP1Ccm, Warning)
 			<< "Failed to parse 'offsets' "
 			<< "parameter from tuning file; falling back to zero offsets";
-		/*
-		 * MatrixInterpolator::reset() resets to identity matrices
-		 * while here we need zero matrices so we need to construct it
-		 * ourselves.
-		 */
-		Matrix<int16_t, 3, 1> m({ 0, 0, 0 });
-		std::map<unsigned int, Matrix<int16_t, 3, 1>> matrices = { { 0, m } };
-		offsets_ = MatrixInterpolator<int16_t, 3, 1>(matrices);
+
+		offsets_.setData({ { 0, Matrix<int16_t, 3, 1>({ 0, 0, 0 }) } });
 	}
 
 	return 0;
@@ -106,8 +100,8 @@ void Ccm::prepare(IPAContext &context, const uint32_t frame,
 	}
 
 	ct_ = ct;
-	Matrix<float, 3, 3> ccm = ccm_.get(ct);
-	Matrix<int16_t, 3, 1> offsets = offsets_.get(ct);
+	Matrix<float, 3, 3> ccm = ccm_.getInterpolated(ct);
+	Matrix<int16_t, 3, 1> offsets = offsets_.getInterpolated(ct);
 
 	context.activeState.ccm.ccm = ccm;
 	frameContext.ccm.ccm = ccm;

@@ -59,6 +59,7 @@ struct IPASessionConfiguration {
 	} sensor;
 
 	bool raw;
+	uint32_t paramFormat;
 };
 
 struct IPAActiveState {

@@ -814,6 +814,7 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 		return ret;
 
 	ipaConfig.sensorControls = data->sensor_->controls();
+	ipaConfig.paramFormat = paramFormat.fourcc;
 
 	ret = data->ipa_->configure(ipaConfig, streamConfig, &data->controlInfo_);
 	if (ret) {

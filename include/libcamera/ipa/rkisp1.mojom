@@ -11,6 +11,7 @@ import "include/libcamera/ipa/core.mojom";
 struct IPAConfigInfo {
 	libcamera.IPACameraSensorInfo sensorInfo;
 	libcamera.ControlInfoMap sensorControls;
+	uint32 paramFormat;
 };
 
 interface IPARkISP1Interface {

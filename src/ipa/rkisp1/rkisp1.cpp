@@ -226,6 +226,8 @@ int IPARkISP1::configure(const IPAConfigInfo &ipaConfig,
 	context_.activeState = {};
 	context_.frameContexts.clear();
 
+	context_.configuration.paramFormat = ipaConfig.paramFormat;
+
 	const IPACameraSensorInfo &info = ipaConfig.sensorInfo;
 	const ControlInfo vBlank = sensorControls_.find(V4L2_CID_VBLANK)->second;
 	context_.configuration.sensor.defVBlank = vBlank.def().get<int32_t>();

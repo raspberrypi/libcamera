@@ -106,6 +106,11 @@ namespace libcamera::ipa::rkisp1 {
  */
 
 /**
+ * \var IPASessionConfiguration::paramFormat
+ * \brief The fourcc of the parameters buffers format
+ */
+
+/**
  * \struct IPAActiveState
  * \brief Active state for algorithms
  *

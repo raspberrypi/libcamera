@@ -110,7 +110,7 @@ public:
 	std::unique_ptr<ipa::rkisp1::IPAProxyRkISP1> ipa_;
 
 private:
-	void paramFilled(unsigned int frame);
+	void paramFilled(unsigned int frame, unsigned int bytesused);
 	void setSensorControls(unsigned int frame,
 			       const ControlList &sensorControls);
 
@@ -374,15 +374,14 @@ int RkISP1CameraData::loadIPA(unsigned int hwRevision)
 	return 0;
 }
 
-void RkISP1CameraData::paramFilled(unsigned int frame)
+void RkISP1CameraData::paramFilled(unsigned int frame, unsigned int bytesused)
 {
 	PipelineHandlerRkISP1 *pipe = RkISP1CameraData::pipe();
 	RkISP1FrameInfo *info = frameInfo_.find(frame);
 	if (!info)
 		return;
 
-	info->paramBuffer->_d()->metadata().planes()[0].bytesused =
-		sizeof(struct rkisp1_params_cfg);
+	info->paramBuffer->_d()->metadata().planes()[0].bytesused = bytesused;
 	pipe->param_->queueBuffer(info->paramBuffer);
 	pipe->stat_->queueBuffer(info->statBuffer);
 

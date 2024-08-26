@@ -332,7 +332,7 @@ void IPARkISP1::fillParamsBuffer(const uint32_t frame, const uint32_t bufferId)
 	for (auto const &algo : algorithms())
 		algo->prepare(context_, frame, frameContext, params);
 
-	paramsBufferReady.emit(frame);
+	paramsBufferReady.emit(frame, sizeof(*params));
 }
 
 void IPARkISP1::processStatsBuffer(const uint32_t frame, const uint32_t bufferId,

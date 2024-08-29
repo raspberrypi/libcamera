@@ -16,6 +16,8 @@
 
 #include "libcamera/internal/yaml_parser.h"
 
+#include "matrix.h"
+
 namespace libcamera {
 
 LOG_DECLARE_CATEGORY(Vector)
@@ -37,29 +39,6 @@ public:
 	{
 		for (unsigned int i = 0; i < Rows; i++)
 			data_[i] = data[i];
-	}
-
-	int readYaml(const libcamera::YamlObject &yaml)
-	{
-		if (yaml.size() != Rows) {
-			LOG(Vector, Error)
-				<< "Wrong number of values in vector: expected "
-				<< Rows << ", got " << yaml.size();
-			return -EINVAL;
-		}
-
-		unsigned int i = 0;
-		for (const auto &x : yaml.asList()) {
-			auto value = x.get<T>();
-			if (!value) {
-				LOG(Vector, Error) << "Failed to read vector value";
-				return -EINVAL;
-			}
-
-			data_[i++] = *value;
-		}
-
-		return 0;
 	}
 
 	const T &operator[](size_t i) const
@@ -163,6 +142,21 @@ private:
 	std::array<T, Rows> data_;
 };
 
+template<typename T, unsigned int Rows, unsigned int Cols>
+Vector<T, Rows> operator*(const Matrix<T, Rows, Cols> &m, const Vector<T, Cols> &v)
+{
+	Vector<T, Rows> result;
+
+	for (unsigned int i = 0; i < Rows; i++) {
+		T sum = 0;
+		for (unsigned int j = 0; j < Cols; j++)
+			sum += m[i][j] * v[j];
+		result[i] = sum;
+	}
+
+	return result;
+}
+
 template<typename T, unsigned int Rows>
 bool operator==(const Vector<T, Rows> &lhs, const Vector<T, Rows> &rhs)
 {
@@ -180,6 +174,10 @@ bool operator!=(const Vector<T, Rows> &lhs, const Vector<T, Rows> &rhs)
 	return !(lhs == rhs);
 }
 
+#ifndef __DOXYGEN__
+bool vectorValidateYaml(const YamlObject &obj, unsigned int size);
+#endif /* __DOXYGEN__ */
+
 } /* namespace ipa */
 
 #ifndef __DOXYGEN__
@@ -195,6 +193,27 @@ std::ostream &operator<<(std::ostream &out, const ipa::Vector<T, Rows> &v)
 
 	return out;
 }
+
+template<typename T, unsigned int Rows>
+struct YamlObject::Getter<ipa::Vector<T, Rows>> {
+	std::optional<ipa::Vector<T, Rows>> get(const YamlObject &obj) const
+	{
+		if (!ipa::vectorValidateYaml(obj, Rows))
+			return std::nullopt;
+
+		ipa::Vector<T, Rows> vector;
+
+		unsigned int i = 0;
+		for (const YamlObject &entry : obj.asList()) {
+			const auto value = entry.get<T>();
+			if (!value)
+				return std::nullopt;
+			vector[i++] = *value;
+		}
+
+		return vector;
+	}
+};
 #endif /* __DOXYGEN__ */
 
 } /* namespace libcamera */

@@ -80,7 +80,7 @@ IncludeCategories:
   # Headers in <> with an extension. (+system libraries)
   - Regex:           '<([A-Za-z0-9\-_])+\.h>'
     Priority:        2
-  # System headers 
+  # System headers
   - Regex:           '<sys/.*>'
     Priority:        2
   # C++ standard library includes (no extension)
@@ -100,7 +100,7 @@ IncludeCategories:
   # IPA Interfaces
   - Regex:           '<libcamera/ipa/.*\.h>'
     Priority:        7
-  # libcamera Internal headers in ""  
+  # libcamera Internal headers in ""
   - Regex:           '"libcamera/internal/.*\.h"'
     Priority:        8
   # Other libraries headers with one group per library (.h or .hpp)

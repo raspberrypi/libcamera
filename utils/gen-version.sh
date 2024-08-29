@@ -42,7 +42,7 @@ if [ -z "$build_dir" ] || (echo "$build_dir" | grep -q "$src_dir")
 then
 	git update-index --refresh > /dev/null 2>&1
 fi
-git diff-index --quiet HEAD || version="$version-dirty ($(date --iso-8601=seconds))"
+git diff-index --quiet HEAD || version="$version-dirty ($(date +%Y-%m-%dT%H:%M:%S%Z))"
 
 # If a project version is provided, use it to replace the version number.
 if [ -n "$project_version" ]

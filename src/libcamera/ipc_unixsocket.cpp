@@ -12,6 +12,7 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <vector>
 
 #include <libcamera/base/event_notifier.h>
 #include <libcamera/base/log.h>
@@ -247,10 +248,9 @@ int IPCUnixSocket::sendData(const void *buffer, size_t length,
 	iov[0].iov_base = const_cast<void *>(buffer);
 	iov[0].iov_len = length;
 
-	char buf[CMSG_SPACE(num * sizeof(uint32_t))];
-	memset(buf, 0, sizeof(buf));
+	std::vector<uint8_t> buf(CMSG_SPACE(num * sizeof(uint32_t)));
 
-	struct cmsghdr *cmsg = (struct cmsghdr *)buf;
+	struct cmsghdr *cmsg = reinterpret_cast<struct cmsghdr *>(buf.data());
 	cmsg->cmsg_len = CMSG_LEN(num * sizeof(uint32_t));
 	cmsg->cmsg_level = SOL_SOCKET;
 	cmsg->cmsg_type = SCM_RIGHTS;
@@ -283,10 +283,9 @@ int IPCUnixSocket::recvData(void *buffer, size_t length,
 	iov[0].iov_base = buffer;
 	iov[0].iov_len = length;
 
-	char buf[CMSG_SPACE(num * sizeof(uint32_t))];
-	memset(buf, 0, sizeof(buf));
+	std::vector<uint8_t> buf(CMSG_SPACE(num * sizeof(uint32_t)));
 
-	struct cmsghdr *cmsg = (struct cmsghdr *)buf;
+	struct cmsghdr *cmsg = reinterpret_cast<struct cmsghdr *>(buf.data());
 	cmsg->cmsg_len = CMSG_LEN(num * sizeof(uint32_t));
 	cmsg->cmsg_level = SOL_SOCKET;
 	cmsg->cmsg_type = SCM_RIGHTS;

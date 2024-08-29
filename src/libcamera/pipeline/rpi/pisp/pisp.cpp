@@ -789,7 +789,7 @@ private:
 	bool calculateCscConfiguration(const V4L2DeviceFormat &v4l2Format, pisp_be_ccm_config &csc);
 	int configureBe(const std::optional<ColorSpace> &yuvColorSpace);
 
-	void platformSetIspCrop() override;
+	void platformSetIspCrop(unsigned int index, const Rectangle &ispCrop) override;
 
 	void prepareCfe();
 	void prepareBe(uint32_t bufferId, bool stitchSwapBuffers);
@@ -1470,8 +1470,10 @@ int PiSPCameraData::platformConfigure(const RPi::RPiCameraConfiguration *rpiConf
 							      s == &isp_[Isp::Output1]; }),
 		       streams_.end());
 
+	cropParams_.clear();
 	for (unsigned int i = 0; i < outStreams.size(); i++) {
 		StreamConfiguration *cfg = outStreams[i].cfg;
+		unsigned int ispIndex;
 
 		/*
 		 * Output 1 must be for the smallest resolution. We will
@@ -1481,9 +1483,11 @@ int PiSPCameraData::platformConfigure(const RPi::RPiCameraConfiguration *rpiConf
 		if (i == 1 || outStreams.size() == 1) {
 			stream = &isp_[Isp::Output1];
 			beEnables |= PISP_BE_RGB_ENABLE_OUTPUT1;
+			ispIndex = 1;
 		} else {
 			stream = &isp_[Isp::Output0];
 			beEnables |= PISP_BE_RGB_ENABLE_OUTPUT0;
+			ispIndex = 0;
 		}
 
 		format = outStreams[i].format;
@@ -1526,6 +1530,32 @@ int PiSPCameraData::platformConfigure(const RPi::RPiCameraConfiguration *rpiConf
 		stream->clearFlags(StreamFlag::Needs32bitConv);
 		if (needs32BitConversion)
 			flags |= StreamFlag::Needs32bitConv;
+
+		/* Set smallest selection the ISP will allow. */
+		Size minCrop{ 32, 32 };
+
+		/* Adjust aspect ratio by providing crops on the input image. */
+		Size size = cfeFormat.size.boundedToAspectRatio(outStreams[i].cfg->size);
+		Rectangle ispCrop = size.centeredTo(Rectangle(cfeFormat.size).center());
+
+		/*
+		 * Calculate the minimum crop. The rule is that (output_dim - 1) / (input_dim - 1)
+		 * must be strictly < 16. We add 2 after dividing because +1
+		 * comes from the division that rounds down, and +1 because we
+		 * had (input_dim - 1).
+		 */
+		Size scalingMinSize = outStreams[i].cfg->size.shrunkBy({ 1, 1 }) / 16;
+		scalingMinSize.growBy({ 2, 2 });
+		minCrop.expandTo(scalingMinSize);
+
+		platformSetIspCrop(ispIndex, ispCrop);
+		/*
+		 * Set the scaler crop to the value we are using (scaled to native sensor
+		 * coordinates).
+		 */
+		cropParams_.emplace(std::piecewise_construct,
+				    std::forward_as_tuple(outStreams[i].index),
+				    std::forward_as_tuple(ispCrop, minCrop, ispIndex));
 
 		cfg->setStream(stream);
 		stream->setFlags(flags);
@@ -1581,32 +1611,11 @@ int PiSPCameraData::platformConfigure(const RPi::RPiCameraConfiguration *rpiConf
 		}
 	}
 
-	/* Set smallest selection the ISP will allow. */
-	ispMinCropSize_ = Size(32, 32);
-
-	if (!outStreams.empty()) {
-		/* Adjust aspect ratio by providing crops on the input image. */
-		Size size = cfeFormat.size.boundedToAspectRatio(outStreams[0].cfg->size);
-		ispCrop_ = size.centeredTo(Rectangle(cfeFormat.size).center());
-
-		/*
-		 * Calculate the minimum crop. The rule is that (output_dim - 1) / (input_dim - 1)
-		 * must be strictly < 16. We add 2 after dividing because +1
-		 * comes from the division that rounds down, and +1 because we
-		 * had (input_dim - 1).
-		 */
-		Size scalingMinSize = outStreams[0].cfg->size.shrunkBy({ 1, 1 }) / 16;
-		scalingMinSize.growBy({ 2, 2 });
-		ispMinCropSize_.expandTo(scalingMinSize);
-	}
-
 	configureEntities(rpiConfig->sensorFormat_, embeddedFormat);
 	configureCfe();
 
 	if (beEnabled_)
 		configureBe(rpiConfig->yuvColorSpace_);
-
-	platformSetIspCrop();
 
 	return 0;
 }
@@ -1856,7 +1865,7 @@ int PiSPCameraData::configureCfe()
 	input.format = image;
 	input.format.format = PISP_IMAGE_FORMAT_BPS_16;
 
-	if (PISP_IMAGE_FORMAT_compressed(image.format)) {
+	if (PISP_IMAGE_FORMAT_COMPRESSED(image.format)) {
 		pisp_compress_config compress;
 		compress.offset = DefaultCompressionOffset;
 		compress.mode =	(image.format & PISP_IMAGE_FORMAT_COMPRESSION_MASK) /
@@ -1935,7 +1944,7 @@ int PiSPCameraData::configureBe(const std::optional<ColorSpace> &yuvColorSpace)
 	global.bayer_order = toPiSPBayerOrder(cfeFormat.fourcc);
 
 	ispOutputTotal_ = 1; /* Config buffer */
-	if (PISP_IMAGE_FORMAT_compressed(inputFormat.format)) {
+	if (PISP_IMAGE_FORMAT_COMPRESSED(inputFormat.format)) {
 		pisp_decompress_config decompress;
 		decompress.offset = DefaultCompressionOffset;
 		decompress.mode = (inputFormat.format & PISP_IMAGE_FORMAT_COMPRESSION_MASK)
@@ -1999,7 +2008,7 @@ int PiSPCameraData::configureBe(const std::optional<ColorSpace> &yuvColorSpace)
 	be_->SetTdnOutputFormat(tdnFormat);
 	be_->SetTdnInputFormat(tdnFormat);
 
-	if (PISP_IMAGE_FORMAT_compressed(tdnFormat.format)) {
+	if (PISP_IMAGE_FORMAT_COMPRESSED(tdnFormat.format)) {
 		pisp_decompress_config tdnDecompress;
 		pisp_compress_config tdnCompress;
 
@@ -2018,7 +2027,7 @@ int PiSPCameraData::configureBe(const std::optional<ColorSpace> &yuvColorSpace)
 	be_->SetStitchOutputFormat(stitchFormat);
 	be_->SetStitchInputFormat(stitchFormat);
 
-	if (PISP_IMAGE_FORMAT_compressed(stitchFormat.format)) {
+	if (PISP_IMAGE_FORMAT_COMPRESSED(stitchFormat.format)) {
 		pisp_decompress_config stitchDecompress;
 		pisp_compress_config stitchCompress;
 
@@ -2074,16 +2083,17 @@ int PiSPCameraData::configureBe(const std::optional<ColorSpace> &yuvColorSpace)
 	return 0;
 }
 
-void PiSPCameraData::platformSetIspCrop()
+void PiSPCameraData::platformSetIspCrop(unsigned int index, const Rectangle &ispCrop)
 {
 	pisp_be_crop_config beCrop = {
-		static_cast<uint16_t>(ispCrop_.x),
-		static_cast<uint16_t>(ispCrop_.y),
-		static_cast<uint16_t>(ispCrop_.width),
-		static_cast<uint16_t>(ispCrop_.height)
+		static_cast<uint16_t>(ispCrop.x),
+		static_cast<uint16_t>(ispCrop.y),
+		static_cast<uint16_t>(ispCrop.width),
+		static_cast<uint16_t>(ispCrop.height)
 	};
 
-	be_->SetCrop(beCrop);
+	LOG(RPI, Debug) << "Output " << index << " " << ispCrop.toString();
+	be_->SetCrop(index, beCrop);
 }
 
 int PiSPCameraData::platformInitIpa(ipa::RPi::InitParams &params)

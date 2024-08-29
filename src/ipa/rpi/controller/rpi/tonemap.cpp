@@ -33,7 +33,7 @@ int Tonemap::read(const libcamera::YamlObject &params)
 	config_.detailSlope = params["detail_slope"].get<double>(0.1);
 	config_.iirStrength = params["iir_strength"].get<double>(1.0);
 	config_.strength = params["strength"].get<double>(1.0);
-	config_.tonemap.readYaml(params["tone_curve"]);
+	config_.tonemap = params["tone_curve"].get<ipa::Pwl>(ipa::Pwl{});
 	return 0;
 }
 

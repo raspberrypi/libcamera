@@ -53,7 +53,9 @@ int Contrast::read(const libcamera::YamlObject &params)
 	config_.hiHistogram = params["hi_histogram"].get<double>(0.95);
 	config_.hiLevel = params["hi_level"].get<double>(0.95);
 	config_.hiMax = params["hi_max"].get<double>(2000);
-	return config_.gammaCurve.readYaml(params["gamma_curve"]);
+
+	config_.gammaCurve = params["gamma_curve"].get<ipa::Pwl>(ipa::Pwl{});
+	return config_.gammaCurve.empty() ? -EINVAL : 0;
 }
 
 void Contrast::setBrightness(double brightness)
@@ -91,6 +93,8 @@ void Contrast::prepare(Metadata *imageMetadata)
 {
 	imageMetadata->set("contrast.status", status_);
 }
+
+namespace {
 
 ipa::Pwl computeStretchCurve(Histogram const &histogram,
 			ContrastConfig const &config)
@@ -150,6 +154,8 @@ ipa::Pwl applyManualContrast(ipa::Pwl const &gammaCurve, double brightness,
 	});
 	return newGammaCurve;
 }
+
+} /* namespace */
 
 void Contrast::process(StatisticsPtr &stats,
 		       [[maybe_unused]] Metadata *imageMetadata)

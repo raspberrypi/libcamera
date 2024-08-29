@@ -9,12 +9,17 @@
 
 #include <libcamera/base/utils.h>
 
+#if HAVE_ASAN
+#include <sanitizer/asan_interface.h>
+#endif
+
 #include "gstreamer_test.h"
 
 #include "test.h"
 
 using namespace std;
 
+#if HAVE_ASAN
 extern "C" {
 const char *__asan_default_options()
 {
@@ -26,6 +31,7 @@ const char *__asan_default_options()
 	return "detect_leaks=false";
 }
 }
+#endif
 
 GstreamerTest::GstreamerTest(unsigned int numStreams)
 	: pipeline_(nullptr), libcameraSrc_(nullptr)

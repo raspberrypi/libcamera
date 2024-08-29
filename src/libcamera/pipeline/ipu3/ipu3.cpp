@@ -1186,9 +1186,8 @@ int IPU3CameraData::loadIPA()
 	 * The API tuning file is made from the sensor name. If the tuning file
 	 * isn't found, fall back to the 'uncalibrated' file.
 	 */
-	std::string ipaTuningFile = ipa_->configurationFile(sensor->model() + ".yaml");
-	if (ipaTuningFile.empty())
-		ipaTuningFile = ipa_->configurationFile("uncalibrated.yaml");
+	std::string ipaTuningFile =
+		ipa_->configurationFile(sensor->model() + ".yaml", "uncalibrated.yaml");
 
 	ret = ipa_->init(IPASettings{ ipaTuningFile, sensor->model() },
 			 sensorInfo, sensor->controls(), &ipaControls_);

@@ -9,6 +9,8 @@
 
 #include <libcamera/base/log.h>
 
+#include <libcamera/control_ids.h>
+
 #include "libcamera/internal/yaml_parser.h"
 
 /**
@@ -38,18 +40,61 @@ LOG_DEFINE_CATEGORY(RkISP1Blc)
 BlackLevelCorrection::BlackLevelCorrection()
 	: tuningParameters_(false)
 {
+	/*
+	 * This is a bit of a hack. In raw mode no black level correction
+	 * happens. This flag is used to ensure the metadata gets populated with
+	 * the black level which is needed to capture proper raw images for
+	 * tuning.
+	 */
+	supportsRaw_ = true;
 }
 
 /**
  * \copydoc libcamera::ipa::Algorithm::init
  */
-int BlackLevelCorrection::init([[maybe_unused]] IPAContext &context,
-			       const YamlObject &tuningData)
+int BlackLevelCorrection::init(IPAContext &context, const YamlObject &tuningData)
 {
-	blackLevelRed_ = tuningData["R"].get<int16_t>(256);
-	blackLevelGreenR_ = tuningData["Gr"].get<int16_t>(256);
-	blackLevelGreenB_ = tuningData["Gb"].get<int16_t>(256);
-	blackLevelBlue_ = tuningData["B"].get<int16_t>(256);
+	std::optional<int16_t> levelRed = tuningData["R"].get<int16_t>();
+	std::optional<int16_t> levelGreenR = tuningData["Gr"].get<int16_t>();
+	std::optional<int16_t> levelGreenB = tuningData["Gb"].get<int16_t>();
+	std::optional<int16_t> levelBlue = tuningData["B"].get<int16_t>();
+	bool tuningHasLevels = levelRed && levelGreenR && levelGreenB && levelBlue;
+
+	auto blackLevel = context.camHelper->blackLevel();
+	if (!blackLevel) {
+		/*
+		 * Not all camera sensor helpers have been updated with black
+		 * levels. Print a warning and fall back to the levels from the
+		 * tuning data to preserve backward compatibility. This should
+		 * be removed once all helpers provide the data.
+		 */
+		LOG(RkISP1Blc, Warning)
+			<< "No black levels provided by camera sensor helper"
+			<< ", please fix";
+
+		blackLevelRed_ = levelRed.value_or(4096);
+		blackLevelGreenR_ = levelGreenR.value_or(4096);
+		blackLevelGreenB_ = levelGreenB.value_or(4096);
+		blackLevelBlue_ = levelBlue.value_or(4096);
+	} else if (tuningHasLevels) {
+		/*
+		 * If black levels are provided in the tuning file, use them to
+		 * avoid breaking existing camera tuning. This is deprecated and
+		 * will be removed.
+		 */
+		LOG(RkISP1Blc, Warning)
+			<< "Deprecated: black levels overwritten by tuning file";
+
+		blackLevelRed_ = *levelRed;
+		blackLevelGreenR_ = *levelGreenR;
+		blackLevelGreenB_ = *levelGreenB;
+		blackLevelBlue_ = *levelBlue;
+	} else {
+		blackLevelRed_ = *blackLevel;
+		blackLevelGreenR_ = *blackLevel;
+		blackLevelGreenB_ = *blackLevel;
+		blackLevelBlue_ = *blackLevel;
+	}
 
 	tuningParameters_ = true;
 
@@ -70,6 +115,9 @@ void BlackLevelCorrection::prepare([[maybe_unused]] IPAContext &context,
 				   [[maybe_unused]] IPAFrameContext &frameContext,
 				   rkisp1_params_cfg *params)
 {
+	if (context.configuration.raw)
+		return;
+
 	if (frame > 0)
 		return;
 
@@ -77,14 +125,31 @@ void BlackLevelCorrection::prepare([[maybe_unused]] IPAContext &context,
 		return;
 
 	params->others.bls_config.enable_auto = 0;
-	params->others.bls_config.fixed_val.r = blackLevelRed_;
-	params->others.bls_config.fixed_val.gr = blackLevelGreenR_;
-	params->others.bls_config.fixed_val.gb = blackLevelGreenB_;
-	params->others.bls_config.fixed_val.b = blackLevelBlue_;
+	/* The rkisp1 uses 12bit based black levels. Scale down accordingly. */
+	params->others.bls_config.fixed_val.r = blackLevelRed_ >> 4;
+	params->others.bls_config.fixed_val.gr = blackLevelGreenR_ >> 4;
+	params->others.bls_config.fixed_val.gb = blackLevelGreenB_ >> 4;
+	params->others.bls_config.fixed_val.b = blackLevelBlue_ >> 4;
 
 	params->module_en_update |= RKISP1_CIF_ISP_MODULE_BLS;
 	params->module_ens |= RKISP1_CIF_ISP_MODULE_BLS;
 	params->module_cfg_update |= RKISP1_CIF_ISP_MODULE_BLS;
+}
+
+/**
+ * \copydoc libcamera::ipa::Algorithm::process
+ */
+void BlackLevelCorrection::process([[maybe_unused]] IPAContext &context,
+				   [[maybe_unused]] const uint32_t frame,
+				   [[maybe_unused]] IPAFrameContext &frameContext,
+				   [[maybe_unused]] const rkisp1_stat_buffer *stats,
+				   ControlList &metadata)
+{
+	metadata.set(controls::SensorBlackLevels,
+		     { static_cast<int32_t>(blackLevelRed_),
+		       static_cast<int32_t>(blackLevelGreenR_),
+		       static_cast<int32_t>(blackLevelGreenB_),
+		       static_cast<int32_t>(blackLevelBlue_) });
 }
 
 REGISTER_IPA_ALGORITHM(BlackLevelCorrection, "BlackLevelCorrection")

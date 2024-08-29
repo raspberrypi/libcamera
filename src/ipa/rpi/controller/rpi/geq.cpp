@@ -44,9 +44,9 @@ int Geq::read(const libcamera::YamlObject &params)
 	}
 
 	if (params.contains("strength")) {
-		int ret = config_.strength.readYaml(params["strength"]);
-		if (ret)
-			return ret;
+		config_.strength = params["strength"].get<ipa::Pwl>(ipa::Pwl{});
+		if (config_.strength.empty())
+			return -EINVAL;
 	}
 
 	return 0;

@@ -33,13 +33,13 @@ class LSCRkISP1(LSC):
     #         table, flattened array of (blue's) green calibration table
 
     def _do_single_lsc(self, image: lt.Image):
-        cgr, gr = self._lsc_single_channel(image.channels[lt.Color.GR], image)
-        cgb, gb = self._lsc_single_channel(image.channels[lt.Color.GB], image)
-
-        # \todo Should these ratio against the average of both greens or just
-        # each green like we've done here?
-        cr, _ = self._lsc_single_channel(image.channels[lt.Color.R], image, gr)
-        cb, _ = self._lsc_single_channel(image.channels[lt.Color.B], image, gb)
+        # Perform LSC on each colour channel independently. A future enhancement
+        # worth investigating would be splitting the luminance and chrominance
+        # LSC as done by Raspberry Pi.
+        cgr, _ = self._lsc_single_channel(image.channels[lt.Color.GR], image)
+        cgb, _ = self._lsc_single_channel(image.channels[lt.Color.GB], image)
+        cr, _ = self._lsc_single_channel(image.channels[lt.Color.R], image)
+        cb, _ = self._lsc_single_channel(image.channels[lt.Color.B], image)
 
         return image.color, cr.flatten(), cb.flatten(), cgr.flatten(), cgb.flatten()
 
@@ -80,7 +80,8 @@ class LSCRkISP1(LSC):
             tables = []
             for lis in [list_cr, list_cgr, list_cgb, list_cb]:
                 table = np.mean(lis[indices], axis=0)
-                table = output_map_func((1, 3.999), (1024, 4095), table)
+                table = output_map_func((1, 4), (1024, 4096), table)
+                table = np.clip(table, 1024, 4095)
                 table = np.round(table).astype('int32').tolist()
                 tables.append(table)
 
@@ -105,6 +106,9 @@ class LSCRkISP1(LSC):
         output['y-size'] = size_gradient.distribute(0.5, 8)
 
         output['sets'] = self._do_all_lsc(images)
+
+        if len(output['sets']) == 0:
+            return None
 
         # \todo Validate images from greyscale camera and force grescale mode
         # \todo Debug functionality

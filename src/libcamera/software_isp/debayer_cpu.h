@@ -85,18 +85,28 @@ private:
 	using debayerFn = void (DebayerCpu::*)(uint8_t *dst, const uint8_t *src[]);
 
 	/* 8-bit raw bayer format */
+	template<bool addAlphaByte>
 	void debayer8_BGBG_BGR888(uint8_t *dst, const uint8_t *src[]);
+	template<bool addAlphaByte>
 	void debayer8_GRGR_BGR888(uint8_t *dst, const uint8_t *src[]);
 	/* unpacked 10-bit raw bayer format */
+	template<bool addAlphaByte>
 	void debayer10_BGBG_BGR888(uint8_t *dst, const uint8_t *src[]);
+	template<bool addAlphaByte>
 	void debayer10_GRGR_BGR888(uint8_t *dst, const uint8_t *src[]);
 	/* unpacked 12-bit raw bayer format */
+	template<bool addAlphaByte>
 	void debayer12_BGBG_BGR888(uint8_t *dst, const uint8_t *src[]);
+	template<bool addAlphaByte>
 	void debayer12_GRGR_BGR888(uint8_t *dst, const uint8_t *src[]);
 	/* CSI-2 packed 10-bit raw bayer format (all the 4 orders) */
+	template<bool addAlphaByte>
 	void debayer10P_BGBG_BGR888(uint8_t *dst, const uint8_t *src[]);
+	template<bool addAlphaByte>
 	void debayer10P_GRGR_BGR888(uint8_t *dst, const uint8_t *src[]);
+	template<bool addAlphaByte>
 	void debayer10P_GBGB_BGR888(uint8_t *dst, const uint8_t *src[]);
+	template<bool addAlphaByte>
 	void debayer10P_RGRG_BGR888(uint8_t *dst, const uint8_t *src[]);
 
 	struct DebayerInputConfig {
@@ -136,7 +146,7 @@ private:
 	DebayerInputConfig inputConfig_;
 	DebayerOutputConfig outputConfig_;
 	std::unique_ptr<SwStatsCpu> stats_;
-	uint8_t *lineBuffers_[kMaxLineBuffers];
+	std::vector<uint8_t> lineBuffers_[kMaxLineBuffers];
 	unsigned int lineBufferLength_;
 	unsigned int lineBufferPadding_;
 	unsigned int lineBufferIndex_;

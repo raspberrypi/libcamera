@@ -60,14 +60,14 @@ namespace ipa {
 /**
  * \fn Pwl::Interval::Interval(double _start, double _end)
  * \brief Construct an interval
- * \param _start Start of the interval
- * \param _end End of the interval
+ * \param[in] _start Start of the interval
+ * \param[in] _end End of the interval
  */
 
 /**
  * \fn Pwl::Interval::contains
  * \brief Check if a given value falls within the interval
- * \param value Value to check
+ * \param[in] value Value to check
  * \return True if the value falls within the interval, including its bounds,
  * or false otherwise
  */
@@ -75,7 +75,7 @@ namespace ipa {
 /**
  * \fn Pwl::Interval::clamp
  * \brief Clamp a value such that it is within the interval
- * \param value Value to clamp
+ * \param[in] value Value to clamp
  * \return The clamped value
  */
 
@@ -104,7 +104,8 @@ Pwl::Pwl()
 
 /**
  * \brief Construct a piecewise linear function from a list of 2D points
- * \param points Vector of points from which to construct the piecewise linear function
+ * \param[in] points Vector of points from which to construct the piecewise
+ * linear function
  *
  * \a points must be in ascending order of x-value.
  */
@@ -114,48 +115,21 @@ Pwl::Pwl(const std::vector<Point> &points)
 }
 
 /**
- * \brief Populate the piecewise linear function from yaml data
- * \param params Yaml data to populate the piecewise linear function with
+ * \copydoc Pwl::Pwl(const std::vector<Point> &points)
  *
- * Any existing points in the piecewise linear function *will* be overwritten.
- *
- * The yaml data is expected to be a list with an even number of numerical
- * elements. These will be parsed in pairs into x and y points in the piecewise
- * linear function, and added in order. x must be monotonically increasing.
- *
- * \return 0 on success, negative error code otherwise
+ * The contents of the \a points vector is moved to the newly constructed Pwl
+ * instance.
  */
-int Pwl::readYaml(const libcamera::YamlObject &params)
+Pwl::Pwl(std::vector<Point> &&points)
+	: points_(std::move(points))
 {
-	if (!params.size() || params.size() % 2)
-		return -EINVAL;
-
-	const auto &list = params.asList();
-
-	points_.clear();
-
-	for (auto it = list.begin(); it != list.end(); it++) {
-		auto x = it->get<double>();
-		if (!x)
-			return -EINVAL;
-		if (it != list.begin() && *x <= points_.back().x())
-			return -EINVAL;
-
-		auto y = (++it)->get<double>();
-		if (!y)
-			return -EINVAL;
-
-		points_.push_back(Point({ *x, *y }));
-	}
-
-	return 0;
 }
 
 /**
  * \brief Append a point to the end of the piecewise linear function
- * \param x x-coordinate of the point to add to the piecewise linear function
- * \param y y-coordinate of the point to add to the piecewise linear function
- * \param eps Epsilon for the minimum x distance between points (optional)
+ * \param[in] x x-coordinate of the point to add to the piecewise linear function
+ * \param[in] y y-coordinate of the point to add to the piecewise linear function
+ * \param[in] eps Epsilon for the minimum x distance between points (optional)
  *
  * The point's x-coordinate must be greater than the x-coordinate of the last
  * (= greatest) point already in the piecewise linear function.
@@ -168,9 +142,9 @@ void Pwl::append(double x, double y, const double eps)
 
 /**
  * \brief Prepend a point to the beginning of the piecewise linear function
- * \param x x-coordinate of the point to add to the piecewise linear function
- * \param y y-coordinate of the point to add to the piecewise linear function
- * \param eps Epsilon for the minimum x distance between points (optional)
+ * \param[in] x x-coordinate of the point to add to the piecewise linear function
+ * \param[in] y y-coordinate of the point to add to the piecewise linear function
+ * \param[in] eps Epsilon for the minimum x distance between points (optional)
  *
  * The point's x-coordinate must be less than the x-coordinate of the first
  * (= smallest) point already in the piecewise linear function.
@@ -180,6 +154,18 @@ void Pwl::prepend(double x, double y, const double eps)
 	if (points_.empty() || points_.front().x() - eps > x)
 		points_.insert(points_.begin(), Point({ x, y }));
 }
+
+/**
+ * \fn Pwl::empty() const
+ * \brief Check if the piecewise linear function is empty
+ * \return True if there are no points in the function, false otherwise
+ */
+
+/**
+ * \fn Pwl::size() const
+ * \brief Retrieve the number of points in the piecewise linear function
+ * \return The number of points in the piecewise linear function
+ */
 
 /**
  * \brief Get the domain of the piecewise linear function
@@ -200,15 +186,6 @@ Pwl::Interval Pwl::range() const
 	for (auto &p : points_)
 		lo = std::min(lo, p.y()), hi = std::max(hi, p.y());
 	return Interval(lo, hi);
-}
-
-/**
- * \brief Check if the piecewise linear function is empty
- * \return True if there are no points in the function, false otherwise
- */
-bool Pwl::empty() const
-{
-	return points_.empty();
 }
 
 /**
@@ -353,7 +330,7 @@ Pwl Pwl::compose(Pwl const &other, const double eps) const
 
 /**
  * \brief Apply function to (x, y) values at every control point
- * \param f Function to be applied
+ * \param[in] f Function to be applied
  */
 void Pwl::map(std::function<void(double x, double y)> f) const
 {
@@ -364,9 +341,9 @@ void Pwl::map(std::function<void(double x, double y)> f) const
 /**
  * \brief Apply function to (x, y0, y1) values wherever either Pwl has a
  * control point.
- * \param pwl0 First piecewise linear function
- * \param pwl1 Second piecewise linear function
- * \param f Function to be applied
+ * \param[in] pwl0 First piecewise linear function
+ * \param[in] pwl1 Second piecewise linear function
+ * \param[in] f Function to be applied
  *
  * This applies the function \a f to every parameter (x, y0, y1), where x is
  * the combined list of x-values from \a pwl0 and \a pwl1, y0 is the y-value
@@ -395,9 +372,9 @@ void Pwl::map2(Pwl const &pwl0, Pwl const &pwl1,
 
 /**
  * \brief Combine two Pwls
- * \param pwl0 First piecewise linear function
- * \param pwl1 Second piecewise linear function
- * \param f Function to be applied
+ * \param[in] pwl0 First piecewise linear function
+ * \param[in] pwl1 Second piecewise linear function
+ * \param[in] f Function to be applied
  * \param[in] eps Epsilon for the minimum x distance between points (optional)
  *
  * Create a new Pwl where the y values are given by running \a f wherever
@@ -418,7 +395,7 @@ Pwl Pwl::combine(Pwl const &pwl0, Pwl const &pwl1,
 
 /**
  * \brief Multiply the piecewise linear function
- * \param d Scalar multiplier to multiply the function by
+ * \param[in] d Scalar multiplier to multiply the function by
  * \return This function, after it has been multiplied by \a d
  */
 Pwl &Pwl::operator*=(double d)
@@ -443,5 +420,40 @@ std::string Pwl::toString() const
 }
 
 } /* namespace ipa */
+
+#ifndef __DOXYGEN__
+/*
+ * The YAML data shall be a list of numerical values with an even number of
+ * elements. They are parsed in pairs into x and y points in the piecewise
+ * linear function, and added in order. x must be monotonically increasing.
+ */
+template<>
+std::optional<ipa::Pwl>
+YamlObject::Getter<ipa::Pwl>::get(const YamlObject &obj) const
+{
+	if (!obj.size() || obj.size() % 2)
+		return std::nullopt;
+
+	ipa::Pwl pwl;
+
+	const auto &list = obj.asList();
+
+	for (auto it = list.begin(); it != list.end(); it++) {
+		auto x = it->get<double>();
+		if (!x)
+			return std::nullopt;
+		auto y = (++it)->get<double>();
+		if (!y)
+			return std::nullopt;
+
+		pwl.append(*x, *y);
+	}
+
+	if (pwl.size() != obj.size() / 2)
+		return std::nullopt;
+
+	return pwl;
+}
+#endif /* __DOXYGEN__ */
 
 } /* namespace libcamera */

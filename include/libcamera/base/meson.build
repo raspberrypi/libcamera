@@ -21,6 +21,7 @@ libcamera_base_private_headers = files([
     'event_notifier.h',
     'file.h',
     'log.h',
+    'memfd.h',
     'message.h',
     'mutex.h',
     'private.h',

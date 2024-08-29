@@ -8,8 +8,10 @@
 #include "dng_writer.h"
 
 #include <algorithm>
+#include <endian.h>
 #include <iostream>
 #include <map>
+#include <vector>
 
 #include <tiffio.h>
 
@@ -126,7 +128,9 @@ struct Matrix3d {
 	float m[9];
 };
 
-void packScanlineSBGGR8(void *output, const void *input, unsigned int width)
+namespace {
+
+void packScanlineRaw8(void *output, const void *input, unsigned int width)
 {
 	const uint8_t *in = static_cast<const uint8_t *>(input);
 	uint8_t *out = static_cast<uint8_t *>(output);
@@ -134,7 +138,67 @@ void packScanlineSBGGR8(void *output, const void *input, unsigned int width)
 	std::copy(in, in + width, out);
 }
 
-void packScanlineSBGGR10P(void *output, const void *input, unsigned int width)
+void packScanlineRaw10(void *output, const void *input, unsigned int width)
+{
+	const uint8_t *in = static_cast<const uint8_t *>(input);
+	uint8_t *out = static_cast<uint8_t *>(output);
+
+	for (unsigned int i = 0; i < width; i += 4) {
+		*out++ = in[1] << 6 | in[0] >> 2;
+		*out++ = in[0] << 6 | (in[3] & 0x03) << 4 | in[2] >> 4;
+		*out++ = in[2] << 4 | (in[5] & 0x03) << 2 | in[4] >> 6;
+		*out++ = in[4] << 2 | (in[7] & 0x03) << 0;
+		*out++ = in[6];
+		in += 8;
+	}
+}
+
+void packScanlineRaw12(void *output, const void *input, unsigned int width)
+{
+	const uint8_t *in = static_cast<const uint8_t *>(input);
+	uint8_t *out = static_cast<uint8_t *>(output);
+
+	for (unsigned int i = 0; i < width; i += 2) {
+		*out++ = in[1] << 4 | in[0] >> 4;
+		*out++ = in[0] << 4 | (in[3] & 0x0f);
+		*out++ = in[2];
+		in += 4;
+	}
+}
+
+void packScanlineRaw16(void *output, const void *input, unsigned int width)
+{
+	const uint16_t *in = static_cast<const uint16_t *>(input);
+	uint16_t *out = static_cast<uint16_t *>(output);
+
+	std::copy(in, in + width, out);
+}
+
+/* Thumbnail function for raw data with each pixel aligned to 16bit. */
+void thumbScanlineRaw(const FormatInfo &info, void *output, const void *input,
+		      unsigned int width, unsigned int stride)
+{
+	const uint16_t *in = static_cast<const uint16_t *>(input);
+	const uint16_t *in2 = static_cast<const uint16_t *>(input) + stride / 2;
+	uint8_t *out = static_cast<uint8_t *>(output);
+
+	/* Shift down to 8. */
+	unsigned int shift = info.bitsPerSample - 8;
+
+	/* Simple averaging that produces greyscale RGB values. */
+	for (unsigned int x = 0; x < width; x++) {
+		uint16_t value = (le16toh(in[0]) + le16toh(in[1]) +
+				  le16toh(in2[0]) + le16toh(in2[1])) >> 2;
+		value = value >> shift;
+		*out++ = value;
+		*out++ = value;
+		*out++ = value;
+		in += 16;
+		in2 += 16;
+	}
+}
+
+void packScanlineRaw10_CSI2P(void *output, const void *input, unsigned int width)
 {
 	const uint8_t *in = static_cast<const uint8_t *>(input);
 	uint8_t *out = static_cast<uint8_t *>(output);
@@ -150,7 +214,7 @@ void packScanlineSBGGR10P(void *output, const void *input, unsigned int width)
 	}
 }
 
-void packScanlineSBGGR12P(void *output, const void *input, unsigned int width)
+void packScanlineRaw12_CSI2P(void *output, const void *input, unsigned int width)
 {
 	const uint8_t *in = static_cast<const uint8_t *>(input);
 	uint8_t *out = static_cast<uint8_t *>(output);
@@ -164,7 +228,7 @@ void packScanlineSBGGR12P(void *output, const void *input, unsigned int width)
 	}
 }
 
-void thumbScanlineSBGGRxxP(const FormatInfo &info, void *output,
+void thumbScanlineRaw_CSI2P(const FormatInfo &info, void *output,
 			   const void *input, unsigned int width,
 			   unsigned int stride)
 {
@@ -282,78 +346,150 @@ void thumbScanlineIPU3([[maybe_unused]] const FormatInfo &info, void *output,
 	}
 }
 
-static const std::map<PixelFormat, FormatInfo> formatInfo = {
+const std::map<PixelFormat, FormatInfo> formatInfo = {
 	{ formats::SBGGR8, {
 		.bitsPerSample = 8,
 		.pattern = { CFAPatternBlue, CFAPatternGreen, CFAPatternGreen, CFAPatternRed },
-		.packScanline = packScanlineSBGGR8,
-		.thumbScanline = thumbScanlineSBGGRxxP,
+		.packScanline = packScanlineRaw8,
+		.thumbScanline = thumbScanlineRaw_CSI2P,
 	} },
 	{ formats::SGBRG8, {
 		.bitsPerSample = 8,
 		.pattern = { CFAPatternGreen, CFAPatternBlue, CFAPatternRed, CFAPatternGreen },
-		.packScanline = packScanlineSBGGR8,
-		.thumbScanline = thumbScanlineSBGGRxxP,
+		.packScanline = packScanlineRaw8,
+		.thumbScanline = thumbScanlineRaw_CSI2P,
 	} },
 	{ formats::SGRBG8, {
 		.bitsPerSample = 8,
 		.pattern = { CFAPatternGreen, CFAPatternRed, CFAPatternBlue, CFAPatternGreen },
-		.packScanline = packScanlineSBGGR8,
-		.thumbScanline = thumbScanlineSBGGRxxP,
+		.packScanline = packScanlineRaw8,
+		.thumbScanline = thumbScanlineRaw_CSI2P,
 	} },
 	{ formats::SRGGB8, {
 		.bitsPerSample = 8,
 		.pattern = { CFAPatternRed, CFAPatternGreen, CFAPatternGreen, CFAPatternBlue },
-		.packScanline = packScanlineSBGGR8,
-		.thumbScanline = thumbScanlineSBGGRxxP,
+		.packScanline = packScanlineRaw8,
+		.thumbScanline = thumbScanlineRaw_CSI2P,
+	} },
+	{ formats::SBGGR10, {
+		.bitsPerSample = 10,
+		.pattern = { CFAPatternBlue, CFAPatternGreen, CFAPatternGreen, CFAPatternRed },
+		.packScanline = packScanlineRaw10,
+		.thumbScanline = thumbScanlineRaw,
+	} },
+	{ formats::SGBRG10, {
+		.bitsPerSample = 10,
+		.pattern = { CFAPatternGreen, CFAPatternBlue, CFAPatternRed, CFAPatternGreen },
+		.packScanline = packScanlineRaw10,
+		.thumbScanline = thumbScanlineRaw,
+	} },
+	{ formats::SGRBG10, {
+		.bitsPerSample = 10,
+		.pattern = { CFAPatternGreen, CFAPatternRed, CFAPatternBlue, CFAPatternGreen },
+		.packScanline = packScanlineRaw10,
+		.thumbScanline = thumbScanlineRaw,
+	} },
+	{ formats::SRGGB10, {
+		.bitsPerSample = 10,
+		.pattern = { CFAPatternRed, CFAPatternGreen, CFAPatternGreen, CFAPatternBlue },
+		.packScanline = packScanlineRaw10,
+		.thumbScanline = thumbScanlineRaw,
+	} },
+	{ formats::SBGGR12, {
+		.bitsPerSample = 12,
+		.pattern = { CFAPatternBlue, CFAPatternGreen, CFAPatternGreen, CFAPatternRed },
+		.packScanline = packScanlineRaw12,
+		.thumbScanline = thumbScanlineRaw,
+	} },
+	{ formats::SGBRG12, {
+		.bitsPerSample = 12,
+		.pattern = { CFAPatternGreen, CFAPatternBlue, CFAPatternRed, CFAPatternGreen },
+		.packScanline = packScanlineRaw12,
+		.thumbScanline = thumbScanlineRaw,
+	} },
+	{ formats::SGRBG12, {
+		.bitsPerSample = 12,
+		.pattern = { CFAPatternGreen, CFAPatternRed, CFAPatternBlue, CFAPatternGreen },
+		.packScanline = packScanlineRaw12,
+		.thumbScanline = thumbScanlineRaw,
+	} },
+	{ formats::SRGGB12, {
+		.bitsPerSample = 12,
+		.pattern = { CFAPatternRed, CFAPatternGreen, CFAPatternGreen, CFAPatternBlue },
+		.packScanline = packScanlineRaw12,
+		.thumbScanline = thumbScanlineRaw,
+	} },
+	{ formats::SBGGR16, {
+		.bitsPerSample = 16,
+		.pattern = { CFAPatternBlue, CFAPatternGreen, CFAPatternGreen, CFAPatternRed },
+		.packScanline = packScanlineRaw16,
+		.thumbScanline = thumbScanlineRaw,
+	} },
+	{ formats::SGBRG16, {
+		.bitsPerSample = 16,
+		.pattern = { CFAPatternGreen, CFAPatternBlue, CFAPatternRed, CFAPatternGreen },
+		.packScanline = packScanlineRaw16,
+		.thumbScanline = thumbScanlineRaw,
+	} },
+	{ formats::SGRBG16, {
+		.bitsPerSample = 16,
+		.pattern = { CFAPatternGreen, CFAPatternRed, CFAPatternBlue, CFAPatternGreen },
+		.packScanline = packScanlineRaw16,
+		.thumbScanline = thumbScanlineRaw,
+	} },
+	{ formats::SRGGB16, {
+		.bitsPerSample = 16,
+		.pattern = { CFAPatternRed, CFAPatternGreen, CFAPatternGreen, CFAPatternBlue },
+		.packScanline = packScanlineRaw16,
+		.thumbScanline = thumbScanlineRaw,
 	} },
 	{ formats::SBGGR10_CSI2P, {
 		.bitsPerSample = 10,
 		.pattern = { CFAPatternBlue, CFAPatternGreen, CFAPatternGreen, CFAPatternRed },
-		.packScanline = packScanlineSBGGR10P,
-		.thumbScanline = thumbScanlineSBGGRxxP,
+		.packScanline = packScanlineRaw10_CSI2P,
+		.thumbScanline = thumbScanlineRaw_CSI2P,
 	} },
 	{ formats::SGBRG10_CSI2P, {
 		.bitsPerSample = 10,
 		.pattern = { CFAPatternGreen, CFAPatternBlue, CFAPatternRed, CFAPatternGreen },
-		.packScanline = packScanlineSBGGR10P,
-		.thumbScanline = thumbScanlineSBGGRxxP,
+		.packScanline = packScanlineRaw10_CSI2P,
+		.thumbScanline = thumbScanlineRaw_CSI2P,
 	} },
 	{ formats::SGRBG10_CSI2P, {
 		.bitsPerSample = 10,
 		.pattern = { CFAPatternGreen, CFAPatternRed, CFAPatternBlue, CFAPatternGreen },
-		.packScanline = packScanlineSBGGR10P,
-		.thumbScanline = thumbScanlineSBGGRxxP,
+		.packScanline = packScanlineRaw10_CSI2P,
+		.thumbScanline = thumbScanlineRaw_CSI2P,
 	} },
 	{ formats::SRGGB10_CSI2P, {
 		.bitsPerSample = 10,
 		.pattern = { CFAPatternRed, CFAPatternGreen, CFAPatternGreen, CFAPatternBlue },
-		.packScanline = packScanlineSBGGR10P,
-		.thumbScanline = thumbScanlineSBGGRxxP,
+		.packScanline = packScanlineRaw10_CSI2P,
+		.thumbScanline = thumbScanlineRaw_CSI2P,
 	} },
 	{ formats::SBGGR12_CSI2P, {
 		.bitsPerSample = 12,
 		.pattern = { CFAPatternBlue, CFAPatternGreen, CFAPatternGreen, CFAPatternRed },
-		.packScanline = packScanlineSBGGR12P,
-		.thumbScanline = thumbScanlineSBGGRxxP,
+		.packScanline = packScanlineRaw12_CSI2P,
+		.thumbScanline = thumbScanlineRaw_CSI2P,
 	} },
 	{ formats::SGBRG12_CSI2P, {
 		.bitsPerSample = 12,
 		.pattern = { CFAPatternGreen, CFAPatternBlue, CFAPatternRed, CFAPatternGreen },
-		.packScanline = packScanlineSBGGR12P,
-		.thumbScanline = thumbScanlineSBGGRxxP,
+		.packScanline = packScanlineRaw12_CSI2P,
+		.thumbScanline = thumbScanlineRaw_CSI2P,
 	} },
 	{ formats::SGRBG12_CSI2P, {
 		.bitsPerSample = 12,
 		.pattern = { CFAPatternGreen, CFAPatternRed, CFAPatternBlue, CFAPatternGreen },
-		.packScanline = packScanlineSBGGR12P,
-		.thumbScanline = thumbScanlineSBGGRxxP,
+		.packScanline = packScanlineRaw12_CSI2P,
+		.thumbScanline = thumbScanlineRaw_CSI2P,
 	} },
 	{ formats::SRGGB12_CSI2P, {
 		.bitsPerSample = 12,
 		.pattern = { CFAPatternRed, CFAPatternGreen, CFAPatternGreen, CFAPatternBlue },
-		.packScanline = packScanlineSBGGR12P,
-		.thumbScanline = thumbScanlineSBGGRxxP,
+		.packScanline = packScanlineRaw12_CSI2P,
+		.thumbScanline = thumbScanlineRaw_CSI2P,
 	} },
 	{ formats::SBGGR10_IPU3, {
 		.bitsPerSample = 16,
@@ -381,6 +517,8 @@ static const std::map<PixelFormat, FormatInfo> formatInfo = {
 	} },
 };
 
+} /* namespace */
+
 int DNGWriter::write(const char *filename, const Camera *camera,
 		     const StreamConfiguration &config,
 		     const ControlList &metadata,
@@ -407,7 +545,7 @@ int DNGWriter::write(const char *filename, const Camera *camera,
 	 * or a thumbnail scanline. The latter will always be much smaller than
 	 * the former as we downscale by 16 in both directions.
 	 */
-	uint8_t scanline[(config.size.width * info->bitsPerSample + 7) / 8];
+	std::vector<uint8_t> scanline((config.size.width * info->bitsPerSample + 7) / 8);
 
 	toff_t rawIFDOffset = 0;
 	toff_t exifIFDOffset = 0;
@@ -507,10 +645,10 @@ int DNGWriter::write(const char *filename, const Camera *camera,
 	/* Write the thumbnail. */
 	const uint8_t *row = static_cast<const uint8_t *>(data);
 	for (unsigned int y = 0; y < config.size.height / 16; y++) {
-		info->thumbScanline(*info, &scanline, row,
+		info->thumbScanline(*info, scanline.data(), row,
 				    config.size.width / 16, config.stride);
 
-		if (TIFFWriteScanline(tif, &scanline, y, 0) != 1) {
+		if (TIFFWriteScanline(tif, scanline.data(), y, 0) != 1) {
 			std::cerr << "Failed to write thumbnail scanline"
 				  << std::endl;
 			TIFFClose(tif);
@@ -521,6 +659,23 @@ int DNGWriter::write(const char *filename, const Camera *camera,
 	}
 
 	TIFFWriteDirectory(tif);
+
+	/*
+	 * Workaround for a bug introduced in libtiff version 4.5.1 and no fix
+	 * released. In these versions the CFA* tags were missing in the field
+	 * info.
+	 * Introduced by: https://gitlab.com/libtiff/libtiff/-/commit/738e04099b13192bb1f654e74e9b5829313f3161
+	 * Fixed by: https://gitlab.com/libtiff/libtiff/-/commit/49856998c3d82e65444b47bb4fb11b7830a0c2be
+	 */
+	if (!TIFFFindField(tif, TIFFTAG_CFAREPEATPATTERNDIM, TIFF_ANY)) {
+		static const TIFFFieldInfo infos[] = {
+			{ TIFFTAG_CFAREPEATPATTERNDIM, 2, 2, TIFF_SHORT, FIELD_CUSTOM,
+			  1, 0, const_cast<char *>("CFARepeatPatternDim") },
+			{ TIFFTAG_CFAPATTERN, -1, -1, TIFF_BYTE, FIELD_CUSTOM,
+			  1, 1, const_cast<char *>("CFAPattern") },
+		};
+		TIFFMergeFieldInfo(tif, infos, 2);
+	}
 
 	/* Create a new IFD for the RAW image. */
 	const uint16_t cfaRepeatPatternDim[] = { 2, 2 };
@@ -593,9 +748,9 @@ int DNGWriter::write(const char *filename, const Camera *camera,
 	/* Write RAW content. */
 	row = static_cast<const uint8_t *>(data);
 	for (unsigned int y = 0; y < config.size.height; y++) {
-		info->packScanline(&scanline, row, config.size.width);
+		info->packScanline(scanline.data(), row, config.size.width);
 
-		if (TIFFWriteScanline(tif, &scanline, y, 0) != 1) {
+		if (TIFFWriteScanline(tif, scanline.data(), y, 0) != 1) {
 			std::cerr << "Failed to write RAW scanline"
 				  << std::endl;
 			TIFFClose(tif);

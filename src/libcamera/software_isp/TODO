@@ -1,22 +1,3 @@
-1. Setting F_SEAL_SHRINK and F_SEAL_GROW after ftruncate()
-
->> SharedMem::SharedMem(const std::string &name, std::size_t size)
->> 	: name_(name), size_(size), mem_(nullptr)
->>
->> ...
->>
->> 	if (ftruncate(fd_.get(), size_) < 0)
->> 		return;
->
-> Should we set the GROW and SHRINK seals (in a separate patch) ?
-
-Yes, this can be done.
-Setting F_SEAL_SHRINK and F_SEAL_GROW after the ftruncate() call above could catch
-some potential errors related to improper access to the shared memory allocated by
-the SharedMemObject.
-
----
-
 2. Reconsider stats sharing
 
 >>> +void SwStatsCpu::finishFrame(void)

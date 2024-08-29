@@ -12,6 +12,8 @@
 #include <tuple>
 #include <vector>
 
+#include <libcamera/base/utils.h>
+
 #include <libcamera/controls.h>
 
 #include "libcamera/internal/yaml_parser.h"
@@ -31,8 +33,8 @@ public:
 
 	struct AgcConstraint {
 		enum class Bound {
-			lower = 0,
-			upper = 1
+			Lower = 0,
+			Upper = 1
 		};
 		Bound bound;
 		double qLo;

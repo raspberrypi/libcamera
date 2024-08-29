@@ -13,8 +13,7 @@ rkisp1_ipa_sources = files([
 
 rkisp1_ipa_sources += rkisp1_ipa_algorithms
 
-mod = shared_module(ipa_name,
-                    [rkisp1_ipa_sources, libcamera_generated_ipa_headers],
+mod = shared_module(ipa_name, rkisp1_ipa_sources,
                     name_prefix : '',
                     include_directories : [ipa_includes],
                     dependencies : [libcamera_private, libipa_dep],

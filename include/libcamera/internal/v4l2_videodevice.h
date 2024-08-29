@@ -12,6 +12,7 @@
 #include <memory>
 #include <optional>
 #include <ostream>
+#include <queue>
 #include <stdint.h>
 #include <string>
 #include <unordered_set>
@@ -266,6 +267,8 @@ private:
 	void bufferAvailable();
 	FrameBuffer *dequeueBuffer();
 
+	int queueToDevice(FrameBuffer *buffer);
+
 	void watchdogExpired();
 
 	template<typename T>
@@ -281,6 +284,7 @@ private:
 
 	V4L2BufferCache *cache_;
 	std::map<unsigned int, FrameBuffer *> queuedBuffers_;
+	std::queue<FrameBuffer *> pendingBuffersToQueue_;
 
 	EventNotifier *fdBufferNotifier_;
 

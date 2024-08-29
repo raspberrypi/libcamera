@@ -151,13 +151,14 @@ integrates with the libcamera build system, and a *vivid.cpp* file that matches
 the name of the pipeline.
 
 In the *meson.build* file, add the *vivid.cpp* file as a build source for
-libcamera by adding it to the global meson ``libcamera_sources`` variable:
+libcamera by adding it to the global meson ``libcamera_internal_sources``
+variable:
 
 .. code-block:: none
 
    # SPDX-License-Identifier: CC0-1.0
 
-   libcamera_sources += files([
+   libcamera_internal_sources += files([
        'vivid.cpp',
    ])
 

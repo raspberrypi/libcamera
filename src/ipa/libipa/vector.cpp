@@ -41,19 +41,6 @@ namespace ipa {
  */
 
 /**
- * \fn Vector::readYaml
- * \brief Populate the vector with yaml data
- * \param yaml Yaml data to populate the vector with
- *
- * Any existing data in the vector will be overwritten. The size of the data
- * read from \a yaml must be equal to the dimension size Rows of the vector.
- *
- * The yaml data is expected to be a list with elements of type T.
- *
- * \return 0 on success, negative error code otherwise
- */
-
-/**
  * \fn T Vector::operator[](size_t i) const
  * \brief Index to an element in the vector
  * \param i Index of element to retrieve
@@ -137,6 +124,17 @@ namespace ipa {
  */
 
 /**
+ * \fn Vector<T, Rows> operator*(const Matrix<T, Rows, Cols> &m, const Vector<T, Cols> &v)
+ * \brief Multiply a matrix by a vector
+ * \tparam T Numerical type of the contents of the matrix and vector
+ * \tparam Rows The number of rows in the matrix
+ * \tparam Cols The number of columns in the matrix (= rows in the vector)
+ * \param m The matrix
+ * \param v The vector
+ * \return Product of matrix \a m and vector \a v
+ */
+
+/**
  * \fn bool operator==(const Vector<T, Rows> &lhs, const Vector<T, Rows> &rhs)
  * \brief Compare vectors for equality
  * \return True if the two vectors are equal, false otherwise
@@ -147,6 +145,23 @@ namespace ipa {
  * \brief Compare vectors for inequality
  * \return True if the two vectors are not equal, false otherwise
  */
+
+#ifndef __DOXYGEN__
+bool vectorValidateYaml(const YamlObject &obj, unsigned int size)
+{
+	if (!obj.isList())
+		return false;
+
+	if (obj.size() != size) {
+		LOG(Vector, Error)
+			<< "Wrong number of values in YAML vector: expected "
+			<< size << ", got " << obj.size();
+		return false;
+	}
+
+	return true;
+}
+#endif /* __DOXYGEN__ */
 
 } /* namespace ipa */
 

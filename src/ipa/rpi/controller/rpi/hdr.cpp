@@ -42,7 +42,7 @@ void HdrConfig::read(const libcamera::YamlObject &params, const std::string &mod
 
 	/* Lens shading related parameters. */
 	if (params.contains("spatial_gain_curve")) {
-		spatialGainCurve.readYaml(params["spatial_gain_curve"]);
+		spatialGainCurve = params["spatial_gain_curve"].get<ipa::Pwl>(ipa::Pwl{});
 	} else if (params.contains("spatial_gain")) {
 		double spatialGain = params["spatial_gain"].get<double>(2.0);
 		spatialGainCurve.append(0.0, spatialGain);
@@ -66,7 +66,7 @@ void HdrConfig::read(const libcamera::YamlObject &params, const std::string &mod
 	iirStrength = params["iir_strength"].get<double>(8.0);
 	strength = params["strength"].get<double>(1.5);
 	if (tonemapEnable)
-		tonemap.readYaml(params["tonemap"]);
+		tonemap = params["tonemap"].get<ipa::Pwl>(ipa::Pwl{});
 	speed = params["speed"].get<double>(1.0);
 	if (params.contains("hi_quantile_targets")) {
 		hiQuantileTargets = params["hi_quantile_targets"].getList<double>().value();

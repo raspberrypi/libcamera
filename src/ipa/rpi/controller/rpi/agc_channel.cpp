@@ -130,7 +130,8 @@ int AgcConstraint::read(const libcamera::YamlObject &params)
 		return -EINVAL;
 	qHi = *value;
 
-	return yTarget.readYaml(params["y_target"]);
+	yTarget = params["y_target"].get<ipa::Pwl>(ipa::Pwl{});
+	return yTarget.empty() ? -EINVAL : 0;
 }
 
 static std::tuple<int, AgcConstraintMode>
@@ -237,9 +238,9 @@ int AgcConfig::read(const libcamera::YamlObject &params)
 			return ret;
 	}
 
-	ret = yTarget.readYaml(params["y_target"]);
-	if (ret)
-		return ret;
+	yTarget = params["y_target"].get<ipa::Pwl>(ipa::Pwl{});
+	if (yTarget.empty())
+		return -EINVAL;
 
 	speed = params["speed"].get<double>(0.2);
 	startupFrames = params["startup_frames"].get<uint16_t>(10);

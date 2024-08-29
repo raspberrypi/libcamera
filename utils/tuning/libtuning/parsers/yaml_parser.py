@@ -5,13 +5,16 @@
 # Parser for YAML format config file
 
 from .parser import Parser
+import yaml
 
 
 class YamlParser(Parser):
     def __init__(self):
         super().__init__()
 
-    # \todo Implement this (it's fine for now as we don't need a config for
-    # rkisp1 LSC, which is the only user of this so far)
     def parse(self, config_file: str, modules: list) -> (dict, list):
-        return {}, []
+        # Dummy implementation that just reads the file
+        with open(config_file, 'r') as f:
+            config = yaml.safe_load(f)
+
+        return config, []

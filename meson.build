@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: CC0-1.0
 
 project('libcamera', 'c', 'cpp',
-    meson_version : '>= 0.60',
-    version : '0.3.0',
+    meson_version : '>= 0.63',
+    version : '0.3.1',
     default_options : [
         'werror=true',
         'warning_level=2',
@@ -90,11 +90,21 @@ if cc.has_header_symbol('sys/mman.h', 'memfd_create', prefix : '#define _GNU_SOU
     config_h.set('HAVE_MEMFD_CREATE', 1)
 endif
 
+ioctl_posix_test = '''
+#include <sys/ioctl.h>
+int ioctl (int, int, ...);
+'''
+
+if cc.compiles(ioctl_posix_test)
+    config_h.set('HAVE_POSIX_IOCTL', 1)
+endif
+
 if cc.has_header_symbol('stdlib.h', 'secure_getenv', prefix : '#define _GNU_SOURCE')
     config_h.set('HAVE_SECURE_GETENV', 1)
 endif
 
 common_arguments = [
+    '-Wmissing-declarations',
     '-Wshadow',
     '-include', meson.current_build_dir() / 'config.h',
 ]
@@ -136,16 +146,8 @@ if cc.get_id() == 'clang'
 endif
 
 if cc.get_id() == 'gcc'
-    if cc.version().version_compare('<8')
-        error('gcc version is too old, libcamera requires 8.0 or newer')
-    endif
-
-    # On gcc 8, the file system library is provided in a separate static
-    # library.
     if cc.version().version_compare('<9')
-        cpp_arguments += [
-            '-lstdc++fs',
-        ]
+        error('gcc version is too old, libcamera requires 9.0 or newer')
     endif
 
     # gcc 13 implements the C++23 version of automatic move from local
@@ -210,7 +212,7 @@ pipelines_support = {
     'rkisp1':       arch_arm,
     'rpi/pisp':     arch_arm,
     'rpi/vc4':      arch_arm,
-    'simple':       arch_arm,
+    'simple':       ['any'],
     'uvcvideo':     ['any'],
     'vimc':         ['test'],
 }

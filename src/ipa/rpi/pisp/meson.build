@@ -25,14 +25,14 @@ pisp_ipa_sources = files([
 
 pisp_ipa_includes += include_directories('..')
 
-mod = shared_module(ipa_name,
-                    [pisp_ipa_sources, libcamera_generated_ipa_headers],
+mod = shared_module(ipa_name, pisp_ipa_sources,
                     name_prefix : '',
                     include_directories : pisp_ipa_includes,
                     dependencies : pisp_ipa_deps,
                     link_with : libipa,
                     link_whole : pisp_ipa_libs,
                     install : true,
+                    cpp_args : '-Wno-address-of-packed-member',
                     install_dir : ipa_install_dir)
 
 if ipa_sign_module

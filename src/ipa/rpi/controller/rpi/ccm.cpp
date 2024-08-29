@@ -71,9 +71,9 @@ int Ccm::read(const libcamera::YamlObject &params)
 	int ret;
 
 	if (params.contains("saturation")) {
-		ret = config_.saturation.readYaml(params["saturation"]);
-		if (ret)
-			return ret;
+		config_.saturation = params["saturation"].get<ipa::Pwl>(ipa::Pwl{});
+		if (config_.saturation.empty())
+			return -EINVAL;
 	}
 
 	for (auto &p : params["ccms"].asList()) {
@@ -113,8 +113,10 @@ void Ccm::initialise()
 {
 }
 
+namespace {
+
 template<typename T>
-static bool getLocked(Metadata *metadata, std::string const &tag, T &value)
+bool getLocked(Metadata *metadata, std::string const &tag, T &value)
 {
 	T *ptr = metadata->getLocked<T>(tag);
 	if (ptr == nullptr)
@@ -148,6 +150,8 @@ Matrix applySaturation(Matrix const &ccm, double saturation)
 	Matrix S(1, 0, 0, 0, saturation, 0, 0, 0, saturation);
 	return Y2RGB * S * RGB2Y * ccm;
 }
+
+} /* namespace */
 
 void Ccm::prepare(Metadata *imageMetadata)
 {

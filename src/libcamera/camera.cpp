@@ -995,7 +995,7 @@ int Camera::acquire()
 	if (ret < 0)
 		return ret == -EACCES ? -EBUSY : ret;
 
-	if (!d->pipe_->acquire()) {
+	if (!d->pipe_->acquire(this)) {
 		LOG(Camera, Info)
 			<< "Pipeline handler in use by another process";
 		return -EBUSY;

@@ -45,7 +45,7 @@ public:
 	MediaDevice *acquireMediaDevice(DeviceEnumerator *enumerator,
 					const DeviceMatch &dm);
 
-	bool acquire();
+	bool acquire(Camera *camera);
 	void release(Camera *camera);
 
 	virtual std::unique_ptr<CameraConfiguration> generateConfiguration(Camera *camera,
@@ -79,6 +79,7 @@ protected:
 	virtual int queueRequestDevice(Camera *camera, Request *request) = 0;
 	virtual void stopDevice(Camera *camera) = 0;
 
+	virtual bool acquireDevice(Camera *camera);
 	virtual void releaseDevice(Camera *camera);
 
 	CameraManager *manager_;

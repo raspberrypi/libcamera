@@ -163,20 +163,24 @@ MediaDevice *PipelineHandler::acquireMediaDevice(DeviceEnumerator *enumerator,
  * has already acquired it
  * \sa release()
  */
-bool PipelineHandler::acquire()
+bool PipelineHandler::acquire(Camera *camera)
 {
 	MutexLocker locker(lock_);
 
-	if (useCount_) {
-		++useCount_;
-		return true;
+	if (useCount_ == 0) {
+		for (std::shared_ptr<MediaDevice> &media : mediaDevices_) {
+			if (!media->lock()) {
+				unlockMediaDevices();
+				return false;
+			}
+		}
 	}
 
-	for (std::shared_ptr<MediaDevice> &media : mediaDevices_) {
-		if (!media->lock()) {
+	if (!acquireDevice(camera)) {
+		if (useCount_ == 0)
 			unlockMediaDevices();
-			return false;
-		}
+
+		return false;
 	}
 
 	++useCount_;
@@ -214,11 +218,39 @@ void PipelineHandler::release(Camera *camera)
 }
 
 /**
+ * \brief Acquire resources associated with this camera
+ * \param[in] camera The camera for which to acquire resources
+ *
+ * Pipeline handlers may override this in order to get resources such as opening
+ * devices and allocating buffers when a camera is acquired.
+ *
+ * This is used by the uvcvideo pipeline handler to delay opening /dev/video#
+ * until the camera is acquired to avoid excess power consumption. The delayed
+ * opening of /dev/video# is a special case because the kernel uvcvideo driver
+ * powers on the USB device as soon as /dev/video# is opened. This behavior
+ * should *not* be copied by other pipeline handlers.
+ *
+ * \return True on success, false on failure
+ * \sa releaseDevice()
+ */
+bool PipelineHandler::acquireDevice([[maybe_unused]] Camera *camera)
+{
+	return true;
+}
+
+/**
  * \brief Release resources associated with this camera
  * \param[in] camera The camera for which to release resources
  *
  * Pipeline handlers may override this in order to perform cleanup operations
  * when a camera is released, such as freeing memory.
+ *
+ * This is called once for every camera that is released. If there are resources
+ * shared by multiple cameras then the pipeline handler must take care to not
+ * release them until releaseDevice() has been called for all previously
+ * acquired cameras.
+ *
+ * \sa acquireDevice()
  */
 void PipelineHandler::releaseDevice([[maybe_unused]] Camera *camera)
 {

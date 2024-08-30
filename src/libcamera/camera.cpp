@@ -995,7 +995,8 @@ int Camera::acquire()
 	if (ret < 0)
 		return ret == -EACCES ? -EBUSY : ret;
 
-	if (!d->pipe_->acquire(this)) {
+	if (!d->pipe_->invokeMethod(&PipelineHandler::acquire,
+				    ConnectionTypeBlocking, this)) {
 		LOG(Camera, Info)
 			<< "Pipeline handler in use by another process";
 		return -EBUSY;
@@ -1030,7 +1031,8 @@ int Camera::release()
 		return ret == -EACCES ? -EBUSY : ret;
 
 	if (d->isAcquired())
-		d->pipe_->release(this);
+		d->pipe_->invokeMethod(&PipelineHandler::release,
+				       ConnectionTypeBlocking, this);
 
 	d->setState(Private::CameraAvailable);
 

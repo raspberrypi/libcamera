@@ -14,7 +14,6 @@
 #include <sys/types.h>
 #include <vector>
 
-#include <libcamera/base/mutex.h>
 #include <libcamera/base/object.h>
 
 #include <libcamera/controls.h>
@@ -99,9 +98,7 @@ private:
 	std::queue<Request *> waitingRequests_;
 
 	const char *name_;
-
-	Mutex lock_;
-	unsigned int useCount_ LIBCAMERA_TSA_GUARDED_BY(lock_);
+	unsigned int useCount_;
 
 	friend class PipelineHandlerFactoryBase;
 };

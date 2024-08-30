@@ -157,7 +157,7 @@ MediaDevice *PipelineHandler::acquireMediaDevice(DeviceEnumerator *enumerator,
  * Pipeline handlers shall not call this function directly as the Camera class
  * handles access internally.
  *
- * \context This function is \threadsafe.
+ * \context This function is called from the CameraManager thread.
  *
  * \return True if the pipeline handler was acquired, false if another process
  * has already acquired it
@@ -165,8 +165,6 @@ MediaDevice *PipelineHandler::acquireMediaDevice(DeviceEnumerator *enumerator,
  */
 bool PipelineHandler::acquire(Camera *camera)
 {
-	MutexLocker locker(lock_);
-
 	if (useCount_ == 0) {
 		for (std::shared_ptr<MediaDevice> &media : mediaDevices_) {
 			if (!media->lock()) {
@@ -199,14 +197,12 @@ bool PipelineHandler::acquire(Camera *camera)
  * Pipeline handlers shall not call this function directly as the Camera class
  * handles access internally.
  *
- * \context This function is \threadsafe.
+ * \context This function is called from the CameraManager thread.
  *
  * \sa acquire()
  */
 void PipelineHandler::release(Camera *camera)
 {
-	MutexLocker locker(lock_);
-
 	ASSERT(useCount_);
 
 	releaseDevice(camera);
@@ -230,6 +226,8 @@ void PipelineHandler::release(Camera *camera)
  * powers on the USB device as soon as /dev/video# is opened. This behavior
  * should *not* be copied by other pipeline handlers.
  *
+ * \context This function is called from the CameraManager thread.
+ *
  * \return True on success, false on failure
  * \sa releaseDevice()
  */
@@ -249,6 +247,8 @@ bool PipelineHandler::acquireDevice([[maybe_unused]] Camera *camera)
  * shared by multiple cameras then the pipeline handler must take care to not
  * release them until releaseDevice() has been called for all previously
  * acquired cameras.
+ *
+ * \context This function is called from the CameraManager thread.
  *
  * \sa acquireDevice()
  */

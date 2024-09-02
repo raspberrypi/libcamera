@@ -7,10 +7,8 @@
 
 #pragma once
 
-#include <algorithm>
 #include <map>
 #include <string>
-#include <tuple>
 
 #include <libcamera/base/log.h>
 

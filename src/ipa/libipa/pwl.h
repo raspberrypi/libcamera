@@ -7,13 +7,10 @@
 #pragma once
 
 #include <algorithm>
-#include <cmath>
 #include <functional>
 #include <string>
 #include <utility>
 #include <vector>
-
-#include "libcamera/internal/yaml_parser.h"
 
 #include "vector.h"
 

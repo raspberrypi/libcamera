@@ -6,14 +6,7 @@
  */
 #include "matrix_interpolator.h"
 
-#include <algorithm>
-#include <string>
-
 #include <libcamera/base/log.h>
-
-#include "libcamera/internal/yaml_parser.h"
-
-#include "matrix.h"
 
 /**
  * \file matrix_interpolator.h

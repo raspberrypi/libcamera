@@ -6,10 +6,10 @@
  */
 #pragma once
 
-#include <algorithm>
 #include <array>
 #include <cmath>
-#include <sstream>
+#include <optional>
+#include <ostream>
 
 #include <libcamera/base/log.h>
 #include <libcamera/base/span.h>

@@ -23,7 +23,9 @@
 #include <libcamera/base/utils.h>
 
 #include <libcamera/control_ids.h>
+#include <libcamera/controls.h>
 #include <libcamera/framebuffer.h>
+#include <libcamera/geometry.h>
 #include <libcamera/request.h>
 
 #include <libcamera/ipa/ipa_interface.h>

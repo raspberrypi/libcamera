@@ -14,6 +14,7 @@
 #include <iostream>
 
 #include <libcamera/base/file.h>
+#include <libcamera/base/flags.h>
 #include <libcamera/base/log.h>
 
 #include <libcamera/ipa/ipa_interface.h>

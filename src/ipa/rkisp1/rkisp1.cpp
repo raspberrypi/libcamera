@@ -18,6 +18,7 @@
 #include <libcamera/base/log.h>
 
 #include <libcamera/control_ids.h>
+#include <libcamera/controls.h>
 #include <libcamera/framebuffer.h>
 #include <libcamera/request.h>
 

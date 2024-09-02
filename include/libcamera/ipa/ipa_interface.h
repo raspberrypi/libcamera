@@ -7,13 +7,6 @@
 
 #pragma once
 
-#include <libcamera/base/flags.h>
-#include <libcamera/base/signal.h>
-
-#include <libcamera/controls.h>
-#include <libcamera/framebuffer.h>
-#include <libcamera/geometry.h>
-
 namespace libcamera {
 
 /*

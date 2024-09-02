@@ -24,7 +24,7 @@
 #include <libcamera/camera.h>
 #include <libcamera/formats.h>
 
-#include "libcamera/internal/formats.h"
+#include "libcamera/internal/v4l2_pixelformat.h"
 
 #include "v4l2_camera.h"
 #include "v4l2_camera_file.h"

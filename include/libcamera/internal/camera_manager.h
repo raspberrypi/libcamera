@@ -9,7 +9,6 @@
 
 #include <libcamera/camera_manager.h>
 
-#include <map>
 #include <memory>
 #include <sys/types.h>
 #include <vector>

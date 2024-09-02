@@ -8,7 +8,6 @@
 #pragma once
 
 #include <ostream>
-#include <set>
 #include <stdint.h>
 #include <string>
 

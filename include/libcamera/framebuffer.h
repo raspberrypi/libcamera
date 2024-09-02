@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include <assert.h>
 #include <limits>
 #include <memory>
 #include <stdint.h>

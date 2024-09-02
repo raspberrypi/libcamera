@@ -9,7 +9,6 @@
 
 #include <memory>
 #include <queue>
-#include <set>
 #include <string>
 #include <sys/types.h>
 #include <vector>
@@ -18,8 +17,6 @@
 
 #include <libcamera/controls.h>
 #include <libcamera/stream.h>
-
-#include "libcamera/internal/ipa_proxy.h"
 
 namespace libcamera {
 

@@ -10,7 +10,6 @@
 #include <array>
 #include <iterator>
 #include <limits>
-#include <stddef.h>
 #include <type_traits>
 
 namespace libcamera {

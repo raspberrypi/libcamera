@@ -23,7 +23,6 @@
 #include <libcamera/ipa/core_ipa_interface.h>
 
 #include "libcamera/internal/bayer_format.h"
-#include "libcamera/internal/formats.h"
 #include "libcamera/internal/v4l2_subdevice.h"
 
 namespace libcamera {

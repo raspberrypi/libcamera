@@ -8,7 +8,6 @@
 #pragma once
 
 #include <array>
-#include <map>
 #include <vector>
 
 #include <libcamera/geometry.h>

@@ -7,8 +7,6 @@
 
 #pragma once
 
-#include <stddef.h>
-
 #include <libcamera/base/flags.h>
 #include <libcamera/base/unique_fd.h>
 

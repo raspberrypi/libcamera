@@ -7,8 +7,6 @@
 
 #pragma once
 
-#include <deque>
-#include <iostream>
 #include <string.h>
 #include <tuple>
 #include <type_traits>
@@ -22,8 +20,6 @@
 #include <libcamera/geometry.h>
 #include <libcamera/ipa/ipa_interface.h>
 
-#include "libcamera/internal/byte_stream_buffer.h"
-#include "libcamera/internal/camera_sensor.h"
 #include "libcamera/internal/control_serializer.h"
 
 namespace libcamera {

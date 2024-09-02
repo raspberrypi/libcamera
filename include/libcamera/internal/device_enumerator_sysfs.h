@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include <memory>
 #include <string>
 
 #include "libcamera/internal/device_enumerator.h"

@@ -11,6 +11,8 @@
 
 #include <libcamera/base/log.h>
 
+#include "libcamera/internal/byte_stream_buffer.h"
+
 /**
  * \file ipa_data_serializer.h
  * \brief IPA Data Serializer

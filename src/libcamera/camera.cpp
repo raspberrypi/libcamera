@@ -9,6 +9,11 @@
 
 #include <array>
 #include <atomic>
+#include <ios>
+#include <memory>
+#include <optional>
+#include <set>
+#include <sstream>
 
 #include <libcamera/base/log.h>
 #include <libcamera/base/thread.h>

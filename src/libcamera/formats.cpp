@@ -7,6 +7,8 @@
 
 #include "libcamera/internal/formats.h"
 
+#include <map>
+
 #include <libcamera/base/log.h>
 #include <libcamera/base/utils.h>
 

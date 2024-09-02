@@ -10,6 +10,9 @@
 #include <algorithm>
 #include <array>
 #include <limits.h>
+#include <ostream>
+#include <string>
+#include <vector>
 
 #include <libcamera/request.h>
 

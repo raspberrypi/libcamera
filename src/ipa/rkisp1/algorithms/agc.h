@@ -15,7 +15,6 @@
 #include <libcamera/geometry.h>
 
 #include "libipa/agc_mean_luminance.h"
-#include "libipa/histogram.h"
 
 #include "algorithm.h"
 

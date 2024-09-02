@@ -8,12 +8,12 @@
 #include "awb.h"
 
 #include <algorithm>
-#include <cmath>
-#include <iomanip>
+#include <ios>
 
 #include <libcamera/base/log.h>
 
 #include <libcamera/control_ids.h>
+
 #include <libcamera/ipa/core_ipa_interface.h>
 
 /**

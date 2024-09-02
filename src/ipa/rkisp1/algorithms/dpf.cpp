@@ -7,7 +7,9 @@
 
 #include "dpf.h"
 
-#include <cmath>
+#include <algorithm>
+#include <string>
+#include <vector>
 
 #include <libcamera/base/log.h>
 

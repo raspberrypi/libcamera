@@ -7,11 +7,7 @@
 
 #include "ccm.h"
 
-#include <algorithm>
-#include <chrono>
-#include <cmath>
-#include <tuple>
-#include <vector>
+#include <map>
 
 #include <libcamera/base/log.h>
 #include <libcamera/base/utils.h>

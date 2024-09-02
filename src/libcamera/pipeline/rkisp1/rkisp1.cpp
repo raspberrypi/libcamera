@@ -6,10 +6,9 @@
  */
 
 #include <algorithm>
-#include <array>
-#include <iomanip>
 #include <memory>
 #include <numeric>
+#include <optional>
 #include <queue>
 
 #include <linux/media-bus-format.h>

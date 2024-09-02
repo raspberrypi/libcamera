@@ -6,8 +6,8 @@
  */
 
 #include <algorithm>
-#include <math.h>
-#include <queue>
+#include <array>
+#include <chrono>
 #include <stdint.h>
 #include <string.h>
 
@@ -19,10 +19,11 @@
 
 #include <libcamera/control_ids.h>
 #include <libcamera/framebuffer.h>
+#include <libcamera/request.h>
+
 #include <libcamera/ipa/ipa_interface.h>
 #include <libcamera/ipa/ipa_module_info.h>
 #include <libcamera/ipa/rkisp1_ipa_interface.h>
-#include <libcamera/request.h>
 
 #include "libcamera/internal/formats.h"
 #include "libcamera/internal/mapped_framebuffer.h"

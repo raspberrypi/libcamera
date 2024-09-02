@@ -8,7 +8,6 @@
 #include "libcamera/internal/v4l2_subdevice.h"
 
 #include <fcntl.h>
-#include <iomanip>
 #include <regex>
 #include <sstream>
 #include <string.h>

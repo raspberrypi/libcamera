@@ -10,7 +10,6 @@
 #include <dlfcn.h>
 #include <fcntl.h>
 #include <map>
-#include <stdarg.h>
 #include <string.h>
 #include <sys/eventfd.h>
 #include <sys/mman.h>

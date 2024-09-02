@@ -8,7 +8,8 @@
 #pragma once
 
 #include <deque>
-#include <utility>
+#include <memory>
+#include <vector>
 
 #include <libcamera/base/mutex.h>
 #include <libcamera/base/semaphore.h>

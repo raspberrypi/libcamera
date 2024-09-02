@@ -8,7 +8,6 @@
 #include "v4l2_camera_proxy.h"
 
 #include <algorithm>
-#include <array>
 #include <errno.h>
 #include <numeric>
 #include <set>

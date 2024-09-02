@@ -8,7 +8,6 @@
 #include "v4l2_compat_manager.h"
 
 #include <assert.h>
-#include <errno.h>
 #include <fcntl.h>
 #include <stdarg.h>
 #include <sys/ioctl.h>

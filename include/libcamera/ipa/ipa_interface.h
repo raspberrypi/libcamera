@@ -7,11 +7,6 @@
 
 #pragma once
 
-#include <map>
-#include <stddef.h>
-#include <stdint.h>
-#include <vector>
-
 #include <libcamera/base/flags.h>
 #include <libcamera/base/signal.h>
 

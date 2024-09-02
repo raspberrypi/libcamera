@@ -6,7 +6,6 @@
  */
 
 #include "libcamera/internal/camera_sensor.h"
-#include "libcamera/internal/media_device.h"
 
 #include <algorithm>
 #include <float.h>
@@ -14,15 +13,16 @@
 #include <math.h>
 #include <string.h>
 
+#include <libcamera/base/utils.h>
+
 #include <libcamera/camera.h>
 #include <libcamera/orientation.h>
 #include <libcamera/property_ids.h>
 
-#include <libcamera/base/utils.h>
-
 #include "libcamera/internal/bayer_format.h"
 #include "libcamera/internal/camera_lens.h"
 #include "libcamera/internal/camera_sensor_properties.h"
+#include "libcamera/internal/media_device.h"
 #include "libcamera/internal/sysfs.h"
 
 /**

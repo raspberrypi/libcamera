@@ -50,8 +50,8 @@ typename std::remove_extent_t<T> *elfPointer(Span<const uint8_t> elf,
 	if (size > elf.size() || size < objSize)
 		return nullptr;
 
-	return reinterpret_cast<typename std::remove_extent_t<T> *>
-		(reinterpret_cast<const char *>(elf.data()) + offset);
+	return reinterpret_cast<typename std::remove_extent_t<T> *>(
+		reinterpret_cast<const char *>(elf.data()) + offset);
 }
 
 template<typename T>

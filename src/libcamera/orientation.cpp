@@ -101,10 +101,14 @@ std::ostream &operator<<(std::ostream &out, const Orientation &orientation)
 {
 	constexpr std::array<const char *, 9> orientationNames = {
 		"", /* Orientation starts counting from 1. */
-		"Rotate0", "Rotate0Mirror",
-		"Rotate180", "Rotate180Mirror",
-		"Rotate90Mirror", "Rotate270",
-		"Rotate270Mirror", "Rotate90",
+		"Rotate0",
+		"Rotate0Mirror",
+		"Rotate180",
+		"Rotate180Mirror",
+		"Rotate90Mirror",
+		"Rotate270",
+		"Rotate270Mirror",
+		"Rotate90",
 	};
 
 	out << orientationNames[static_cast<unsigned int>(orientation)];

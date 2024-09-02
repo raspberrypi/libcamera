@@ -14,11 +14,10 @@
 #include <string>
 #include <vector>
 
-#include <libcamera/request.h>
-
 #include <libcamera/base/log.h>
 #include <libcamera/base/utils.h>
 
+#include <libcamera/request.h>
 
 /**
  * \file stream.h

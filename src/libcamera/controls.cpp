@@ -8,8 +8,8 @@
 #include <libcamera/controls.h>
 
 #include <sstream>
-#include <string>
 #include <string.h>
+#include <string>
 
 #include <libcamera/base/log.h>
 #include <libcamera/base/utils.h>

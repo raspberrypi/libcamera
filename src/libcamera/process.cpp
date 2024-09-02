@@ -188,7 +188,6 @@ const struct sigaction &ProcessManager::oldsa() const
 	return oldsa_;
 }
 
-
 /**
  * \class Process
  * \brief Process object
@@ -270,8 +269,8 @@ int Process::start(const std::string &path,
 		unsigned int len = args.size();
 		argv[0] = path.c_str();
 		for (unsigned int i = 0; i < len; i++)
-			argv[i+1] = args[i].c_str();
-		argv[len+1] = nullptr;
+			argv[i + 1] = args[i].c_str();
+		argv[len + 1] = nullptr;
 
 		execv(path.c_str(), (char **)argv);
 

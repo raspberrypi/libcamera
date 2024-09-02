@@ -57,8 +57,8 @@ SharedMem::SharedMem() = default;
  */
 SharedMem::SharedMem(const std::string &name, std::size_t size)
 {
-	UniqueFD memfd = MemFd::create(name.c_str(), size, MemFd::Seal::Shrink |
-				       MemFd::Seal::Grow);
+	UniqueFD memfd = MemFd::create(name.c_str(), size,
+				       MemFd::Seal::Shrink | MemFd::Seal::Grow);
 	if (!memfd.isValid())
 		return;
 

@@ -7,8 +7,6 @@
 
 #include <libcamera/base/event_dispatcher_poll.h>
 
-#include <algorithm>
-#include <chrono>
 #include <iomanip>
 #include <poll.h>
 #include <stdint.h>

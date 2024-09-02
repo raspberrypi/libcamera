@@ -7,7 +7,6 @@
 
 #include <libcamera/controls.h>
 
-#include <iomanip>
 #include <sstream>
 #include <string>
 #include <string.h>

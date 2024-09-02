@@ -22,7 +22,6 @@
 #include "libcamera/internal/camera.h"
 #include "libcamera/internal/camera_manager.h"
 #include "libcamera/internal/device_enumerator.h"
-#include "libcamera/internal/framebuffer.h"
 #include "libcamera/internal/media_device.h"
 #include "libcamera/internal/request.h"
 #include "libcamera/internal/tracepoints.h"

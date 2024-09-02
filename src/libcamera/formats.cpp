@@ -7,9 +7,6 @@
 
 #include "libcamera/internal/formats.h"
 
-#include <algorithm>
-#include <errno.h>
-
 #include <libcamera/base/log.h>
 #include <libcamera/base/utils.h>
 

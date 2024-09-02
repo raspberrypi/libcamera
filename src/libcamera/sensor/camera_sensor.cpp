@@ -10,7 +10,6 @@
 
 #include <algorithm>
 #include <float.h>
-#include <iomanip>
 #include <limits.h>
 #include <math.h>
 #include <string.h>
@@ -24,7 +23,6 @@
 #include "libcamera/internal/bayer_format.h"
 #include "libcamera/internal/camera_lens.h"
 #include "libcamera/internal/camera_sensor_properties.h"
-#include "libcamera/internal/formats.h"
 #include "libcamera/internal/sysfs.h"
 
 /**

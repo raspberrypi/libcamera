@@ -10,7 +10,6 @@
 
 #include "libcamera/internal/shared_mem_object.h"
 
-#include <stddef.h>
 #include <stdint.h>
 #include <sys/mman.h>
 #include <sys/types.h>

@@ -9,7 +9,6 @@
 
 #include <array>
 #include <atomic>
-#include <iomanip>
 
 #include <libcamera/base/log.h>
 #include <libcamera/base/thread.h>
@@ -21,7 +20,6 @@
 
 #include "libcamera/internal/camera.h"
 #include "libcamera/internal/camera_controls.h"
-#include "libcamera/internal/formats.h"
 #include "libcamera/internal/pipeline_handler.h"
 #include "libcamera/internal/request.h"
 

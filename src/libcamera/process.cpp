@@ -10,7 +10,6 @@
 #include <algorithm>
 #include <dirent.h>
 #include <fcntl.h>
-#include <iostream>
 #include <list>
 #include <signal.h>
 #include <string.h>

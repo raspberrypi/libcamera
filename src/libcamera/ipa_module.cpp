@@ -8,7 +8,6 @@
 #include "libcamera/internal/ipa_module.h"
 
 #include <algorithm>
-#include <array>
 #include <ctype.h>
 #include <dlfcn.h>
 #include <elf.h>

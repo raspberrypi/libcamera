@@ -8,7 +8,6 @@
 #include <libcamera/orientation.h>
 
 #include <array>
-#include <string>
 
 /**
  * \file orientation.h

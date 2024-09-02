@@ -12,8 +12,8 @@
 #include <iterator>
 #include <ostream>
 #include <sstream>
-#include <string>
 #include <string.h>
+#include <string>
 #include <sys/time.h>
 #include <type_traits>
 #include <utility>

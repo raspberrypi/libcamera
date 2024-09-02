@@ -306,7 +306,8 @@ void Awb::process(IPAContext &context,
 	activeState.awb.gains.automatic.blue = blueGain;
 	activeState.awb.gains.automatic.green = 1.0;
 
-	LOG(RkISP1Awb, Debug) << std::showpoint
+	LOG(RkISP1Awb, Debug)
+		<< std::showpoint
 		<< "Means [" << redMean << ", " << greenMean << ", " << blueMean
 		<< "], gains [" << activeState.awb.gains.automatic.red << ", "
 		<< activeState.awb.gains.automatic.green << ", "

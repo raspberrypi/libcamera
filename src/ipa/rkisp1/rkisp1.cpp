@@ -165,8 +165,8 @@ int IPARkISP1::init(const IPASettings &settings, unsigned int hwRevision,
 		return -ENODEV;
 	}
 
-	context_.configuration.sensor.lineDuration = sensorInfo.minLineLength
-						   * 1.0s / sensorInfo.pixelRate;
+	context_.configuration.sensor.lineDuration =
+		sensorInfo.minLineLength * 1.0s / sensorInfo.pixelRate;
 
 	/* Load the tuning data file. */
 	File file(settings.configurationFile);

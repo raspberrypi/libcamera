@@ -14,6 +14,7 @@
 #include <libcamera/base/utils.h>
 
 #include <libcamera/control_ids.h>
+
 #include <libcamera/ipa/core_ipa_interface.h>
 
 #include "libipa/histogram.h"
@@ -246,7 +247,6 @@ void Agc::process(IPAContext &context, [[maybe_unused]] const uint32_t frame,
 	utils::Duration frameDuration = context.configuration.sensor.lineDuration
 				      * vTotal;
 	metadata.set(controls::FrameDuration, frameDuration.get<std::micro>());
-
 }
 
 REGISTER_IPA_ALGORITHM(Agc, "Agc")

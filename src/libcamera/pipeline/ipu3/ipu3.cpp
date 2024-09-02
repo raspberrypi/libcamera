@@ -18,11 +18,12 @@
 #include <libcamera/camera.h>
 #include <libcamera/control_ids.h>
 #include <libcamera/formats.h>
-#include <libcamera/ipa/ipu3_ipa_interface.h>
-#include <libcamera/ipa/ipu3_ipa_proxy.h>
 #include <libcamera/property_ids.h>
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
+
+#include <libcamera/ipa/ipu3_ipa_interface.h>
+#include <libcamera/ipa/ipu3_ipa_proxy.h>
 
 #include "libcamera/internal/camera.h"
 #include "libcamera/internal/camera_lens.h"
@@ -1116,19 +1117,19 @@ int PipelineHandlerIPU3::registerCameras()
 		 * returned through the ImgU main and secondary outputs.
 		 */
 		data->cio2_.bufferReady().connect(data.get(),
-					&IPU3CameraData::cio2BufferReady);
+						  &IPU3CameraData::cio2BufferReady);
 		data->cio2_.bufferAvailable.connect(
 			data.get(), &IPU3CameraData::queuePendingRequests);
 		data->imgu_->input_->bufferReady.connect(&data->cio2_,
-					&CIO2Device::tryReturnBuffer);
+							 &CIO2Device::tryReturnBuffer);
 		data->imgu_->output_->bufferReady.connect(data.get(),
-					&IPU3CameraData::imguOutputBufferReady);
+							  &IPU3CameraData::imguOutputBufferReady);
 		data->imgu_->viewfinder_->bufferReady.connect(data.get(),
-					&IPU3CameraData::imguOutputBufferReady);
+							      &IPU3CameraData::imguOutputBufferReady);
 		data->imgu_->param_->bufferReady.connect(data.get(),
-					&IPU3CameraData::paramBufferReady);
+							 &IPU3CameraData::paramBufferReady);
 		data->imgu_->stat_->bufferReady.connect(data.get(),
-					&IPU3CameraData::statBufferReady);
+							&IPU3CameraData::statBufferReady);
 
 		/* Create and register the Camera instance. */
 		const std::string &cameraId = cio2->sensor()->id();

@@ -24,10 +24,11 @@
 
 #include <libcamera/control_ids.h>
 #include <libcamera/framebuffer.h>
+#include <libcamera/request.h>
+
 #include <libcamera/ipa/ipa_interface.h>
 #include <libcamera/ipa/ipa_module_info.h>
 #include <libcamera/ipa/ipu3_ipa_interface.h>
-#include <libcamera/request.h>
 
 #include "libcamera/internal/mapped_framebuffer.h"
 #include "libcamera/internal/yaml_parser.h"
@@ -308,8 +309,8 @@ int IPAIPU3::init(const IPASettings &settings,
 
 	/* Clean context */
 	context_.configuration = {};
-	context_.configuration.sensor.lineDuration = sensorInfo.minLineLength
-						   * 1.0s / sensorInfo.pixelRate;
+	context_.configuration.sensor.lineDuration =
+		sensorInfo.minLineLength * 1.0s / sensorInfo.pixelRate;
 
 	/* Load the tuning data file. */
 	File file(settings.configurationFile);
@@ -472,8 +473,8 @@ int IPAIPU3::configure(const IPAConfigInfo &configInfo,
 	context_.frameContexts.clear();
 
 	/* Initialise the sensor configuration. */
-	context_.configuration.sensor.lineDuration = sensorInfo_.minLineLength
-						   * 1.0s / sensorInfo_.pixelRate;
+	context_.configuration.sensor.lineDuration =
+		sensorInfo_.minLineLength * 1.0s / sensorInfo_.pixelRate;
 	context_.configuration.sensor.size = sensorInfo_.outputSize;
 
 	/*

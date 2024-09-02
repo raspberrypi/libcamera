@@ -55,8 +55,8 @@ void BlackLevelCorrection::prepare([[maybe_unused]] IPAContext &context,
 	 * tuning processes. This is a first rough approximation.
 	 */
 	params->obgrid_param.gr = 64;
-	params->obgrid_param.r  = 64;
-	params->obgrid_param.b  = 64;
+	params->obgrid_param.r = 64;
+	params->obgrid_param.b = 64;
 	params->obgrid_param.gb = 64;
 
 	/* Enable the custom black level correction processing */

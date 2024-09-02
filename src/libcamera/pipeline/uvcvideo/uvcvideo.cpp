@@ -7,10 +7,12 @@
 
 #include <algorithm>
 #include <fstream>
-#include <iomanip>
+#include <map>
 #include <math.h>
 #include <memory>
-#include <tuple>
+#include <set>
+#include <string>
+#include <vector>
 
 #include <libcamera/base/log.h>
 #include <libcamera/base/mutex.h>

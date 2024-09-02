@@ -7,8 +7,6 @@
 
 #include "blc.h"
 
-#include <string.h>
-
 /**
  * \file blc.h
  * \brief IPU3 Black Level Correction control

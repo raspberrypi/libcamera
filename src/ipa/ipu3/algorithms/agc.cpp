@@ -9,7 +9,6 @@
 
 #include <algorithm>
 #include <chrono>
-#include <cmath>
 
 #include <libcamera/base/log.h>
 #include <libcamera/base/utils.h>

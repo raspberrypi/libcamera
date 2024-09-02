@@ -6,7 +6,6 @@
  */
 
 #include <algorithm>
-#include <iomanip>
 #include <memory>
 #include <queue>
 #include <vector>

@@ -32,15 +32,10 @@
 #include "libcamera/internal/mapped_framebuffer.h"
 #include "libcamera/internal/yaml_parser.h"
 
-#include "algorithms/af.h"
-#include "algorithms/agc.h"
-#include "algorithms/algorithm.h"
-#include "algorithms/awb.h"
-#include "algorithms/blc.h"
-#include "algorithms/tone_mapping.h"
 #include "libipa/camera_sensor_helper.h"
 
 #include "ipa_context.h"
+#include "module.h"
 
 /* Minimum grid width, expressed as a number of cells */
 static constexpr uint32_t kMinGridWidth = 16;

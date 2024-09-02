@@ -14,11 +14,12 @@
 
 #pragma once
 
+{% if has_map %}#include <map>{% endif %}
+{% if has_string %}#include <string>{% endif %}
+{% if has_array %}#include <vector>{% endif %}
+
 #include <libcamera/ipa/core_ipa_interface.h>
 #include <libcamera/ipa/ipa_interface.h>
-
-{% if has_map %}#include <map>{% endif %}
-{% if has_array %}#include <vector>{% endif %}
 
 namespace libcamera {
 {%- if has_namespace %}

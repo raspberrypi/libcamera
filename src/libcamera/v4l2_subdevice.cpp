@@ -17,10 +17,10 @@
 #include <linux/media-bus-format.h>
 #include <linux/v4l2-subdev.h>
 
-#include <libcamera/geometry.h>
-
 #include <libcamera/base/log.h>
 #include <libcamera/base/utils.h>
+
+#include <libcamera/geometry.h>
 
 #include "libcamera/internal/formats.h"
 #include "libcamera/internal/media_device.h"

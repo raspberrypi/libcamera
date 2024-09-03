@@ -709,39 +709,6 @@ class MesonChecker(StyleChecker):
         return issues
 
 
-class Pep8Checker(StyleChecker):
-    patterns = ('*.py',)
-    results_regex = re.compile(r'stdin:([0-9]+):([0-9]+)(.*)')
-
-    def __init__(self, content):
-        super().__init__()
-        self.__content = content
-
-    def check(self, line_numbers):
-        issues = []
-        data = ''.join(self.__content).encode('utf-8')
-
-        try:
-            ret = subprocess.run(['pycodestyle', '--ignore=E501', '-'],
-                                 input=data, stdout=subprocess.PIPE)
-        except FileNotFoundError:
-            issues.append(StyleIssue(0, None, None, 'Please install pycodestyle to validate python additions'))
-            return issues
-
-        results = ret.stdout.decode('utf-8').splitlines()
-        for item in results:
-            search = re.search(Pep8Checker.results_regex, item)
-            line_number = int(search.group(1))
-            position = int(search.group(2))
-            msg = search.group(3)
-
-            if line_number in line_numbers:
-                line = self.__content[line_number - 1]
-                issues.append(StyleIssue(line_number, None, line, msg))
-
-        return issues
-
-
 class ShellChecker(StyleChecker):
     patterns = ('*.sh',)
     results_line_regex = re.compile(r'In - line ([0-9]+):')

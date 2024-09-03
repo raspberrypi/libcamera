@@ -943,6 +943,21 @@ class IncludeOrderFormatter(Formatter):
         return '\n'.join(lines)
 
 
+class Pep8Formatter(Formatter):
+    patterns = ('*.py',)
+
+    @classmethod
+    def format(cls, filename, data):
+        try:
+            ret = subprocess.run(['autopep8', '--ignore=E501', '-'],
+                                 input=data.encode('utf-8'), stdout=subprocess.PIPE)
+        except FileNotFoundError:
+            issues.append(StyleIssue(0, None, None, 'Please install autopep8 to format python additions'))
+            return issues
+
+        return ret.stdout.decode('utf-8')
+
+
 class StripTrailingSpaceFormatter(Formatter):
     patterns = ('*.c', '*.cpp', '*.h', '*.py', 'meson.build')
 

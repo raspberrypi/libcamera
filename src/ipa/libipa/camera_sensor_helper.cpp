@@ -519,6 +519,19 @@ private:
 };
 REGISTER_CAMERA_SENSOR_HELPER("ar0521", CameraSensorHelperAr0521)
 
+class CameraSensorHelperImx214 : public CameraSensorHelper
+{
+public:
+	CameraSensorHelperImx214()
+	{
+		/* From datasheet: 64 at 10bits. */
+		blackLevel_ = 4096;
+		gainType_ = AnalogueGainLinear;
+		gainConstants_.linear = { 0, 512, -1, 512 };
+	}
+};
+REGISTER_CAMERA_SENSOR_HELPER("imx214", CameraSensorHelperImx214)
+
 class CameraSensorHelperImx219 : public CameraSensorHelper
 {
 public:

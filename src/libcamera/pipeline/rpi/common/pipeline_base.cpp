@@ -529,6 +529,13 @@ int PipelineHandlerBase::configure(Camera *camera, CameraConfiguration *config)
 	if (ret)
 		return ret;
 
+	/* We store the IPACameraSensorInfo for digital zoom calculations. */
+	ret = data->sensor_->sensorInfo(&data->sensorInfo_);
+	if (ret) {
+		LOG(RPI, Error) << "Failed to retrieve camera sensor info";
+		return ret;
+	}
+
 	/*
 	 * Platform specific internal stream configuration. This also assigns
 	 * external streams which get configured below.
@@ -1200,13 +1207,6 @@ int CameraData::configureIPA(const CameraConfiguration *config, ipa::RPi::Config
 	ret = platformConfigureIpa(params);
 	if (ret)
 		return ret;
-
-	/* We store the IPACameraSensorInfo for digital zoom calculations. */
-	ret = sensor_->sensorInfo(&sensorInfo_);
-	if (ret) {
-		LOG(RPI, Error) << "Failed to retrieve camera sensor info";
-		return ret;
-	}
 
 	/* Always send the user transform to the IPA. */
 	Transform transform = config->orientation / Orientation::Rotate0;

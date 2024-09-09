@@ -25,6 +25,39 @@
 
 namespace RPiController {
 
+/*
+ * The following structures are used to export the CNN input/output tensor information
+ * through the rpi::CnnOutputTensorInfo and rpi::CnnInputTensorInfo controls.
+ * Applications must cast the span to these structures exactly.
+ */
+static constexpr unsigned int NetworkNameLen = 64;
+static constexpr unsigned int MaxNumTensors = 16;
+static constexpr unsigned int MaxNumDimensions = 16;
+
+struct OutputTensorInfo {
+	uint32_t tensorDataNum;
+	uint32_t numDimensions;
+	uint16_t size[MaxNumDimensions];
+};
+
+struct CnnOutputTensorInfo {
+	char networkName[NetworkNameLen];
+	uint32_t numTensors;
+	OutputTensorInfo info[MaxNumTensors];
+};
+
+struct CnnInputTensorInfo {
+	char networkName[NetworkNameLen];
+	uint32_t width;
+	uint32_t height;
+	uint32_t numChannels;
+};
+
+struct CnnKpiInfo {
+	uint32_t dnnRuntime;
+	uint32_t dspRuntime;
+};
+
 class Algorithm;
 typedef std::unique_ptr<Algorithm> AlgorithmPtr;
 

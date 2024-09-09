@@ -49,6 +49,7 @@ public:
 		unsigned int pipelineWidth;
 		bool statsInline;
 		libcamera::utils::Duration minPixelProcessingTime;
+		bool cfeDataBufferStrided;
 	};
 
 	Controller();

@@ -883,11 +883,14 @@ void AgcChannel::filterExposure()
 
 	/*
 	 * AGC adapts instantly if both shutter and gain are directly specified
-	 * or we're in the startup phase.
+	 * or we're in the startup phase. Also disable the stable region, because we want
+	 * to reflect any user exposure/gain updates, however small.
 	 */
 	if ((status_.fixedShutter && status_.fixedAnalogueGain) ||
-	    frameCount_ <= config_.startupFrames)
+	    frameCount_ <= config_.startupFrames) {
 		speed = 1.0;
+		stableRegion = 0.0;
+	}
 	if (!filtered_.totalExposure) {
 		filtered_.totalExposure = target_.totalExposure;
 	} else if (filtered_.totalExposure * (1.0 - stableRegion) < target_.totalExposure &&

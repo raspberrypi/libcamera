@@ -57,4 +57,111 @@ controls:
 
         \sa StatsOutputEnable
 
+  - CnnOutputTensor:
+      type: float
+      size: [n]
+      description: |
+        This control returns a span of floating point values that represent the
+        output tensors from a Convolutional Neural Network (CNN). The size and
+        format of this array of values is entirely dependent on the neural
+        network used, and further post-processing may need to be performed at
+        the application level to generate the final desired output. This control
+        is agnostic of the hardware or software used to generate the output
+        tensors.
+
+        The structure of the span is described by the CnnOutputTensorInfo
+        control.
+
+        \sa CnnOutputTensorInfo
+
+  - CnnOutputTensorInfo:
+      type: uint8_t
+      size: [n]
+      description: |
+        This control returns the structure of the CnnOutputTensor. This structure
+        takes the following form:
+
+        constexpr unsigned int NetworkNameLen = 64;
+        constexpr unsigned int MaxNumTensors = 8;
+        constexpr unsigned int MaxNumDimensions = 8;
+
+        struct CnnOutputTensorInfo {
+          char networkName[NetworkNameLen];
+          uint32_t numTensors;
+          OutputTensorInfo info[MaxNumTensors];
+        };
+
+        with
+
+        struct OutputTensorInfo {
+          uint32_t tensorDataNum;
+          uint32_t numDimensions;
+          uint16_t size[MaxNumDimensions];
+        };
+
+        networkName is the name of the CNN used,
+        numTensors is the number of output tensors returned,
+        tensorDataNum gives the number of elements in each output tensor,
+        numDimensions gives the dimensionality of each output tensor,
+        size gives the size of each dimension in each output tensor.
+
+        \sa CnnOutputTensor
+
+  - CnnEnableInputTensor:
+      type: bool
+      description: |
+        Boolean to control if the IPA returns the input tensor used by the CNN
+        to generate the output tensors via the CnnInputTensor control. Because
+        the input tensor may be relatively large, for efficiency reason avoid
+        enabling input tensor output unless required for debugging purposes.
+
+        \sa CnnInputTensor
+
+  - CnnInputTensor:
+       type: uint8_t
+       size: [n]
+       description: |
+        This control returns a span of uint8_t pixel values that represent the
+        input tensor for a Convolutional Neural Network (CNN). The size and
+        format of this array of values is entirely dependent on the neural
+        network used, and further post-processing (e.g. pixel normalisations) may
+        need to be performed at the application level to generate the final input
+        image.
+
+        The structure of the span is described by the CnnInputTensorInfo
+        control.
+
+        \sa CnnInputTensorInfo
+
+  - CnnInputTensorInfo:
+      type: uint8_t
+      size: [n]
+      description: |
+        This control returns the structure of the CnnInputTensor. This structure
+        takes the following form:
+
+        constexpr unsigned int NetworkNameLen = 64;
+
+        struct CnnInputTensorInfo {
+          char networkName[NetworkNameLen];
+          uint32_t width;
+          uint32_t height;
+          uint32_t numChannels;
+        };
+
+        where
+
+        networkName is the name of the CNN used,
+        width and height are the input tensor image width and height in pixels,
+        numChannels is the number of channels in the input tensor image.
+
+        \sa CnnInputTensor
+
+  - CnnKpiInfo:
+      type: int32_t
+      size: [2]
+      description: |
+        This control returns performance metrics for the CNN processing stage.
+        Two values are returned in this span, the runtime of the CNN/DNN stage
+        and the DSP stage in milliseconds.
 ...

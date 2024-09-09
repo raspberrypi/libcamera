@@ -443,14 +443,10 @@ bool ViewFinderGL::createFragmentShader()
 		close();
 	}
 
-	/* Bind shader pipeline for use */
-	if (!shaderProgram_.bind()) {
-		qWarning() << "[ViewFinderGL]:" << shaderProgram_.log();
-		close();
-	}
-
 	attributeVertex = shaderProgram_.attributeLocation("vertexIn");
 	attributeTexture = shaderProgram_.attributeLocation("textureIn");
+
+	vertexBuffer_.bind();
 
 	shaderProgram_.enableAttributeArray(attributeVertex);
 	shaderProgram_.setAttributeBuffer(attributeVertex,
@@ -465,6 +461,8 @@ bool ViewFinderGL::createFragmentShader()
 					  8 * sizeof(GLfloat),
 					  2,
 					  2 * sizeof(GLfloat));
+
+	vertexBuffer_.release();
 
 	textureUniformY_ = shaderProgram_.uniformLocation("tex_y");
 	textureUniformU_ = shaderProgram_.uniformLocation("tex_u");
@@ -809,11 +807,18 @@ void ViewFinderGL::doRender()
 
 void ViewFinderGL::paintGL()
 {
-	if (!fragmentShader_)
+	if (!fragmentShader_) {
 		if (!createFragmentShader()) {
 			qWarning() << "[ViewFinderGL]:"
 				   << "create fragment shader failed.";
 		}
+	}
+
+	/* Bind shader pipeline for use. */
+	if (!shaderProgram_.bind()) {
+		qWarning() << "[ViewFinderGL]:" << shaderProgram_.log();
+		close();
+	}
 
 	if (image_) {
 		glClearColor(0.0, 0.0, 0.0, 1.0);

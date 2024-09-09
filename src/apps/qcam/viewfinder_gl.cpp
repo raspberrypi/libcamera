@@ -533,8 +533,6 @@ void ViewFinderGL::initializeGL()
 	/* Create Vertex Shader */
 	if (!createVertexShader())
 		qWarning() << "[ViewFinderGL]: create vertex shader failed.";
-
-	glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
 }
 
 void ViewFinderGL::doRender()
@@ -821,7 +819,7 @@ void ViewFinderGL::paintGL()
 	}
 
 	if (image_) {
-		glClearColor(0.0, 0.0, 0.0, 1.0);
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		doRender();

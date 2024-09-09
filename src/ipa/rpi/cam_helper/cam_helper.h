@@ -76,6 +76,7 @@ public:
 	CamHelper(std::unique_ptr<MdParser> parser, unsigned int frameIntegrationDiff);
 	virtual ~CamHelper();
 	void setCameraMode(const CameraMode &mode);
+	void setHwConfig(const Controller::HardwareConfig &hwConfig);
 	virtual void prepare(libcamera::Span<const uint8_t> buffer,
 			     Metadata &metadata);
 	virtual void process(StatisticsPtr &stats, Metadata &metadata);
@@ -108,6 +109,7 @@ protected:
 
 	std::unique_ptr<MdParser> parser_;
 	CameraMode mode_;
+	Controller::HardwareConfig hwConfig_;
 
 private:
 	/*

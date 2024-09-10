@@ -22,6 +22,8 @@
 #include <libcamera/base/utils.h>
 
 #include <libcamera/camera.h>
+#include <libcamera/control_ids.h>
+#include <libcamera/controls.h>
 #include <libcamera/formats.h>
 
 #include "libcamera/internal/v4l2_pixelformat.h"
@@ -33,6 +35,7 @@
 #define KERNEL_VERSION(a, b, c) (((a) << 16) + ((b) << 8) + (c))
 
 using namespace libcamera;
+using namespace std::literals::chrono_literals;
 
 LOG_DECLARE_CATEGORY(V4L2Compat)
 
@@ -755,6 +758,23 @@ int V4L2CameraProxy::vidioc_streamoff(V4L2CameraFile *file, int *arg)
 	return ret;
 }
 
+int V4L2CameraProxy::vidioc_s_parm(V4L2CameraFile *file, struct v4l2_streamparm *arg)
+{
+	LOG(V4L2Compat, Debug)
+		<< "[" << file->description() << "] " << __func__ << "()";
+
+	if (!validateBufferType(arg->type))
+		return -EINVAL;
+
+	struct v4l2_fract *timeperframe = &arg->parm.capture.timeperframe;
+	utils::Duration frameDuration = 1.0s * timeperframe->numerator / timeperframe->denominator;
+
+	int64_t uDuration = frameDuration.get<std::micro>();
+	vcam_->controls().set(controls::FrameDurationLimits, { uDuration, uDuration });
+
+	return 0;
+}
+
 const std::set<unsigned long> V4L2CameraProxy::supportedIoctls_ = {
 	VIDIOC_QUERYCAP,
 	VIDIOC_ENUM_FRAMESIZES,
@@ -775,6 +795,7 @@ const std::set<unsigned long> V4L2CameraProxy::supportedIoctls_ = {
 	VIDIOC_EXPBUF,
 	VIDIOC_STREAMON,
 	VIDIOC_STREAMOFF,
+	VIDIOC_S_PARM,
 };
 
 int V4L2CameraProxy::ioctl(V4L2CameraFile *file, unsigned long longRequest, void *arg)
@@ -861,6 +882,9 @@ int V4L2CameraProxy::ioctl(V4L2CameraFile *file, unsigned long longRequest, void
 		break;
 	case VIDIOC_STREAMOFF:
 		ret = vidioc_streamoff(file, static_cast<int *>(arg));
+		break;
+	case VIDIOC_S_PARM:
+		ret = vidioc_s_parm(file, static_cast<struct v4l2_streamparm *>(arg));
 		break;
 	default:
 		ret = -ENOTTY;

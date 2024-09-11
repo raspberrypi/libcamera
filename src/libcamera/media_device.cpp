@@ -818,20 +818,12 @@ int MediaDevice::setupLink(const MediaLink *link, unsigned int flags)
 	if (ret) {
 		ret = -errno;
 		LOG(MediaDevice, Error)
-			<< "Failed to setup link "
-			<< source->entity()->name() << "["
-			<< source->index() << "] -> "
-			<< sink->entity()->name() << "["
-			<< sink->index() << "]: "
+			<< "Failed to setup link " << *link << ": "
 			<< strerror(-ret);
 		return ret;
 	}
 
-	LOG(MediaDevice, Debug)
-		<< source->entity()->name() << "["
-		<< source->index() << "] -> "
-		<< sink->entity()->name() << "["
-		<< sink->index() << "]: " << flags;
+	LOG(MediaDevice, Debug) << *link << ": " << flags;
 
 	return 0;
 }

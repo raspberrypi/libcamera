@@ -48,6 +48,8 @@ public:
 	unsigned int flags() const { return flags_; }
 	int setEnabled(bool enable);
 
+	std::string toString() const;
+
 private:
 	LIBCAMERA_DISABLE_COPY_AND_MOVE(MediaLink)
 
@@ -60,6 +62,8 @@ private:
 	MediaPad *sink_;
 	unsigned int flags_;
 };
+
+std::ostream &operator<<(std::ostream &out, const MediaLink &link);
 
 class MediaPad : public MediaObject
 {

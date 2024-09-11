@@ -773,11 +773,8 @@ int SimpleCameraData::setupFormats(V4L2SubdeviceFormat *format,
 		}
 
 		LOG(SimplePipeline, Debug)
-			<< "Link '" << source->entity()->name()
-			<< "':" << source->index()
-			<< " -> '" << sink->entity()->name()
-			<< "':" << sink->index()
-			<< " configured with format " << *format;
+			<< "Link " << *link << ": configured with format "
+			<< *format;
 	}
 
 	return 0;

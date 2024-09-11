@@ -236,6 +236,31 @@ void MediaPad::addLink(MediaLink *link)
 }
 
 /**
+ * \brief Generate a string representation of the MediaPad
+ * \return A string representing the MediaPad
+ */
+std::string MediaPad::toString() const
+{
+	std::stringstream ss;
+	ss << *this;
+
+	return ss.str();
+}
+
+/**
+ * \brief Insert a text representation of a MediaPad into an output stream
+ * \param[in] out The output stream
+ * \param[in] pad The MediaPad
+ * \return The output stream \a out
+ */
+std::ostream &operator<<(std::ostream &out, const MediaPad &pad)
+{
+	out << "'" << pad.entity()->name() << "'[" << pad.index() << "]";
+
+	return out;
+}
+
+/**
  * \class MediaEntity
  * \brief The MediaEntity represents an entity in the media graph
  *

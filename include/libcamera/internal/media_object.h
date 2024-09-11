@@ -71,6 +71,8 @@ public:
 
 	void addLink(MediaLink *link);
 
+	std::string toString() const;
+
 private:
 	LIBCAMERA_DISABLE_COPY_AND_MOVE(MediaPad)
 
@@ -84,6 +86,8 @@ private:
 
 	std::vector<MediaLink *> links_;
 };
+
+std::ostream &operator<<(std::ostream &out, const MediaPad &pad);
 
 class MediaEntity : public MediaObject
 {

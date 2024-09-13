@@ -90,6 +90,8 @@ int Awb::init(IPAContext &context, const YamlObject &tuningData)
 	cmap[&controls::ColourTemperature] = ControlInfo(kMinColourTemperature,
 							 kMaxColourTemperature,
 							 kDefaultColourTemperature);
+	cmap[&controls::AwbEnable] = ControlInfo(false, true);
+	cmap[&controls::ColourGains] = ControlInfo(0.0f, 3.996f, 1.0f);
 
 	if (!tuningData.contains("algorithm"))
 		LOG(RkISP1Awb, Info) << "No AWB algorithm specified."

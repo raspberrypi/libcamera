@@ -152,7 +152,7 @@ public:
 		unsigned int ispIndex;
 	};
 
-	/* Mapping of CropParams keyed by the stream index in CameraConfiguration */
+	/* Mapping of CropParams keyed by the output stream order in CameraConfiguration */
 	std::map<unsigned int, CropParams> cropParams_;
 
 	unsigned int dropFrameCount_;

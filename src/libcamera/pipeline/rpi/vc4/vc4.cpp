@@ -715,7 +715,7 @@ int Vc4CameraData::platformConfigure(const RPi::RPiCameraConfiguration *rpiConfi
 	cropParams_.clear();
 	cropParams_.emplace(std::piecewise_construct,
 			    std::forward_as_tuple(0),
-			    std::forward_as_tuple(scaleIspCrop(ispCrop), testCrop.size(), 0));
+			    std::forward_as_tuple(ispCrop, testCrop.size(), 0));
 
 	return 0;
 }

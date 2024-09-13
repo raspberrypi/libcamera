@@ -182,11 +182,12 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 	rawStreams_.clear();
 	outStreams_.clear();
 
-	for (const auto &[index, cfg] : utils::enumerate(config_)) {
+	unsigned int rawIndex = 0, outIndex = 0;
+	for (auto &cfg : config_) {
 		if (PipelineHandlerBase::isRaw(cfg.pixelFormat))
-			rawStreams_.emplace_back(index, &cfg);
+			rawStreams_.emplace_back(rawIndex++, &cfg);
 		else
-			outStreams_.emplace_back(index, &cfg);
+			outStreams_.emplace_back(outIndex++, &cfg);
 	}
 
 	/* Sort the streams so the highest resolution is first. */
@@ -1513,6 +1514,7 @@ void CameraData::fillRequestMetadata(const ControlList &bufferControls, Request 
 	if (cropParams_.size()) {
 		std::vector<Rectangle> crops;
 
+		ASSERT(cropParams_.size() <= 2);
 		for (auto const &[k, v] : cropParams_)
 			crops.push_back(scaleIspCrop(v.ispCrop));
 

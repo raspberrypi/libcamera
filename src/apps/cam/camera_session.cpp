@@ -159,8 +159,23 @@ CameraSession::~CameraSession()
 void CameraSession::listControls() const
 {
 	for (const auto &[id, info] : camera_->controls()) {
-		std::cout << "Control: " << id->name() << ": "
-			  << info.toString() << std::endl;
+		if (info.values().empty()) {
+			std::cout << "Control: " << id->name() << ": "
+				  << info.toString() << std::endl;
+		} else {
+			std::cout << "Control: " << id->name() << ":" << std::endl;
+			for (const auto &value : info.values()) {
+				int32_t val = value.get<int32_t>();
+				const auto &it = id->enumerators().find(val);
+
+				std::cout << "  - ";
+				if (it == id->enumerators().end())
+					std::cout << "UNKNOWN";
+				else
+					std::cout << it->second;
+				std::cout << " (" << val << ")" << std::endl;
+			}
+		}
 	}
 }
 

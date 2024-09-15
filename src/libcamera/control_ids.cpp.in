@@ -89,8 +89,10 @@ extern const std::map<std::string, {{ctrl.type}}> {{ctrl.name}}NameValueMap = {
 	{ "{{enum.name}}", {{enum.name}} },
 {%- endfor %}
 };
-{% endif -%}
+extern const Control<{{ctrl.type}}> {{ctrl.name}}({{ctrl.name|snake_case|upper}}, "{{ctrl.name}}", {{ctrl.name}}NameValueMap);
+{% else -%}
 extern const Control<{{ctrl.type}}> {{ctrl.name}}({{ctrl.name|snake_case|upper}}, "{{ctrl.name}}");
+{% endif -%}
 {%- endfor %}
 
 {% if vendor != 'libcamera' %}

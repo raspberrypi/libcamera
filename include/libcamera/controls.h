@@ -8,6 +8,7 @@
 #pragma once
 
 #include <assert.h>
+#include <map>
 #include <optional>
 #include <set>
 #include <stdint.h>
@@ -213,14 +214,13 @@ private:
 class ControlId
 {
 public:
-	ControlId(unsigned int id, const std::string &name, ControlType type)
-		: id_(id), name_(name), type_(type)
-	{
-	}
+	ControlId(unsigned int id, const std::string &name, ControlType type,
+		  const std::map<std::string, int32_t> &enumStrMap = {});
 
 	unsigned int id() const { return id_; }
 	const std::string &name() const { return name_; }
 	ControlType type() const { return type_; }
+	const std::map<int32_t, std::string> &enumerators() const { return reverseMap_; }
 
 private:
 	LIBCAMERA_DISABLE_COPY_AND_MOVE(ControlId)
@@ -228,6 +228,8 @@ private:
 	unsigned int id_;
 	std::string name_;
 	ControlType type_;
+	std::map<std::string, int32_t> enumStrMap_;
+	std::map<int32_t, std::string> reverseMap_;
 };
 
 static inline bool operator==(unsigned int lhs, const ControlId &rhs)
@@ -256,8 +258,8 @@ class Control : public ControlId
 public:
 	using type = T;
 
-	Control(unsigned int id, const char *name)
-		: ControlId(id, name, details::control_type<std::remove_cv_t<T>>::value)
+	Control(unsigned int id, const char *name, const std::map<std::string, int32_t> &enumStrMap = {})
+		: ControlId(id, name, details::control_type<std::remove_cv_t<T>>::value, enumStrMap)
 	{
 	}
 

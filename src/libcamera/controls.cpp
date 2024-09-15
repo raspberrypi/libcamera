@@ -389,7 +389,15 @@ void ControlValue::reserve(ControlType type, bool isArray, std::size_t numElemen
  * \param[in] id The control numerical ID
  * \param[in] name The control name
  * \param[in] type The control data type
+ * \param[in] enumStrMap The map from enum names to values (optional)
  */
+ControlId::ControlId(unsigned int id, const std::string &name, ControlType type,
+		     const std::map<std::string, int32_t> &enumStrMap)
+	: id_(id), name_(name), type_(type), enumStrMap_(enumStrMap)
+{
+	for (const auto &pair : enumStrMap_)
+		reverseMap_[pair.second] = pair.first;
+}
 
 /**
  * \fn unsigned int ControlId::id() const
@@ -407,6 +415,12 @@ void ControlValue::reserve(ControlType type, bool isArray, std::size_t numElemen
  * \fn ControlType ControlId::type() const
  * \brief Retrieve the control data type
  * \return The control data type
+ */
+
+/**
+ * \fn const std::map<int32_t, std::string> &ControlId::enumerators() const
+ * \brief Retrieve the map of enum values to enum names
+ * \return The map of enum values to enum names
  */
 
 /**
@@ -459,6 +473,7 @@ void ControlValue::reserve(ControlType type, bool isArray, std::size_t numElemen
  * \brief Construct a Control instance
  * \param[in] id The control numerical ID
  * \param[in] name The control name
+ * \param[in] enumStrMap The map from enum names to values (optional)
  *
  * The control data type is automatically deduced from the template type T.
  */

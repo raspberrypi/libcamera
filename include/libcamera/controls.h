@@ -46,50 +46,60 @@ struct control_type {
 template<>
 struct control_type<void> {
 	static constexpr ControlType value = ControlTypeNone;
+	static constexpr std::size_t size = 0;
 };
 
 template<>
 struct control_type<bool> {
 	static constexpr ControlType value = ControlTypeBool;
+	static constexpr std::size_t size = 0;
 };
 
 template<>
 struct control_type<uint8_t> {
 	static constexpr ControlType value = ControlTypeByte;
+	static constexpr std::size_t size = 0;
 };
 
 template<>
 struct control_type<int32_t> {
 	static constexpr ControlType value = ControlTypeInteger32;
+	static constexpr std::size_t size = 0;
 };
 
 template<>
 struct control_type<int64_t> {
 	static constexpr ControlType value = ControlTypeInteger64;
+	static constexpr std::size_t size = 0;
 };
 
 template<>
 struct control_type<float> {
 	static constexpr ControlType value = ControlTypeFloat;
+	static constexpr std::size_t size = 0;
 };
 
 template<>
 struct control_type<std::string> {
 	static constexpr ControlType value = ControlTypeString;
+	static constexpr std::size_t size = 0;
 };
 
 template<>
 struct control_type<Rectangle> {
 	static constexpr ControlType value = ControlTypeRectangle;
+	static constexpr std::size_t size = 0;
 };
 
 template<>
 struct control_type<Size> {
 	static constexpr ControlType value = ControlTypeSize;
+	static constexpr std::size_t size = 0;
 };
 
 template<typename T, std::size_t N>
 struct control_type<Span<T, N>> : public control_type<std::remove_cv_t<T>> {
+	static constexpr std::size_t size = N;
 };
 
 } /* namespace details */
@@ -215,11 +225,14 @@ class ControlId
 {
 public:
 	ControlId(unsigned int id, const std::string &name, ControlType type,
+		  std::size_t size = 0,
 		  const std::map<std::string, int32_t> &enumStrMap = {});
 
 	unsigned int id() const { return id_; }
 	const std::string &name() const { return name_; }
 	ControlType type() const { return type_; }
+	bool isArray() const { return size_ > 0; }
+	std::size_t size() const { return size_; }
 	const std::map<int32_t, std::string> &enumerators() const { return reverseMap_; }
 
 private:
@@ -228,6 +241,7 @@ private:
 	unsigned int id_;
 	std::string name_;
 	ControlType type_;
+	std::size_t size_;
 	std::map<std::string, int32_t> enumStrMap_;
 	std::map<int32_t, std::string> reverseMap_;
 };
@@ -259,7 +273,8 @@ public:
 	using type = T;
 
 	Control(unsigned int id, const char *name, const std::map<std::string, int32_t> &enumStrMap = {})
-		: ControlId(id, name, details::control_type<std::remove_cv_t<T>>::value, enumStrMap)
+		: ControlId(id, name, details::control_type<std::remove_cv_t<T>>::value,
+			    details::control_type<std::remove_cv_t<T>>::size, enumStrMap)
 	{
 	}
 

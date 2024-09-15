@@ -176,6 +176,17 @@ void CameraSession::listControls() const
 				std::cout << " (" << val << ")" << std::endl;
 			}
 		}
+
+		if (id->isArray()) {
+			std::size_t size = id->size();
+
+			std::cout << "   Size: ";
+			if (size == std::numeric_limits<std::size_t>::max())
+				std::cout << "n";
+			else
+				std::cout << std::to_string(size);
+			std::cout << std::endl;
+		}
 	}
 }
 

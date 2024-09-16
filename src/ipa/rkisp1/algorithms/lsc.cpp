@@ -16,6 +16,7 @@
 
 #include "libcamera/internal/yaml_parser.h"
 
+#include "libipa/lsc_polynomial.h"
 #include "linux/rkisp1-config.h"
 
 /**
@@ -69,6 +70,136 @@ namespace ipa::rkisp1::algorithms {
  */
 
 LOG_DEFINE_CATEGORY(RkISP1Lsc)
+
+class LscPolynomialLoader
+{
+public:
+	LscPolynomialLoader(const Size &sensorSize,
+			    const Rectangle &cropRectangle,
+			    const std::vector<double> &xSizes,
+			    const std::vector<double> &ySizes)
+		: sensorSize_(sensorSize),
+		  cropRectangle_(cropRectangle),
+		  xSizes_(xSizes),
+		  ySizes_(ySizes)
+	{
+	}
+
+	int parseLscData(const YamlObject &yamlSets,
+			 std::map<unsigned int, LensShadingCorrection::Components> &lscData)
+	{
+		const auto &sets = yamlSets.asList();
+		for (const auto &yamlSet : sets) {
+			std::optional<LscPolynomial> pr, pgr, pgb, pb;
+			uint32_t ct = yamlSet["ct"].get<uint32_t>(0);
+
+			if (lscData.count(ct)) {
+				LOG(RkISP1Lsc, Error)
+					<< "Multiple sets found for "
+					<< "color temperature " << ct;
+				return -EINVAL;
+			}
+
+			LensShadingCorrection::Components &set = lscData[ct];
+			pr = yamlSet["r"].get<LscPolynomial>();
+			pgr = yamlSet["gr"].get<LscPolynomial>();
+			pgb = yamlSet["gb"].get<LscPolynomial>();
+			pb = yamlSet["b"].get<LscPolynomial>();
+
+			if (!(pr || pgr || pgb || pb)) {
+				LOG(RkISP1Lsc, Error)
+					<< "Failed to parse polynomial for "
+					<< "colour temperature " << ct;
+				return -EINVAL;
+			}
+
+			set.ct = ct;
+			pr->setReferenceImageSize(sensorSize_);
+			pgr->setReferenceImageSize(sensorSize_);
+			pgb->setReferenceImageSize(sensorSize_);
+			pb->setReferenceImageSize(sensorSize_);
+			set.r = samplePolynomial(*pr);
+			set.gr = samplePolynomial(*pgr);
+			set.gb = samplePolynomial(*pgb);
+			set.b = samplePolynomial(*pb);
+		}
+
+		if (lscData.empty()) {
+			LOG(RkISP1Lsc, Error) << "Failed to load any sets";
+			return -EINVAL;
+		}
+
+		return 0;
+	}
+
+private:
+	/*
+	 * The lsc grid has custom spacing defined on half the range (see
+	 * parseSizes() for details). For easier handling this function converts
+	 * the spaces vector to positions and mirrors them. E.g.:
+	 *
+	 * input:   | 0.2 | 0.3 |
+	 * output: 0.0   0.2   0.5   0.8   1.0
+	 */
+	std::vector<double> sizesListToPositions(const std::vector<double> &sizes)
+	{
+		const int half = sizes.size();
+		std::vector<double> res(half * 2 + 1);
+		double x = 0.0;
+
+		res[half] = 0.5;
+		for (int i = 1; i <= half; i++) {
+			x += sizes[half - i];
+			res[half - i] = 0.5 - x;
+			res[half + i] = 0.5 + x;
+		}
+
+		return res;
+	}
+
+	std::vector<uint16_t> samplePolynomial(const LscPolynomial &poly)
+	{
+		constexpr int k = RKISP1_CIF_ISP_LSC_SAMPLES_MAX;
+
+		double m = poly.getM();
+		double x0 = cropRectangle_.x / m;
+		double y0 = cropRectangle_.y / m;
+		double w = cropRectangle_.width / m;
+		double h = cropRectangle_.height / m;
+		std::vector<uint16_t> res;
+
+		assert(xSizes_.size() * 2 + 1 == k);
+		assert(ySizes_.size() * 2 + 1 == k);
+
+		res.reserve(k * k);
+
+		std::vector<double> xPos(sizesListToPositions(xSizes_));
+		std::vector<double> yPos(sizesListToPositions(ySizes_));
+
+		for (int y = 0; y < k; y++) {
+			for (int x = 0; x < k; x++) {
+				double xp = x0 + xPos[x] * w;
+				double yp = y0 + yPos[y] * h;
+				/*
+				 * The hardware uses 2.10 fixed point format and
+				 * limits the legal values to [1..3.999]. Scale
+				 * and clamp the sampled value accordingly.
+				 */
+				int v = static_cast<int>(
+					poly.sampleAtNormalizedPixelPos(xp, yp) *
+					1024);
+				v = std::min(std::max(v, 1024), 4095);
+				res.push_back(v);
+			}
+		}
+		return res;
+	}
+
+	Size sensorSize_;
+	Rectangle cropRectangle_;
+	const std::vector<double> &xSizes_;
+	const std::vector<double> &ySizes_;
+};
 
 class LscTableLoader
 {
@@ -192,8 +323,24 @@ int LensShadingCorrection::init([[maybe_unused]] IPAContext &context,
 
 	std::map<unsigned int, Components> lscData;
 	int res = 0;
-	auto loader = LscTableLoader();
-	res = loader.parseLscData(yamlSets, lscData);
+	std::string type = tuningData["type"].get<std::string>("table");
+	if (type == "table") {
+		LOG(RkISP1Lsc, Debug) << "Loading tabular LSC data.";
+		auto loader = LscTableLoader();
+		res = loader.parseLscData(yamlSets, lscData);
+	} else if (type == "polynomial") {
+		LOG(RkISP1Lsc, Debug) << "Loading polynomial LSC data.";
+		auto loader = LscPolynomialLoader(context.sensorInfo.activeAreaSize,
+						  context.sensorInfo.analogCrop,
+						  xSize_,
+						  ySize_);
+		res = loader.parseLscData(yamlSets, lscData);
+	} else {
+		LOG(RkISP1Lsc, Error) << "Unsupported LSC data type '"
+				      << type << "'";
+		res = -EINVAL;
+	}
+
 	if (res)
 		return res;
 

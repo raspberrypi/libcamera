@@ -34,10 +34,12 @@ static const string testYaml =
 	"list:\n"
 	"  - James\n"
 	"  - Mary\n"
+	"  - \n"
 	"dictionary:\n"
 	"  a: 1\n"
 	"  c: 3\n"
 	"  b: 2\n"
+	"  empty:\n"
 	"level1:\n"
 	"  level2:\n"
 	"    - [1, 2]\n"
@@ -430,9 +432,10 @@ protected:
 		if (testObjectType(listObj, "list", Type::List) != TestPass)
 			return TestFail;
 
-		static constexpr std::array<const char *, 2> listValues{
+		static constexpr std::array<const char *, 3> listValues{
 			"James",
 			"Mary",
+			"",
 		};
 
 		if (listObj.size() != listValues.size()) {
@@ -465,16 +468,23 @@ protected:
 			i++;
 		}
 
+		/* Ensure that empty objects get parsed as empty strings. */
+		if (!listObj[2].isValue()) {
+			cerr << "Empty object is not a value" << std::endl;
+			return TestFail;
+		}
+
 		/* Test dictionary object */
 		auto &dictObj = (*root)["dictionary"];
 
 		if (testObjectType(dictObj, "dictionary", Type::Dictionary) != TestPass)
 			return TestFail;
 
-		static constexpr std::array<std::pair<const char *, int>, 3> dictValues{ {
+		static constexpr std::array<std::pair<const char *, int>, 4> dictValues{ {
 			{ "a", 1 },
 			{ "c", 3 },
 			{ "b", 2 },
+			{ "empty", -100 },
 		} };
 
 		size_t dictSize = dictValues.size();
@@ -505,13 +515,25 @@ protected:
 				return TestFail;
 			}
 
-			if (elem.get<int32_t>(0) != item.second) {
+			if (elem.get<int32_t>(-100) != item.second) {
 				std::cerr << "Dictionary element " << i << " has wrong value"
 					  << std::endl;
 				return TestFail;
 			}
 
 			i++;
+		}
+
+		/* Ensure that empty objects get parsed as empty strings. */
+		if (!dictObj["empty"].isValue()) {
+			cerr << "Empty object is not of type value" << std::endl;
+			return TestFail;
+		}
+
+		/* Ensure that keys without values are added to a dict. */
+		if (!dictObj.contains("empty")) {
+			cerr << "Empty element is missing in dict" << std::endl;
+			return TestFail;
 		}
 
 		/* Make sure utils::map_keys() works on the adapter. */

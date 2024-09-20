@@ -542,6 +542,24 @@ protected:
 			return TestFail;
 		}
 
+		/* Test nonexistent object has value type empty. */
+		if (!dictObj["nonexistent"].isEmpty()) {
+			cerr << "Accessing nonexistent object returns non-empty object" << std::endl;
+			return TestFail;
+		}
+
+		/* Test explicit cast to bool on an empty object returns true. */
+		if (!!dictObj["empty"] != true) {
+			cerr << "Casting empty entry to bool returns false" << std::endl;
+			return TestFail;
+		}
+
+		/* Test explicit cast to bool on nonexistent object returns false. */
+		if (!!dictObj["nonexistent"] != false) {
+			cerr << "Casting nonexistent dict entry to bool returns true" << std::endl;
+			return TestFail;
+		}
+
 		/* Make sure utils::map_keys() works on the adapter. */
 		(void)utils::map_keys(dictObj.asDict());
 

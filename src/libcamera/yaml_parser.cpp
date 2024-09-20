@@ -38,12 +38,12 @@ static const YamlObject empty;
  * \brief A class representing the tree structure of the YAML content
  *
  * The YamlObject class represents the tree structure of YAML content. A
- * YamlObject can be a dictionary or list of YamlObjects or a value if a tree
- * leaf.
+ * YamlObject can be empty, a dictionary or list of YamlObjects, or a value if a
+ * tree leaf.
  */
 
 YamlObject::YamlObject()
-	: type_(Type::Value)
+	: type_(Type::Empty)
 {
 }
 
@@ -68,6 +68,20 @@ YamlObject::~YamlObject() = default;
  * \brief Return whether the YamlObject is a dictionary
  *
  * \return True if the YamlObject is a dictionary, false otherwise
+ */
+
+/**
+ * \fn YamlObject::isEmpty()
+ * \brief Return whether the YamlObject is an empty
+ *
+ * \return True if the YamlObject is empty, false otherwise
+ */
+
+/**
+ * \fn YamlObject::operator bool()
+ * \brief Return whether the YamlObject is a non-empty
+ *
+ * \return False if the YamlObject is empty, true otherwise
  */
 
 /**
@@ -443,7 +457,8 @@ template std::optional<std::vector<Size>> YamlObject::getList<Size>() const;
  *
  * This function retrieves an element of the YamlObject. Only YamlObject
  * instances of List type associate elements with index, calling this function
- * on other types of instances is invalid and results in undefined behaviour.
+ * on other types of instances or with an invalid index results in an empty
+ * object.
  *
  * \return The YamlObject as an element of the list
  */
@@ -480,8 +495,8 @@ bool YamlObject::contains(const std::string &key) const
  *
  * This function retrieve a member of a YamlObject by name. Only YamlObject
  * instances of Dictionary type associate elements with names, calling this
- * function on other types of instances is invalid and results in undefined
- * behaviour.
+ * function on other types of instances or with a nonexistent key results in an
+ * empty object.
  *
  * \return The YamlObject corresponding to the \a key member
  */

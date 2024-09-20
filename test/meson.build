@@ -73,7 +73,7 @@ internal_tests = [
     {'name': 'timer-thread', 'sources': ['timer-thread.cpp']},
     {'name': 'unique-fd', 'sources': ['unique-fd.cpp']},
     {'name': 'utils', 'sources': ['utils.cpp']},
-    {'name': 'yaml-parser', 'sources': ['yaml-parser.cpp'], 'should_fail': true},
+    {'name': 'yaml-parser', 'sources': ['yaml-parser.cpp']},
 ]
 
 internal_non_parallel_tests = [

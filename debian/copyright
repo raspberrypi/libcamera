@@ -12,8 +12,8 @@ Copyright:
  2018—2024 Laurent Pinchart
  2019      Mickael Guene
  2018—2019 Niklas Söderlund
- 2019      Paul Elder
- 2018—2022 Google Inc.
+ 2019—2024 Paul Elder
+ 2018—2024 Google Inc.
  2021—2024 Ideas on Board Oy
 License: GPL-2+
 
@@ -38,9 +38,11 @@ Copyright:
  2019      Mickael Guene
  2018—2019 Niklas Söderlund
  2019      Paul Elder
- 2018—2021 Google Inc.
+ 2018—2022 Google Inc.
  2019—2023 Raspberry Pi Ltd.
  2021—2024 Ideas on Board Oy
+ 2023 Linaro Ltd
+ 2023—2024 Red Hat Inc.
 License: LGPL-2.1+
 
 Files:
@@ -51,10 +53,10 @@ License: Expat
 Comment: https://feathericons.com/
 
 Files:
- utils/ipc/mojo/*
- utils/ipc/tools/*
+ utils/coden/ipc/mojo/*
+ utils/coden/ipc/tools/*
 Copyright:
- 2013-2020 The Chromium Authors. All rights reserved.
+ 2013-2023 The Chromium Authors. All rights reserved.
 License: BSD-3-Clause
 Comment: Source: https://chromium.googlesource.com/chromium/src.git/
 
@@ -103,7 +105,7 @@ Files:
  src/libcamera/pipeline/rpi/*
  utils/raspberrypi/ctt/*
 Copyright:
- 2019—2023 Raspberry Pi Ltd
+ 2019—2024 Raspberry Pi Ltd
 License: BSD-2-Clause
 
 Files: include/linux/rkisp1-config.h

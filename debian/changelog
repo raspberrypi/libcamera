@@ -1,10 +1,10 @@
-libcamera (0.3.2-1) UNRELEASED; urgency=medium
+libcamera (0.3.2-1) unstable; urgency=medium
 
   * New upstream version 0.3.2
   * Drop patch included in upstream release
   * Update debian/copyright
 
- -- Dylan Aïssi <daissi@debian.org>  Tue, 24 Sep 2024 16:59:36 +0200
+ -- Dylan Aïssi <daissi@debian.org>  Tue, 24 Sep 2024 21:35:43 +0200
 
 libcamera (0.3.1-2) unstable; urgency=medium
 

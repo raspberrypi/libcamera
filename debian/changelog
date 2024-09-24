@@ -1,6 +1,7 @@
 libcamera (0.3.2-1) UNRELEASED; urgency=medium
 
   * New upstream version 0.3.2
+  * Drop patch included in upstream release
 
  -- Dylan Aïssi <daissi@debian.org>  Tue, 24 Sep 2024 16:59:36 +0200
 

@@ -1,3 +1,2 @@
 ppc64el-fix-ftbfs-gcc.patch
 skip_failing_tests.patch
-meson-Enable-simple-pipeline-handler-on-all-platform.patch

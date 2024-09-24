@@ -161,6 +161,7 @@ create_abi_dump() {
 			-Ddocumentation=disabled \
 			-Dcam=disabled \
 			-Dqcam=disabled \
+			-Dpycamera=disabled \
 			-Dgstreamer=disabled \
 			-Dlc-compliance=disabled \
 			-Dtracing=disabled \

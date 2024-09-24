@@ -7,9 +7,7 @@
 
 #pragma once
 
-#include <memory>
 #include <string>
-#include <vector>
 
 #include <libcamera/ipa/ipa_interface.h>
 
@@ -31,7 +29,8 @@ public:
 
 	bool isValid() const { return valid_; }
 
-	std::string configurationFile(const std::string &file) const;
+	std::string configurationFile(const std::string &name,
+				      const std::string &fallbackName = std::string()) const;
 
 protected:
 	std::string resolvePath(const std::string &file) const;

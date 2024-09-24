@@ -1,0 +1,33 @@
+/**
+\mainpage libcamera API reference
+
+Welcome to the API reference for <a href="https://libcamera.org/">libcamera</a>,
+a complex camera support library for Linux, Android and ChromeOS. These pages
+are automatically generated from the libcamera source code and describe the API
+in detail - if this is your first interaction with libcamera then you may find
+it useful to visit the [documentation](../introduction.html) in
+the first instance, which can provide a more generic introduction to the
+library's concepts.
+
+\if internal
+
+As a follow-on to the developer's guide, to assist you in adding support for
+your platform the [pipeline handler writer's guide](../guides/pipeline-handler.html)
+and the [ipa module writer's guide](../guides/ipa.html) should be helpful.
+
+The full libcamera API is documented here. If you wish to see only the public
+part of the API you can use [these pages](../api-html/index.html) instead.
+
+\else
+
+As a follow-on to the developer's guide, to assist you in using libcamera within
+your project the [application developer's guide](../guides/application-developer.html)
+gives an overview on how to achieve that.
+
+Only the public part of the libcamera API is documented here; if you are a
+developer seeking to add support for your hardware to the library or make other
+improvements, you should switch to the internal API
+[reference pages](../internal-api-html/index.html) instead.
+
+\endif
+*/

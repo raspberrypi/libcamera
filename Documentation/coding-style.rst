@@ -1,5 +1,7 @@
 .. SPDX-License-Identifier: CC-BY-SA-4.0
 
+.. include:: documentation-contents.rst
+
 .. _coding-style-guidelines:
 
 Coding Style Guidelines
@@ -215,7 +217,7 @@ shall be avoided when possible, but are allowed when required (for instance to
 implement factories with auto-registration). They shall not depend on any other
 global variable, should run a minimal amount of code in the constructor and
 destructor, and code that contains dependencies should be moved to a later
-point in time. 
+point in time.
 
 Error Handling
 ~~~~~~~~~~~~~~

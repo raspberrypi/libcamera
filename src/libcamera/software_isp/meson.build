@@ -7,7 +7,7 @@ if not softisp_enabled
     subdir_done()
 endif
 
-libcamera_sources += files([
+libcamera_internal_sources += files([
     'debayer.cpp',
     'debayer_cpu.cpp',
     'software_isp.cpp',

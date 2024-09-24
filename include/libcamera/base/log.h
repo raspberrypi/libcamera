@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include <chrono>
 #include <sstream>
 
 #include <libcamera/base/private.h>

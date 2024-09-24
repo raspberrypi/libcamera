@@ -20,11 +20,11 @@
 #include <libcamera/base/thread.h>
 #include <libcamera/base/timer.h>
 
+#include "libcamera/internal/camera_manager.h"
 #include "libcamera/internal/device_enumerator.h"
 #include "libcamera/internal/ipa_manager.h"
 #include "libcamera/internal/ipa_module.h"
 #include "libcamera/internal/pipeline_handler.h"
-#include "libcamera/internal/process.h"
 
 #include "test.h"
 
@@ -44,20 +44,20 @@ public:
 	{
 		delete notifier_;
 		ipa_.reset();
-		ipaManager_.reset();
+		cameraManager_.reset();
 	}
 
 protected:
 	int init() override
 	{
-		ipaManager_ = make_unique<IPAManager>();
+		cameraManager_ = make_unique<CameraManager>();
 
 		/* Create a pipeline handler for vimc. */
 		const std::vector<PipelineHandlerFactoryBase *> &factories =
 			PipelineHandlerFactoryBase::factories();
 		for (const PipelineHandlerFactoryBase *factory : factories) {
 			if (factory->name() == "vimc") {
-				pipe_ = factory->create(nullptr);
+				pipe_ = factory->create(cameraManager_.get());
 				break;
 			}
 		}
@@ -171,11 +171,9 @@ private:
 		}
 	}
 
-	ProcessManager processManager_;
-
 	std::shared_ptr<PipelineHandler> pipe_;
 	std::unique_ptr<ipa::vimc::IPAProxyVimc> ipa_;
-	std::unique_ptr<IPAManager> ipaManager_;
+	std::unique_ptr<CameraManager> cameraManager_;
 	enum ipa::vimc::IPAOperationCode trace_;
 	EventNotifier *notifier_;
 	int fd_;

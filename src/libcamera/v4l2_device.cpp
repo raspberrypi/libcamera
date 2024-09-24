@@ -8,8 +8,6 @@
 #include "libcamera/internal/v4l2_device.h"
 
 #include <fcntl.h>
-#include <iomanip>
-#include <limits.h>
 #include <map>
 #include <stdlib.h>
 #include <string.h>

@@ -95,7 +95,10 @@ class Tuner(object):
         self.output = {}
 
     def add(self, module):
-        self.modules.append(module)
+        if isinstance(module, list):
+            self.modules.extend(module)
+        else:
+            self.modules.append(module)
 
     def set_input_parser(self, parser):
         self.parser = parser

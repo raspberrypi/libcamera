@@ -281,7 +281,7 @@ void Agc::queueRequest(IPAContext &context,
  * \copydoc libcamera::ipa::Algorithm::prepare
  */
 void Agc::prepare(IPAContext &context, const uint32_t frame,
-		  IPAFrameContext &frameContext, rkisp1_params_cfg *params)
+		  IPAFrameContext &frameContext, RkISP1Params *params)
 {
 	if (frameContext.agc.autoEnabled) {
 		frameContext.agc.exposure = context.activeState.agc.automatic.exposure;
@@ -291,41 +291,39 @@ void Agc::prepare(IPAContext &context, const uint32_t frame,
 	if (frame > 0 && !frameContext.agc.updateMetering)
 		return;
 
-	/* Configure the measurement window. */
-	params->meas.aec_config.meas_window = context.configuration.agc.measureWindow;
-	/* Use a continuous method for measure. */
-	params->meas.aec_config.autostop = RKISP1_CIF_ISP_EXP_CTRL_AUTOSTOP_0;
-	/* Estimate Y as (R + G + B) x (85/256). */
-	params->meas.aec_config.mode = RKISP1_CIF_ISP_EXP_MEASURING_MODE_1;
+	/*
+	 * Configure the AEC measurements. Set the window, measure
+	 * continuously, and estimate Y as (R + G + B) x (85/256).
+	 */
+	auto aecConfig = params->block<BlockType::Aec>();
+	aecConfig.setEnabled(true);
 
-	params->module_cfg_update |= RKISP1_CIF_ISP_MODULE_AEC;
-	params->module_ens |= RKISP1_CIF_ISP_MODULE_AEC;
-	params->module_en_update |= RKISP1_CIF_ISP_MODULE_AEC;
+	aecConfig->meas_window = context.configuration.agc.measureWindow;
+	aecConfig->autostop = RKISP1_CIF_ISP_EXP_CTRL_AUTOSTOP_0;
+	aecConfig->mode = RKISP1_CIF_ISP_EXP_MEASURING_MODE_1;
 
-	/* Configure histogram. */
-	params->meas.hst_config.meas_window = context.configuration.agc.measureWindow;
-	/* Produce the luminance histogram. */
-	params->meas.hst_config.mode = RKISP1_CIF_ISP_HISTOGRAM_MODE_Y_HISTOGRAM;
+	/*
+	 * Configure the histogram measurement. Set the window, produce a
+	 * luminance histogram, and set the weights and predivider.
+	 */
+	auto hstConfig = params->block<BlockType::Hst>();
+	hstConfig.setEnabled(true);
 
-	/* Set an average weighted histogram. */
+	hstConfig->meas_window = context.configuration.agc.measureWindow;
+	hstConfig->mode = RKISP1_CIF_ISP_HISTOGRAM_MODE_Y_HISTOGRAM;
+
 	Span<uint8_t> weights{
-		params->meas.hst_config.hist_weight,
+		hstConfig->hist_weight,
 		context.hw->numHistogramWeights
 	};
 	std::vector<uint8_t> &modeWeights = meteringModes_.at(frameContext.agc.meteringMode);
 	std::copy(modeWeights.begin(), modeWeights.end(), weights.begin());
 
-	struct rkisp1_cif_isp_window window = params->meas.hst_config.meas_window;
+	struct rkisp1_cif_isp_window window = hstConfig->meas_window;
 	Size windowSize = { window.h_size, window.v_size };
-	params->meas.hst_config.histogram_predivider =
+	hstConfig->histogram_predivider =
 		computeHistogramPredivider(windowSize,
-					   static_cast<rkisp1_cif_isp_histogram_mode>(params->meas.hst_config.mode));
-
-	/* Update the configuration for histogram. */
-	params->module_cfg_update |= RKISP1_CIF_ISP_MODULE_HST;
-	/* Enable the histogram measure unit. */
-	params->module_ens |= RKISP1_CIF_ISP_MODULE_HST;
-	params->module_en_update |= RKISP1_CIF_ISP_MODULE_HST;
+					   static_cast<rkisp1_cif_isp_histogram_mode>(hstConfig->mode));
 }
 
 void Agc::fillMetadata(IPAContext &context, IPAFrameContext &frameContext,

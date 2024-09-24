@@ -147,6 +147,31 @@ MediaLink::MediaLink(const struct media_v2_link *link, MediaPad *source,
 }
 
 /**
+ * \brief Generate a string representation of the MediaLink
+ * \return A string representing the MediaLink
+ */
+std::string MediaLink::toString() const
+{
+	std::stringstream ss;
+	ss << *this;
+
+	return ss.str();
+}
+
+/**
+ * \brief Insert a text representation of a Link into an output stream
+ * \param[in] out The output stream
+ * \param[in] link The MediaLink
+ * \return The output stream \a out
+ */
+std::ostream &operator<<(std::ostream &out, const MediaLink &link)
+{
+	out << *link.source() << " -> " << *link.sink();
+
+	return out;
+}
+
+/**
  * \fn MediaLink::source()
  * \brief Retrieve the link's source pad
  * \return The source pad at the origin of the link
@@ -233,6 +258,31 @@ MediaPad::MediaPad(const struct media_v2_pad *pad, MediaEntity *entity)
 void MediaPad::addLink(MediaLink *link)
 {
 	links_.push_back(link);
+}
+
+/**
+ * \brief Generate a string representation of the MediaPad
+ * \return A string representing the MediaPad
+ */
+std::string MediaPad::toString() const
+{
+	std::stringstream ss;
+	ss << *this;
+
+	return ss.str();
+}
+
+/**
+ * \brief Insert a text representation of a MediaPad into an output stream
+ * \param[in] out The output stream
+ * \param[in] pad The MediaPad
+ * \return The output stream \a out
+ */
+std::ostream &operator<<(std::ostream &out, const MediaPad &pad)
+{
+	out << "'" << pad.entity()->name() << "'[" << pad.index() << "]";
+
+	return out;
 }
 
 /**

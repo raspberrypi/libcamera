@@ -1,5 +1,7 @@
 .. SPDX-License-Identifier: CC-BY-SA-4.0
 
+.. include:: documentation-contents.rst
+
 .. _lens-driver-requirements:
 
 Lens Driver Requirements

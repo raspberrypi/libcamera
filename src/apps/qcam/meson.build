@@ -36,7 +36,11 @@ qcam_resources = files([
     'assets/shader/shaders.qrc',
 ])
 
-qt6_cpp_args = [apps_cpp_args, '-DQT_NO_KEYWORDS']
+qt6_cpp_args = [
+    apps_cpp_args,
+    '-DQT_NO_KEYWORDS',
+    '-Wno-extra-semi',
+]
 
 resources = qt6.preprocess(moc_headers : qcam_moc_headers,
                            qresources : qcam_resources,

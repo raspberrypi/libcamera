@@ -7,11 +7,7 @@
 
 #include "ccm.h"
 
-#include <algorithm>
-#include <chrono>
-#include <cmath>
-#include <tuple>
-#include <vector>
+#include <map>
 
 #include <libcamera/base/log.h>
 #include <libcamera/base/utils.h>
@@ -23,7 +19,7 @@
 #include "libcamera/internal/yaml_parser.h"
 
 #include "../utils.h"
-#include "libipa/matrix_interpolator.h"
+#include "libipa/interpolator.h"
 
 /**
  * \file ccm.h
@@ -50,7 +46,7 @@ int Ccm::init([[maybe_unused]] IPAContext &context, const YamlObject &tuningData
 		LOG(RkISP1Ccm, Warning)
 			<< "Failed to parse 'ccm' "
 			<< "parameter from tuning file; falling back to unit matrix";
-		ccm_.reset();
+		ccm_.setData({ { 0, Matrix<float, 3, 3>::identity() } });
 	}
 
 	ret = offsets_.readYaml(tuningData["ccms"], "ct", "offsets");
@@ -58,25 +54,17 @@ int Ccm::init([[maybe_unused]] IPAContext &context, const YamlObject &tuningData
 		LOG(RkISP1Ccm, Warning)
 			<< "Failed to parse 'offsets' "
 			<< "parameter from tuning file; falling back to zero offsets";
-		/*
-		 * MatrixInterpolator::reset() resets to identity matrices
-		 * while here we need zero matrices so we need to construct it
-		 * ourselves.
-		 */
-		Matrix<int16_t, 3, 1> m({ 0, 0, 0 });
-		std::map<unsigned int, Matrix<int16_t, 3, 1>> matrices = { { 0, m } };
-		offsets_ = MatrixInterpolator<int16_t, 3, 1>(matrices);
+
+		offsets_.setData({ { 0, Matrix<int16_t, 3, 1>({ 0, 0, 0 }) } });
 	}
 
 	return 0;
 }
 
-void Ccm::setParameters(rkisp1_params_cfg *params,
+void Ccm::setParameters(struct rkisp1_cif_isp_ctk_config &config,
 			const Matrix<float, 3, 3> &matrix,
 			const Matrix<int16_t, 3, 1> &offsets)
 {
-	struct rkisp1_cif_isp_ctk_config &config = params->others.ctk_config;
-
 	/*
 	 * 4 bit integer and 7 bit fractional, ranging from -8 (0x400) to
 	 * +7.992 (0x3ff)
@@ -92,18 +80,13 @@ void Ccm::setParameters(rkisp1_params_cfg *params,
 
 	LOG(RkISP1Ccm, Debug) << "Setting matrix " << matrix;
 	LOG(RkISP1Ccm, Debug) << "Setting offsets " << offsets;
-
-	params->module_en_update |= RKISP1_CIF_ISP_MODULE_CTK;
-	params->module_ens |= RKISP1_CIF_ISP_MODULE_CTK;
-	params->module_cfg_update |= RKISP1_CIF_ISP_MODULE_CTK;
 }
 
 /**
  * \copydoc libcamera::ipa::Algorithm::prepare
  */
 void Ccm::prepare(IPAContext &context, const uint32_t frame,
-		  IPAFrameContext &frameContext,
-		  rkisp1_params_cfg *params)
+		  IPAFrameContext &frameContext, RkISP1Params *params)
 {
 	uint32_t ct = context.activeState.awb.temperatureK;
 
@@ -117,13 +100,15 @@ void Ccm::prepare(IPAContext &context, const uint32_t frame,
 	}
 
 	ct_ = ct;
-	Matrix<float, 3, 3> ccm = ccm_.get(ct);
-	Matrix<int16_t, 3, 1> offsets = offsets_.get(ct);
+	Matrix<float, 3, 3> ccm = ccm_.getInterpolated(ct);
+	Matrix<int16_t, 3, 1> offsets = offsets_.getInterpolated(ct);
 
 	context.activeState.ccm.ccm = ccm;
 	frameContext.ccm.ccm = ccm;
 
-	setParameters(params, ccm, offsets);
+	auto config = params->block<BlockType::Ctk>();
+	config.setEnabled(true);
+	setParameters(*config, ccm, offsets);
 }
 
 /**

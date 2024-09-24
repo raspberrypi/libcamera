@@ -7,10 +7,10 @@
 
 #pragma once
 
-#include <sys/types.h>
-
 #include <map>
+#include <stdint.h>
 #include <string>
+#include <sys/types.h>
 
 #include <libcamera/base/private.h>
 

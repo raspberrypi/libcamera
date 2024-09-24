@@ -2,7 +2,7 @@
 
 .. _api:
 
-API
-===
+API Reference
+=============
 
 :: Placeholder for Doxygen documentation

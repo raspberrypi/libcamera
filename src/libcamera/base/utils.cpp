@@ -531,6 +531,138 @@ double strtod(const char *__restrict nptr, char **__restrict endptr)
  * \return The value of e converted to its underlying type
  */
 
+/**
+ * \class ScopeExitActions
+ * \brief An object that performs actions upon destruction
+ *
+ * The ScopeExitActions class is a simple object that performs user-provided
+ * actions upon destruction. It is meant to simplify cleanup tasks in error
+ * handling paths.
+ *
+ * When the code flow performs multiple sequential actions that each need a
+ * corresponding cleanup action, error handling quickly become tedious:
+ *
+ * \code{.cpp}
+ * {
+ * 	int ret = allocateMemory();
+ * 	if (ret)
+ * 		return ret;
+ *
+ * 	ret = startProducer();
+ * 	if (ret) {
+ * 		freeMemory();
+ * 		return ret;
+ * 	}
+ *
+ * 	ret = startConsumer();
+ * 	if (ret) {
+ * 		stopProducer();
+ * 		freeMemory();
+ * 		return ret;
+ * 	}
+ *
+ * 	return 0;
+ * }
+ * \endcode
+ *
+ * This is prone to programming mistakes, as cleanup actions can easily be
+ * forgotten or ordered incorrectly. One strategy to simplify error handling is
+ * to use goto statements:
+ *
+ * \code{.cpp}
+ * {
+ * 	int ret = allocateMemory();
+ * 	if (ret)
+ * 		return ret;
+ *
+ * 	ret = startProducer();
+ * 	if (ret)
+ * 		goto error_free;
+ *
+ * 	ret = startConsumer();
+ * 	if (ret)
+ * 		goto error_stop;
+ *
+ * 	return 0;
+ *
+ * error_stop:
+ * 	stopProducer();
+ * error_free:
+ * 	freeMemory();
+ * 	return ret;
+ * }
+ * \endcode
+ *
+ * While this may be considered better, this solution is still quite
+ * error-prone. Beside the risk of picking the wrong error label, the error
+ * handling logic is separated from the normal code flow, which increases the
+ * risk of error when refactoring the code. Additionally, C++ doesn't allow
+ * goto statements to jump over local variable declarations, which can make
+ * usage of this pattern more difficult.
+ *
+ * The ScopeExitActions class solves these issues by allowing code that
+ * requires cleanup actions to be grouped with its corresponding error handling
+ * code:
+ *
+ * \code{.cpp}
+ * {
+ * 	ScopeExitActions actions;
+ *
+ * 	int ret = allocateMemory();
+ * 	if (ret)
+ * 		return ret;
+ *
+ * 	actions += [&]() { freeMemory(); };
+ *
+ * 	ret = startProducer();
+ * 	if (ret)
+ * 		return ret;
+ *
+ * 	actions += [&]() { stopProducer(); };
+ *
+ * 	ret = startConsumer();
+ * 	if (ret)
+ * 		return ret;
+ *
+ * 	actions.release();
+ * 	return 0;
+ * }
+ * \endcode
+ *
+ * Error handlers are executed when the ScopeExitActions instance is destroyed,
+ * in the reverse order of their addition.
+ */
+
+ScopeExitActions::~ScopeExitActions()
+{
+	for (const auto &action : utils::reverse(actions_))
+		action();
+}
+
+/**
+ * \brief Add an exit action
+ * \param[in] action The action
+ *
+ * Add an exit action to the ScopeExitActions. Actions will be called upon
+ * destruction in the reverse order of their addition.
+ */
+void ScopeExitActions::operator+=(std::function<void()> &&action)
+{
+	actions_.push_back(std::move(action));
+}
+
+/**
+ * \brief Remove all exit actions
+ *
+ * This function should be called in scope exit paths that don't need the
+ * actions to be executed, such as success return paths from a function when
+ * the ScopeExitActions is used for error cleanup.
+ */
+void ScopeExitActions::release()
+{
+	actions_.clear();
+}
+
 } /* namespace utils */
 
 #ifndef __DOXYGEN__

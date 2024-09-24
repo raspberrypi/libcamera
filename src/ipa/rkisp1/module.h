@@ -14,13 +14,14 @@
 #include <libipa/module.h>
 
 #include "ipa_context.h"
+#include "params.h"
 
 namespace libcamera {
 
 namespace ipa::rkisp1 {
 
 using Module = ipa::Module<IPAContext, IPAFrameContext, IPACameraSensorInfo,
-			   rkisp1_params_cfg, rkisp1_stat_buffer>;
+			   RkISP1Params, rkisp1_stat_buffer>;
 
 } /* namespace ipa::rkisp1 */
 

@@ -1,0 +1,31 @@
+# SPDX-License-Identifier: CC-BY-SA-4.0
+
+@INCLUDE_PATH          = @TOP_BUILDDIR@/Documentation
+@INCLUDE               = Doxyfile-common
+
+HIDE_UNDOC_CLASSES     = NO
+HIDE_UNDOC_MEMBERS     = NO
+HTML_OUTPUT            = internal-api-html
+INTERNAL_DOCS          = YES
+ENABLED_SECTIONS       = internal
+
+INPUT                  = "@TOP_SRCDIR@/Documentation" \
+                         "@TOP_SRCDIR@/include/libcamera" \
+                         "@TOP_SRCDIR@/src/ipa/ipu3" \
+                         "@TOP_SRCDIR@/src/ipa/libipa" \
+                         "@TOP_SRCDIR@/src/libcamera" \
+                         "@TOP_BUILDDIR@/include/libcamera" \
+                         "@TOP_BUILDDIR@/src/libcamera"
+
+EXCLUDE                = @TOP_SRCDIR@/include/libcamera/base/span.h \
+                         @TOP_SRCDIR@/include/libcamera/internal/device_enumerator_sysfs.h \
+                         @TOP_SRCDIR@/include/libcamera/internal/device_enumerator_udev.h \
+                         @TOP_SRCDIR@/include/libcamera/internal/ipc_pipe_unixsocket.h \
+                         @TOP_SRCDIR@/src/libcamera/device_enumerator_sysfs.cpp \
+                         @TOP_SRCDIR@/src/libcamera/device_enumerator_udev.cpp \
+                         @TOP_SRCDIR@/src/libcamera/ipc_pipe_unixsocket.cpp \
+                         @TOP_SRCDIR@/src/libcamera/pipeline/ \
+                         @TOP_SRCDIR@/src/libcamera/tracepoints.cpp \
+                         @TOP_BUILDDIR@/include/libcamera/internal/tracepoints.h \
+                         @TOP_BUILDDIR@/include/libcamera/ipa/soft_ipa_interface.h \
+                         @TOP_BUILDDIR@/src/libcamera/proxy/

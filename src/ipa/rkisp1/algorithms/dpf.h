@@ -27,7 +27,7 @@ public:
 			  const ControlList &controls) override;
 	void prepare(IPAContext &context, const uint32_t frame,
 		     IPAFrameContext &frameContext,
-		     rkisp1_params_cfg *params) override;
+		     RkISP1Params *params) override;
 
 private:
 	struct rkisp1_cif_isp_dpf_config config_;

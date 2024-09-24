@@ -10,6 +10,7 @@
 #include <chrono>
 #include <map>
 #include <memory>
+#include <unordered_set>
 
 #include <libcamera/base/event_notifier.h>
 #include <libcamera/base/timer.h>

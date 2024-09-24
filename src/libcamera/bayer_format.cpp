@@ -184,6 +184,8 @@ const std::map<BayerFormat, Formats, BayerFormatComparator> bayerToFormat{
 		{ formats::R10_CSI2P, V4L2PixelFormat(V4L2_PIX_FMT_Y10P) } },
 	{ { BayerFormat::MONO, 12, BayerFormat::Packing::None },
 		{ formats::R12, V4L2PixelFormat(V4L2_PIX_FMT_Y12) } },
+	{ { BayerFormat::MONO, 12, BayerFormat::Packing::CSI2 },
+		{ formats::R12_CSI2P, V4L2PixelFormat(V4L2_PIX_FMT_Y12P) } },
 	{ { BayerFormat::MONO, 16, BayerFormat::Packing::None },
 		{ formats::R16, V4L2PixelFormat(V4L2_PIX_FMT_Y16) } },
 	{ { BayerFormat::MONO, 16, BayerFormat::Packing::PISP1 },

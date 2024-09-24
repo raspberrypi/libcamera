@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include <assert.h>
 #include <limits.h>
 #include <stdint.h>
 #include <type_traits>

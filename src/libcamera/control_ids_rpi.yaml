@@ -10,9 +10,11 @@ controls:
   - StatsOutputEnable:
       type: bool
       description: |
-        Toggles the Raspberry Pi IPA to output a binary dump of the hardware
-        generated statistics through the Request metadata in the Bcm2835StatsOutput
-        control.
+        Toggles the Raspberry Pi IPA to output the hardware generated statistics.
+
+        When this control is set to true, the IPA outputs a binary dump of the
+        hardware generated statistics through the Request metadata in the
+        Bcm2835StatsOutput control.
 
         \sa Bcm2835StatsOutput
 
@@ -20,9 +22,11 @@ controls:
       type: uint8_t
       size: [n]
       description: |
-        Span of the BCM2835 ISP generated statistics for the current frame. This
-        is sent in the Request metadata if the StatsOutputEnable is set to true.
-        The statistics struct definition can be found in include/linux/bcm2835-isp.h.
+        Span of the BCM2835 ISP generated statistics for the current frame.
+
+        This is sent in the Request metadata if the StatsOutputEnable is set to
+        true.  The statistics struct definition can be found in
+        include/linux/bcm2835-isp.h.
 
         \sa StatsOutputEnable
 

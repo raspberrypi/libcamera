@@ -28,10 +28,17 @@
  * \brief Describes a frame capture request to be processed by a camera
  */
 
+/**
+ * \internal
+ * \file libcamera/internal/request.h
+ * \brief Internal support for request handling
+ */
+
 namespace libcamera {
 
 LOG_DEFINE_CATEGORY(Request)
 
+#ifndef __DOXYGEN_PUBLIC__
 /**
  * \class Request::Private
  * \brief Request private data
@@ -300,6 +307,7 @@ void Request::Private::timeout()
 
 	emitPrepareCompleted();
 }
+#endif /* __DOXYGEN_PUBLIC__ */
 
 /**
  * \enum Request::Status

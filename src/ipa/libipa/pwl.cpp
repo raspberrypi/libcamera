@@ -8,10 +8,8 @@
 
 #include "pwl.h"
 
-#include <assert.h>
 #include <cmath>
 #include <sstream>
-#include <stdexcept>
 
 /**
  * \file pwl.h

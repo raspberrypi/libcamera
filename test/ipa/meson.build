@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: CC0-1.0
 
+subdir('libipa')
 subdir('rkisp1')
 
 ipa_test = [
@@ -8,7 +9,7 @@ ipa_test = [
 ]
 
 foreach test : ipa_test
-    exe = executable(test['name'], test['sources'], libcamera_generated_ipa_headers,
+    exe = executable(test['name'], test['sources'],
                      dependencies : [libcamera_private, libipa_dep],
                      link_with : [test_libraries],
                      include_directories : [test_includes_internal])

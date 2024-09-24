@@ -156,16 +156,16 @@ create_abi_dump() {
 		# Generate a minimal libcamera build. "lib" and "prefix" are
 		# defined explicitly to avoid system default ambiguities.
 		meson setup "$build" "$worktree" \
-			-Dlibdir=lib \
-			-Dprefix=/usr/local/ \
-			-Ddocumentation=disabled \
 			-Dcam=disabled \
-			-Dqcam=disabled \
-			-Dpycamera=disabled \
+			-Ddocumentation=disabled \
 			-Dgstreamer=disabled \
 			-Dlc-compliance=disabled \
-			-Dtracing=disabled \
-			-Dpipelines=
+			-Dlibdir=lib \
+			-Dpipelines= \
+			-Dprefix=/usr/local/ \
+			-Dpycamera=disabled \
+			-Dqcam=disabled \
+			-Dtracing=disabled
 
 		ninja -C "$build"
 		DESTDIR="$install" ninja -C "$build" install

@@ -14,7 +14,7 @@
 #include "libcamera/internal/media_device.h"
 
 /**
- * \file internal/converter.h
+ * \file converter.h
  * \brief Abstract converter
  */
 

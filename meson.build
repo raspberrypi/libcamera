@@ -2,7 +2,7 @@
 
 project('libcamera', 'c', 'cpp',
     meson_version : '>= 0.63',
-    version : '0.3.1',
+    version : '0.3.2',
     default_options : [
         'werror=true',
         'warning_level=2',
@@ -146,16 +146,8 @@ if cc.get_id() == 'clang'
 endif
 
 if cc.get_id() == 'gcc'
-    if cc.version().version_compare('<8')
-        error('gcc version is too old, libcamera requires 8.0 or newer')
-    endif
-
-    # On gcc 8, the file system library is provided in a separate static
-    # library.
     if cc.version().version_compare('<9')
-        cpp_arguments += [
-            '-lstdc++fs',
-        ]
+        error('gcc version is too old, libcamera requires 9.0 or newer')
     endif
 
     # gcc 13 implements the C++23 version of automatic move from local
@@ -219,7 +211,7 @@ pipelines_support = {
     'mali-c55':     arch_arm,
     'rkisp1':       arch_arm,
     'rpi/vc4':      arch_arm,
-    'simple':       arch_arm,
+    'simple':       ['any'],
     'uvcvideo':     ['any'],
     'vimc':         ['test'],
 }
@@ -286,8 +278,8 @@ py_mod.find_installation('python3', modules : py_modules)
 summary({
             'Enabled pipelines': pipelines,
             'Enabled IPA modules': enabled_ipa_names,
-            'Controls files': controls_files,
-            'Properties files': properties_files,
+            'Controls files': controls_files_names,
+            'Properties files': properties_files_names,
             'Hotplug support': libudev.found(),
             'Tracing support': tracing_enabled,
             'Android support': android_enabled,

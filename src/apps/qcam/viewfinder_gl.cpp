@@ -12,6 +12,7 @@
 #include <QByteArray>
 #include <QFile>
 #include <QImage>
+#include <QMatrix4x4>
 #include <QStringList>
 
 #include <libcamera/formats.h>
@@ -443,14 +444,10 @@ bool ViewFinderGL::createFragmentShader()
 		close();
 	}
 
-	/* Bind shader pipeline for use */
-	if (!shaderProgram_.bind()) {
-		qWarning() << "[ViewFinderGL]:" << shaderProgram_.log();
-		close();
-	}
-
 	attributeVertex = shaderProgram_.attributeLocation("vertexIn");
 	attributeTexture = shaderProgram_.attributeLocation("textureIn");
+
+	vertexBuffer_.bind();
 
 	shaderProgram_.enableAttributeArray(attributeVertex);
 	shaderProgram_.setAttributeBuffer(attributeVertex,
@@ -466,6 +463,9 @@ bool ViewFinderGL::createFragmentShader()
 					  2,
 					  2 * sizeof(GLfloat));
 
+	vertexBuffer_.release();
+
+	projMatrixUniform_ = shaderProgram_.uniformLocation("proj_matrix");
 	textureUniformY_ = shaderProgram_.uniformLocation("tex_y");
 	textureUniformU_ = shaderProgram_.uniformLocation("tex_u");
 	textureUniformV_ = shaderProgram_.uniformLocation("tex_v");
@@ -511,7 +511,7 @@ void ViewFinderGL::initializeGL()
 	glEnable(GL_TEXTURE_2D);
 	glDisable(GL_DEPTH_TEST);
 
-	static const GLfloat coordinates[2][4][2]{
+	const GLfloat coordinates[2][4][2]{
 		{
 			/* Vertex coordinates */
 			{ -1.0f, -1.0f },
@@ -535,8 +535,6 @@ void ViewFinderGL::initializeGL()
 	/* Create Vertex Shader */
 	if (!createVertexShader())
 		qWarning() << "[ViewFinderGL]: create vertex shader failed.";
-
-	glClearColor(1.0f, 1.0f, 1.0f, 0.0f);
 }
 
 void ViewFinderGL::doRender()
@@ -805,28 +803,42 @@ void ViewFinderGL::doRender()
 	shaderProgram_.setUniformValue(textureUniformStrideFactor_,
 				       static_cast<float>(size_.width() - 1) /
 				       (stridePixels - 1));
+
+	/*
+	 * Place the viewfinder in the centre of the widget, preserving the
+	 * aspect ratio of the image.
+	 */
+	QMatrix4x4 projMatrix;
+	QSizeF scaledSize = size_.scaled(size(), Qt::KeepAspectRatio);
+	projMatrix.scale(scaledSize.width() / size().width(),
+			 scaledSize.height() / size().height());
+
+	shaderProgram_.setUniformValue(projMatrixUniform_, projMatrix);
 }
 
 void ViewFinderGL::paintGL()
 {
-	if (!fragmentShader_)
+	if (!fragmentShader_) {
 		if (!createFragmentShader()) {
 			qWarning() << "[ViewFinderGL]:"
 				   << "create fragment shader failed.";
 		}
-
-	if (image_) {
-		glClearColor(0.0, 0.0, 0.0, 1.0);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		doRender();
-		glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 	}
-}
 
-void ViewFinderGL::resizeGL(int w, int h)
-{
-	glViewport(0, 0, w, h);
+	/* Bind shader pipeline for use. */
+	if (!shaderProgram_.bind()) {
+		qWarning() << "[ViewFinderGL]:" << shaderProgram_.log();
+		close();
+	}
+
+	if (!image_)
+		return;
+
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	doRender();
+	glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 }
 
 QSize ViewFinderGL::sizeHint() const

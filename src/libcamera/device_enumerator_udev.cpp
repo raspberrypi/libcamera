@@ -332,6 +332,14 @@ int DeviceEnumeratorUdev::addV4L2Device(dev_t devnum)
 void DeviceEnumeratorUdev::udevNotify()
 {
 	struct udev_device *dev = udev_monitor_receive_device(monitor_);
+	if (!dev) {
+		int err = errno;
+		LOG(DeviceEnumerator, Warning)
+			<< "Ignoring notfication received without a device: "
+			<< strerror(err);
+		return;
+	}
+
 	std::string_view action(udev_device_get_action(dev));
 	std::string_view deviceNode(udev_device_get_devnode(dev));
 

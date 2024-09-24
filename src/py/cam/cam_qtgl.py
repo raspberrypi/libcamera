@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 # Copyright (C) 2022, Tomi Valkeinen <tomi.valkeinen@ideasonboard.com>
 
-from PyQt5 import QtCore, QtWidgets
-from PyQt5.QtCore import Qt
+from PyQt6 import QtCore, QtWidgets
+from PyQt6.QtCore import Qt
 
 import math
 import os
@@ -142,10 +142,10 @@ class QtRenderer:
         self.window = window
 
     def run(self):
-        camnotif = QtCore.QSocketNotifier(self.state.cm.event_fd, QtCore.QSocketNotifier.Read)
+        camnotif = QtCore.QSocketNotifier(self.state.cm.event_fd, QtCore.QSocketNotifier.Type.Read)
         camnotif.activated.connect(lambda _: self.readcam())
 
-        keynotif = QtCore.QSocketNotifier(sys.stdin.fileno(), QtCore.QSocketNotifier.Read)
+        keynotif = QtCore.QSocketNotifier(sys.stdin.fileno(), QtCore.QSocketNotifier.Type.Read)
         keynotif.activated.connect(lambda _: self.readkey())
 
         print('Capturing...')
@@ -175,8 +175,8 @@ class MainWindow(QtWidgets.QWidget):
     def __init__(self, state):
         super().__init__()
 
-        self.setAttribute(Qt.WA_PaintOnScreen)
-        self.setAttribute(Qt.WA_NativeWindow)
+        self.setAttribute(Qt.WidgetAttribute.WA_PaintOnScreen)
+        self.setAttribute(Qt.WidgetAttribute.WA_NativeWindow)
 
         self.state = state
 

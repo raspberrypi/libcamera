@@ -9,8 +9,8 @@
 
 #include <linux/rkisp1-config.h>
 
+#include "libipa/interpolator.h"
 #include "libipa/matrix.h"
-#include "libipa/matrix_interpolator.h"
 
 #include "algorithm.h"
 
@@ -27,7 +27,7 @@ public:
 	int init(IPAContext &context, const YamlObject &tuningData) override;
 	void prepare(IPAContext &context, const uint32_t frame,
 		     IPAFrameContext &frameContext,
-		     rkisp1_params_cfg *params) override;
+		     RkISP1Params *params) override;
 	void process(IPAContext &context, const uint32_t frame,
 		     IPAFrameContext &frameContext,
 		     const rkisp1_stat_buffer *stats,
@@ -35,13 +35,13 @@ public:
 
 private:
 	void parseYaml(const YamlObject &tuningData);
-	void setParameters(rkisp1_params_cfg *params,
+	void setParameters(struct rkisp1_cif_isp_ctk_config &config,
 			   const Matrix<float, 3, 3> &matrix,
 			   const Matrix<int16_t, 3, 1> &offsets);
 
 	unsigned int ct_;
-	MatrixInterpolator<float, 3, 3> ccm_;
-	MatrixInterpolator<int16_t, 3, 1> offsets_;
+	Interpolator<Matrix<float, 3, 3>> ccm_;
+	Interpolator<Matrix<int16_t, 3, 1>> offsets_;
 };
 
 } /* namespace ipa::rkisp1::algorithms */

@@ -467,6 +467,7 @@ class Generator(generator.Generator):
             'enums': self.module.enums,
             'has_array': len([x for x in self.module.kinds.keys() if x[0] == 'a']) > 0,
             'has_map': len([x for x in self.module.kinds.keys() if x[0] == 'm']) > 0,
+            'has_string': len([x for x in self.module.kinds.keys() if x[0] == 's']) > 0,
             'has_namespace': self.module.mojom_namespace != '',
             'interface_event': GetEventInterface(self.module.interfaces),
             'interface_main': GetMainInterface(self.module.interfaces),
@@ -486,6 +487,7 @@ class Generator(generator.Generator):
             'enums_gen_header': [x for x in self.module.enums if x.attributes is None or 'skipHeader' not in x.attributes],
             'has_array': len([x for x in self.module.kinds.keys() if x[0] == 'a']) > 0,
             'has_map': len([x for x in self.module.kinds.keys() if x[0] == 'm']) > 0,
+            'has_string': len([x for x in self.module.kinds.keys() if x[0] == 's']) > 0,
             'structs_gen_header': [x for x in self.module.structs if x.attributes is None or 'skipHeader' not in x.attributes],
             'structs_gen_serializer': [x for x in self.module.structs if x.attributes is None or 'skipSerdes' not in x.attributes],
         }

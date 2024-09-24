@@ -7,8 +7,7 @@
 
 #include "libcamera/internal/formats.h"
 
-#include <algorithm>
-#include <errno.h>
+#include <map>
 
 #include <libcamera/base/log.h>
 #include <libcamera/base/utils.h>
@@ -16,7 +15,7 @@
 #include <libcamera/formats.h>
 
 /**
- * \file internal/formats.h
+ * \file libcamera/internal/formats.h
  * \brief Types and helper functions to handle libcamera image formats
  */
 
@@ -526,6 +525,16 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.packed = true,
 		.pixelsPerGroup = 4,
 		.planes = {{ { 5, 1 }, { 0, 0 }, { 0, 0 } }},
+	} },
+	{ formats::R12_CSI2P, {
+		.name = "R12_CSI2P",
+		.format = formats::R12_CSI2P,
+		.v4l2Formats = { V4L2PixelFormat(V4L2_PIX_FMT_Y12P), },
+		.bitsPerPixel = 12,
+		.colourEncoding = PixelFormatInfo::ColourEncodingYUV,
+		.packed = true,
+		.pixelsPerGroup = 2,
+		.planes = {{ { 3, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
 	{ formats::R12, {
 		.name = "R12",

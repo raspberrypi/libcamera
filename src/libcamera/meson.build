@@ -1,14 +1,26 @@
 # SPDX-License-Identifier: CC0-1.0
 
-libcamera_sources = files([
-    'bayer_format.cpp',
-    'byte_stream_buffer.cpp',
+libcamera_public_sources = files([
     'camera.cpp',
-    'camera_controls.cpp',
-    'camera_lens.cpp',
     'camera_manager.cpp',
     'color_space.cpp',
     'controls.cpp',
+    'fence.cpp',
+    'framebuffer.cpp',
+    'framebuffer_allocator.cpp',
+    'geometry.cpp',
+    'orientation.cpp',
+    'pixel_format.cpp',
+    'request.cpp',
+    'stream.cpp',
+    'transform.cpp',
+])
+
+libcamera_internal_sources = files([
+    'bayer_format.cpp',
+    'byte_stream_buffer.cpp',
+    'camera_controls.cpp',
+    'camera_lens.cpp',
     'control_serializer.cpp',
     'control_validator.cpp',
     'converter.cpp',
@@ -16,11 +28,7 @@ libcamera_sources = files([
     'device_enumerator.cpp',
     'device_enumerator_sysfs.cpp',
     'dma_buf_allocator.cpp',
-    'fence.cpp',
     'formats.cpp',
-    'framebuffer.cpp',
-    'framebuffer_allocator.cpp',
-    'geometry.cpp',
     'ipa_controls.cpp',
     'ipa_data_serializer.cpp',
     'ipa_interface.cpp',
@@ -33,27 +41,18 @@ libcamera_sources = files([
     'mapped_framebuffer.cpp',
     'media_device.cpp',
     'media_object.cpp',
-    'orientation.cpp',
     'pipeline_handler.cpp',
-    'pixel_format.cpp',
     'process.cpp',
     'pub_key.cpp',
-    'request.cpp',
     'shared_mem_object.cpp',
     'source_paths.cpp',
-    'stream.cpp',
     'sysfs.cpp',
-    'transform.cpp',
     'v4l2_device.cpp',
     'v4l2_pixelformat.cpp',
     'v4l2_subdevice.cpp',
     'v4l2_videodevice.cpp',
     'yaml_parser.cpp',
 ])
-
-libcamera_sources += libcamera_public_headers
-libcamera_sources += libcamera_generated_ipa_headers
-libcamera_sources += libcamera_tracepoint_header
 
 includes = [
     libcamera_includes,
@@ -104,14 +103,14 @@ endif
 if liblttng.found()
     tracing_enabled = true
     config_h.set('HAVE_TRACING', 1)
-    libcamera_sources += files(['tracepoints.cpp'])
+    libcamera_internal_sources += files(['tracepoints.cpp'])
 else
     tracing_enabled = false
 endif
 
 if libudev.found()
     config_h.set('HAVE_LIBUDEV', 1)
-    libcamera_sources += files([
+    libcamera_internal_sources += files([
         'device_enumerator_udev.cpp',
     ])
 endif
@@ -130,29 +129,33 @@ endif
 control_sources = []
 
 controls_mode_files = {
-    'controls' : controls_files,
-    'properties' : properties_files,
+    'controls': [
+        controls_files,
+        'control_ids.cpp',
+    ],
+    'properties': [
+        properties_files,
+        'property_ids.cpp',
+    ],
 }
 
-foreach mode, input_files : controls_mode_files
-    input_files = files(input_files)
+foreach mode, inout_files : controls_mode_files
+    input_files = inout_files[0]
+    output_file = inout_files[1]
 
-    if mode == 'controls'
-        template_file = files('control_ids.cpp.in')
-    else
-        template_file = files('property_ids.cpp.in')
-    endif
-
+    template_file = files('control_ids.cpp.in')
     ranges_file = files('control_ranges.yaml')
-    control_sources += custom_target(mode + '_cpp',
+
+    control_sources += custom_target(mode + '_ids_cpp',
                                      input : input_files,
-                                     output : mode + '_ids.cpp',
+                                     output : output_file,
                                      command : [gen_controls, '-o', '@OUTPUT@',
                                                 '--mode', mode, '-t', template_file,
-                                                '-r', ranges_file, '@INPUT@'])
+                                                '-r', ranges_file, '@INPUT@'],
+                                     env : py_build_env)
 endforeach
 
-libcamera_sources += control_sources
+libcamera_public_sources += control_sources
 
 gen_version = meson.project_source_root() / 'utils' / 'gen-version.sh'
 
@@ -163,7 +166,7 @@ version_cpp = vcs_tag(command : [gen_version, meson.project_build_root(), meson.
                       output : 'version.cpp',
                       fallback : meson.project_version())
 
-libcamera_sources += version_cpp
+libcamera_public_sources += version_cpp
 
 if ipa_sign_module
     ipa_pub_key_cpp = custom_target('ipa_pub_key_cpp',
@@ -171,7 +174,7 @@ if ipa_sign_module
                                     output : 'ipa_pub_key.cpp',
                                     command : [gen_ipa_pub_key, '@INPUT@', '@OUTPUT@'])
 
-    libcamera_sources += ipa_pub_key_cpp
+    libcamera_internal_sources += ipa_pub_key_cpp
 endif
 
 libcamera_deps += [
@@ -191,7 +194,13 @@ libcamera_deps += [
 # for the presence or abscence of the dynamic tag.
 
 libcamera = shared_library('libcamera',
-                           libcamera_sources,
+                           [
+                               libcamera_public_headers,
+                               libcamera_public_sources,
+                               libcamera_ipa_headers,
+                               libcamera_internal_headers,
+                               libcamera_internal_sources,
+                           ],
                            version : libcamera_version,
                            soversion : libcamera_soversion,
                            name_prefix : '',
@@ -201,7 +210,6 @@ libcamera = shared_library('libcamera',
                            dependencies : libcamera_deps)
 
 libcamera_public = declare_dependency(sources : [
-                                          libcamera_ipa_headers,
                                           libcamera_public_headers,
                                       ],
                                       include_directories : libcamera_includes,
@@ -210,7 +218,7 @@ libcamera_public = declare_dependency(sources : [
 
 # Internal dependency for components and plugins which can use private APIs
 libcamera_private = declare_dependency(sources : [
-                                           libcamera_generated_ipa_headers,
+                                           libcamera_ipa_headers,
                                        ],
                                        dependencies : [
                                            libcamera_public,

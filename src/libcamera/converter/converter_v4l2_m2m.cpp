@@ -8,7 +8,6 @@
 
 #include "libcamera/internal/converter/converter_v4l2_m2m.h"
 
-#include <algorithm>
 #include <limits.h>
 
 #include <libcamera/base/log.h>
@@ -23,7 +22,7 @@
 #include "libcamera/internal/v4l2_videodevice.h"
 
 /**
- * \file internal/converter/converter_v4l2_m2m.h
+ * \file converter/converter_v4l2_m2m.h
  * \brief V4L2 M2M based converter
  */
 

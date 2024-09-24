@@ -9,6 +9,7 @@
 #include "gstlibcamerapool.h"
 
 #include <deque>
+
 #include <libcamera/stream.h>
 
 #include "gstlibcamera-utils.h"

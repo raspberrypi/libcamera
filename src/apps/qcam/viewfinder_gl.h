@@ -51,7 +51,6 @@ Q_SIGNALS:
 protected:
 	void initializeGL() override;
 	void paintGL() override;
-	void resizeGL(int w, int h) override;
 	QSize sizeHint() const override;
 
 private:
@@ -88,6 +87,7 @@ private:
 
 	/* Common texture parameters */
 	GLuint textureMinMagFilters_;
+	GLuint projMatrixUniform_;
 
 	/* YUV texture parameters */
 	GLuint textureUniformU_;

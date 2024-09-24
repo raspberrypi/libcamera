@@ -95,8 +95,6 @@ LOG_DEFINE_CATEGORY(IPAManager)
  * IPC.
  */
 
-IPAManager *IPAManager::self_ = nullptr;
-
 /**
  * \brief Construct an IPAManager instance
  *
@@ -105,10 +103,6 @@ IPAManager *IPAManager::self_ = nullptr;
  */
 IPAManager::IPAManager()
 {
-	if (self_)
-		LOG(IPAManager, Fatal)
-			<< "Multiple IPAManager objects are not allowed";
-
 #if HAVE_IPA_PUBKEY
 	if (!pubKey_.isValid())
 		LOG(IPAManager, Warning) << "Public key not valid";
@@ -153,16 +147,12 @@ IPAManager::IPAManager()
 	if (!ipaCount)
 		LOG(IPAManager, Warning)
 			<< "No IPA found in '" IPA_MODULE_DIR "'";
-
-	self_ = this;
 }
 
 IPAManager::~IPAManager()
 {
 	for (IPAModule *module : modules_)
 		delete module;
-
-	self_ = nullptr;
 }
 
 /**

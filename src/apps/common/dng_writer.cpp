@@ -11,6 +11,7 @@
 #include <endian.h>
 #include <iostream>
 #include <map>
+#include <vector>
 
 #include <tiffio.h>
 
@@ -544,7 +545,7 @@ int DNGWriter::write(const char *filename, const Camera *camera,
 	 * or a thumbnail scanline. The latter will always be much smaller than
 	 * the former as we downscale by 16 in both directions.
 	 */
-	uint8_t scanline[(config.size.width * info->bitsPerSample + 7) / 8];
+	std::vector<uint8_t> scanline((config.size.width * info->bitsPerSample + 7) / 8);
 
 	toff_t rawIFDOffset = 0;
 	toff_t exifIFDOffset = 0;
@@ -644,10 +645,10 @@ int DNGWriter::write(const char *filename, const Camera *camera,
 	/* Write the thumbnail. */
 	const uint8_t *row = static_cast<const uint8_t *>(data);
 	for (unsigned int y = 0; y < config.size.height / 16; y++) {
-		info->thumbScanline(*info, &scanline, row,
+		info->thumbScanline(*info, scanline.data(), row,
 				    config.size.width / 16, config.stride);
 
-		if (TIFFWriteScanline(tif, &scanline, y, 0) != 1) {
+		if (TIFFWriteScanline(tif, scanline.data(), y, 0) != 1) {
 			std::cerr << "Failed to write thumbnail scanline"
 				  << std::endl;
 			TIFFClose(tif);
@@ -747,9 +748,9 @@ int DNGWriter::write(const char *filename, const Camera *camera,
 	/* Write RAW content. */
 	row = static_cast<const uint8_t *>(data);
 	for (unsigned int y = 0; y < config.size.height; y++) {
-		info->packScanline(&scanline, row, config.size.width);
+		info->packScanline(scanline.data(), row, config.size.width);
 
-		if (TIFFWriteScanline(tif, &scanline, y, 0) != 1) {
+		if (TIFFWriteScanline(tif, scanline.data(), y, 0) != 1) {
 			std::cerr << "Failed to write RAW scanline"
 				  << std::endl;
 			TIFFClose(tif);

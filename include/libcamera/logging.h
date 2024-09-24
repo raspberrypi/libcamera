@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <ostream>
+
 namespace libcamera {
 
 enum LoggingTarget {

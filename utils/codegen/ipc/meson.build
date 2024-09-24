@@ -13,6 +13,7 @@ mojom_docs_extractor = find_program('./extract-docs.py')
 mojom_templates = custom_target('mojom_templates',
                                 input : mojom_template_files,
                                 output : 'libcamera_templates.zip',
-                                command : [mojom_generator, '-o', '@OUTDIR@', 'precompile'])
+                                command : [mojom_generator, '-o', '@OUTDIR@', 'precompile'],
+                                env : py_build_env)
 
 mojom_templates_dir = meson.current_build_dir()

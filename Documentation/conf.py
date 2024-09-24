@@ -37,7 +37,10 @@ author = u'Kieran Bingham, Jacopo Mondi, Laurent Pinchart, Niklas Söderlund'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    'sphinx.ext.graphviz'
 ]
+
+graphviz_output_format = 'svg'
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = []
@@ -61,7 +64,12 @@ language = 'en'
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = [
+    '_build',
+    'Thumbs.db',
+    '.DS_Store',
+    'documentation-contents.rst',
+]
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = None

@@ -11,7 +11,7 @@ namespace libcamera {
 
 /**
  *
- * \file libcamera/fence.h
+ * \file fence.h
  * \brief Definition of the Fence class
  */
 

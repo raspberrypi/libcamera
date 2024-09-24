@@ -163,7 +163,7 @@ LOG_DEFINE_CATEGORY(SimplePipeline)
  * handler has no a priori knowledge of. The pipeline handler thus implements a
  * heuristic to handle sharing of hardware resources in a generic fashion.
  *
- * Two cameras are considered to be mutually exclusive if their share common
+ * Two cameras are considered to be mutually exclusive if they share common
  * pads along the pipeline from the camera sensor to the video node. An entity
  * can thus be used concurrently by multiple cameras, as long as pads are
  * distinct.
@@ -363,13 +363,12 @@ private:
 		return static_cast<SimpleCameraData *>(camera->_d());
 	}
 
-	std::vector<MediaEntity *> locateSensors();
+	std::vector<MediaEntity *> locateSensors(MediaDevice *media);
 	static int resetRoutingTable(V4L2Subdevice *subdev);
 
 	const MediaPad *acquirePipeline(SimpleCameraData *data);
 	void releasePipeline(SimpleCameraData *data);
 
-	MediaDevice *media_;
 	std::map<const MediaEntity *, EntityData> entities_;
 
 	MediaDevice *converter_;
@@ -774,11 +773,8 @@ int SimpleCameraData::setupFormats(V4L2SubdeviceFormat *format,
 		}
 
 		LOG(SimplePipeline, Debug)
-			<< "Link '" << source->entity()->name()
-			<< "':" << source->index()
-			<< " -> '" << sink->entity()->name()
-			<< "':" << sink->index()
-			<< " configured with format " << *format;
+			<< "Link " << *link << ": configured with format "
+			<< *format;
 	}
 
 	return 0;
@@ -1424,7 +1420,8 @@ int SimplePipelineHandler::queueRequestDevice(Camera *camera, Request *request)
  * Match and Setup
  */
 
-std::vector<MediaEntity *> SimplePipelineHandler::locateSensors()
+std::vector<MediaEntity *>
+SimplePipelineHandler::locateSensors(MediaDevice *media)
 {
 	std::vector<MediaEntity *> entities;
 
@@ -1432,7 +1429,7 @@ std::vector<MediaEntity *> SimplePipelineHandler::locateSensors()
 	 * Gather all the camera sensor entities based on the function they
 	 * expose.
 	 */
-	for (MediaEntity *entity : media_->entities()) {
+	for (MediaEntity *entity : media->entities()) {
 		if (entity->function() == MEDIA_ENT_F_CAM_SENSOR)
 			entities.push_back(entity);
 	}
@@ -1520,17 +1517,18 @@ bool SimplePipelineHandler::match(DeviceEnumerator *enumerator)
 {
 	const SimplePipelineInfo *info = nullptr;
 	unsigned int numStreams = 1;
+	MediaDevice *media;
 
 	for (const SimplePipelineInfo &inf : supportedDevices) {
 		DeviceMatch dm(inf.driver);
-		media_ = acquireMediaDevice(enumerator, dm);
-		if (media_) {
+		media = acquireMediaDevice(enumerator, dm);
+		if (media) {
 			info = &inf;
 			break;
 		}
 	}
 
-	if (!media_)
+	if (!media)
 		return false;
 
 	for (const auto &[name, streams] : info->converters) {
@@ -1545,11 +1543,13 @@ bool SimplePipelineHandler::match(DeviceEnumerator *enumerator)
 	swIspEnabled_ = info->swIspEnabled;
 
 	/* Locate the sensors. */
-	std::vector<MediaEntity *> sensors = locateSensors();
+	std::vector<MediaEntity *> sensors = locateSensors(media);
 	if (sensors.empty()) {
-		LOG(SimplePipeline, Error) << "No sensor found";
+		LOG(SimplePipeline, Info) << "No sensor found for " << media->deviceNode();
 		return false;
 	}
+
+	LOG(SimplePipeline, Debug) << "Sensor found for " << media->deviceNode();
 
 	/*
 	 * Create one camera data instance for each sensor and gather all
@@ -1614,8 +1614,8 @@ bool SimplePipelineHandler::match(DeviceEnumerator *enumerator)
 			if (subdev->caps().hasStreams()) {
 				/*
 				 * Reset the routing table to its default state
-				 * to make sure entities are enumerate according
-				 * to the defaul routing configuration.
+				 * to make sure entities are enumerated according
+				 * to the default routing configuration.
 				 */
 				ret = resetRoutingTable(subdev.get());
 				if (ret) {

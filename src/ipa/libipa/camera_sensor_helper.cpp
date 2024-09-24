@@ -41,6 +41,7 @@ namespace ipa {
  */
 
 /**
+ * \fn CameraSensorHelper::CameraSensorHelper()
  * \brief Construct a CameraSensorHelper instance
  *
  * CameraSensorHelper derived class instances shall never be constructed
@@ -235,6 +236,7 @@ double CameraSensorHelper::gain(uint32_t gainCode) const
 /**
  * \var CameraSensorHelper::blackLevel_
  * \brief The black level of the sensor
+ * \sa CameraSensorHelper::blackLevel()
  */
 
 /**
@@ -517,6 +519,19 @@ private:
 };
 REGISTER_CAMERA_SENSOR_HELPER("ar0521", CameraSensorHelperAr0521)
 
+class CameraSensorHelperImx214 : public CameraSensorHelper
+{
+public:
+	CameraSensorHelperImx214()
+	{
+		/* From datasheet: 64 at 10bits. */
+		blackLevel_ = 4096;
+		gainType_ = AnalogueGainLinear;
+		gainConstants_.linear = { 0, 512, -1, 512 };
+	}
+};
+REGISTER_CAMERA_SENSOR_HELPER("imx214", CameraSensorHelperImx214)
+
 class CameraSensorHelperImx219 : public CameraSensorHelper
 {
 public:
@@ -548,6 +563,8 @@ class CameraSensorHelperImx283 : public CameraSensorHelper
 public:
 	CameraSensorHelperImx283()
 	{
+		/* From datasheet: 0x32 at 10bits. */
+		blackLevel_ = 3200;
 		gainType_ = AnalogueGainLinear;
 		gainConstants_.linear = { 0, 2048, -1, 2048 };
 	}

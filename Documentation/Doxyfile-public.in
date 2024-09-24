@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: CC-BY-SA-4.0
+
+@INCLUDE_PATH          = @TOP_BUILDDIR@/Documentation
+@INCLUDE               = Doxyfile-common
+
+HIDE_UNDOC_CLASSES     = YES
+HIDE_UNDOC_MEMBERS     = YES
+HTML_OUTPUT            = api-html
+INTERNAL_DOCS          = NO
+
+INPUT                  = "@TOP_SRCDIR@/Documentation" \
+                         ${inputs}
+
+EXCLUDE                = @TOP_SRCDIR@/include/libcamera/base/class.h \
+                         @TOP_SRCDIR@/include/libcamera/base/object.h \
+                         @TOP_SRCDIR@/include/libcamera/base/span.h \
+                         @TOP_SRCDIR@/src/libcamera/base/class.cpp \
+                         @TOP_SRCDIR@/src/libcamera/base/object.cpp
+
+PREDEFINED            += __DOXYGEN_PUBLIC__

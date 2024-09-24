@@ -7,8 +7,6 @@
 
 #pragma once
 
-#include <string>
-
 namespace libcamera {
 
 enum class Orientation;

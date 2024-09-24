@@ -10,7 +10,6 @@
 #include <functional>
 #include <list>
 #include <type_traits>
-#include <vector>
 
 #include <libcamera/base/bound_method.h>
 

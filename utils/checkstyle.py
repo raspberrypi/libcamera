@@ -211,34 +211,64 @@ class CommitFile:
 
 class Commit:
     def __init__(self, commit):
-        self.commit = commit
+        self._commit = commit
+        self._author = None
         self._trailers = []
         self._parse()
 
-    def _parse_trailers(self, lines):
-        for index in range(1, len(lines)):
-            line = lines[index]
-            if not line:
-                break
-
-            self._trailers.append(line)
-
-        return index
-
-    def _parse(self):
-        # Get the commit title and list of files.
-        ret = subprocess.run(['git', 'show', '--format=%s%n%(trailers:only,unfold)', '--name-status',
-                              self.commit],
+    def _parse_commit(self):
+        # Get and parse the commit message.
+        ret = subprocess.run(['git', 'show', '--format=%H%n%an <%ae>%n%s%n%b',
+                              '--no-patch', self.commit],
                              stdout=subprocess.PIPE).stdout.decode('utf-8')
         lines = ret.splitlines()
 
-        self._title = lines[0]
+        self._commit = lines[0]
+        self._author = lines[1]
+        self._title = lines[2]
+        self._body = lines[3:]
 
-        index = self._parse_trailers(lines)
-        self._files = [CommitFile(f) for f in lines[index:] if f]
+        # Parse the trailers. Feed git-interpret-trailers with a full commit
+        # message that includes both the title and the body, as it otherwise
+        # fails to find trailers when the body contains trailers only.
+        message = self._title + '\n\n' + '\n'.join(self._body)
+        trailers = subprocess.run(['git', 'interpret-trailers', '--parse'],
+                                  input=message.encode('utf-8'),
+                                  stdout=subprocess.PIPE).stdout.decode('utf-8')
+
+        self._trailers = trailers.splitlines()
+
+    def _parse(self):
+        self._parse_commit()
+
+        # Get the list of files. Use an empty format specifier to suppress the
+        # commit message completely.
+        ret = subprocess.run(['git', 'show', '--format=', '--name-status',
+                              self.commit],
+                             stdout=subprocess.PIPE).stdout.decode('utf-8')
+        self._files = [CommitFile(f) for f in ret.splitlines()]
+
+    def __repr__(self):
+        return '\n'.join([
+            f'commit {self.commit}',
+            f'Author: {self.author}',
+            f'',
+            f'    {self.title}',
+            '',
+            '\n'.join([line and f'    {line}' or '' for line in self._body]),
+            'Trailers:',
+        ] + self.trailers)
 
     def files(self, filter='AMR'):
         return [f.filename for f in self._files if f.status in filter]
+
+    @property
+    def author(self):
+        return self._author
+
+    @property
+    def commit(self):
+        return self._commit
 
     @property
     def title(self):
@@ -278,20 +308,14 @@ class StagedChanges(Commit):
 
 class Amendment(Commit):
     def __init__(self):
-        Commit.__init__(self, '')
+        Commit.__init__(self, 'HEAD')
 
     def _parse(self):
-        # Create a title using HEAD commit and parse the trailers.
-        ret = subprocess.run(['git', 'show', '--format=%H %s%n%(trailers:only,unfold)',
-                             '--no-patch'],
-                             stdout=subprocess.PIPE).stdout.decode('utf-8')
-        lines = ret.splitlines()
+        self._parse_commit()
 
-        self._title = 'Amendment of ' + lines[0].strip()
+        self._title = f'Amendment of "{self.title}"'
 
-        self._parse_trailers(lines)
-
-        # Extract the list of modified files
+        # Extract the list of modified files.
         ret = subprocess.run(['git', 'diff', '--staged', '--name-status', 'HEAD~'],
                              stdout=subprocess.PIPE).stdout.decode('utf-8')
         self._files = [CommitFile(f) for f in ret.splitlines()]
@@ -331,11 +355,16 @@ class CommitChecker(metaclass=ClassRegistry):
     # Class methods
     #
     @classmethod
-    def checkers(cls, names):
+    def checkers(cls, commit, names):
         for checker in cls.subclasses:
             if names and checker.__name__ not in names:
                 continue
-            yield checker
+            if checker.supports(commit):
+                yield checker
+
+    @classmethod
+    def supports(cls, commit):
+        return type(commit) in cls.commit_types
 
 
 class CommitIssue(object):
@@ -344,6 +373,8 @@ class CommitIssue(object):
 
 
 class HeaderAddChecker(CommitChecker):
+    commit_types = (Commit, StagedChanges, Amendment)
+
     @classmethod
     def check(cls, commit, top_level):
         issues = []
@@ -388,17 +419,14 @@ class HeaderAddChecker(CommitChecker):
 
 
 class TitleChecker(CommitChecker):
+    commit_types = (Commit,)
+
     prefix_regex = re.compile(r'^([a-zA-Z0-9_.-]+: )+')
     release_regex = re.compile(r'libcamera v[0-9]+\.[0-9]+\.[0-9]+')
 
     @classmethod
     def check(cls, commit, top_level):
         title = commit.title
-
-        # Skip the check when validating staged changes (as done through a
-        # pre-commit hook) as there is no title to check in that case.
-        if isinstance(commit, StagedChanges):
-            return []
 
         # Ignore release commits, they don't need a prefix.
         if TitleChecker.release_regex.fullmatch(title):
@@ -455,6 +483,8 @@ class TitleChecker(CommitChecker):
 
 
 class TrailersChecker(CommitChecker):
+    commit_types = (Commit,)
+
     commit_regex = re.compile(r'[0-9a-f]{12}[0-9a-f]* \(".*"\)')
 
     coverity_regex = re.compile(r'Coverity CID=.*')
@@ -493,6 +523,8 @@ class TrailersChecker(CommitChecker):
     def check(cls, commit, top_level):
         issues = []
 
+        sob_found = False
+
         for trailer in commit.trailers:
             match = TrailersChecker.trailer_regex.fullmatch(trailer)
             if not match:
@@ -514,6 +546,13 @@ class TrailersChecker(CommitChecker):
             if not valid:
                 issues.append(CommitIssue(f"Malformed value '{value}' for commit trailer '{key}'"))
                 continue
+
+            if key == 'Signed-off-by':
+                if value == commit.author:
+                    sob_found = True
+
+        if not sob_found:
+            issues.append(CommitIssue(f"No 'Signed-off-by' trailer matching author '{commit.author}', see Documentation/contributing.rst"))
 
         return issues
 
@@ -667,39 +706,6 @@ class MesonChecker(StyleChecker):
             if pos != -1:
                 issues.append(StyleIssue(line_number, [pos, pos], line,
                                          'meson.build should use spaces for indentation'))
-        return issues
-
-
-class Pep8Checker(StyleChecker):
-    patterns = ('*.py',)
-    results_regex = re.compile(r'stdin:([0-9]+):([0-9]+)(.*)')
-
-    def __init__(self, content):
-        super().__init__()
-        self.__content = content
-
-    def check(self, line_numbers):
-        issues = []
-        data = ''.join(self.__content).encode('utf-8')
-
-        try:
-            ret = subprocess.run(['pycodestyle', '--ignore=E501', '-'],
-                                 input=data, stdout=subprocess.PIPE)
-        except FileNotFoundError:
-            issues.append(StyleIssue(0, None, None, 'Please install pycodestyle to validate python additions'))
-            return issues
-
-        results = ret.stdout.decode('utf-8').splitlines()
-        for item in results:
-            search = re.search(Pep8Checker.results_regex, item)
-            line_number = int(search.group(1))
-            position = int(search.group(2))
-            msg = search.group(3)
-
-            if line_number in line_numbers:
-                line = self.__content[line_number - 1]
-                issues.append(StyleIssue(line_number, None, line, msg))
-
         return issues
 
 
@@ -904,6 +910,21 @@ class IncludeOrderFormatter(Formatter):
         return '\n'.join(lines)
 
 
+class Pep8Formatter(Formatter):
+    patterns = ('*.py',)
+
+    @classmethod
+    def format(cls, filename, data):
+        try:
+            ret = subprocess.run(['autopep8', '--ignore=E501', '-'],
+                                 input=data.encode('utf-8'), stdout=subprocess.PIPE)
+        except FileNotFoundError:
+            issues.append(StyleIssue(0, None, None, 'Please install autopep8 to format python additions'))
+            return issues
+
+        return ret.stdout.decode('utf-8')
+
+
 class StripTrailingSpaceFormatter(Formatter):
     patterns = ('*.c', '*.cpp', '*.h', '*.py', 'meson.build')
 
@@ -998,7 +1019,7 @@ def check_style(top_level, commit, checkers):
     issues = 0
 
     # Apply the commit checkers first.
-    for checker in CommitChecker.checkers(checkers):
+    for checker in CommitChecker.checkers(commit, checkers):
         for issue in checker.check(commit, top_level):
             print('%s%s%s' % (Colours.fg(Colours.Yellow), issue.msg, Colours.reset()))
             issues += 1

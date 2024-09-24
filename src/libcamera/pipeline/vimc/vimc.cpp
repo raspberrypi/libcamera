@@ -14,6 +14,7 @@
 #include <linux/media-bus-format.h>
 #include <linux/version.h>
 
+#include <libcamera/base/flags.h>
 #include <libcamera/base/log.h>
 #include <libcamera/base/utils.h>
 
@@ -21,6 +22,8 @@
 #include <libcamera/control_ids.h>
 #include <libcamera/controls.h>
 #include <libcamera/formats.h>
+#include <libcamera/framebuffer.h>
+#include <libcamera/geometry.h>
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
 

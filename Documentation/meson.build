@@ -24,34 +24,92 @@ if doxygen.found() and dot.found()
 
     cdata.set('PREDEFINED', ' \\\n\t\t\t '.join(doxygen_predefined))
 
-    doxyfile = configure_file(input : 'Doxyfile.in',
-                              output : 'Doxyfile',
-                              configuration : cdata)
+    doxyfile_common = configure_file(input : 'Doxyfile-common.in',
+                                     output : 'Doxyfile-common',
+                                     configuration : cdata)
 
-    doxygen_input = [
-        doxyfile,
-        libcamera_base_headers,
-        libcamera_base_sources,
+    doxygen_public_input = [
+        libcamera_base_public_headers,
+        libcamera_base_public_sources,
+        libcamera_public_headers,
+        libcamera_public_sources,
+    ]
+
+    doxygen_internal_input = [
+        libcamera_base_private_headers,
+        libcamera_base_internal_sources,
         libcamera_internal_headers,
+        libcamera_internal_sources,
         libcamera_ipa_headers,
         libcamera_ipa_interfaces,
-        libcamera_public_headers,
-        libcamera_sources,
         libipa_headers,
         libipa_sources,
     ]
 
     if is_variable('ipu3_ipa_sources')
-        doxygen_input += [ipu3_ipa_sources]
+        doxygen_internal_input += [ipu3_ipa_sources]
     endif
 
-    custom_target('doxygen',
-                  input : doxygen_input,
+    # We run doxygen twice - the first run excludes internal API objects as it
+    # is intended to document the public API only. A second run covers all of
+    # the library's objects for libcamera developers. Common configuration is
+    # set in an initially generated Doxyfile, which is then included by the two
+    # final Doxyfiles.
+
+    # This is the "public" run of doxygen generating an abridged version of the
+    # API's documentation.
+
+    doxyfile_tmpl = configure_file(input : 'Doxyfile-public.in',
+                                   output : 'Doxyfile-public.tmpl',
+                                   configuration : cdata)
+
+    # The set of public input files stored in the doxygen_public_input array
+    # needs to be set in Doxyfile public. We can't pass them through cdata
+    # cdata, as some of the array members are custom_tgt instances, which
+    # configuration_data.set() doesn't support. Using a separate script invoked
+    # through custom_target(), which supports custom_tgt instances as inputs.
+
+    doxyfile = custom_target('doxyfile-public',
+                             input : [
+                                 doxygen_public_input,
+                             ],
+                             output : 'Doxyfile-public',
+                             command : [
+                                 'gen-doxyfile.py',
+                                 '-o', '@OUTPUT@',
+                                 doxyfile_tmpl,
+                                 '@INPUT@',
+                             ])
+
+    custom_target('doxygen-public',
+                  input : [
+                      doxyfile,
+                      doxyfile_common,
+                  ],
                   output : 'api-html',
                   command : [doxygen, doxyfile],
                   install : true,
                   install_dir : doc_install_dir,
                   install_tag : 'doc')
+
+    # This is the internal documentation, which hard-codes a list of directories
+    # to parse in its doxyfile.
+
+    doxyfile = configure_file(input : 'Doxyfile-internal.in',
+                              output : 'Doxyfile-internal',
+                              configuration : cdata)
+
+    custom_target('doxygen-internal',
+                  input : [
+                      doxyfile,
+                      doxyfile_common,
+                      doxygen_internal_input,
+                  ],
+                  output : 'internal-api-html',
+                  command : [doxygen, doxyfile],
+                  install : true,
+                  install_dir : doc_install_dir,
+                  install_tag : 'doc-internal')
 endif
 
 #
@@ -70,15 +128,18 @@ if sphinx.found()
         'coding-style.rst',
         'conf.py',
         'contributing.rst',
-        'docs.rst',
+        'documentation-contents.rst',
         'environment_variables.rst',
+        'feature_requirements.rst',
         'guides/application-developer.rst',
-        'guides/introduction.rst',
         'guides/ipa.rst',
         'guides/pipeline-handler.rst',
         'guides/tracing.rst',
         'index.rst',
+        'introduction.rst',
         'lens_driver_requirements.rst',
+        'libcamera_architecture.rst',
+        'mali-c55.dot',
         'python-bindings.rst',
         'sensor_driver_requirements.rst',
         'software-isp-benchmarking.rst',

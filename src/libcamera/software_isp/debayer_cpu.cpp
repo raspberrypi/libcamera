@@ -12,7 +12,10 @@
 #include "debayer_cpu.h"
 
 #include <stdlib.h>
+#include <sys/ioctl.h>
 #include <time.h>
+
+#include <linux/dma-buf.h>
 
 #include <libcamera/formats.h>
 
@@ -49,16 +52,9 @@ DebayerCpu::DebayerCpu(std::unique_ptr<SwStatsCpu> stats)
 	/* Initialize color lookup tables */
 	for (unsigned int i = 0; i < DebayerParams::kRGBLookupSize; i++)
 		red_[i] = green_[i] = blue_[i] = i;
-
-	for (unsigned int i = 0; i < kMaxLineBuffers; i++)
-		lineBuffers_[i] = nullptr;
 }
 
-DebayerCpu::~DebayerCpu()
-{
-	for (unsigned int i = 0; i < kMaxLineBuffers; i++)
-		free(lineBuffers_[i]);
-}
+DebayerCpu::~DebayerCpu() = default;
 
 #define DECLARE_SRC_POINTERS(pixel_t)                            \
 	const pixel_t *prev = (const pixel_t *)src[0] + xShift_; \
@@ -526,13 +522,10 @@ int DebayerCpu::configure(const StreamConfiguration &inputCfg,
 	lineBufferPadding_ = inputConfig_.patternSize.width * inputConfig_.bpp / 8;
 	lineBufferLength_ = window_.width * inputConfig_.bpp / 8 +
 			    2 * lineBufferPadding_;
-	for (unsigned int i = 0;
-	     i < (inputConfig_.patternSize.height + 1) && enableInputMemcpy_;
-	     i++) {
-		free(lineBuffers_[i]);
-		lineBuffers_[i] = (uint8_t *)malloc(lineBufferLength_);
-		if (!lineBuffers_[i])
-			return -ENOMEM;
+
+	if (enableInputMemcpy_) {
+		for (unsigned int i = 0; i <= inputConfig_.patternSize.height; i++)
+			lineBuffers_[i].resize(lineBufferLength_);
 	}
 
 	measuredFrames_ = 0;
@@ -587,9 +580,10 @@ void DebayerCpu::setupInputMemcpy(const uint8_t *linePointers[])
 		return;
 
 	for (unsigned int i = 0; i < patternHeight; i++) {
-		memcpy(lineBuffers_[i], linePointers[i + 1] - lineBufferPadding_,
+		memcpy(lineBuffers_[i].data(),
+		       linePointers[i + 1] - lineBufferPadding_,
 		       lineBufferLength_);
-		linePointers[i + 1] = lineBuffers_[i] + lineBufferPadding_;
+		linePointers[i + 1] = lineBuffers_[i].data() + lineBufferPadding_;
 	}
 
 	/* Point lineBufferIndex_ to first unused lineBuffer */
@@ -614,9 +608,11 @@ void DebayerCpu::memcpyNextLine(const uint8_t *linePointers[])
 	if (!enableInputMemcpy_)
 		return;
 
-	memcpy(lineBuffers_[lineBufferIndex_], linePointers[patternHeight] - lineBufferPadding_,
+	memcpy(lineBuffers_[lineBufferIndex_].data(),
+	       linePointers[patternHeight] - lineBufferPadding_,
 	       lineBufferLength_);
-	linePointers[patternHeight] = lineBuffers_[lineBufferIndex_] + lineBufferPadding_;
+	linePointers[patternHeight] = lineBuffers_[lineBufferIndex_].data()
+				    + lineBufferPadding_;
 
 	lineBufferIndex_ = (lineBufferIndex_ + 1) % (patternHeight + 1);
 }
@@ -725,11 +721,32 @@ void DebayerCpu::process4(const uint8_t *src, uint8_t *dst)
 	}
 }
 
-static inline int64_t timeDiff(timespec &after, timespec &before)
+namespace {
+
+void syncBufferForCPU(FrameBuffer *buffer, uint64_t syncFlags)
+{
+	for (const FrameBuffer::Plane &plane : buffer->planes()) {
+		const int fd = plane.fd.get();
+		struct dma_buf_sync sync = { syncFlags };
+		int ret;
+
+		ret = ioctl(fd, DMA_BUF_IOCTL_SYNC, &sync);
+		if (ret < 0) {
+			ret = errno;
+			LOG(Debayer, Error)
+				<< "Syncing buffer FD " << fd << " with flags "
+				<< syncFlags << " failed: " << strerror(ret);
+		}
+	}
+}
+
+inline int64_t timeDiff(timespec &after, timespec &before)
 {
 	return (after.tv_sec - before.tv_sec) * 1000000000LL +
 	       (int64_t)after.tv_nsec - (int64_t)before.tv_nsec;
 }
+
+} /* namespace */
 
 void DebayerCpu::process(FrameBuffer *input, FrameBuffer *output, DebayerParams params)
 {
@@ -739,6 +756,9 @@ void DebayerCpu::process(FrameBuffer *input, FrameBuffer *output, DebayerParams 
 		frameStartTime = {};
 		clock_gettime(CLOCK_MONOTONIC_RAW, &frameStartTime);
 	}
+
+	syncBufferForCPU(input, DMA_BUF_SYNC_START | DMA_BUF_SYNC_READ);
+	syncBufferForCPU(output, DMA_BUF_SYNC_START | DMA_BUF_SYNC_WRITE);
 
 	green_ = params.green;
 	red_ = swapRedBlueGains_ ? params.blue : params.red;
@@ -766,6 +786,9 @@ void DebayerCpu::process(FrameBuffer *input, FrameBuffer *output, DebayerParams 
 		process4(in.planes()[0].data(), out.planes()[0].data());
 
 	metadata.planes()[0].bytesused = out.planes()[0].size();
+
+	syncBufferForCPU(output, DMA_BUF_SYNC_END | DMA_BUF_SYNC_WRITE);
+	syncBufferForCPU(input, DMA_BUF_SYNC_END | DMA_BUF_SYNC_READ);
 
 	/* Measure before emitting signals */
 	if (measuredFrames_ < DebayerCpu::kLastFrameToMeasure &&

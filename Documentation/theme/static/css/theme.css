@@ -283,9 +283,13 @@ div#signature {
 	font-size: 12px;
 }
 
-#libcamera div.toctree-wrapper {
+#licensing div.toctree-wrapper {
 	height: 0px;
 	margin: 0px;
 	padding: 0px;
 	visibility: hidden;
+}
+
+.documentation-nav {
+	display: none;
 }

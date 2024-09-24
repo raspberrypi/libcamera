@@ -53,8 +53,8 @@ License: Expat
 Comment: https://feathericons.com/
 
 Files:
- utils/coden/ipc/mojo/*
- utils/coden/ipc/tools/*
+ utils/codegen/ipc/mojo/*
+ utils/codegen/ipc/tools/*
 Copyright:
  2013-2023 The Chromium Authors. All rights reserved.
 License: BSD-3-Clause

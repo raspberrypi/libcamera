@@ -39,7 +39,7 @@ enum ControlType {
 
 namespace details {
 
-template<typename T>
+template<typename T, typename = std::void_t<>>
 struct control_type {
 };
 
@@ -100,6 +100,10 @@ struct control_type<Size> {
 template<typename T, std::size_t N>
 struct control_type<Span<T, N>> : public control_type<std::remove_cv_t<T>> {
 	static constexpr std::size_t size = N;
+};
+
+template<typename T>
+struct control_type<T, std::enable_if_t<std::is_enum_v<T>>> : public control_type<int32_t> {
 };
 
 } /* namespace details */

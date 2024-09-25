@@ -256,11 +256,16 @@ int CameraSession::start()
 #endif
 
 	if (options_.isSet(OptFile)) {
-		if (!options_[OptFile].toString().empty())
-			sink_ = std::make_unique<FileSink>(camera_.get(), streamNames_,
-							   options_[OptFile]);
-		else
-			sink_ = std::make_unique<FileSink>(camera_.get(), streamNames_);
+		std::unique_ptr<FileSink> sink =
+			std::make_unique<FileSink>(camera_.get(), streamNames_);
+
+		if (!options_[OptFile].toString().empty()) {
+			ret = sink->setFilePattern(options_[OptFile]);
+			if (ret)
+				return ret;
+		}
+
+		sink_ = std::move(sink);
 	}
 
 	if (sink_) {

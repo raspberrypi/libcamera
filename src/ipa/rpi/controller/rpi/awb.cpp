@@ -6,6 +6,7 @@
  */
 
 #include <assert.h>
+#include <cmath>
 #include <functional>
 
 #include <libcamera/base/log.h>
@@ -505,7 +506,7 @@ static double interpolateQuadatric(ipa::Pwl::Point const &a, ipa::Pwl::Point con
 	const double eps = 1e-3;
 	ipa::Pwl::Point ca = c - a, ba = b - a;
 	double denominator = 2 * (ba.y() * ca.x() - ca.y() * ba.x());
-	if (abs(denominator) > eps) {
+	if (std::abs(denominator) > eps) {
 		double numerator = ba.y() * ca.x() * ca.x() - ca.y() * ba.x() * ba.x();
 		double result = numerator / denominator + a.x();
 		return std::max(a.x(), std::min(c.x(), result));

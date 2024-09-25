@@ -262,6 +262,15 @@ public:
 	{
 	}
 
+	constexpr Rectangle(const Point &point1, const Point &point2)
+		: Rectangle(std::min(point1.x, point2.x), std::min(point1.y, point2.y),
+			    static_cast<unsigned int>(std::max(point1.x, point2.x)) -
+			    static_cast<unsigned int>(std::min(point1.x, point2.x)),
+			    static_cast<unsigned int>(std::max(point1.y, point2.y)) -
+			    static_cast<unsigned int>(std::min(point1.y, point2.y)))
+	{
+	}
+
 	int x;
 	int y;
 	unsigned int width;

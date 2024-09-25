@@ -211,7 +211,7 @@ int MainWindow::createToolbars()
 	action->setShortcut(QKeySequence::SaveAs);
 	connect(action, &QAction::triggered, this, &MainWindow::saveImageAs);
 
-#ifdef HAVE_DNG
+#ifdef HAVE_TIFF
 	/* Save Raw action. */
 	action = toolbar_->addAction(QIcon::fromTheme("camera-photo",
 						      QIcon(":aperture.svg")),
@@ -646,7 +646,7 @@ void MainWindow::captureRaw()
 void MainWindow::processRaw(FrameBuffer *buffer,
 			    [[maybe_unused]] const ControlList &metadata)
 {
-#ifdef HAVE_DNG
+#ifdef HAVE_TIFF
 	QString defaultPath = QStandardPaths::writableLocation(QStandardPaths::PicturesLocation);
 	QString filename = QFileDialog::getSaveFileName(this, "Save DNG", defaultPath,
 							"DNG Files (*.dng)");

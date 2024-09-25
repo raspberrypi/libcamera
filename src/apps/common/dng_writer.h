@@ -8,7 +8,6 @@
 #pragma once
 
 #ifdef HAVE_TIFF
-#define HAVE_DNG
 
 #include <libcamera/camera.h>
 #include <libcamera/controls.h>

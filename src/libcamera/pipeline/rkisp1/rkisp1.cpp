@@ -108,6 +108,8 @@ public:
 
 	std::unique_ptr<ipa::rkisp1::IPAProxyRkISP1> ipa_;
 
+	ControlInfoMap ipaControls_;
+
 private:
 	void paramFilled(unsigned int frame, unsigned int bytesused);
 	void setSensorControls(unsigned int frame,
@@ -182,6 +184,8 @@ private:
 
 	int allocateBuffers(Camera *camera);
 	int freeBuffers(Camera *camera);
+
+	int updateControls(RkISP1CameraData *data);
 
 	MediaDevice *media_;
 	std::unique_ptr<V4L2Subdevice> isp_;
@@ -364,7 +368,7 @@ int RkISP1CameraData::loadIPA(unsigned int hwRevision)
 	}
 
 	ret = ipa_->init({ ipaTuningFile, sensor_->model() }, hwRevision,
-			 sensorInfo, sensor_->controls(), &controlInfo_);
+			 sensorInfo, sensor_->controls(), &ipaControls_);
 	if (ret < 0) {
 		LOG(RkISP1, Error) << "IPA initialization failure";
 		return ret;
@@ -842,12 +846,13 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 	ipaConfig.sensorControls = data->sensor_->controls();
 	ipaConfig.paramFormat = paramFormat.fourcc;
 
-	ret = data->ipa_->configure(ipaConfig, streamConfig, &data->controlInfo_);
+	ret = data->ipa_->configure(ipaConfig, streamConfig, &data->ipaControls_);
 	if (ret) {
 		LOG(RkISP1, Error) << "failed configuring IPA (" << ret << ")";
 		return ret;
 	}
-	return 0;
+
+	return updateControls(data);
 }
 
 int PipelineHandlerRkISP1::exportFrameBuffers([[maybe_unused]] Camera *camera, Stream *stream,
@@ -1114,6 +1119,35 @@ int PipelineHandlerRkISP1::initLinks(Camera *camera,
 	return 0;
 }
 
+/**
+ * \brief Update the camera controls
+ * \param[in] data The camera data
+ *
+ * Compute the camera controls by calculating controls which the pipeline
+ * is reponsible for and merge them with the controls computed by the IPA.
+ *
+ * This function needs data->ipaControls_ to be refreshed when a new
+ * configuration is applied to the camera by the IPA configure() function.
+ *
+ * Always call this function after IPA configure() to make sure to have a
+ * properly refreshed IPA controls list.
+ *
+ * \return 0 on success or a negative error code otherwise
+ */
+int PipelineHandlerRkISP1::updateControls(RkISP1CameraData *data)
+{
+	ControlInfoMap::Map controls;
+
+	/* Add the IPA registered controls to list of camera controls. */
+	for (const auto &ipaControl : data->ipaControls_)
+		controls[ipaControl.first] = ipaControl.second;
+
+	data->controlInfo_ = ControlInfoMap(std::move(controls),
+					    controls::controls);
+
+	return 0;
+}
+
 int PipelineHandlerRkISP1::createCamera(MediaEntity *sensor)
 {
 	int ret;
@@ -1149,6 +1183,8 @@ int PipelineHandlerRkISP1::createCamera(MediaEntity *sensor)
 	ret = data->loadIPA(media_->hwRevision());
 	if (ret)
 		return ret;
+
+	updateControls(data.get());
 
 	std::set<Stream *> streams{
 		&data->mainPathStream_,

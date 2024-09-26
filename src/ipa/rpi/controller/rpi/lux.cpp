@@ -4,7 +4,6 @@
  *
  * Lux control algorithm
  */
-#include <math.h>
 
 #include <libcamera/base/log.h>
 

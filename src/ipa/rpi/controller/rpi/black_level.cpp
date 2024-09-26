@@ -5,7 +5,6 @@
  * black level control algorithm
  */
 
-#include <math.h>
 #include <stdint.h>
 
 #include <libcamera/base/log.h>

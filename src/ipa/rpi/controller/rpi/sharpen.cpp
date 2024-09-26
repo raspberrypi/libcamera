@@ -5,7 +5,7 @@
  * sharpening control algorithm
  */
 
-#include <math.h>
+#include <cmath>
 
 #include <libcamera/base/log.h>
 
@@ -68,7 +68,7 @@ void Sharpen::prepare(Metadata *imageMetadata)
 	 * we adjust the limit and threshold less aggressively. Using a sqrt
 	 * function is an arbitrary but gentle way of accomplishing this.
 	 */
-	double userStrengthSqrt = sqrt(userStrength_);
+	double userStrengthSqrt = std::sqrt(userStrength_);
 	struct SharpenStatus status;
 	/*
 	 * Binned modes seem to need the sharpening toned down with this

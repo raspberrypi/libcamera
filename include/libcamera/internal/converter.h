@@ -14,6 +14,7 @@
 #include <memory>
 #include <string>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 #include <libcamera/base/class.h>
@@ -35,6 +36,7 @@ class Converter
 public:
 	enum class Feature {
 		None = 0,
+		InputCrop = (1 << 0),
 	};
 
 	using Features = Flags<Feature>;
@@ -62,6 +64,9 @@ public:
 
 	virtual int queueBuffers(FrameBuffer *input,
 				 const std::map<const Stream *, FrameBuffer *> &outputs) = 0;
+
+	virtual int setInputCrop(const Stream *stream, Rectangle *rect) = 0;
+	virtual std::pair<Rectangle, Rectangle> inputCropBounds(const Stream *stream) = 0;
 
 	Signal<FrameBuffer *> inputBufferReady;
 	Signal<FrameBuffer *> outputBufferReady;

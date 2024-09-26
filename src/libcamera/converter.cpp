@@ -11,6 +11,8 @@
 
 #include <libcamera/base/log.h>
 
+#include <libcamera/stream.h>
+
 #include "libcamera/internal/media_device.h"
 
 /**
@@ -39,6 +41,8 @@ LOG_DEFINE_CATEGORY(Converter)
  * \brief Specify the features supported by the converter
  * \var Converter::Feature::None
  * \brief No extra features supported by the converter
+ * \var Converter::Feature::InputCrop
+ * \brief Cropping capability at input is supported by the converter
  */
 
 /**
@@ -159,6 +163,39 @@ Converter::~Converter()
  * buffer map value.
  *
  * \return 0 on success or a negative error code otherwise
+ */
+
+/**
+ * \fn Converter::setInputCrop()
+ * \brief Set the crop rectangle \a rect for \a stream
+ * \param[in] stream The output stream
+ * \param[inout] rect The crop rectangle to apply and return the rectangle
+ * that is actually applied
+ *
+ * Set the crop rectangle \a rect for \a stream provided the converter supports
+ * cropping. The converter has the Feature::InputCrop flag in this case.
+ *
+ * The underlying hardware can adjust the rectangle supplied by the user
+ * due to hardware constraints. The caller can inspect \a rect to determine the
+ * actual rectangle that has been applied by the converter, after this function
+ * returns.
+ *
+ * \return 0 on success or a negative error code otherwise
+ */
+
+/**
+ * \fn Converter::inputCropBounds()
+ * \brief Retrieve the crop bounds for \a stream
+ * \param[in] stream The output stream
+ *
+ * Retrieve the minimum and maximum crop bounds for \a stream. The converter
+ * should support cropping (Feature::InputCrop).
+ *
+ * The crop bounds depend on the configuration of the output stream and hence
+ * this function should be called after the \a stream has been configured using
+ * configure().
+ *
+ * \return A pair containing the minimum and maximum crop bound in that order
  */
 
 /**

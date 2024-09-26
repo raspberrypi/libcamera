@@ -1145,7 +1145,7 @@ CameraConfiguration::Status SimpleCameraConfiguration::validate()
 			cfg.frameSize = format.planes[0].size;
 		}
 
-		cfg.bufferCount = 3;
+		cfg.bufferCount = 4;
 	}
 
 	return status;

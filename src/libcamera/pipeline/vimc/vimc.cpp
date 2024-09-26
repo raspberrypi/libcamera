@@ -6,9 +6,9 @@
  */
 
 #include <algorithm>
+#include <cmath>
 #include <iomanip>
 #include <map>
-#include <math.h>
 #include <tuple>
 
 #include <linux/media-bus-format.h>
@@ -420,7 +420,7 @@ int PipelineHandlerVimc::processControls(VimcCameraData *data, Request *request)
 			continue;
 		}
 
-		int32_t value = lroundf(it.second.get<float>() * 128 + offset);
+		int32_t value = std::lround(it.second.get<float>() * 128 + offset);
 		controls.set(cid, std::clamp(value, 0, 255));
 	}
 

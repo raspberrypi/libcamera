@@ -35,13 +35,26 @@ LOG_DEFINE_CATEGORY(Converter)
  */
 
 /**
+ * \enum Converter::Feature
+ * \brief Specify the features supported by the converter
+ * \var Converter::Feature::None
+ * \brief No extra features supported by the converter
+ */
+
+/**
+ * \typedef Converter::Features
+ * \brief A bitwise combination of features supported by the converter
+ */
+
+/**
  * \brief Construct a Converter instance
  * \param[in] media The media device implementing the converter
+ * \param[in] features Features flags representing supported features
  *
  * This searches for the entity implementing the data streaming function in the
  * media graph entities and use its device node as the converter device node.
  */
-Converter::Converter(MediaDevice *media)
+Converter::Converter(MediaDevice *media, Features features)
 {
 	const std::vector<MediaEntity *> &entities = media->entities();
 	auto it = std::find_if(entities.begin(), entities.end(),
@@ -56,6 +69,7 @@ Converter::Converter(MediaDevice *media)
 	}
 
 	deviceNode_ = (*it)->deviceNode();
+	features_ = features;
 }
 
 Converter::~Converter()
@@ -158,9 +172,20 @@ Converter::~Converter()
  */
 
 /**
+ * \var Converter::features_
+ * \brief Stores the features supported by the converter
+ */
+
+/**
  * \fn Converter::deviceNode()
  * \brief The converter device node attribute accessor
  * \return The converter device node string
+ */
+
+/**
+ * \fn Converter::features()
+ * \brief Retrieve the features supported by the converter
+ * \return The converter Features flags
  */
 
 /**

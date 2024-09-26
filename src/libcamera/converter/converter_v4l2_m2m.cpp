@@ -446,6 +446,10 @@ int V4L2M2MConverter::queueBuffers(FrameBuffer *input,
 	return 0;
 }
 
+/*
+ * \todo: This should be extended to include Feature::Flag to denote
+ * what each converter supports feature-wise.
+ */
 static std::initializer_list<std::string> compatibles = {
 	"mtk-mdp",
 	"pxp",

@@ -23,6 +23,7 @@ interface IPASoftInterface {
 	configure(IPAConfigInfo configInfo)
 		=> (int32 ret);
 
+	[async] queueRequest(uint32 frame, libcamera.ControlList sensorControls);
 	[async] processStats(uint32 frame,
 			     uint32 bufferId,
 			     libcamera.ControlList sensorControls);

@@ -1421,8 +1421,11 @@ int SimplePipelineHandler::queueRequestDevice(Camera *camera, Request *request)
 		}
 	}
 
-	if (data->useConversion_)
+	if (data->useConversion_) {
 		data->conversionQueue_.push(std::move(buffers));
+		if (data->swIsp_)
+			data->swIsp_->queueRequest(request->sequence(), request->controls());
+	}
 
 	return 0;
 }

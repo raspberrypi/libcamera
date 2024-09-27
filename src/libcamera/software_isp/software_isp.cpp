@@ -278,6 +278,16 @@ int SoftwareIsp::exportBuffers(const Stream *stream, unsigned int count,
 }
 
 /**
+ * \brief Queue a request and process the control list from the application
+ * \param[in] frame The number of the frame which will be processed next
+ * \param[in] controls The controls for the \a frame
+ */
+void SoftwareIsp::queueRequest(const uint32_t frame, const ControlList &controls)
+{
+	ipa_->queueRequest(frame, controls);
+}
+
+/**
  * \brief Queue buffers to Software ISP
  * \param[in] frame The frame number
  * \param[in] input The input framebuffer

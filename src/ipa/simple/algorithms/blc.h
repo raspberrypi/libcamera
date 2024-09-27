@@ -24,6 +24,10 @@ public:
 		     IPAFrameContext &frameContext,
 		     const SwIspStats *stats,
 		     ControlList &metadata) override;
+
+private:
+	uint32_t exposure_;
+	double gain_;
 };
 
 } /* namespace ipa::soft::algorithms */

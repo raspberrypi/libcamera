@@ -30,10 +30,15 @@ int BlackLevel::configure(IPAContext &context,
 
 void BlackLevel::process(IPAContext &context,
 			 [[maybe_unused]] const uint32_t frame,
-			 [[maybe_unused]] IPAFrameContext &frameContext,
+			 IPAFrameContext &frameContext,
 			 const SwIspStats *stats,
 			 [[maybe_unused]] ControlList &metadata)
 {
+	if (frameContext.sensor.exposure == exposure_ &&
+	    frameContext.sensor.gain == gain_) {
+		return;
+	}
+
 	const SwIspStats::Histogram &histogram = stats->yHistogram;
 
 	/*
@@ -54,6 +59,8 @@ void BlackLevel::process(IPAContext &context,
 		seen += histogram[i];
 		if (seen >= pixelThreshold) {
 			context.activeState.blc.level = i * histogramRatio;
+			exposure_ = frameContext.sensor.exposure;
+			gain_ = frameContext.sensor.gain;
 			LOG(IPASoftBL, Debug)
 				<< "Auto-set black level: "
 				<< i << "/" << SwIspStats::kYHistogramSize

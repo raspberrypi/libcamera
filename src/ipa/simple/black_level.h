@@ -14,6 +14,8 @@
 
 namespace libcamera {
 
+namespace ipa::soft {
+
 class BlackLevel
 {
 public:
@@ -25,5 +27,7 @@ private:
 	uint8_t blackLevel_;
 	bool blackLevelSet_;
 };
+
+} /* namespace ipa::soft */
 
 } /* namespace libcamera */

@@ -15,6 +15,8 @@ namespace libcamera {
 
 LOG_DEFINE_CATEGORY(IPASoftBL)
 
+namespace ipa::soft {
+
 /**
  * \class BlackLevel
  * \brief Object providing black point level for software ISP
@@ -85,4 +87,7 @@ void BlackLevel::update(SwIspStats::Histogram &yHistogram)
 		}
 	};
 }
+
+} /* namespace ipa::soft */
+
 } /* namespace libcamera */

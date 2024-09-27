@@ -5,8 +5,6 @@
  * Simple Software Image Processing Algorithm module
  */
 
-#include <cmath>
-#include <numeric>
 #include <stdint.h>
 #include <sys/mman.h>
 
@@ -93,9 +91,6 @@ private:
 	std::unique_ptr<CameraSensorHelper> camHelper_;
 	ControlInfoMap sensorInfoMap_;
 
-	static constexpr unsigned int kGammaLookupSize = 1024;
-	std::array<uint8_t, kGammaLookupSize> gammaTable_;
-	int lastBlackLevel_ = -1;
 	/* Local parameter storage */
 	struct IPAContext context_;
 
@@ -283,6 +278,7 @@ void IPASoftSimple::fillParamsBuffer(const uint32_t frame)
 	IPAFrameContext &frameContext = context_.frameContexts.get(frame);
 	for (auto const &algo : algorithms())
 		algo->prepare(context_, frame, frameContext, params_);
+	setIspParams.emit();
 }
 
 void IPASoftSimple::processStats(const uint32_t frame,
@@ -300,62 +296,6 @@ void IPASoftSimple::processStats(const uint32_t frame,
 	for (auto const &algo : algorithms())
 		algo->process(context_, frame, frameContext, stats_, metadata);
 
-	SwIspStats::Histogram histogram = stats_->yHistogram;
-	const uint8_t blackLevel = context_.activeState.blc.level;
-
-	/*
-	 * Black level must be subtracted to get the correct AWB ratios, they
-	 * would be off if they were computed from the whole brightness range
-	 * rather than from the sensor range.
-	 */
-	const uint64_t nPixels = std::accumulate(
-		histogram.begin(), histogram.end(), 0);
-	const uint64_t offset = blackLevel * nPixels;
-	const uint64_t sumR = stats_->sumR_ - offset / 4;
-	const uint64_t sumG = stats_->sumG_ - offset / 2;
-	const uint64_t sumB = stats_->sumB_ - offset / 4;
-
-	/*
-	 * Calculate red and blue gains for AWB.
-	 * Clamp max gain at 4.0, this also avoids 0 division.
-	 * Gain: 128 = 0.5, 256 = 1.0, 512 = 2.0, etc.
-	 */
-	const unsigned int gainR = sumR <= sumG / 4 ? 1024 : 256 * sumG / sumR;
-	const unsigned int gainB = sumB <= sumG / 4 ? 1024 : 256 * sumG / sumB;
-	/* Green gain and gamma values are fixed */
-	constexpr unsigned int gainG = 256;
-
-	/* Update the gamma table if needed */
-	if (blackLevel != lastBlackLevel_) {
-		constexpr float gamma = 0.5;
-		const unsigned int blackIndex = blackLevel * kGammaLookupSize / 256;
-		std::fill(gammaTable_.begin(), gammaTable_.begin() + blackIndex, 0);
-		const float divisor = kGammaLookupSize - blackIndex - 1.0;
-		for (unsigned int i = blackIndex; i < kGammaLookupSize; i++)
-			gammaTable_[i] = UINT8_MAX *
-					 std::pow((i - blackIndex) / divisor, gamma);
-
-		lastBlackLevel_ = blackLevel;
-	}
-
-	for (unsigned int i = 0; i < DebayerParams::kRGBLookupSize; i++) {
-		constexpr unsigned int div =
-			DebayerParams::kRGBLookupSize * 256 / kGammaLookupSize;
-		unsigned int idx;
-
-		/* Apply gamma after gain! */
-		idx = std::min({ i * gainR / div, (kGammaLookupSize - 1) });
-		params_->red[i] = gammaTable_[idx];
-
-		idx = std::min({ i * gainG / div, (kGammaLookupSize - 1) });
-		params_->green[i] = gammaTable_[idx];
-
-		idx = std::min({ i * gainB / div, (kGammaLookupSize - 1) });
-		params_->blue[i] = gammaTable_[idx];
-	}
-
-	setIspParams.emit();
-
 	/* \todo Switch to the libipa/algorithm.h API someday. */
 
 	/*
@@ -372,6 +312,7 @@ void IPASoftSimple::processStats(const uint32_t frame,
 	 * Calculate Mean Sample Value (MSV) according to formula from:
 	 * https://www.araa.asn.au/acra/acra2007/papers/paper84final.pdf
 	 */
+	const uint8_t blackLevel = context_.activeState.blc.level;
 	const unsigned int blackLevelHistIdx =
 		blackLevel / (256 / SwIspStats::kYHistogramSize);
 	const unsigned int histogramSize =
@@ -421,7 +362,6 @@ void IPASoftSimple::processStats(const uint32_t frame,
 
 	LOG(IPASoft, Debug) << "exposureMSV " << exposureMSV
 			    << " exp " << exposure_ << " again " << again_
-			    << " gain R/B " << gainR << "/" << gainB
 			    << " black level " << static_cast<unsigned int>(blackLevel);
 }
 

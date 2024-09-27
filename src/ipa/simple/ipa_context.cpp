@@ -51,11 +51,41 @@ namespace libcamera::ipa::soft {
  */
 
 /**
+ * \var IPASessionConfiguration::gamma
+ * \brief Gamma value to be used in the raw image processing
+ */
+
+/**
  * \var IPAActiveState::black
  * \brief Context for the Black Level algorithm
  *
  * \var IPAActiveState::black.level
  * \brief Current determined black level
+ */
+
+/**
+ * \var IPAActiveState::gains
+ * \brief Context for gains in the Colors algorithm
+ *
+ * \var IPAActiveState::gains.red
+ * \brief Gain of red color
+ *
+ * \var IPAActiveState::gains.green
+ * \brief Gain of green color
+ *
+ * \var IPAActiveState::gains.blue
+ * \brief Gain of blue color
+ */
+
+/**
+ * \var IPAActiveState::gamma
+ * \brief Context for gamma in the Colors algorithm
+ *
+ * \var IPAActiveState::gamma.gammaTable
+ * \brief Computed gamma table
+ *
+ * \var IPAActiveState::gamma.blackLevel
+ * \brief Black level used for the gamma table computation
  */
 
 } /* namespace libcamera::ipa::soft */

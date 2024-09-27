@@ -4,4 +4,6 @@
 version: 1
 algorithms:
   - BlackLevel:
+  - Awb:
+  - Lut:
 ...

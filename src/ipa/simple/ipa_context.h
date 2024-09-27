@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <array>
 #include <stdint.h>
 
 #include <libipa/fc_queue.h>
@@ -16,12 +17,25 @@ namespace libcamera {
 namespace ipa::soft {
 
 struct IPASessionConfiguration {
+	float gamma;
 };
 
 struct IPAActiveState {
 	struct {
 		uint8_t level;
 	} blc;
+
+	struct {
+		unsigned int red;
+		unsigned int green;
+		unsigned int blue;
+	} gains;
+
+	static constexpr unsigned int kGammaLookupSize = 1024;
+	struct {
+		std::array<double, kGammaLookupSize> gammaTable;
+		uint8_t blackLevel;
+	} gamma;
 };
 
 struct IPAFrameContext : public FrameContext {

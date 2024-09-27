@@ -1290,10 +1290,13 @@ int SimplePipelineHandler::configure(Camera *camera, CameraConfiguration *c)
 	inputCfg.stride = captureFormat.planes[0].bpl;
 	inputCfg.bufferCount = kNumInternalBuffers;
 
-	return data->converter_
-		       ? data->converter_->configure(inputCfg, outputCfgs)
-		       : data->swIsp_->configure(inputCfg, outputCfgs,
-						 data->sensor_->controls());
+	if (data->converter_) {
+		return data->converter_->configure(inputCfg, outputCfgs);
+	} else {
+		ipa::soft::IPAConfigInfo configInfo;
+		configInfo.sensorControls = data->sensor_->controls();
+		return data->swIsp_->configure(inputCfg, outputCfgs, configInfo);
+	}
 }
 
 int SimplePipelineHandler::exportFrameBuffers(Camera *camera, Stream *stream,

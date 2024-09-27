@@ -222,16 +222,17 @@ SoftwareIsp::strideAndFrameSize(const PixelFormat &outputFormat, const Size &siz
  * \brief Configure the SoftwareIsp object according to the passed in parameters
  * \param[in] inputCfg The input configuration
  * \param[in] outputCfgs The output configurations
- * \param[in] sensorControls ControlInfoMap of the controls supported by the sensor
+ * \param[in] configInfo The IPA configuration data, received from the pipeline
+ * handler
  * \return 0 on success, a negative errno on failure
  */
 int SoftwareIsp::configure(const StreamConfiguration &inputCfg,
 			   const std::vector<std::reference_wrapper<StreamConfiguration>> &outputCfgs,
-			   const ControlInfoMap &sensorControls)
+			   const ipa::soft::IPAConfigInfo &configInfo)
 {
 	ASSERT(ipa_ && debayer_);
 
-	int ret = ipa_->configure(sensorControls);
+	int ret = ipa_->configure(configInfo);
 	if (ret < 0)
 		return ret;
 

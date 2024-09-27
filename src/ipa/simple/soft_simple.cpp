@@ -73,7 +73,7 @@ public:
 		 const SharedFD &fdStats,
 		 const SharedFD &fdParams,
 		 const ControlInfoMap &sensorInfoMap) override;
-	int configure(const ControlInfoMap &sensorInfoMap) override;
+	int configure(const IPAConfigInfo &configInfo) override;
 
 	int start() override;
 	void stop() override;
@@ -207,9 +207,9 @@ int IPASoftSimple::init(const IPASettings &settings,
 	return 0;
 }
 
-int IPASoftSimple::configure(const ControlInfoMap &sensorInfoMap)
+int IPASoftSimple::configure(const IPAConfigInfo &configInfo)
 {
-	sensorInfoMap_ = sensorInfoMap;
+	sensorInfoMap_ = configInfo.sensorControls;
 
 	const ControlInfo &exposureInfo = sensorInfoMap_.find(V4L2_CID_EXPOSURE)->second;
 	const ControlInfo &gainInfo = sensorInfoMap_.find(V4L2_CID_ANALOGUE_GAIN)->second;
@@ -246,6 +246,12 @@ int IPASoftSimple::configure(const ControlInfoMap &sensorInfoMap)
 			againMin_ = std::min(100, againMin / 2 + againMax / 2);
 		}
 		againMinStep_ = 1.0;
+	}
+
+	for (auto const &algo : algorithms()) {
+		int ret = algo->configure(context_, configInfo);
+		if (ret)
+			return ret;
 	}
 
 	LOG(IPASoft, Info) << "Exposure " << exposureMin_ << "-" << exposureMax_

@@ -63,15 +63,18 @@ void Lut::prepare(IPAContext &context,
 	const unsigned int gammaTableSize = gammaTable.size();
 
 	for (unsigned int i = 0; i < DebayerParams::kRGBLookupSize; i++) {
-		const unsigned int div = static_cast<double>(DebayerParams::kRGBLookupSize) *
-					 256 / gammaTableSize;
+		const double div = static_cast<double>(DebayerParams::kRGBLookupSize) /
+				   gammaTableSize;
 		/* Apply gamma after gain! */
 		unsigned int idx;
-		idx = std::min({ i * gains.red / div, gammaTableSize - 1 });
+		idx = std::min({ static_cast<unsigned int>(i * gains.red / div),
+				 gammaTableSize - 1 });
 		params->red[i] = gammaTable[idx];
-		idx = std::min({ i * gains.green / div, gammaTableSize - 1 });
+		idx = std::min({ static_cast<unsigned int>(i * gains.green / div),
+				 gammaTableSize - 1 });
 		params->green[i] = gammaTable[idx];
-		idx = std::min({ i * gains.blue / div, gammaTableSize - 1 });
+		idx = std::min({ static_cast<unsigned int>(i * gains.blue / div),
+				 gammaTableSize - 1 });
 		params->blue[i] = gammaTable[idx];
 	}
 }

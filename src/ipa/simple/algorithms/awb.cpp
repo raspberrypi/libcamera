@@ -24,7 +24,7 @@ int Awb::configure(IPAContext &context,
 		   [[maybe_unused]] const IPAConfigInfo &configInfo)
 {
 	auto &gains = context.activeState.gains;
-	gains.red = gains.green = gains.blue = 256;
+	gains.red = gains.green = gains.blue = 1.0;
 
 	return 0;
 }
@@ -53,12 +53,11 @@ void Awb::process(IPAContext &context,
 	/*
 	 * Calculate red and blue gains for AWB.
 	 * Clamp max gain at 4.0, this also avoids 0 division.
-	 * Gain: 128 = 0.5, 256 = 1.0, 512 = 2.0, etc.
 	 */
 	auto &gains = context.activeState.gains;
-	gains.red = sumR <= sumG / 4 ? 1024 : 256 * sumG / sumR;
-	gains.blue = sumB <= sumG / 4 ? 1024 : 256 * sumG / sumB;
-	/* Green gain is fixed to 256 */
+	gains.red = sumR <= sumG / 4 ? 4.0 : static_cast<double>(sumG) / sumR;
+	gains.blue = sumB <= sumG / 4 ? 4.0 : static_cast<double>(sumG) / sumB;
+	/* Green gain is fixed to 1.0 */
 
 	LOG(IPASoftAwb, Debug) << "gain R/B " << gains.red << "/" << gains.blue;
 }

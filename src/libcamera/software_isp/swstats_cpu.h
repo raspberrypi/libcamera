@@ -41,7 +41,7 @@ public:
 	int configure(const StreamConfiguration &inputCfg);
 	void setWindow(const Rectangle &window);
 	void startFrame();
-	void finishFrame();
+	void finishFrame(uint32_t frame, uint32_t bufferId);
 
 	void processLine0(unsigned int y, const uint8_t *src[])
 	{
@@ -61,7 +61,7 @@ public:
 		(this->*stats2_)(src);
 	}
 
-	Signal<> statsReady;
+	Signal<uint32_t, uint32_t> statsReady;
 
 private:
 	using statsProcessFn = void (SwStatsCpu::*)(const uint8_t *src[]);

@@ -807,7 +807,13 @@ void DebayerCpu::process(FrameBuffer *input, FrameBuffer *output, DebayerParams 
 		}
 	}
 
-	stats_->finishFrame();
+	/*
+	 * Frame and buffer ids are currently not used, so pass zeros as parameters.
+	 *
+	 * \todo Pass real values once frame is passed here and stats buffer passing
+	 * is changed.
+	 */
+	stats_->finishFrame(0, 0);
 	outputBufferReady.emit(output);
 	inputBufferReady.emit(input);
 }

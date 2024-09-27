@@ -155,15 +155,18 @@ SoftwareIsp::~SoftwareIsp()
 
 /**
  * \brief Process the statistics gathered
+ * \param[in] frame The frame number
+ * \param[in] bufferId ID of the statistics buffer
  * \param[in] sensorControls The sensor controls
  *
  * Requests the IPA to calculate new parameters for ISP and new control
  * values for the sensor.
  */
-void SoftwareIsp::processStats(const ControlList &sensorControls)
+void SoftwareIsp::processStats(const uint32_t frame, const uint32_t bufferId,
+			       const ControlList &sensorControls)
 {
 	ASSERT(ipa_);
-	ipa_->processStats(sensorControls);
+	ipa_->processStats(frame, bufferId, sensorControls);
 }
 
 /**
@@ -349,9 +352,9 @@ void SoftwareIsp::setSensorCtrls(const ControlList &sensorControls)
 	setSensorControls.emit(sensorControls);
 }
 
-void SoftwareIsp::statsReady()
+void SoftwareIsp::statsReady(uint32_t frame, uint32_t bufferId)
 {
-	ispStatsReady.emit();
+	ispStatsReady.emit(frame, bufferId);
 }
 
 void SoftwareIsp::inputReady(FrameBuffer *input)

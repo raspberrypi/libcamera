@@ -13,6 +13,7 @@
 #include <memory>
 #include <queue>
 #include <set>
+#include <stdint.h>
 #include <string.h>
 #include <string>
 #include <unordered_map>
@@ -291,7 +292,7 @@ private:
 	void conversionInputDone(FrameBuffer *buffer);
 	void conversionOutputDone(FrameBuffer *buffer);
 
-	void ispStatsReady();
+	void ispStatsReady(uint32_t frame, uint32_t bufferId);
 	void setSensorControls(const ControlList &sensorControls);
 };
 
@@ -887,10 +888,11 @@ void SimpleCameraData::conversionOutputDone(FrameBuffer *buffer)
 		pipe->completeRequest(request);
 }
 
-void SimpleCameraData::ispStatsReady()
+void SimpleCameraData::ispStatsReady(uint32_t frame, uint32_t bufferId)
 {
 	/* \todo Use the DelayedControls class */
-	swIsp_->processStats(sensor_->getControls({ V4L2_CID_ANALOGUE_GAIN,
+	swIsp_->processStats(frame, bufferId,
+			     sensor_->getControls({ V4L2_CID_ANALOGUE_GAIN,
 						    V4L2_CID_EXPOSURE }));
 }
 

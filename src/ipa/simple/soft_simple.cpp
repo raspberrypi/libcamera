@@ -75,7 +75,8 @@ public:
 	int start() override;
 	void stop() override;
 
-	void processStats(const ControlList &sensorControls) override;
+	void processStats(const uint32_t frame, const uint32_t bufferId,
+			  const ControlList &sensorControls) override;
 
 protected:
 	std::string logPrefix() const override;
@@ -249,7 +250,9 @@ void IPASoftSimple::stop()
 {
 }
 
-void IPASoftSimple::processStats(const ControlList &sensorControls)
+void IPASoftSimple::processStats([[maybe_unused]] const uint32_t frame,
+				 [[maybe_unused]] const uint32_t bufferId,
+				 const ControlList &sensorControls)
 {
 	SwIspStats::Histogram histogram = stats_->yHistogram;
 	if (ignoreUpdates_ > 0)

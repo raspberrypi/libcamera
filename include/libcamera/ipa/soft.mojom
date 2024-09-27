@@ -23,7 +23,9 @@ interface IPASoftInterface {
 	configure(libcamera.ControlInfoMap sensorCtrlInfoMap)
 		=> (int32 ret);
 
-	[async] processStats(libcamera.ControlList sensorControls);
+	[async] processStats(uint32 frame,
+			     uint32 bufferId,
+			     libcamera.ControlList sensorControls);
 };
 
 interface IPASoftEventInterface {

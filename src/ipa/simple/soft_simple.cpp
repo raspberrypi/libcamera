@@ -287,10 +287,21 @@ void IPASoftSimple::fillParamsBuffer(const uint32_t frame)
 		algo->prepare(context_, frame, frameContext, params_);
 }
 
-void IPASoftSimple::processStats([[maybe_unused]] const uint32_t frame,
+void IPASoftSimple::processStats(const uint32_t frame,
 				 [[maybe_unused]] const uint32_t bufferId,
 				 const ControlList &sensorControls)
 {
+	IPAFrameContext &frameContext = context_.frameContexts.get(frame);
+	/*
+	 * Software ISP currently does not produce any metadata. Use an empty
+	 * ControlList for now.
+	 *
+	 * \todo Implement proper metadata handling
+	 */
+	ControlList metadata(controls::controls);
+	for (auto const &algo : algorithms())
+		algo->process(context_, frame, frameContext, stats_, metadata);
+
 	SwIspStats::Histogram histogram = stats_->yHistogram;
 	if (ignoreUpdates_ > 0)
 		blackLevel_.update(histogram);

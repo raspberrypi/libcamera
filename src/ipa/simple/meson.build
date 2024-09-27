@@ -8,7 +8,6 @@ ipa_name = 'ipa_soft_simple'
 soft_simple_sources = files([
     'ipa_context.cpp',
     'soft_simple.cpp',
-    'black_level.cpp',
 ])
 
 soft_simple_sources += soft_simple_ipa_algorithms

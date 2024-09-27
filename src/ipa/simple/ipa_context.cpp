@@ -50,4 +50,12 @@ namespace libcamera::ipa::soft {
  * \brief The current state of IPA algorithms
  */
 
+/**
+ * \var IPAActiveState::black
+ * \brief Context for the Black Level algorithm
+ *
+ * \var IPAActiveState::black.level
+ * \brief Current determined black level
+ */
+
 } /* namespace libcamera::ipa::soft */

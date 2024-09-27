@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <stdint.h>
+
 #include <libipa/fc_queue.h>
 
 namespace libcamera {
@@ -17,6 +19,9 @@ struct IPASessionConfiguration {
 };
 
 struct IPAActiveState {
+	struct {
+		uint8_t level;
+	} blc;
 };
 
 struct IPAFrameContext : public FrameContext {

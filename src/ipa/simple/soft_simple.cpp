@@ -29,7 +29,6 @@
 
 #include "libipa/camera_sensor_helper.h"
 
-#include "black_level.h"
 #include "module.h"
 
 namespace libcamera {
@@ -61,7 +60,7 @@ class IPASoftSimple : public ipa::soft::IPASoftInterface, public Module
 {
 public:
 	IPASoftSimple()
-		: params_(nullptr), stats_(nullptr), blackLevel_(BlackLevel()),
+		: params_(nullptr), stats_(nullptr),
 		  context_({ {}, {}, { kMaxFrameContexts } }),
 		  ignoreUpdates_(0)
 	{
@@ -93,7 +92,6 @@ private:
 	SwIspStats *stats_;
 	std::unique_ptr<CameraSensorHelper> camHelper_;
 	ControlInfoMap sensorInfoMap_;
-	BlackLevel blackLevel_;
 
 	static constexpr unsigned int kGammaLookupSize = 1024;
 	std::array<uint8_t, kGammaLookupSize> gammaTable_;
@@ -303,9 +301,7 @@ void IPASoftSimple::processStats(const uint32_t frame,
 		algo->process(context_, frame, frameContext, stats_, metadata);
 
 	SwIspStats::Histogram histogram = stats_->yHistogram;
-	if (ignoreUpdates_ > 0)
-		blackLevel_.update(histogram);
-	const uint8_t blackLevel = blackLevel_.get();
+	const uint8_t blackLevel = context_.activeState.blc.level;
 
 	/*
 	 * Black level must be subtracted to get the correct AWB ratios, they

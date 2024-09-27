@@ -3,4 +3,5 @@
 ---
 version: 1
 algorithms:
+  - BlackLevel:
 ...

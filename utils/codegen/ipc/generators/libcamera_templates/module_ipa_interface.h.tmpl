@@ -1,0 +1,92 @@
+{#-
+ # SPDX-License-Identifier: LGPL-2.1-or-later
+ # Copyright (C) 2020, Google Inc.
+-#}
+{%- import "definition_functions.tmpl" as funcs -%}
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
+/*
+ * Copyright (C) 2020, Google Inc.
+ *
+ * Image Processing Algorithm interface for {{module_name}}
+ *
+ * This file is auto-generated. Do not edit.
+ */
+
+#pragma once
+
+{% if has_map %}#include <map>{% endif %}
+{% if has_string %}#include <string>{% endif %}
+{% if has_array %}#include <vector>{% endif %}
+
+#include <libcamera/base/flags.h>
+#include <libcamera/base/signal.h>
+
+#include <libcamera/controls.h>
+#include <libcamera/framebuffer.h>
+#include <libcamera/geometry.h>
+
+#include <libcamera/ipa/core_ipa_interface.h>
+#include <libcamera/ipa/ipa_interface.h>
+
+namespace libcamera {
+{%- if has_namespace %}
+{% for ns in namespace %}
+namespace {{ns}} {
+{% endfor %}
+{%- endif %}
+
+{% for const in consts %}
+const {{const.kind|name}} {{const.mojom_name}} = {{const.value}};
+{% endfor %}
+
+enum class {{cmd_enum_name}} {
+	Exit = 0,
+{%- for method in interface_main.methods %}
+	{{method.mojom_name|cap}} = {{loop.index}},
+{%- endfor %}
+};
+
+enum class {{cmd_event_enum_name}} {
+{%- for method in interface_event.methods %}
+	{{method.mojom_name|cap}} = {{loop.index}},
+{%- endfor %}
+};
+
+{% for enum in enums %}
+{{funcs.define_enum(enum)}}
+{% endfor %}
+
+{%- for struct in structs_nonempty %}
+{{funcs.define_struct(struct)}}
+{% endfor %}
+
+{#-
+Any consts or #defines should be moved to the mojom file.
+#}
+class {{interface_name}} : public IPAInterface
+{
+public:
+{% for method in interface_main.methods %}
+	virtual {{method|method_return_value}} {{method.mojom_name}}(
+{%- for param in method|method_parameters %}
+		{{param}}{{- "," if not loop.last}}
+{%- endfor -%}
+) = 0;
+{% endfor %}
+
+{%- for method in interface_event.methods %}
+	Signal<
+{%- for param in method.parameters -%}
+		{{"const " if not param|is_pod}}{{param|name}}{{" &" if not param|is_pod and not param|is_enum}}
+		{{- ", " if not loop.last}}
+{%- endfor -%}
+> {{method.mojom_name}};
+{% endfor -%}
+};
+
+{%- if has_namespace %}
+{% for ns in namespace|reverse %}
+} /* namespace {{ns}} */
+{% endfor %}
+{%- endif %}
+} /* namespace libcamera */

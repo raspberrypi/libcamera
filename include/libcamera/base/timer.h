@@ -8,7 +8,6 @@
 #pragma once
 
 #include <chrono>
-#include <stdint.h>
 
 #include <libcamera/base/private.h>
 

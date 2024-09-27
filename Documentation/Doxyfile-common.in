@@ -1,0 +1,69 @@
+# SPDX-License-Identifier: CC-BY-SA-4.0
+# Doxyfile 1.9.5
+
+PROJECT_NAME           = "libcamera"
+PROJECT_NUMBER         = "@VERSION@"
+PROJECT_BRIEF          = "Supporting cameras in Linux since 2019"
+
+OUTPUT_DIRECTORY       = "@OUTPUT_DIR@"
+
+STRIP_FROM_PATH        = "@TOP_SRCDIR@"
+
+ALIASES                = "context=\xrefitem context \"Thread Safety\" \"Thread Safety\"" \
+                         "threadbound=\ref thread-bound \"thread-bound\"" \
+                         "threadsafe=\ref thread-safe \"thread-safe\""
+
+EXTENSION_MAPPING      = h=C++
+
+TOC_INCLUDE_HEADINGS   = 0
+
+CASE_SENSE_NAMES       = YES
+
+QUIET                  = YES
+WARN_AS_ERROR          = @WARN_AS_ERROR@
+
+FILE_PATTERNS          = *.c \
+                         *.cpp \
+                         *.dox \
+                         *.h
+
+RECURSIVE              = YES
+
+EXCLUDE_PATTERNS       = @TOP_BUILDDIR@/include/libcamera/ipa/*_serializer.h \
+                         @TOP_BUILDDIR@/include/libcamera/ipa/*_proxy.h \
+                         @TOP_BUILDDIR@/include/libcamera/ipa/ipu3_*.h \
+                         @TOP_BUILDDIR@/include/libcamera/ipa/raspberrypi_*.h \
+                         @TOP_BUILDDIR@/include/libcamera/ipa/rkisp1_*.h \
+                         @TOP_BUILDDIR@/include/libcamera/ipa/vimc_*.h
+
+EXCLUDE_SYMBOLS        = libcamera::BoundMethodArgs \
+                         libcamera::BoundMethodBase \
+                         libcamera::BoundMethodFunctor \
+                         libcamera::BoundMethodMember \
+                         libcamera::BoundMethodPack \
+                         libcamera::BoundMethodPackBase \
+                         libcamera::BoundMethodStatic \
+                         libcamera::CameraManager::Private \
+                         libcamera::SignalBase \
+                         libcamera::ipa::AlgorithmFactoryBase \
+                         *::details \
+                         std::*
+
+EXCLUDE_SYMLINKS       = YES
+
+GENERATE_LATEX         = NO
+
+MACRO_EXPANSION        = YES
+EXPAND_ONLY_PREDEF     = YES
+
+INCLUDE_PATH           = "@TOP_SRCDIR@/include/libcamera"
+INCLUDE_FILE_PATTERNS  = *.h
+
+IMAGE_PATH             = "@TOP_SRCDIR@/Documentation/images"
+
+PREDEFINED             = __DOXYGEN__ \
+                         __cplusplus \
+                         __attribute__(x)= \
+			 @PREDEFINED@
+
+HAVE_DOT               = YES

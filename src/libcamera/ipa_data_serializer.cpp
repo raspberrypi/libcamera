@@ -11,6 +11,8 @@
 
 #include <libcamera/base/log.h>
 
+#include "libcamera/internal/byte_stream_buffer.h"
+
 /**
  * \file ipa_data_serializer.h
  * \brief IPA Data Serializer
@@ -537,7 +539,6 @@ IPADataSerializer<SharedFD>::serialize(const SharedFD &data,
 	if (data.isValid())
 		fdVec.push_back(data);
 
-
 	return { dataVec, fdVec };
 }
 
@@ -604,7 +605,7 @@ IPADataSerializer<FrameBuffer::Plane>::deserialize(std::vector<uint8_t>::const_i
 	FrameBuffer::Plane ret;
 
 	ret.fd = IPADataSerializer<SharedFD>::deserialize(dataBegin, dataBegin + 4,
-								fdsBegin, fdsBegin + 1);
+							  fdsBegin, fdsBegin + 1);
 	ret.offset = readPOD<uint32_t>(dataBegin, 4, dataEnd);
 	ret.length = readPOD<uint32_t>(dataBegin, 8, dataEnd);
 

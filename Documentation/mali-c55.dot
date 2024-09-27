@@ -1,0 +1,25 @@
+/* SPDX-License-Identifier: CC-BY-SA-4.0 */
+
+digraph board {
+        rankdir=TB
+        n00000001 [label="{{} | mali-c55 tpg\n/dev/v4l-subdev0 | {<port0> 0}}", shape=Mrecord, style=filled, fillcolor=green]
+        n00000001:port0 -> n00000003:port0 [style=dashed]
+        n00000003 [label="{{<port0> 0 | <port4> 4} | mali-c55 isp\n/dev/v4l-subdev1 | {<port1> 1 | <port2> 2 | <port3> 3}}", shape=Mrecord, style=filled, fillcolor=green]
+        n00000003:port1 -> n00000009:port0 [style=bold]
+        n00000003:port2 -> n00000009:port2 [style=bold]
+        n00000003:port1 -> n0000000d:port0 [style=bold]
+        n00000003:port3 -> n0000001c
+        n00000009 [label="{{<port0> 0 | <port2> 2} | mali-c55 resizer fr\n/dev/v4l-subdev2 | {<port1> 1}}", shape=Mrecord, style=filled, fillcolor=green]
+        n00000009:port1 -> n00000010
+        n0000000d [label="{{<port0> 0} | mali-c55 resizer ds\n/dev/v4l-subdev3 | {<port1> 1}}", shape=Mrecord, style=filled, fillcolor=green]
+        n0000000d:port1 -> n00000014
+        n00000010 [label="mali-c55 fr\n/dev/video0", shape=box, style=filled, fillcolor=yellow]
+        n00000014 [label="mali-c55 ds\n/dev/video1", shape=box, style=filled, fillcolor=yellow]
+        n00000018 [label="mali-c55 3a params\n/dev/video2", shape=box, style=filled, fillcolor=yellow]
+        n00000018 -> n00000003:port4
+        n0000001c [label="mali-c55 3a stats\n/dev/video3", shape=box, style=filled, fillcolor=yellow]
+        n00000030 [label="{{<port0> 0} | lte-csi2-rx\n/dev/v4l-subdev4 | {<port1> 1}}", shape=Mrecord, style=filled, fillcolor=green]
+        n00000030:port1 -> n00000003:port0
+        n00000035 [label="{{} | imx415 1-001a\n/dev/v4l-subdev5 | {<port0> 0}}", shape=Mrecord, style=filled, fillcolor=green]
+        n00000035:port0 -> n00000030:port0 [style=bold]
+}

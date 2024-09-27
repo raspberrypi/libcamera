@@ -48,7 +48,7 @@ tracepoints_h = custom_target(
     'tp_header',
     input : ['tracepoints.h.in', tracepoint_files],
     output : 'tracepoints.h',
-    command : [gen_tracepoints_header, include_build_dir, '@OUTPUT@', '@INPUT@'],
+    command : [gen_tracepoints, include_build_dir, '@OUTPUT@', '@INPUT@'],
 )
 
 libcamera_internal_headers += tracepoints_h

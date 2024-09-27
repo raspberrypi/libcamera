@@ -37,16 +37,6 @@
 
 using namespace libcamera;
 
-#if QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
-/*
- * Qt::fixed was introduced in v5.14, and ::fixed deprecated in v5.15. Allow
- * usage of Qt::fixed unconditionally.
- */
-namespace Qt {
-constexpr auto fixed = ::fixed;
-} /* namespace Qt */
-#endif
-
 /**
  * \brief Custom QEvent to signal capture completion
  */

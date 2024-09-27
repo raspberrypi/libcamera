@@ -6,8 +6,8 @@
  */
 
 #include <algorithm>
-#include <math.h>
-#include <queue>
+#include <array>
+#include <chrono>
 #include <stdint.h>
 #include <string.h>
 
@@ -18,11 +18,13 @@
 #include <libcamera/base/log.h>
 
 #include <libcamera/control_ids.h>
+#include <libcamera/controls.h>
 #include <libcamera/framebuffer.h>
+#include <libcamera/request.h>
+
 #include <libcamera/ipa/ipa_interface.h>
 #include <libcamera/ipa/ipa_module_info.h>
 #include <libcamera/ipa/rkisp1_ipa_interface.h>
-#include <libcamera/request.h>
 
 #include "libcamera/internal/formats.h"
 #include "libcamera/internal/mapped_framebuffer.h"
@@ -31,6 +33,7 @@
 #include "algorithms/algorithm.h"
 
 #include "ipa_context.h"
+#include "params.h"
 
 namespace libcamera {
 
@@ -91,6 +94,15 @@ const IPAHwSettings ipaHwSettingsV10{
 	RKISP1_CIF_ISP_HIST_BIN_N_MAX_V10,
 	RKISP1_CIF_ISP_HISTOGRAM_WEIGHT_GRIDS_SIZE_V10,
 	RKISP1_CIF_ISP_GAMMA_OUT_MAX_SAMPLES_V10,
+	false,
+};
+
+const IPAHwSettings ipaHwSettingsIMX8MP{
+	RKISP1_CIF_ISP_AE_MEAN_MAX_V10,
+	RKISP1_CIF_ISP_HIST_BIN_N_MAX_V10,
+	RKISP1_CIF_ISP_HISTOGRAM_WEIGHT_GRIDS_SIZE_V10,
+	RKISP1_CIF_ISP_GAMMA_OUT_MAX_SAMPLES_V10,
+	true,
 };
 
 const IPAHwSettings ipaHwSettingsV12{
@@ -98,6 +110,7 @@ const IPAHwSettings ipaHwSettingsV12{
 	RKISP1_CIF_ISP_HIST_BIN_N_MAX_V12,
 	RKISP1_CIF_ISP_HISTOGRAM_WEIGHT_GRIDS_SIZE_V12,
 	RKISP1_CIF_ISP_GAMMA_OUT_MAX_SAMPLES_V12,
+	false,
 };
 
 /* List of controls handled by the RkISP1 IPA */
@@ -111,7 +124,7 @@ const ControlInfoMap::Map rkisp1Controls{
 } /* namespace */
 
 IPARkISP1::IPARkISP1()
-	: context_({ {}, {}, {}, { kMaxFrameContexts }, {}, {} })
+	: context_({ {}, {}, {}, {}, { kMaxFrameContexts }, {}, {} })
 {
 }
 
@@ -128,8 +141,10 @@ int IPARkISP1::init(const IPASettings &settings, unsigned int hwRevision,
 	/* \todo Add support for other revisions */
 	switch (hwRevision) {
 	case RKISP1_V10:
-	case RKISP1_V_IMX8MP:
 		context_.hw = &ipaHwSettingsV10;
+		break;
+	case RKISP1_V_IMX8MP:
+		context_.hw = &ipaHwSettingsIMX8MP;
 		break;
 	case RKISP1_V12:
 		context_.hw = &ipaHwSettingsV12;
@@ -143,6 +158,8 @@ int IPARkISP1::init(const IPASettings &settings, unsigned int hwRevision,
 
 	LOG(IPARkISP1, Debug) << "Hardware revision is " << hwRevision;
 
+	context_.sensorInfo = sensorInfo;
+
 	context_.camHelper = CameraSensorHelperFactoryBase::create(settings.sensorModel);
 	if (!context_.camHelper) {
 		LOG(IPARkISP1, Error)
@@ -151,8 +168,8 @@ int IPARkISP1::init(const IPASettings &settings, unsigned int hwRevision,
 		return -ENODEV;
 	}
 
-	context_.configuration.sensor.lineDuration = sensorInfo.minLineLength
-						   * 1.0s / sensorInfo.pixelRate;
+	context_.configuration.sensor.lineDuration =
+		sensorInfo.minLineLength * 1.0s / sensorInfo.pixelRate;
 
 	/* Load the tuning data file. */
 	File file(settings.configurationFile);
@@ -225,6 +242,8 @@ int IPARkISP1::configure(const IPAConfigInfo &ipaConfig,
 	context_.configuration = {};
 	context_.activeState = {};
 	context_.frameContexts.clear();
+
+	context_.configuration.paramFormat = ipaConfig.paramFormat;
 
 	const IPACameraSensorInfo &info = ipaConfig.sensorInfo;
 	const ControlInfo vBlank = sensorControls_.find(V4L2_CID_VBLANK)->second;
@@ -320,17 +339,13 @@ void IPARkISP1::fillParamsBuffer(const uint32_t frame, const uint32_t bufferId)
 {
 	IPAFrameContext &frameContext = context_.frameContexts.get(frame);
 
-	rkisp1_params_cfg *params =
-		reinterpret_cast<rkisp1_params_cfg *>(
-			mappedBuffers_.at(bufferId).planes()[0].data());
-
-	/* Prepare parameters buffer. */
-	memset(params, 0, sizeof(*params));
+	RkISP1Params params(context_.configuration.paramFormat,
+			    mappedBuffers_.at(bufferId).planes()[0]);
 
 	for (auto const &algo : algorithms())
-		algo->prepare(context_, frame, frameContext, params);
+		algo->prepare(context_, frame, frameContext, &params);
 
-	paramsBufferReady.emit(frame);
+	paramsBufferReady.emit(frame, params.size());
 }
 
 void IPARkISP1::processStatsBuffer(const uint32_t frame, const uint32_t bufferId,

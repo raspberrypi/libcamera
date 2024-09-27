@@ -1,5 +1,6 @@
 # SPDX-License-Identifier: CC0-1.0
 
+subdir('libipa')
 subdir('rkisp1')
 
 ipa_test = [

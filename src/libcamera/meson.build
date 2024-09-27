@@ -129,26 +129,30 @@ endif
 control_sources = []
 
 controls_mode_files = {
-    'controls' : controls_files,
-    'properties' : properties_files,
+    'controls': [
+        controls_files,
+        'control_ids.cpp',
+    ],
+    'properties': [
+        properties_files,
+        'property_ids.cpp',
+    ],
 }
 
-foreach mode, input_files : controls_mode_files
-    input_files = files(input_files)
+foreach mode, inout_files : controls_mode_files
+    input_files = inout_files[0]
+    output_file = inout_files[1]
 
-    if mode == 'controls'
-        template_file = files('control_ids.cpp.in')
-    else
-        template_file = files('property_ids.cpp.in')
-    endif
-
+    template_file = files('control_ids.cpp.in')
     ranges_file = files('control_ranges.yaml')
-    control_sources += custom_target(mode + '_cpp',
+
+    control_sources += custom_target(mode + '_ids_cpp',
                                      input : input_files,
-                                     output : mode + '_ids.cpp',
+                                     output : output_file,
                                      command : [gen_controls, '-o', '@OUTPUT@',
                                                 '--mode', mode, '-t', template_file,
-                                                '-r', ranges_file, '@INPUT@'])
+                                                '-r', ranges_file, '@INPUT@'],
+                                     env : py_build_env)
 endforeach
 
 libcamera_public_sources += control_sources

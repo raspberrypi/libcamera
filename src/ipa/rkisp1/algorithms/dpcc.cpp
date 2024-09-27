@@ -232,16 +232,14 @@ int DefectPixelClusterCorrection::init([[maybe_unused]] IPAContext &context,
 void DefectPixelClusterCorrection::prepare([[maybe_unused]] IPAContext &context,
 					   const uint32_t frame,
 					   [[maybe_unused]] IPAFrameContext &frameContext,
-					   rkisp1_params_cfg *params)
+					   RkISP1Params *params)
 {
 	if (frame > 0)
 		return;
 
-	params->others.dpcc_config = config_;
-
-	params->module_en_update |= RKISP1_CIF_ISP_MODULE_DPCC;
-	params->module_ens |= RKISP1_CIF_ISP_MODULE_DPCC;
-	params->module_cfg_update |= RKISP1_CIF_ISP_MODULE_DPCC;
+	auto config = params->block<BlockType::Dpcc>();
+	config.setEnabled(true);
+	*config = config_;
 }
 
 REGISTER_IPA_ALGORITHM(DefectPixelClusterCorrection, "DefectPixelClusterCorrection")

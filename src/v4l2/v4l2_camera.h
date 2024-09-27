@@ -8,13 +8,15 @@
 #pragma once
 
 #include <deque>
-#include <utility>
+#include <memory>
+#include <vector>
 
 #include <libcamera/base/mutex.h>
 #include <libcamera/base/semaphore.h>
 #include <libcamera/base/shared_fd.h>
 
 #include <libcamera/camera.h>
+#include <libcamera/controls.h>
 #include <libcamera/framebuffer.h>
 #include <libcamera/framebuffer_allocator.h>
 
@@ -49,6 +51,8 @@ public:
 				  const libcamera::Size &size,
 				  libcamera::StreamConfiguration *streamConfigOut);
 
+	libcamera::ControlList &controls() { return controls_; }
+
 	int allocBuffers(unsigned int count);
 	void freeBuffers();
 	int getBufferFd(unsigned int index);
@@ -69,6 +73,8 @@ private:
 
 	std::shared_ptr<libcamera::Camera> camera_;
 	std::unique_ptr<libcamera::CameraConfiguration> config_;
+
+	libcamera::ControlList controls_;
 
 	bool isRunning_;
 

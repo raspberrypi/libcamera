@@ -2,7 +2,7 @@
 
 project('libcamera', 'c', 'cpp',
     meson_version : '>= 0.63',
-    version : '0.3.1',
+    version : '0.3.2',
     default_options : [
         'werror=true',
         'warning_level=2',
@@ -279,8 +279,8 @@ py_mod.find_installation('python3', modules : py_modules)
 summary({
             'Enabled pipelines': pipelines,
             'Enabled IPA modules': enabled_ipa_names,
-            'Controls files': controls_files,
-            'Properties files': properties_files,
+            'Controls files': controls_files_names,
+            'Properties files': properties_files_names,
             'Hotplug support': libudev.found(),
             'Tracing support': tracing_enabled,
             'Android support': android_enabled,

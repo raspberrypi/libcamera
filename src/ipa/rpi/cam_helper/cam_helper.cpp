@@ -156,6 +156,11 @@ void CamHelper::setCameraMode(const CameraMode &mode)
 	}
 }
 
+void CamHelper::setHwConfig(const Controller::HardwareConfig &hwConfig)
+{
+	hwConfig_ = hwConfig;
+}
+
 void CamHelper::getDelays(int &exposureDelay, int &gainDelay,
 			  int &vblankDelay, int &hblankDelay) const
 {

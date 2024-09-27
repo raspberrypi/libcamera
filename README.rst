@@ -1,7 +1,5 @@
 .. SPDX-License-Identifier: CC-BY-SA-4.0
 
-.. section-begin-libcamera
-
 ===========
  libcamera
 ===========
@@ -22,7 +20,6 @@ open-source-friendly while still protecting vendor core IP. libcamera was born
 out of that collaboration and will offer modern camera support to Linux-based
 systems, including traditional Linux distributions, ChromeOS and Android.
 
-.. section-end-libcamera
 .. section-begin-getting-started
 
 Getting Started

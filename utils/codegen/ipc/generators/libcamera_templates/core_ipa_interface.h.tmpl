@@ -1,0 +1,42 @@
+{#-
+ # SPDX-License-Identifier: LGPL-2.1-or-later
+ # Copyright (C) 2020, Google Inc.
+-#}
+{%- import "definition_functions.tmpl" as funcs -%}
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
+/*
+ * Copyright (C) 2020, Google Inc.
+ *
+ * libcamera core definitions for Image Processing Algorithms
+ *
+ * This file is auto-generated. Do not edit.
+ */
+
+#pragma once
+
+{% if has_map %}#include <map>{% endif %}
+{% if has_string %}#include <string>{% endif %}
+{% if has_array %}#include <vector>{% endif %}
+
+#include <libcamera/controls.h>
+#include <libcamera/framebuffer.h>
+#include <libcamera/geometry.h>
+
+#include <libcamera/ipa/ipa_interface.h>
+
+namespace libcamera {
+
+{# \todo Use const char * instead of std::string for strings #}
+{% for const in consts %}
+static const {{const.kind|name}} {{const.mojom_name}} = {{const.value}};
+{% endfor %}
+
+{% for enum in enums_gen_header %}
+{{funcs.define_enum(enum)}}
+{% endfor %}
+
+{%- for struct in structs_gen_header %}
+{{funcs.define_struct(struct)}}
+{% endfor %}
+
+} /* namespace libcamera */

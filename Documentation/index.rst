@@ -1,27 +1,29 @@
 .. SPDX-License-Identifier: CC-BY-SA-4.0
 
-.. Front page matter is defined in the project README file.
-.. include:: ../README.rst
-   :start-after: .. section-begin-libcamera
-   :end-before: .. section-end-libcamera
+.. include:: introduction.rst
 
 .. toctree::
    :maxdepth: 1
    :caption: Contents:
 
    Home <self>
-   Docs <docs>
    Contribute <contributing>
    Getting Started <getting-started>
 
-   Developer Guide <guides/introduction>
    Application Writer's Guide <guides/application-developer>
-   Pipeline Handler Writer's Guide <guides/pipeline-handler>
-   IPA Writer's guide <guides/ipa>
-   Tracing guide <guides/tracing>
-   Environment variables <environment_variables>
-   Sensor driver requirements <sensor_driver_requirements>
-   Lens driver requirements <lens_driver_requirements>
-   Python Bindings <python-bindings>
    Camera Sensor Model <camera-sensor-model>
+   Environment variables <environment_variables>
+   Feature Requirements <feature_requirements>
+   IPA Writer's guide <guides/ipa>
+   Lens driver requirements <lens_driver_requirements>
+   libcamera Architecture <libcamera_architecture>
+   Pipeline Handler Writer's Guide <guides/pipeline-handler>
+   Python Bindings <python-bindings>
+   Sensor driver requirements <sensor_driver_requirements>
    SoftwareISP Benchmarking <software-isp-benchmarking>
+   Tracing guide <guides/tracing>
+
+.. toctree::
+   :hidden:
+
+   introduction

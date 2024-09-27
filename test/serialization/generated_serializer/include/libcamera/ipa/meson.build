@@ -9,7 +9,8 @@ mojom = custom_target('test_mojom_module',
                           '--output-root', meson.project_build_root(),
                           '--input-root', meson.project_source_root(),
                           '--mojoms', '@INPUT@'
-                      ])
+                      ],
+                      env : py_build_env)
 
 # test_ipa_interface.h
 generated_test_header = custom_target('test_ipa_interface_h',
@@ -23,7 +24,8 @@ generated_test_header = custom_target('test_ipa_interface_h',
                            '--libcamera_generate_header',
                            '--libcamera_output_path=@OUTPUT@',
                            './' +'@INPUT@'
-                       ])
+                       ],
+                       env : py_build_env)
 
 # test_ipa_serializer.h
 generated_test_serializer = custom_target('test_ipa_serializer_h',
@@ -37,4 +39,5 @@ generated_test_serializer = custom_target('test_ipa_serializer_h',
                                '--libcamera_generate_serializer',
                                '--libcamera_output_path=@OUTPUT@',
                                './' +'@INPUT@'
-                           ])
+                           ],
+                           env : py_build_env)

@@ -119,24 +119,20 @@ int GammaSensorLinearization::init([[maybe_unused]] IPAContext &context,
 void GammaSensorLinearization::prepare([[maybe_unused]] IPAContext &context,
 				       const uint32_t frame,
 				       [[maybe_unused]] IPAFrameContext &frameContext,
-				       rkisp1_params_cfg *params)
+				       RkISP1Params *params)
 {
 	if (frame > 0)
 		return;
 
-	params->others.sdg_config.xa_pnts.gamma_dx0 = gammaDx_[0];
-	params->others.sdg_config.xa_pnts.gamma_dx1 = gammaDx_[1];
+	auto config = params->block<BlockType::Sdg>();
+	config.setEnabled(true);
 
-	std::copy(curveYr_.begin(), curveYr_.end(),
-		  params->others.sdg_config.curve_r.gamma_y);
-	std::copy(curveYg_.begin(), curveYg_.end(),
-		  params->others.sdg_config.curve_g.gamma_y);
-	std::copy(curveYb_.begin(), curveYb_.end(),
-		  params->others.sdg_config.curve_b.gamma_y);
+	config->xa_pnts.gamma_dx0 = gammaDx_[0];
+	config->xa_pnts.gamma_dx1 = gammaDx_[1];
 
-	params->module_en_update |= RKISP1_CIF_ISP_MODULE_SDG;
-	params->module_ens |= RKISP1_CIF_ISP_MODULE_SDG;
-	params->module_cfg_update |= RKISP1_CIF_ISP_MODULE_SDG;
+	std::copy(curveYr_.begin(), curveYr_.end(), config->curve_r.gamma_y);
+	std::copy(curveYg_.begin(), curveYg_.end(), config->curve_g.gamma_y);
+	std::copy(curveYb_.begin(), curveYb_.end(), config->curve_b.gamma_y);
 }
 
 REGISTER_IPA_ALGORITHM(GammaSensorLinearization, "GammaSensorLinearization")

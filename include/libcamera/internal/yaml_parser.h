@@ -10,6 +10,7 @@
 #include <iterator>
 #include <map>
 #include <optional>
+#include <stdint.h>
 #include <string>
 #include <vector>
 
@@ -158,6 +159,14 @@ public:
 	{
 		return type_ == Type::Dictionary;
 	}
+	bool isEmpty() const
+	{
+		return type_ == Type::Empty;
+	}
+	explicit operator bool() const
+	{
+		return type_ != Type::Empty;
+	}
 
 	std::size_t size() const;
 
@@ -211,6 +220,7 @@ private:
 		Dictionary,
 		List,
 		Value,
+		Empty,
 	};
 
 	template<typename T>

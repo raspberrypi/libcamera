@@ -12,13 +12,15 @@
 
 #include <libcamera/base/log.h>
 
+#include <libcamera/control_ids.h>
+
 using namespace libcamera;
 
 LOG_DECLARE_CATEGORY(V4L2Compat)
 
 V4L2Camera::V4L2Camera(std::shared_ptr<Camera> camera)
-	: camera_(camera), isRunning_(false), bufferAllocator_(nullptr),
-	  efd_(-1), bufferAvailableCount_(0)
+	: camera_(camera), controls_(controls::controls), isRunning_(false),
+	  bufferAllocator_(nullptr), efd_(-1), bufferAvailableCount_(0)
 {
 	camera_->requestCompleted.connect(this, &V4L2Camera::requestComplete);
 }
@@ -202,9 +204,11 @@ int V4L2Camera::streamOn()
 	if (isRunning_)
 		return 0;
 
-	int ret = camera_->start();
+	int ret = camera_->start(&controls_);
 	if (ret < 0)
 		return ret == -EACCES ? -EBUSY : ret;
+
+	controls_.clear();
 
 	isRunning_ = true;
 
@@ -264,6 +268,8 @@ int V4L2Camera::qbuf(unsigned int index)
 		pendingRequests_.push_back(request);
 		return 0;
 	}
+
+	request->controls().merge(std::move(controls_));
 
 	ret = camera_->queueRequest(request);
 	if (ret < 0) {

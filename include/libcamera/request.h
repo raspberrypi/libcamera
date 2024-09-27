@@ -12,7 +12,6 @@
 #include <ostream>
 #include <stdint.h>
 #include <string>
-#include <unordered_set>
 
 #include <libcamera/base/class.h>
 #include <libcamera/base/signal.h>

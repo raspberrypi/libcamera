@@ -9,18 +9,14 @@
 
 #include <memory>
 #include <queue>
-#include <set>
 #include <string>
 #include <sys/types.h>
 #include <vector>
 
-#include <libcamera/base/mutex.h>
 #include <libcamera/base/object.h>
 
 #include <libcamera/controls.h>
 #include <libcamera/stream.h>
-
-#include "libcamera/internal/ipa_proxy.h"
 
 namespace libcamera {
 
@@ -45,7 +41,7 @@ public:
 	MediaDevice *acquireMediaDevice(DeviceEnumerator *enumerator,
 					const DeviceMatch &dm);
 
-	bool acquire();
+	bool acquire(Camera *camera);
 	void release(Camera *camera);
 
 	virtual std::unique_ptr<CameraConfiguration> generateConfiguration(Camera *camera,
@@ -70,6 +66,8 @@ public:
 
 	const char *name() const { return name_; }
 
+	CameraManager *cameraManager() const { return manager_; }
+
 protected:
 	void registerCamera(std::shared_ptr<Camera> camera);
 	void hotplugMediaDevice(MediaDevice *media);
@@ -77,6 +75,7 @@ protected:
 	virtual int queueRequestDevice(Camera *camera, Request *request) = 0;
 	virtual void stopDevice(Camera *camera) = 0;
 
+	virtual bool acquireDevice(Camera *camera);
 	virtual void releaseDevice(Camera *camera);
 
 	CameraManager *manager_;
@@ -96,9 +95,7 @@ private:
 	std::queue<Request *> waitingRequests_;
 
 	const char *name_;
-
-	Mutex lock_;
-	unsigned int useCount_ LIBCAMERA_TSA_GUARDED_BY(lock_);
+	unsigned int useCount_;
 
 	friend class PipelineHandlerFactoryBase;
 };

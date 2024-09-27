@@ -19,6 +19,8 @@ Copyright (C) 2021, Linaro
 attribute vec4 vertexIn;
 attribute vec2 textureIn;
 
+uniform mat4 proj_matrix;
+
 uniform vec2 tex_size;	/* The texture size in pixels */
 uniform vec2 tex_step;
 
@@ -47,5 +49,5 @@ void main(void) {
     yCoord = center.y + vec4(-2.0 * tex_step.y,
                               -tex_step.y, tex_step.y, 2.0 * tex_step.y);
 
-    gl_Position = vertexIn;
+    gl_Position = proj_matrix * vertexIn;
 }

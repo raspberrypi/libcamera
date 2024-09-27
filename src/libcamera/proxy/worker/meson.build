@@ -15,7 +15,8 @@ foreach mojom : ipa_mojoms
                                '--libcamera_generate_proxy_worker',
                                '--libcamera_output_path=@OUTPUT@',
                                './' + '@INPUT@'
-                           ])
+                           ],
+                           env : py_build_env)
 
     proxy = executable(mojom['name'] + '_ipa_proxy', worker,
                        install : true,

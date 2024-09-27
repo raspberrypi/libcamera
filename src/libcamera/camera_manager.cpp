@@ -15,6 +15,7 @@
 
 #include "libcamera/internal/camera.h"
 #include "libcamera/internal/device_enumerator.h"
+#include "libcamera/internal/ipa_manager.h"
 #include "libcamera/internal/pipeline_handler.h"
 
 /**
@@ -39,6 +40,7 @@ LOG_DEFINE_CATEGORY(Camera)
 CameraManager::Private::Private()
 	: initialized_(false)
 {
+	ipaManager_ = std::make_unique<IPAManager>();
 }
 
 int CameraManager::Private::start()
@@ -250,6 +252,13 @@ void CameraManager::Private::removeCamera(std::shared_ptr<Camera> camera)
 	CameraManager *const o = LIBCAMERA_O_PTR();
 	o->cameraRemoved.emit(camera);
 }
+
+/**
+ * \fn CameraManager::Private::ipaManager() const
+ * \brief Retrieve the IPAManager
+ * \context This function is \threadsafe.
+ * \return The IPAManager for this CameraManager
+ */
 #endif /* __DOXYGEN_PUBLIC__ */
 
 /**

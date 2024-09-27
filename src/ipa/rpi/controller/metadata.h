@@ -36,10 +36,10 @@ public:
 	}
 
 	template<typename T>
-	void set(std::string const &tag, T const &value)
+	void set(std::string const &tag, T &&value)
 	{
 		std::scoped_lock lock(mutex_);
-		data_[tag] = value;
+		data_[tag] = std::forward<T>(value);
 	}
 
 	template<typename T>
@@ -90,6 +90,12 @@ public:
 		data_.insert(other.data_.begin(), other.data_.end());
 	}
 
+	void erase(std::string const &tag)
+	{
+		std::scoped_lock lock(mutex_);
+		eraseLocked(tag);
+	}
+
 	template<typename T>
 	T *getLocked(std::string const &tag)
 	{
@@ -104,10 +110,18 @@ public:
 	}
 
 	template<typename T>
-	void setLocked(std::string const &tag, T const &value)
+	void setLocked(std::string const &tag, T &&value)
 	{
 		/* Use this only if you're holding the lock yourself. */
-		data_[tag] = value;
+		data_[tag] = std::forward<T>(value);
+	}
+
+	void eraseLocked(std::string const &tag)
+	{
+		auto it = data_.find(tag);
+		if (it == data_.end())
+			return;
+		data_.erase(it);
 	}
 
 	/*

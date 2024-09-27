@@ -9,15 +9,15 @@
 
 #include <algorithm>
 #include <array>
-#include <iomanip>
 #include <limits.h>
-#include <sstream>
-
-#include <libcamera/request.h>
+#include <ostream>
+#include <string>
+#include <vector>
 
 #include <libcamera/base/log.h>
 #include <libcamera/base/utils.h>
 
+#include <libcamera/request.h>
 
 /**
  * \file stream.h

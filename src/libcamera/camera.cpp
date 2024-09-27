@@ -9,7 +9,11 @@
 
 #include <array>
 #include <atomic>
-#include <iomanip>
+#include <ios>
+#include <memory>
+#include <optional>
+#include <set>
+#include <sstream>
 
 #include <libcamera/base/log.h>
 #include <libcamera/base/thread.h>
@@ -21,7 +25,6 @@
 
 #include "libcamera/internal/camera.h"
 #include "libcamera/internal/camera_controls.h"
-#include "libcamera/internal/formats.h"
 #include "libcamera/internal/pipeline_handler.h"
 #include "libcamera/internal/request.h"
 
@@ -821,6 +824,7 @@ void Camera::Private::setState(State state)
  */
 
 /**
+ * \internal
  * \brief Create a camera instance
  * \param[in] d Camera private data
  * \param[in] id The ID of the camera device
@@ -994,7 +998,8 @@ int Camera::acquire()
 	if (ret < 0)
 		return ret == -EACCES ? -EBUSY : ret;
 
-	if (!d->pipe_->acquire()) {
+	if (!d->pipe_->invokeMethod(&PipelineHandler::acquire,
+				    ConnectionTypeBlocking, this)) {
 		LOG(Camera, Info)
 			<< "Pipeline handler in use by another process";
 		return -EBUSY;
@@ -1029,7 +1034,8 @@ int Camera::release()
 		return ret == -EACCES ? -EBUSY : ret;
 
 	if (d->isAcquired())
-		d->pipe_->release(this);
+		d->pipe_->invokeMethod(&PipelineHandler::release,
+				       ConnectionTypeBlocking, this);
 
 	d->setState(Private::CameraAvailable);
 

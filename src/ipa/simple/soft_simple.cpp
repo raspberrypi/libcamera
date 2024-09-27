@@ -34,23 +34,6 @@ LOG_DEFINE_CATEGORY(IPASoft)
 
 namespace ipa::soft {
 
-/*
- * The number of bins to use for the optimal exposure calculations.
- */
-static constexpr unsigned int kExposureBinsCount = 5;
-
-/*
- * The exposure is optimal when the mean sample value of the histogram is
- * in the middle of the range.
- */
-static constexpr float kExposureOptimal = kExposureBinsCount / 2.0;
-
-/*
- * The below value implements the hysteresis for the exposure adjustment.
- * It is small enough to have the exposure close to the optimal, and is big
- * enough to prevent the exposure from wobbling around the optimal value.
- */
-static constexpr float kExposureSatisfactory = 0.2;
 /* Maximum number of frame contexts to be held */
 static constexpr uint32_t kMaxFrameContexts = 16;
 
@@ -58,8 +41,7 @@ class IPASoftSimple : public ipa::soft::IPASoftInterface, public Module
 {
 public:
 	IPASoftSimple()
-		: params_(nullptr), stats_(nullptr),
-		  context_({ {}, {}, { kMaxFrameContexts } })
+		: context_({ {}, {}, { kMaxFrameContexts } })
 	{
 	}
 
@@ -92,11 +74,6 @@ private:
 
 	/* Local parameter storage */
 	struct IPAContext context_;
-
-	int32_t exposureMin_, exposureMax_;
-	int32_t exposure_;
-	double againMin_, againMax_, againMinStep_;
-	double again_;
 };
 
 IPASoftSimple::~IPASoftSimple()
@@ -207,20 +184,23 @@ int IPASoftSimple::configure(const IPAConfigInfo &configInfo)
 	const ControlInfo &exposureInfo = sensorInfoMap_.find(V4L2_CID_EXPOSURE)->second;
 	const ControlInfo &gainInfo = sensorInfoMap_.find(V4L2_CID_ANALOGUE_GAIN)->second;
 
-	exposureMin_ = exposureInfo.min().get<int32_t>();
-	exposureMax_ = exposureInfo.max().get<int32_t>();
-	if (!exposureMin_) {
+	context_.configuration.agc.exposureMin = exposureInfo.min().get<int32_t>();
+	context_.configuration.agc.exposureMax = exposureInfo.max().get<int32_t>();
+	if (!context_.configuration.agc.exposureMin) {
 		LOG(IPASoft, Warning) << "Minimum exposure is zero, that can't be linear";
-		exposureMin_ = 1;
+		context_.configuration.agc.exposureMin = 1;
 	}
 
 	int32_t againMin = gainInfo.min().get<int32_t>();
 	int32_t againMax = gainInfo.max().get<int32_t>();
 
 	if (camHelper_) {
-		againMin_ = camHelper_->gain(againMin);
-		againMax_ = camHelper_->gain(againMax);
-		againMinStep_ = (againMax_ - againMin_) / 100.0;
+		context_.configuration.agc.againMin = camHelper_->gain(againMin);
+		context_.configuration.agc.againMax = camHelper_->gain(againMax);
+		context_.configuration.agc.againMinStep =
+			(context_.configuration.agc.againMax -
+			 context_.configuration.agc.againMin) /
+			100.0;
 	} else {
 		/*
 		 * The camera sensor gain (g) is usually not equal to the value written
@@ -232,13 +212,14 @@ int IPASoftSimple::configure(const IPAConfigInfo &configInfo)
 		 * the AGC algorithm (abrupt near one edge, and very small near the
 		 * other) we limit the range of the gain values used.
 		 */
-		againMax_ = againMax;
+		context_.configuration.agc.againMax = againMax;
 		if (!againMin) {
 			LOG(IPASoft, Warning)
 				<< "Minimum gain is zero, that can't be linear";
-			againMin_ = std::min(100, againMin / 2 + againMax / 2);
+			context_.configuration.agc.againMin =
+				std::min(100, againMin / 2 + againMax / 2);
 		}
-		againMinStep_ = 1.0;
+		context_.configuration.agc.againMinStep = 1.0;
 	}
 
 	for (auto const &algo : algorithms()) {
@@ -247,9 +228,12 @@ int IPASoftSimple::configure(const IPAConfigInfo &configInfo)
 			return ret;
 	}
 
-	LOG(IPASoft, Info) << "Exposure " << exposureMin_ << "-" << exposureMax_
-			   << ", gain " << againMin_ << "-" << againMax_
-			   << " (" << againMinStep_ << ")";
+	LOG(IPASoft, Info)
+		<< "Exposure " << context_.configuration.agc.exposureMin << "-"
+		<< context_.configuration.agc.exposureMax
+		<< ", gain " << context_.configuration.agc.againMin << "-"
+		<< context_.configuration.agc.againMax
+		<< " (" << context_.configuration.agc.againMinStep << ")";
 
 	return 0;
 }
@@ -284,6 +268,12 @@ void IPASoftSimple::processStats(const uint32_t frame,
 				 const ControlList &sensorControls)
 {
 	IPAFrameContext &frameContext = context_.frameContexts.get(frame);
+
+	frameContext.sensor.exposure =
+		sensorControls.get(V4L2_CID_EXPOSURE).get<int32_t>();
+	int32_t again = sensorControls.get(V4L2_CID_ANALOGUE_GAIN).get<int32_t>();
+	frameContext.sensor.gain = camHelper_ ? camHelper_->gain(again) : again;
+
 	/*
 	 * Software ISP currently does not produce any metadata. Use an empty
 	 * ControlList for now.
@@ -294,37 +284,6 @@ void IPASoftSimple::processStats(const uint32_t frame,
 	for (auto const &algo : algorithms())
 		algo->process(context_, frame, frameContext, stats_, metadata);
 
-	/* \todo Switch to the libipa/algorithm.h API someday. */
-
-	/*
-	 * Calculate Mean Sample Value (MSV) according to formula from:
-	 * https://www.araa.asn.au/acra/acra2007/papers/paper84final.pdf
-	 */
-	const uint8_t blackLevel = context_.activeState.blc.level;
-	const unsigned int blackLevelHistIdx =
-		blackLevel / (256 / SwIspStats::kYHistogramSize);
-	const unsigned int histogramSize =
-		SwIspStats::kYHistogramSize - blackLevelHistIdx;
-	const unsigned int yHistValsPerBin = histogramSize / kExposureBinsCount;
-	const unsigned int yHistValsPerBinMod =
-		histogramSize / (histogramSize % kExposureBinsCount + 1);
-	int exposureBins[kExposureBinsCount] = {};
-	unsigned int denom = 0;
-	unsigned int num = 0;
-
-	for (unsigned int i = 0; i < histogramSize; i++) {
-		unsigned int idx = (i - (i / yHistValsPerBinMod)) / yHistValsPerBin;
-		exposureBins[idx] += stats_->yHistogram[blackLevelHistIdx + i];
-	}
-
-	for (unsigned int i = 0; i < kExposureBinsCount; i++) {
-		LOG(IPASoft, Debug) << i << ": " << exposureBins[i];
-		denom += exposureBins[i];
-		num += exposureBins[i] * (i + 1);
-	}
-
-	float exposureMSV = static_cast<float>(num) / denom;
-
 	/* Sanity check */
 	if (!sensorControls.contains(V4L2_CID_EXPOSURE) ||
 	    !sensorControls.contains(V4L2_CID_ANALOGUE_GAIN)) {
@@ -332,70 +291,14 @@ void IPASoftSimple::processStats(const uint32_t frame,
 		return;
 	}
 
-	exposure_ = sensorControls.get(V4L2_CID_EXPOSURE).get<int32_t>();
-	int32_t again = sensorControls.get(V4L2_CID_ANALOGUE_GAIN).get<int32_t>();
-	again_ = camHelper_ ? camHelper_->gain(again) : again;
-
-	updateExposure(exposureMSV);
-
 	ControlList ctrls(sensorInfoMap_);
 
-	ctrls.set(V4L2_CID_EXPOSURE, exposure_);
+	auto &againNew = context_.activeState.agc.again;
+	ctrls.set(V4L2_CID_EXPOSURE, context_.activeState.agc.exposure);
 	ctrls.set(V4L2_CID_ANALOGUE_GAIN,
-		  static_cast<int32_t>(camHelper_ ? camHelper_->gainCode(again_) : again_));
+		  static_cast<int32_t>(camHelper_ ? camHelper_->gainCode(againNew) : againNew));
 
 	setSensorControls.emit(ctrls);
-
-	LOG(IPASoft, Debug) << "exposureMSV " << exposureMSV
-			    << " exp " << exposure_ << " again " << again_
-			    << " black level " << static_cast<unsigned int>(blackLevel);
-}
-
-void IPASoftSimple::updateExposure(double exposureMSV)
-{
-	/*
-	 * kExpDenominator of 10 gives ~10% increment/decrement;
-	 * kExpDenominator of 5 - about ~20%
-	 */
-	static constexpr uint8_t kExpDenominator = 10;
-	static constexpr uint8_t kExpNumeratorUp = kExpDenominator + 1;
-	static constexpr uint8_t kExpNumeratorDown = kExpDenominator - 1;
-
-	double next;
-
-	if (exposureMSV < kExposureOptimal - kExposureSatisfactory) {
-		next = exposure_ * kExpNumeratorUp / kExpDenominator;
-		if (next - exposure_ < 1)
-			exposure_ += 1;
-		else
-			exposure_ = next;
-		if (exposure_ >= exposureMax_) {
-			next = again_ * kExpNumeratorUp / kExpDenominator;
-			if (next - again_ < againMinStep_)
-				again_ += againMinStep_;
-			else
-				again_ = next;
-		}
-	}
-
-	if (exposureMSV > kExposureOptimal + kExposureSatisfactory) {
-		if (exposure_ == exposureMax_ && again_ > againMin_) {
-			next = again_ * kExpNumeratorDown / kExpDenominator;
-			if (again_ - next < againMinStep_)
-				again_ -= againMinStep_;
-			else
-				again_ = next;
-		} else {
-			next = exposure_ * kExpNumeratorDown / kExpDenominator;
-			if (exposure_ - next < 1)
-				exposure_ -= 1;
-			else
-				exposure_ = next;
-		}
-	}
-
-	exposure_ = std::clamp(exposure_, exposureMin_, exposureMax_);
-	again_ = std::clamp(again_, againMin_, againMax_);
 }
 
 std::string IPASoftSimple::logPrefix() const

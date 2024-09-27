@@ -18,6 +18,10 @@ namespace ipa::soft {
 
 struct IPASessionConfiguration {
 	float gamma;
+	struct {
+		int32_t exposureMin, exposureMax;
+		double againMin, againMax, againMinStep;
+	} agc;
 };
 
 struct IPAActiveState {
@@ -31,6 +35,11 @@ struct IPAActiveState {
 		double blue;
 	} gains;
 
+	struct {
+		int32_t exposure;
+		double again;
+	} agc;
+
 	static constexpr unsigned int kGammaLookupSize = 1024;
 	struct {
 		std::array<double, kGammaLookupSize> gammaTable;
@@ -39,6 +48,10 @@ struct IPAActiveState {
 };
 
 struct IPAFrameContext : public FrameContext {
+	struct {
+		uint32_t exposure;
+		double gain;
+	} sensor;
 };
 
 struct IPAContext {

@@ -78,6 +78,17 @@ namespace libcamera::ipa::soft {
  */
 
 /**
+ * \var IPAActiveState::agc
+ * \brief Context for the AGC algorithm
+ *
+ * \var IPAActiveState::agc.exposure
+ * \brief Current exposure value
+ *
+ * \var IPAActiveState::agc.again
+ * \brief Current analog gain value
+ */
+
+/**
  * \var IPAActiveState::gamma
  * \brief Context for gamma in the Colors algorithm
  *

@@ -6,4 +6,5 @@ algorithms:
   - BlackLevel:
   - Awb:
   - Lut:
+  - Agc:
 ...

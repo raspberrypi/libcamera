@@ -199,16 +199,6 @@ Yes, because, well... all the other IPAs were doing that...
 
 ---
 
-10. Switch to libipa/algorithm.h API in processStats
-
->> void IPASoftSimple::processStats(const ControlList &sensorControls)
->>
-> Do you envision switching to the libipa/algorithm.h API at some point ?
-
-At some point, yes.
-
----
-
 13. Improve black level and colour gains application
 
 I think the black level should eventually be moved before debayering, and

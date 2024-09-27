@@ -36,7 +36,7 @@ public:
 	std::vector<PixelFormat> formats(PixelFormat input);
 	std::tuple<unsigned int, unsigned int>
 	strideAndFrameSize(const PixelFormat &outputFormat, const Size &size);
-	void process(FrameBuffer *input, FrameBuffer *output, DebayerParams params);
+	void process(uint32_t frame, FrameBuffer *input, FrameBuffer *output, DebayerParams params);
 	SizeRange sizes(PixelFormat inputFormat, const Size &inputSize);
 
 	/**

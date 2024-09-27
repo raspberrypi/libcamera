@@ -861,7 +861,13 @@ void SimpleCameraData::bufferReady(FrameBuffer *buffer)
 		if (converter_)
 			converter_->queueBuffers(buffer, conversionQueue_.front());
 		else
-			swIsp_->queueBuffers(buffer, conversionQueue_.front());
+			/*
+			 * request->sequence() cannot be retrieved from `buffer' inside
+			 * queueBuffers because unique_ptr's make buffer->request() invalid
+			 * already here.
+			 */
+			swIsp_->queueBuffers(request->sequence(), buffer,
+					     conversionQueue_.front());
 
 		conversionQueue_.pop();
 		return;

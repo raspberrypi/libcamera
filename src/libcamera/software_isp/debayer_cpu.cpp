@@ -611,8 +611,7 @@ void DebayerCpu::memcpyNextLine(const uint8_t *linePointers[])
 	memcpy(lineBuffers_[lineBufferIndex_].data(),
 	       linePointers[patternHeight] - lineBufferPadding_,
 	       lineBufferLength_);
-	linePointers[patternHeight] = lineBuffers_[lineBufferIndex_].data()
-				    + lineBufferPadding_;
+	linePointers[patternHeight] = lineBuffers_[lineBufferIndex_].data() + lineBufferPadding_;
 
 	lineBufferIndex_ = (lineBufferIndex_ + 1) % (patternHeight + 1);
 }
@@ -748,7 +747,7 @@ inline int64_t timeDiff(timespec &after, timespec &before)
 
 } /* namespace */
 
-void DebayerCpu::process(FrameBuffer *input, FrameBuffer *output, DebayerParams params)
+void DebayerCpu::process(uint32_t frame, FrameBuffer *input, FrameBuffer *output, DebayerParams params)
 {
 	timespec frameStartTime;
 
@@ -808,12 +807,11 @@ void DebayerCpu::process(FrameBuffer *input, FrameBuffer *output, DebayerParams 
 	}
 
 	/*
-	 * Frame and buffer ids are currently not used, so pass zeros as parameters.
+	 * Buffer ids are currently not used, so pass zeros as its parameter.
 	 *
-	 * \todo Pass real values once frame is passed here and stats buffer passing
-	 * is changed.
+	 * \todo Pass real bufferId once stats buffer passing is changed.
 	 */
-	stats_->finishFrame(0, 0);
+	stats_->finishFrame(frame, 0);
 	outputBufferReady.emit(output);
 	inputBufferReady.emit(input);
 }

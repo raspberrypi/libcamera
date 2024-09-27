@@ -73,10 +73,10 @@ public:
 	int start();
 	void stop();
 
-	int queueBuffers(FrameBuffer *input,
+	int queueBuffers(uint32_t frame, FrameBuffer *input,
 			 const std::map<const Stream *, FrameBuffer *> &outputs);
 
-	void process(FrameBuffer *input, FrameBuffer *output);
+	void process(uint32_t frame, FrameBuffer *input, FrameBuffer *output);
 
 	Signal<FrameBuffer *> inputBufferReady;
 	Signal<FrameBuffer *> outputBufferReady;

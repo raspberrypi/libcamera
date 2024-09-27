@@ -30,6 +30,7 @@
 #include "libipa/camera_sensor_helper.h"
 
 #include "black_level.h"
+#include "module.h"
 
 namespace libcamera {
 LOG_DEFINE_CATEGORY(IPASoft)
@@ -54,7 +55,7 @@ static constexpr float kExposureOptimal = kExposureBinsCount / 2.0;
  */
 static constexpr float kExposureSatisfactory = 0.2;
 
-class IPASoftSimple : public ipa::soft::IPASoftInterface
+class IPASoftSimple : public ipa::soft::IPASoftInterface, public Module
 {
 public:
 	IPASoftSimple()
@@ -75,6 +76,9 @@ public:
 	void stop() override;
 
 	void processStats(const ControlList &sensorControls) override;
+
+protected:
+	std::string logPrefix() const override;
 
 private:
 	void updateExposure(double exposureMSV);
@@ -419,6 +423,11 @@ void IPASoftSimple::updateExposure(double exposureMSV)
 
 	exposure_ = std::clamp(exposure_, exposureMin_, exposureMax_);
 	again_ = std::clamp(again_, againMin_, againMax_);
+}
+
+std::string IPASoftSimple::logPrefix() const
+{
+	return "IPASoft";
 }
 
 } /* namespace ipa::soft */

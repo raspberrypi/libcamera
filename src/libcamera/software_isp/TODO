@@ -209,35 +209,6 @@ At some point, yes.
 
 ---
 
-11. Improve handling the sensor controls which take effect with a delay
-
-> void IPASoftSimple::processStats(const ControlList &sensorControls)
-> {
->       ...
->	/*
->	 * AE / AGC, use 2 frames delay to make sure that the exposure and
->	 * the gain set have applied to the camera sensor.
->	 */
->	if (ignore_updates_ > 0) {
->		--ignore_updates_;
->		return;
->	}
-
-This could be handled better with DelayedControls.
-
----
-
-12. Use DelayedControls class in ispStatsReady()
-
-> void SimpleCameraData::ispStatsReady()
-> {
-> 	swIsp_->processStats(sensor_->getControls({ V4L2_CID_ANALOGUE_GAIN,
-> 						    V4L2_CID_EXPOSURE }));
-
-You should use the DelayedControls class.
-
----
-
 13. Improve black level and colour gains application
 
 I think the black level should eventually be moved before debayering, and

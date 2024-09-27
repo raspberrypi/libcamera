@@ -32,6 +32,7 @@
 #include "libcamera/internal/camera.h"
 #include "libcamera/internal/camera_sensor.h"
 #include "libcamera/internal/converter.h"
+#include "libcamera/internal/delayed_controls.h"
 #include "libcamera/internal/device_enumerator.h"
 #include "libcamera/internal/media_device.h"
 #include "libcamera/internal/pipeline_handler.h"
@@ -277,6 +278,8 @@ public:
 
 	std::vector<Configuration> configs_;
 	std::map<PixelFormat, std::vector<const Configuration *>> formats_;
+
+	std::unique_ptr<DelayedControls> delayedCtrls_;
 
 	std::vector<std::unique_ptr<FrameBuffer>> conversionBuffers_;
 	std::queue<std::map<const Stream *, FrameBuffer *>> conversionQueue_;
@@ -896,14 +899,13 @@ void SimpleCameraData::conversionOutputDone(FrameBuffer *buffer)
 
 void SimpleCameraData::ispStatsReady(uint32_t frame, uint32_t bufferId)
 {
-	/* \todo Use the DelayedControls class */
 	swIsp_->processStats(frame, bufferId,
-			     sensor_->getControls({ V4L2_CID_ANALOGUE_GAIN,
-						    V4L2_CID_EXPOSURE }));
+			     delayedCtrls_->get(frame));
 }
 
 void SimpleCameraData::setSensorControls(const ControlList &sensorControls)
 {
+	delayedCtrls_->push(sensorControls);
 	ControlList ctrls(sensorControls);
 	sensor_->setControls(&ctrls);
 }
@@ -1283,6 +1285,16 @@ int SimplePipelineHandler::configure(Camera *camera, CameraConfiguration *c)
 
 	if (outputCfgs.empty())
 		return 0;
+
+	std::unordered_map<uint32_t, DelayedControls::ControlParams> params = {
+		{ V4L2_CID_ANALOGUE_GAIN, { 2, false } },
+		{ V4L2_CID_EXPOSURE, { 2, false } },
+	};
+	data->delayedCtrls_ =
+		std::make_unique<DelayedControls>(data->sensor_->device(),
+						  params);
+	data->video_->frameStart.connect(data->delayedCtrls_.get(),
+					 &DelayedControls::applyControls);
 
 	StreamConfiguration inputCfg;
 	inputCfg.pixelFormat = pipeConfig->captureFormat;

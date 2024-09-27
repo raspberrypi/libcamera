@@ -59,8 +59,7 @@ class IPASoftSimple : public ipa::soft::IPASoftInterface, public Module
 public:
 	IPASoftSimple()
 		: params_(nullptr), stats_(nullptr),
-		  context_({ {}, {}, { kMaxFrameContexts } }),
-		  ignoreUpdates_(0)
+		  context_({ {}, {}, { kMaxFrameContexts } })
 	{
 	}
 
@@ -98,7 +97,6 @@ private:
 	int32_t exposure_;
 	double againMin_, againMax_, againMinStep_;
 	double again_;
-	unsigned int ignoreUpdates_;
 };
 
 IPASoftSimple::~IPASoftSimple()
@@ -299,16 +297,6 @@ void IPASoftSimple::processStats(const uint32_t frame,
 	/* \todo Switch to the libipa/algorithm.h API someday. */
 
 	/*
-	 * AE / AGC, use 2 frames delay to make sure that the exposure and
-	 * the gain set have applied to the camera sensor.
-	 * \todo This could be handled better with DelayedControls.
-	 */
-	if (ignoreUpdates_ > 0) {
-		--ignoreUpdates_;
-		return;
-	}
-
-	/*
 	 * Calculate Mean Sample Value (MSV) according to formula from:
 	 * https://www.araa.asn.au/acra/acra2007/papers/paper84final.pdf
 	 */
@@ -355,8 +343,6 @@ void IPASoftSimple::processStats(const uint32_t frame,
 	ctrls.set(V4L2_CID_EXPOSURE, exposure_);
 	ctrls.set(V4L2_CID_ANALOGUE_GAIN,
 		  static_cast<int32_t>(camHelper_ ? camHelper_->gainCode(again_) : again_));
-
-	ignoreUpdates_ = 2;
 
 	setSensorControls.emit(ctrls);
 

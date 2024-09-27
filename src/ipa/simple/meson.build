@@ -1,5 +1,8 @@
 # SPDX-License-Identifier: CC0-1.0
 
+subdir('algorithms')
+subdir('data')
+
 ipa_name = 'ipa_soft_simple'
 
 soft_simple_sources = files([
@@ -7,6 +10,8 @@ soft_simple_sources = files([
     'soft_simple.cpp',
     'black_level.cpp',
 ])
+
+soft_simple_sources += soft_simple_ipa_algorithms
 
 mod = shared_module(ipa_name, soft_simple_sources,
                     name_prefix : '',
@@ -23,7 +28,5 @@ if ipa_sign_module
                   install : false,
                   build_by_default : true)
 endif
-
-subdir('data')
 
 ipa_names += ipa_name

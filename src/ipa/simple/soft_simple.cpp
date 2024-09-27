@@ -54,12 +54,15 @@ static constexpr float kExposureOptimal = kExposureBinsCount / 2.0;
  * enough to prevent the exposure from wobbling around the optimal value.
  */
 static constexpr float kExposureSatisfactory = 0.2;
+/* Maximum number of frame contexts to be held */
+static constexpr uint32_t kMaxFrameContexts = 16;
 
 class IPASoftSimple : public ipa::soft::IPASoftInterface, public Module
 {
 public:
 	IPASoftSimple()
 		: params_(nullptr), stats_(nullptr), blackLevel_(BlackLevel()),
+		  context_({ {}, {}, { kMaxFrameContexts } }),
 		  ignoreUpdates_(0)
 	{
 	}
@@ -93,6 +96,8 @@ private:
 	static constexpr unsigned int kGammaLookupSize = 1024;
 	std::array<uint8_t, kGammaLookupSize> gammaTable_;
 	int lastBlackLevel_ = -1;
+	/* Local parameter storage */
+	struct IPAContext context_;
 
 	int32_t exposureMin_, exposureMax_;
 	int32_t exposure_;
@@ -138,6 +143,15 @@ int IPASoftSimple::init(const IPASettings &settings,
 	/* \todo Use the IPA configuration file for real. */
 	unsigned int version = (*data)["version"].get<uint32_t>(0);
 	LOG(IPASoft, Debug) << "Tuning file version " << version;
+
+	if (!data->contains("algorithms")) {
+		LOG(IPASoft, Error) << "Tuning file doesn't contain algorithms";
+		return -EINVAL;
+	}
+
+	int ret = createAlgorithms(context_, (*data)["algorithms"]);
+	if (ret)
+		return ret;
 
 	params_ = nullptr;
 	stats_ = nullptr;

@@ -16,10 +16,7 @@
 #include <libcamera/formats.h>
 #include <libcamera/stream.h>
 
-#include "libcamera/internal/bayer_format.h"
-#include "libcamera/internal/framebuffer.h"
 #include "libcamera/internal/ipa_manager.h"
-#include "libcamera/internal/mapped_framebuffer.h"
 #include "libcamera/internal/software_isp/debayer_params.h"
 
 #include "debayer_cpu.h"

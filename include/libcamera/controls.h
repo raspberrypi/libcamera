@@ -35,6 +35,7 @@ enum ControlType {
 	ControlTypeString,
 	ControlTypeRectangle,
 	ControlTypeSize,
+	ControlTypePoint,
 };
 
 namespace details {
@@ -95,6 +96,11 @@ template<>
 struct control_type<Size> {
 	static constexpr ControlType value = ControlTypeSize;
 	static constexpr std::size_t size = 0;
+};
+
+template<>
+struct control_type<Point> {
+	static constexpr ControlType value = ControlTypePoint;
 };
 
 template<typename T, std::size_t N>

@@ -60,6 +60,7 @@ static constexpr size_t ControlValueSize[] = {
 	[ControlTypeString]		= sizeof(char),
 	[ControlTypeRectangle]		= sizeof(Rectangle),
 	[ControlTypeSize]		= sizeof(Size),
+	[ControlTypePoint]		= sizeof(Point),
 };
 
 } /* namespace */
@@ -251,6 +252,11 @@ std::string ControlValue::toString() const
 		}
 		case ControlTypeSize: {
 			const Size *value = reinterpret_cast<const Size *>(data);
+			str += value->toString();
+			break;
+		}
+		case ControlTypePoint: {
+			const Point *value = reinterpret_cast<const Point *>(data);
 			str += value->toString();
 			break;
 		}

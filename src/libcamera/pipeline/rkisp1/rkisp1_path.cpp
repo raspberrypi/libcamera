@@ -123,12 +123,50 @@ void RkISP1Path::populateFormats()
 	}
 }
 
+/**
+ * \brief Filter the sensor resolutions that can be supported
+ * \param[in] sensor The camera sensor
+ *
+ * This function retrieves all the sizes supported by the sensor and
+ * filters all the resolutions that can be supported on the pipeline.
+ * It is possible that the sensor's maximum output resolution is higher
+ * than the ISP maximum input. In that case, this function filters out all
+ * the resolution incapable of being supported and returns the maximum
+ * sensor resolution that can be supported by the pipeline.
+ *
+ * \return Maximum sensor size supported on the pipeline
+ */
+Size RkISP1Path::filterSensorResolution(const CameraSensor *sensor)
+{
+	auto iter = sensorSizesMap_.find(sensor);
+	if (iter != sensorSizesMap_.end())
+		return iter->second.back();
+
+	std::vector<Size> &sizes = sensorSizesMap_[sensor];
+	for (unsigned int code : sensor->mbusCodes()) {
+		for (const Size &size : sensor->sizes(code)) {
+			if (size.width > maxResolution_.width ||
+			    size.height > maxResolution_.height)
+				continue;
+
+			sizes.push_back(size);
+		}
+	}
+
+	/* Sort in increasing order and remove duplicates. */
+	std::sort(sizes.begin(), sizes.end());
+	auto last = std::unique(sizes.begin(), sizes.end());
+	sizes.erase(last, sizes.end());
+
+	return sizes.back();
+}
+
 StreamConfiguration
 RkISP1Path::generateConfiguration(const CameraSensor *sensor, const Size &size,
 				  StreamRole role)
 {
 	const std::vector<unsigned int> &mbusCodes = sensor->mbusCodes();
-	const Size &resolution = sensor->resolution();
+	Size resolution = filterSensorResolution(sensor);
 
 	/* Min and max resolutions to populate the available stream formats. */
 	Size maxResolution = maxResolution_.boundedToAspectRatio(resolution)
@@ -217,7 +255,7 @@ CameraConfiguration::Status RkISP1Path::validate(const CameraSensor *sensor,
 						 StreamConfiguration *cfg)
 {
 	const std::vector<unsigned int> &mbusCodes = sensor->mbusCodes();
-	const Size &resolution = sensor->resolution();
+	Size resolution = filterSensorResolution(sensor);
 
 	const StreamConfiguration reqCfg = *cfg;
 	CameraConfiguration::Status status = CameraConfiguration::Valid;

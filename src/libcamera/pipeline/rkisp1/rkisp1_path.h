@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <map>
 #include <memory>
 #include <set>
 #include <vector>
@@ -62,6 +63,7 @@ public:
 
 private:
 	void populateFormats();
+	Size filterSensorResolution(const CameraSensor *sensor);
 
 	static constexpr unsigned int RKISP1_BUFFER_COUNT = 4;
 
@@ -76,6 +78,12 @@ private:
 	std::unique_ptr<V4L2Subdevice> resizer_;
 	std::unique_ptr<V4L2VideoDevice> video_;
 	MediaLink *link_;
+
+	/*
+	 * Map from camera sensors to the sizes (in increasing order),
+	 * which are guaranteed to be supported by the pipeline.
+	 */
+	std::map<const CameraSensor *, std::vector<Size>> sensorSizesMap_;
 };
 
 class RkISP1MainPath : public RkISP1Path

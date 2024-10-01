@@ -8,10 +8,10 @@
 #include "libcamera/internal/yaml_parser.h"
 
 #include <charconv>
-#include <cstdlib>
 #include <errno.h>
 #include <functional>
 #include <limits>
+#include <stdlib.h>
 
 #include <libcamera/base/file.h>
 #include <libcamera/base/log.h>

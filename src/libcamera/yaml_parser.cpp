@@ -481,16 +481,13 @@ const YamlObject &YamlObject::operator[](std::size_t index) const
  *
  * \return True if an element exists, false otherwise
  */
-bool YamlObject::contains(const std::string &key) const
+bool YamlObject::contains(std::string_view key) const
 {
-	if (dictionary_.find(std::ref(key)) == dictionary_.end())
-		return false;
-
-	return true;
+	return dictionary_.find(key) != dictionary_.end();
 }
 
 /**
- * \fn YamlObject::operator[](const std::string &key) const
+ * \fn YamlObject::operator[](std::string_view key) const
  * \brief Retrieve a member by name from the dictionary
  *
  * This function retrieve a member of a YamlObject by name. Only YamlObject
@@ -500,7 +497,7 @@ bool YamlObject::contains(const std::string &key) const
  *
  * \return The YamlObject corresponding to the \a key member
  */
-const YamlObject &YamlObject::operator[](const std::string &key) const
+const YamlObject &YamlObject::operator[](std::string_view key) const
 {
 	if (type_ != Type::Dictionary)
 		return empty;

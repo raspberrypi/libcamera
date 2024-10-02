@@ -7,6 +7,8 @@
 
 #include "rkisp1_path.h"
 
+#include <array>
+
 #include <linux/media-bus-format.h>
 
 #include <libcamera/formats.h>
@@ -341,7 +343,7 @@ RkISP1Path::validate(const CameraSensor *sensor,
 					    : cfg->size;
 
 		V4L2SubdeviceFormat sensorFormat =
-			sensor->getFormat({ mbusCode }, rawSize);
+			sensor->getFormat(std::array{ mbusCode }, rawSize);
 
 		if (sensorConfig &&
 		    sensorConfig->outputSize != sensorFormat.size)
@@ -362,7 +364,7 @@ RkISP1Path::validate(const CameraSensor *sensor,
 
 		uint32_t mbusCode = formatToMediaBus.at(rawFormat);
 		V4L2SubdeviceFormat sensorFormat =
-			sensor->getFormat({ mbusCode }, sensorSize);
+			sensor->getFormat(std::array{ mbusCode }, sensorSize);
 
 		if (sensorFormat.size != sensorSize)
 			return CameraConfiguration::Invalid;

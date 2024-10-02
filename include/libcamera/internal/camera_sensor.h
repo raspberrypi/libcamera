@@ -54,7 +54,7 @@ public:
 	virtual Size resolution() const = 0;
 
 	virtual V4L2SubdeviceFormat
-	getFormat(const std::vector<unsigned int> &mbusCodes,
+	getFormat(Span<const unsigned int> mbusCodes,
 		  const Size &size, const Size maxSize = Size()) const = 0;
 	virtual int setFormat(V4L2SubdeviceFormat *format,
 			      Transform transform = Transform::Identity) = 0;

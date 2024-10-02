@@ -96,10 +96,13 @@ protected:
 		}
 
 		/* Use an invalid format and make sure it's not selected. */
-		V4L2SubdeviceFormat format = sensor_->getFormat({ 0xdeadbeef,
-								  MEDIA_BUS_FMT_SBGGR10_1X10,
-								  MEDIA_BUS_FMT_BGR888_1X24 },
-								Size(1024, 768));
+		static constexpr uint32_t mbusCodes[] = {
+			0xdeadbeef,
+			MEDIA_BUS_FMT_SBGGR10_1X10,
+			MEDIA_BUS_FMT_BGR888_1X24,
+		};
+
+		V4L2SubdeviceFormat format = sensor_->getFormat(mbusCodes, Size(1024, 768));
 		if (format.code != MEDIA_BUS_FMT_SBGGR10_1X10 ||
 		    format.size != Size(4096, 2160)) {
 			cerr << "Failed to get a suitable format, expected 4096x2160-0x"

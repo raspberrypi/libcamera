@@ -74,7 +74,7 @@ public:
 	std::vector<Size> sizes(unsigned int mbusCode) const override;
 	Size resolution() const override;
 
-	V4L2SubdeviceFormat getFormat(const std::vector<unsigned int> &mbusCodes,
+	V4L2SubdeviceFormat getFormat(Span<const unsigned int> mbusCodes,
 				      const Size &size,
 				      const Size maxSize) const override;
 	int setFormat(V4L2SubdeviceFormat *format,
@@ -757,7 +757,7 @@ Size CameraSensorRaw::resolution() const
 }
 
 V4L2SubdeviceFormat
-CameraSensorRaw::getFormat(const std::vector<unsigned int> &mbusCodes,
+CameraSensorRaw::getFormat(Span<const unsigned int> mbusCodes,
 			   const Size &size, Size maxSize) const
 {
 	unsigned int desiredArea = size.width * size.height;

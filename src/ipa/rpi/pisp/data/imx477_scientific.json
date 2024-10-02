@@ -541,6 +541,15 @@
                 "limit": 1.0,
                 "strength": 1.0
             }
-        }
+        },
+        {
+            "rpi.sync":
+            {
+                "group": "224.0.0.1",
+                "port": 12345,
+                "sync_period": 30,
+                "ready_frame": 1000
+            }
+	}
     ]
 }

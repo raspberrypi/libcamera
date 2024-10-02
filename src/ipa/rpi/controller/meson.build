@@ -23,6 +23,7 @@ rpi_ipa_controller_sources = files([
     'rpi/saturation.cpp',
     'rpi/sdn.cpp',
     'rpi/sharpen.cpp',
+    'rpi/sync.cpp',
     'rpi/tonemap.cpp',
 ])
 

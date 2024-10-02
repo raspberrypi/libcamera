@@ -13,6 +13,7 @@ rpi_ipa_controller_sources = files([
     'rpi/black_level.cpp',
     'rpi/cac.cpp',
     'rpi/ccm.cpp',
+    'rpi/clock_recovery.cpp',
     'rpi/contrast.cpp',
     'rpi/denoise.cpp',
     'rpi/dpc.cpp',
@@ -23,6 +24,7 @@ rpi_ipa_controller_sources = files([
     'rpi/saturation.cpp',
     'rpi/sdn.cpp',
     'rpi/sharpen.cpp',
+    'rpi/sync.cpp',
     'rpi/tonemap.cpp',
 ])
 

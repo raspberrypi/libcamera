@@ -29,7 +29,7 @@ static constexpr unsigned int kExposureBinsCount = 5;
 static constexpr float kExposureOptimal = kExposureBinsCount / 2.0;
 
 /*
- * The below value implements the hysteresis for the exposure adjustment.
+ * This implements the hysteresis for the exposure adjustment.
  * It is small enough to have the exposure close to the optimal, and is big
  * enough to prevent the exposure from wobbling around the optimal value.
  */

@@ -164,4 +164,81 @@ controls:
         This control returns performance metrics for the CNN processing stage.
         Two values are returned in this span, the runtime of the CNN/DNN stage
         and the DSP stage in milliseconds.
+
+  - FrameWallClock:
+      type: int64_t
+      description: |
+        Control that returns the wall clock timestamp of a frame. This
+        is the "time since epoch" value obtained from the system, in
+        microseconds. This value is likely to be subject to
+        significantly more jitter than the recorded SensorTimestamp.
+
+  - SyncMode:
+      type: int32_t
+      description: |
+        Puts the camera system into sync mode, so that frames can be
+        temporally synchronised with another camera, either on the same
+        device, or on a different one.
+      enum:
+        - name: SyncModeOff
+          value: 0
+          description: Sync not in use.
+        - name: SyncModeServer
+          value: 1
+          description: |
+            Sync on, act as server. The server broadcasts timing
+            messages to any clients that are listening, so that the
+            clients can synchronise their camera frames with the
+            server's.
+        - name: SyncModeClient
+          value: 2
+          description: |
+            Sync on, act as client. A client listens for any server
+            messages, and arranges for its camera frames to synchronise
+            as closely as possible with the server's. Many clients
+            can listen out for the same server.
+
+  - SyncWait:
+      type: bool
+      description: |
+        When using the camera syncrhonisation algorithm, the server
+        broadcasts timing information to the client. This also includes
+        the time (some number of frames in the future) at which it will
+        tell the application running on the server when to start using
+        the image frames (the "ready time").
+
+        The client receives the "ready time" from the server, and will
+        tell the application on its end to start using the frames at
+        this same moment.
+
+        While this control value is true, applications (on both client
+        and server) should continue to wait.
+
+        Once this value is false, it means that this is the frame where
+        client and server have agreed that it is the first synchronised
+        frame that should be used by the application.
+
+  - SyncLag:
+      type: int64_t
+      description: |
+        The lag is the amount of time since the "ready time", at which
+        the server and client will signal their controlling applications
+        that the frames are now synchronised and should be used.
+
+        Normally, therefore, the value will start negative (the "ready
+        time" is in the future), and increase towards zero, before
+        becoming positive (the "ready time" has elapsed).
+
+        Servers always report this value; clients will omit this control
+        until they have received a message from the server that enables
+        them to calculate it.
+
+        Normally there will be just one frame where the lag value is, or
+        is very close to, zero - the one for which SyncWait becomes
+        false. But note that if frames are being dropped, then the "near
+        zero" value, or indeed any other, could be skipped. In these
+        cases the lag value allows an application to work out exactly
+        what has happened.
+
+        \sa SyncWait
 ...

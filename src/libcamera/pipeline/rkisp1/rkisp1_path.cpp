@@ -326,9 +326,15 @@ RkISP1Path::validate(const CameraSensor *sensor,
 	if (isRaw) {
 		/*
 		 * Use the sensor output size closest to the requested stream
-		 * size.
+		 * size while ensuring the output size doesn't exceed ISP limits.
+		 *
+		 * As 'resolution' is the largest sensor resolution
+		 * supported by the ISP, CameraSensor::getFormat() will never
+		 * return a V4L2SubdeviceFormat with a larger size.
 		 */
 		uint32_t mbusCode = formatToMediaBus.at(cfg->pixelFormat);
+		cfg->size.boundTo(resolution);
+
 		Size rawSize = sensorConfig ? sensorConfig->outputSize
 					    : cfg->size;
 

@@ -336,7 +336,7 @@ void CameraConfiguration::addConfiguration(const StreamConfiguration &cfg)
  * \retval CameraConfiguration::Invalid The configuration is invalid and can't
  * be adjusted. This may only occur in extreme cases such as when the
  * configuration is empty.
- * \retval CameraConfigutation::Adjusted The configuration has been adjusted
+ * \retval CameraConfiguration::Adjusted The configuration has been adjusted
  * and is now valid. Parameters may have changed for any stream, and stream
  * configurations may have been removed. The caller shall check the
  * configuration carefully.

@@ -698,6 +698,7 @@ int PipelineHandlerBase::start(Camera *camera, const ControlList *controls)
 	 */
 	data->delayedCtrls_->reset(0);
 	data->state_ = CameraData::State::Idle;
+	data->frameWallClock_ = {};
 
 	/* Enable SOF event generation. */
 	data->frontendDevice()->setFrameStartEnabled(true);
@@ -1381,6 +1382,11 @@ void CameraData::cameraTimeout()
 
 void CameraData::frameStarted(uint32_t sequence)
 {
+	/* Get frame wall clock. */
+	auto now = std::chrono::system_clock::now();
+	auto durNow = std::chrono::duration_cast<std::chrono::microseconds>(now.time_since_epoch());
+	frameWallClock_.emplace(sequence, durNow);
+
 	LOG(RPI, Debug) << "Frame start " << sequence;
 
 	/* Write any controls for the next frame as soon as we can. */
@@ -1510,6 +1516,9 @@ void CameraData::fillRequestMetadata(const ControlList &bufferControls, Request 
 {
 	request->metadata().set(controls::SensorTimestamp,
 				bufferControls.get(controls::SensorTimestamp).value_or(0));
+
+	request->metadata().set(controls::rpi::FrameWallClock,
+				bufferControls.get(controls::rpi::FrameWallClock).value_or(0));
 
 	if (cropParams_.size()) {
 		std::vector<Rectangle> crops;

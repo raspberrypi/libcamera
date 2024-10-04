@@ -837,6 +837,18 @@ void Vc4CameraData::unicamBufferDequeue(FrameBuffer *buffer)
 		 * as it does not receive the FrameBuffer object.
 		 */
 		ctrl.set(controls::SensorTimestamp, buffer->metadata().timestamp);
+
+		/* Also record a wall-clock timestamp that can be passed to IPAs. */
+		while (!frameWallClock_.empty() &&
+		       frameWallClock_.front().first < buffer->metadata().sequence)
+			frameWallClock_.pop();
+
+		if (!frameWallClock_.empty() &&
+		    frameWallClock_.front().first == buffer->metadata().sequence) {
+			ctrl.set(controls::rpi::FrameWallClock, frameWallClock_.front().second.get<std::micro>());
+			frameWallClock_.pop();
+		}
+
 		bayerQueue_.push({ buffer, std::move(ctrl), delayContext });
 	} else {
 		embeddedQueue_.push(buffer);

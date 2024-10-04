@@ -1,3 +1,10 @@
+libcamera (0.3.2-1.1) UNRELEASED; urgency=medium
+
+  * Non-maintainer upload.
+  * Move documentation Build-Depends to Build-Depends-Indep. (Closes: #1083173)
+
+ -- Helmut Grohne <helmut@subdivi.de>  Tue, 01 Oct 2024 23:43:35 +0200
+
 libcamera (0.3.2-1) unstable; urgency=medium
 
   * New upstream version 0.3.2

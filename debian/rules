@@ -39,13 +39,15 @@ else
 	-dh_auto_test
 endif
 
-override_dh_install:
+override_dh_install-indep:
 ifeq ($(filter nodoc,$(DEB_BUILD_PROFILES)),)
 	mv debian/tmp/usr/share/doc/libcamera-0.* debian/tmp/usr/share/doc/libcamera-doc
 endif
+	dh_install -X/.doctrees/
+
+execute_before_dh_install-arch:
 	cp ./obj-${DEB_HOST_GNU_TYPE}/src/apps/ipa-verify/ipa_verify \
 	   debian/tmp/usr/bin/
-	dh_install -X/.doctrees/
 
 override_dh_strip:
 	dh_strip -a

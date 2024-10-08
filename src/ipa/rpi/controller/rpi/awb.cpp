@@ -170,6 +170,14 @@ int AwbConfig::read(const libcamera::YamlObject &params)
 	whitepointB = params["whitepoint_b"].get<double>(0.0);
 	if (bayes == false)
 		sensitivityR = sensitivityB = 1.0; /* nor do sensitivities make any sense */
+	/*
+	 * The biasProportion parameter adds a small proportion of the counted
+	 * pixles to a region biased to the biasCT colour temperature.
+	 *
+	 * A typical value for biasProportion would be between 0.05 to 0.1.
+	 */
+	biasProportion = params["bias_proportion"].get<double>(0.0);
+	biasCT = params["bias_ct"].get<double>(kDefaultCT);
 	return 0;
 }
 
@@ -410,7 +418,8 @@ void Awb::asyncFunc()
 
 static void generateStats(std::vector<Awb::RGB> &zones,
 			  StatisticsPtr &stats, double minPixels,
-			  double minG, Metadata &globalMetadata)
+			  double minG, Metadata &globalMetadata,
+			  double biasProportion, double biasCtR, double biasCtB)
 {
 	std::scoped_lock<RPiController::Metadata> l(globalMetadata);
 
@@ -423,6 +432,14 @@ static void generateStats(std::vector<Awb::RGB> &zones,
 				continue;
 			zone.R = region.val.rSum / region.counted;
 			zone.B = region.val.bSum / region.counted;
+			/*
+			 * Add some bias samples to allow the search to tend to a
+			 * bias CT in failure cases.
+			 */
+			const unsigned int proportion = biasProportion * region.counted;
+			zone.R += proportion * biasCtR;
+			zone.B += proportion * biasCtB;
+			zone.G += proportion * 1.0;
 			/* Factor in the ALSC applied colour shading correction if required. */
 			const AlscStatus *alscStatus = globalMetadata.getLocked<AlscStatus>("alsc.status");
 			if (stats->colourStatsPos == Statistics::ColourStatsPos::PreLsc && alscStatus) {
@@ -443,7 +460,9 @@ void Awb::prepareStats()
 	 * any LSC compensation.  We also ignore config_.fast in this version.
 	 */
 	generateStats(zones_, statistics_, config_.minPixels,
-		      config_.minG, getGlobalMetadata());
+		      config_.minG, getGlobalMetadata(),
+		      config_.biasProportion, config_.ctR.eval(config_.biasCT),
+		      config_.ctB.eval(config_.biasCT));
 	/*
 	 * apply sensitivities, so values appear to come from our "canonical"
 	 * sensor.

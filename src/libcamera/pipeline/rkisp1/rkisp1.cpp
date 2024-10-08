@@ -1131,7 +1131,7 @@ int PipelineHandlerRkISP1::createCamera(MediaEntity *sensor)
 	data->properties_ = data->sensor_->properties();
 
 	/*
-	 * \todo Read dealy values from the sensor itself or from a
+	 * \todo Read delay values from the sensor itself or from a
 	 * a sensor database. For now use generic values taken from
 	 * the Raspberry Pi and listed as generic values.
 	 */

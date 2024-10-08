@@ -483,7 +483,7 @@ instance. An example of how to write image data to disk is available in the
 `FileSink class`_ which is a part of the ``cam`` utility application in the
 libcamera repository.
 
-.. _FileSink class: https://git.libcamera.org/libcamera/libcamera.git/tree/src/cam/file_sink.cpp
+.. _FileSink class: https://git.libcamera.org/libcamera/libcamera.git/tree/src/apps/cam/file_sink.cpp
 
 With the handling of this request completed, it is possible to re-use the
 request and the associated buffers and re-queue it to the camera

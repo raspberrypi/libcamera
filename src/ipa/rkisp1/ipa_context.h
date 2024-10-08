@@ -17,7 +17,10 @@
 #include <libcamera/control_ids.h>
 #include <libcamera/controls.h>
 #include <libcamera/geometry.h>
+
 #include <libcamera/ipa/core_ipa_interface.h>
+
+#include "libcamera/internal/debug_controls.h"
 
 #include <libipa/camera_sensor_helper.h>
 #include <libipa/fc_queue.h>
@@ -193,6 +196,8 @@ struct IPAContext {
 	FCQueue<IPAFrameContext> frameContexts;
 
 	ControlInfoMap::Map ctrlMap;
+
+	DebugMetadata debugMetadata;
 
 	/* Interface to the Camera Helper */
 	std::unique_ptr<CameraSensorHelper> camHelper;

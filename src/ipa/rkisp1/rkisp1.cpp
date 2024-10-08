@@ -117,6 +117,7 @@ const IPAHwSettings ipaHwSettingsV12{
 const ControlInfoMap::Map rkisp1Controls{
 	{ &controls::AwbEnable, ControlInfo(false, true) },
 	{ &controls::ColourGains, ControlInfo(0.0f, 3.996f, 1.0f) },
+	{ &controls::DebugMetadataEnable, ControlInfo(false, true, false) },
 	{ &controls::Sharpness, ControlInfo(0.0f, 10.0f, 1.0f) },
 	{ &controls::draft::NoiseReductionMode, ControlInfo(controls::draft::NoiseReductionModeValues) },
 };
@@ -326,6 +327,7 @@ void IPARkISP1::unmapBuffers(const std::vector<unsigned int> &ids)
 void IPARkISP1::queueRequest(const uint32_t frame, const ControlList &controls)
 {
 	IPAFrameContext &frameContext = context_.frameContexts.alloc(frame);
+	context_.debugMetadata.enableByControl(controls);
 
 	for (auto const &a : algorithms()) {
 		Algorithm *algo = static_cast<Algorithm *>(a.get());
@@ -378,6 +380,7 @@ void IPARkISP1::processStats(const uint32_t frame, const uint32_t bufferId,
 
 	setControls(frame);
 
+	context_.debugMetadata.moveEntries(metadata);
 	metadataReady.emit(frame, metadata);
 }
 

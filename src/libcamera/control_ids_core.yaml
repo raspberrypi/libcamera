@@ -968,4 +968,9 @@ controls:
         The default gamma value must be 2.2 which closely mimics sRGB gamma.
         Note that this is camera gamma, so it is applied as 1.0/gamma.
 
+  - DebugMetadataEnable:
+      type: bool
+      description: |
+        Enable or disable the debug metadata.
+
 ...

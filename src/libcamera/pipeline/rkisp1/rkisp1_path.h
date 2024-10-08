@@ -27,6 +27,7 @@ namespace libcamera {
 class CameraSensor;
 class MediaDevice;
 class V4L2Subdevice;
+class SensorConfiguration;
 struct StreamConfiguration;
 struct V4L2SubdeviceFormat;
 
@@ -44,6 +45,7 @@ public:
 						  const Size &resolution,
 						  StreamRole role);
 	CameraConfiguration::Status validate(const CameraSensor *sensor,
+					     std::optional<SensorConfiguration> &sensorConfig,
 					     StreamConfiguration *cfg);
 
 	int configure(const StreamConfiguration &config,

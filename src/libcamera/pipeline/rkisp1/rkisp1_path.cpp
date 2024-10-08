@@ -251,8 +251,10 @@ RkISP1Path::generateConfiguration(const CameraSensor *sensor, const Size &size,
 	return cfg;
 }
 
-CameraConfiguration::Status RkISP1Path::validate(const CameraSensor *sensor,
-						 StreamConfiguration *cfg)
+CameraConfiguration::Status
+RkISP1Path::validate(const CameraSensor *sensor,
+		     std::optional<SensorConfiguration> &sensorConfig,
+		     StreamConfiguration *cfg)
 {
 	const std::vector<unsigned int> &mbusCodes = sensor->mbusCodes();
 	Size resolution = filterSensorResolution(sensor);
@@ -282,9 +284,14 @@ CameraConfiguration::Status RkISP1Path::validate(const CameraSensor *sensor,
 				continue;
 
 			/*
-			 * Store the raw format with the highest bits per pixel
-			 * for later usage.
+			 * If the bits per pixel is supplied from the sensor
+			 * configuration, choose a raw format that complies with
+			 * it. Otherwise, store the raw format with the highest
+			 * bits per pixel for later usage.
 			 */
+			if (sensorConfig && info.bitsPerPixel != sensorConfig->bitDepth)
+				continue;
+
 			if (info.bitsPerPixel > rawBitsPerPixel) {
 				rawBitsPerPixel = info.bitsPerPixel;
 				rawFormat = format;
@@ -296,6 +303,9 @@ CameraConfiguration::Status RkISP1Path::validate(const CameraSensor *sensor,
 			break;
 		}
 	}
+
+	if (sensorConfig && !found)
+		return CameraConfiguration::Invalid;
 
 	bool isRaw = PixelFormatInfo::info(cfg->pixelFormat).colourEncoding ==
 		     PixelFormatInfo::ColourEncodingRAW;
@@ -319,11 +329,39 @@ CameraConfiguration::Status RkISP1Path::validate(const CameraSensor *sensor,
 		 * size.
 		 */
 		uint32_t mbusCode = formatToMediaBus.at(cfg->pixelFormat);
+		Size rawSize = sensorConfig ? sensorConfig->outputSize
+					    : cfg->size;
+
 		V4L2SubdeviceFormat sensorFormat =
-			sensor->getFormat({ mbusCode }, cfg->size);
+			sensor->getFormat({ mbusCode }, rawSize);
+
+		if (sensorConfig &&
+		    sensorConfig->outputSize != sensorFormat.size)
+			return CameraConfiguration::Invalid;
 
 		minResolution = sensorFormat.size;
 		maxResolution = sensorFormat.size;
+	} else if (sensorConfig) {
+		/*
+		 * We have already ensured 'rawFormat' has the matching bit
+		 * depth with sensorConfig.bitDepth hence, only validate the
+		 * sensorConfig's output size here.
+		 */
+		Size sensorSize = sensorConfig->outputSize;
+
+		if (sensorSize > resolution)
+			return CameraConfiguration::Invalid;
+
+		uint32_t mbusCode = formatToMediaBus.at(rawFormat);
+		V4L2SubdeviceFormat sensorFormat =
+			sensor->getFormat({ mbusCode }, sensorSize);
+
+		if (sensorFormat.size != sensorSize)
+			return CameraConfiguration::Invalid;
+
+		minResolution = minResolution_.expandedToAspectRatio(sensorSize);
+		maxResolution = maxResolution_.boundedTo(sensorSize)
+					      .boundedToAspectRatio(sensorSize);
 	} else {
 		/*
 		 * Adjust the size based on the sensor resolution and absolute

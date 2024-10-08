@@ -447,11 +447,12 @@ bool RkISP1CameraConfiguration::fitsAllPaths(const StreamConfiguration &cfg)
 	StreamConfiguration config;
 
 	config = cfg;
-	if (data_->mainPath_->validate(sensor, &config) != Valid)
+	if (data_->mainPath_->validate(sensor, sensorConfig, &config) != Valid)
 		return false;
 
 	config = cfg;
-	if (data_->selfPath_ && data_->selfPath_->validate(sensor, &config) != Valid)
+	if (data_->selfPath_ &&
+	    data_->selfPath_->validate(sensor, sensorConfig, &config) != Valid)
 		return false;
 
 	return true;
@@ -467,6 +468,27 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 		return Invalid;
 
 	status = validateColorSpaces(ColorSpaceFlag::StreamsShareColorSpace);
+
+	/*
+	 * Make sure that if a sensor configuration has been requested it
+	 * is valid.
+	 */
+	if (sensorConfig) {
+		if (!sensorConfig->isValid()) {
+			LOG(RkISP1, Error)
+				<< "Invalid sensor configuration request";
+
+			return Invalid;
+		}
+
+		unsigned int bitDepth = sensorConfig->bitDepth;
+		if (bitDepth != 8 && bitDepth != 10 && bitDepth != 12) {
+			LOG(RkISP1, Error)
+				<< "Invalid sensor configuration bit depth";
+
+			return Invalid;
+		}
+	}
 
 	/* Cap the number of entries to the available streams. */
 	if (config_.size() > pathCount) {
@@ -514,7 +536,7 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 		/* Try to match stream without adjusting configuration. */
 		if (mainPathAvailable) {
 			StreamConfiguration tryCfg = cfg;
-			if (data_->mainPath_->validate(sensor, &tryCfg) == Valid) {
+			if (data_->mainPath_->validate(sensor, sensorConfig, &tryCfg) == Valid) {
 				mainPathAvailable = false;
 				cfg = tryCfg;
 				cfg.setStream(const_cast<Stream *>(&data_->mainPathStream_));
@@ -524,7 +546,7 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 
 		if (selfPathAvailable) {
 			StreamConfiguration tryCfg = cfg;
-			if (data_->selfPath_->validate(sensor, &tryCfg) == Valid) {
+			if (data_->selfPath_->validate(sensor, sensorConfig, &tryCfg) == Valid) {
 				selfPathAvailable = false;
 				cfg = tryCfg;
 				cfg.setStream(const_cast<Stream *>(&data_->selfPathStream_));
@@ -535,7 +557,7 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 		/* Try to match stream allowing adjusting configuration. */
 		if (mainPathAvailable) {
 			StreamConfiguration tryCfg = cfg;
-			if (data_->mainPath_->validate(sensor, &tryCfg) == Adjusted) {
+			if (data_->mainPath_->validate(sensor, sensorConfig, &tryCfg) == Adjusted) {
 				mainPathAvailable = false;
 				cfg = tryCfg;
 				cfg.setStream(const_cast<Stream *>(&data_->mainPathStream_));
@@ -546,7 +568,7 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 
 		if (selfPathAvailable) {
 			StreamConfiguration tryCfg = cfg;
-			if (data_->selfPath_->validate(sensor, &tryCfg) == Adjusted) {
+			if (data_->selfPath_->validate(sensor, sensorConfig, &tryCfg) == Adjusted) {
 				selfPathAvailable = false;
 				cfg = tryCfg;
 				cfg.setStream(const_cast<Stream *>(&data_->selfPathStream_));
@@ -723,7 +745,13 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 	V4L2SubdeviceFormat format = config->sensorFormat();
 	LOG(RkISP1, Debug) << "Configuring sensor with " << format;
 
-	ret = sensor->setFormat(&format, config->combinedTransform());
+	if (config->sensorConfig)
+		ret = sensor->applyConfiguration(*config->sensorConfig,
+						 config->combinedTransform(),
+						 &format);
+	else
+		ret = sensor->setFormat(&format, config->combinedTransform());
+
 	if (ret < 0)
 		return ret;
 

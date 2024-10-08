@@ -180,6 +180,11 @@ struct IPAFrameContext : public FrameContext {
 };
 
 struct IPAContext {
+	IPAContext(unsigned int frameContextSize)
+		: hw(nullptr), frameContexts(frameContextSize)
+	{
+	}
+
 	const IPAHwSettings *hw;
 	IPACameraSensorInfo sensorInfo;
 	IPASessionConfiguration configuration;

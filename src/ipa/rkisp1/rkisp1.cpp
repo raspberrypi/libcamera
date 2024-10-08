@@ -124,7 +124,7 @@ const ControlInfoMap::Map rkisp1Controls{
 } /* namespace */
 
 IPARkISP1::IPARkISP1()
-	: context_({ {}, {}, {}, {}, { kMaxFrameContexts }, {}, {} })
+	: context_(kMaxFrameContexts)
 {
 }
 

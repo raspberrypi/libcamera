@@ -21,6 +21,8 @@ using namespace libcamera;
 
 LOG_DEFINE_CATEGORY(RPiAwb)
 
+constexpr double kDefaultCT = 4500.0;
+
 #define NAME "rpi.awb"
 
 /*
@@ -215,7 +217,7 @@ void Awb::initialise()
 		syncResults_.gainB = 1.0 / config_.ctB.eval(syncResults_.temperatureK);
 	} else {
 		/* random values just to stop the world blowing up */
-		syncResults_.temperatureK = 4500;
+		syncResults_.temperatureK = kDefaultCT;
 		syncResults_.gainR = syncResults_.gainG = syncResults_.gainB = 1.0;
 	}
 	prevSyncResults_ = syncResults_;
@@ -717,7 +719,11 @@ void Awb::awbGrey()
 		sumR += *ri, sumB += *bi;
 	double gainR = sumR.G / (sumR.R + 1),
 	       gainB = sumB.G / (sumB.B + 1);
-	asyncResults_.temperatureK = 4500; /* don't know what it is */
+	/*
+	 * The grey world model can't estimate the colour temperature, use a
+	 * default value.
+	 */
+	asyncResults_.temperatureK = kDefaultCT;
 	asyncResults_.gainR = gainR;
 	asyncResults_.gainG = 1.0;
 	asyncResults_.gainB = gainB;

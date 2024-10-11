@@ -304,7 +304,7 @@ RkISP1Path::validate(const CameraSensor *sensor,
 		}
 	}
 
-	if (sensorConfig && !found)
+	if (sensorConfig && !rawFormat.isValid())
 		return CameraConfiguration::Invalid;
 
 	bool isRaw = PixelFormatInfo::info(cfg->pixelFormat).colourEncoding ==

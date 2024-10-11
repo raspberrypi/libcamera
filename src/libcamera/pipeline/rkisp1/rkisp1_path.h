@@ -26,8 +26,8 @@ namespace libcamera {
 
 class CameraSensor;
 class MediaDevice;
-class V4L2Subdevice;
 class SensorConfiguration;
+class V4L2Subdevice;
 struct StreamConfiguration;
 struct V4L2SubdeviceFormat;
 

@@ -45,7 +45,7 @@ public:
 						  const Size &resolution,
 						  StreamRole role);
 	CameraConfiguration::Status validate(const CameraSensor *sensor,
-					     std::optional<SensorConfiguration> &sensorConfig,
+					     const std::optional<SensorConfiguration> &sensorConfig,
 					     StreamConfiguration *cfg);
 
 	int configure(const StreamConfiguration &config,

@@ -253,7 +253,7 @@ RkISP1Path::generateConfiguration(const CameraSensor *sensor, const Size &size,
 
 CameraConfiguration::Status
 RkISP1Path::validate(const CameraSensor *sensor,
-		     std::optional<SensorConfiguration> &sensorConfig,
+		     const std::optional<SensorConfiguration> &sensorConfig,
 		     StreamConfiguration *cfg)
 {
 	const std::vector<unsigned int> &mbusCodes = sensor->mbusCodes();

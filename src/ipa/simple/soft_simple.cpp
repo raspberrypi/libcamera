@@ -184,6 +184,11 @@ int IPASoftSimple::configure(const IPAConfigInfo &configInfo)
 	const ControlInfo &exposureInfo = sensorInfoMap_.find(V4L2_CID_EXPOSURE)->second;
 	const ControlInfo &gainInfo = sensorInfoMap_.find(V4L2_CID_ANALOGUE_GAIN)->second;
 
+	/* Clear the IPA context before the streaming session. */
+	context_.configuration = {};
+	context_.activeState = {};
+	context_.frameContexts.clear();
+
 	context_.configuration.agc.exposureMin = exposureInfo.min().get<int32_t>();
 	context_.configuration.agc.exposureMax = exposureInfo.max().get<int32_t>();
 	if (!context_.configuration.agc.exposureMin) {
@@ -245,6 +250,7 @@ int IPASoftSimple::start()
 
 void IPASoftSimple::stop()
 {
+	context_.frameContexts.clear();
 }
 
 void IPASoftSimple::queueRequest(const uint32_t frame, const ControlList &controls)

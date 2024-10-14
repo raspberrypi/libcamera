@@ -453,10 +453,12 @@ void IPARkISP1::setControls(unsigned int frame)
 	IPAFrameContext &frameContext = context_.frameContexts.get(frame);
 	uint32_t exposure = frameContext.agc.exposure;
 	uint32_t gain = context_.camHelper->gainCode(frameContext.agc.gain);
+	uint32_t vblank = frameContext.agc.vblank;
 
 	ControlList ctrls(sensorControls_);
 	ctrls.set(V4L2_CID_EXPOSURE, static_cast<int32_t>(exposure));
 	ctrls.set(V4L2_CID_ANALOGUE_GAIN, static_cast<int32_t>(gain));
+	ctrls.set(V4L2_CID_VBLANK, static_cast<int32_t>(vblank));
 
 	setSensorControls.emit(frame, ctrls);
 }

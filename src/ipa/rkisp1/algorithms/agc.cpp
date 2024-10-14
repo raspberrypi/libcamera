@@ -470,6 +470,8 @@ void Agc::process(IPAContext &context, [[maybe_unused]] const uint32_t frame,
 		return;
 	}
 
+	const utils::Duration &lineDuration = context.configuration.sensor.lineDuration;
+
 	/*
 	 * \todo Verify that the exposure and gain applied by the sensor for
 	 * this frame match what has been requested. This isn't a hard
@@ -519,8 +521,7 @@ void Agc::process(IPAContext &context, [[maybe_unused]] const uint32_t frame,
 	 * The Agc algorithm needs to know the effective exposure value that was
 	 * applied to the sensor when the statistics were collected.
 	 */
-	utils::Duration exposureTime = context.configuration.sensor.lineDuration
-				       * frameContext.sensor.exposure;
+	utils::Duration exposureTime = lineDuration * frameContext.sensor.exposure;
 	double analogueGain = frameContext.sensor.gain;
 	utils::Duration effectiveExposureValue = exposureTime * analogueGain;
 
@@ -537,8 +538,7 @@ void Agc::process(IPAContext &context, [[maybe_unused]] const uint32_t frame,
 
 	IPAActiveState &activeState = context.activeState;
 	/* Update the estimated exposure and gain. */
-	activeState.agc.automatic.exposure = newExposureTime
-					   / context.configuration.sensor.lineDuration;
+	activeState.agc.automatic.exposure = newExposureTime / lineDuration;
 	activeState.agc.automatic.gain = aGain;
 
 	fillMetadata(context, frameContext, metadata);

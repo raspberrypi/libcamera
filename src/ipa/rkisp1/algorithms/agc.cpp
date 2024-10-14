@@ -188,12 +188,9 @@ int Agc::configure(IPAContext &context, const IPACameraSensorInfo &configInfo)
 	context.activeState.agc.meteringMode =
 		static_cast<controls::AeMeteringModeEnum>(meteringModes_.begin()->first);
 
-	/*
-	 * \todo This should probably come from FrameDurationLimits instead,
-	 * except it's computed in the IPA and not here so we'd have to
-	 * recompute it.
-	 */
-	context.activeState.agc.maxFrameDuration = context.configuration.sensor.maxExposureTime;
+	/* Limit the frame duration to match current initialisation */
+	ControlInfo &frameDurationLimits = context.ctrlMap[&controls::FrameDurationLimits];
+	context.activeState.agc.maxFrameDuration = std::chrono::microseconds(frameDurationLimits.max().get<int64_t>());
 
 	/*
 	 * Define the measurement window for AGC as a centered rectangle

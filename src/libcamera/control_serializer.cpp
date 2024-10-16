@@ -498,7 +498,7 @@ ControlInfoMap ControlSerializer::deserialize<ControlInfoMap>(ByteStreamBuffer &
 			 * debugging purpose.
 			 */
 			controlIds_.emplace_back(std::make_unique<ControlId>(entry->id,
-									     "", type));
+									     "", "local", type));
 			(*localIdMap)[entry->id] = controlIds_.back().get();
 		}
 

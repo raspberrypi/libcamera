@@ -520,7 +520,7 @@ std::unique_ptr<ControlId> V4L2Device::v4l2ControlId(const v4l2_query_ext_ctrl &
 	const std::string name(static_cast<const char *>(ctrl.name), len);
 	const ControlType type = v4l2CtrlType(ctrl.type);
 
-	return std::make_unique<ControlId>(ctrl.id, name, type);
+	return std::make_unique<ControlId>(ctrl.id, name, "v4l2", type);
 }
 
 /**

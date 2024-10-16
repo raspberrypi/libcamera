@@ -89,9 +89,9 @@ extern const std::map<std::string, {{ctrl.type}}> {{ctrl.name}}NameValueMap = {
 	{ "{{enum.name}}", {{enum.name}} },
 {%- endfor %}
 };
-extern const Control<{{ctrl.type}}> {{ctrl.name}}({{ctrl.name|snake_case|upper}}, "{{ctrl.name}}", {{ctrl.name}}NameValueMap);
+extern const Control<{{ctrl.type}}> {{ctrl.name}}({{ctrl.name|snake_case|upper}}, "{{ctrl.name}}", "{{vendor}}", {{ctrl.name}}NameValueMap);
 {% else -%}
-extern const Control<{{ctrl.type}}> {{ctrl.name}}({{ctrl.name|snake_case|upper}}, "{{ctrl.name}}");
+extern const Control<{{ctrl.type}}> {{ctrl.name}}({{ctrl.name|snake_case|upper}}, "{{ctrl.name}}", "{{vendor}}");
 {% endif -%}
 {%- endfor %}
 

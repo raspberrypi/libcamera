@@ -160,10 +160,13 @@ void CameraSession::listControls() const
 {
 	for (const auto &[id, info] : camera_->controls()) {
 		if (info.values().empty()) {
-			std::cout << "Control: " << id->name() << ": "
+			std::cout << "Control: "
+				  << id->vendor() << "::" << id->name() << ": "
 				  << info.toString() << std::endl;
 		} else {
-			std::cout << "Control: " << id->name() << ":" << std::endl;
+			std::cout << "Control: "
+				  << id->vendor() << "::" << id->name() << ":"
+				  << std::endl;
 			for (const auto &value : info.values()) {
 				int32_t val = value.get<int32_t>();
 				const auto &it = id->enumerators().find(val);

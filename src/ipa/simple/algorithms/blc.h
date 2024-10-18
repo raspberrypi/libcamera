@@ -19,6 +19,7 @@ public:
 	BlackLevel();
 	~BlackLevel() = default;
 
+	int init(IPAContext &context, const YamlObject &tuningData) override;
 	int configure(IPAContext &context, const IPAConfigInfo &configInfo) override;
 	void process(IPAContext &context, const uint32_t frame,
 		     IPAFrameContext &frameContext,

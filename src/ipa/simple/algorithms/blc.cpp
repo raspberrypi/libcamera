@@ -21,6 +21,19 @@ BlackLevel::BlackLevel()
 {
 }
 
+int BlackLevel::init(IPAContext &context, const YamlObject &tuningData)
+{
+	auto blackLevel = tuningData["blackLevel"].get<int16_t>();
+	if (blackLevel.has_value()) {
+		/*
+		 * Convert 16 bit values from the tuning file to 8 bit black
+		 * level for the SoftISP.
+		 */
+		context.configuration.black.level = blackLevel.value() >> 8;
+	}
+	return 0;
+}
+
 int BlackLevel::configure(IPAContext &context,
 			  [[maybe_unused]] const IPAConfigInfo &configInfo)
 {

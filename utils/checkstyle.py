@@ -334,37 +334,57 @@ class Amendment(Commit):
 class ClassRegistry(type):
     def __new__(cls, clsname, bases, attrs):
         newclass = super().__new__(cls, clsname, bases, attrs)
-        if bases:
-            bases[0].subclasses.append(newclass)
-            bases[0].subclasses.sort(key=lambda x: getattr(x, 'priority', 0),
-                                     reverse=True)
+        if bases and bases[0] != CheckerBase:
+            base = bases[0]
+
+            if not hasattr(base, 'subclasses'):
+                base.subclasses = []
+            base.subclasses.append(newclass)
+            base.subclasses.sort(key=lambda x: getattr(x, 'priority', 0),
+                                 reverse=True)
         return newclass
+
+
+class CheckerBase(metaclass=ClassRegistry):
+    #
+    # Class methods
+    #
+    @classmethod
+    def instances(cls, obj, names):
+        for instance in cls.subclasses:
+            if names and instance.__name__ not in names:
+                continue
+            if instance.supports(obj):
+                yield instance
+
+    @classmethod
+    def supports(cls, obj):
+        if hasattr(cls, 'commit_types'):
+            return type(obj) in cls.commit_types
+
+        if hasattr(cls, 'patterns'):
+            for pattern in cls.patterns:
+                if fnmatch.fnmatch(os.path.basename(obj), pattern):
+                    return True
+
+        return False
+
+    @classmethod
+    def all_patterns(cls):
+        patterns = set()
+        for instance in cls.subclasses:
+            if hasattr(instance, 'patterns'):
+                patterns.update(instance.patterns)
+
+        return patterns
 
 
 # ------------------------------------------------------------------------------
 # Commit Checkers
 #
 
-class CommitChecker(metaclass=ClassRegistry):
-    subclasses = []
-
-    def __init__(self):
-        pass
-
-    #
-    # Class methods
-    #
-    @classmethod
-    def checkers(cls, commit, names):
-        for checker in cls.subclasses:
-            if names and checker.__name__ not in names:
-                continue
-            if checker.supports(commit):
-                yield checker
-
-    @classmethod
-    def supports(cls, commit):
-        return type(commit) in cls.commit_types
+class CommitChecker(CheckerBase):
+    pass
 
 
 class CommitIssue(object):
@@ -561,37 +581,8 @@ class TrailersChecker(CommitChecker):
 # Style Checkers
 #
 
-class StyleChecker(metaclass=ClassRegistry):
-    subclasses = []
-
-    def __init__(self):
-        pass
-
-    #
-    # Class methods
-    #
-    @classmethod
-    def checkers(cls, filename, names):
-        for checker in cls.subclasses:
-            if names and checker.__name__ not in names:
-                continue
-            if checker.supports(filename):
-                yield checker
-
-    @classmethod
-    def supports(cls, filename):
-        for pattern in cls.patterns:
-            if fnmatch.fnmatch(os.path.basename(filename), pattern):
-                return True
-        return False
-
-    @classmethod
-    def all_patterns(cls):
-        patterns = set()
-        for checker in cls.subclasses:
-            patterns.update(checker.patterns)
-
-        return patterns
+class StyleChecker(CheckerBase):
+    pass
 
 
 class StyleIssue(object):
@@ -748,37 +739,8 @@ class ShellChecker(StyleChecker):
 # Formatters
 #
 
-class Formatter(metaclass=ClassRegistry):
-    subclasses = []
-
-    def __init__(self):
-        pass
-
-    #
-    # Class methods
-    #
-    @classmethod
-    def formatters(cls, filename, names):
-        for formatter in cls.subclasses:
-            if names and formatter.__name__ not in names:
-                continue
-            if formatter.supports(filename):
-                yield formatter
-
-    @classmethod
-    def supports(cls, filename):
-        for pattern in cls.patterns:
-            if fnmatch.fnmatch(os.path.basename(filename), pattern):
-                return True
-        return False
-
-    @classmethod
-    def all_patterns(cls):
-        patterns = set()
-        for formatter in cls.subclasses:
-            patterns.update(formatter.patterns)
-
-        return patterns
+class Formatter(CheckerBase):
+    pass
 
 
 class CLangFormatter(Formatter):
@@ -957,7 +919,7 @@ def check_file(top_level, commit, filename, checkers):
     after = commit.get_file(filename)
 
     formatted = after
-    for formatter in Formatter.formatters(filename, checkers):
+    for formatter in Formatter.instances(filename, checkers):
         formatted = formatter.format(filename, formatted)
 
     after = after.splitlines(True)
@@ -971,7 +933,7 @@ def check_file(top_level, commit, filename, checkers):
 
     # Check for code issues not related to formatting.
     issues = []
-    for checker in StyleChecker.checkers(filename, checkers):
+    for checker in StyleChecker.instances(filename, checkers):
         checker = checker(after)
         for hunk in commit_diff:
             issues += checker.check(hunk.side('to').touched)
@@ -1019,7 +981,7 @@ def check_style(top_level, commit, checkers):
     issues = 0
 
     # Apply the commit checkers first.
-    for checker in CommitChecker.checkers(commit, checkers):
+    for checker in CommitChecker.instances(commit, checkers):
         for issue in checker.check(commit, top_level):
             print('%s%s%s' % (Colours.fg(Colours.Yellow), issue.msg, Colours.reset()))
             issues += 1

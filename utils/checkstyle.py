@@ -23,7 +23,6 @@ import subprocess
 import sys
 
 dependencies = {
-    'clang-format': True,
     'git': True,
 }
 
@@ -346,9 +345,6 @@ class ClassRegistry(type):
 
 
 class CheckerBase(metaclass=ClassRegistry):
-    #
-    # Class methods
-    #
     @classmethod
     def instances(cls, obj, names):
         for instance in cls.subclasses:
@@ -377,6 +373,22 @@ class CheckerBase(metaclass=ClassRegistry):
                 patterns.update(instance.patterns)
 
         return patterns
+
+    @classmethod
+    def check_dependencies(cls):
+        if not hasattr(cls, 'dependencies'):
+            return []
+
+        issues = []
+
+        for command in cls.dependencies:
+            if command not in dependencies:
+                dependencies[command] = shutil.which(command)
+
+            if not dependencies[command]:
+                issues.append(CommitIssue(f'Missing {command} to run {cls.__name__}'))
+
+        return issues
 
 
 # ------------------------------------------------------------------------------
@@ -710,6 +722,7 @@ class MesonChecker(StyleChecker):
 
 
 class ShellChecker(StyleChecker):
+    dependencies = ('shellcheck',)
     patterns = ('*.sh',)
     results_line_regex = re.compile(r'In - line ([0-9]+):')
 
@@ -718,12 +731,8 @@ class ShellChecker(StyleChecker):
         issues = []
         data = ''.join(content).encode('utf-8')
 
-        try:
-            ret = subprocess.run(['shellcheck', '-Cnever', '-'],
-                                 input=data, stdout=subprocess.PIPE)
-        except FileNotFoundError:
-            issues.append(StyleIssue(0, None, None, 'Please install shellcheck to validate shell script additions'))
-            return issues
+        ret = subprocess.run(['shellcheck', '-Cnever', '-'],
+                             input=data, stdout=subprocess.PIPE)
 
         results = ret.stdout.decode('utf-8').splitlines()
         for nr, item in enumerate(results):
@@ -750,6 +759,7 @@ class Formatter(CheckerBase):
 
 
 class CLangFormatter(Formatter):
+    dependencies = ('clang-format',)
     patterns = ('*.c', '*.cpp', '*.h')
     priority = -1
 
@@ -879,17 +889,13 @@ class IncludeOrderFormatter(Formatter):
 
 
 class Pep8Formatter(Formatter):
+    dependencies = ('autopep8',)
     patterns = ('*.py',)
 
     @classmethod
     def format(cls, filename, data):
-        try:
-            ret = subprocess.run(['autopep8', '--ignore=E501', '-'],
-                                 input=data.encode('utf-8'), stdout=subprocess.PIPE)
-        except FileNotFoundError:
-            issues.append(StyleIssue(0, None, None, 'Please install autopep8 to format python additions'))
-            return issues
-
+        ret = subprocess.run(['autopep8', '--ignore=E501', '-'],
+                             input=data.encode('utf-8'), stdout=subprocess.PIPE)
         return ret.stdout.decode('utf-8')
 
 
@@ -908,6 +914,24 @@ class StripTrailingSpaceFormatter(Formatter):
 # Style checking
 #
 
+def check_commit(top_level, commit, checkers):
+    issues = []
+
+    # Apply the commit checkers first.
+    for checker in CommitChecker.instances(commit, checkers):
+        issues_ = checker.check_dependencies()
+        if issues_:
+            issues += issues_
+            continue
+
+        issues += checker.check(commit, top_level)
+
+    for issue in issues:
+        print(issue)
+
+    return len(issues)
+
+
 def check_file(top_level, commit, filename, checkers):
     # Extract the line numbers touched by the commit.
     commit_diff = commit.get_diff(top_level, filename)
@@ -923,9 +947,15 @@ def check_file(top_level, commit, filename, checkers):
     # Format the file after the commit with all formatters and compute the diff
     # between the unformatted and formatted contents.
     after = commit.get_file(filename)
+    issues = []
 
     formatted = after
     for formatter in Formatter.instances(filename, checkers):
+        issues_ = formatter.check_dependencies()
+        if issues_:
+            issues += issues_
+            continue
+
         formatted = formatter.format(filename, formatted)
 
     after = after.splitlines(True)
@@ -938,8 +968,12 @@ def check_file(top_level, commit, filename, checkers):
     formatted_diff = [hunk for hunk in formatted_diff if hunk.intersects(lines)]
 
     # Check for code issues not related to formatting.
-    issues = []
     for checker in StyleChecker.instances(filename, checkers):
+        issues_ = checker.check_dependencies()
+        if issues_:
+            issues += issues_
+            continue
+
         for hunk in commit_diff:
             issues += checker.check(after, hunk.side('to').touched)
 
@@ -955,7 +989,7 @@ def check_file(top_level, commit, filename, checkers):
             print(hunk)
 
     if len(issues):
-        issues = sorted(issues, key=lambda i: i.line_number)
+        issues = sorted(issues, key=lambda i: getattr(i, 'line_number', -1))
         for issue in issues:
             print(issue)
 
@@ -969,13 +1003,8 @@ def check_style(top_level, commit, checkers):
     print(title)
     print(separator)
 
-    issues = 0
-
     # Apply the commit checkers first.
-    for checker in CommitChecker.instances(commit, checkers):
-        for issue in checker.check(commit, top_level):
-            print(issue)
-            issues += 1
+    issues = check_commit(top_level, commit, checkers)
 
     # Filter out files we have no checker for.
     patterns = set()
@@ -1047,7 +1076,7 @@ def main(argv):
     if args.checkers:
         args.checkers = args.checkers.split(',')
 
-    # Check for required dependencies.
+    # Check for required common dependencies.
     for command, mandatory in dependencies.items():
         found = shutil.which(command)
         if mandatory and not found:

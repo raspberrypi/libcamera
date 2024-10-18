@@ -598,15 +598,12 @@ class HexValueChecker(StyleChecker):
 
     regex = re.compile(r'\b0[xX][0-9a-fA-F]+\b')
 
-    def __init__(self, content):
-        super().__init__()
-        self.__content = content
-
-    def check(self, line_numbers):
+    @classmethod
+    def check(cls, content, line_numbers):
         issues = []
 
         for line_number in line_numbers:
-            line = self.__content[line_number - 1]
+            line = content[line_number - 1]
             match = HexValueChecker.regex.search(line)
             if not match:
                 continue
@@ -630,15 +627,12 @@ class IncludeChecker(StyleChecker):
                'cwchar', 'cwctype', 'math.h')
     include_regex = re.compile(r'^#include <([a-z.]*)>')
 
-    def __init__(self, content):
-        super().__init__()
-        self.__content = content
-
-    def check(self, line_numbers):
+    @classmethod
+    def check(self, content, line_numbers):
         issues = []
 
         for line_number in line_numbers:
-            line = self.__content[line_number - 1]
+            line = content[line_number - 1]
             match = IncludeChecker.include_regex.match(line)
             if not match:
                 continue
@@ -664,14 +658,11 @@ class LogCategoryChecker(StyleChecker):
     log_regex = re.compile(r'\bLOG\((Debug|Info|Warning|Error|Fatal)\)')
     patterns = ('*.cpp',)
 
-    def __init__(self, content):
-        super().__init__()
-        self.__content = content
-
-    def check(self, line_numbers):
+    @classmethod
+    def check(cls, content, line_numbers):
         issues = []
         for line_number in line_numbers:
-            line = self.__content[line_number-1]
+            line = content[line_number - 1]
             match = LogCategoryChecker.log_regex.search(line)
             if not match:
                 continue
@@ -685,14 +676,11 @@ class LogCategoryChecker(StyleChecker):
 class MesonChecker(StyleChecker):
     patterns = ('meson.build',)
 
-    def __init__(self, content):
-        super().__init__()
-        self.__content = content
-
-    def check(self, line_numbers):
+    @classmethod
+    def check(cls, content, line_numbers):
         issues = []
         for line_number in line_numbers:
-            line = self.__content[line_number-1]
+            line = content[line_number - 1]
             pos = line.find('\t')
             if pos != -1:
                 issues.append(StyleIssue(line_number, [pos, pos], line,
@@ -704,13 +692,10 @@ class ShellChecker(StyleChecker):
     patterns = ('*.sh',)
     results_line_regex = re.compile(r'In - line ([0-9]+):')
 
-    def __init__(self, content):
-        super().__init__()
-        self.__content = content
-
-    def check(self, line_numbers):
+    @classmethod
+    def check(cls, content, line_numbers):
         issues = []
-        data = ''.join(self.__content).encode('utf-8')
+        data = ''.join(content).encode('utf-8')
 
         try:
             ret = subprocess.run(['shellcheck', '-Cnever', '-'],
@@ -934,9 +919,8 @@ def check_file(top_level, commit, filename, checkers):
     # Check for code issues not related to formatting.
     issues = []
     for checker in StyleChecker.instances(filename, checkers):
-        checker = checker(after)
         for hunk in commit_diff:
-            issues += checker.check(hunk.side('to').touched)
+            issues += checker.check(after, hunk.side('to').touched)
 
     # Print the detected issues.
     if len(issues) == 0 and len(formatted_diff) == 0:

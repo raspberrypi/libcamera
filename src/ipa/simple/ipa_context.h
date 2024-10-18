@@ -8,6 +8,7 @@
 #pragma once
 
 #include <array>
+#include <optional>
 #include <stdint.h>
 
 #include <libipa/fc_queue.h>
@@ -22,6 +23,9 @@ struct IPASessionConfiguration {
 		int32_t exposureMin, exposureMax;
 		double againMin, againMax, againMinStep;
 	} agc;
+	struct {
+		std::optional<uint8_t> level;
+	} black;
 };
 
 struct IPAActiveState {

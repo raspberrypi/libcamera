@@ -24,7 +24,8 @@ BlackLevel::BlackLevel()
 int BlackLevel::configure(IPAContext &context,
 			  [[maybe_unused]] const IPAConfigInfo &configInfo)
 {
-	context.activeState.blc.level = 255;
+	context.activeState.blc.level =
+		context.configuration.black.level.value_or(255);
 	return 0;
 }
 
@@ -34,6 +35,9 @@ void BlackLevel::process(IPAContext &context,
 			 const SwIspStats *stats,
 			 [[maybe_unused]] ControlList &metadata)
 {
+	if (context.configuration.black.level.has_value())
+		return;
+
 	if (frameContext.sensor.exposure == exposure_ &&
 	    frameContext.sensor.gain == gain_) {
 		return;

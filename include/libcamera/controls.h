@@ -101,6 +101,7 @@ struct control_type<Size> {
 template<>
 struct control_type<Point> {
 	static constexpr ControlType value = ControlTypePoint;
+	static constexpr std::size_t size = 0;
 };
 
 template<typename T, std::size_t N>

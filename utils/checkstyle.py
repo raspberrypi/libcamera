@@ -391,6 +391,9 @@ class CommitIssue(object):
     def __init__(self, msg):
         self.msg = msg
 
+    def __str__(self):
+        return f'{Colours.fg(Colours.Yellow)}{self.msg}{Colours.reset()}'
+
 
 class HeaderAddChecker(CommitChecker):
     commit_types = (Commit, StagedChanges, Amendment)
@@ -591,6 +594,24 @@ class StyleIssue(object):
         self.position = position
         self.line = line
         self.msg = msg
+
+    def __str__(self):
+        s = []
+        s.append(f'{Colours.fg(Colours.Yellow)}#{self.line_number}: {self.msg}{Colours.reset()}')
+        if self.line is not None:
+            s.append(f'{Colours.fg(Colours.Yellow)}+{self.line.rstrip()}{Colours.reset()}')
+
+            if self.position is not None:
+                # Align the position marker by using the original line with
+                # all characters except for tabs replaced with spaces. This
+                # ensures proper alignment regardless of how the code is
+                # indented.
+                start = self.position[0]
+                prefix = ''.join([c if c == '\t' else ' ' for c in self.line[:start]])
+                length = self.position[1] - start - 1
+                s.append(f' {prefix}^{"~" * length}')
+
+        return '\n'.join(s)
 
 
 class HexValueChecker(StyleChecker):
@@ -936,21 +957,7 @@ def check_file(top_level, commit, filename, checkers):
     if len(issues):
         issues = sorted(issues, key=lambda i: i.line_number)
         for issue in issues:
-            print('%s#%u: %s%s' % (Colours.fg(Colours.Yellow), issue.line_number,
-                                   issue.msg, Colours.reset()))
-            if issue.line is not None:
-                print('%s+%s%s' % (Colours.fg(Colours.Yellow), issue.line.rstrip(),
-                                   Colours.reset()))
-
-                if issue.position is not None:
-                    # Align the position marker by using the original line with
-                    # all characters except for tabs replaced with spaces. This
-                    # ensures proper alignment regardless of how the code is
-                    # indented.
-                    start = issue.position[0]
-                    prefix = ''.join([c if c == '\t' else ' ' for c in issue.line[:start]])
-                    length = issue.position[1] - start - 1
-                    print(' ' + prefix + '^' + '~' * length)
+            print(issue)
 
     return len(formatted_diff) + len(issues)
 
@@ -967,7 +974,7 @@ def check_style(top_level, commit, checkers):
     # Apply the commit checkers first.
     for checker in CommitChecker.instances(commit, checkers):
         for issue in checker.check(commit, top_level):
-            print('%s%s%s' % (Colours.fg(Colours.Yellow), issue.msg, Colours.reset()))
+            print(issue)
             issues += 1
 
     # Filter out files we have no checker for.

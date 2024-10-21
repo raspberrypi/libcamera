@@ -33,7 +33,6 @@ GST_DEBUG_CATEGORY_STATIC(provider_debug);
 
 enum {
 	PROP_DEVICE_NAME = 1,
-	PROP_AUTO_FOCUS_MODE = 2,
 };
 
 #define GST_TYPE_LIBCAMERA_DEVICE gst_libcamera_device_get_type()
@@ -43,7 +42,6 @@ G_DECLARE_FINAL_TYPE(GstLibcameraDevice, gst_libcamera_device,
 struct _GstLibcameraDevice {
 	GstDevice parent;
 	gchar *name;
-	controls::AfModeEnum auto_focus_mode = controls::AfModeManual;
 };
 
 G_DEFINE_TYPE(GstLibcameraDevice, gst_libcamera_device, GST_TYPE_DEVICE)
@@ -60,7 +58,6 @@ gst_libcamera_device_create_element(GstDevice *device, const gchar *name)
 	g_assert(source);
 
 	g_object_set(source, "camera-name", GST_LIBCAMERA_DEVICE(device)->name, nullptr);
-	g_object_set(source, "auto-focus-mode", GST_LIBCAMERA_DEVICE(device)->auto_focus_mode, nullptr);
 
 	return source;
 }
@@ -86,9 +83,6 @@ gst_libcamera_device_set_property(GObject *object, guint prop_id,
 	switch (prop_id) {
 	case PROP_DEVICE_NAME:
 		device->name = g_value_dup_string(value);
-		break;
-	case PROP_AUTO_FOCUS_MODE:
-		device->auto_focus_mode = static_cast<controls::AfModeEnum>(g_value_get_enum(value));
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
@@ -129,15 +123,6 @@ gst_libcamera_device_class_init(GstLibcameraDeviceClass *klass)
 						(GParamFlags)(G_PARAM_STATIC_STRINGS | G_PARAM_WRITABLE |
 							      G_PARAM_CONSTRUCT_ONLY));
 	g_object_class_install_property(object_class, PROP_DEVICE_NAME, pspec);
-
-	pspec = g_param_spec_enum("auto-focus-mode",
-				  "Set auto-focus mode",
-				  "Available options: AfModeManual, "
-				  "AfModeAuto or AfModeContinuous.",
-				  gst_libcamera_auto_focus_get_type(),
-				  static_cast<gint>(controls::AfModeManual),
-				  G_PARAM_WRITABLE);
-	g_object_class_install_property(object_class, PROP_AUTO_FOCUS_MODE, pspec);
 }
 
 static GstDevice *

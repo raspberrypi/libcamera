@@ -1,0 +1,332 @@
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
+/*
+ * Copyright (C) 2024, Jaslo Ziska
+ *
+ * GStreamer Camera Controls
+ *
+ * This file is auto-generated. Do not edit.
+ */
+
+#include <vector>
+
+#include <libcamera/control_ids.h>
+#include <libcamera/controls.h>
+#include <libcamera/geometry.h>
+
+#include "gstlibcamera-controls.h"
+
+using namespace libcamera;
+
+static void value_set_rectangle(GValue *value, const Rectangle &rect)
+{
+	Point top_left = rect.topLeft();
+	Size size = rect.size();
+
+	GValue x = G_VALUE_INIT;
+	g_value_init(&x, G_TYPE_INT);
+	g_value_set_int(&x, top_left.x);
+	gst_value_array_append_and_take_value(value, &x);
+
+	GValue y = G_VALUE_INIT;
+	g_value_init(&y, G_TYPE_INT);
+	g_value_set_int(&y, top_left.y);
+	gst_value_array_append_and_take_value(value, &y);
+
+	GValue width = G_VALUE_INIT;
+	g_value_init(&width, G_TYPE_INT);
+	g_value_set_int(&width, size.width);
+	gst_value_array_append_and_take_value(value, &width);
+
+	GValue height = G_VALUE_INIT;
+	g_value_init(&height, G_TYPE_INT);
+	g_value_set_int(&x, size.height);
+	gst_value_array_append_and_take_value(value, &height);
+}
+
+static Rectangle value_get_rectangle(const GValue *value)
+{
+	const GValue *r;
+	r = gst_value_array_get_value(value, 0);
+	int x = g_value_get_int(r);
+	r = gst_value_array_get_value(value, 1);
+	int y = g_value_get_int(r);
+	r = gst_value_array_get_value(value, 2);
+	int w = g_value_get_int(r);
+	r = gst_value_array_get_value(value, 3);
+	int h = g_value_get_int(r);
+
+	return Rectangle(x, y, w, h);
+}
+
+{% for vendor, ctrls in controls %}
+{%- for ctrl in ctrls if ctrl.is_enum %}
+static const GEnumValue {{ ctrl.name|snake_case }}_types[] = {
+{%- for enum in ctrl.enum_values %}
+	{
+		controls::{{ ctrl.namespace }}{{ enum.name }},
+		{{ enum.description|format_description|indent_str('\t\t') }},
+		"{{ enum.gst_name }}"
+	},
+{%- endfor %}
+	{0, NULL, NULL}
+};
+
+#define TYPE_{{ ctrl.name|snake_case|upper }} \
+	({{ ctrl.name|snake_case }}_get_type())
+static GType {{ ctrl.name|snake_case }}_get_type()
+{
+	static GType {{ ctrl.name|snake_case }}_type = 0;
+
+	if (!{{ ctrl.name|snake_case }}_type)
+		{{ ctrl.name|snake_case }}_type =
+			g_enum_register_static("{{ ctrl.name }}",
+					       {{ ctrl.name|snake_case }}_types);
+
+	return {{ ctrl.name|snake_case }}_type;
+}
+{% endfor %}
+{%- endfor %}
+
+void GstCameraControls::installProperties(GObjectClass *klass, int lastPropId)
+{
+{%- for vendor, ctrls in controls %}
+{%- for ctrl in ctrls %}
+
+{%- set spec %}
+{%- if ctrl.is_rectangle -%}
+gst_param_spec_array(
+{%- else -%}
+g_param_spec_{{ ctrl.gtype }}(
+{%- endif -%}
+{%- if ctrl.is_array %}
+	"{{ ctrl.vendor_prefix }}{{ ctrl.name|kebab_case }}-value",
+	"{{ ctrl.name }} Value",
+	"One {{ ctrl.name }} element value",
+{%- else %}
+	"{{ ctrl.vendor_prefix }}{{ ctrl.name|kebab_case }}",
+	"{{ ctrl.name }}",
+	{{ ctrl.description|format_description|indent_str('\t') }},
+{%- endif %}
+{%- if ctrl.is_enum %}
+	TYPE_{{ ctrl.name|snake_case|upper }},
+	{{ ctrl.default }},
+{%- elif ctrl.is_rectangle %}
+	g_param_spec_int(
+		"rectangle-value",
+		"Rectangle Value",
+		"One rectangle value, either x, y, width or height.",
+		{{ ctrl.min }}, {{ ctrl.max }}, {{ ctrl.default }},
+		(GParamFlags) (GST_PARAM_CONTROLLABLE | G_PARAM_READWRITE |
+			       G_PARAM_STATIC_STRINGS)
+	),
+{%- elif ctrl.gtype == 'boolean' %}
+	{{ ctrl.default }},
+{%- elif ctrl.gtype in ['float', 'int', 'int64', 'uchar'] %}
+	{{ ctrl.min }}, {{ ctrl.max }}, {{ ctrl.default }},
+{%- endif %}
+	(GParamFlags) (GST_PARAM_CONTROLLABLE | G_PARAM_READWRITE |
+		       G_PARAM_STATIC_STRINGS)
+)
+{%- endset %}
+
+	g_object_class_install_property(
+		klass,
+		lastPropId + controls::{{ ctrl.namespace }}{{ ctrl.name|snake_case|upper }},
+{%- if ctrl.is_array %}
+		gst_param_spec_array(
+			"{{ ctrl.vendor_prefix }}{{ ctrl.name|kebab_case }}",
+			"{{ ctrl.name }}",
+			{{ ctrl.description|format_description|indent_str('\t\t\t') }},
+			{{ spec|indent_str('\t\t\t') }},
+			(GParamFlags) (GST_PARAM_CONTROLLABLE |
+				       G_PARAM_READWRITE |
+				       G_PARAM_STATIC_STRINGS)
+		)
+{%- else %}
+		{{ spec|indent_str('\t\t') }}
+{%- endif %}
+	);
+{%- endfor %}
+{%- endfor %}
+}
+
+bool GstCameraControls::getProperty(guint propId, GValue *value,
+				    [[maybe_unused]] GParamSpec *pspec)
+{
+	if (!controls_acc_.contains(propId)) {
+		GST_WARNING("Control '%s' is not available, default value will "
+			    "be returned",
+			    controls::controls.at(propId)->name().c_str());
+		return true;
+	}
+	const ControlValue &cv = controls_acc_.get(propId);
+
+	switch (propId) {
+{%- for vendor, ctrls in controls %}
+{%- for ctrl in ctrls %}
+
+	case controls::{{ ctrl.namespace }}{{ ctrl.name|snake_case|upper }}: {
+		auto control = cv.get<{{ ctrl.type }}>();
+
+{%- if ctrl.is_array %}
+		for (size_t i = 0; i < control.size(); ++i) {
+			GValue element = G_VALUE_INIT;
+{%- if ctrl.is_rectangle %}
+			g_value_init(&element, GST_TYPE_PARAM_ARRAY_LIST);
+			value_set_rectangle(&element, control[i]);
+{%- else %}
+			g_value_init(&element, G_TYPE_{{ ctrl.gtype|upper }});
+			g_value_set_{{ ctrl.gtype }}(&element, control[i]);
+{%- endif %}
+			gst_value_array_append_and_take_value(value, &element);
+		}
+{%- else %}
+{%- if ctrl.is_rectangle %}
+		value_set_rectangle(value, control);
+{%- else %}
+		g_value_set_{{ ctrl.gtype }}(value, control);
+{%- endif %}
+{%- endif %}
+
+		return true;
+	}
+{%- endfor %}
+{%- endfor %}
+
+	default:
+		return false;
+	}
+}
+
+bool GstCameraControls::setProperty(guint propId, const GValue *value,
+				    [[maybe_unused]] GParamSpec *pspec)
+{
+	/*
+	 * Check whether the camera capabilities are already available.
+	 * They might not be available if the pipeline has not started yet.
+	 */
+	if (!capabilities_.empty()) {
+ 		/* If so, check that the control is supported by the camera. */
+		const ControlId *cid = capabilities_.idmap().at(propId);
+		auto info = capabilities_.find(cid);
+
+		if (info == capabilities_.end()) {
+			GST_WARNING("Control '%s' is not supported by the "
+				    "camera and will be ignored",
+				    cid->name().c_str());
+			return true;
+		}
+	}
+
+	switch (propId) {
+{%- for vendor, ctrls in controls %}
+{%- for ctrl in ctrls %}
+
+	case controls::{{ ctrl.namespace }}{{ ctrl.name|snake_case|upper }}: {
+		ControlValue control;
+{%- if ctrl.is_array %}
+		size_t size = gst_value_array_get_size(value);
+{%- if ctrl.size != 0 %}
+		if (size != {{ ctrl.size }}) {
+			GST_ERROR("Incorrect array size for control "
+				  "'{{ ctrl.name|kebab_case }}', must be of "
+				  "size {{ ctrl.size }}");
+			return true;
+		}
+{%- endif %}
+
+		std::vector<{{ ctrl.element_type }}> values(size);
+		for (size_t i = 0; i < size; ++i) {
+			const GValue *element =
+				gst_value_array_get_value(value, i);
+{%- if ctrl.is_rectangle %}
+			if (gst_value_array_get_size(element) != 4) {
+				GST_ERROR("Rectangle in control "
+					  "'{{ ctrl.name|kebab_case }}' at"
+					  "index %zu must be an array of size 4",
+					  i);
+				return true;
+			}
+			values[i] = value_get_rectangle(element);
+{%- else %}
+			values[i] = g_value_get_{{ ctrl.gtype }}(element);
+{%- endif %}
+		}
+
+{%- if ctrl.size == 0 %}
+		control.set(Span<const {{ ctrl.element_type }}>(values.data(),
+								size));
+{%- else %}
+		control.set(Span<const {{ ctrl.element_type }},
+			         {{ ctrl.size }}>(values.data(),
+						  {{ ctrl.size }}));
+{%- endif %}
+{%- else %}
+{%- if ctrl.is_rectangle %}
+		if (gst_value_array_get_size(value) != 4) {
+			GST_ERROR("Rectangle in control "
+				  "'{{ ctrl.name|kebab_case }}' must be an "
+				  "array of size 4");
+			return true;
+		}
+		Rectangle val = value_get_rectangle(value);
+{%- else %}
+		auto val = g_value_get_{{ ctrl.gtype }}(value);
+{%- endif %}
+		control.set(val);
+{%- endif %}
+		controls_.set(propId, control);
+		controls_acc_.set(propId, control);
+		return true;
+	}
+{%- endfor %}
+{%- endfor %}
+
+	default:
+		return false;
+	}
+}
+
+void GstCameraControls::setCamera(const std::shared_ptr<libcamera::Camera> &cam)
+{
+	capabilities_ = cam->controls();
+
+	/*
+	 * Check the controls which were set before the camera capabilities were
+	 * known. This is required because GStreamer may set properties before
+	 * the pipeline has started and thus before the camera was known.
+	 */
+	ControlList new_controls;
+	for (auto control = controls_acc_.begin();
+	     control != controls_acc_.end();
+	     ++control) {
+		unsigned int id = control->first;
+		ControlValue value = control->second;
+
+		const ControlId *cid = capabilities_.idmap().at(id);
+		auto info = capabilities_.find(cid);
+
+		/* Only add controls which are supported. */
+		if (info != capabilities_.end())
+			new_controls.set(id, value);
+		else
+			GST_WARNING("Control '%s' is not supported by the "
+				    "camera and will be ignored",
+				    cid->name().c_str());
+	}
+
+	controls_acc_ = new_controls;
+	controls_ = new_controls;
+}
+
+void GstCameraControls::applyControls(std::unique_ptr<libcamera::Request> &request)
+{
+	request->controls().merge(controls_);
+	controls_.clear();
+}
+
+void GstCameraControls::readMetadata(libcamera::Request *request)
+{
+	controls_acc_.merge(request->metadata(),
+			    ControlList::MergePolicy::OverwriteExisting);
+}

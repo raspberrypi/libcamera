@@ -110,3 +110,11 @@ class Control(object):
             return f"Span<const {typ}, {self.__size}>"
         else:
             return f"Span<const {typ}>"
+
+    @property
+    def element_type(self):
+        return self.__data.get('type')
+
+    @property
+    def size(self):
+        return self.__size

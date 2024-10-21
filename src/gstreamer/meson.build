@@ -25,6 +25,16 @@ libcamera_gst_sources = [
     'gstlibcamerasrc.cpp',
 ]
 
+# Generate gstreamer control properties
+
+gen_gst_controls_template = files('gstlibcamera-controls.cpp.in')
+libcamera_gst_sources += custom_target('gstlibcamera-controls.cpp',
+                                       input : controls_files,
+                                       output : 'gstlibcamera-controls.cpp',
+                                       command : [gen_gst_controls, '-o', '@OUTPUT@',
+                                                  '-t', gen_gst_controls_template, '@INPUT@'],
+                                       env : py_build_env)
+
 libcamera_gst_cpp_args = [
     '-DVERSION="@0@"'.format(libcamera_git_version),
     '-DPACKAGE="@0@"'.format(meson.project_name()),

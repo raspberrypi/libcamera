@@ -181,6 +181,8 @@ public:
 
 	Config config_;
 
+	std::queue<std::pair<uint64_t, utils::Duration>> frameWallClock_;
+
 protected:
 	void fillRequestMetadata(const ControlList &bufferControls,
 				 Request *request);

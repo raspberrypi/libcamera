@@ -28,6 +28,8 @@
 #include "controller/lux_status.h"
 #include "controller/sharpen_algorithm.h"
 #include "controller/statistics.h"
+#include "controller/sync_algorithm.h"
+#include "controller/sync_status.h"
 
 namespace libcamera {
 
@@ -76,6 +78,7 @@ const ControlInfoMap::Map ipaControls{
 	{ &controls::draft::NoiseReductionMode, ControlInfo(controls::draft::NoiseReductionModeValues) },
 	{ &controls::rpi::StatsOutputEnable, ControlInfo(false, true, false) },
 	{ &controls::rpi::CnnEnableInputTensor, ControlInfo(false, true, false) },
+	{ &controls::rpi::SyncMode, ControlInfo(controls::rpi::SyncModeValues) },
 };
 
 /* IPA controls handled conditionally, if the sensor is not mono */
@@ -390,6 +393,7 @@ void IpaBase::prepareIsp(const PrepareParams &params)
 
 	rpiMetadata.clear();
 	fillDeviceStatus(params.sensorControls, ipaContext);
+	fillSyncParams(params, ipaContext);
 
 	if (params.buffers.embedded) {
 		/*
@@ -488,10 +492,23 @@ void IpaBase::processStats(const ProcessParams &params)
 		helper_->process(statistics, rpiMetadata);
 		controller_.process(statistics, &rpiMetadata);
 
+		/* Send any sync algorithm outputs back to the pipeline handler */
+		Duration offset(0s);
+		struct SyncStatus syncStatus;
+		if (rpiMetadata.get("sync.status", syncStatus) == 0) {
+			if (minFrameDuration_ != maxFrameDuration_)
+				LOG(IPARPI, Error) << "Sync algorithm enabled with variable framerate. " << minFrameDuration_ << " " << maxFrameDuration_;
+			offset = syncStatus.frameDurationOffset;
+
+			libcameraMetadata_.set(controls::rpi::SyncWait, !syncStatus.ready);
+			if (syncStatus.lagKnown)
+				libcameraMetadata_.set(controls::rpi::SyncLag, syncStatus.lag);
+		}
+
 		struct AgcStatus agcStatus;
 		if (rpiMetadata.get("agc.status", agcStatus) == 0) {
 			ControlList ctrls(sensorCtrls_);
-			applyAGC(&agcStatus, ctrls);
+			applyAGC(&agcStatus, ctrls, offset);
 			setDelayedControls.emit(ctrls, ipaContext);
 			setCameraTimeoutValue();
 		}
@@ -724,6 +741,7 @@ void IpaBase::applyControls(const ControlList &controls)
 	using RPiController::ContrastAlgorithm;
 	using RPiController::DenoiseAlgorithm;
 	using RPiController::HdrAlgorithm;
+	using RPiController::SyncAlgorithm;
 
 	/* Clear the return metadata buffer. */
 	libcameraMetadata_.clear();
@@ -1255,6 +1273,24 @@ void IpaBase::applyControls(const ControlList &controls)
 			cnnEnableInputTensor_ = ctrl.second.get<bool>();
 			break;
 
+		case controls::rpi::SYNC_MODE: {
+			SyncAlgorithm *sync = dynamic_cast<SyncAlgorithm *>(controller_.getAlgorithm("sync"));
+
+			if (sync) {
+				int mode = ctrl.second.get<int32_t>();
+				SyncAlgorithm::Mode m = SyncAlgorithm::Mode::Off;
+				if (mode == controls::rpi::SyncModeServer) {
+					m = SyncAlgorithm::Mode::Server;
+					LOG(IPARPI, Info) << "Sync mode set to server";
+				} else if (mode == controls::rpi::SyncModeClient) {
+					m = SyncAlgorithm::Mode::Client;
+					LOG(IPARPI, Info) << "Sync mode set to client";
+				}
+				sync->setMode(m);
+			}
+			break;
+		}
+
 		default:
 			LOG(IPARPI, Warning)
 				<< "Ctrl " << controls::controls.at(ctrl.first)->name()
@@ -1289,6 +1325,19 @@ void IpaBase::fillDeviceStatus(const ControlList &sensorControls, unsigned int i
 	LOG(IPARPI, Debug) << "Metadata - " << deviceStatus;
 
 	rpiMetadata_[ipaContext].set("device.status", deviceStatus);
+}
+
+void IpaBase::fillSyncParams(const PrepareParams &params, unsigned int ipaContext)
+{
+	RPiController::SyncAlgorithm *sync = dynamic_cast<RPiController::SyncAlgorithm *>(
+		controller_.getAlgorithm("sync"));
+	if (!sync)
+		return;
+
+	SyncParams syncParams;
+	syncParams.wallClock = *params.sensorControls.get(controls::rpi::FrameWallClock);
+	syncParams.sensorTimestamp = *params.sensorControls.get(controls::SensorTimestamp);
+	rpiMetadata_[ipaContext].set("sync.params", syncParams);
 }
 
 void IpaBase::reportMetadata(unsigned int ipaContext)
@@ -1504,14 +1553,22 @@ void IpaBase::applyFrameDurations(Duration minFrameDuration, Duration maxFrameDu
 	 * value possible.
 	 */
 	Duration maxShutter = Duration::max();
-	helper_->getBlanking(maxShutter, minFrameDuration_, maxFrameDuration_);
+	auto [vblank, hblank] = helper_->getBlanking(maxShutter, minFrameDuration_, maxFrameDuration_);
 
 	RPiController::AgcAlgorithm *agc = dynamic_cast<RPiController::AgcAlgorithm *>(
 		controller_.getAlgorithm("agc"));
 	agc->setMaxShutter(maxShutter);
+
+	RPiController::SyncAlgorithm *sync = dynamic_cast<RPiController::SyncAlgorithm *>(
+		controller_.getAlgorithm("sync"));
+	if (sync) {
+		Duration duration = (mode_.height + vblank) * ((mode_.width + hblank) * 1.0s / mode_.pixelRate);
+		LOG(IPARPI, Debug) << "setting sync frame duration to  " << duration;
+		sync->setFrameDuration(duration);
+	}
 }
 
-void IpaBase::applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls)
+void IpaBase::applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls, Duration frameDurationOffset)
 {
 	const int32_t minGainCode = helper_->gainCode(mode_.minAnalogueGain);
 	const int32_t maxGainCode = helper_->gainCode(mode_.maxAnalogueGain);
@@ -1526,7 +1583,8 @@ void IpaBase::applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls)
 
 	/* getBlanking might clip exposure time to the fps limits. */
 	Duration exposure = agcStatus->shutterTime;
-	auto [vblank, hblank] = helper_->getBlanking(exposure, minFrameDuration_, maxFrameDuration_);
+	auto [vblank, hblank] = helper_->getBlanking(exposure, minFrameDuration_ - frameDurationOffset,
+						     maxFrameDuration_ - frameDurationOffset);
 	int32_t exposureLines = helper_->exposureLines(exposure,
 						       helper_->hblankToLineLength(hblank));
 

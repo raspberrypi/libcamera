@@ -256,25 +256,7 @@ int SoftwareIsp::exportBuffers(const Stream *stream, unsigned int count,
 	if (stream == nullptr)
 		return -EINVAL;
 
-	for (unsigned int i = 0; i < count; i++) {
-		const std::string name = "frame-" + std::to_string(i);
-		const size_t frameSize = debayer_->frameSize();
-
-		FrameBuffer::Plane outPlane;
-		outPlane.fd = SharedFD(dmaHeap_.alloc(name.c_str(), frameSize));
-		if (!outPlane.fd.isValid()) {
-			LOG(SoftwareIsp, Error)
-				<< "failed to allocate a dma_buf";
-			return -ENOMEM;
-		}
-		outPlane.offset = 0;
-		outPlane.length = frameSize;
-
-		std::vector<FrameBuffer::Plane> planes{ outPlane };
-		buffers->emplace_back(std::make_unique<FrameBuffer>(std::move(planes)));
-	}
-
-	return count;
+	return dmaHeap_.exportBuffers(count, { debayer_->frameSize() }, buffers);
 }
 
 /**

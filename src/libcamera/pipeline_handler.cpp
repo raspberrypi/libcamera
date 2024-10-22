@@ -646,9 +646,14 @@ void PipelineHandler::registerCamera(std::shared_ptr<Camera> camera)
 {
 	cameras_.push_back(camera);
 
-	if (mediaDevices_.empty())
-		LOG(Pipeline, Fatal)
-			<< "Registering camera with no media devices!";
+	if (mediaDevices_.empty()) {
+		/*
+		 * For virtual devices with no MediaDevice, there are no system
+		 * devices to register.
+		 */
+		manager_->_d()->addCamera(std::move(camera));
+		return;
+	}
 
 	/*
 	 * Walk the entity list and map the devnums of all capture video nodes

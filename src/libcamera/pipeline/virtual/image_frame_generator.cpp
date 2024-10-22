@@ -39,15 +39,7 @@ ImageFrameGenerator::create(ImageFrames &imageFrames)
 	 * For each file in the directory, load the image,
 	 * convert it to NV12, and store the pointer.
 	 */
-	for (unsigned int i = 0; i < imageFrames.number.value_or(1); i++) {
-		std::filesystem::path path;
-		if (!imageFrames.number)
-			/* If the path is to an image */
-			path = imageFrames.path;
-		else
-			/* If the path is to a directory */
-			path = imageFrames.path / (std::to_string(i) + ".jpg");
-
+	for (std::filesystem::path path : imageFrames.files) {
 		File file(path);
 		if (!file.open(File::OpenModeFlag::ReadOnly)) {
 			LOG(Virtual, Error) << "Failed to open image file " << file.fileName()
@@ -87,6 +79,8 @@ ImageFrameGenerator::create(ImageFrames &imageFrames)
 					Size(width, height) });
 	}
 
+	ASSERT(!imageFrameGenerator->imageFrameDatas_.empty());
+
 	return imageFrameGenerator;
 }
 
@@ -103,7 +97,7 @@ void ImageFrameGenerator::configure(const Size &size)
 	frameIndex_ = 0;
 	parameter_ = 0;
 
-	for (unsigned int i = 0; i < imageFrames_->number.value_or(1); i++) {
+	for (unsigned int i = 0; i < imageFrameDatas_.size(); i++) {
 		/* Scale the imageFrameDatas_ to scaledY and scaledUV */
 		unsigned int halfSizeWidth = (size.width + 1) / 2;
 		unsigned int halfSizeHeight = (size.height + 1) / 2;
@@ -138,7 +132,7 @@ int ImageFrameGenerator::generateFrame(const Size &size, const FrameBuffer *buff
 	auto planes = mappedFrameBuffer.planes();
 
 	/* Loop only around the number of images available */
-	frameIndex_ %= imageFrames_->number.value_or(1);
+	frameIndex_ %= imageFrameDatas_.size();
 
 	/* Write the scaledY and scaledUV to the mapped frame buffer */
 	libyuv::NV12Copy(scaledFrameDatas_[frameIndex_].Y.get(), size.width,

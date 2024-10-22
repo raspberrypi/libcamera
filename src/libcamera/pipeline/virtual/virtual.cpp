@@ -36,6 +36,9 @@
 #include "libcamera/internal/formats.h"
 #include "libcamera/internal/framebuffer.h"
 #include "libcamera/internal/pipeline_handler.h"
+#include "libcamera/internal/yaml_parser.h"
+
+#include "pipeline/virtual/config_parser.h"
 
 namespace libcamera {
 
@@ -53,6 +56,13 @@ uint64_t currentTimestamp()
 }
 
 } /* namespace */
+
+template<class... Ts>
+struct overloaded : Ts... {
+	using Ts::operator()...;
+};
+template<class... Ts>
+overloaded(Ts...) -> overloaded<Ts...>;
 
 class VirtualCameraConfiguration : public CameraConfiguration
 {
@@ -95,7 +105,7 @@ private:
 		return static_cast<VirtualCameraData *>(camera->_d());
 	}
 
-	void initFrameGenerator(Camera *camera);
+	bool initFrameGenerator(Camera *camera);
 
 	DmaBufAllocator dmaBufAllocator_;
 
@@ -104,14 +114,18 @@ private:
 
 VirtualCameraData::VirtualCameraData(PipelineHandler *pipe,
 				     const std::vector<Resolution> &supportedResolutions)
-	: Camera::Private(pipe), supportedResolutions_(supportedResolutions)
+	: Camera::Private(pipe)
 {
-	for (const auto &resolution : supportedResolutions_) {
-		if (minResolutionSize_.isNull() || minResolutionSize_ > resolution.size)
-			minResolutionSize_ = resolution.size;
+	config_.resolutions = supportedResolutions;
+	for (const auto &resolution : config_.resolutions) {
+		if (config_.minResolutionSize.isNull() || config_.minResolutionSize > resolution.size)
+			config_.minResolutionSize = resolution.size;
 
-		maxResolutionSize_ = std::max(maxResolutionSize_, resolution.size);
+		config_.maxResolutionSize = std::max(config_.maxResolutionSize, resolution.size);
 	}
+
+	properties_.set(properties::PixelArrayActiveAreas,
+			{ Rectangle(config_.maxResolutionSize) });
 
 	/* \todo Support multiple streams and pass multi_stream_test */
 	streamConfigs_.resize(kMaxStream);
@@ -140,7 +154,7 @@ CameraConfiguration::Status VirtualCameraConfiguration::validate()
 	for (StreamConfiguration &cfg : config_) {
 		bool adjusted = false;
 		bool found = false;
-		for (const auto &resolution : data_->supportedResolutions_) {
+		for (const auto &resolution : data_->config_.resolutions) {
 			if (resolution.size.width == cfg.size.width &&
 			    resolution.size.height == cfg.size.height) {
 				found = true;
@@ -155,7 +169,7 @@ CameraConfiguration::Status VirtualCameraConfiguration::validate()
 			 * Defining the default logic in PipelineHandler to
 			 * find the closest resolution would be nice.
 			 */
-			cfg.size = data_->maxResolutionSize_;
+			cfg.size = data_->config_.maxResolutionSize;
 			status = Adjusted;
 			adjusted = true;
 		}
@@ -224,12 +238,12 @@ PipelineHandlerVirtual::generateConfiguration(Camera *camera,
 
 		std::map<PixelFormat, std::vector<SizeRange>> streamFormats;
 		PixelFormat pixelFormat = formats::NV12;
-		streamFormats[pixelFormat] = { { data->minResolutionSize_,
-						 data->maxResolutionSize_ } };
+		streamFormats[pixelFormat] = { { data->config_.minResolutionSize,
+						 data->config_.maxResolutionSize } };
 		StreamFormats formats(streamFormats);
 		StreamConfiguration cfg(formats);
 		cfg.pixelFormat = pixelFormat;
-		cfg.size = data->maxResolutionSize_;
+		cfg.size = data->config_.maxResolutionSize;
 		cfg.bufferCount = VirtualCameraConfiguration::kBufferCount;
 
 		config->addConfiguration(cfg);
@@ -246,6 +260,7 @@ int PipelineHandlerVirtual::configure(Camera *camera,
 	VirtualCameraData *data = cameraData(camera);
 	for (auto [i, c] : utils::enumerate(*config)) {
 		c.setStream(&data->streamConfigs_[i].stream);
+		/* Start reading the images/generating test patterns */
 		data->streamConfigs_[i].frameGenerator->configure(c.size);
 	}
 
@@ -315,56 +330,67 @@ bool PipelineHandlerVirtual::match([[maybe_unused]] DeviceEnumerator *enumerator
 
 	created_ = true;
 
-	/* \todo Add virtual cameras according to a config file. */
+	File file(configurationFile("virtual", "virtual.yaml"));
+	bool isOpen = file.open(File::OpenModeFlag::ReadOnly);
+	if (!isOpen) {
+		LOG(Virtual, Error) << "Failed to open config file: " << file.fileName();
+		return false;
+	}
 
-	std::vector<VirtualCameraData::Resolution> supportedResolutions;
-	supportedResolutions.resize(2);
-	supportedResolutions[0] = { .size = Size(1920, 1080), .frameRates = { 30 } };
-	supportedResolutions[1] = { .size = Size(1280, 720), .frameRates = { 30 } };
+	ConfigParser parser;
+	auto configData = parser.parseConfigFile(file, this);
+	if (configData.size() == 0) {
+		LOG(Virtual, Error) << "Failed to parse any cameras from the config file: "
+				    << file.fileName();
+		return false;
+	}
 
-	std::unique_ptr<VirtualCameraData> data =
-		std::make_unique<VirtualCameraData>(this, supportedResolutions);
+	/* Configure and register cameras with configData */
+	for (auto &data : configData) {
+		std::set<Stream *> streams;
+		for (auto &streamConfig : data->streamConfigs_)
+			streams.insert(&streamConfig.stream);
+		std::string id = data->config_.id;
+		std::shared_ptr<Camera> camera = Camera::create(std::move(data), id, streams);
 
-	data->properties_.set(properties::Location, properties::CameraLocationFront);
-	data->properties_.set(properties::Model, "Virtual Video Device");
-	data->properties_.set(properties::PixelArrayActiveAreas, { Rectangle(Size(1920, 1080)) });
+		if (!initFrameGenerator(camera.get())) {
+			LOG(Virtual, Error) << "Failed to initialize frame "
+					    << "generator for camera: " << id;
+			continue;
+		}
 
-	/* \todo Set FrameDurationLimits based on config. */
-	ControlInfoMap::Map controls;
-	int64_t min_frame_duration = 33333, max_frame_duration = 33333;
-	controls[&controls::FrameDurationLimits] = ControlInfo(min_frame_duration, max_frame_duration);
-	std::vector<ControlValue> supportedFaceDetectModes{
-		static_cast<int32_t>(controls::draft::FaceDetectModeOff),
-	};
-	controls[&controls::draft::FaceDetectMode] = ControlInfo(supportedFaceDetectModes);
-	data->controlInfo_ = ControlInfoMap(std::move(controls), controls::controls);
-
-	/* Create and register the camera. */
-	std::set<Stream *> streams;
-	for (auto &streamConfig : data->streamConfigs_)
-		streams.insert(&streamConfig.stream);
-
-	const std::string id = "Virtual0";
-	std::shared_ptr<Camera> camera = Camera::create(std::move(data), id, streams);
-
-	initFrameGenerator(camera.get());
-
-	registerCamera(std::move(camera));
+		registerCamera(std::move(camera));
+	}
 
 	resetCreated_ = true;
 
 	return true;
 }
 
-void PipelineHandlerVirtual::initFrameGenerator(Camera *camera)
+bool PipelineHandlerVirtual::initFrameGenerator(Camera *camera)
 {
 	auto data = cameraData(camera);
-	for (auto &streamConfig : data->streamConfigs_) {
-		if (data->testPattern_ == TestPattern::DiagonalLines)
-			streamConfig.frameGenerator = std::make_unique<DiagonalLinesGenerator>();
-		else
-			streamConfig.frameGenerator = std::make_unique<ColorBarsGenerator>();
-	}
+	auto &frame = data->config_.frame;
+	std::visit(overloaded{
+			   [&](TestPattern &testPattern) {
+				   for (auto &streamConfig : data->streamConfigs_) {
+					   if (testPattern == TestPattern::DiagonalLines)
+						   streamConfig.frameGenerator = std::make_unique<DiagonalLinesGenerator>();
+					   else
+						   streamConfig.frameGenerator = std::make_unique<ColorBarsGenerator>();
+				   }
+			   },
+			   [&](ImageFrames &imageFrames) {
+				   for (auto &streamConfig : data->streamConfigs_)
+					   streamConfig.frameGenerator = ImageFrameGenerator::create(imageFrames);
+			   } },
+		   frame);
+
+	for (auto &streamConfig : data->streamConfigs_)
+		if (!streamConfig.frameGenerator)
+			return false;
+
+	return true;
 }
 
 REGISTER_PIPELINE_HANDLER(PipelineHandlerVirtual, "virtual")

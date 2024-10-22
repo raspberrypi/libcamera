@@ -9,9 +9,9 @@
 
 #include <filesystem>
 #include <memory>
-#include <optional>
 #include <stdint.h>
 #include <sys/types.h>
+#include <vector>
 
 #include "frame_generator.h"
 
@@ -19,8 +19,7 @@ namespace libcamera {
 
 /* Frame configuration provided by the config file */
 struct ImageFrames {
-	std::filesystem::path path;
-	std::optional<unsigned int> number;
+	std::vector<std::filesystem::path> files;
 };
 
 class ImageFrameGenerator : public FrameGenerator

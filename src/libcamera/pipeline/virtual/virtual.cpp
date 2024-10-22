@@ -34,6 +34,7 @@
 #include "libcamera/internal/camera.h"
 #include "libcamera/internal/dma_buf_allocator.h"
 #include "libcamera/internal/formats.h"
+#include "libcamera/internal/framebuffer.h"
 #include "libcamera/internal/pipeline_handler.h"
 
 namespace libcamera {
@@ -93,6 +94,8 @@ private:
 	{
 		return static_cast<VirtualCameraData *>(camera->_d());
 	}
+
+	void initFrameGenerator(Camera *camera);
 
 	DmaBufAllocator dmaBufAllocator_;
 
@@ -241,8 +244,10 @@ int PipelineHandlerVirtual::configure(Camera *camera,
 				      CameraConfiguration *config)
 {
 	VirtualCameraData *data = cameraData(camera);
-	for (auto [i, c] : utils::enumerate(*config))
+	for (auto [i, c] : utils::enumerate(*config)) {
 		c.setStream(&data->streamConfigs_[i].stream);
+		data->streamConfigs_[i].frameGenerator->configure(c.size);
+	}
 
 	return 0;
 }
@@ -278,8 +283,24 @@ void PipelineHandlerVirtual::stopDevice([[maybe_unused]] Camera *camera)
 int PipelineHandlerVirtual::queueRequestDevice([[maybe_unused]] Camera *camera,
 					       Request *request)
 {
-	for (auto it : request->buffers())
-		completeBuffer(request, it.second);
+	VirtualCameraData *data = cameraData(camera);
+
+	for (auto const &[stream, buffer] : request->buffers()) {
+		bool found = false;
+		/* map buffer and fill test patterns */
+		for (auto &streamConfig : data->streamConfigs_) {
+			if (stream == &streamConfig.stream) {
+				found = true;
+				if (streamConfig.frameGenerator->generateFrame(
+					    stream->configuration().size, buffer))
+					buffer->_d()->cancel();
+
+				completeBuffer(request, buffer);
+				break;
+			}
+		}
+		ASSERT(found);
+	}
 
 	request->metadata().set(controls::SensorTimestamp, currentTimestamp());
 	completeRequest(request);
@@ -325,11 +346,25 @@ bool PipelineHandlerVirtual::match([[maybe_unused]] DeviceEnumerator *enumerator
 
 	const std::string id = "Virtual0";
 	std::shared_ptr<Camera> camera = Camera::create(std::move(data), id, streams);
+
+	initFrameGenerator(camera.get());
+
 	registerCamera(std::move(camera));
 
 	resetCreated_ = true;
 
 	return true;
+}
+
+void PipelineHandlerVirtual::initFrameGenerator(Camera *camera)
+{
+	auto data = cameraData(camera);
+	for (auto &streamConfig : data->streamConfigs_) {
+		if (data->testPattern_ == TestPattern::DiagonalLines)
+			streamConfig.frameGenerator = std::make_unique<DiagonalLinesGenerator>();
+		else
+			streamConfig.frameGenerator = std::make_unique<ColorBarsGenerator>();
+	}
 }
 
 REGISTER_PIPELINE_HANDLER(PipelineHandlerVirtual, "virtual")

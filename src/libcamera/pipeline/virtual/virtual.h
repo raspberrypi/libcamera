@@ -15,6 +15,8 @@
 #include "libcamera/internal/camera.h"
 #include "libcamera/internal/pipeline_handler.h"
 
+#include "test_pattern_generator.h"
+
 namespace libcamera {
 
 class VirtualCameraData : public Camera::Private
@@ -28,12 +30,15 @@ public:
 	};
 	struct StreamConfig {
 		Stream stream;
+		std::unique_ptr<FrameGenerator> frameGenerator;
 	};
 
 	VirtualCameraData(PipelineHandler *pipe,
 			  const std::vector<Resolution> &supportedResolutions);
 
 	~VirtualCameraData() = default;
+
+	TestPattern testPattern_ = TestPattern::ColorBars;
 
 	const std::vector<Resolution> supportedResolutions_;
 	Size maxResolutionSize_;

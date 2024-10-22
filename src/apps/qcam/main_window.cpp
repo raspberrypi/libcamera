@@ -298,13 +298,19 @@ int MainWindow::openCamera()
 	std::string cameraName;
 
 	/*
-	 * Use the camera specified on the command line, if any, or display the
-	 * camera selection dialog box otherwise.
+	 * If a camera is specified on the command line, get it. Otherwise, if
+	 * only one camera is available, pick it automatically, else, display
+	 * the selector dialog box.
 	 */
-	if (options_.isSet(OptCamera))
+	if (options_.isSet(OptCamera)) {
 		cameraName = static_cast<std::string>(options_[OptCamera]);
-	else
-		cameraName = chooseCamera();
+	} else {
+		std::vector<std::shared_ptr<Camera>> cameras = cm_->cameras();
+		if (cameras.size() == 1)
+			cameraName = cameras[0]->id();
+		else
+			cameraName = chooseCamera();
+	}
 
 	if (cameraName == "")
 		return -EINVAL;

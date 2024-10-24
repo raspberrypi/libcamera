@@ -5,6 +5,8 @@
  * Pipeline handler for VC4-based Raspberry Pi devices
  */
 
+#include <memory>
+
 #include <linux/bcm2835-isp.h>
 #include <linux/v4l2-controls.h>
 #include <linux/videodev2.h>
@@ -13,6 +15,7 @@
 
 #include "libcamera/internal/device_enumerator.h"
 #include "libcamera/internal/dma_buf_allocator.h"
+#include "libcamera/internal/v4l2_subdevice.h"
 
 #include "../common/pipeline_base.h"
 #include "../common/rpi_stream.h"
@@ -30,6 +33,10 @@ namespace {
 
 enum class Unicam : unsigned int { Image, Embedded };
 enum class Isp : unsigned int { Input, Output0, Output1, Stats };
+
+static constexpr unsigned int kUnicamSinkPad = 0;
+static constexpr unsigned int kUnicamSourceImagePad = 1;
+static constexpr unsigned int kUnicamSourceMetadataPad = 2;
 
 } /* namespace */
 
@@ -80,6 +87,8 @@ public:
 	void prepareIspComplete(const ipa::RPi::BufferIds &buffers, bool stitchSwapBuffers);
 	void setIspControls(const ControlList &controls);
 	void setCameraTimeout(uint32_t maxFrameLengthMs);
+
+	std::unique_ptr<V4L2Subdevice> unicamSubdev_;
 
 	/* Array of Unicam and ISP device streams and associated buffers/streams. */
 	RPi::Device<Unicam, 2> unicam_;
@@ -356,25 +365,27 @@ int PipelineHandlerVc4::platformRegister(std::unique_ptr<RPi::CameraData> &camer
 	if (!data->dmaHeap_.isValid())
 		return -ENOMEM;
 
+	MediaEntity *unicamSubdev = unicam->getEntityByName("unicam");
 	MediaEntity *unicamImage = unicam->getEntityByName("unicam-image");
+	MediaEntity *unicamEmbedded = unicam->getEntityByName("unicam-embedded");
 	MediaEntity *ispOutput0 = isp->getEntityByName("bcm2835-isp0-output0");
 	MediaEntity *ispCapture1 = isp->getEntityByName("bcm2835-isp0-capture1");
 	MediaEntity *ispCapture2 = isp->getEntityByName("bcm2835-isp0-capture2");
 	MediaEntity *ispCapture3 = isp->getEntityByName("bcm2835-isp0-capture3");
 
-	if (!unicamImage || !ispOutput0 || !ispCapture1 || !ispCapture2 || !ispCapture3)
+	if (!unicamImage || !unicamEmbedded ||
+	    !ispOutput0 || !ispCapture1 || !ispCapture2 || !ispCapture3)
 		return -ENOENT;
 
-	/* Locate and open the unicam video streams. */
-	data->unicam_[Unicam::Image] = RPi::Stream("Unicam Image", unicamImage);
-
-	/* An embedded data node will not be present if the sensor does not support it. */
-	MediaEntity *unicamEmbedded = unicam->getEntityByName("unicam-embedded");
-	if (unicamEmbedded) {
-		data->unicam_[Unicam::Embedded] = RPi::Stream("Unicam Embedded", unicamEmbedded);
-		data->unicam_[Unicam::Embedded].dev()->bufferReady.connect(data,
-									   &Vc4CameraData::unicamBufferDequeue);
+	if (!unicamSubdev) {
+		LOG(RPI, Error) << "Downstream Unicam driver not supported, please update your kernel!";
+		return -EINVAL;
 	}
+
+	/* Create the unicam subdev and video streams. */
+	data->unicamSubdev_ = std::make_unique<V4L2Subdevice>(unicamSubdev);
+	data->unicam_[Unicam::Image] = RPi::Stream("Unicam Image", unicamImage);
+	data->unicam_[Unicam::Embedded] = RPi::Stream("Unicam Embedded", unicamEmbedded);
 
 	/* Tag the ISP input stream as an import stream. */
 	data->isp_[Isp::Input] = RPi::Stream("ISP Input", ispOutput0, StreamFlag::ImportOnly);
@@ -384,17 +395,14 @@ int PipelineHandlerVc4::platformRegister(std::unique_ptr<RPi::CameraData> &camer
 
 	/* Wire up all the buffer connections. */
 	data->unicam_[Unicam::Image].dev()->bufferReady.connect(data, &Vc4CameraData::unicamBufferDequeue);
+	if (data->sensorMetadata_)
+		data->unicam_[Unicam::Embedded].dev()->bufferReady.connect(data,
+									   &Vc4CameraData::unicamBufferDequeue);
+
 	data->isp_[Isp::Input].dev()->bufferReady.connect(data, &Vc4CameraData::ispInputDequeue);
 	data->isp_[Isp::Output0].dev()->bufferReady.connect(data, &Vc4CameraData::ispOutputDequeue);
 	data->isp_[Isp::Output1].dev()->bufferReady.connect(data, &Vc4CameraData::ispOutputDequeue);
 	data->isp_[Isp::Stats].dev()->bufferReady.connect(data, &Vc4CameraData::ispOutputDequeue);
-
-	if (data->sensorMetadata_ ^ !!data->unicam_[Unicam::Embedded].dev()) {
-		LOG(RPI, Warning) << "Mismatch between Unicam and CamHelper for embedded data usage!";
-		data->sensorMetadata_ = false;
-		if (data->unicam_[Unicam::Embedded].dev())
-			data->unicam_[Unicam::Embedded].dev()->bufferReady.disconnect();
-	}
 
 	/*
 	 * Open all Unicam and ISP streams. The exception is the embedded data
@@ -404,6 +412,10 @@ int PipelineHandlerVc4::platformRegister(std::unique_ptr<RPi::CameraData> &camer
 	 * The below grouping is just for convenience so that we can easily
 	 * iterate over all streams in one go.
 	 */
+	int ret = data->unicamSubdev_->open();
+	if (ret < 0)
+		return ret;
+
 	data->streams_.push_back(&data->unicam_[Unicam::Image]);
 	if (data->sensorMetadata_)
 		data->streams_.push_back(&data->unicam_[Unicam::Embedded]);
@@ -412,14 +424,9 @@ int PipelineHandlerVc4::platformRegister(std::unique_ptr<RPi::CameraData> &camer
 		data->streams_.push_back(&stream);
 
 	for (auto stream : data->streams_) {
-		int ret = stream->dev()->open();
+		ret = stream->dev()->open();
 		if (ret)
 			return ret;
-	}
-
-	if (!data->unicam_[Unicam::Image].dev()->caps().hasMediaController()) {
-		LOG(RPI, Error) << "Unicam driver does not use the MediaController, please update your kernel!";
-		return -EINVAL;
 	}
 
 	/* Write up all the IPA connections. */
@@ -589,9 +596,52 @@ int Vc4CameraData::platformPipelineConfigure(const std::unique_ptr<YamlObject> &
 
 int Vc4CameraData::platformConfigure(const RPi::RPiCameraConfiguration *rpiConfig)
 {
-	const std::vector<StreamParams> &rawStreams = rpiConfig->rawStreams_;
-	const std::vector<StreamParams> &outStreams = rpiConfig->outStreams_;
-	int ret;
+	/*
+	 * 1. Configure the Unicam subdev.
+	 *
+	 * Start by setting up routes, and then set the formats on the sink pad
+	 * streams. They will be automatically propagated to the source pads by
+	 * the kernel.
+	 */
+
+	const V4L2Subdevice::Stream imageStream{
+		kUnicamSinkPad,
+		sensor_->imageStream().stream
+	};
+	const V4L2Subdevice::Stream embeddedDataStream{
+		kUnicamSinkPad,
+		sensor_->embeddedDataStream().value_or(V4L2Subdevice::Stream{}).stream
+	};
+
+	V4L2Subdevice::Routing routing;
+
+	routing.emplace_back(imageStream, V4L2Subdevice::Stream{ kUnicamSourceImagePad, 0 },
+			     V4L2_SUBDEV_ROUTE_FL_ACTIVE);
+
+	if (sensorMetadata_)
+		routing.emplace_back(embeddedDataStream,
+				     V4L2Subdevice::Stream{ kUnicamSourceMetadataPad, 0 },
+				     V4L2_SUBDEV_ROUTE_FL_ACTIVE);
+
+	int ret = unicamSubdev_->setRouting(&routing);
+	if (ret)
+		return ret;
+
+	V4L2SubdeviceFormat subdevFormat = rpiConfig->sensorFormat_;
+	ret = unicamSubdev_->setFormat(imageStream, &subdevFormat);
+	if (ret)
+		return ret;
+
+	if (sensorMetadata_) {
+		subdevFormat = sensor_->embeddedDataFormat();
+		ret = unicamSubdev_->setFormat(embeddedDataStream, &subdevFormat);
+		if (ret)
+			return ret;
+	}
+
+	/*
+	 * 2. Configure the Unicam video devices.
+	 */
 
 	V4L2VideoDevice *unicam = unicam_[Unicam::Image].dev();
 	V4L2DeviceFormat unicamFormat;
@@ -600,6 +650,8 @@ int Vc4CameraData::platformConfigure(const RPi::RPiCameraConfiguration *rpiConfi
 	 * See which streams are requested, and route the user
 	 * StreamConfiguration appropriately.
 	 */
+	const std::vector<StreamParams> &rawStreams = rpiConfig->rawStreams_;
+
 	if (!rawStreams.empty()) {
 		rawStreams[0].cfg->setStream(&unicam_[Unicam::Image]);
 		unicam_[Unicam::Image].setFlags(StreamFlag::External);
@@ -615,15 +667,54 @@ int Vc4CameraData::platformConfigure(const RPi::RPiCameraConfiguration *rpiConfi
 	if (ret)
 		return ret;
 
-	ret = isp_[Isp::Input].dev()->setFormat(&unicamFormat);
-	if (ret)
-		return ret;
-
 	LOG(RPI, Info) << "Sensor: " << sensor_->id()
 		       << " - Selected sensor format: " << rpiConfig->sensorFormat_
 		       << " - Selected unicam format: " << unicamFormat;
 
+	/*
+	 * Configure the Unicam embedded data output format only if the sensor
+	 * supports it.
+	 */
+	if (sensorMetadata_) {
+		static const std::map<uint32_t, V4L2PixelFormat> metaFormats{
+			{ MEDIA_BUS_FMT_META_8, V4L2PixelFormat(V4L2_META_FMT_GENERIC_8) },
+			{ MEDIA_BUS_FMT_META_10, V4L2PixelFormat(V4L2_META_FMT_GENERIC_CSI2_10) },
+			{ MEDIA_BUS_FMT_META_12, V4L2PixelFormat(V4L2_META_FMT_GENERIC_CSI2_12) },
+			{ MEDIA_BUS_FMT_META_14, V4L2PixelFormat(V4L2_META_FMT_GENERIC_CSI2_14) },
+		};
+
+		V4L2SubdeviceFormat embeddedFormat = sensor_->embeddedDataFormat();
+		const auto metaFormat = metaFormats.find(embeddedFormat.code);
+		if (metaFormat == metaFormats.end()) {
+			LOG(RPI, Error)
+				<< "Unsupported metadata format "
+				<< utils::hex(embeddedFormat.code, 4);
+			return -EINVAL;
+		}
+
+		V4L2DeviceFormat format{};
+		format.fourcc = metaFormat->second;
+		format.size = embeddedFormat.size;
+
+		LOG(RPI, Debug) << "Setting embedded data format " << format;
+		ret = unicam_[Unicam::Embedded].dev()->setFormat(&format);
+		if (ret) {
+			LOG(RPI, Error) << "Failed to set format on Unicam embedded: "
+					<< format;
+			return ret;
+		}
+	}
+
+	/*
+	 * 3. Configure the ISP.
+	 */
+
+	ret = isp_[Isp::Input].dev()->setFormat(&unicamFormat);
+	if (ret)
+		return ret;
+
 	/* Use a sensible small default size if no output streams are configured. */
+	const std::vector<StreamParams> &outStreams = rpiConfig->outStreams_;
 	Size maxSize = outStreams.empty() ? Size(320, 240) : outStreams[0].cfg->size;
 	V4L2DeviceFormat format;
 
@@ -729,27 +820,6 @@ int Vc4CameraData::platformConfigure(const RPi::RPiCameraConfiguration *rpiConfi
 	}
 
 	ispOutputTotal_++;
-
-	/*
-	 * Configure the Unicam embedded data output format only if the sensor
-	 * supports it.
-	 */
-	if (sensorMetadata_) {
-		V4L2SubdeviceFormat embeddedFormat;
-
-		sensor_->device()->getFormat(1, &embeddedFormat);
-		format = {};
-		format.fourcc = V4L2PixelFormat(V4L2_META_FMT_SENSOR_DATA);
-		format.planes[0].size = embeddedFormat.size.width * embeddedFormat.size.height;
-
-		LOG(RPI, Debug) << "Setting embedded data format " << format.toString();
-		ret = unicam_[Unicam::Embedded].dev()->setFormat(&format);
-		if (ret) {
-			LOG(RPI, Error) << "Failed to set format on Unicam embedded: "
-					<< format;
-			return ret;
-		}
-	}
 
 	/* Figure out the smallest selection the ISP will allow. */
 	Rectangle testCrop(0, 0, 1, 1);

@@ -384,8 +384,6 @@ SimpleCameraData::SimpleCameraData(SimplePipelineHandler *pipe,
 				   MediaEntity *sensor)
 	: Camera::Private(pipe), streams_(numStreams)
 {
-	int ret;
-
 	/*
 	 * Find the shortest path from the camera sensor to a video capture
 	 * device using the breadth-first search algorithm. This heuristic will
@@ -476,12 +474,9 @@ SimpleCameraData::SimpleCameraData(SimplePipelineHandler *pipe,
 	}
 
 	/* Finally also remember the sensor. */
-	sensor_ = std::make_unique<CameraSensor>(sensor);
-	ret = sensor_->init();
-	if (ret) {
-		sensor_.reset();
+	sensor_ = CameraSensorFactoryBase::create(sensor);
+	if (!sensor_)
 		return;
-	}
 
 	LOG(SimplePipeline, Debug)
 		<< "Found pipeline: "

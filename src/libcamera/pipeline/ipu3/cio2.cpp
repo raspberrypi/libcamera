@@ -134,10 +134,9 @@ int CIO2Device::init(const MediaDevice *media, unsigned int index)
 
 	MediaLink *link = links[0];
 	MediaEntity *sensorEntity = link->source()->entity();
-	sensor_ = std::make_unique<CameraSensor>(sensorEntity);
-	ret = sensor_->init();
-	if (ret)
-		return ret;
+	sensor_ = CameraSensorFactoryBase::create(sensorEntity);
+	if (!sensor_)
+		return -ENODEV;
 
 	ret = link->setEnabled(true);
 	if (ret)

@@ -14,9 +14,9 @@
  * \file exposure_mode_helper.h
  * \brief Helper class that performs computations relating to exposure
  *
- * AEGC algorithms have a need to split exposure between shutter time, analogue
+ * AEGC algorithms have a need to split exposure between exposure time, analogue
  * and digital gain. Multiple implementations do so based on paired stages of
- * shutter time and gain limits; provide a helper to avoid duplicating the code.
+ * exposure time and gain limits; provide a helper to avoid duplicating the code.
  */
 
 namespace libcamera {
@@ -29,24 +29,24 @@ namespace ipa {
 
 /**
  * \class ExposureModeHelper
- * \brief Class for splitting exposure into shutter time and total gain
+ * \brief Class for splitting exposure into exposure time and total gain
  *
  * The ExposureModeHelper class provides a standard interface through which an
- * AEGC algorithm can divide exposure between shutter time and gain. It is
- * configured with a set of shutter time and gain pairs and works by initially
- * fixing gain at 1.0 and increasing shutter time up to the shutter time value
+ * AEGC algorithm can divide exposure between exposure time and gain. It is
+ * configured with a set of exposure time and gain pairs and works by initially
+ * fixing gain at 1.0 and increasing exposure time up to the exposure time value
  * from the first pair in the set in an attempt to meet the required exposure
  * value.
  *
- * If the required exposure is not achievable by the first shutter time value
+ * If the required exposure is not achievable by the first exposure time value
  * alone it ramps gain up to the value from the first pair in the set. If the
- * required exposure is still not met it then allows shutter time to ramp up to
- * the shutter time value from the second pair in the set, and continues in this
+ * required exposure is still not met it then allows exposure time to ramp up to
+ * the exposure time value from the second pair in the set, and continues in this
  * vein until either the required exposure time is met, or else the hardware's
- * shutter time or gain limits are reached.
+ * exposure time or gain limits are reached.
  *
  * This method allows users to strike a balance between a well-exposed image and
- * an acceptable frame-rate, as opposed to simply maximising shutter time
+ * an acceptable frame-rate, as opposed to simply maximising exposure time
  * followed by gain. The same helpers can be used to perform the latter
  * operation if needed by passing an empty set of pairs to the initialisation
  * function.
@@ -61,9 +61,9 @@ namespace ipa {
 
 /**
  * \brief Construct an ExposureModeHelper instance
- * \param[in] stages The vector of paired shutter time and gain limits
+ * \param[in] stages The vector of paired exposure time and gain limits
  *
- * The input stages are shutter time and _total_ gain pairs; the gain
+ * The input stages are exposure time and _total_ gain pairs; the gain
  * encompasses both analogue and digital gain.
  *
  * The vector of stages may be empty. In that case, the helper will simply use
@@ -71,46 +71,46 @@ namespace ipa {
  */
 ExposureModeHelper::ExposureModeHelper(const Span<std::pair<utils::Duration, double>> stages)
 {
-	minShutter_ = 0us;
-	maxShutter_ = 0us;
+	minExposureTime_ = 0us;
+	maxExposureTime_ = 0us;
 	minGain_ = 0;
 	maxGain_ = 0;
 
 	for (const auto &[s, g] : stages) {
-		shutters_.push_back(s);
+		exposureTimes_.push_back(s);
 		gains_.push_back(g);
 	}
 }
 
 /**
- * \brief Set the shutter time and gain limits
- * \param[in] minShutter The minimum shutter time supported
- * \param[in] maxShutter The maximum shutter time supported
+ * \brief Set the exposure time and gain limits
+ * \param[in] minExposureTime The minimum exposure time supported
+ * \param[in] maxExposureTime The maximum exposure time supported
  * \param[in] minGain The minimum analogue gain supported
  * \param[in] maxGain The maximum analogue gain supported
  *
- * This function configures the shutter time and analogue gain limits that need
+ * This function configures the exposure time and analogue gain limits that need
  * to be adhered to as the helper divides up exposure. Note that this function
  * *must* be called whenever those limits change and before splitExposure() is
  * used.
  *
- * If the algorithm using the helpers needs to indicate that either shutter time
+ * If the algorithm using the helpers needs to indicate that either exposure time
  * or analogue gain or both should be fixed it can do so by setting both the
  * minima and maxima to the same value.
  */
-void ExposureModeHelper::setLimits(utils::Duration minShutter,
-				   utils::Duration maxShutter,
+void ExposureModeHelper::setLimits(utils::Duration minExposureTime,
+				   utils::Duration maxExposureTime,
 				   double minGain, double maxGain)
 {
-	minShutter_ = minShutter;
-	maxShutter_ = maxShutter;
+	minExposureTime_ = minExposureTime;
+	maxExposureTime_ = maxExposureTime;
 	minGain_ = minGain;
 	maxGain_ = maxGain;
 }
 
-utils::Duration ExposureModeHelper::clampShutter(utils::Duration shutter) const
+utils::Duration ExposureModeHelper::clampExposureTime(utils::Duration exposureTime) const
 {
-	return std::clamp(shutter, minShutter_, maxShutter_);
+	return std::clamp(exposureTime, minExposureTime_, maxExposureTime_);
 }
 
 double ExposureModeHelper::clampGain(double gain) const
@@ -119,108 +119,108 @@ double ExposureModeHelper::clampGain(double gain) const
 }
 
 /**
- * \brief Split exposure time into shutter time and gain
- * \param[in] exposure Exposure time
+ * \brief Split exposure into exposure time and gain
+ * \param[in] exposure Exposure value
  *
- * This function divides a given exposure time into shutter time, analogue and
- * digital gain by iterating through stages of shutter time and gain limits. At
- * each stage the current stage's shutter time limit is multiplied by the
+ * This function divides a given exposure into exposure time, analogue and
+ * digital gain by iterating through stages of exposure time and gain limits.
+ * At each stage the current stage's exposure time limit is multiplied by the
  * previous stage's gain limit (or 1.0 initially) to see if the combination of
- * the two can meet the required exposure time. If they cannot then the current
- * stage's shutter time limit is multiplied by the same stage's gain limit to
+ * the two can meet the required exposure. If they cannot then the current
+ * stage's exposure time limit is multiplied by the same stage's gain limit to
  * see if that combination can meet the required exposure time. If they cannot
  * then the function moves to consider the next stage.
  *
- * When a combination of shutter time and gain _stage_ limits are found that are
- * sufficient to meet the required exposure time, the function attempts to
- * reduce shutter time as much as possible whilst fixing gain and still meeting
- * the exposure time. If a _runtime_ limit prevents shutter time from being
- * lowered enough to meet the exposure time with gain fixed at the stage limit,
- * gain is also lowered to compensate.
+ * When a combination of exposure time and gain _stage_ limits are found that
+ * are sufficient to meet the required exposure, the function attempts to reduce
+ * exposure time as much as possible whilst fixing gain and still meeting the
+ * exposure. If a _runtime_ limit prevents exposure time from being lowered
+ * enough to meet the exposure with gain fixed at the stage limit, gain is also
+ * lowered to compensate.
  *
- * Once the shutter time and gain values are ascertained, gain is assigned as
+ * Once the exposure time and gain values are ascertained, gain is assigned as
  * analogue gain as much as possible, with digital gain only in use if the
  * maximum analogue gain runtime limit is unable to accommodate the exposure
  * value.
  *
- * If no combination of shutter time and gain limits is found that meets the
- * required exposure time, the helper falls-back to simply maximising the
- * shutter time first, followed by analogue gain, followed by digital gain.
+ * If no combination of exposure time and gain limits is found that meets the
+ * required exposure, the helper falls-back to simply maximising the exposure
+ * time first, followed by analogue gain, followed by digital gain.
  *
- * \return Tuple of shutter time, analogue gain, and digital gain
+ * \return Tuple of exposure time, analogue gain, and digital gain
  */
 std::tuple<utils::Duration, double, double>
 ExposureModeHelper::splitExposure(utils::Duration exposure) const
 {
-	ASSERT(maxShutter_);
+	ASSERT(maxExposureTime_);
 	ASSERT(maxGain_);
 
 	bool gainFixed = minGain_ == maxGain_;
-	bool shutterFixed = minShutter_ == maxShutter_;
+	bool exposureTimeFixed = minExposureTime_ == maxExposureTime_;
 
 	/*
 	 * There's no point entering the loop if we cannot change either gain
-	 * nor shutter anyway.
+	 * nor exposure time anyway.
 	 */
-	if (shutterFixed && gainFixed)
-		return { minShutter_, minGain_, exposure / (minShutter_ * minGain_) };
+	if (exposureTimeFixed && gainFixed)
+		return { minExposureTime_, minGain_, exposure / (minExposureTime_ * minGain_) };
 
-	utils::Duration shutter;
+	utils::Duration exposureTime;
 	double stageGain = 1.0;
 	double gain;
 
 	for (unsigned int stage = 0; stage < gains_.size(); stage++) {
 		double lastStageGain = stage == 0 ? 1.0 : clampGain(gains_[stage - 1]);
-		utils::Duration stageShutter = clampShutter(shutters_[stage]);
+		utils::Duration stageExposureTime = clampExposureTime(exposureTimes_[stage]);
 		stageGain = clampGain(gains_[stage]);
 
 		/*
-		 * We perform the clamping on both shutter and gain in case the
-		 * helper has had limits set that prevent those values being
-		 * lowered beyond a certain minimum...this can happen at runtime
-		 * for various reasons and so would not be known when the stage
-		 * limits are initialised.
+		 * We perform the clamping on both exposure time and gain in
+		 * case the helper has had limits set that prevent those values
+		 * being lowered beyond a certain minimum...this can happen at
+		 * runtime for various reasons and so would not be known when
+		 * the stage limits are initialised.
 		 */
 
-		if (stageShutter * lastStageGain >= exposure) {
-			shutter = clampShutter(exposure / clampGain(lastStageGain));
-			gain = clampGain(exposure / shutter);
+		if (stageExposureTime * lastStageGain >= exposure) {
+			exposureTime = clampExposureTime(exposure / clampGain(lastStageGain));
+			gain = clampGain(exposure / exposureTime);
 
-			return { shutter, gain, exposure / (shutter * gain) };
+			return { exposureTime, gain, exposure / (exposureTime * gain) };
 		}
 
-		if (stageShutter * stageGain >= exposure) {
-			shutter = clampShutter(exposure / clampGain(stageGain));
-			gain = clampGain(exposure / shutter);
+		if (stageExposureTime * stageGain >= exposure) {
+			exposureTime = clampExposureTime(exposure / clampGain(stageGain));
+			gain = clampGain(exposure / exposureTime);
 
-			return { shutter, gain, exposure / (shutter * gain) };
+			return { exposureTime, gain, exposure / (exposureTime * gain) };
 		}
 	}
 
 	/*
-	 * From here on all we can do is max out the shutter time, followed by
+	 * From here on all we can do is max out the exposure time, followed by
 	 * the analogue gain. If we still haven't achieved the target we send
 	 * the rest of the exposure time to digital gain. If we were given no
 	 * stages to use then the default stageGain of 1.0 is used so that
-	 * shutter time is maxed before gain is touched at all.
+	 * exposure time is maxed before gain is touched at all.
 	 */
-	shutter = clampShutter(exposure / clampGain(stageGain));
-	gain = clampGain(exposure / shutter);
+	exposureTime = clampExposureTime(exposure / clampGain(stageGain));
+	gain = clampGain(exposure / exposureTime);
 
-	return { shutter, gain, exposure / (shutter * gain) };
+	return { exposureTime, gain, exposure / (exposureTime * gain) };
 }
 
 /**
- * \fn ExposureModeHelper::minShutter()
- * \brief Retrieve the configured minimum shutter time limit set through
+ * \fn ExposureModeHelper::minExposureTime()
+ * \brief Retrieve the configured minimum exposure time limit set through
  * setLimits()
- * \return The minShutter_ value
+ * \return The minExposureTime_ value
  */
 
 /**
- * \fn ExposureModeHelper::maxShutter()
- * \brief Retrieve the configured maximum shutter time set through setLimits()
- * \return The maxShutter_ value
+ * \fn ExposureModeHelper::maxExposureTime()
+ * \brief Retrieve the configured maximum exposure time set through setLimits()
+ * \return The maxExposureTime_ value
  */
 
 /**

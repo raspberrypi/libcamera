@@ -272,7 +272,7 @@ interface IPARPiEventInterface {
 	 * \param[in] delayContext IPA context index used for this request
 	 *
 	 * This asynchronous event is signalled to the pipeline handler when
-	 * the IPA requires sensor specific controls (e.g. shutter speed, gain,
+	 * the IPA requires sensor specific controls (e.g. exposure time, gain,
 	 * blanking) to be applied.
 	 */
 	setDelayedControls(libcamera.ControlList controls, uint32 delayContext);

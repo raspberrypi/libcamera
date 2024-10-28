@@ -12,21 +12,21 @@
 #include <libcamera/base/utils.h>
 
 /*
- * Definition of "device metadata" which stores things like shutter time and
+ * Definition of "device metadata" which stores things like exposure time and
  * analogue gain that downstream control algorithms will want to know.
  */
 
 struct DeviceStatus {
 	DeviceStatus()
-		: shutterSpeed(std::chrono::seconds(0)), frameLength(0),
+		: exposureTime(std::chrono::seconds(0)), frameLength(0),
 		  lineLength(std::chrono::seconds(0)), analogueGain(0.0)
 	{
 	}
 
 	friend std::ostream &operator<<(std::ostream &out, const DeviceStatus &d);
 
-	/* time shutter is open */
-	libcamera::utils::Duration shutterSpeed;
+	/* time the image is exposed */
+	libcamera::utils::Duration exposureTime;
 	/* frame length given in number of lines */
 	uint32_t frameLength;
 	/* line length for the current frame */

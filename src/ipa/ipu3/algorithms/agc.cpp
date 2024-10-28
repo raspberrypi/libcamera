@@ -34,7 +34,7 @@ namespace ipa::ipu3::algorithms {
  * \class Agc
  * \brief A mean-based auto-exposure algorithm
  *
- * This algorithm calculates a shutter time and an analogue gain so that the
+ * This algorithm calculates an exposure time and an analogue gain so that the
  * average value of the green channel of the brightest 2% of pixels approaches
  * 0.5. The AWB gains are not used here, and all cells in the grid have the same
  * weight, like an average-metering case. In this metering mode, the camera uses
@@ -52,13 +52,13 @@ LOG_DEFINE_CATEGORY(IPU3Agc)
 static constexpr double kMinAnalogueGain = 1.0;
 
 /* \todo Honour the FrameDurationLimits control instead of hardcoding a limit */
-static constexpr utils::Duration kMaxShutterSpeed = 60ms;
+static constexpr utils::Duration kMaxExposureTime = 60ms;
 
 /* Histogram constants */
 static constexpr uint32_t knumHistogramBins = 256;
 
 Agc::Agc()
-	: minShutterSpeed_(0s), maxShutterSpeed_(0s)
+	: minExposureTime_(0s), maxExposureTime_(0s)
 {
 }
 
@@ -101,9 +101,9 @@ int Agc::configure(IPAContext &context,
 	stride_ = configuration.grid.stride;
 	bdsGrid_ = configuration.grid.bdsGrid;
 
-	minShutterSpeed_ = configuration.agc.minShutterSpeed;
-	maxShutterSpeed_ = std::min(configuration.agc.maxShutterSpeed,
-				    kMaxShutterSpeed);
+	minExposureTime_ = configuration.agc.minExposureTime;
+	maxExposureTime_ = std::min(configuration.agc.maxExposureTime,
+				    kMaxExposureTime);
 
 	minAnalogueGain_ = std::max(configuration.agc.minAnalogueGain, kMinAnalogueGain);
 	maxAnalogueGain_ = configuration.agc.maxAnalogueGain;
@@ -116,7 +116,7 @@ int Agc::configure(IPAContext &context,
 	context.activeState.agc.exposureMode = exposureModeHelpers().begin()->first;
 
 	/* \todo Run this again when FrameDurationLimits is passed in */
-	setLimits(minShutterSpeed_, maxShutterSpeed_, minAnalogueGain_,
+	setLimits(minExposureTime_, maxExposureTime_, minAnalogueGain_,
 		  maxAnalogueGain_);
 	resetFrameCount();
 
@@ -223,20 +223,20 @@ void Agc::process(IPAContext &context, [[maybe_unused]] const uint32_t frame,
 	double analogueGain = frameContext.sensor.gain;
 	utils::Duration effectiveExposureValue = exposureTime * analogueGain;
 
-	utils::Duration shutterTime;
+	utils::Duration newExposureTime;
 	double aGain, dGain;
-	std::tie(shutterTime, aGain, dGain) =
+	std::tie(newExposureTime, aGain, dGain) =
 		calculateNewEv(context.activeState.agc.constraintMode,
 			       context.activeState.agc.exposureMode, hist,
 			       effectiveExposureValue);
 
 	LOG(IPU3Agc, Debug)
-		<< "Divided up shutter, analogue gain and digital gain are "
-		<< shutterTime << ", " << aGain << " and " << dGain;
+		<< "Divided up exposure time, analogue gain and digital gain are "
+		<< newExposureTime << ", " << aGain << " and " << dGain;
 
 	IPAActiveState &activeState = context.activeState;
-	/* Update the estimated exposure and gain. */
-	activeState.agc.exposure = shutterTime / context.configuration.sensor.lineDuration;
+	/* Update the estimated exposure time and gain. */
+	activeState.agc.exposure = newExposureTime / context.configuration.sensor.lineDuration;
 	activeState.agc.gain = aGain;
 
 	metadata.set(controls::AnalogueGain, frameContext.sensor.gain);

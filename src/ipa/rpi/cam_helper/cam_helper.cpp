@@ -241,7 +241,7 @@ void CamHelper::parseEmbeddedData(Span<const uint8_t> buffer,
 		return;
 	}
 
-	deviceStatus.shutterSpeed = parsedDeviceStatus.shutterSpeed;
+	deviceStatus.exposureTime = parsedDeviceStatus.exposureTime;
 	deviceStatus.analogueGain = parsedDeviceStatus.analogueGain;
 	deviceStatus.frameLength = parsedDeviceStatus.frameLength;
 	deviceStatus.lineLength = parsedDeviceStatus.lineLength;

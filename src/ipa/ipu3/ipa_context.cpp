@@ -92,11 +92,11 @@ namespace libcamera::ipa::ipu3 {
  * \var IPASessionConfiguration::agc
  * \brief AGC parameters configuration of the IPA
  *
- * \var IPASessionConfiguration::agc.minShutterSpeed
- * \brief Minimum shutter speed supported with the configured sensor
+ * \var IPASessionConfiguration::agc.minExposureTime
+ * \brief Minimum exposure time supported with the configured sensor
  *
- * \var IPASessionConfiguration::agc.maxShutterSpeed
- * \brief Maximum shutter speed supported with the configured sensor
+ * \var IPASessionConfiguration::agc.maxExposureTime
+ * \brief Maximum exposure time supported with the configured sensor
  *
  * \var IPASessionConfiguration::agc.minAnalogueGain
  * \brief Minimum analogue gain supported with the configured sensor

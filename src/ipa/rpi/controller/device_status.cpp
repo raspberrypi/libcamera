@@ -10,7 +10,7 @@ using namespace libcamera; /* for the Duration operator<< overload */
 
 std::ostream &operator<<(std::ostream &out, const DeviceStatus &d)
 {
-	out << "Exposure: " << d.shutterSpeed
+	out << "Exposure time: " << d.exposureTime
 	    << " Frame length: " << d.frameLength
 	    << " Line length: " << d.lineLength
 	    << " Gain: " << d.analogueGain;

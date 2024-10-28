@@ -155,7 +155,7 @@ void CamHelperImx708::prepare(libcamera::Span<const uint8_t> buffer, Metadata &m
 		DeviceStatus parsedDeviceStatus;
 
 		metadata.get("device.status", parsedDeviceStatus);
-		parsedDeviceStatus.shutterSpeed = deviceStatus.shutterSpeed;
+		parsedDeviceStatus.exposureTime = deviceStatus.exposureTime;
 		parsedDeviceStatus.frameLength = deviceStatus.frameLength;
 		metadata.set("device.status", parsedDeviceStatus);
 
@@ -255,7 +255,7 @@ void CamHelperImx708::populateMetadata(const MdParser::RegisterMap &registers,
 
 	deviceStatus.lineLength = lineLengthPckToDuration(registers.at(lineLengthHiReg) * 256 +
 							  registers.at(lineLengthLoReg));
-	deviceStatus.shutterSpeed = exposure(registers.at(expHiReg) * 256 + registers.at(expLoReg),
+	deviceStatus.exposureTime = exposure(registers.at(expHiReg) * 256 + registers.at(expLoReg),
 					     deviceStatus.lineLength);
 	deviceStatus.analogueGain = gain(registers.at(gainHiReg) * 256 + registers.at(gainLoReg));
 	deviceStatus.frameLength = registers.at(frameLengthHiReg) * 256 + registers.at(frameLengthLoReg);

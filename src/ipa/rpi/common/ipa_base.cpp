@@ -224,7 +224,7 @@ int32_t IpaBase::configure(const IPACameraSensorInfo &sensorInfo, const ConfigPa
 
 		/* Supply initial values for gain and exposure. */
 		AgcStatus agcStatus;
-		agcStatus.shutterTime = defaultExposureTime;
+		agcStatus.exposureTime = defaultExposureTime;
 		agcStatus.analogueGain = defaultAnalogueGain;
 		applyAGC(&agcStatus, ctrls);
 
@@ -265,8 +265,8 @@ int32_t IpaBase::configure(const IPACameraSensorInfo &sensorInfo, const ConfigPa
 			    static_cast<float>(mode_.maxAnalogueGain));
 
 	ctrlMap[&controls::ExposureTime] =
-		ControlInfo(static_cast<int32_t>(mode_.minShutter.get<std::micro>()),
-			    static_cast<int32_t>(mode_.maxShutter.get<std::micro>()));
+		ControlInfo(static_cast<int32_t>(mode_.minExposureTime.get<std::micro>()),
+			    static_cast<int32_t>(mode_.maxExposureTime.get<std::micro>()));
 
 	/* Declare colour processing related controls for non-mono sensors. */
 	if (!monoSensor_)
@@ -299,11 +299,11 @@ void IpaBase::start(const ControlList &controls, StartResult *result)
 
 	/* SwitchMode may supply updated exposure/gain values to use. */
 	AgcStatus agcStatus;
-	agcStatus.shutterTime = 0.0s;
+	agcStatus.exposureTime = 0.0s;
 	agcStatus.analogueGain = 0.0;
 
 	metadata.get("agc.status", agcStatus);
-	if (agcStatus.shutterTime && agcStatus.analogueGain) {
+	if (agcStatus.exposureTime && agcStatus.analogueGain) {
 		ControlList ctrls(sensorCtrls_);
 		applyAGC(&agcStatus, ctrls);
 		result->controls = std::move(ctrls);
@@ -599,7 +599,7 @@ void IpaBase::setMode(const IPACameraSensorInfo &sensorInfo)
 	mode_.sensitivity = helper_->getModeSensitivity(mode_);
 
 	const ControlInfo &gainCtrl = sensorCtrls_.at(V4L2_CID_ANALOGUE_GAIN);
-	const ControlInfo &shutterCtrl = sensorCtrls_.at(V4L2_CID_EXPOSURE);
+	const ControlInfo &exposureTimeCtrl = sensorCtrls_.at(V4L2_CID_EXPOSURE);
 
 	mode_.minAnalogueGain = helper_->gain(gainCtrl.min().get<int32_t>());
 	mode_.maxAnalogueGain = helper_->gain(gainCtrl.max().get<int32_t>());
@@ -610,11 +610,15 @@ void IpaBase::setMode(const IPACameraSensorInfo &sensorInfo)
 	 */
 	helper_->setCameraMode(mode_);
 
-	/* Shutter speed is calculated based on the limits of the frame durations. */
-	mode_.minShutter = helper_->exposure(shutterCtrl.min().get<int32_t>(), mode_.minLineLength);
-	mode_.maxShutter = Duration::max();
-	helper_->getBlanking(mode_.maxShutter,
-			     mode_.minFrameDuration, mode_.maxFrameDuration);
+	/*
+	 * Exposure time is calculated based on the limits of the frame
+	 * durations.
+	 */
+	mode_.minExposureTime = helper_->exposure(exposureTimeCtrl.min().get<int32_t>(),
+						  mode_.minLineLength);
+	mode_.maxExposureTime = Duration::max();
+	helper_->getBlanking(mode_.maxExposureTime, mode_.minFrameDuration,
+			     mode_.maxFrameDuration);
 }
 
 void IpaBase::setCameraTimeoutValue()
@@ -788,7 +792,7 @@ void IpaBase::applyControls(const ControlList &controls)
 			}
 
 			/* The control provides units of microseconds. */
-			agc->setFixedShutter(0, ctrl.second.get<int32_t>() * 1.0us);
+			agc->setFixedExposureTime(0, ctrl.second.get<int32_t>() * 1.0us);
 
 			libcameraMetadata_.set(controls::ExposureTime, ctrl.second.get<int32_t>());
 			break;
@@ -1281,7 +1285,7 @@ void IpaBase::fillDeviceStatus(const ControlList &sensorControls, unsigned int i
 	int32_t hblank = sensorControls.get(V4L2_CID_HBLANK).get<int32_t>();
 
 	deviceStatus.lineLength = helper_->hblankToLineLength(hblank);
-	deviceStatus.shutterSpeed = helper_->exposure(exposureLines, deviceStatus.lineLength);
+	deviceStatus.exposureTime = helper_->exposure(exposureLines, deviceStatus.lineLength);
 	deviceStatus.analogueGain = helper_->gain(gainCode);
 	deviceStatus.frameLength = mode_.height + vblank;
 
@@ -1308,7 +1312,7 @@ void IpaBase::reportMetadata(unsigned int ipaContext)
 	DeviceStatus *deviceStatus = rpiMetadata.getLocked<DeviceStatus>("device.status");
 	if (deviceStatus) {
 		libcameraMetadata_.set(controls::ExposureTime,
-				       deviceStatus->shutterSpeed.get<std::micro>());
+				       deviceStatus->exposureTime.get<std::micro>());
 		libcameraMetadata_.set(controls::AnalogueGain, deviceStatus->analogueGain);
 		libcameraMetadata_.set(controls::FrameDuration,
 				       helper_->exposure(deviceStatus->frameLength, deviceStatus->lineLength).get<std::micro>());
@@ -1459,15 +1463,15 @@ void IpaBase::applyFrameDurations(Duration minFrameDuration, Duration maxFrameDu
 
 	/*
 	 * Calculate the maximum exposure time possible for the AGC to use.
-	 * getBlanking() will update maxShutter with the largest exposure
+	 * getBlanking() will update maxExposureTime with the largest exposure
 	 * value possible.
 	 */
-	Duration maxShutter = Duration::max();
-	helper_->getBlanking(maxShutter, minFrameDuration_, maxFrameDuration_);
+	Duration maxExposureTime = Duration::max();
+	helper_->getBlanking(maxExposureTime, minFrameDuration_, maxFrameDuration_);
 
 	RPiController::AgcAlgorithm *agc = dynamic_cast<RPiController::AgcAlgorithm *>(
 		controller_.getAlgorithm("agc"));
-	agc->setMaxShutter(maxShutter);
+	agc->setMaxExposureTime(maxExposureTime);
 }
 
 void IpaBase::applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls)
@@ -1484,14 +1488,14 @@ void IpaBase::applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls)
 	gainCode = std::clamp<int32_t>(gainCode, minGainCode, maxGainCode);
 
 	/* getBlanking might clip exposure time to the fps limits. */
-	Duration exposure = agcStatus->shutterTime;
+	Duration exposure = agcStatus->exposureTime;
 	auto [vblank, hblank] = helper_->getBlanking(exposure, minFrameDuration_, maxFrameDuration_);
 	int32_t exposureLines = helper_->exposureLines(exposure,
 						       helper_->hblankToLineLength(hblank));
 
 	LOG(IPARPI, Debug) << "Applying AGC Exposure: " << exposure
-			   << " (Shutter lines: " << exposureLines << ", AGC requested "
-			   << agcStatus->shutterTime << ") Gain: "
+			   << " (Exposure lines: " << exposureLines << ", AGC requested "
+			   << agcStatus->exposureTime << ") Gain: "
 			   << agcStatus->analogueGain << " (Gain Code: "
 			   << gainCode << ")";
 

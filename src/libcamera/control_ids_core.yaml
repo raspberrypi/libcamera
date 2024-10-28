@@ -102,7 +102,7 @@ controls:
         Specify an exposure mode for the AE algorithm to use.
 
         The exposure modes specify how the desired total exposure is divided
-        between the shutter time and the sensor's analogue gain. They are
+        between the exposure time and the sensor's analogue gain. They are
         platform specific, and not all exposure modes may be supported.
       enum:
         - name: ExposureNormal
@@ -135,8 +135,7 @@ controls:
   - ExposureTime:
       type: int32_t
       description: |
-        Exposure time (shutter speed) for the frame applied in the sensor
-        device.
+        Exposure time for the frame applied in the sensor device.
 
         This value is specified in micro-seconds.
 
@@ -463,14 +462,13 @@ controls:
         values to be the same. Setting both values to 0 reverts to using the
         camera defaults.
 
-        The maximum frame duration provides the absolute limit to the shutter
-        speed computed by the AE algorithm and it overrides any exposure mode
+        The maximum frame duration provides the absolute limit to the exposure
+        time computed by the AE algorithm and it overrides any exposure mode
         setting specified with controls::AeExposureMode. Similarly, when a
         manual exposure time is set through controls::ExposureTime, it also
         gets clipped to the limits set by this control. When reported in
-        metadata, the control expresses the minimum and maximum frame
-        durations used after being clipped to the sensor provided frame
-        duration limits.
+        metadata, the control expresses the minimum and maximum frame durations
+        used after being clipped to the sensor provided frame duration limits.
 
         \sa AeExposureMode
         \sa ExposureTime

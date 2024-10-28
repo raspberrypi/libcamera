@@ -112,7 +112,7 @@ namespace ipa::ipu3 {
  * blue gains to apply to generate a neutral grey frame overall.
  *
  * AGC is handled by calculating a histogram of the green channel to estimate an
- * analogue gain and shutter time which will provide a well exposed frame. A
+ * analogue gain and exposure time which will provide a well exposed frame. A
  * low-pass IIR filter is used to smooth the changes to the sensor to reduce
  * perceivable steps.
  *
@@ -215,13 +215,13 @@ void IPAIPU3::updateSessionConfiguration(const ControlInfoMap &sensorControls)
 
 	/*
 	 * When the AGC computes the new exposure values for a frame, it needs
-	 * to know the limits for shutter speed and analogue gain.
+	 * to know the limits for exposure time and analogue gain.
 	 * As it depends on the sensor, update it with the controls.
 	 *
-	 * \todo take VBLANK into account for maximum shutter speed
+	 * \todo take VBLANK into account for maximum exposure time
 	 */
-	context_.configuration.agc.minShutterSpeed = minExposure * context_.configuration.sensor.lineDuration;
-	context_.configuration.agc.maxShutterSpeed = maxExposure * context_.configuration.sensor.lineDuration;
+	context_.configuration.agc.minExposureTime = minExposure * context_.configuration.sensor.lineDuration;
+	context_.configuration.agc.maxExposureTime = maxExposure * context_.configuration.sensor.lineDuration;
 	context_.configuration.agc.minAnalogueGain = camHelper_->gain(minGain);
 	context_.configuration.agc.maxAnalogueGain = camHelper_->gain(maxGain);
 }

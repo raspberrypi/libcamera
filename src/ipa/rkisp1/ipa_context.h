@@ -53,8 +53,8 @@ struct IPASessionConfiguration {
 	} lsc;
 
 	struct {
-		utils::Duration minShutterSpeed;
-		utils::Duration maxShutterSpeed;
+		utils::Duration minExposureTime;
+		utils::Duration maxExposureTime;
 		double minAnalogueGain;
 		double maxAnalogueGain;
 

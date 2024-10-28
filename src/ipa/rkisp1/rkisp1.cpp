@@ -257,14 +257,14 @@ int IPARkISP1::configure(const IPAConfigInfo &ipaConfig,
 
 	/*
 	 * When the AGC computes the new exposure values for a frame, it needs
-	 * to know the limits for shutter speed and analogue gain.
-	 * As it depends on the sensor, update it with the controls.
+	 * to know the limits for exposure time and analogue gain. As it depends
+	 * on the sensor, update it with the controls.
 	 *
-	 * \todo take VBLANK into account for maximum shutter speed
+	 * \todo take VBLANK into account for maximum exposure time
 	 */
-	context_.configuration.sensor.minShutterSpeed =
+	context_.configuration.sensor.minExposureTime =
 		minExposure * context_.configuration.sensor.lineDuration;
-	context_.configuration.sensor.maxShutterSpeed =
+	context_.configuration.sensor.maxExposureTime =
 		maxExposure * context_.configuration.sensor.lineDuration;
 	context_.configuration.sensor.minAnalogueGain =
 		context_.camHelper->gain(minGain);

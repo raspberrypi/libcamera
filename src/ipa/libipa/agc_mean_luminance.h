@@ -44,7 +44,7 @@ public:
 
 	int parseTuningData(const YamlObject &tuningData);
 
-	void setLimits(utils::Duration minShutter, utils::Duration maxShutter,
+	void setLimits(utils::Duration minExposureTime, utils::Duration maxExposureTime,
 		       double minGain, double maxGain);
 
 	std::map<int32_t, std::vector<AgcConstraint>> constraintModes()

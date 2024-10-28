@@ -927,16 +927,16 @@ int PipelineHandlerRkISP1::allocateBuffers(Camera *camera)
 		ret = stat_->allocateBuffers(maxCount, &statBuffers_);
 		if (ret < 0)
 			goto error;
+	}
 
-		/* If the dewarper is being used, allocate internal buffers for ISP. */
-		if (useDewarper_) {
-			ret = mainPath_.exportBuffers(maxCount, &mainPathBuffers_);
-			if (ret < 0)
-				goto error;
+	/* If the dewarper is being used, allocate internal buffers for ISP. */
+	if (useDewarper_) {
+		ret = mainPath_.exportBuffers(maxCount, &mainPathBuffers_);
+		if (ret < 0)
+			goto error;
 
-			for (std::unique_ptr<FrameBuffer> &buffer : mainPathBuffers_)
-				availableMainPathBuffers_.push(buffer.get());
-		}
+		for (std::unique_ptr<FrameBuffer> &buffer : mainPathBuffers_)
+			availableMainPathBuffers_.push(buffer.get());
 	}
 
 	for (std::unique_ptr<FrameBuffer> &buffer : paramBuffers_) {

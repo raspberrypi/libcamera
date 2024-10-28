@@ -57,7 +57,7 @@ public:
 	void stop() override;
 
 	void queueRequest(const uint32_t frame, const ControlList &controls) override;
-	void fillParamsBuffer(const uint32_t frame) override;
+	void computeParams(const uint32_t frame) override;
 	void processStats(const uint32_t frame, const uint32_t bufferId,
 			  const ControlList &sensorControls) override;
 
@@ -272,7 +272,7 @@ void IPASoftSimple::queueRequest(const uint32_t frame, const ControlList &contro
 		algo->queueRequest(context_, frame, frameContext, controls);
 }
 
-void IPASoftSimple::fillParamsBuffer(const uint32_t frame)
+void IPASoftSimple::computeParams(const uint32_t frame)
 {
 	IPAFrameContext &frameContext = context_.frameContexts.get(frame);
 	for (auto const &algo : algorithms())

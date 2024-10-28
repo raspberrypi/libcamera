@@ -31,14 +31,14 @@ interface IPAIPU3Interface {
 	unmapBuffers(array<uint32> ids);
 
 	[async] queueRequest(uint32 frame, libcamera.ControlList controls);
-	[async] fillParamsBuffer(uint32 frame, uint32 bufferId);
-	[async] processStatsBuffer(uint32 frame, int64 frameTimestamp,
-				   uint32 bufferId, libcamera.ControlList sensorControls);
+	[async] computeParams(uint32 frame, uint32 bufferId);
+	[async] processStats(uint32 frame, int64 frameTimestamp,
+			     uint32 bufferId, libcamera.ControlList sensorControls);
 };
 
 interface IPAIPU3EventInterface {
 	setSensorControls(uint32 frame, libcamera.ControlList sensorControls,
 			  libcamera.ControlList lensControls);
-	paramsBufferReady(uint32 frame);
+	paramsComputed(uint32 frame);
 	metadataReady(uint32 frame, libcamera.ControlList metadata);
 };

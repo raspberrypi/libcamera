@@ -351,7 +351,7 @@ void SoftwareIsp::stop()
  */
 void SoftwareIsp::process(uint32_t frame, FrameBuffer *input, FrameBuffer *output)
 {
-	ipa_->fillParamsBuffer(frame);
+	ipa_->computeParams(frame);
 	debayer_->invokeMethod(&DebayerCpu::process,
 			       ConnectionTypeQueued, frame, input, output, debayerParams_);
 }

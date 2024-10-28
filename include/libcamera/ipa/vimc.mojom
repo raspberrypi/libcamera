@@ -47,9 +47,9 @@ interface IPAVimcInterface {
 	 * interface functions that mimick how other pipeline handlers typically
 	 * handle parameters at runtime.
 	 */
-	[async] fillParamsBuffer(uint32 frame, uint32 bufferId);
+	[async] computeParams(uint32 frame, uint32 bufferId);
 };
 
 interface IPAVimcEventInterface {
-	paramsBufferReady(uint32 bufferId, [flags] TestFlag flags);
+	paramsComputed(uint32 bufferId, [flags] TestFlag flags);
 };

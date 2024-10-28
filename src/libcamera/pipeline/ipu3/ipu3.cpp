@@ -88,7 +88,7 @@ public:
 
 private:
 	void metadataReady(unsigned int id, const ControlList &metadata);
-	void paramsBufferReady(unsigned int id);
+	void paramsComputed(unsigned int id);
 	void setSensorControls(unsigned int id, const ControlList &sensorControls,
 			       const ControlList &lensControls);
 };
@@ -1156,7 +1156,7 @@ int IPU3CameraData::loadIPA()
 		return -ENOENT;
 
 	ipa_->setSensorControls.connect(this, &IPU3CameraData::setSensorControls);
-	ipa_->paramsBufferReady.connect(this, &IPU3CameraData::paramsBufferReady);
+	ipa_->paramsComputed.connect(this, &IPU3CameraData::paramsComputed);
 	ipa_->metadataReady.connect(this, &IPU3CameraData::metadataReady);
 
 	/*
@@ -1217,7 +1217,7 @@ void IPU3CameraData::setSensorControls([[maybe_unused]] unsigned int id,
 	focusLens->setFocusPosition(focusValue.get<int32_t>());
 }
 
-void IPU3CameraData::paramsBufferReady(unsigned int id)
+void IPU3CameraData::paramsComputed(unsigned int id)
 {
 	IPU3Frames::Info *info = frameInfos_.find(id);
 	if (!info)
@@ -1328,7 +1328,7 @@ void IPU3CameraData::cio2BufferReady(FrameBuffer *buffer)
 	if (request->findBuffer(&rawStream_))
 		pipe()->completeBuffer(request, buffer);
 
-	ipa_->fillParamsBuffer(info->id, info->paramBuffer->cookie());
+	ipa_->computeParams(info->id, info->paramBuffer->cookie());
 }
 
 void IPU3CameraData::paramBufferReady(FrameBuffer *buffer)
@@ -1372,8 +1372,8 @@ void IPU3CameraData::statBufferReady(FrameBuffer *buffer)
 		return;
 	}
 
-	ipa_->processStatsBuffer(info->id, request->metadata().get(controls::SensorTimestamp).value_or(0),
-				 info->statBuffer->cookie(), info->effectiveSensorControls);
+	ipa_->processStats(info->id, request->metadata().get(controls::SensorTimestamp).value_or(0),
+			   info->statBuffer->cookie(), info->effectiveSensorControls);
 }
 
 /*

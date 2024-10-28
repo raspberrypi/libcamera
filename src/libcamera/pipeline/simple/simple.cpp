@@ -225,7 +225,7 @@ public:
 	int setupFormats(V4L2SubdeviceFormat *format,
 			 V4L2Subdevice::Whence whence,
 			 Transform transform = Transform::Identity);
-	void bufferReady(FrameBuffer *buffer);
+	void imageBufferReady(FrameBuffer *buffer);
 	void clearIncompleteRequests();
 
 	unsigned int streamIndex(const Stream *stream) const
@@ -784,7 +784,7 @@ int SimpleCameraData::setupFormats(V4L2SubdeviceFormat *format,
 	return 0;
 }
 
-void SimpleCameraData::bufferReady(FrameBuffer *buffer)
+void SimpleCameraData::imageBufferReady(FrameBuffer *buffer)
 {
 	SimplePipelineHandler *pipe = SimpleCameraData::pipe();
 
@@ -1364,7 +1364,7 @@ int SimplePipelineHandler::start(Camera *camera, [[maybe_unused]] const ControlL
 		return ret;
 	}
 
-	video->bufferReady.connect(data, &SimpleCameraData::bufferReady);
+	video->bufferReady.connect(data, &SimpleCameraData::imageBufferReady);
 
 	ret = video->streamOn();
 	if (ret < 0) {
@@ -1408,7 +1408,7 @@ void SimplePipelineHandler::stopDevice(Camera *camera)
 	video->streamOff();
 	video->releaseBuffers();
 
-	video->bufferReady.disconnect(data, &SimpleCameraData::bufferReady);
+	video->bufferReady.disconnect(data, &SimpleCameraData::imageBufferReady);
 
 	data->clearIncompleteRequests();
 	data->conversionBuffers_.clear();

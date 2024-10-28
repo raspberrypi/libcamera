@@ -56,8 +56,8 @@ public:
 
 	int init();
 	int allocateMockIPABuffers();
-	void bufferReady(FrameBuffer *buffer);
-	void paramsBufferReady(unsigned int id, const Flags<ipa::vimc::TestFlag> flags);
+	void imageBufferReady(FrameBuffer *buffer);
+	void paramsComputed(unsigned int id, const Flags<ipa::vimc::TestFlag> flags);
 
 	MediaDevice *media_;
 	std::unique_ptr<CameraSensor> sensor_;
@@ -492,7 +492,7 @@ bool PipelineHandlerVimc::match(DeviceEnumerator *enumerator)
 		return false;
 	}
 
-	data->ipa_->paramsBufferReady.connect(data.get(), &VimcCameraData::paramsBufferReady);
+	data->ipa_->paramsComputed.connect(data.get(), &VimcCameraData::paramsComputed);
 
 	std::string conf = data->ipa_->configurationFile("vimc.conf");
 	Flags<ipa::vimc::TestFlag> inFlags = ipa::vimc::TestFlag::Flag2;
@@ -548,7 +548,7 @@ int VimcCameraData::init()
 	if (video_->open())
 		return -ENODEV;
 
-	video_->bufferReady.connect(this, &VimcCameraData::bufferReady);
+	video_->bufferReady.connect(this, &VimcCameraData::imageBufferReady);
 
 	raw_ = V4L2VideoDevice::fromEntityName(media_, "Raw Capture 1");
 	if (raw_->open())
@@ -596,7 +596,7 @@ int VimcCameraData::init()
 	return 0;
 }
 
-void VimcCameraData::bufferReady(FrameBuffer *buffer)
+void VimcCameraData::imageBufferReady(FrameBuffer *buffer)
 {
 	PipelineHandlerVimc *pipe =
 		static_cast<PipelineHandlerVimc *>(this->pipe());
@@ -621,7 +621,7 @@ void VimcCameraData::bufferReady(FrameBuffer *buffer)
 	pipe->completeBuffer(request, buffer);
 	pipe->completeRequest(request);
 
-	ipa_->fillParamsBuffer(request->sequence(), mockIPABufs_[0]->cookie());
+	ipa_->computeParams(request->sequence(), mockIPABufs_[0]->cookie());
 }
 
 int VimcCameraData::allocateMockIPABuffers()
@@ -639,8 +639,8 @@ int VimcCameraData::allocateMockIPABuffers()
 	return video_->exportBuffers(kBufCount, &mockIPABufs_);
 }
 
-void VimcCameraData::paramsBufferReady([[maybe_unused]] unsigned int id,
-				       [[maybe_unused]] const Flags<ipa::vimc::TestFlag> flags)
+void VimcCameraData::paramsComputed([[maybe_unused]] unsigned int id,
+				    [[maybe_unused]] const Flags<ipa::vimc::TestFlag> flags)
 {
 }
 

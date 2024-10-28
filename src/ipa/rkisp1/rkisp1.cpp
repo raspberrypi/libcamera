@@ -65,9 +65,9 @@ public:
 	void unmapBuffers(const std::vector<unsigned int> &ids) override;
 
 	void queueRequest(const uint32_t frame, const ControlList &controls) override;
-	void fillParamsBuffer(const uint32_t frame, const uint32_t bufferId) override;
-	void processStatsBuffer(const uint32_t frame, const uint32_t bufferId,
-				const ControlList &sensorControls) override;
+	void computeParams(const uint32_t frame, const uint32_t bufferId) override;
+	void processStats(const uint32_t frame, const uint32_t bufferId,
+			  const ControlList &sensorControls) override;
 
 protected:
 	std::string logPrefix() const override;
@@ -335,7 +335,7 @@ void IPARkISP1::queueRequest(const uint32_t frame, const ControlList &controls)
 	}
 }
 
-void IPARkISP1::fillParamsBuffer(const uint32_t frame, const uint32_t bufferId)
+void IPARkISP1::computeParams(const uint32_t frame, const uint32_t bufferId)
 {
 	IPAFrameContext &frameContext = context_.frameContexts.get(frame);
 
@@ -345,11 +345,11 @@ void IPARkISP1::fillParamsBuffer(const uint32_t frame, const uint32_t bufferId)
 	for (auto const &algo : algorithms())
 		algo->prepare(context_, frame, frameContext, &params);
 
-	paramsBufferReady.emit(frame, params.size());
+	paramsComputed.emit(frame, params.size());
 }
 
-void IPARkISP1::processStatsBuffer(const uint32_t frame, const uint32_t bufferId,
-				   const ControlList &sensorControls)
+void IPARkISP1::processStats(const uint32_t frame, const uint32_t bufferId,
+			     const ControlList &sensorControls)
 {
 	IPAFrameContext &frameContext = context_.frameContexts.get(frame);
 

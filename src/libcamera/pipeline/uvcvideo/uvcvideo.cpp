@@ -47,7 +47,7 @@ public:
 	int init(MediaDevice *media);
 	void addControl(uint32_t cid, const ControlInfo &v4l2info,
 			ControlInfoMap::Map *ctrls);
-	void bufferReady(FrameBuffer *buffer);
+	void imageBufferReady(FrameBuffer *buffer);
 
 	const std::string &id() const { return id_; }
 
@@ -476,7 +476,7 @@ int UVCCameraData::init(MediaDevice *media)
 	if (ret)
 		return ret;
 
-	video_->bufferReady.connect(this, &UVCCameraData::bufferReady);
+	video_->bufferReady.connect(this, &UVCCameraData::imageBufferReady);
 
 	/* Generate the camera ID. */
 	if (!generateId()) {
@@ -747,7 +747,7 @@ void UVCCameraData::addControl(uint32_t cid, const ControlInfo &v4l2Info,
 	ctrls->emplace(id, info);
 }
 
-void UVCCameraData::bufferReady(FrameBuffer *buffer)
+void UVCCameraData::imageBufferReady(FrameBuffer *buffer)
 {
 	Request *request = buffer->request();
 

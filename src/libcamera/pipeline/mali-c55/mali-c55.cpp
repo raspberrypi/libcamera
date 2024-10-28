@@ -463,7 +463,7 @@ public:
 
 	int queueRequestDevice(Camera *camera, Request *request) override;
 
-	void bufferReady(FrameBuffer *buffer);
+	void imageBufferReady(FrameBuffer *buffer);
 
 	bool match(DeviceEnumerator *enumerator) override;
 
@@ -877,7 +877,7 @@ int PipelineHandlerMaliC55::queueRequestDevice(Camera *camera, Request *request)
 	return 0;
 }
 
-void PipelineHandlerMaliC55::bufferReady(FrameBuffer *buffer)
+void PipelineHandlerMaliC55::imageBufferReady(FrameBuffer *buffer)
 {
 	Request *request = buffer->request();
 
@@ -991,7 +991,7 @@ bool PipelineHandlerMaliC55::match(DeviceEnumerator *enumerator)
 	if (frPipe->cap->open() < 0)
 		return false;
 
-	frPipe->cap->bufferReady.connect(this, &PipelineHandlerMaliC55::bufferReady);
+	frPipe->cap->bufferReady.connect(this, &PipelineHandlerMaliC55::imageBufferReady);
 
 	dsFitted_ = !!media_->getEntityByName("mali-c55 ds");
 	if (dsFitted_) {
@@ -1007,7 +1007,7 @@ bool PipelineHandlerMaliC55::match(DeviceEnumerator *enumerator)
 		if (dsPipe->cap->open() < 0)
 			return false;
 
-		dsPipe->cap->bufferReady.connect(this, &PipelineHandlerMaliC55::bufferReady);
+		dsPipe->cap->bufferReady.connect(this, &PipelineHandlerMaliC55::imageBufferReady);
 	}
 
 	ispSink = isp_->entity()->getPadByIndex(0);

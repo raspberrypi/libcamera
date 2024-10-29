@@ -54,6 +54,7 @@ static constexpr size_t ControlValueSize[] = {
 	[ControlTypeNone]		= 0,
 	[ControlTypeBool]		= sizeof(bool),
 	[ControlTypeByte]		= sizeof(uint8_t),
+	[ControlTypeUnsigned16]		= sizeof(uint16_t),
 	[ControlTypeUnsigned32]		= sizeof(uint32_t),
 	[ControlTypeInteger32]		= sizeof(int32_t),
 	[ControlTypeInteger64]		= sizeof(int64_t),
@@ -75,6 +76,8 @@ static constexpr size_t ControlValueSize[] = {
  * The control stores a boolean value
  * \var ControlTypeByte
  * The control stores a byte value as an unsigned 8-bit integer
+ * \var ControlTypeUnsigned16
+ * The control stores an unsigned 16-bit integer value
  * \var ControlTypeUnsigned32
  * The control stores an unsigned 32-bit integer value
  * \var ControlTypeInteger32
@@ -230,6 +233,11 @@ std::string ControlValue::toString() const
 		}
 		case ControlTypeByte: {
 			const uint8_t *value = reinterpret_cast<const uint8_t *>(data);
+			str += std::to_string(*value);
+			break;
+		}
+		case ControlTypeUnsigned16: {
+			const uint16_t *value = reinterpret_cast<const uint16_t *>(data);
 			str += std::to_string(*value);
 			break;
 		}

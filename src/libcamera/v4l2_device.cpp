@@ -216,6 +216,13 @@ ControlList V4L2Device::getControls(const std::vector<uint32_t> &ids)
 				v4l2Ctrl.p_u8 = data.data();
 				break;
 
+			case V4L2_CTRL_TYPE_U16:
+				type = ControlTypeUnsigned16;
+				value.reserve(type, true, info.elems);
+				data = value.data();
+				v4l2Ctrl.p_u16 = reinterpret_cast<uint16_t *>(data.data());
+				break;
+
 			case V4L2_CTRL_TYPE_U32:
 				type = ControlTypeUnsigned32;
 				value.reserve(type, true, info.elems);
@@ -307,6 +314,18 @@ int V4L2Device::setControls(ControlList *ctrls)
 		/* Set the v4l2_ext_control value for the write operation. */
 		ControlValue &value = ctrl->second;
 		switch (iter->first->type()) {
+		case ControlTypeUnsigned16: {
+			if (value.isArray()) {
+				Span<uint8_t> data = value.data();
+				v4l2Ctrl.p_u16 = reinterpret_cast<uint16_t *>(data.data());
+				v4l2Ctrl.size = data.size();
+			} else {
+				v4l2Ctrl.value = value.get<uint16_t>();
+			}
+
+			break;
+		}
+
 		case ControlTypeUnsigned32: {
 			if (value.isArray()) {
 				Span<uint8_t> data = value.data();
@@ -508,6 +527,9 @@ ControlType V4L2Device::v4l2CtrlType(uint32_t ctrlType)
 	case V4L2_CTRL_TYPE_BOOLEAN:
 		return ControlTypeBool;
 
+	case V4L2_CTRL_TYPE_U16:
+		return ControlTypeUnsigned16;
+
 	case V4L2_CTRL_TYPE_U32:
 		return ControlTypeUnsigned32;
 
@@ -558,6 +580,11 @@ std::optional<ControlInfo> V4L2Device::v4l2ControlInfo(const v4l2_query_ext_ctrl
 		return ControlInfo(static_cast<uint8_t>(ctrl.minimum),
 				   static_cast<uint8_t>(ctrl.maximum),
 				   static_cast<uint8_t>(ctrl.default_value));
+
+	case V4L2_CTRL_TYPE_U16:
+		return ControlInfo(static_cast<uint16_t>(ctrl.minimum),
+				   static_cast<uint16_t>(ctrl.maximum),
+				   static_cast<uint16_t>(ctrl.default_value));
 
 	case V4L2_CTRL_TYPE_U32:
 		return ControlInfo(static_cast<uint32_t>(ctrl.minimum),
@@ -650,6 +677,7 @@ void V4L2Device::listControls()
 		case V4L2_CTRL_TYPE_BITMASK:
 		case V4L2_CTRL_TYPE_INTEGER_MENU:
 		case V4L2_CTRL_TYPE_U8:
+		case V4L2_CTRL_TYPE_U16:
 		case V4L2_CTRL_TYPE_U32:
 			break;
 		/* \todo Support other control types. */

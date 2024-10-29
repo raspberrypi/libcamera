@@ -110,6 +110,46 @@ protected:
 		}
 
 		/*
+		 * Unsigned Integer16 type.
+		 */
+		value.set(static_cast<uint16_t>(42));
+		if (value.isNone() || value.isArray() ||
+		    value.type() != ControlTypeUnsigned16) {
+			cerr << "Control type mismatch after setting to uint16_t" << endl;
+			return TestFail;
+		}
+
+		if (value.get<uint16_t>() != 42) {
+			cerr << "Control value mismatch after setting to uint16_t" << endl;
+			return TestFail;
+		}
+
+		if (value.toString() != "42") {
+			cerr << "Control string mismatch after setting to uint16_t" << endl;
+			return TestFail;
+		}
+
+		std::array<uint16_t, 4> uint16s{ 3, 14, 15, 9 };
+		value.set(Span<uint16_t>(uint16s));
+		if (value.isNone() || !value.isArray() ||
+		    value.type() != ControlTypeUnsigned16) {
+			cerr << "Control type mismatch after setting to uint16_t array" << endl;
+			return TestFail;
+		}
+
+		Span<const uint16_t> uint16sResult = value.get<Span<const uint16_t>>();
+		if (uint16s.size() != uint16sResult.size() ||
+		    !std::equal(uint16s.begin(), uint16s.end(), uint16sResult.begin())) {
+			cerr << "Control value mismatch after setting to uint16_t array" << endl;
+			return TestFail;
+		}
+
+		if (value.toString() != "[ 3, 14, 15, 9 ]") {
+			cerr << "Control string mismatch after setting to uint16_t array" << endl;
+			return TestFail;
+		}
+
+		/*
 		 * Unsigned Integer32 type.
 		 */
 		value.set(static_cast<uint32_t>(42));

@@ -39,11 +39,6 @@ struct IPAActiveState {
 		double blue;
 	} gains;
 
-	struct {
-		int32_t exposure;
-		double again;
-	} agc;
-
 	static constexpr unsigned int kGammaLookupSize = 1024;
 	struct {
 		std::array<double, kGammaLookupSize> gammaTable;

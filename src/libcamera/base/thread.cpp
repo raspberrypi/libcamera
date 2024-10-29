@@ -9,6 +9,7 @@
 
 #include <atomic>
 #include <list>
+#include <optional>
 #include <sys/syscall.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -128,6 +129,8 @@ private:
 	int exitCode_;
 
 	MessageQueue messages_;
+
+	std::optional<cpu_set_t> cpuset_;
 };
 
 /**
@@ -281,6 +284,8 @@ void Thread::startThread()
 	data_->tid_ = syscall(SYS_gettid);
 	currentThreadData = data_;
 
+	setThreadAffinityInternal();
+
 	run();
 }
 
@@ -408,6 +413,48 @@ bool Thread::wait(utils::duration duration)
 		thread_.join();
 
 	return hasFinished;
+}
+
+/**
+ * \brief Set the CPU affinity mask of the thread
+ * \param[in] cpus The list of CPU indices that the thread is set affinity to
+ *
+ * The CPU indices should be within [0, std::thread::hardware_concurrency()).
+ * If any index is invalid, this function won't modify the thread affinity and
+ * will return an error.
+ *
+ * \return 0 if all indices are valid, -EINVAL otherwise
+ */
+int Thread::setThreadAffinity(const Span<const unsigned int> &cpus)
+{
+	const unsigned int numCpus = std::thread::hardware_concurrency();
+
+	MutexLocker locker(data_->mutex_);
+	data_->cpuset_ = cpu_set_t();
+	CPU_ZERO(&data_->cpuset_.value());
+
+	for (const unsigned int &cpu : cpus) {
+		if (cpu >= numCpus) {
+			LOG(Thread, Error) << "Invalid CPU " << cpu << "for thread affinity";
+			return -EINVAL;
+		}
+
+		CPU_SET(cpu, &data_->cpuset_.value());
+	}
+
+	if (data_->running_)
+		setThreadAffinityInternal();
+
+	return 0;
+}
+
+void Thread::setThreadAffinityInternal()
+{
+	if (!data_->cpuset_)
+		return;
+
+	const cpu_set_t &cpuset = data_->cpuset_.value();
+	pthread_setaffinity_np(thread_.native_handle(), sizeof(cpuset), &cpuset);
 }
 
 /**

@@ -29,6 +29,7 @@ enum ControlType {
 	ControlTypeNone,
 	ControlTypeBool,
 	ControlTypeByte,
+	ControlTypeUnsigned32,
 	ControlTypeInteger32,
 	ControlTypeInteger64,
 	ControlTypeFloat,
@@ -59,6 +60,12 @@ struct control_type<bool> {
 template<>
 struct control_type<uint8_t> {
 	static constexpr ControlType value = ControlTypeByte;
+	static constexpr std::size_t size = 0;
+};
+
+template<>
+struct control_type<uint32_t> {
+	static constexpr ControlType value = ControlTypeUnsigned32;
 	static constexpr std::size_t size = 0;
 };
 

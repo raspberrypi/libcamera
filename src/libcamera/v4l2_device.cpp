@@ -9,6 +9,7 @@
 
 #include <fcntl.h>
 #include <map>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
@@ -204,10 +205,22 @@ ControlList V4L2Device::getControls(const std::vector<uint32_t> &ids)
 
 		if (info.flags & V4L2_CTRL_FLAG_HAS_PAYLOAD) {
 			ControlType type;
+			ControlValue &value = ctrl.second;
+			Span<uint8_t> data;
 
 			switch (info.type) {
 			case V4L2_CTRL_TYPE_U8:
 				type = ControlTypeByte;
+				value.reserve(type, true, info.elems);
+				data = value.data();
+				v4l2Ctrl.p_u8 = data.data();
+				break;
+
+			case V4L2_CTRL_TYPE_U32:
+				type = ControlTypeUnsigned32;
+				value.reserve(type, true, info.elems);
+				data = value.data();
+				v4l2Ctrl.p_u32 = reinterpret_cast<uint32_t *>(data.data());
 				break;
 
 			default:
@@ -217,11 +230,6 @@ ControlList V4L2Device::getControls(const std::vector<uint32_t> &ids)
 				return {};
 			}
 
-			ControlValue &value = ctrl.second;
-			value.reserve(type, true, info.elems);
-			Span<uint8_t> data = value.data();
-
-			v4l2Ctrl.p_u8 = data.data();
 			v4l2Ctrl.size = data.size();
 		}
 	}
@@ -299,6 +307,18 @@ int V4L2Device::setControls(ControlList *ctrls)
 		/* Set the v4l2_ext_control value for the write operation. */
 		ControlValue &value = ctrl->second;
 		switch (iter->first->type()) {
+		case ControlTypeUnsigned32: {
+			if (value.isArray()) {
+				Span<uint8_t> data = value.data();
+				v4l2Ctrl.p_u32 = reinterpret_cast<uint32_t *>(data.data());
+				v4l2Ctrl.size = data.size();
+			} else {
+				v4l2Ctrl.value = value.get<uint32_t>();
+			}
+
+			break;
+		}
+
 		case ControlTypeInteger32: {
 			if (value.isArray()) {
 				Span<uint8_t> data = value.data();
@@ -488,6 +508,9 @@ ControlType V4L2Device::v4l2CtrlType(uint32_t ctrlType)
 	case V4L2_CTRL_TYPE_BOOLEAN:
 		return ControlTypeBool;
 
+	case V4L2_CTRL_TYPE_U32:
+		return ControlTypeUnsigned32;
+
 	case V4L2_CTRL_TYPE_INTEGER:
 		return ControlTypeInteger32;
 
@@ -535,6 +558,11 @@ std::optional<ControlInfo> V4L2Device::v4l2ControlInfo(const v4l2_query_ext_ctrl
 		return ControlInfo(static_cast<uint8_t>(ctrl.minimum),
 				   static_cast<uint8_t>(ctrl.maximum),
 				   static_cast<uint8_t>(ctrl.default_value));
+
+	case V4L2_CTRL_TYPE_U32:
+		return ControlInfo(static_cast<uint32_t>(ctrl.minimum),
+				   static_cast<uint32_t>(ctrl.maximum),
+				   static_cast<uint32_t>(ctrl.default_value));
 
 	case V4L2_CTRL_TYPE_BOOLEAN:
 		return ControlInfo(static_cast<bool>(ctrl.minimum),
@@ -622,6 +650,7 @@ void V4L2Device::listControls()
 		case V4L2_CTRL_TYPE_BITMASK:
 		case V4L2_CTRL_TYPE_INTEGER_MENU:
 		case V4L2_CTRL_TYPE_U8:
+		case V4L2_CTRL_TYPE_U32:
 			break;
 		/* \todo Support other control types. */
 		default:

@@ -39,7 +39,7 @@ Agc::Agc()
 {
 }
 
-void Agc::updateExposure(IPAContext &context, double exposureMSV)
+void Agc::updateExposure(IPAContext &context, IPAFrameContext &frameContext, double exposureMSV)
 {
 	/*
 	 * kExpDenominator of 10 gives ~10% increment/decrement;
@@ -50,8 +50,8 @@ void Agc::updateExposure(IPAContext &context, double exposureMSV)
 	static constexpr uint8_t kExpNumeratorDown = kExpDenominator - 1;
 
 	double next;
-	int32_t &exposure = context.activeState.agc.exposure;
-	double &again = context.activeState.agc.again;
+	int32_t &exposure = frameContext.sensor.exposure;
+	double &again = frameContext.sensor.gain;
 
 	if (exposureMSV < kExposureOptimal - kExposureSatisfactory) {
 		next = exposure * kExpNumeratorUp / kExpDenominator;
@@ -129,7 +129,7 @@ void Agc::process(IPAContext &context,
 	}
 
 	float exposureMSV = (denom == 0 ? 0 : static_cast<float>(num) / denom);
-	updateExposure(context, exposureMSV);
+	updateExposure(context, frameContext, exposureMSV);
 }
 
 REGISTER_IPA_ALGORITHM(Agc, "Agc")

@@ -310,8 +310,8 @@ void IPASoftSimple::processStats(const uint32_t frame,
 
 	ControlList ctrls(sensorInfoMap_);
 
-	auto &againNew = context_.activeState.agc.again;
-	ctrls.set(V4L2_CID_EXPOSURE, context_.activeState.agc.exposure);
+	auto &againNew = frameContext.sensor.gain;
+	ctrls.set(V4L2_CID_EXPOSURE, frameContext.sensor.exposure);
 	ctrls.set(V4L2_CID_ANALOGUE_GAIN,
 		  static_cast<int32_t>(camHelper_ ? camHelper_->gainCode(againNew) : againNew));
 

@@ -27,7 +27,7 @@ public:
 		     ControlList &metadata) override;
 
 private:
-	uint32_t exposure_;
+	int32_t exposure_;
 	double gain_;
 };
 

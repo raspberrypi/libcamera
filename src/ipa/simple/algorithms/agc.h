@@ -25,7 +25,7 @@ public:
 		     ControlList &metadata) override;
 
 private:
-	void updateExposure(IPAContext &context, double exposureMSV);
+	void updateExposure(IPAContext &context, IPAFrameContext &frameContext, double exposureMSV);
 };
 
 } /* namespace ipa::soft::algorithms */

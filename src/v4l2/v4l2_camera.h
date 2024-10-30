@@ -52,6 +52,7 @@ public:
 				  libcamera::StreamConfiguration *streamConfigOut);
 
 	libcamera::ControlList &controls() { return controls_; }
+	const libcamera::ControlInfoMap &controlInfo() { return camera_->controls(); }
 
 	int allocBuffers(unsigned int count);
 	void freeBuffers();

@@ -73,7 +73,7 @@ private Q_SLOTS:
 private:
 	int createToolbars();
 
-	std::string chooseCamera();
+	std::shared_ptr<libcamera::Camera> chooseCamera();
 	int openCamera();
 
 	int startCapture();

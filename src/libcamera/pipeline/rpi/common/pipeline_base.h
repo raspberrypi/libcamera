@@ -133,8 +133,21 @@ public:
 
 	/* For handling digital zoom. */
 	IPACameraSensorInfo sensorInfo_;
-	Rectangle ispCrop_; /* crop in ISP (camera mode) pixels */
-	Size ispMinCropSize_;
+
+	struct CropParams {
+		CropParams(Rectangle ispCrop_, Size ispMinCropSize_)
+			: ispCrop(ispCrop_), ispMinCropSize(ispMinCropSize_)
+		{
+		}
+
+		/* Crop in ISP (camera mode) pixels */
+		Rectangle ispCrop;
+		/* Minimum crop size in ISP output pixels */
+		Size ispMinCropSize;
+	};
+
+	/* Mapping of CropParams keyed by the output stream order in CameraConfiguration */
+	std::map<unsigned int, CropParams> cropParams_;
 
 	unsigned int dropFrameCount_;
 

@@ -702,13 +702,19 @@ int Vc4CameraData::platformConfigure(const RPi::RPiCameraConfiguration *rpiConfi
 	/* Figure out the smallest selection the ISP will allow. */
 	Rectangle testCrop(0, 0, 1, 1);
 	isp_[Isp::Input].dev()->setSelection(V4L2_SEL_TGT_CROP, &testCrop);
-	ispMinCropSize_ = testCrop.size();
 
 	/* Adjust aspect ratio by providing crops on the input image. */
 	Size size = unicamFormat.size.boundedToAspectRatio(maxSize);
-	ispCrop_ = size.centeredTo(Rectangle(unicamFormat.size).center());
+	Rectangle ispCrop = size.centeredTo(Rectangle(unicamFormat.size).center());
 
-	platformSetIspCrop(ispCrop_);
+	platformSetIspCrop(ispCrop);
+	/*
+	 * Set the scaler crop to the value we are using (scaled to native sensor
+	 * coordinates).
+	 */
+	cropParams_.emplace(std::piecewise_construct,
+			    std::forward_as_tuple(0),
+			    std::forward_as_tuple(ispCrop, testCrop.size()));
 
 	return 0;
 }

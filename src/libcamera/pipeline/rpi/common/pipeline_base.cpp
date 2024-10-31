@@ -533,6 +533,7 @@ int PipelineHandlerBase::configure(Camera *camera, CameraConfiguration *config)
 	 * Platform specific internal stream configuration. This also assigns
 	 * external streams which get configured below.
 	 */
+	data->cropParams_.clear();
 	ret = data->platformConfigure(rpiConfig);
 	if (ret)
 		return ret;
@@ -561,10 +562,14 @@ int PipelineHandlerBase::configure(Camera *camera, CameraConfiguration *config)
 	for (auto const &c : result.controlInfo)
 		ctrlMap.emplace(c.first, c.second);
 
-	/* Add the ScalerCrop control limits based on the current mode. */
-	Rectangle ispMinCrop = data->scaleIspCrop(Rectangle(data->ispMinCropSize_));
-	ctrlMap[&controls::ScalerCrop] = ControlInfo(ispMinCrop, data->sensorInfo_.analogCrop,
-						     data->scaleIspCrop(data->ispCrop_));
+	const auto cropParamsIt = data->cropParams_.find(0);
+	if (cropParamsIt != data->cropParams_.end()) {
+		const CameraData::CropParams &cropParams = cropParamsIt->second;
+		/* Add the ScalerCrop control limits based on the current mode. */
+		Rectangle ispMinCrop = data->scaleIspCrop(Rectangle(cropParams.ispMinCropSize));
+		ctrlMap[&controls::ScalerCrop] = ControlInfo(ispMinCrop, data->sensorInfo_.analogCrop,
+							     data->scaleIspCrop(cropParams.ispCrop));
+	}
 
 	data->controlInfo_ = ControlInfoMap(std::move(ctrlMap), result.controlInfo.idmap());
 
@@ -1291,8 +1296,10 @@ Rectangle CameraData::scaleIspCrop(const Rectangle &ispCrop) const
 void CameraData::applyScalerCrop(const ControlList &controls)
 {
 	const auto &scalerCrop = controls.get<Rectangle>(controls::ScalerCrop);
-	if (scalerCrop) {
+	const auto cropParamsIt = cropParams_.find(0);
+	if (scalerCrop && cropParamsIt != cropParams_.end()) {
 		Rectangle nativeCrop = *scalerCrop;
+		CropParams &cropParams = cropParamsIt->second;
 
 		if (!nativeCrop.width || !nativeCrop.height)
 			nativeCrop = { 0, 0, 1, 1 };
@@ -1308,12 +1315,12 @@ void CameraData::applyScalerCrop(const ControlList &controls)
 		 * 2. With the same mid-point, if possible.
 		 * 3. But it can't go outside the sensor area.
 		 */
-		Size minSize = ispMinCropSize_.expandedToAspectRatio(nativeCrop.size());
+		Size minSize = cropParams.ispMinCropSize.expandedToAspectRatio(nativeCrop.size());
 		Size size = ispCrop.size().expandedTo(minSize);
 		ispCrop = size.centeredTo(ispCrop.center()).enclosedIn(Rectangle(sensorInfo_.outputSize));
 
-		if (ispCrop != ispCrop_) {
-			ispCrop_ = ispCrop;
+		if (ispCrop != cropParams.ispCrop) {
+			cropParams.ispCrop = ispCrop;
 			platformSetIspCrop(ispCrop);
 		}
 	}
@@ -1471,7 +1478,10 @@ void CameraData::fillRequestMetadata(const ControlList &bufferControls, Request 
 	request->metadata().set(controls::SensorTimestamp,
 				bufferControls.get(controls::SensorTimestamp).value_or(0));
 
-	request->metadata().set(controls::ScalerCrop, scaleIspCrop(ispCrop_));
+	const auto cropParamsIt = cropParams_.find(0);
+	if (cropParamsIt != cropParams_.end())
+		request->metadata().set(controls::ScalerCrop,
+					scaleIspCrop(cropParamsIt->second.ispCrop));
 }
 
 } /* namespace libcamera */

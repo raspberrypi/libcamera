@@ -545,12 +545,6 @@ int PipelineHandlerBase::configure(Camera *camera, CameraConfiguration *config)
 	}
 
 	/*
-	 * Set the scaler crop to the value we are using (scaled to native sensor
-	 * coordinates).
-	 */
-	data->scalerCrop_ = data->scaleIspCrop(data->ispCrop_);
-
-	/*
 	 * Update the ScalerCropMaximum to the correct value for this camera mode.
 	 * For us, it's the same as the "analogue crop".
 	 *
@@ -569,7 +563,8 @@ int PipelineHandlerBase::configure(Camera *camera, CameraConfiguration *config)
 
 	/* Add the ScalerCrop control limits based on the current mode. */
 	Rectangle ispMinCrop = data->scaleIspCrop(Rectangle(data->ispMinCropSize_));
-	ctrlMap[&controls::ScalerCrop] = ControlInfo(ispMinCrop, data->sensorInfo_.analogCrop, data->scalerCrop_);
+	ctrlMap[&controls::ScalerCrop] = ControlInfo(ispMinCrop, data->sensorInfo_.analogCrop,
+						     data->scaleIspCrop(data->ispCrop_));
 
 	data->controlInfo_ = ControlInfoMap(std::move(ctrlMap), result.controlInfo.idmap());
 
@@ -1320,13 +1315,6 @@ void CameraData::applyScalerCrop(const ControlList &controls)
 		if (ispCrop != ispCrop_) {
 			ispCrop_ = ispCrop;
 			platformSetIspCrop();
-
-			/*
-			 * Also update the ScalerCrop in the metadata with what we actually
-			 * used. But we must first rescale that from ISP (camera mode) pixels
-			 * back into sensor native pixels.
-			 */
-			scalerCrop_ = scaleIspCrop(ispCrop_);
 		}
 	}
 }
@@ -1483,7 +1471,7 @@ void CameraData::fillRequestMetadata(const ControlList &bufferControls, Request 
 	request->metadata().set(controls::SensorTimestamp,
 				bufferControls.get(controls::SensorTimestamp).value_or(0));
 
-	request->metadata().set(controls::ScalerCrop, scalerCrop_);
+	request->metadata().set(controls::ScalerCrop, scaleIspCrop(ispCrop_));
 }
 
 } /* namespace libcamera */

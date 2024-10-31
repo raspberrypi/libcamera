@@ -30,4 +30,29 @@ controls:
 
         \sa StatsOutputEnable
 
+  - ScalerCrops:
+      type: Rectangle
+      size: [n]
+      description: |
+        An array of rectangles, where each singular value has identical
+        functionality to the ScalerCrop control. This control allows the
+        Raspberry Pi pipeline handler to control individual scaler crops per
+        output stream.
+
+        The order of rectangles passed into the control must match the order of
+        streams configured by the application. The pipeline handler will only
+        configure crop retangles up-to the number of output streams configured.
+        All subsequent rectangles passed into this control are ignored by the
+        pipeline handler.
+
+        If both rpi::ScalerCrops and ScalerCrop controls are present in a
+        ControlList, the latter is discarded, and crops are obtained from this
+        control.
+
+        Note that using different crop rectangles for each output stream with
+        this control is only applicable on the Pi5/PiSP platform. This control
+        should also be considered temporary/draft and will be replaced with
+        official libcamera API support for per-stream controls in the future.
+
+        \sa ScalerCrop
 ...

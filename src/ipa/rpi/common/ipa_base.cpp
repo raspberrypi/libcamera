@@ -96,6 +96,13 @@ const ControlInfoMap::Map ipaAfControls{
 	{ &controls::LensPosition, ControlInfo(0.0f, 32.0f, 1.0f) }
 };
 
+/* Platform specific controls */
+const std::map<const std::string, ControlInfoMap::Map> platformControls {
+	{ "pisp", {
+		{ &controls::rpi::ScalerCrops, ControlInfo(Rectangle{}, Rectangle(65535, 65535, 65535, 65535), Rectangle{}) }
+	} },
+};
+
 } /* namespace */
 
 LOG_DEFINE_CATEGORY(IPARPI)
@@ -158,6 +165,10 @@ int32_t IpaBase::init(const IPASettings &settings, const InitParams &params, Ini
 	ControlInfoMap::Map ctrlMap = ipaControls;
 	if (lensPresent_)
 		ctrlMap.merge(ControlInfoMap::Map(ipaAfControls));
+
+	auto platformCtrlsIt = platformControls.find(controller_.getTarget());
+	if (platformCtrlsIt != platformControls.end())
+		ctrlMap.merge(ControlInfoMap::Map(platformCtrlsIt->second));
 
 	monoSensor_ = params.sensorInfo.cfaPattern == properties::draft::ColorFilterArrangementEnum::MONO;
 	if (!monoSensor_)
@@ -1070,6 +1081,7 @@ void IpaBase::applyControls(const ControlList &controls)
 			break;
 		}
 
+		case controls::rpi::SCALER_CROPS:
 		case controls::SCALER_CROP: {
 			/* We do nothing with this, but should avoid the warning below. */
 			break;

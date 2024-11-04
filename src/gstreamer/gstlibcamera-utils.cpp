@@ -254,52 +254,50 @@ gst_format_to_pixel_format(GstVideoFormat gst_format)
 	return PixelFormat{};
 }
 
+static const struct {
+	PixelFormat format;
+	const gchar *name;
+} bayer_map[]{
+	{ formats::SBGGR8, "bggr" },
+	{ formats::SGBRG8, "gbrg" },
+	{ formats::SGRBG8, "grbg" },
+	{ formats::SRGGB8, "rggb" },
+	{ formats::SBGGR10, "bggr10le" },
+	{ formats::SGBRG10, "gbrg10le" },
+	{ formats::SGRBG10, "grbg10le" },
+	{ formats::SRGGB10, "rggb10le" },
+	{ formats::SBGGR12, "bggr12le" },
+	{ formats::SGBRG12, "gbrg12le" },
+	{ formats::SGRBG12, "grbg12le" },
+	{ formats::SRGGB12, "rggb12le" },
+	{ formats::SBGGR14, "bggr14le" },
+	{ formats::SGBRG14, "gbrg14le" },
+	{ formats::SGRBG14, "grbg14le" },
+	{ formats::SRGGB14, "rggb14le" },
+	{ formats::SBGGR16, "bggr16le" },
+	{ formats::SGBRG16, "gbrg16le" },
+	{ formats::SGRBG16, "grbg16le" },
+	{ formats::SRGGB16, "rggb16le" },
+};
+
 static const gchar *
-bayer_format_to_string(int format)
+bayer_format_to_string(PixelFormat format)
 {
-	switch (format) {
-	case formats::SBGGR8:
-		return "bggr";
-	case formats::SGBRG8:
-		return "gbrg";
-	case formats::SGRBG8:
-		return "grbg";
-	case formats::SRGGB8:
-		return "rggb";
-	case formats::SBGGR10:
-		return "bggr10le";
-	case formats::SGBRG10:
-		return "gbrg10le";
-	case formats::SGRBG10:
-		return "grbg10le";
-	case formats::SRGGB10:
-		return "rggb10le";
-	case formats::SBGGR12:
-		return "bggr12le";
-	case formats::SGBRG12:
-		return "gbrg12le";
-	case formats::SGRBG12:
-		return "grbg12le";
-	case formats::SRGGB12:
-		return "rggb12le";
-	case formats::SBGGR14:
-		return "bggr14le";
-	case formats::SGBRG14:
-		return "gbrg14le";
-	case formats::SGRBG14:
-		return "grbg14le";
-	case formats::SRGGB14:
-		return "rggb14le";
-	case formats::SBGGR16:
-		return "bggr16le";
-	case formats::SGBRG16:
-		return "gbrg16le";
-	case formats::SGRBG16:
-		return "grbg16le";
-	case formats::SRGGB16:
-		return "rggb16le";
+	for (auto &b : bayer_map) {
+		if (b.format == format)
+			return b.name;
 	}
-	return NULL;
+	return nullptr;
+}
+
+static PixelFormat
+bayer_format_from_string(const gchar *name)
+{
+	for (auto &b : bayer_map) {
+		if (strcmp(b.name, name) == 0)
+			return b.format;
+	}
+	return PixelFormat{};
 }
 
 static GstStructure *
@@ -474,6 +472,9 @@ gst_libcamera_configure_stream_from_caps(StreamConfiguration &stream_cfg,
 		const gchar *format = gst_structure_get_string(s, "format");
 		gst_format = gst_video_format_from_string(format);
 		stream_cfg.pixelFormat = gst_format_to_pixel_format(gst_format);
+	} else if (gst_structure_has_name(s, "video/x-bayer")) {
+		const gchar *format = gst_structure_get_string(s, "format");
+		stream_cfg.pixelFormat = bayer_format_from_string(format);
 	} else if (gst_structure_has_name(s, "image/jpeg")) {
 		stream_cfg.pixelFormat = formats::MJPEG;
 	} else {

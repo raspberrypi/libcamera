@@ -66,7 +66,7 @@ class SimpleTestMethods(BaseTestCase):
         libcam.log_set_level('Camera', 'FATAL')
         with self.assertRaises(RuntimeError):
             cam.acquire()
-        libcam.log_set_level('Camera', 'ERROR')
+        libcam.log_set_level('Camera', 'INFO')
 
         cam.release()
 

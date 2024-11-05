@@ -112,6 +112,8 @@ common_arguments = [
 c_arguments = []
 cpp_arguments = []
 
+cxx_stdlib = 'libstdc++'
+
 if cc.get_id() == 'clang'
     if cc.version().version_compare('<9')
         error('clang version is too old, libcamera requires 9.0 or newer')
@@ -137,6 +139,7 @@ if cc.get_id() == 'clang'
         cpp_arguments += [
             '-stdlib=libc++',
         ]
+        cxx_stdlib = 'libc++'
     endif
 
     cpp_arguments += [

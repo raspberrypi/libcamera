@@ -24,6 +24,12 @@ py_env.append('PYTHONPATH', pypathdir)
 if asan_enabled
     py_env.append('LD_PRELOAD', asan_runtime)
 
+    # Preload the C++ standard library to work around a bug in ASan when
+    # dynamically loading C++ .so modules.
+    stdlib = run_command(cxx, '-print-file-name=' + cxx_stdlib + '.so',
+                         check : true).stdout().strip()
+    py_env.append('LD_PRELOAD', stdlib)
+
     # Disable leak detection as the Python interpreter is full of leaks.
     py_env.append('ASAN_OPTIONS', 'detect_leaks=0')
 endif

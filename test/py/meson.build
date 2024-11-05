@@ -13,15 +13,19 @@ if asan_runtime_missing
     subdir_done()
 endif
 
+py_env = environment()
+
 pymod = import('python')
 py3 = pymod.find_installation('python3')
 
 pypathdir = meson.project_build_root() / 'src' / 'py'
-py_env = ['PYTHONPATH=' + pypathdir]
+py_env.append('PYTHONPATH', pypathdir)
 
 if asan_enabled
+    py_env.append('LD_PRELOAD', asan_runtime)
+
     # Disable leak detection as the Python interpreter is full of leaks.
-    py_env += ['LD_PRELOAD=' + asan_runtime, 'ASAN_OPTIONS=detect_leaks=0']
+    py_env.append('ASAN_OPTIONS', 'detect_leaks=0')
 endif
 
 test('pyunittests',

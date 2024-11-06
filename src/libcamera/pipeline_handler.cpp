@@ -367,9 +367,7 @@ void PipelineHandler::stop(Camera *camera)
 	while (!waitingRequests_.empty()) {
 		Request *request = waitingRequests_.front();
 		waitingRequests_.pop();
-
-		request->_d()->cancel();
-		completeRequest(request);
+		cancelRequest(request);
 	}
 
 	/* Make sure no requests are pending. */
@@ -470,10 +468,8 @@ void PipelineHandler::doQueueRequest(Request *request)
 	}
 
 	int ret = queueRequestDevice(camera, request);
-	if (ret) {
-		request->_d()->cancel();
-		completeRequest(request);
-	}
+	if (ret)
+		cancelRequest(request);
 }
 
 /**
@@ -566,6 +562,19 @@ void PipelineHandler::completeRequest(Request *request)
 		data->queuedRequests_.pop_front();
 		camera->requestComplete(req);
 	}
+}
+
+/**
+ * \brief Cancel request and signal its completion
+ * \param[in] request The request to cancel
+ *
+ * This function cancels and completes the request. The same rules as for
+ * completeRequest() apply.
+ */
+void PipelineHandler::cancelRequest(Request *request)
+{
+	request->_d()->cancel();
+	completeRequest(request);
 }
 
 /**

@@ -226,6 +226,7 @@ public:
 			 V4L2Subdevice::Whence whence,
 			 Transform transform = Transform::Identity);
 	void bufferReady(FrameBuffer *buffer);
+	void clearIncompleteRequests();
 
 	unsigned int streamIndex(const Stream *stream) const
 	{
@@ -876,6 +877,14 @@ void SimpleCameraData::bufferReady(FrameBuffer *buffer)
 	pipe->completeRequest(request);
 }
 
+void SimpleCameraData::clearIncompleteRequests()
+{
+	while (!conversionQueue_.empty()) {
+		pipe()->cancelRequest(conversionQueue_.front().request);
+		conversionQueue_.pop();
+	}
+}
+
 void SimpleCameraData::conversionInputDone(FrameBuffer *buffer)
 {
 	/* Queue the input buffer back for capture. */
@@ -1401,6 +1410,7 @@ void SimplePipelineHandler::stopDevice(Camera *camera)
 
 	video->bufferReady.disconnect(data, &SimpleCameraData::bufferReady);
 
+	data->clearIncompleteRequests();
 	data->conversionBuffers_.clear();
 
 	releasePipeline(data);

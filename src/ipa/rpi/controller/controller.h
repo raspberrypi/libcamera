@@ -31,7 +31,7 @@ namespace RPiController {
  * Applications must cast the span to these structures exactly.
  */
 static constexpr unsigned int NetworkNameLen = 64;
-static constexpr unsigned int MaxNumTensors = 8;
+static constexpr unsigned int MaxNumTensors = 16;
 static constexpr unsigned int MaxNumDimensions = 8;
 
 struct OutputTensorInfo {

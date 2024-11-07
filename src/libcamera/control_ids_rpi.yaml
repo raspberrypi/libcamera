@@ -82,7 +82,7 @@ controls:
         takes the following form:
 
         constexpr unsigned int NetworkNameLen = 64;
-        constexpr unsigned int MaxNumTensors = 8;
+        constexpr unsigned int MaxNumTensors = 16;
         constexpr unsigned int MaxNumDimensions = 8;
 
         struct CnnOutputTensorInfo {

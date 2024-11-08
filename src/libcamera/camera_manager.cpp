@@ -80,8 +80,10 @@ void CameraManager::Private::run()
 	mutex_.unlock();
 	cv_.notify_one();
 
-	if (ret < 0)
+	if (ret < 0) {
+		cleanup();
 		return;
+	}
 
 	/* Now start processing events and messages. */
 	exec();

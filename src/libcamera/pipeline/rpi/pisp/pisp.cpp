@@ -392,6 +392,31 @@ void do16BitEndianSwap([[maybe_unused]] void *mem, [[maybe_unused]] unsigned int
 #endif
 }
 
+void do14bitUnpack(void *mem, unsigned int width, unsigned int height,
+		   unsigned int stride)
+{
+	std::vector<uint8_t> cache(stride);
+
+	for (unsigned int j = 0; j < height; j++) {
+		const uint8_t *in = ((uint8_t *)mem) + j * stride;
+		uint8_t *out = ((uint8_t *)mem) + j * stride;
+		uint8_t *p = cache.data();
+
+		std::memcpy(p, in, stride);
+		for (unsigned int i = 0; i < width; i += 4, p += 7) {
+			uint16_t p0 = (p[0] << 8) | ((p[4] & 0x3f) << 2);
+			uint16_t p1 = (p[1] << 8) | ((p[4] & 0xc0) >> 4) | ((p[5] & 0x0f) << 4);
+			uint16_t p2 = (p[2] << 8) | ((p[5] & 0xf0) >> 2) | ((p[6] & 0x03) << 6);
+			uint16_t p3 = (p[3] << 8) | (p[6] & 0xfc);
+
+			*(uint16_t *)(out + i * 2 + 0) = p0;
+			*(uint16_t *)(out + i * 2 + 2) = p1;
+			*(uint16_t *)(out + i * 2 + 4) = p2;
+			*(uint16_t *)(out + i * 2 + 6) = p3;
+		}
+	}
+}
+
 void downscaleInterleaved3(void *mem, unsigned int height, unsigned int src_width,
 			   unsigned int stride)
 {
@@ -1433,6 +1458,15 @@ int PiSPCameraData::platformConfigure(const RPi::RPiCameraConfiguration *rpiConf
 			<< "  will not be correct. You must use manual camera settings.";
 	}
 
+	/* Ditto for the 14-bit unpacking. */
+	cfe_[Cfe::Output0].clearFlags(StreamFlag::Needs14bitUnpack);
+	if (MediaBusFormatInfo::info(rpiConfig->sensorFormat_.code).bitsPerPixel == 14) {
+		cfe_[Cfe::Output0].setFlags(StreamFlag::Needs14bitUnpack);
+		LOG(RPI, Warning)
+			<< "The sensor is configured for a 14-bit output, statistics"
+			<< "  will not be correct. You must use manual camera settings.";
+	}
+
 	ret = cfe->setFormat(&cfeFormat);
 	if (ret)
 		return ret;
@@ -1682,8 +1716,9 @@ void PiSPCameraData::cfeBufferDequeue(FrameBuffer *buffer)
 	job.buffers[stream] = buffer;
 
 	if (stream == &cfe_[Cfe::Output0]) {
-		/* Do an endian swap if needed. */
-		if (stream->getFlags() & StreamFlag::Needs16bitEndianSwap) {
+		/* Do an endian swap or 14-bit unpacking if needed. */
+		if (stream->getFlags() & StreamFlag::Needs16bitEndianSwap ||
+		    stream->getFlags() & StreamFlag::Needs14bitUnpack) {
 			const unsigned int stride = stream->configuration().stride;
 			const unsigned int width = stream->configuration().size.width;
 			const unsigned int height = stream->configuration().size.height;
@@ -1693,7 +1728,12 @@ void PiSPCameraData::cfeBufferDequeue(FrameBuffer *buffer)
 			void *mem = b.mapped->planes()[0].data();
 
 			dmabufSyncStart(buffer->planes()[0].fd);
-			do16BitEndianSwap(mem, width, height, stride);
+
+			if (stream->getFlags() & StreamFlag::Needs16bitEndianSwap)
+				do16BitEndianSwap(mem, width, height, stride);
+			else
+				do14bitUnpack(mem, width, height, stride);
+
 			dmabufSyncEnd(buffer->planes()[0].fd);
 		}
 
@@ -1860,6 +1900,10 @@ int PiSPCameraData::configureCfe()
 
 	pisp_image_format_config image = toPiSPImageFormat(cfeFormat);
 	pisp_fe_input_config input = {};
+
+	/* 14-bit bodge */
+	if (cfe_[Cfe::Output0].getFlags() & StreamFlag::Needs14bitUnpack)
+		image.width = image.width * 14 / 16;
 
 	input.streaming = 1;
 	input.format = image;

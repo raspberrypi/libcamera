@@ -224,7 +224,7 @@ private:
 		Empty,
 	};
 
-	template<typename T>
+	template<typename T, typename Enable = void>
 	struct Getter {
 		std::optional<T> get(const YamlObject &obj) const;
 	};

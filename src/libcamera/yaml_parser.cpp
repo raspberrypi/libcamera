@@ -7,6 +7,7 @@
 
 #include "libcamera/internal/yaml_parser.h"
 
+#include <charconv>
 #include <cstdlib>
 #include <errno.h>
 #include <functional>
@@ -146,151 +147,38 @@ YamlObject::Getter<bool>::get(const YamlObject &obj) const
 	return std::nullopt;
 }
 
-namespace {
-
-bool parseSignedInteger(const std::string &str, long min, long max,
-			long *result)
+template<typename T>
+struct YamlObject::Getter<T, std::enable_if_t<
+	std::is_same_v<int8_t, T> ||
+	std::is_same_v<uint8_t, T> ||
+	std::is_same_v<int16_t, T> ||
+	std::is_same_v<uint16_t, T> ||
+	std::is_same_v<int32_t, T> ||
+	std::is_same_v<uint32_t, T>>>
 {
-	if (str == "")
-		return false;
+	std::optional<T> get(const YamlObject &obj) const
+	{
+		if (obj.type_ != Type::Value)
+			return std::nullopt;
 
-	char *end;
+		const std::string &str = obj.value_;
+		T value;
 
-	errno = 0;
-	long value = std::strtol(str.c_str(), &end, 10);
+		auto [ptr, ec] = std::from_chars(str.data(), str.data() + str.size(),
+						 value);
+		if (ptr != str.data() + str.size() || ec != std::errc())
+			return std::nullopt;
 
-	if ('\0' != *end || errno == ERANGE || value < min || value > max)
-		return false;
+		return value;
+	}
+};
 
-	*result = value;
-	return true;
-}
-
-bool parseUnsignedInteger(const std::string &str, unsigned long max,
-			  unsigned long *result)
-{
-	if (str == "")
-		return false;
-
-	/*
-	 * strtoul() accepts strings representing a negative number, in which
-	 * case it negates the converted value. We don't want to silently accept
-	 * negative values and return a large positive number, so check for a
-	 * minus sign (after optional whitespace) and return an error.
-	 */
-	std::size_t found = str.find_first_not_of(" \t");
-	if (found != std::string::npos && str[found] == '-')
-		return false;
-
-	char *end;
-
-	errno = 0;
-	unsigned long value = std::strtoul(str.c_str(), &end, 10);
-
-	if ('\0' != *end || errno == ERANGE || value > max)
-		return false;
-
-	*result = value;
-	return true;
-}
-
-} /* namespace */
-
-template<>
-std::optional<int8_t>
-YamlObject::Getter<int8_t>::get(const YamlObject &obj) const
-{
-	if (obj.type_ != Type::Value)
-		return std::nullopt;
-
-	long value;
-
-	if (!parseSignedInteger(obj.value_, std::numeric_limits<int8_t>::min(),
-				std::numeric_limits<int8_t>::max(), &value))
-		return std::nullopt;
-
-	return value;
-}
-
-template<>
-std::optional<uint8_t>
-YamlObject::Getter<uint8_t>::get(const YamlObject &obj) const
-{
-	if (obj.type_ != Type::Value)
-		return std::nullopt;
-
-	unsigned long value;
-
-	if (!parseUnsignedInteger(obj.value_, std::numeric_limits<uint8_t>::max(),
-				  &value))
-		return std::nullopt;
-
-	return value;
-}
-
-template<>
-std::optional<int16_t>
-YamlObject::Getter<int16_t>::get(const YamlObject &obj) const
-{
-	if (obj.type_ != Type::Value)
-		return std::nullopt;
-
-	long value;
-
-	if (!parseSignedInteger(obj.value_, std::numeric_limits<int16_t>::min(),
-				std::numeric_limits<int16_t>::max(), &value))
-		return std::nullopt;
-
-	return value;
-}
-
-template<>
-std::optional<uint16_t>
-YamlObject::Getter<uint16_t>::get(const YamlObject &obj) const
-{
-	if (obj.type_ != Type::Value)
-		return std::nullopt;
-
-	unsigned long value;
-
-	if (!parseUnsignedInteger(obj.value_, std::numeric_limits<uint16_t>::max(),
-				  &value))
-		return std::nullopt;
-
-	return value;
-}
-
-template<>
-std::optional<int32_t>
-YamlObject::Getter<int32_t>::get(const YamlObject &obj) const
-{
-	if (obj.type_ != Type::Value)
-		return std::nullopt;
-
-	long value;
-
-	if (!parseSignedInteger(obj.value_, std::numeric_limits<int32_t>::min(),
-				std::numeric_limits<int32_t>::max(), &value))
-		return std::nullopt;
-
-	return value;
-}
-
-template<>
-std::optional<uint32_t>
-YamlObject::Getter<uint32_t>::get(const YamlObject &obj) const
-{
-	if (obj.type_ != Type::Value)
-		return std::nullopt;
-
-	unsigned long value;
-
-	if (!parseUnsignedInteger(obj.value_, std::numeric_limits<uint32_t>::max(),
-				  &value))
-		return std::nullopt;
-
-	return value;
-}
+template struct YamlObject::Getter<int8_t>;
+template struct YamlObject::Getter<uint8_t>;
+template struct YamlObject::Getter<int16_t>;
+template struct YamlObject::Getter<uint16_t>;
+template struct YamlObject::Getter<int32_t>;
+template struct YamlObject::Getter<uint32_t>;
 
 template<>
 std::optional<float>

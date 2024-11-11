@@ -5,7 +5,7 @@
  * Matrix and related operations
  */
 
-#include "matrix.h"
+#include "libcamera/internal/matrix.h"
 
 #include <libcamera/base/log.h>
 
@@ -17,8 +17,6 @@
 namespace libcamera {
 
 LOG_DEFINE_CATEGORY(Matrix)
-
-namespace ipa {
 
 /**
  * \class Matrix
@@ -143,7 +141,5 @@ bool matrixValidateYaml(const YamlObject &obj, unsigned int size)
 	return true;
 }
 #endif /* __DOXYGEN__ */
-
-} /* namespace ipa */
 
 } /* namespace libcamera */

@@ -19,8 +19,6 @@ namespace libcamera {
 
 LOG_DECLARE_CATEGORY(Matrix)
 
-namespace ipa {
-
 #ifndef __DOXYGEN__
 template<typename T, unsigned int Rows, unsigned int Cols,
 	 std::enable_if_t<std::is_arithmetic_v<T>> * = nullptr>
@@ -166,24 +164,22 @@ Matrix<T, Rows, Cols> operator+(const Matrix<T, Rows, Cols> &m1, const Matrix<T,
 bool matrixValidateYaml(const YamlObject &obj, unsigned int size);
 #endif /* __DOXYGEN__ */
 
-} /* namespace ipa */
-
 #ifndef __DOXYGEN__
 template<typename T, unsigned int Rows, unsigned int Cols>
-std::ostream &operator<<(std::ostream &out, const ipa::Matrix<T, Rows, Cols> &m)
+std::ostream &operator<<(std::ostream &out, const Matrix<T, Rows, Cols> &m)
 {
 	out << m.toString();
 	return out;
 }
 
 template<typename T, unsigned int Rows, unsigned int Cols>
-struct YamlObject::Getter<ipa::Matrix<T, Rows, Cols>> {
-	std::optional<ipa::Matrix<T, Rows, Cols>> get(const YamlObject &obj) const
+struct YamlObject::Getter<Matrix<T, Rows, Cols>> {
+	std::optional<Matrix<T, Rows, Cols>> get(const YamlObject &obj) const
 	{
-		if (!ipa::matrixValidateYaml(obj, Rows * Cols))
+		if (!matrixValidateYaml(obj, Rows * Cols))
 			return std::nullopt;
 
-		ipa::Matrix<T, Rows, Cols> matrix;
+		Matrix<T, Rows, Cols> matrix;
 		T *data = &matrix[0][0];
 
 		unsigned int i = 0;

@@ -140,10 +140,6 @@ public:
 		{
 		}
 
-		CropParams()
-		{
-		}
-
 		/* Crop in ISP (camera mode) pixels */
 		Rectangle ispCrop;
 		/* Minimum crop size in ISP output pixels */

@@ -8,7 +8,7 @@
 #include <assert.h>
 
 #include "cam_helper.h"
-#include "math.h"
+
 using namespace RPiController;
 
 class CamHelperImx283 : public CamHelper

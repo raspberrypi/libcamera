@@ -71,7 +71,6 @@ const ControlInfoMap::Map ipaControls{
 	{ &controls::HdrMode, ControlInfo(controls::HdrModeValues) },
 	{ &controls::Sharpness, ControlInfo(0.0f, 16.0f, 1.0f) },
 	{ &controls::ScalerCrop, ControlInfo(Rectangle{}, Rectangle(65535, 65535, 65535, 65535), Rectangle{}) },
-	{ &controls::rpi::ScalerCrops, ControlInfo(Rectangle{}, Rectangle(65535, 65535, 65535, 65535), Rectangle{}) },
 	{ &controls::FrameDurationLimits, ControlInfo(INT64_C(33333), INT64_C(120000)) },
 	{ &controls::draft::NoiseReductionMode, ControlInfo(controls::draft::NoiseReductionModeValues) },
 	{ &controls::rpi::StatsOutputEnable, ControlInfo(false, true, false) },
@@ -96,6 +95,13 @@ const ControlInfoMap::Map ipaAfControls{
 	{ &controls::AfTrigger, ControlInfo(controls::AfTriggerValues) },
 	{ &controls::AfPause, ControlInfo(controls::AfPauseValues) },
 	{ &controls::LensPosition, ControlInfo(0.0f, 32.0f, 1.0f) }
+};
+
+/* Platform specific controls */
+const std::map<const std::string, ControlInfoMap::Map> platformControls {
+	{ "pisp", {
+		{ &controls::rpi::ScalerCrops, ControlInfo(Rectangle{}, Rectangle(65535, 65535, 65535, 65535), Rectangle{}) }
+	} },
 };
 
 } /* namespace */
@@ -161,6 +167,10 @@ int32_t IpaBase::init(const IPASettings &settings, const InitParams &params, Ini
 	ControlInfoMap::Map ctrlMap = ipaControls;
 	if (lensPresent_)
 		ctrlMap.merge(ControlInfoMap::Map(ipaAfControls));
+
+	auto platformCtrlsIt = platformControls.find(controller_.getTarget());
+	if (platformCtrlsIt != platformControls.end())
+		ctrlMap.merge(ControlInfoMap::Map(platformCtrlsIt->second));
 
 	monoSensor_ = params.sensorInfo.cfaPattern == properties::draft::ColorFilterArrangementEnum::MONO;
 	if (!monoSensor_)

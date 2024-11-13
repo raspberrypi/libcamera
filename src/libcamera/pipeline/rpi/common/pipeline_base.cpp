@@ -181,13 +181,14 @@ CameraConfiguration::Status RPiCameraConfiguration::validate()
 
 	rawStreams_.clear();
 	outStreams_.clear();
+	unsigned int rawStreamIndex = 0;
+	unsigned int outStreamIndex = 0;
 
-	unsigned int rawIndex = 0, outIndex = 0;
 	for (auto &cfg : config_) {
 		if (PipelineHandlerBase::isRaw(cfg.pixelFormat))
-			rawStreams_.emplace_back(rawIndex++, &cfg);
+			rawStreams_.emplace_back(rawStreamIndex++, &cfg);
 		else
-			outStreams_.emplace_back(outIndex++, &cfg);
+			outStreams_.emplace_back(outStreamIndex++, &cfg);
 	}
 
 	/* Sort the streams so the highest resolution is first. */
@@ -530,17 +531,11 @@ int PipelineHandlerBase::configure(Camera *camera, CameraConfiguration *config)
 	if (ret)
 		return ret;
 
-	/* We store the IPACameraSensorInfo for digital zoom calculations. */
-	ret = data->sensor_->sensorInfo(&data->sensorInfo_);
-	if (ret) {
-		LOG(RPI, Error) << "Failed to retrieve camera sensor info";
-		return ret;
-	}
-
 	/*
 	 * Platform specific internal stream configuration. This also assigns
 	 * external streams which get configured below.
 	 */
+	data->cropParams_.clear();
 	ret = data->platformConfigure(rpiConfig);
 	if (ret)
 		return ret;
@@ -569,14 +564,16 @@ int PipelineHandlerBase::configure(Camera *camera, CameraConfiguration *config)
 	for (auto const &c : result.controlInfo)
 		ctrlMap.emplace(c.first, c.second);
 
-	if (data->cropParams_.size()) {
+	const auto cropParamsIt = data->cropParams_.find(0);
+	if (cropParamsIt != data->cropParams_.end()) {
+		const CameraData::CropParams &cropParams = cropParamsIt->second;
 		/*
 		 * Add the ScalerCrop control limits based on the current mode and
 		 * the first configured stream.
 		 */
-		Rectangle ispMinCrop = data->scaleIspCrop(Rectangle(data->cropParams_[0].ispMinCropSize));
+		Rectangle ispMinCrop = data->scaleIspCrop(Rectangle(cropParams.ispMinCropSize));
 		ctrlMap[&controls::ScalerCrop] = ControlInfo(ispMinCrop, data->sensorInfo_.analogCrop,
-							     data->scaleIspCrop(data->cropParams_[0].ispCrop));
+							     data->scaleIspCrop(cropParams.ispCrop));
 		if (data->cropParams_.size() == 2) {
 			/*
 			 * The control map for rpi::ScalerCrops has the min value
@@ -584,12 +581,9 @@ int PipelineHandlerBase::configure(Camera *camera, CameraConfiguration *config)
 			 * value for stream 1.
 			 */
 			ctrlMap[&controls::rpi::ScalerCrops] =
-				ControlInfo(data->scaleIspCrop(data->cropParams_[0].ispCrop),
-					    data->scaleIspCrop(data->cropParams_[1].ispCrop),
+				ControlInfo(data->scaleIspCrop(data->cropParams_.at(0).ispCrop),
+					    data->scaleIspCrop(data->cropParams_.at(1).ispCrop),
 					    ctrlMap[&controls::ScalerCrop].def());
-		} else {
-			/* Match the same ControlInfo for rpi::ScalerCrops. */
-			ctrlMap[&controls::rpi::ScalerCrops] = ctrlMap[&controls::ScalerCrop];
 		}
 	}
 
@@ -1209,6 +1203,13 @@ int CameraData::configureIPA(const CameraConfiguration *config, ipa::RPi::Config
 	if (ret)
 		return ret;
 
+	/* We store the IPACameraSensorInfo for digital zoom calculations. */
+	ret = sensor_->sensorInfo(&sensorInfo_);
+	if (ret) {
+		LOG(RPI, Error) << "Failed to retrieve camera sensor info";
+		return ret;
+	}
+
 	/* Always send the user transform to the IPA. */
 	Transform transform = config->orientation / Orientation::Rotate0;
 	params.transform = static_cast<unsigned int>(transform);
@@ -1319,10 +1320,11 @@ void CameraData::applyScalerCrop(const ControlList &controls)
 	 * based on either controls::ScalerCrop or controls::rpi::ScalerCrops if
 	 * present.
 	 *
-	 * If controls::ScalerCrop is present, apply the same crop to all ISP output
-	 * streams. Otherwise if controls::rpi::ScalerCrops, apply the given crops
-	 * to the ISP output streams, indexed by the same order in which they had
-	 * been configured. This is not the same as the ISP output index.
+	 * If controls::rpi::ScalerCrops is preset, apply the given crops to the
+	 * ISP output streams, indexed by the same order in which they had been
+	 * configured. This is not the same as the ISP output index. Otherwise
+	 * if controls::ScalerCrop is present, apply the same crop to all ISP
+	 * output streams.
 	 */
 	for (unsigned int i = 0; i < cropParams_.size(); i++) {
 		if (scalerCropRPi && i < scalerCropRPi->size())
@@ -1348,13 +1350,13 @@ void CameraData::applyScalerCrop(const ControlList &controls)
 		 * 2. With the same mid-point, if possible.
 		 * 3. But it can't go outside the sensor area.
 		 */
-		Size minSize = cropParams_[i].ispMinCropSize.expandedToAspectRatio(nativeCrop.size());
+		Size minSize = cropParams_.at(i).ispMinCropSize.expandedToAspectRatio(nativeCrop.size());
 		Size size = ispCrop.size().expandedTo(minSize);
 		ispCrop = size.centeredTo(ispCrop.center()).enclosedIn(Rectangle(sensorInfo_.outputSize));
 
-		if (ispCrop != cropParams_[i].ispCrop) {
-			cropParams_[i].ispCrop = ispCrop;
-			platformSetIspCrop(cropParams_[i].ispIndex, ispCrop);
+		if (ispCrop != cropParams_.at(i).ispCrop) {
+			cropParams_.at(i).ispCrop = ispCrop;
+			platformSetIspCrop(cropParams_.at(i).ispIndex, ispCrop);
 		}
 	}
 }
@@ -1514,13 +1516,14 @@ void CameraData::fillRequestMetadata(const ControlList &bufferControls, Request 
 	if (cropParams_.size()) {
 		std::vector<Rectangle> crops;
 
-		ASSERT(cropParams_.size() <= 2);
 		for (auto const &[k, v] : cropParams_)
 			crops.push_back(scaleIspCrop(v.ispCrop));
 
 		request->metadata().set(controls::ScalerCrop, crops[0]);
-		request->metadata().set(controls::rpi::ScalerCrops,
-					Span<const Rectangle>(crops.data(), crops.size()));
+		if (crops.size() > 1) {
+			request->metadata().set(controls::rpi::ScalerCrops,
+						Span<const Rectangle>(crops.data(), crops.size()));
+		}
 	}
 }
 

@@ -1350,7 +1350,7 @@ before being set.
                         continue;
                  }
 
-                 int32_t value = lroundf(it.second.get<float>() * 128 + offset);
+                 int32_t value = std::lround(it.second.get<float>() * 128 + offset);
                  controls.set(cid, std::clamp(value, 0, 255));
           }
 
@@ -1414,7 +1414,7 @@ value translation operations:
 
 .. code-block:: cpp
 
-   #include <math.h>
+   #include <cmath>
 
 Frame completion and event handling
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

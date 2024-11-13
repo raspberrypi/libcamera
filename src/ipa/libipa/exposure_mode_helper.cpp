@@ -67,7 +67,7 @@ namespace ipa {
  * encompasses both analogue and digital gain.
  *
  * The vector of stages may be empty. In that case, the helper will simply use
- * the runtime limits set through setShutterGainLimits() instead.
+ * the runtime limits set through setLimits() instead.
  */
 ExposureModeHelper::ExposureModeHelper(const Span<std::pair<utils::Duration, double>> stages)
 {
@@ -213,28 +213,25 @@ ExposureModeHelper::splitExposure(utils::Duration exposure) const
 /**
  * \fn ExposureModeHelper::minShutter()
  * \brief Retrieve the configured minimum shutter time limit set through
- * setShutterGainLimits()
+ * setLimits()
  * \return The minShutter_ value
  */
 
 /**
  * \fn ExposureModeHelper::maxShutter()
- * \brief Retrieve the configured maximum shutter time set through
- * setShutterGainLimits()
+ * \brief Retrieve the configured maximum shutter time set through setLimits()
  * \return The maxShutter_ value
  */
 
 /**
  * \fn ExposureModeHelper::minGain()
- * \brief Retrieve the configured minimum gain set through
- * setShutterGainLimits()
+ * \brief Retrieve the configured minimum gain set through setLimits()
  * \return The minGain_ value
  */
 
 /**
  * \fn ExposureModeHelper::maxGain()
- * \brief Retrieve the configured maximum gain set through
- * setShutterGainLimits()
+ * \brief Retrieve the configured maximum gain set through setLimits()
  * \return The maxGain_ value
  */
 

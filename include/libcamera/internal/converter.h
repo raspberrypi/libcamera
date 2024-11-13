@@ -14,9 +14,11 @@
 #include <memory>
 #include <string>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 #include <libcamera/base/class.h>
+#include <libcamera/base/flags.h>
 #include <libcamera/base/signal.h>
 
 #include <libcamera/geometry.h>
@@ -32,7 +34,14 @@ struct StreamConfiguration;
 class Converter
 {
 public:
-	Converter(MediaDevice *media);
+	enum class Feature {
+		None = 0,
+		InputCrop = (1 << 0),
+	};
+
+	using Features = Flags<Feature>;
+
+	Converter(MediaDevice *media, Features features = Feature::None);
 	virtual ~Converter();
 
 	virtual int loadConfiguration(const std::string &filename) = 0;
@@ -56,10 +65,18 @@ public:
 	virtual int queueBuffers(FrameBuffer *input,
 				 const std::map<const Stream *, FrameBuffer *> &outputs) = 0;
 
+	virtual int setInputCrop(const Stream *stream, Rectangle *rect) = 0;
+	virtual std::pair<Rectangle, Rectangle> inputCropBounds(const Stream *stream) = 0;
+
 	Signal<FrameBuffer *> inputBufferReady;
 	Signal<FrameBuffer *> outputBufferReady;
 
 	const std::string &deviceNode() const { return deviceNode_; }
+
+	Features features() const { return features_; }
+
+protected:
+	Features features_;
 
 private:
 	std::string deviceNode_;

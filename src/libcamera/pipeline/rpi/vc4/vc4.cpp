@@ -764,7 +764,6 @@ int Vc4CameraData::platformConfigure(const RPi::RPiCameraConfiguration *rpiConfi
 	 * Set the scaler crop to the value we are using (scaled to native sensor
 	 * coordinates).
 	 */
-	cropParams_.clear();
 	cropParams_.emplace(std::piecewise_construct,
 			    std::forward_as_tuple(0),
 			    std::forward_as_tuple(ispCrop, testCrop.size(), 0));

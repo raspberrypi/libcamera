@@ -594,6 +594,8 @@ std::ostream &operator<<(std::ostream &out, const SizeRange &sr)
  *
  * Rectangles are used to identify an area of an image. They are specified by
  * the coordinates of top-left corner and their horizontal and vertical size.
+ * By convention, the top-left corner is defined as the corner with the lowest
+ * x and y coordinates, regardless of the origin and direction of the axes.
  *
  * The measure unit of the rectangle coordinates and size, as well as the
  * reference point from which the Rectangle::x and Rectangle::y displacements
@@ -611,6 +613,8 @@ std::ostream &operator<<(std::ostream &out, const SizeRange &sr)
  * \param[in] x The horizontal coordinate of the top-left corner
  * \param[in] y The vertical coordinate of the top-left corner
  * \param[in] size The size
+ *
+ * The rectangle's top-left corner is the point with the smaller x and y values.
  */
 
 /**
@@ -620,6 +624,8 @@ std::ostream &operator<<(std::ostream &out, const SizeRange &sr)
  * \param[in] y The vertical coordinate of the top-left corner
  * \param[in] width The width
  * \param[in] height The height
+ *
+ * The rectangle's top-left corner is the point with the smaller x and y values.
  */
 
 /**
@@ -630,13 +636,24 @@ std::ostream &operator<<(std::ostream &out, const SizeRange &sr)
  */
 
 /**
+ * \fn Rectangle::Rectangle(const Point &point1, const Point &point2)
+ * \brief Construct a Rectangle from two opposite corners
+ * \param[in] point1 One of corners of the rectangle
+ * \param[in] point2 The opposite corner of \a point1
+ */
+
+/**
  * \var Rectangle::x
  * \brief The horizontal coordinate of the rectangle's top-left corner
+ *
+ * The rectangle's top-left corner is the point with the smaller x and y values.
  */
 
 /**
  * \var Rectangle::y
  * \brief The vertical coordinate of the rectangle's top-left corner
+ *
+ * The rectangle's top-left corner is the point with the smaller x and y values.
  */
 
 /**
@@ -685,6 +702,9 @@ Point Rectangle::center() const
 /**
  * \fn Point Rectangle::topLeft() const
  * \brief Retrieve the coordinates of the top left corner of this Rectangle
+ *
+ * The rectangle's top-left corner is the point with the smaller x and y values.
+ *
  * \return The Rectangle's top left corner
  */
 

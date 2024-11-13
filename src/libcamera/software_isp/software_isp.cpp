@@ -16,10 +16,7 @@
 #include <libcamera/formats.h>
 #include <libcamera/stream.h>
 
-#include "libcamera/internal/bayer_format.h"
-#include "libcamera/internal/framebuffer.h"
 #include "libcamera/internal/ipa_manager.h"
-#include "libcamera/internal/mapped_framebuffer.h"
 #include "libcamera/internal/software_isp/debayer_params.h"
 
 #include "debayer_cpu.h"
@@ -158,15 +155,18 @@ SoftwareIsp::~SoftwareIsp()
 
 /**
  * \brief Process the statistics gathered
+ * \param[in] frame The frame number
+ * \param[in] bufferId ID of the statistics buffer
  * \param[in] sensorControls The sensor controls
  *
  * Requests the IPA to calculate new parameters for ISP and new control
  * values for the sensor.
  */
-void SoftwareIsp::processStats(const ControlList &sensorControls)
+void SoftwareIsp::processStats(const uint32_t frame, const uint32_t bufferId,
+			       const ControlList &sensorControls)
 {
 	ASSERT(ipa_);
-	ipa_->processStats(sensorControls);
+	ipa_->processStats(frame, bufferId, sensorControls);
 }
 
 /**
@@ -222,16 +222,17 @@ SoftwareIsp::strideAndFrameSize(const PixelFormat &outputFormat, const Size &siz
  * \brief Configure the SoftwareIsp object according to the passed in parameters
  * \param[in] inputCfg The input configuration
  * \param[in] outputCfgs The output configurations
- * \param[in] sensorControls ControlInfoMap of the controls supported by the sensor
+ * \param[in] configInfo The IPA configuration data, received from the pipeline
+ * handler
  * \return 0 on success, a negative errno on failure
  */
 int SoftwareIsp::configure(const StreamConfiguration &inputCfg,
 			   const std::vector<std::reference_wrapper<StreamConfiguration>> &outputCfgs,
-			   const ControlInfoMap &sensorControls)
+			   const ipa::soft::IPAConfigInfo &configInfo)
 {
 	ASSERT(ipa_ && debayer_);
 
-	int ret = ipa_->configure(sensorControls);
+	int ret = ipa_->configure(configInfo);
 	if (ret < 0)
 		return ret;
 
@@ -277,13 +278,24 @@ int SoftwareIsp::exportBuffers(const Stream *stream, unsigned int count,
 }
 
 /**
+ * \brief Queue a request and process the control list from the application
+ * \param[in] frame The number of the frame which will be processed next
+ * \param[in] controls The controls for the \a frame
+ */
+void SoftwareIsp::queueRequest(const uint32_t frame, const ControlList &controls)
+{
+	ipa_->queueRequest(frame, controls);
+}
+
+/**
  * \brief Queue buffers to Software ISP
+ * \param[in] frame The frame number
  * \param[in] input The input framebuffer
  * \param[in] outputs The container holding the output stream pointers and
  * their respective frame buffer outputs
  * \return 0 on success, a negative errno on failure
  */
-int SoftwareIsp::queueBuffers(FrameBuffer *input,
+int SoftwareIsp::queueBuffers(uint32_t frame, FrameBuffer *input,
 			      const std::map<const Stream *, FrameBuffer *> &outputs)
 {
 	/*
@@ -301,7 +313,7 @@ int SoftwareIsp::queueBuffers(FrameBuffer *input,
 	}
 
 	for (auto iter = outputs.begin(); iter != outputs.end(); iter++)
-		process(input, iter->second);
+		process(frame, input, iter->second);
 
 	return 0;
 }
@@ -333,13 +345,15 @@ void SoftwareIsp::stop()
 
 /**
  * \brief Passes the input framebuffer to the ISP worker to process
+ * \param[in] frame The frame number
  * \param[in] input The input framebuffer
  * \param[out] output The framebuffer to write the processed frame to
  */
-void SoftwareIsp::process(FrameBuffer *input, FrameBuffer *output)
+void SoftwareIsp::process(uint32_t frame, FrameBuffer *input, FrameBuffer *output)
 {
+	ipa_->fillParamsBuffer(frame);
 	debayer_->invokeMethod(&DebayerCpu::process,
-			       ConnectionTypeQueued, input, output, debayerParams_);
+			       ConnectionTypeQueued, frame, input, output, debayerParams_);
 }
 
 void SoftwareIsp::saveIspParams()
@@ -352,9 +366,9 @@ void SoftwareIsp::setSensorCtrls(const ControlList &sensorControls)
 	setSensorControls.emit(sensorControls);
 }
 
-void SoftwareIsp::statsReady()
+void SoftwareIsp::statsReady(uint32_t frame, uint32_t bufferId)
 {
-	ispStatsReady.emit();
+	ispStatsReady.emit(frame, bufferId);
 }
 
 void SoftwareIsp::inputReady(FrameBuffer *input)

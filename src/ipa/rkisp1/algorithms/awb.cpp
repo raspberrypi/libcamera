@@ -215,6 +215,12 @@ void Awb::process(IPAContext &context,
 			static_cast<float>(frameContext.awb.gains.red),
 			static_cast<float>(frameContext.awb.gains.blue)
 		});
+	metadata.set(controls::ColourTemperature, activeState.awb.temperatureK);
+
+	if (!stats || !(stats->meas_type & RKISP1_CIF_ISP_STAT_AWB)) {
+		LOG(RkISP1Awb, Error) << "AWB data is missing in statistics";
+		return;
+	}
 
 	if (rgbMode_) {
 		greenMean = awb->awb_mean[0].mean_y_or_g;
@@ -270,10 +276,8 @@ void Awb::process(IPAContext &context,
 	 * meaningfully calculate gains. Freeze the algorithm in that case.
 	 */
 	if (redMean < kMeanMinThreshold && greenMean < kMeanMinThreshold &&
-	    blueMean < kMeanMinThreshold) {
-		metadata.set(controls::ColourTemperature, activeState.awb.temperatureK);
+	    blueMean < kMeanMinThreshold)
 		return;
-	}
 
 	activeState.awb.temperatureK = estimateCCT(redMean, greenMean, blueMean);
 

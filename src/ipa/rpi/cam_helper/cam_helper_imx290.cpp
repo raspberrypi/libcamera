@@ -5,7 +5,7 @@
  * camera helper for imx290 sensor
  */
 
-#include <math.h>
+#include <cmath>
 
 #include "cam_helper.h"
 
@@ -37,13 +37,13 @@ CamHelperImx290::CamHelperImx290()
 
 uint32_t CamHelperImx290::gainCode(double gain) const
 {
-	int code = 66.6667 * log10(gain);
+	int code = 66.6667 * std::log10(gain);
 	return std::max(0, std::min(code, 0xf0));
 }
 
 double CamHelperImx290::gain(uint32_t gainCode) const
 {
-	return pow(10, 0.015 * gainCode);
+	return std::pow(10, 0.015 * gainCode);
 }
 
 void CamHelperImx290::getDelays(int &exposureDelay, int &gainDelay,

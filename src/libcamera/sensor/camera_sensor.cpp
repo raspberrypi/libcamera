@@ -8,9 +8,9 @@
 #include "libcamera/internal/camera_sensor.h"
 
 #include <algorithm>
+#include <cmath>
 #include <float.h>
 #include <limits.h>
-#include <math.h>
 #include <string.h>
 
 #include <libcamera/base/utils.h>
@@ -719,7 +719,7 @@ V4L2SubdeviceFormat CameraSensor::getFormat(const std::vector<unsigned int> &mbu
 				continue;
 
 			float ratio = static_cast<float>(sz.width) / sz.height;
-			float ratioDiff = fabsf(ratio - desiredRatio);
+			float ratioDiff = std::abs(ratio - desiredRatio);
 			unsigned int area = sz.width * sz.height;
 			unsigned int areaDiff = area - desiredArea;
 

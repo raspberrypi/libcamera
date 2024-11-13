@@ -6,9 +6,9 @@
  */
 
 #include <algorithm>
+#include <cmath>
 #include <fstream>
 #include <map>
-#include <math.h>
 #include <memory>
 #include <set>
 #include <string>
@@ -320,14 +320,14 @@ int PipelineHandlerUVC::processControl(ControlList *controls, unsigned int id,
 	case V4L2_CID_BRIGHTNESS: {
 		float scale = std::max(max - def, def - min);
 		float fvalue = value.get<float>() * scale + def;
-		controls->set(cid, static_cast<int32_t>(lroundf(fvalue)));
+		controls->set(cid, static_cast<int32_t>(std::lround(fvalue)));
 		break;
 	}
 
 	case V4L2_CID_SATURATION: {
 		float scale = def - min;
 		float fvalue = value.get<float>() * scale + min;
-		controls->set(cid, static_cast<int32_t>(lroundf(fvalue)));
+		controls->set(cid, static_cast<int32_t>(std::lround(fvalue)));
 		break;
 	}
 
@@ -354,7 +354,7 @@ int PipelineHandlerUVC::processControl(ControlList *controls, unsigned int id,
 		}
 
 		float fvalue = (value.get<float>() - p) / m;
-		controls->set(cid, static_cast<int32_t>(lroundf(fvalue)));
+		controls->set(cid, static_cast<int32_t>(std::lround(fvalue)));
 		break;
 	}
 

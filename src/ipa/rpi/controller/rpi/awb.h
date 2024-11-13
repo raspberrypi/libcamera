@@ -87,6 +87,10 @@ struct AwbConfig {
 	double whitepointR;
 	double whitepointB;
 	bool bayes; /* use Bayesian algorithm */
+	/* proportion of counted samples to add for the search bias */
+	double biasProportion;
+	/* CT target for the search bias */
+	double biasCT;
 };
 
 class Awb : public AwbAlgorithm

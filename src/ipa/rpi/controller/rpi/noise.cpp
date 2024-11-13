@@ -5,7 +5,7 @@
  * Noise control algorithm
  */
 
-#include <math.h>
+#include <cmath>
 
 #include <libcamera/base/log.h>
 
@@ -69,7 +69,7 @@ void Noise::prepare(Metadata *imageMetadata)
 		 * make some adjustments based on the camera mode (such as
 		 * binning), if we knew how to discover it...
 		 */
-		double factor = sqrt(deviceStatus.analogueGain) / modeFactor_;
+		double factor = std::sqrt(deviceStatus.analogueGain) / modeFactor_;
 		struct NoiseStatus status;
 		status.noiseConstant = referenceConstant_ * factor;
 		status.noiseSlope = referenceSlope_ * factor;

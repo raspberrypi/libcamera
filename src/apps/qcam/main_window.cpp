@@ -211,7 +211,7 @@ int MainWindow::createToolbars()
 	action->setShortcut(QKeySequence::SaveAs);
 	connect(action, &QAction::triggered, this, &MainWindow::saveImageAs);
 
-#ifdef HAVE_DNG
+#ifdef HAVE_TIFF
 	/* Save Raw action. */
 	action = toolbar_->addAction(QIcon::fromTheme("camera-photo",
 						      QIcon(":aperture.svg")),
@@ -298,13 +298,19 @@ int MainWindow::openCamera()
 	std::string cameraName;
 
 	/*
-	 * Use the camera specified on the command line, if any, or display the
-	 * camera selection dialog box otherwise.
+	 * If a camera is specified on the command line, get it. Otherwise, if
+	 * only one camera is available, pick it automatically, else, display
+	 * the selector dialog box.
 	 */
-	if (options_.isSet(OptCamera))
+	if (options_.isSet(OptCamera)) {
 		cameraName = static_cast<std::string>(options_[OptCamera]);
-	else
-		cameraName = chooseCamera();
+	} else {
+		std::vector<std::shared_ptr<Camera>> cameras = cm_->cameras();
+		if (cameras.size() == 1)
+			cameraName = cameras[0]->id();
+		else
+			cameraName = chooseCamera();
+	}
 
 	if (cameraName == "")
 		return -EINVAL;
@@ -646,7 +652,7 @@ void MainWindow::captureRaw()
 void MainWindow::processRaw(FrameBuffer *buffer,
 			    [[maybe_unused]] const ControlList &metadata)
 {
-#ifdef HAVE_DNG
+#ifdef HAVE_TIFF
 	QString defaultPath = QStandardPaths::writableLocation(QStandardPaths::PicturesLocation);
 	QString filename = QFileDialog::getSaveFileName(this, "Save DNG", defaultPath,
 							"DNG Files (*.dng)");

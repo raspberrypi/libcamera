@@ -60,6 +60,7 @@ static constexpr size_t ControlValueSize[] = {
 	[ControlTypeString]		= sizeof(char),
 	[ControlTypeRectangle]		= sizeof(Rectangle),
 	[ControlTypeSize]		= sizeof(Size),
+	[ControlTypePoint]		= sizeof(Point),
 };
 
 } /* namespace */
@@ -254,6 +255,11 @@ std::string ControlValue::toString() const
 			str += value->toString();
 			break;
 		}
+		case ControlTypePoint: {
+			const Point *value = reinterpret_cast<const Point *>(data);
+			str += value->toString();
+			break;
+		}
 		case ControlTypeNone:
 		case ControlTypeString:
 			break;
@@ -388,8 +394,21 @@ void ControlValue::reserve(ControlType type, bool isArray, std::size_t numElemen
  * \brief Construct a ControlId instance
  * \param[in] id The control numerical ID
  * \param[in] name The control name
+ * \param[in] vendor The vendor name
  * \param[in] type The control data type
+ * \param[in] size The size of the array control, or 0 if scalar control
+ * \param[in] enumStrMap The map from enum names to values (optional)
  */
+ControlId::ControlId(unsigned int id, const std::string &name,
+		     const std::string &vendor, ControlType type,
+		     std::size_t size,
+		     const std::map<std::string, int32_t> &enumStrMap)
+	: id_(id), name_(name), vendor_(vendor), type_(type), size_(size),
+	  enumStrMap_(enumStrMap)
+{
+	for (const auto &pair : enumStrMap_)
+		reverseMap_[pair.second] = pair.first;
+}
 
 /**
  * \fn unsigned int ControlId::id() const
@@ -404,9 +423,34 @@ void ControlValue::reserve(ControlType type, bool isArray, std::size_t numElemen
  */
 
 /**
+ * \fn const std::string &ControlId::vendor() const
+ * \brief Retrieve the vendor name
+ * \return The vendor name, as a string
+ */
+
+/**
  * \fn ControlType ControlId::type() const
  * \brief Retrieve the control data type
  * \return The control data type
+ */
+
+/**
+ * \fn bool ControlId::isArray() const
+ * \brief Determine if the control is an array control
+ * \return True if the control is an array control, false otherwise
+ */
+
+/**
+ * \fn std::size_t ControlId::size() const
+ * \brief Retrieve the size of the control if it is an array control
+ * \return The size of the array control, size_t::max for dynamic extent, or 0
+ * for non-array
+ */
+
+/**
+ * \fn const std::map<int32_t, std::string> &ControlId::enumerators() const
+ * \brief Retrieve the map of enum values to enum names
+ * \return The map of enum values to enum names
  */
 
 /**
@@ -455,10 +499,12 @@ void ControlValue::reserve(ControlType type, bool isArray, std::size_t numElemen
  */
 
 /**
- * \fn Control::Control(unsigned int id, const char *name)
+ * \fn Control::Control(unsigned int id, const char *name, const char *vendor)
  * \brief Construct a Control instance
  * \param[in] id The control numerical ID
  * \param[in] name The control name
+ * \param[in] vendor The vendor name
+ * \param[in] enumStrMap The map from enum names to values (optional)
  *
  * The control data type is automatically deduced from the template type T.
  */

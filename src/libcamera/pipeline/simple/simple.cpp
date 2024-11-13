@@ -13,6 +13,7 @@
 #include <memory>
 #include <queue>
 #include <set>
+#include <stdint.h>
 #include <string.h>
 #include <string>
 #include <unordered_map>
@@ -31,6 +32,7 @@
 #include "libcamera/internal/camera.h"
 #include "libcamera/internal/camera_sensor.h"
 #include "libcamera/internal/converter.h"
+#include "libcamera/internal/delayed_controls.h"
 #include "libcamera/internal/device_enumerator.h"
 #include "libcamera/internal/media_device.h"
 #include "libcamera/internal/pipeline_handler.h"
@@ -277,6 +279,8 @@ public:
 	std::vector<Configuration> configs_;
 	std::map<PixelFormat, std::vector<const Configuration *>> formats_;
 
+	std::unique_ptr<DelayedControls> delayedCtrls_;
+
 	std::vector<std::unique_ptr<FrameBuffer>> conversionBuffers_;
 	std::queue<std::map<const Stream *, FrameBuffer *>> conversionQueue_;
 	bool useConversion_;
@@ -291,7 +295,7 @@ private:
 	void conversionInputDone(FrameBuffer *buffer);
 	void conversionOutputDone(FrameBuffer *buffer);
 
-	void ispStatsReady();
+	void ispStatsReady(uint32_t frame, uint32_t bufferId);
 	void setSensorControls(const ControlList &sensorControls);
 };
 
@@ -860,7 +864,13 @@ void SimpleCameraData::bufferReady(FrameBuffer *buffer)
 		if (converter_)
 			converter_->queueBuffers(buffer, conversionQueue_.front());
 		else
-			swIsp_->queueBuffers(buffer, conversionQueue_.front());
+			/*
+			 * request->sequence() cannot be retrieved from `buffer' inside
+			 * queueBuffers because unique_ptr's make buffer->request() invalid
+			 * already here.
+			 */
+			swIsp_->queueBuffers(request->sequence(), buffer,
+					     conversionQueue_.front());
 
 		conversionQueue_.pop();
 		return;
@@ -887,15 +897,15 @@ void SimpleCameraData::conversionOutputDone(FrameBuffer *buffer)
 		pipe->completeRequest(request);
 }
 
-void SimpleCameraData::ispStatsReady()
+void SimpleCameraData::ispStatsReady(uint32_t frame, uint32_t bufferId)
 {
-	/* \todo Use the DelayedControls class */
-	swIsp_->processStats(sensor_->getControls({ V4L2_CID_ANALOGUE_GAIN,
-						    V4L2_CID_EXPOSURE }));
+	swIsp_->processStats(frame, bufferId,
+			     delayedCtrls_->get(frame));
 }
 
 void SimpleCameraData::setSensorControls(const ControlList &sensorControls)
 {
+	delayedCtrls_->push(sensorControls);
 	ControlList ctrls(sensorControls);
 	sensor_->setControls(&ctrls);
 }
@@ -1135,7 +1145,7 @@ CameraConfiguration::Status SimpleCameraConfiguration::validate()
 			cfg.frameSize = format.planes[0].size;
 		}
 
-		cfg.bufferCount = 3;
+		cfg.bufferCount = 4;
 	}
 
 	return status;
@@ -1276,16 +1286,29 @@ int SimplePipelineHandler::configure(Camera *camera, CameraConfiguration *c)
 	if (outputCfgs.empty())
 		return 0;
 
+	std::unordered_map<uint32_t, DelayedControls::ControlParams> params = {
+		{ V4L2_CID_ANALOGUE_GAIN, { 2, false } },
+		{ V4L2_CID_EXPOSURE, { 2, false } },
+	};
+	data->delayedCtrls_ =
+		std::make_unique<DelayedControls>(data->sensor_->device(),
+						  params);
+	data->video_->frameStart.connect(data->delayedCtrls_.get(),
+					 &DelayedControls::applyControls);
+
 	StreamConfiguration inputCfg;
 	inputCfg.pixelFormat = pipeConfig->captureFormat;
 	inputCfg.size = pipeConfig->captureSize;
 	inputCfg.stride = captureFormat.planes[0].bpl;
 	inputCfg.bufferCount = kNumInternalBuffers;
 
-	return data->converter_
-		       ? data->converter_->configure(inputCfg, outputCfgs)
-		       : data->swIsp_->configure(inputCfg, outputCfgs,
-						 data->sensor_->controls());
+	if (data->converter_) {
+		return data->converter_->configure(inputCfg, outputCfgs);
+	} else {
+		ipa::soft::IPAConfigInfo configInfo;
+		configInfo.sensorControls = data->sensor_->controls();
+		return data->swIsp_->configure(inputCfg, outputCfgs, configInfo);
+	}
 }
 
 int SimplePipelineHandler::exportFrameBuffers(Camera *camera, Stream *stream,
@@ -1410,8 +1433,11 @@ int SimplePipelineHandler::queueRequestDevice(Camera *camera, Request *request)
 		}
 	}
 
-	if (data->useConversion_)
+	if (data->useConversion_) {
 		data->conversionQueue_.push(std::move(buffers));
+		if (data->swIsp_)
+			data->swIsp_->queueRequest(request->sequence(), request->controls());
+	}
 
 	return 0;
 }

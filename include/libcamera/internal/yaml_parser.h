@@ -12,6 +12,7 @@
 #include <optional>
 #include <stdint.h>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include <libcamera/base/class.h>
@@ -206,8 +207,8 @@ public:
 
 	const YamlObject &operator[](std::size_t index) const;
 
-	bool contains(const std::string &key) const;
-	const YamlObject &operator[](const std::string &key) const;
+	bool contains(std::string_view key) const;
+	const YamlObject &operator[](std::string_view key) const;
 
 private:
 	LIBCAMERA_DISABLE_COPY_AND_MOVE(YamlObject)
@@ -232,7 +233,7 @@ private:
 
 	std::string value_;
 	Container list_;
-	std::map<std::string, YamlObject *> dictionary_;
+	std::map<std::string, YamlObject *, std::less<>> dictionary_;
 };
 
 class YamlParser final

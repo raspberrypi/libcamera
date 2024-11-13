@@ -958,7 +958,7 @@ int PipelineHandlerIPU3::updateControls(IPU3CameraData *data)
 		values.reserve(testPatternModes.size());
 
 		for (auto pattern : testPatternModes)
-			values.emplace_back(static_cast<int32_t>(pattern));
+			values.emplace_back(pattern);
 
 		controls[&controls::draft::TestPatternMode] = ControlInfo(values);
 	}

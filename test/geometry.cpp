@@ -481,6 +481,20 @@ protected:
 			return TestFail;
 		}
 
+		Point topLeft(3, 3);
+		Point bottomRight(30, 30);
+		Point topRight(30, 3);
+		Point bottomLeft(3, 30);
+		Rectangle rect1(topLeft, bottomRight);
+		Rectangle rect2(topRight, bottomLeft);
+		Rectangle rect3(bottomRight, topLeft);
+		Rectangle rect4(bottomLeft, topRight);
+
+		if (rect1 != rect2 || rect1 != rect3 || rect1 != rect4) {
+			cout << "Point-to-point construction failed" << endl;
+			return TestFail;
+		}
+
 		return TestPass;
 	}
 };

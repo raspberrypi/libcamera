@@ -366,6 +366,10 @@ CameraConfiguration::Status MaliC55CameraConfiguration::validate()
 
 		maxSize = rawSize;
 
+		const PixelFormatInfo &info = PixelFormatInfo::info(rawConfig->pixelFormat);
+		rawConfig->stride = info.stride(rawConfig->size.width, 0, 4);
+		rawConfig->frameSize = info.frameSize(rawConfig->size, 4);
+
 		rawConfig->setStream(const_cast<Stream *>(&data_->frStream_));
 		frPipeAvailable = false;
 	}

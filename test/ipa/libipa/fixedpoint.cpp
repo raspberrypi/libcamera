@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2024, Paul Elder <paul.elder@ideasonboard.com>
  *
- * Miscellaneous utility tests
+ * Fixed / Floating point utility tests
  */
 
 #include <cmath>
@@ -10,22 +10,22 @@
 #include <map>
 #include <stdint.h>
 
-#include "../src/ipa/rkisp1/utils.h"
+#include "../src/ipa/libipa/fixedpoint.h"
 
 #include "test.h"
 
 using namespace std;
 using namespace libcamera;
-using namespace ipa::rkisp1;
+using namespace ipa;
 
-class RkISP1UtilsTest : public Test
+class FixedPointUtilsTest : public Test
 {
 protected:
 	/* R for real, I for integer */
 	template<unsigned int IntPrec, unsigned int FracPrec, typename I, typename R>
 	int testFixedToFloat(I input, R expected)
 	{
-		R out = utils::fixedToFloatingPoint<IntPrec, FracPrec, R>(input);
+		R out = fixedToFloatingPoint<IntPrec, FracPrec, R>(input);
 		R prec = 1.0 / (1 << FracPrec);
 		if (std::abs(out - expected) > prec) {
 			cerr << "Reverse conversion expected " << input
@@ -40,7 +40,7 @@ protected:
 	template<unsigned int IntPrec, unsigned int FracPrec, typename T>
 	int testSingleFixedPoint(double input, T expected)
 	{
-		T ret = utils::floatingToFixedPoint<IntPrec, FracPrec, T>(input);
+		T ret = floatingToFixedPoint<IntPrec, FracPrec, T>(input);
 		if (ret != expected) {
 			cerr << "Expected " << input << " to convert to "
 			     << expected << ", got " << ret << std::endl;
@@ -51,7 +51,7 @@ protected:
 		 * The precision check is fairly arbitrary but is based on what
 		 * the rkisp1 is capable of in the crosstalk module.
 		 */
-		double f = utils::fixedToFloatingPoint<IntPrec, FracPrec, double>(ret);
+		double f = fixedToFloatingPoint<IntPrec, FracPrec, double>(ret);
 		if (std::abs(f - input) > 0.005) {
 			cerr << "Reverse conversion expected " << ret
 			     << " to convert to " << input
@@ -105,4 +105,4 @@ protected:
 	}
 };
 
-TEST_REGISTER(RkISP1UtilsTest)
+TEST_REGISTER(FixedPointUtilsTest)

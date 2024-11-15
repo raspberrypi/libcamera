@@ -9,7 +9,6 @@ rkisp1_ipa_sources = files([
     'ipa_context.cpp',
     'params.cpp',
     'rkisp1.cpp',
-    'utils.cpp',
 ])
 
 rkisp1_ipa_sources += rkisp1_ipa_algorithms

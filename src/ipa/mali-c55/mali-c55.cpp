@@ -33,6 +33,8 @@ namespace libcamera {
 
 LOG_DEFINE_CATEGORY(IPAMaliC55)
 
+using namespace std::literals::chrono_literals;
+
 namespace ipa::mali_c55 {
 
 /* Maximum number of frame contexts to be held */
@@ -60,6 +62,9 @@ protected:
 	std::string logPrefix() const override;
 
 private:
+	void updateSessionConfiguration(const IPACameraSensorInfo &info,
+					const ControlInfoMap &sensorControls,
+					BayerFormat::Order bayerOrder);
 	void updateControls(const IPACameraSensorInfo &sensorInfo,
 			    const ControlInfoMap &sensorControls,
 			    ControlInfoMap *ipaControls);
@@ -131,7 +136,21 @@ int IPAMaliC55::init(const IPASettings &settings, const IPAConfigInfo &ipaConfig
 
 void IPAMaliC55::setControls()
 {
+	IPAActiveState &activeState = context_.activeState;
+	uint32_t exposure;
+	uint32_t gain;
+
+	if (activeState.agc.autoEnabled) {
+		exposure = activeState.agc.automatic.exposure;
+		gain = camHelper_->gainCode(activeState.agc.automatic.sensorGain);
+	} else {
+		exposure = activeState.agc.manual.exposure;
+		gain = camHelper_->gainCode(activeState.agc.manual.sensorGain);
+	}
+
 	ControlList ctrls(sensorControls_);
+	ctrls.set(V4L2_CID_EXPOSURE, static_cast<int32_t>(exposure));
+	ctrls.set(V4L2_CID_ANALOGUE_GAIN, static_cast<int32_t>(gain));
 
 	setSensorControls.emit(ctrls);
 }
@@ -144,6 +163,36 @@ int IPAMaliC55::start()
 void IPAMaliC55::stop()
 {
 	context_.frameContexts.clear();
+}
+
+void IPAMaliC55::updateSessionConfiguration(const IPACameraSensorInfo &info,
+					    const ControlInfoMap &sensorControls,
+					    BayerFormat::Order bayerOrder)
+{
+	context_.configuration.sensor.bayerOrder = bayerOrder;
+
+	const ControlInfo &v4l2Exposure = sensorControls.find(V4L2_CID_EXPOSURE)->second;
+	int32_t minExposure = v4l2Exposure.min().get<int32_t>();
+	int32_t maxExposure = v4l2Exposure.max().get<int32_t>();
+	int32_t defExposure = v4l2Exposure.def().get<int32_t>();
+
+	const ControlInfo &v4l2Gain = sensorControls.find(V4L2_CID_ANALOGUE_GAIN)->second;
+	int32_t minGain = v4l2Gain.min().get<int32_t>();
+	int32_t maxGain = v4l2Gain.max().get<int32_t>();
+
+	/*
+	 * When the AGC computes the new exposure values for a frame, it needs
+	 * to know the limits for shutter speed and analogue gain.
+	 * As it depends on the sensor, update it with the controls.
+	 *
+	 * \todo take VBLANK into account for maximum shutter speed
+	 */
+	context_.configuration.sensor.lineDuration = info.minLineLength * 1.0s / info.pixelRate;
+	context_.configuration.agc.minShutterSpeed = minExposure * context_.configuration.sensor.lineDuration;
+	context_.configuration.agc.maxShutterSpeed = maxExposure * context_.configuration.sensor.lineDuration;
+	context_.configuration.agc.defaultExposure = defExposure;
+	context_.configuration.agc.minAnalogueGain = camHelper_->gain(minGain);
+	context_.configuration.agc.maxAnalogueGain = camHelper_->gain(maxGain);
 }
 
 void IPAMaliC55::updateControls(const IPACameraSensorInfo &sensorInfo,
@@ -207,8 +256,7 @@ void IPAMaliC55::updateControls(const IPACameraSensorInfo &sensorInfo,
 	*ipaControls = ControlInfoMap(std::move(ctrlMap), controls::controls);
 }
 
-int IPAMaliC55::configure(const IPAConfigInfo &ipaConfig,
-			  [[maybe_unused]] uint8_t bayerOrder,
+int IPAMaliC55::configure(const IPAConfigInfo &ipaConfig, uint8_t bayerOrder,
 			  ControlInfoMap *ipaControls)
 {
 	sensorControls_ = ipaConfig.sensorControls;
@@ -220,6 +268,8 @@ int IPAMaliC55::configure(const IPAConfigInfo &ipaConfig,
 
 	const IPACameraSensorInfo &info = ipaConfig.sensorInfo;
 
+	updateSessionConfiguration(info, ipaConfig.sensorControls,
+				   static_cast<BayerFormat::Order>(bayerOrder));
 	updateControls(info, ipaConfig.sensorControls, ipaControls);
 
 	for (auto const &a : algorithms()) {

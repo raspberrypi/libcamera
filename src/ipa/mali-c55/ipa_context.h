@@ -7,7 +7,10 @@
 
 #pragma once
 
+#include <libcamera/base/utils.h>
 #include <libcamera/controls.h>
+
+#include "libcamera/internal/bayer_format.h"
 
 #include <libipa/fc_queue.h>
 
@@ -16,15 +19,44 @@ namespace libcamera {
 namespace ipa::mali_c55 {
 
 struct IPASessionConfiguration {
+	struct {
+		utils::Duration minShutterSpeed;
+		utils::Duration maxShutterSpeed;
+		uint32_t defaultExposure;
+		double minAnalogueGain;
+		double maxAnalogueGain;
+	} agc;
+
+	struct {
+		BayerFormat::Order bayerOrder;
+		utils::Duration lineDuration;
+	} sensor;
 };
 
 struct IPAActiveState {
+	struct {
+		struct {
+			uint32_t exposure;
+			double sensorGain;
+			double ispGain;
+		} automatic;
+		struct {
+			uint32_t exposure;
+			double sensorGain;
+			double ispGain;
+		} manual;
+		bool autoEnabled;
+		uint32_t constraintMode;
+		uint32_t exposureMode;
+		uint32_t temperatureK;
+	} agc;
 };
 
 struct IPAFrameContext : public FrameContext {
 	struct {
 		uint32_t exposure;
 		double sensorGain;
+		double ispGain;
 	} agc;
 };
 

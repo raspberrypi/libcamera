@@ -16,6 +16,8 @@
 
 #include <libcamera/ipa/core_ipa_interface.h>
 
+#include "libipa/colours.h"
+
 /**
  * \file awb.h
  */
@@ -176,22 +178,6 @@ void Awb::prepare(IPAContext &context, const uint32_t frame,
 		awbConfig->min_c = 16;
 		awbConfig->max_csum = 250;
 	}
-}
-
-uint32_t Awb::estimateCCT(double red, double green, double blue)
-{
-	/* Convert the RGB values to CIE tristimulus values (XYZ) */
-	double X = (-0.14282) * (red) + (1.54924) * (green) + (-0.95641) * (blue);
-	double Y = (-0.32466) * (red) + (1.57837) * (green) + (-0.73191) * (blue);
-	double Z = (-0.68202) * (red) + (0.77073) * (green) + (0.56332) * (blue);
-
-	/* Calculate the normalized chromaticity values */
-	double x = X / (X + Y + Z);
-	double y = Y / (X + Y + Z);
-
-	/* Calculate CCT */
-	double n = (x - 0.3320) / (0.1858 - y);
-	return 449 * n * n * n + 3525 * n * n + 6823.3 * n + 5520.33;
 }
 
 /**

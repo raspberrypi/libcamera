@@ -341,7 +341,11 @@ CameraConfiguration::Status MaliC55CameraConfiguration::validate()
 		rawConfig = &config;
 	}
 
-	Size maxSize = kMaliC55MaxSize;
+	/*
+	 * The C55 can not upscale. Limit the configuration to the ISP
+	 * capabilities and the sensor resolution.
+	 */
+	Size maxSize = kMaliC55MaxSize.boundedTo(data_->resolution());
 	if (rawConfig) {
 		/*
 		 * \todo Take into account the Bayer components ordering once

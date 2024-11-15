@@ -893,12 +893,8 @@ void PipelineHandlerMaliC55::imageBufferReady(FrameBuffer *buffer)
 {
 	Request *request = buffer->request();
 
-	completeBuffer(request, buffer);
-
-	if (request->hasPendingBuffers())
-		return;
-
-	completeRequest(request);
+	if (completeBuffer(request, buffer))
+		completeRequest(request);
 }
 
 void PipelineHandlerMaliC55::registerMaliCamera(std::unique_ptr<MaliC55CameraData> data,

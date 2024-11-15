@@ -12,6 +12,7 @@
 #include <set>
 #include <string>
 
+#include <linux/mali-c55-config.h>
 #include <linux/media-bus-format.h>
 #include <linux/media.h>
 
@@ -28,6 +29,7 @@
 #include "libcamera/internal/camera.h"
 #include "libcamera/internal/camera_sensor.h"
 #include "libcamera/internal/device_enumerator.h"
+#include "libcamera/internal/framebuffer.h"
 #include "libcamera/internal/media_device.h"
 #include "libcamera/internal/pipeline_handler.h"
 #include "libcamera/internal/v4l2_subdevice.h"
@@ -520,6 +522,8 @@ public:
 
 	int exportFrameBuffers(Camera *camera, Stream *stream,
 			       std::vector<std::unique_ptr<FrameBuffer>> *buffers) override;
+	int allocateBuffers(Camera *camera);
+	void freeBuffers(Camera *camera);
 
 	int start(Camera *camera, const ControlList *controls) override;
 	void stopDevice(Camera *camera) override;
@@ -527,6 +531,7 @@ public:
 	int queueRequestDevice(Camera *camera, Request *request) override;
 
 	void imageBufferReady(FrameBuffer *buffer);
+	void statsBufferReady(FrameBuffer *buffer);
 
 	bool match(DeviceEnumerator *enumerator) override;
 
@@ -587,6 +592,14 @@ private:
 
 	MediaDevice *media_;
 	std::unique_ptr<V4L2Subdevice> isp_;
+	std::unique_ptr<V4L2VideoDevice> stats_;
+	std::unique_ptr<V4L2VideoDevice> params_;
+
+	std::vector<std::unique_ptr<FrameBuffer>> statsBuffers_;
+	std::queue<FrameBuffer *> availableStatsBuffers_;
+
+	std::vector<std::unique_ptr<FrameBuffer>> paramsBuffers_;
+	std::queue<FrameBuffer *> availableParamsBuffers_;
 
 	std::array<MaliC55Pipe, MaliC55NumPipes> pipes_;
 
@@ -846,6 +859,16 @@ int PipelineHandlerMaliC55::configure(Camera *camera,
 			return ret;
 	}
 
+	V4L2DeviceFormat statsFormat;
+	ret = stats_->getFormat(&statsFormat);
+	if (ret)
+		return ret;
+
+	if (statsFormat.planes[0].size != sizeof(struct mali_c55_stats_buffer)) {
+		LOG(MaliC55, Error) << "3a stats buffer size invalid";
+		return -EINVAL;
+	}
+
 	/*
 	 * Propagate the format to the ISP sink pad and configure the input
 	 * crop rectangle (no crop at the moment).
@@ -921,25 +944,108 @@ int PipelineHandlerMaliC55::exportFrameBuffers(Camera *camera, Stream *stream,
 	return pipe->cap->exportBuffers(count, buffers);
 }
 
-int PipelineHandlerMaliC55::start([[maybe_unused]] Camera *camera, [[maybe_unused]] const ControlList *controls)
+void PipelineHandlerMaliC55::freeBuffers([[maybe_unused]] Camera *camera)
 {
+	while (!availableStatsBuffers_.empty())
+		availableStatsBuffers_.pop();
+	while (!availableParamsBuffers_.empty())
+		availableParamsBuffers_.pop();
+
+	statsBuffers_.clear();
+	paramsBuffers_.clear();
+
+	if (stats_->releaseBuffers())
+		LOG(MaliC55, Error) << "Failed to release stats buffers";
+
+	if (params_->releaseBuffers())
+		LOG(MaliC55, Error) << "Failed to release stats buffers";
+
+	return;
+}
+
+int PipelineHandlerMaliC55::allocateBuffers(Camera *camera)
+{
+	MaliC55CameraData *data = cameraData(camera);
+	unsigned int bufferCount;
+	int ret;
+
+	bufferCount = std::max({
+		data->frStream_.configuration().bufferCount,
+		data->dsStream_.configuration().bufferCount,
+	});
+
+	ret = stats_->allocateBuffers(bufferCount, &statsBuffers_);
+	if (ret < 0)
+		return ret;
+
+	for (std::unique_ptr<FrameBuffer> &buffer : statsBuffers_)
+		availableStatsBuffers_.push(buffer.get());
+
+	ret = params_->allocateBuffers(bufferCount, &paramsBuffers_);
+	if (ret < 0)
+		return ret;
+
+	for (std::unique_ptr<FrameBuffer> &buffer : paramsBuffers_)
+		availableParamsBuffers_.push(buffer.get());
+
+	return 0;
+}
+
+int PipelineHandlerMaliC55::start(Camera *camera, [[maybe_unused]] const ControlList *controls)
+{
+	int ret;
+
+	ret = allocateBuffers(camera);
+	if (ret)
+		return ret;
+
 	for (MaliC55Pipe &pipe : pipes_) {
 		if (!pipe.stream)
 			continue;
 
 		Stream *stream = pipe.stream;
 
-		int ret = pipe.cap->importBuffers(stream->configuration().bufferCount);
+		ret = pipe.cap->importBuffers(stream->configuration().bufferCount);
 		if (ret) {
 			LOG(MaliC55, Error) << "Failed to import buffers";
+			freeBuffers(camera);
 			return ret;
 		}
 
 		ret = pipe.cap->streamOn();
 		if (ret) {
 			LOG(MaliC55, Error) << "Failed to start stream";
+			freeBuffers(camera);
 			return ret;
 		}
+	}
+
+	ret = stats_->streamOn();
+	if (ret) {
+		LOG(MaliC55, Error) << "Failed to start stats stream";
+
+		for (MaliC55Pipe &pipe : pipes_) {
+			if (pipe.stream)
+				pipe.cap->streamOff();
+		}
+
+		freeBuffers(camera);
+		return ret;
+	}
+
+	ret = params_->streamOn();
+	if (ret) {
+		LOG(MaliC55, Error) << "Failed to start params stream";
+
+		stats_->streamOff();
+
+		for (MaliC55Pipe &pipe : pipes_) {
+			if (pipe.stream)
+				pipe.cap->streamOff();
+		}
+
+		freeBuffers(camera);
+		return ret;
 	}
 
 	return 0;
@@ -954,6 +1060,10 @@ void PipelineHandlerMaliC55::stopDevice([[maybe_unused]] Camera *camera)
 		pipe.cap->streamOff();
 		pipe.cap->releaseBuffers();
 	}
+
+	stats_->streamOff();
+	params_->streamOff();
+	freeBuffers(camera);
 }
 
 void PipelineHandlerMaliC55::applyScalerCrop(Camera *camera,
@@ -1054,7 +1164,23 @@ void PipelineHandlerMaliC55::applyScalerCrop(Camera *camera,
 
 int PipelineHandlerMaliC55::queueRequestDevice(Camera *camera, Request *request)
 {
+	FrameBuffer *statsBuffer;
 	int ret;
+
+	if (availableStatsBuffers_.empty()) {
+		LOG(MaliC55, Error) << "Stats buffer underrun";
+		return -ENOENT;
+	}
+
+	statsBuffer = availableStatsBuffers_.front();
+	availableStatsBuffers_.pop();
+
+	/*
+	 * We need to associate the Request to this buffer even though it's a
+	 * purely internal one because we will need to use request->sequence()
+	 * later.
+	 */
+	statsBuffer->_d()->setRequest(request);
 
 	for (auto &[stream, buffer] : request->buffers()) {
 		MaliC55Pipe *pipe = pipeFromStream(cameraData(camera), stream);
@@ -1073,6 +1199,10 @@ int PipelineHandlerMaliC55::queueRequestDevice(Camera *camera, Request *request)
 	 */
 	applyScalerCrop(camera, request->controls());
 
+	ret = stats_->queueBuffer(statsBuffer);
+	if (ret)
+		return ret;
+
 	return 0;
 }
 
@@ -1082,6 +1212,11 @@ void PipelineHandlerMaliC55::imageBufferReady(FrameBuffer *buffer)
 
 	if (completeBuffer(request, buffer))
 		completeRequest(request);
+}
+
+void PipelineHandlerMaliC55::statsBufferReady(FrameBuffer *buffer)
+{
+	availableStatsBuffers_.push(buffer);
 }
 
 void PipelineHandlerMaliC55::registerMaliCamera(std::unique_ptr<MaliC55CameraData> data,
@@ -1161,7 +1296,7 @@ bool PipelineHandlerMaliC55::match(DeviceEnumerator *enumerator)
 	const MediaPad *ispSink;
 
 	/*
-	 * We search for just the ISP subdevice and the full resolution pipe.
+	 * We search for just the always-available elements of the media graph.
 	 * The TPG and the downscale pipe are both optional blocks and may not
 	 * be fitted.
 	 */
@@ -1169,6 +1304,8 @@ bool PipelineHandlerMaliC55::match(DeviceEnumerator *enumerator)
 	dm.add("mali-c55 isp");
 	dm.add("mali-c55 resizer fr");
 	dm.add("mali-c55 fr");
+	dm.add("mali-c55 3a stats");
+	dm.add("mali-c55 3a params");
 
 	media_ = acquireMediaDevice(enumerator, dm);
 	if (!media_)
@@ -1176,6 +1313,14 @@ bool PipelineHandlerMaliC55::match(DeviceEnumerator *enumerator)
 
 	isp_ = V4L2Subdevice::fromEntityName(media_, "mali-c55 isp");
 	if (isp_->open() < 0)
+		return false;
+
+	stats_ = V4L2VideoDevice::fromEntityName(media_, "mali-c55 3a stats");
+	if (stats_->open() < 0)
+		return false;
+
+	params_ = V4L2VideoDevice::fromEntityName(media_, "mali-c55 3a params");
+	if (params_->open() < 0)
 		return false;
 
 	MaliC55Pipe *frPipe = &pipes_[MaliC55FR];
@@ -1218,6 +1363,8 @@ bool PipelineHandlerMaliC55::match(DeviceEnumerator *enumerator)
 
 		dsPipe->cap->bufferReady.connect(this, &PipelineHandlerMaliC55::imageBufferReady);
 	}
+
+	stats_->bufferReady.connect(this, &PipelineHandlerMaliC55::statsBufferReady);
 
 	ispSink = isp_->entity()->getPadByIndex(0);
 	if (!ispSink || ispSink->links().empty()) {

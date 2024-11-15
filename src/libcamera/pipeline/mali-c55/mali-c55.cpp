@@ -756,16 +756,28 @@ int PipelineHandlerMaliC55::configureProcessedStream(MaliC55CameraData *data,
 	if (ret)
 		return ret;
 
-	/* \todo Configure the resizer crop/compose rectangles. */
-	Rectangle ispCrop = { 0, 0, config.size };
+	/*
+	 * Compute the scaler-in to scaler-out ratio: first center-crop to align
+	 * the FOV to the desired resolution, then scale to the desired size.
+	 */
+	Size scalerIn = subdevFormat.size.boundedToAspectRatio(config.size);
+	int xCrop = (subdevFormat.size.width - scalerIn.width) / 2;
+	int yCrop = (subdevFormat.size.height - scalerIn.height) / 2;
+	Rectangle ispCrop = { xCrop, yCrop, scalerIn };
 	ret = pipe->resizer->setSelection(0, V4L2_SEL_TGT_CROP, &ispCrop);
 	if (ret)
 		return ret;
 
-	ret = pipe->resizer->setSelection(0, V4L2_SEL_TGT_COMPOSE, &ispCrop);
+	Rectangle ispCompose = { 0, 0, config.size };
+	ret = pipe->resizer->setSelection(0, V4L2_SEL_TGT_COMPOSE, &ispCompose);
 	if (ret)
 		return ret;
 
+	/*
+	 * The source pad format size comes directly from the sink
+	 * compose rectangle.
+	 */
+	subdevFormat.size = ispCompose.size();
 	subdevFormat.code = maliC55FmtToCode.find(config.pixelFormat)->second;
 	return pipe->resizer->setFormat(1, &subdevFormat);
 }

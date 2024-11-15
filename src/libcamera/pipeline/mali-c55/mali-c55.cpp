@@ -79,6 +79,7 @@ const std::map<libcamera::PixelFormat, unsigned int> maliC55FmtToCode = {
 	{ formats::SGRBG16, MEDIA_BUS_FMT_SGRBG16_1X16 },
 };
 
+constexpr Size kMaliC55MinInputSize = { 640, 480 };
 constexpr Size kMaliC55MinSize = { 128, 128 };
 constexpr Size kMaliC55MaxSize = { 8192, 8192 };
 constexpr unsigned int kMaliC55ISPInternalFormat = MEDIA_BUS_FMT_RGB121212_1X36;
@@ -264,12 +265,15 @@ PixelFormat MaliC55CameraData::adjustRawFormat(const PixelFormat &rawFmt) const
 	return rawFmt;
 }
 
-Size MaliC55CameraData::adjustRawSizes(const PixelFormat &rawFmt, const Size &rawSize) const
+Size MaliC55CameraData::adjustRawSizes(const PixelFormat &rawFmt, const Size &size) const
 {
 	/* Just make sure the format is supported. */
 	auto it = maliC55FmtToCode.find(rawFmt);
 	if (it == maliC55FmtToCode.end())
 		return {};
+
+	/* Expand the RAW size to the minimum ISP input size. */
+	Size rawSize = size.expandedTo(kMaliC55MinInputSize);
 
 	/* Check if the size is natively supported. */
 	unsigned int rawCode = it->second;
@@ -281,14 +285,14 @@ Size MaliC55CameraData::adjustRawSizes(const PixelFormat &rawFmt, const Size &ra
 	/* Or adjust it to the closest supported size. */
 	uint16_t distance = std::numeric_limits<uint16_t>::max();
 	Size bestSize;
-	for (const Size &size : rawSizes) {
+	for (const Size &sz : rawSizes) {
 		uint16_t dist = std::abs(static_cast<int>(rawSize.width) -
-					 static_cast<int>(size.width)) +
+					 static_cast<int>(sz.width)) +
 				std::abs(static_cast<int>(rawSize.height) -
-					 static_cast<int>(size.height));
+					 static_cast<int>(sz.height));
 		if (dist < distance) {
 			dist = distance;
-			bestSize = size;
+			bestSize = sz;
 		}
 	}
 
@@ -375,8 +379,13 @@ CameraConfiguration::Status MaliC55CameraConfiguration::validate()
 		frPipeAvailable = false;
 	}
 
-	/* Adjust processed streams. */
-	Size maxYuvSize;
+	/*
+	 * Adjust processed streams.
+	 *
+	 * Compute the minimum sensor size to be later used to select the
+	 * sensor configuration.
+	 */
+	Size minSensorSize = kMaliC55MinInputSize;
 	for (StreamConfiguration &config : config_) {
 		if (isFormatRaw(config.pixelFormat))
 			continue;
@@ -398,8 +407,8 @@ CameraConfiguration::Status MaliC55CameraConfiguration::validate()
 			status = Adjusted;
 		}
 
-		if (maxYuvSize < size)
-			maxYuvSize = size;
+		if (minSensorSize < size)
+			minSensorSize = size;
 
 		if (frPipeAvailable) {
 			config.setStream(const_cast<Stream *>(&data_->frStream_));
@@ -415,7 +424,7 @@ CameraConfiguration::Status MaliC55CameraConfiguration::validate()
 	if (rawConfig) {
 		const auto it = maliC55FmtToCode.find(rawConfig->pixelFormat);
 		sensorFormat_.code = it->second;
-		sensorFormat_.size = rawConfig->size;
+		sensorFormat_.size = rawConfig->size.expandedTo(minSensorSize);
 
 		return status;
 	}
@@ -429,14 +438,13 @@ CameraConfiguration::Status MaliC55CameraConfiguration::validate()
 	const auto sizes = data_->sizes(it->second);
 	Size bestSize;
 	for (const auto &size : sizes) {
-		/* Skip sensor sizes that are smaller than the max YUV size. */
-		if (maxYuvSize.width > size.width ||
-		    maxYuvSize.height > size.height)
+		if (minSensorSize.width > size.width ||
+		    minSensorSize.height > size.height)
 			continue;
 
-		uint16_t dist = std::abs(static_cast<int>(maxYuvSize.width) -
+		uint16_t dist = std::abs(static_cast<int>(minSensorSize.width) -
 					 static_cast<int>(size.width)) +
-				std::abs(static_cast<int>(maxYuvSize.height) -
+				std::abs(static_cast<int>(minSensorSize.height) -
 					 static_cast<int>(size.height));
 		if (dist < distance) {
 			dist = distance;

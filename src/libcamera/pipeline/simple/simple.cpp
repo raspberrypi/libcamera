@@ -31,6 +31,7 @@
 
 #include "libcamera/internal/camera.h"
 #include "libcamera/internal/camera_sensor.h"
+#include "libcamera/internal/camera_sensor_properties.h"
 #include "libcamera/internal/converter.h"
 #include "libcamera/internal/delayed_controls.h"
 #include "libcamera/internal/device_enumerator.h"
@@ -1290,9 +1291,10 @@ int SimplePipelineHandler::configure(Camera *camera, CameraConfiguration *c)
 	if (outputCfgs.empty())
 		return 0;
 
+	const CameraSensorProperties::SensorDelays &delays = data->sensor_->sensorDelays();
 	std::unordered_map<uint32_t, DelayedControls::ControlParams> params = {
-		{ V4L2_CID_ANALOGUE_GAIN, { 2, false } },
-		{ V4L2_CID_EXPOSURE, { 2, false } },
+		{ V4L2_CID_ANALOGUE_GAIN, { delays.gainDelay, false } },
+		{ V4L2_CID_EXPOSURE, { delays.exposureDelay, false } },
 	};
 	data->delayedCtrls_ =
 		std::make_unique<DelayedControls>(data->sensor_->device(),

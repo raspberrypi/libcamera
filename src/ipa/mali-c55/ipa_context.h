@@ -30,6 +30,7 @@ struct IPASessionConfiguration {
 	struct {
 		BayerFormat::Order bayerOrder;
 		utils::Duration lineDuration;
+		uint32_t blackLevel;
 	} sensor;
 };
 

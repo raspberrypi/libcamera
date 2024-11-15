@@ -95,7 +95,6 @@ public:
 	int init();
 
 	/* Deflect these functionalities to either TPG or CameraSensor. */
-	const std::vector<unsigned int> mbusCodes() const;
 	const std::vector<Size> sizes(unsigned int mbusCode) const;
 	const Size resolution() const;
 
@@ -175,14 +174,6 @@ void MaliC55CameraData::initTPGData()
 	}
 
 	tpgResolution_ = tpgSizes_.back();
-}
-
-const std::vector<unsigned int> MaliC55CameraData::mbusCodes() const
-{
-	if (sensor_)
-		return sensor_->mbusCodes();
-
-	return tpgCodes_;
 }
 
 const std::vector<Size> MaliC55CameraData::sizes(unsigned int mbusCode) const

@@ -509,6 +509,7 @@ private:
 	struct MaliC55Pipe {
 		std::unique_ptr<V4L2Subdevice> resizer;
 		std::unique_ptr<V4L2VideoDevice> cap;
+		MediaLink *link;
 		Stream *stream;
 	};
 
@@ -835,6 +836,17 @@ int PipelineHandlerMaliC55::configure(Camera *camera,
 		Stream *stream = streamConfig.stream();
 		MaliC55Pipe *pipe = pipeFromStream(data, stream);
 
+		/*
+		 * Enable the media link between the pipe's resizer and the
+		 * capture video device
+		 */
+
+		ret = pipe->link->setEnabled(true);
+		if (ret) {
+			LOG(MaliC55, Error) << "Couldn't enable resizer's link";
+			return ret;
+		}
+
 		if (isFormatRaw(streamConfig.pixelFormat))
 			ret = configureRawStream(data, streamConfig, subdevFormat);
 		else
@@ -1028,6 +1040,12 @@ bool PipelineHandlerMaliC55::match(DeviceEnumerator *enumerator)
 	if (frPipe->cap->open() < 0)
 		return false;
 
+	frPipe->link = media_->link("mali-c55 resizer fr", 1, "mali-c55 fr", 0);
+	if (!frPipe->link) {
+		LOG(MaliC55, Error) << "No link between fr resizer and video node";
+		return false;
+	}
+
 	frPipe->cap->bufferReady.connect(this, &PipelineHandlerMaliC55::imageBufferReady);
 
 	dsFitted_ = !!media_->getEntityByName("mali-c55 ds");
@@ -1043,6 +1061,13 @@ bool PipelineHandlerMaliC55::match(DeviceEnumerator *enumerator)
 		dsPipe->cap = V4L2VideoDevice::fromEntityName(media_, "mali-c55 ds");
 		if (dsPipe->cap->open() < 0)
 			return false;
+
+		dsPipe->link = media_->link("mali-c55 resizer ds", 1,
+					    "mali-c55 ds", 0);
+		if (!dsPipe->link) {
+			LOG(MaliC55, Error) << "No link between ds resizer and video node";
+			return false;
+		}
 
 		dsPipe->cap->bufferReady.connect(this, &PipelineHandlerMaliC55::imageBufferReady);
 	}

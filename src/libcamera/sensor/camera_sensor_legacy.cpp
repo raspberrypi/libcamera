@@ -95,6 +95,7 @@ public:
 	const std::vector<controls::draft::TestPatternModeEnum> &
 	testPatternModes() const override { return testPatternModes_; }
 	int setTestPatternMode(controls::draft::TestPatternModeEnum mode) override;
+	const CameraSensorProperties::SensorDelays &sensorDelays() override;
 
 protected:
 	std::string logPrefix() const override;
@@ -480,6 +481,30 @@ void CameraSensorLegacy::initStaticProperties()
 	properties_.set(properties::UnitCellSize, staticProps_->unitCellSize);
 
 	initTestPatternModes();
+}
+
+const CameraSensorProperties::SensorDelays &CameraSensorLegacy::sensorDelays()
+{
+	static constexpr CameraSensorProperties::SensorDelays defaultSensorDelays = {
+		.exposureDelay = 2,
+		.gainDelay = 1,
+		.vblankDelay = 2,
+		.hblankDelay = 2,
+	};
+
+	if (!staticProps_ ||
+	    (!staticProps_->sensorDelays.exposureDelay &&
+	     !staticProps_->sensorDelays.gainDelay &&
+	     !staticProps_->sensorDelays.vblankDelay &&
+	     !staticProps_->sensorDelays.hblankDelay)) {
+		LOG(CameraSensor, Warning)
+			<< "No sensor delays found in static properties. "
+			   "Assuming unverified defaults.";
+
+		return defaultSensorDelays;
+	}
+
+	return staticProps_->sensorDelays;
 }
 
 void CameraSensorLegacy::initTestPatternModes()

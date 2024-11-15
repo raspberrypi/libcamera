@@ -337,6 +337,18 @@ CameraSensor::~CameraSensor() = default;
  */
 
 /**
+ * \fn CameraSensor::sensorDelays()
+ * \brief Fetch the sensor delay values
+ *
+ * This function retrieves the delays that the sensor applies to controls. If
+ * the static properties database doesn't specifiy control delay values for the
+ * sensor, default delays that may be suitable are returned and a warning is
+ * logged.
+ *
+ * \return The sensor delay values
+ */
+
+/**
  * \class CameraSensorFactoryBase
  * \brief Base class for camera sensor factories
  *

@@ -21,6 +21,7 @@
 #include <libcamera/transform.h>
 
 #include "libcamera/internal/bayer_format.h"
+#include "libcamera/internal/camera_sensor_properties.h"
 #include "libcamera/internal/v4l2_subdevice.h"
 
 namespace libcamera {
@@ -73,6 +74,7 @@ public:
 	virtual const std::vector<controls::draft::TestPatternModeEnum> &
 	testPatternModes() const = 0;
 	virtual int setTestPatternMode(controls::draft::TestPatternModeEnum mode) = 0;
+	virtual const CameraSensorProperties::SensorDelays &sensorDelays() = 0;
 };
 
 class CameraSensorFactoryBase

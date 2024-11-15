@@ -57,22 +57,6 @@ const std::map<libcamera::PixelFormat, unsigned int> maliC55FmtToCode = {
 	{ formats::NV21, MEDIA_BUS_FMT_YUV10_1X30 },
 
 	/* RAW formats, FR pipe only. */
-	{ formats::SGBRG8, MEDIA_BUS_FMT_SGBRG8_1X8 },
-	{ formats::SRGGB8, MEDIA_BUS_FMT_SRGGB8_1X8 },
-	{ formats::SBGGR8, MEDIA_BUS_FMT_SBGGR8_1X8 },
-	{ formats::SGRBG8, MEDIA_BUS_FMT_SGRBG8_1X8 },
-	{ formats::SGBRG10, MEDIA_BUS_FMT_SGBRG10_1X10 },
-	{ formats::SRGGB10, MEDIA_BUS_FMT_SRGGB10_1X10 },
-	{ formats::SBGGR10, MEDIA_BUS_FMT_SBGGR10_1X10 },
-	{ formats::SGRBG10, MEDIA_BUS_FMT_SGRBG10_1X10 },
-	{ formats::SGBRG12, MEDIA_BUS_FMT_SGBRG12_1X12 },
-	{ formats::SRGGB12, MEDIA_BUS_FMT_SRGGB12_1X12 },
-	{ formats::SBGGR12, MEDIA_BUS_FMT_SBGGR12_1X12 },
-	{ formats::SGRBG12, MEDIA_BUS_FMT_SGRBG12_1X12 },
-	{ formats::SGBRG14, MEDIA_BUS_FMT_SGBRG14_1X14 },
-	{ formats::SRGGB14, MEDIA_BUS_FMT_SRGGB14_1X14 },
-	{ formats::SBGGR14, MEDIA_BUS_FMT_SBGGR14_1X14 },
-	{ formats::SGRBG14, MEDIA_BUS_FMT_SGRBG14_1X14 },
 	{ formats::SGBRG16, MEDIA_BUS_FMT_SGBRG16_1X16 },
 	{ formats::SRGGB16, MEDIA_BUS_FMT_SRGGB16_1X16 },
 	{ formats::SBGGR16, MEDIA_BUS_FMT_SBGGR16_1X16 },
@@ -98,7 +82,8 @@ public:
 	const std::vector<Size> sizes(unsigned int mbusCode) const;
 	const Size resolution() const;
 
-	PixelFormat bestRawFormat() const;
+	int pixfmtToMbusCode(const PixelFormat &pixFmt) const;
+	const PixelFormat &bestRawFormat() const;
 
 	PixelFormat adjustRawFormat(const PixelFormat &pixFmt) const;
 	Size adjustRawSizes(const PixelFormat &pixFmt, const Size &rawSize) const;
@@ -207,33 +192,78 @@ const Size MaliC55CameraData::resolution() const
 	return tpgResolution_;
 }
 
-PixelFormat MaliC55CameraData::bestRawFormat() const
+/*
+ * The Mali C55 ISP can only produce 16-bit RAW output in bypass modes, but the
+ * sensors connected to it might produce 8/10/12/16 bits. We simply search the
+ * sensor's supported formats for the one with a matching bayer order and the
+ * greatest bitdepth.
+ */
+int MaliC55CameraData::pixfmtToMbusCode(const PixelFormat &pixFmt) const
 {
+	auto it = maliC55FmtToCode.find(pixFmt);
+	if (it == maliC55FmtToCode.end())
+		return -EINVAL;
+
+	BayerFormat bayerFormat = BayerFormat::fromMbusCode(it->second);
+	if (!bayerFormat.isValid())
+		return -EINVAL;
+
+	V4L2Subdevice::Formats formats = sd_->formats(0);
+	unsigned int sensorMbusCode = 0;
 	unsigned int bitDepth = 0;
-	PixelFormat rawFormat;
 
-	/*
-	 * Iterate over all the supported PixelFormat and find the one
-	 * supported by the camera with the largest bitdepth.
-	 */
-	for (const auto &maliFormat : maliC55FmtToCode) {
-		PixelFormat pixFmt = maliFormat.first;
-		if (!isFormatRaw(pixFmt))
+	for (const auto &[code, sizes] : formats) {
+		BayerFormat sdBayerFormat = BayerFormat::fromMbusCode(code);
+		if (!sdBayerFormat.isValid())
 			continue;
 
-		unsigned int rawCode = maliFormat.second;
-		const auto rawSizes = sizes(rawCode);
-		if (rawSizes.empty())
+		if (sdBayerFormat.order != bayerFormat.order)
 			continue;
 
-		BayerFormat bayer = BayerFormat::fromMbusCode(rawCode);
-		if (bayer.bitDepth > bitDepth) {
-			bitDepth = bayer.bitDepth;
-			rawFormat = pixFmt;
+		if (sdBayerFormat.bitDepth > bitDepth) {
+			bitDepth = sdBayerFormat.bitDepth;
+			sensorMbusCode = code;
 		}
 	}
 
-	return rawFormat;
+	if (!sensorMbusCode)
+		return -EINVAL;
+
+	return sensorMbusCode;
+}
+
+/*
+ * Find a RAW PixelFormat supported by both the ISP and the sensor.
+ *
+ * The situation is mildly complicated by the fact that we expect the sensor to
+ * output something like RAW8/10/12/16, but the ISP can only accept as input
+ * RAW20 and can only produce as output RAW16. The one constant in that is the
+ * bayer order of the data, so we'll simply check that the sensor produces a
+ * format with a bayer order that matches that of one of the formats we support,
+ * and select that.
+ */
+const PixelFormat &MaliC55CameraData::bestRawFormat() const
+{
+	static const PixelFormat invalidPixFmt = {};
+
+	for (const auto &fmt : sd_->formats(0)) {
+		BayerFormat sensorBayer = BayerFormat::fromMbusCode(fmt.first);
+
+		if (!sensorBayer.isValid())
+			continue;
+
+		for (const auto &[pixFmt, rawCode] : maliC55FmtToCode) {
+			if (!isFormatRaw(pixFmt))
+				continue;
+
+			BayerFormat bayer = BayerFormat::fromMbusCode(rawCode);
+			if (bayer.order == sensorBayer.order)
+				return pixFmt;
+		}
+	}
+
+	LOG(MaliC55, Error) << "Sensor doesn't provide a compatible format";
+	return invalidPixFmt;
 }
 
 /*
@@ -242,13 +272,11 @@ PixelFormat MaliC55CameraData::bestRawFormat() const
  */
 PixelFormat MaliC55CameraData::adjustRawFormat(const PixelFormat &rawFmt) const
 {
-	/* Make sure the provided raw format is supported by the pipeline. */
-	auto it = maliC55FmtToCode.find(rawFmt);
-	if (it == maliC55FmtToCode.end())
+	/* Make sure the RAW mbus code is supported by the image source. */
+	int rawCode = pixfmtToMbusCode(rawFmt);
+	if (rawCode < 0)
 		return bestRawFormat();
 
-	/* Now make sure the RAW mbus code is supported by the image source. */
-	unsigned int rawCode = it->second;
 	const auto rawSizes = sizes(rawCode);
 	if (rawSizes.empty())
 		return bestRawFormat();
@@ -258,16 +286,14 @@ PixelFormat MaliC55CameraData::adjustRawFormat(const PixelFormat &rawFmt) const
 
 Size MaliC55CameraData::adjustRawSizes(const PixelFormat &rawFmt, const Size &size) const
 {
-	/* Just make sure the format is supported. */
-	auto it = maliC55FmtToCode.find(rawFmt);
-	if (it == maliC55FmtToCode.end())
-		return {};
-
 	/* Expand the RAW size to the minimum ISP input size. */
 	Size rawSize = size.expandedTo(kMaliC55MinInputSize);
 
 	/* Check if the size is natively supported. */
-	unsigned int rawCode = it->second;
+	int rawCode = pixfmtToMbusCode(rawFmt);
+	if (rawCode < 0)
+		return {};
+
 	const auto rawSizes = sizes(rawCode);
 	auto sizeIt = std::find(rawSizes.begin(), rawSizes.end(), rawSize);
 	if (sizeIt != rawSizes.end())
@@ -348,6 +374,10 @@ CameraConfiguration::Status MaliC55CameraConfiguration::validate()
 		 */
 		PixelFormat rawFormat =
 			data_->adjustRawFormat(rawConfig->pixelFormat);
+
+		if (!rawFormat.isValid())
+			return Invalid;
+
 		if (rawFormat != rawConfig->pixelFormat) {
 			LOG(MaliC55, Debug)
 				<< "RAW format adjusted to " << rawFormat;
@@ -417,8 +447,7 @@ CameraConfiguration::Status MaliC55CameraConfiguration::validate()
 
 	/* If there's a RAW config, sensor configuration follows it. */
 	if (rawConfig) {
-		const auto it = maliC55FmtToCode.find(rawConfig->pixelFormat);
-		sensorFormat_.code = it->second;
+		sensorFormat_.code = data_->pixfmtToMbusCode(rawConfig->pixelFormat);
 		sensorFormat_.size = rawConfig->size.expandedTo(minSensorSize);
 
 		return status;
@@ -426,11 +455,13 @@ CameraConfiguration::Status MaliC55CameraConfiguration::validate()
 
 	/* If there's no RAW config, compute the sensor configuration here. */
 	PixelFormat rawFormat = data_->bestRawFormat();
-	const auto it = maliC55FmtToCode.find(rawFormat);
-	sensorFormat_.code = it->second;
+	if (!rawFormat.isValid())
+		return Invalid;
+
+	sensorFormat_.code = data_->pixfmtToMbusCode(rawFormat);
 
 	uint16_t distance = std::numeric_limits<uint16_t>::max();
-	const auto sizes = data_->sizes(it->second);
+	const auto sizes = data_->sizes(sensorFormat_.code);
 	Size bestSize;
 	for (const auto &size : sizes) {
 		if (minSensorSize.width > size.width ||
@@ -613,7 +644,10 @@ PipelineHandlerMaliC55::generateConfiguration(Camera *camera,
 
 			if (isRaw) {
 				/* Make sure the mbus code is supported. */
-				unsigned int rawCode = maliFormat.second;
+				int rawCode = data->pixfmtToMbusCode(pixFmt);
+				if (rawCode < 0)
+					continue;
+
 				const auto sizes = data->sizes(rawCode);
 				if (sizes.empty())
 					continue;

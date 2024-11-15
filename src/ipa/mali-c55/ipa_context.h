@@ -51,6 +51,11 @@ struct IPAActiveState {
 		uint32_t exposureMode;
 		uint32_t temperatureK;
 	} agc;
+
+	struct {
+		double rGain;
+		double bGain;
+	} awb;
 };
 
 struct IPAFrameContext : public FrameContext {
@@ -59,6 +64,11 @@ struct IPAFrameContext : public FrameContext {
 		double sensorGain;
 		double ispGain;
 	} agc;
+
+	struct {
+		double rGain;
+		double bGain;
+	} awb;
 };
 
 struct IPAContext {

@@ -75,7 +75,6 @@ private:
 	void generateAwbStats(const ipu3_uapi_stats_3a *stats);
 	void clearAwbStats();
 	void awbGreyWorld();
-	uint32_t estimateCCT(double red, double green, double blue);
 	static constexpr uint16_t threshold(float value);
 	static constexpr uint16_t gainValue(double gain);
 

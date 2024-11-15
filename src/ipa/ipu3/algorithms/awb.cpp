@@ -13,6 +13,8 @@
 
 #include <libcamera/control_ids.h>
 
+#include "libipa/colours.h"
+
 /**
  * \file awb.h
  */
@@ -299,36 +301,6 @@ void Awb::prepare(IPAContext &context,
 	params->use.acc_awb = 1;
 	params->use.acc_bnr = 1;
 	params->use.acc_ccm = 1;
-}
-
-/**
- * The function estimates the correlated color temperature using
- * from RGB color space input.
- * In physics and color science, the Planckian locus or black body locus is
- * the path or locus that the color of an incandescent black body would take
- * in a particular chromaticity space as the blackbody temperature changes.
- *
- * If a narrow range of color temperatures is considered (those encapsulating
- * daylight being the most practical case) one can approximate the Planckian
- * locus in order to calculate the CCT in terms of chromaticity coordinates.
- *
- * More detailed information can be found in:
- * https://en.wikipedia.org/wiki/Color_temperature#Approximation
- */
-uint32_t Awb::estimateCCT(double red, double green, double blue)
-{
-	/* Convert the RGB values to CIE tristimulus values (XYZ) */
-	double X = (-0.14282) * (red) + (1.54924) * (green) + (-0.95641) * (blue);
-	double Y = (-0.32466) * (red) + (1.57837) * (green) + (-0.73191) * (blue);
-	double Z = (-0.68202) * (red) + (0.77073) * (green) + (0.56332) * (blue);
-
-	/* Calculate the normalized chromaticity values */
-	double x = X / (X + Y + Z);
-	double y = Y / (X + Y + Z);
-
-	/* Calculate CCT */
-	double n = (x - 0.3320) / (0.1858 - y);
-	return 449 * n * n * n + 3525 * n * n + 6823.3 * n + 5520.33;
 }
 
 /* Generate an RGB vector with the average values for each zone */

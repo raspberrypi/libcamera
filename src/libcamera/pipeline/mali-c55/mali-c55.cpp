@@ -767,7 +767,7 @@ int PipelineHandlerMaliC55::configure(Camera *camera,
 		if (ret)
 			return ret;
 
-		ret = data->csi_->setFormat(1, &subdevFormat);
+		ret = data->csi_->getFormat(1, &subdevFormat);
 		if (ret)
 			return ret;
 	}

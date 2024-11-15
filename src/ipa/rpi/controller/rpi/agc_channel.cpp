@@ -12,6 +12,8 @@
 
 #include <libcamera/base/log.h>
 
+#include "libipa/colours.h"
+
 #include "../awb_status.h"
 #include "../device_status.h"
 #include "../histogram.h"
@@ -694,11 +696,11 @@ static double computeInitialY(StatisticsPtr &stats, AwbStatus const &awb,
 	double ySum;
 	/* Factor in the AWB correction if needed. */
 	if (stats->agcStatsPos == Statistics::AgcStatsPos::PreWb) {
-		ySum = rSum * awb.gainR * .299 +
-		       gSum * awb.gainG * .587 +
-		       bSum * awb.gainB * .114;
+		ySum = ipa::rec601LuminanceFromRGB(rSum * awb.gainR,
+						   gSum * awb.gainG,
+						   bSum * awb.gainB);
 	} else
-		ySum = rSum * .299 + gSum * .587 + bSum * .114;
+		ySum = ipa::rec601LuminanceFromRGB(rSum, gSum, bSum);
 
 	return ySum / pixelSum / (1 << 16);
 }

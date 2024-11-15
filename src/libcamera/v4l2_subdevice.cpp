@@ -188,6 +188,20 @@ const std::map<uint32_t, MediaBusFormatInfo> mediaBusFormatInfo{
 		.bitsPerPixel = 24,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
 	} },
+	{ MEDIA_BUS_FMT_RGB121212_1X36, {
+		.name = "RGB121212_1X36",
+		.code = MEDIA_BUS_FMT_RGB121212_1X36,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 36,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
+	} },
+	{ MEDIA_BUS_FMT_RGB202020_1X60, {
+		.name = "RGB202020_1X60",
+		.code = MEDIA_BUS_FMT_RGB202020_1X60,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 60,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
+	} },
 	{ MEDIA_BUS_FMT_ARGB8888_1X32, {
 		.name = "ARGB8888_1X32",
 		.code = MEDIA_BUS_FMT_ARGB8888_1X32,
@@ -676,6 +690,34 @@ const std::map<uint32_t, MediaBusFormatInfo> mediaBusFormatInfo{
 		.code = MEDIA_BUS_FMT_SRGGB16_1X16,
 		.type = MediaBusFormatInfo::Type::Image,
 		.bitsPerPixel = 16,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW
+	} },
+	{ MEDIA_BUS_FMT_SBGGR20_1X20, {
+		.name = "SBGGR20_1X20",
+		.code = MEDIA_BUS_FMT_SBGGR20_1X20,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 20,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW
+	} },
+	{ MEDIA_BUS_FMT_SGBRG20_1X20, {
+		.name = "SGBRG20_1X20",
+		.code = MEDIA_BUS_FMT_SGBRG20_1X20,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 20,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW
+	} },
+	{ MEDIA_BUS_FMT_SGRBG20_1X20, {
+		.name = "SGRBG20_1X20",
+		.code = MEDIA_BUS_FMT_SGRBG20_1X20,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 20,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW
+	} },
+	{ MEDIA_BUS_FMT_SRGGB20_1X20, {
+		.name = "SRGGB20_1X20",
+		.code = MEDIA_BUS_FMT_SRGGB20_1X20,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 20,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW
 	} },
 	/* \todo Clarify colour encoding for HSV formats */

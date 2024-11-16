@@ -177,6 +177,34 @@ namespace ipa {
  */
 
 /**
+ * \fn Vector::min(const Vector &other) const
+ * \brief Calculate the minimum of this vector and \a other element-wise
+ * \param[in] other The other vector
+ * \return The element-wise minimum of this vector and \a other
+ */
+
+/**
+ * \fn Vector::min(T scalar) const
+ * \brief Calculate the minimum of this vector and \a scalar element-wise
+ * \param[in] scalar The scalar
+ * \return The element-wise minimum of this vector and \a scalar
+ */
+
+/**
+ * \fn Vector::max(const Vector &other) const
+ * \brief Calculate the maximum of this vector and \a other element-wise
+ * \param[in] other The other vector
+ * \return The element-wise maximum of this vector and \a other
+ */
+
+/**
+ * \fn Vector::max(T scalar) const
+ * \brief Calculate the maximum of this vector and \a scalar element-wise
+ * \param[in] scalar The scalar
+ * \return The element-wise maximum of this vector and \a scalar
+ */
+
+/**
  * \fn Vector::dot(const Vector<T, Rows> &other) const
  * \brief Compute the dot product
  * \param[in] other The other vector

@@ -148,6 +148,26 @@ public:
 		return apply(scalar, [](T a, T b) { return a / b; });
 	}
 
+	constexpr Vector min(const Vector &other) const
+	{
+		return apply(*this, other, [](T a, T b) { return std::min(a, b); });
+	}
+
+	constexpr Vector min(T scalar) const
+	{
+		return apply(*this, scalar, [](T a, T b) { return std::min(a, b); });
+	}
+
+	constexpr Vector max(const Vector &other) const
+	{
+		return apply(*this, other, [](T a, T b) { return std::max(a, b); });
+	}
+
+	constexpr Vector max(T scalar) const
+	{
+		return apply(*this, scalar, [](T a, T b) -> T { return std::max(a, b); });
+	}
+
 	constexpr T dot(const Vector<T, Rows> &other) const
 	{
 		T ret = 0;

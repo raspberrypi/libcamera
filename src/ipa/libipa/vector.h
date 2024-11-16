@@ -68,24 +68,44 @@ public:
 		return ret;
 	}
 
-	constexpr Vector operator-(const Vector &other) const
-	{
-		return apply(*this, other, std::minus<>{});
-	}
-
 	constexpr Vector operator+(const Vector &other) const
 	{
 		return apply(*this, other, std::plus<>{});
 	}
 
-	constexpr Vector operator*(T factor) const
+	constexpr Vector operator+(T scalar) const
 	{
-		return apply(*this, factor, std::multiplies<>{});
+		return apply(*this, scalar, std::plus<>{});
 	}
 
-	constexpr Vector operator/(T factor) const
+	constexpr Vector operator-(const Vector &other) const
 	{
-		return apply(*this, factor, std::divides<>{});
+		return apply(*this, other, std::minus<>{});
+	}
+
+	constexpr Vector operator-(T scalar) const
+	{
+		return apply(*this, scalar, std::minus<>{});
+	}
+
+	constexpr Vector operator*(const Vector &other) const
+	{
+		return apply(*this, other, std::multiplies<>{});
+	}
+
+	constexpr Vector operator*(T scalar) const
+	{
+		return apply(*this, scalar, std::multiplies<>{});
+	}
+
+	constexpr Vector operator/(const Vector &other) const
+	{
+		return apply(*this, other, std::divides<>{});
+	}
+
+	constexpr Vector operator/(T scalar) const
+	{
+		return apply(*this, scalar, std::divides<>{});
 	}
 
 	constexpr T dot(const Vector<T, Rows> &other) const

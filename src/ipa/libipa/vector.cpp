@@ -65,31 +65,59 @@ namespace ipa {
  */
 
 /**
+ * \fn Vector::operator+(Vector const &other) const
+ * \brief Calculate the sum of this vector and \a other element-wise
+ * \param[in] other The other vector
+ * \return The element-wise sum of this vector and \a other
+ */
+
+/**
+ * \fn Vector::operator+(T scalar) const
+ * \brief Calculate the sum of this vector and \a scalar element-wise
+ * \param[in] scalar The scalar
+ * \return The element-wise sum of this vector and \a other
+ */
+
+/**
  * \fn Vector::operator-(Vector const &other) const
- * \brief Subtract one vector from another
+ * \brief Calculate the difference of this vector and \a other element-wise
  * \param[in] other The other vector
- * \return The difference of \a other from this vector
+ * \return The element-wise subtraction of \a other from this vector
  */
 
 /**
- * \fn Vector::operator+()
- * \brief Add two vectors together
+ * \fn Vector::operator-(T scalar) const
+ * \brief Calculate the difference of this vector and \a scalar element-wise
+ * \param[in] scalar The scalar
+ * \return The element-wise subtraction of \a scalar from this vector
+ */
+
+/**
+ * \fn Vector::operator*(const Vector &other) const
+ * \brief Calculate the product of this vector and \a other element-wise
  * \param[in] other The other vector
- * \return The sum of the two vectors
+ * \return The element-wise product of this vector and \a other
  */
 
 /**
- * \fn Vector::operator*(T factor) const
- * \brief Multiply the vector by a scalar
- * \param[in] factor The factor
- * \return The vector multiplied by \a factor
+ * \fn Vector::operator*(T scalar) const
+ * \brief Calculate the product of this vector and \a scalar element-wise
+ * \param[in] scalar The scalar
+ * \return The element-wise product of this vector and \a scalar
  */
 
 /**
- * \fn Vector::operator/()
- * \brief Divide the vector by a scalar
- * \param[in] factor The factor
- * \return The vector divided by \a factor
+ * \fn Vector::operator/(const Vector &other) const
+ * \brief Calculate the quotient of this vector and \a other element-wise
+ * \param[in] other The other vector
+ * \return The element-wise division of this vector by \a other
+ */
+
+/**
+ * \fn Vector::operator/(T scalar) const
+ * \brief Calculate the quotient of this vector and \a scalar element-wise
+ * \param[in] scalar The scalar
+ * \return The element-wise division of this vector by \a scalar
  */
 
 /**

@@ -290,6 +290,18 @@ namespace ipa {
  */
 
 /**
+ * \fn Vector::sum() const
+ * \brief Calculate the sum of all the vector elements
+ * \tparam R The type of the sum
+ *
+ * The type R of the sum defaults to the type T of the elements, but can be set
+ * explicitly to use a different type in case the type T would risk
+ * overflowing.
+ *
+ * \return The sum of all the vector elements
+ */
+
+/**
  * \fn Vector<T, Rows> operator*(const Matrix<T, Rows, Cols> &m, const Vector<T, Cols> &v)
  * \brief Multiply a matrix by a vector
  * \tparam T Numerical type of the contents of the matrix and vector

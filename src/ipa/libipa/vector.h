@@ -10,6 +10,7 @@
 #include <array>
 #include <cmath>
 #include <functional>
+#include <numeric>
 #include <optional>
 #include <ostream>
 
@@ -237,6 +238,12 @@ public:
 	constexpr double length() const
 	{
 		return std::sqrt(length2());
+	}
+
+	template<typename R = T>
+	constexpr R sum() const
+	{
+		return std::accumulate(data_.begin(), data_.end(), R{});
 	}
 
 private:

@@ -53,24 +53,6 @@ namespace ipa {
  */
 
 /**
- * \fn Vector::x()
- * \brief Convenience function to access the first element of the vector
- * \return The first element of the vector
- */
-
-/**
- * \fn Vector::y()
- * \brief Convenience function to access the second element of the vector
- * \return The second element of the vector
- */
-
-/**
- * \fn Vector::z()
- * \brief Convenience function to access the third element of the vector
- * \return The third element of the vector
- */
-
-/**
  * \fn Vector::operator-() const
  * \brief Negate a Vector by negating both all of its coordinates
  * \return The negated vector
@@ -109,6 +91,39 @@ namespace ipa {
  * \brief Divide the vector by a scalar
  * \param[in] factor The factor
  * \return The vector divided by \a factor
+ */
+
+/**
+ * \fn constexpr T &Vector::x()
+ * \brief Convenience function to access the first element of the vector
+ * \return The first element of the vector
+ */
+
+/**
+ * \fn constexpr T &Vector::y()
+ * \brief Convenience function to access the second element of the vector
+ * \return The second element of the vector
+ */
+
+/**
+ * \fn constexpr T &Vector::z()
+ * \brief Convenience function to access the third element of the vector
+ * \return The third element of the vector
+ */
+
+/**
+ * \fn constexpr const T &Vector::x() const
+ * \copydoc Vector::x()
+ */
+
+/**
+ * \fn constexpr const T &Vector::y() const
+ * \copydoc Vector::y()
+ */
+
+/**
+ * \fn constexpr const T &Vector::z() const
+ * \copydoc Vector::z()
  */
 
 /**

@@ -53,30 +53,6 @@ public:
 		return data_[i];
 	}
 
-#ifndef __DOXYGEN__
-	template<bool Dependent = false, typename = std::enable_if_t<Dependent || Rows >= 1>>
-#endif /* __DOXYGEN__ */
-	constexpr T x() const
-	{
-		return data_[0];
-	}
-
-#ifndef __DOXYGEN__
-	template<bool Dependent = false, typename = std::enable_if_t<Dependent || Rows >= 2>>
-#endif /* __DOXYGEN__ */
-	constexpr T y() const
-	{
-		return data_[1];
-	}
-
-#ifndef __DOXYGEN__
-	template<bool Dependent = false, typename = std::enable_if_t<Dependent || Rows >= 3>>
-#endif /* __DOXYGEN__ */
-	constexpr T z() const
-	{
-		return data_[2];
-	}
-
 	constexpr Vector<T, Rows> operator-() const
 	{
 		Vector<T, Rows> ret;
@@ -124,6 +100,31 @@ public:
 			ret[i] = data_[i] / factor;
 		return ret;
 	}
+
+#ifndef __DOXYGEN__
+	template<bool Dependent = false, typename = std::enable_if_t<Dependent || Rows >= 1>>
+#endif /* __DOXYGEN__ */
+	constexpr const T &x() const { return data_[0]; }
+#ifndef __DOXYGEN__
+	template<bool Dependent = false, typename = std::enable_if_t<Dependent || Rows >= 2>>
+#endif /* __DOXYGEN__ */
+	constexpr const T &y() const { return data_[1]; }
+#ifndef __DOXYGEN__
+	template<bool Dependent = false, typename = std::enable_if_t<Dependent || Rows >= 3>>
+#endif /* __DOXYGEN__ */
+	constexpr const T &z() const { return data_[2]; }
+#ifndef __DOXYGEN__
+	template<bool Dependent = false, typename = std::enable_if_t<Dependent || Rows >= 1>>
+#endif /* __DOXYGEN__ */
+	constexpr T &x() { return data_[0]; }
+#ifndef __DOXYGEN__
+	template<bool Dependent = false, typename = std::enable_if_t<Dependent || Rows >= 2>>
+#endif /* __DOXYGEN__ */
+	constexpr T &y() { return data_[1]; }
+#ifndef __DOXYGEN__
+	template<bool Dependent = false, typename = std::enable_if_t<Dependent || Rows >= 3>>
+#endif /* __DOXYGEN__ */
+	constexpr T &z() { return data_[2]; }
 
 	constexpr double length2() const
 	{

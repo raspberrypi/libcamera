@@ -121,6 +121,62 @@ namespace ipa {
  */
 
 /**
+ * \fn Vector::operator+=(Vector const &other)
+ * \brief Add \a other element-wise to this vector
+ * \param[in] other The other vector
+ * \return This vector
+ */
+
+/**
+ * \fn Vector::operator+=(T scalar)
+ * \brief Add \a scalar element-wise to this vector
+ * \param[in] scalar The scalar
+ * \return This vector
+ */
+
+/**
+ * \fn Vector::operator-=(Vector const &other)
+ * \brief Subtract \a other element-wise from this vector
+ * \param[in] other The other vector
+ * \return This vector
+ */
+
+/**
+ * \fn Vector::operator-=(T scalar)
+ * \brief Subtract \a scalar element-wise from this vector
+ * \param[in] scalar The scalar
+ * \return This vector
+ */
+
+/**
+ * \fn Vector::operator*=(const Vector &other)
+ * \brief Multiply this vector by \a other element-wise
+ * \param[in] other The other vector
+ * \return This vector
+ */
+
+/**
+ * \fn Vector::operator*=(T scalar)
+ * \brief Multiply this vector by \a scalar element-wise
+ * \param[in] scalar The scalar
+ * \return This vector
+ */
+
+/**
+ * \fn Vector::operator/=(const Vector &other)
+ * \brief Divide this vector by \a other element-wise
+ * \param[in] other The other vector
+ * \return This vector
+ */
+
+/**
+ * \fn Vector::operator/=(T scalar)
+ * \brief Divide this vector by \a scalar element-wise
+ * \param[in] scalar The scalar
+ * \return This vector
+ */
+
+/**
  * \fn Vector::dot(const Vector<T, Rows> &other) const
  * \brief Compute the dot product
  * \param[in] other The other vector

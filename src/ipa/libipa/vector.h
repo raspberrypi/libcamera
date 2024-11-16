@@ -108,6 +108,46 @@ public:
 		return apply(*this, scalar, std::divides<>{});
 	}
 
+	Vector &operator+=(const Vector &other)
+	{
+		return apply(other, [](T a, T b) { return a + b; });
+	}
+
+	Vector &operator+=(T scalar)
+	{
+		return apply(scalar, [](T a, T b) { return a + b; });
+	}
+
+	Vector &operator-=(const Vector &other)
+	{
+		return apply(other, [](T a, T b) { return a - b; });
+	}
+
+	Vector &operator-=(T scalar)
+	{
+		return apply(scalar, [](T a, T b) { return a - b; });
+	}
+
+	Vector &operator*=(const Vector &other)
+	{
+		return apply(other, [](T a, T b) { return a * b; });
+	}
+
+	Vector &operator*=(T scalar)
+	{
+		return apply(scalar, [](T a, T b) { return a * b; });
+	}
+
+	Vector &operator/=(const Vector &other)
+	{
+		return apply(other, [](T a, T b) { return a / b; });
+	}
+
+	Vector &operator/=(T scalar)
+	{
+		return apply(scalar, [](T a, T b) { return a / b; });
+	}
+
 	constexpr T dot(const Vector<T, Rows> &other) const
 	{
 		T ret = 0;
@@ -200,6 +240,25 @@ private:
 			       [&op, rhs](T v) { return op(v, rhs); });
 
 		return result;
+	}
+
+	template<class BinaryOp>
+	Vector &apply(const Vector &other, BinaryOp op)
+	{
+		auto itOther = other.data_.begin();
+		std::for_each(data_.begin(), data_.end(),
+			      [&op, &itOther](T &v) { v = op(v, *itOther++); });
+
+		return *this;
+	}
+
+	template<class BinaryOp>
+	Vector &apply(T scalar, BinaryOp op)
+	{
+		std::for_each(data_.begin(), data_.end(),
+			      [&op, scalar](T &v) { v = op(v, scalar); });
+
+		return *this;
 	}
 
 	std::array<T, Rows> data_;

@@ -126,6 +126,31 @@ public:
 #endif /* __DOXYGEN__ */
 	constexpr T &z() { return data_[2]; }
 
+#ifndef __DOXYGEN__
+	template<bool Dependent = false, typename = std::enable_if_t<Dependent || Rows >= 1>>
+#endif /* __DOXYGEN__ */
+	constexpr const T &r() const { return data_[0]; }
+#ifndef __DOXYGEN__
+	template<bool Dependent = false, typename = std::enable_if_t<Dependent || Rows >= 2>>
+#endif /* __DOXYGEN__ */
+	constexpr const T &g() const { return data_[1]; }
+#ifndef __DOXYGEN__
+	template<bool Dependent = false, typename = std::enable_if_t<Dependent || Rows >= 3>>
+#endif /* __DOXYGEN__ */
+	constexpr const T &b() const { return data_[2]; }
+#ifndef __DOXYGEN__
+	template<bool Dependent = false, typename = std::enable_if_t<Dependent || Rows >= 1>>
+#endif /* __DOXYGEN__ */
+	constexpr T &r() { return data_[0]; }
+#ifndef __DOXYGEN__
+	template<bool Dependent = false, typename = std::enable_if_t<Dependent || Rows >= 2>>
+#endif /* __DOXYGEN__ */
+	constexpr T &g() { return data_[1]; }
+#ifndef __DOXYGEN__
+	template<bool Dependent = false, typename = std::enable_if_t<Dependent || Rows >= 3>>
+#endif /* __DOXYGEN__ */
+	constexpr T &b() { return data_[2]; }
+
 	constexpr double length2() const
 	{
 		double ret = 0;
@@ -142,6 +167,9 @@ public:
 private:
 	std::array<T, Rows> data_;
 };
+
+template<typename T>
+using RGB = Vector<T, 3>;
 
 template<typename T, unsigned int Rows, unsigned int Cols>
 Vector<T, Rows> operator*(const Matrix<T, Rows, Cols> &m, const Vector<T, Cols> &v)

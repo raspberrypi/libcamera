@@ -127,6 +127,39 @@ namespace ipa {
  */
 
 /**
+ * \fn constexpr T &Vector::r()
+ * \brief Convenience function to access the first element of the vector
+ * \return The first element of the vector
+ */
+
+/**
+ * \fn constexpr T &Vector::g()
+ * \brief Convenience function to access the second element of the vector
+ * \return The second element of the vector
+ */
+
+/**
+ * \fn constexpr T &Vector::b()
+ * \brief Convenience function to access the third element of the vector
+ * \return The third element of the vector
+ */
+
+/**
+ * \fn constexpr const T &Vector::r() const
+ * \copydoc Vector::r()
+ */
+
+/**
+ * \fn constexpr const T &Vector::g() const
+ * \copydoc Vector::g()
+ */
+
+/**
+ * \fn constexpr const T &Vector::b() const
+ * \copydoc Vector::b()
+ */
+
+/**
  * \fn Vector::length2()
  * \brief Get the squared length of the vector
  * \return The squared length of the vector
@@ -147,6 +180,11 @@ namespace ipa {
  * \param m The matrix
  * \param v The vector
  * \return Product of matrix \a m and vector \a v
+ */
+
+/**
+ * \typedef RGB
+ * \brief A Vector of 3 elements representing an RGB pixel value
  */
 
 /**

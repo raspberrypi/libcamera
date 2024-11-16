@@ -79,13 +79,6 @@ namespace ipa {
  */
 
 /**
- * \fn Vector::operator*(const Vector<T, Rows> &other) const
- * \brief Compute the dot product
- * \param[in] other The other vector
- * \return The dot product of the two vectors
- */
-
-/**
  * \fn Vector::operator*(T factor) const
  * \brief Multiply the vector by a scalar
  * \param[in] factor The factor
@@ -97,6 +90,13 @@ namespace ipa {
  * \brief Divide the vector by a scalar
  * \param[in] factor The factor
  * \return The vector divided by \a factor
+ */
+
+/**
+ * \fn Vector::dot(const Vector<T, Rows> &other) const
+ * \brief Compute the dot product
+ * \param[in] other The other vector
+ * \return The dot product of the two vectors
  */
 
 /**

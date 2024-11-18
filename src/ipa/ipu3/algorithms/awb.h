@@ -13,6 +13,8 @@
 
 #include <libcamera/geometry.h>
 
+#include "libipa/vector.h"
+
 #include "algorithm.h"
 
 namespace libcamera {
@@ -48,20 +50,6 @@ public:
 		     ControlList &metadata) override;
 
 private:
-	/* \todo Make these structs available to all the ISPs ? */
-	struct RGB {
-		RGB(double _R = 0, double _G = 0, double _B = 0)
-			: R(_R), G(_G), B(_B)
-		{
-		}
-		double R, G, B;
-		RGB &operator+=(RGB const &other)
-		{
-			R += other.R, G += other.G, B += other.B;
-			return *this;
-		}
-	};
-
 	struct AwbStatus {
 		double temperatureK;
 		double redGain;
@@ -78,7 +66,7 @@ private:
 	static constexpr uint16_t threshold(float value);
 	static constexpr uint16_t gainValue(double gain);
 
-	std::vector<RGB> zones_;
+	std::vector<RGB<double>> zones_;
 	Accumulator awbStats_[kAwbStatsSizeX * kAwbStatsSizeY];
 	AwbStatus asyncResults_;
 

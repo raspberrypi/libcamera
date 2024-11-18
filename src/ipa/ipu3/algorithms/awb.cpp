@@ -309,15 +309,18 @@ void Awb::generateZones()
 	zones_.clear();
 
 	for (unsigned int i = 0; i < kAwbStatsSizeX * kAwbStatsSizeY; i++) {
-		RGB zone;
 		double counted = awbStats_[i].counted;
 		if (counted >= cellsPerZoneThreshold_) {
-			zone.G = awbStats_[i].sum.green / counted;
-			if (zone.G >= kMinGreenLevelInZone) {
-				zone.R = awbStats_[i].sum.red / counted;
-				zone.B = awbStats_[i].sum.blue / counted;
+			RGB<double> zone{{
+				static_cast<double>(awbStats_[i].sum.red),
+				static_cast<double>(awbStats_[i].sum.green),
+				static_cast<double>(awbStats_[i].sum.blue)
+			}};
+
+			zone /= counted;
+
+			if (zone.g() >= kMinGreenLevelInZone)
 				zones_.push_back(zone);
-			}
 		}
 	}
 }
@@ -384,32 +387,32 @@ void Awb::awbGreyWorld()
 	 * consider some variations, such as normalising all the zones first, or
 	 * doing an L2 average etc.
 	 */
-	std::vector<RGB> &redDerivative(zones_);
-	std::vector<RGB> blueDerivative(redDerivative);
+	std::vector<RGB<double>> &redDerivative(zones_);
+	std::vector<RGB<double>> blueDerivative(redDerivative);
 	std::sort(redDerivative.begin(), redDerivative.end(),
-		  [](RGB const &a, RGB const &b) {
-			  return a.G * b.R < b.G * a.R;
+		  [](RGB<double> const &a, RGB<double> const &b) {
+			  return a.g() * b.r() < b.g() * a.r();
 		  });
 	std::sort(blueDerivative.begin(), blueDerivative.end(),
-		  [](RGB const &a, RGB const &b) {
-			  return a.G * b.B < b.G * a.B;
+		  [](RGB<double> const &a, RGB<double> const &b) {
+			  return a.g() * b.b() < b.g() * a.b();
 		  });
 
 	/* Average the middle half of the values. */
 	int discard = redDerivative.size() / 4;
 
-	RGB sumRed(0, 0, 0);
-	RGB sumBlue(0, 0, 0);
+	RGB<double> sumRed{ 0.0 };
+	RGB<double> sumBlue{ 0.0 };
 	for (auto ri = redDerivative.begin() + discard,
 		  bi = blueDerivative.begin() + discard;
 	     ri != redDerivative.end() - discard; ri++, bi++)
 		sumRed += *ri, sumBlue += *bi;
 
-	double redGain = sumRed.G / (sumRed.R + 1),
-	       blueGain = sumBlue.G / (sumBlue.B + 1);
+	double redGain = sumRed.g() / (sumRed.r() + 1),
+	       blueGain = sumBlue.g() / (sumBlue.b() + 1);
 
 	/* Color temperature is not relevant in Grey world but still useful to estimate it :-) */
-	asyncResults_.temperatureK = estimateCCT(sumRed.R, sumRed.G, sumBlue.B);
+	asyncResults_.temperatureK = estimateCCT(sumRed.r(), sumRed.g(), sumBlue.b());
 
 	/*
 	 * Gain values are unsigned integer value ranging [0, 8) with 13 bit

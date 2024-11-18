@@ -16,22 +16,22 @@ namespace RPiController {
 
 /* Algorithm to calculate colour matrix. Should be placed after AWB. */
 
-struct Matrix {
-	Matrix(double m0, double m1, double m2, double m3, double m4, double m5,
+struct Matrix3x3 {
+	Matrix3x3(double m0, double m1, double m2, double m3, double m4, double m5,
 	       double m6, double m7, double m8);
-	Matrix();
+	Matrix3x3();
 	double m[3][3];
 	int read(const libcamera::YamlObject &params);
 };
-static inline Matrix operator*(double d, Matrix const &m)
+static inline Matrix3x3 operator*(double d, Matrix3x3 const &m)
 {
-	return Matrix(m.m[0][0] * d, m.m[0][1] * d, m.m[0][2] * d,
+	return Matrix3x3(m.m[0][0] * d, m.m[0][1] * d, m.m[0][2] * d,
 		      m.m[1][0] * d, m.m[1][1] * d, m.m[1][2] * d,
 		      m.m[2][0] * d, m.m[2][1] * d, m.m[2][2] * d);
 }
-static inline Matrix operator*(Matrix const &m1, Matrix const &m2)
+static inline Matrix3x3 operator*(Matrix3x3 const &m1, Matrix3x3 const &m2)
 {
-	Matrix m;
+	Matrix3x3 m;
 	for (int i = 0; i < 3; i++)
 		for (int j = 0; j < 3; j++)
 			m.m[i][j] = m1.m[i][0] * m2.m[0][j] +
@@ -39,9 +39,9 @@ static inline Matrix operator*(Matrix const &m1, Matrix const &m2)
 				    m1.m[i][2] * m2.m[2][j];
 	return m;
 }
-static inline Matrix operator+(Matrix const &m1, Matrix const &m2)
+static inline Matrix3x3 operator+(Matrix3x3 const &m1, Matrix3x3 const &m2)
 {
-	Matrix m;
+	Matrix3x3 m;
 	for (int i = 0; i < 3; i++)
 		for (int j = 0; j < 3; j++)
 			m.m[i][j] = m1.m[i][j] + m2.m[i][j];
@@ -50,7 +50,7 @@ static inline Matrix operator+(Matrix const &m1, Matrix const &m2)
 
 struct CtCcm {
 	double ct;
-	Matrix ccm;
+	Matrix3x3 ccm;
 };
 
 struct CcmConfig {

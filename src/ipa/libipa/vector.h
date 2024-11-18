@@ -35,6 +35,11 @@ class Vector
 public:
 	constexpr Vector() = default;
 
+	constexpr explicit Vector(T scalar)
+	{
+		data_.fill(scalar);
+	}
+
 	constexpr Vector(const std::array<T, Rows> &data)
 	{
 		for (unsigned int i = 0; i < Rows; i++)

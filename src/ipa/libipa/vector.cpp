@@ -29,7 +29,13 @@ namespace ipa {
 
 /**
  * \fn Vector::Vector()
- * \brief Construct a zero vector
+ * \brief Construct an uninitialized vector
+ */
+
+/**
+ * \fn Vector::Vector(T scalar)
+ * \brief Construct a vector filled with a \a scalar value
+ * \param[in] scalar The scalar value
  */
 
 /**

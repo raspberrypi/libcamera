@@ -412,7 +412,7 @@ void Awb::awbGreyWorld()
 	       blueGain = sumBlue.g() / (sumBlue.b() + 1);
 
 	/* Color temperature is not relevant in Grey world but still useful to estimate it :-) */
-	asyncResults_.temperatureK = estimateCCT(sumRed.r(), sumRed.g(), sumBlue.b());
+	asyncResults_.temperatureK = estimateCCT({{ sumRed.r(), sumRed.g(), sumBlue.b() }});
 
 	/*
 	 * Gain values are unsigned integer value ranging [0, 8) with 13 bit

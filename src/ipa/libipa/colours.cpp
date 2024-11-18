@@ -21,9 +21,7 @@ namespace ipa {
 
 /**
  * \brief Estimate luminance from RGB values following ITU-R BT.601
- * \param[in] r The red value
- * \param[in] g The green value
- * \param[in] b The blue value
+ * \param[in] rgb The RGB value
  *
  * This function estimates a luminance value from a triplet of Red, Green and
  * Blue values, following the formula defined by ITU-R Recommendation BT.601-7
@@ -31,21 +29,19 @@ namespace ipa {
  *
  * \return The estimated luminance value
  */
-double rec601LuminanceFromRGB(double r, double g, double b)
+double rec601LuminanceFromRGB(const RGB<double> &rgb)
 {
-	return (r * .299) + (g * .587) + (b * .114);
+	return (rgb.r() * .299) + (rgb.g() * .587) + (rgb.b() * .114);
 }
 
 /**
  * \brief Estimate correlated colour temperature from RGB color space input
- * \param[in] red The input red value
- * \param[in] green The input green value
- * \param[in] blue The input blue value
+ * \param[in] rgb The RGB value
  *
  * This function estimates the correlated color temperature RGB color space
  * input. In physics and color science, the Planckian locus or black body locus
  * is the path or locus that the color of an incandescent black body would take
- * in a particular chromaticity space as the blackbody temperature changes.
+ * in a particular chromaticity space as the black body temperature changes.
  *
  * If a narrow range of color temperatures is considered (those encapsulating
  * daylight being the most practical case) one can approximate the Planckian
@@ -56,12 +52,12 @@ double rec601LuminanceFromRGB(double r, double g, double b)
  *
  * \return The estimated color temperature
  */
-uint32_t estimateCCT(double red, double green, double blue)
+uint32_t estimateCCT(const RGB<double> &rgb)
 {
 	/* Convert the RGB values to CIE tristimulus values (XYZ) */
-	double X = (-0.14282) * (red) + (1.54924) * (green) + (-0.95641) * (blue);
-	double Y = (-0.32466) * (red) + (1.57837) * (green) + (-0.73191) * (blue);
-	double Z = (-0.68202) * (red) + (0.77073) * (green) + (0.56332) * (blue);
+	double X = (-0.14282) * rgb.r() + (1.54924) * rgb.g() + (-0.95641) * rgb.b();
+	double Y = (-0.32466) * rgb.r() + (1.57837) * rgb.g() + (-0.73191) * rgb.b();
+	double Z = (-0.68202) * rgb.r() + (0.77073) * rgb.g() + (0.56332) * rgb.b();
 
 	/* Calculate the normalized chromaticity values */
 	double x = X / (X + Y + Z);

@@ -9,12 +9,14 @@
 
 #include <stdint.h>
 
+#include "vector.h"
+
 namespace libcamera {
 
 namespace ipa {
 
-double rec601LuminanceFromRGB(double r, double g, double b);
-uint32_t estimateCCT(double red, double green, double blue);
+double rec601LuminanceFromRGB(const RGB<double> &rgb);
+uint32_t estimateCCT(const RGB<double> &rgb);
 
 } /* namespace ipa */
 

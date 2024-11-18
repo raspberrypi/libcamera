@@ -178,18 +178,16 @@ Histogram Agc::parseStatistics(const ipu3_uapi_stats_3a *stats,
  */
 double Agc::estimateLuminance(double gain) const
 {
-	double redSum = 0, greenSum = 0, blueSum = 0;
+	RGB<double> sum{ 0.0 };
 
 	for (unsigned int i = 0; i < rgbTriples_.size(); i++) {
-		redSum += std::min(std::get<0>(rgbTriples_[i]) * gain, 255.0);
-		greenSum += std::min(std::get<1>(rgbTriples_[i]) * gain, 255.0);
-		blueSum += std::min(std::get<2>(rgbTriples_[i]) * gain, 255.0);
+		sum.r() += std::min(std::get<0>(rgbTriples_[i]) * gain, 255.0);
+		sum.g() += std::min(std::get<1>(rgbTriples_[i]) * gain, 255.0);
+		sum.b() += std::min(std::get<2>(rgbTriples_[i]) * gain, 255.0);
 	}
 
-	double ySum = rec601LuminanceFromRGB(redSum * rGain_,
-					     greenSum * gGain_,
-					     blueSum * bGain_);
-
+	RGB<double> gains{{ rGain_, gGain_, bGain_ }};
+	double ySum = rec601LuminanceFromRGB(sum * gains);
 	return ySum / (bdsGrid_.height * bdsGrid_.width) / 255;
 }
 

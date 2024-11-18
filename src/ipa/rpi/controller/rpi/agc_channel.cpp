@@ -13,6 +13,7 @@
 #include <libcamera/base/log.h>
 
 #include "libipa/colours.h"
+#include "libipa/vector.h"
 
 #include "../awb_status.h"
 #include "../device_status.h"
@@ -681,12 +682,13 @@ static double computeInitialY(StatisticsPtr &stats, AwbStatus const &awb,
 	 * Note that the weights are applied by the IPA to the statistics directly,
 	 * before they are given to us here.
 	 */
-	double rSum = 0, gSum = 0, bSum = 0, pixelSum = 0;
+	ipa::RGB<double> sum{ 0.0 };
+	double pixelSum = 0;
 	for (unsigned int i = 0; i < stats->agcRegions.numRegions(); i++) {
 		auto &region = stats->agcRegions.get(i);
-		rSum += std::min<double>(region.val.rSum * gain, (maxVal - 1) * region.counted);
-		gSum += std::min<double>(region.val.gSum * gain, (maxVal - 1) * region.counted);
-		bSum += std::min<double>(region.val.bSum * gain, (maxVal - 1) * region.counted);
+		sum.r() += std::min<double>(region.val.rSum * gain, (maxVal - 1) * region.counted);
+		sum.g() += std::min<double>(region.val.gSum * gain, (maxVal - 1) * region.counted);
+		sum.b() += std::min<double>(region.val.bSum * gain, (maxVal - 1) * region.counted);
 		pixelSum += region.counted;
 	}
 	if (pixelSum == 0.0) {
@@ -694,14 +696,11 @@ static double computeInitialY(StatisticsPtr &stats, AwbStatus const &awb,
 		return 0;
 	}
 
-	double ySum;
 	/* Factor in the AWB correction if needed. */
-	if (stats->agcStatsPos == Statistics::AgcStatsPos::PreWb) {
-		ySum = ipa::rec601LuminanceFromRGB(rSum * awb.gainR,
-						   gSum * awb.gainG,
-						   bSum * awb.gainB);
-	} else
-		ySum = ipa::rec601LuminanceFromRGB(rSum, gSum, bSum);
+	if (stats->agcStatsPos == Statistics::AgcStatsPos::PreWb)
+		sum *= ipa::RGB<double>{{ awb.gainR, awb.gainR, awb.gainB }};
+
+	double ySum = ipa::rec601LuminanceFromRGB(sum);
 
 	return ySum / pixelSum / (1 << 16);
 }

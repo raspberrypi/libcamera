@@ -192,9 +192,7 @@ void Awb::process(IPAContext &context,
 	const rkisp1_cif_isp_stat *params = &stats->params;
 	const rkisp1_cif_isp_awb_stat *awb = &params->awb;
 	IPAActiveState &activeState = context.activeState;
-	double greenMean;
-	double redMean;
-	double blueMean;
+	RGB<double> rgbMeans;
 
 	metadata.set(controls::AwbEnable, frameContext.awb.autoEnabled);
 	metadata.set(controls::ColourGains, {
@@ -209,9 +207,11 @@ void Awb::process(IPAContext &context,
 	}
 
 	if (rgbMode_) {
-		greenMean = awb->awb_mean[0].mean_y_or_g;
-		redMean = awb->awb_mean[0].mean_cr_or_r;
-		blueMean = awb->awb_mean[0].mean_cb_or_b;
+		rgbMeans = {{
+			static_cast<double>(awb->awb_mean[0].mean_y_or_g),
+			static_cast<double>(awb->awb_mean[0].mean_cr_or_r),
+			static_cast<double>(awb->awb_mean[0].mean_cb_or_b)
+		}};
 	} else {
 		/* Get the YCbCr mean values */
 		double yMean = awb->awb_mean[0].mean_y_or_g;
@@ -233,9 +233,11 @@ void Awb::process(IPAContext &context,
 		yMean -= 16;
 		cbMean -= 128;
 		crMean -= 128;
-		redMean = 1.1636 * yMean - 0.0623 * cbMean + 1.6008 * crMean;
-		greenMean = 1.1636 * yMean - 0.4045 * cbMean - 0.7949 * crMean;
-		blueMean = 1.1636 * yMean + 1.9912 * cbMean - 0.0250 * crMean;
+		rgbMeans = {{
+			1.1636 * yMean - 0.0623 * cbMean + 1.6008 * crMean,
+			1.1636 * yMean - 0.4045 * cbMean - 0.7949 * crMean,
+			1.1636 * yMean + 1.9912 * cbMean - 0.0250 * crMean
+		}};
 
 		/*
 		 * Due to hardware rounding errors in the YCbCr means, the
@@ -243,9 +245,7 @@ void Awb::process(IPAContext &context,
 		 * negative gains, messing up calculation. Prevent this by
 		 * clamping the means to positive values.
 		 */
-		redMean = std::max(redMean, 0.0);
-		greenMean = std::max(greenMean, 0.0);
-		blueMean = std::max(blueMean, 0.0);
+		rgbMeans = rgbMeans.max(0.0);
 	}
 
 	/*
@@ -253,19 +253,22 @@ void Awb::process(IPAContext &context,
 	 * divide by the gains that were used to get the raw means from the
 	 * sensor.
 	 */
-	redMean /= frameContext.awb.gains.red;
-	greenMean /= frameContext.awb.gains.green;
-	blueMean /= frameContext.awb.gains.blue;
+	RGB<double> gains{{
+		frameContext.awb.gains.red,
+		frameContext.awb.gains.green,
+		frameContext.awb.gains.blue
+	}};
+	rgbMeans /= gains;
 
 	/*
 	 * If the means are too small we don't have enough information to
 	 * meaningfully calculate gains. Freeze the algorithm in that case.
 	 */
-	if (redMean < kMeanMinThreshold && greenMean < kMeanMinThreshold &&
-	    blueMean < kMeanMinThreshold)
+	if (rgbMeans.r() < kMeanMinThreshold && rgbMeans.g() < kMeanMinThreshold &&
+	    rgbMeans.b() < kMeanMinThreshold)
 		return;
 
-	activeState.awb.temperatureK = estimateCCT(redMean, greenMean, blueMean);
+	activeState.awb.temperatureK = estimateCCT(rgbMeans);
 
 	/* Metadata shall contain the up to date measurement */
 	metadata.set(controls::ColourTemperature, activeState.awb.temperatureK);
@@ -275,8 +278,8 @@ void Awb::process(IPAContext &context,
 	 * gain is hardcoded to 1.0. Avoid divisions by zero by clamping the
 	 * divisor to a minimum value of 1.0.
 	 */
-	double redGain = greenMean / std::max(redMean, 1.0);
-	double blueGain = greenMean / std::max(blueMean, 1.0);
+	double redGain = rgbMeans.g() / std::max(rgbMeans.r(), 1.0);
+	double blueGain = rgbMeans.g() / std::max(rgbMeans.b(), 1.0);
 
 	/*
 	 * Clamp the gain values to the hardware, which expresses gains as Q2.8
@@ -298,8 +301,8 @@ void Awb::process(IPAContext &context,
 
 	LOG(RkISP1Awb, Debug)
 		<< std::showpoint
-		<< "Means [" << redMean << ", " << greenMean << ", " << blueMean
-		<< "], gains [" << activeState.awb.gains.automatic.red << ", "
+		<< "Means " << rgbMeans
+		<< ", gains [" << activeState.awb.gains.automatic.red << ", "
 		<< activeState.awb.gains.automatic.green << ", "
 		<< activeState.awb.gains.automatic.blue << "], temp "
 		<< activeState.awb.temperatureK << "K";

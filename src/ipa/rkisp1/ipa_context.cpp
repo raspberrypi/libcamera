@@ -188,29 +188,11 @@ namespace libcamera::ipa::rkisp1 {
  * \struct IPAActiveState::awb.gains
  * \brief White balance gains
  *
- * \struct IPAActiveState::awb.gains.manual
+ * \var IPAActiveState::awb.gains.manual
  * \brief Manual white balance gains (set through requests)
  *
- * \var IPAActiveState::awb.gains.manual.red
- * \brief Manual white balance gain for R channel
- *
- * \var IPAActiveState::awb.gains.manual.green
- * \brief Manual white balance gain for G channel
- *
- * \var IPAActiveState::awb.gains.manual.blue
- * \brief Manual white balance gain for B channel
- *
- * \struct IPAActiveState::awb.gains.automatic
+ * \var IPAActiveState::awb.gains.automatic
  * \brief Automatic white balance gains (computed by the algorithm)
- *
- * \var IPAActiveState::awb.gains.automatic.red
- * \brief Automatic white balance gain for R channel
- *
- * \var IPAActiveState::awb.gains.automatic.green
- * \brief Automatic white balance gain for G channel
- *
- * \var IPAActiveState::awb.gains.automatic.blue
- * \brief Automatic white balance gain for B channel
  *
  * \var IPAActiveState::awb.temperatureK
  * \brief Estimated color temperature
@@ -332,15 +314,6 @@ namespace libcamera::ipa::rkisp1 {
  *
  * \struct IPAFrameContext::awb.gains
  * \brief White balance gains
- *
- * \var IPAFrameContext::awb.gains.red
- * \brief White balance gain for R channel
- *
- * \var IPAFrameContext::awb.gains.green
- * \brief White balance gain for G channel
- *
- * \var IPAFrameContext::awb.gains.blue
- * \brief White balance gain for B channel
  *
  * \var IPAFrameContext::awb.temperatureK
  * \brief Estimated color temperature

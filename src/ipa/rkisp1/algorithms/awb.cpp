@@ -210,13 +210,18 @@ void Awb::process(IPAContext &context,
 		});
 
 		/*
-		 * Convert from YCbCr to RGB.
-		 * The hardware uses the following formulas:
-		 * Y = 16 + 0.2500 R + 0.5000 G + 0.1094 B
+		 * Convert from YCbCr to RGB. The hardware uses the following
+		 * formulas:
+		 *
+		 * Y  =  16 + 0.2500 R + 0.5000 G + 0.1094 B
 		 * Cb = 128 - 0.1406 R - 0.2969 G + 0.4375 B
 		 * Cr = 128 + 0.4375 R - 0.3750 G - 0.0625 B
 		 *
-		 * The inverse matrix is thus:
+		 * This seems to be based on limited range BT.601 with Q1.6
+		 * precision.
+		 *
+		 * The inverse matrix is:
+		 *
 		 * [[1,1636, -0,0623,  1,6008]
 		 *  [1,1636, -0,4045, -0,7949]
 		 *  [1,1636,  1,9912, -0,0250]]

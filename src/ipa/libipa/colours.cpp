@@ -31,7 +31,11 @@ namespace ipa {
  */
 double rec601LuminanceFromRGB(const RGB<double> &rgb)
 {
-	return (rgb.r() * .299) + (rgb.g() * .587) + (rgb.b() * .114);
+	static const Vector<double, 3> rgb2y{{
+		0.299, 0.587, 0.114
+	}};
+
+	return rgb.dot(rgb2y);
 }
 
 /**
@@ -54,17 +58,21 @@ double rec601LuminanceFromRGB(const RGB<double> &rgb)
  */
 uint32_t estimateCCT(const RGB<double> &rgb)
 {
-	/* Convert the RGB values to CIE tristimulus values (XYZ) */
-	double X = (-0.14282) * rgb.r() + (1.54924) * rgb.g() + (-0.95641) * rgb.b();
-	double Y = (-0.32466) * rgb.r() + (1.57837) * rgb.g() + (-0.73191) * rgb.b();
-	double Z = (-0.68202) * rgb.r() + (0.77073) * rgb.g() + (0.56332) * rgb.b();
+	/*
+	 * Convert the RGB values to CIE tristimulus values (XYZ) and divide by
+	 * the sum of X, Y and Z to calculate the CIE xy chromaticity.
+	 */
+	static const Matrix<double, 3, 3> rgb2xyz({
+		-0.14282, 1.54924, -0.95641,
+		-0.32466, 1.57837, -0.73191,
+		-0.68202, 0.77073,  0.56332
+	});
 
-	/* Calculate the normalized chromaticity values */
-	double x = X / (X + Y + Z);
-	double y = Y / (X + Y + Z);
+	Vector<double, 3> xyz = rgb2xyz * rgb;
+	xyz /= xyz.sum();
 
 	/* Calculate CCT */
-	double n = (x - 0.3320) / (0.1858 - y);
+	double n = (xyz.x() - 0.3320) / (0.1858 - xyz.y());
 	return 449 * n * n * n + 3525 * n * n + 6823.3 * n + 5520.33;
 }
 

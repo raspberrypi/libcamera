@@ -459,10 +459,13 @@ void Awb::prepareStats()
 	 * LSC has already been applied to the stats in this pipeline, so stop
 	 * any LSC compensation.  We also ignore config_.fast in this version.
 	 */
+	const double biasCtR = config_.bayes && config_.ctR.size() ?
+			       config_.ctR.eval(config_.biasCT) : 0;
+	const double biasCtB = config_.bayes && config_.ctB.size() ?
+			       config_.ctB.eval(config_.biasCT) : 0;
 	generateStats(zones_, statistics_, config_.minPixels,
 		      config_.minG, getGlobalMetadata(),
-		      config_.biasProportion, config_.ctR.eval(config_.biasCT),
-		      config_.ctB.eval(config_.biasCT));
+		      config_.biasProportion, biasCtR, biasCtB);
 	/*
 	 * apply sensitivities, so values appear to come from our "canonical"
 	 * sensor.

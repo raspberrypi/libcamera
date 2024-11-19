@@ -32,7 +32,7 @@ LOG_DEFINE_CATEGORY(Matrix)
  */
 
 /**
- * \fn Matrix::Matrix(const std::vector<T> &data)
+ * \fn Matrix::Matrix(const std::array<T, Rows * Cols> &data)
  * \brief Construct a matrix from supplied data
  * \param[in] data Data from which to construct a matrix
  *

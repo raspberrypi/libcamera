@@ -33,7 +33,7 @@ public:
 		data_.fill(static_cast<T>(0));
 	}
 
-	Matrix(const std::vector<T> &data)
+	Matrix(const std::array<T, Rows * Cols> &data)
 	{
 		std::copy(data.begin(), data.end(), data_.begin());
 	}

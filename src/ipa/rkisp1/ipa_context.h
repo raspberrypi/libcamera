@@ -21,10 +21,10 @@
 #include <libcamera/ipa/core_ipa_interface.h>
 
 #include "libcamera/internal/debug_controls.h"
+#include "libcamera/internal/matrix.h"
 
 #include <libipa/camera_sensor_helper.h>
 #include <libipa/fc_queue.h>
-#include <libipa/matrix.h>
 #include <libipa/vector.h>
 
 namespace libcamera {

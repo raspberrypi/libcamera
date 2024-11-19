@@ -9,8 +9,9 @@
 
 #include <linux/rkisp1-config.h>
 
+#include "libcamera/internal/matrix.h"
+
 #include "libipa/interpolator.h"
-#include "libipa/matrix.h"
 
 #include "algorithm.h"
 

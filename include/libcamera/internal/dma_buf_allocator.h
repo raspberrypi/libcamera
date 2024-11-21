@@ -12,6 +12,7 @@
 #include <vector>
 
 #include <libcamera/base/flags.h>
+#include <libcamera/base/shared_fd.h>
 #include <libcamera/base/unique_fd.h>
 
 namespace libcamera {
@@ -46,6 +47,26 @@ private:
 	UniqueFD allocFromUDmaBuf(const char *name, std::size_t size);
 	UniqueFD providerHandle_;
 	DmaBufAllocatorFlag type_;
+};
+
+class DmaSyncer final
+{
+public:
+	enum class SyncType {
+		Read = 0,
+		Write,
+		ReadWrite,
+	};
+
+	explicit DmaSyncer(SharedFD fd, SyncType type = SyncType::ReadWrite);
+
+	~DmaSyncer();
+
+private:
+	void sync(uint64_t step);
+
+	SharedFD fd_;
+	uint64_t flags_ = 0;
 };
 
 LIBCAMERA_FLAGS_ENABLE_OPERATORS(DmaBufAllocator::DmaBufAllocatorFlag)

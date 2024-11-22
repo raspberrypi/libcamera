@@ -1,6 +1,4 @@
-# SPDX-License-Identifier: LGPL-2.1-or-later
-#
-# Copyright (C) 2019, Google Inc.
+
 #
 %YAML 1.1
 ---
@@ -1048,5 +1046,20 @@ controls:
       direction: inout
       description: |
         Enable or disable the debug metadata.
+
+  - FrameWallClock:
+      type: int64_t
+      direction: out
+      description: |
+        This timestamp corresponds to the same moment in time as the
+        SensorTimestamp, but is represented as a wall clock time as measured by
+        the CLOCK_REALTIME clock.
+
+        Being a wall clock measurement, it can be used to synchronise timing
+        across different devices.
+
+        \sa SensorTimestamp
+
+        The FrameWallClock control can only be returned in metadata.
 
 ...

@@ -31,7 +31,7 @@ Build-Depends: debhelper-compat (= 13),
                python3-yaml,
                qt6-base-dev [!i386] <!pkg.libcamera.noqt>
 Build-Depends-Indep: doxygen <!nodoc>,
-                     doxygen-latex [!sh4] <!nodoc> | texlive-latex-extra <!nodoc>,
+                     doxygen-latex <!nodoc>,
                      graphviz <!nodoc>,
                      libjs-jquery <!nodoc>,
                      libjs-sphinxdoc <!nodoc>,

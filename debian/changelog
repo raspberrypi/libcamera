@@ -1,3 +1,10 @@
+libcamera (0.3.2-3) UNRELEASED; urgency=medium
+
+  * Drop workaround for doxygen-latex on sh4, no longer required since all
+    these build-deps moved to Build-Depends-Indep.
+
+ -- Dylan Aïssi <daissi@debian.org>  Sat, 23 Nov 2024 09:52:58 +0100
+
 libcamera (0.3.2-2) unstable; urgency=medium
 
   [ Helmut Grohne ]

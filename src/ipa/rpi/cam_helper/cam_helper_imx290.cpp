@@ -73,3 +73,4 @@ static CamHelper *create()
 }
 
 static RegisterCamHelper reg("imx290", &create);
+static RegisterCamHelper reg462("imx462", &create);

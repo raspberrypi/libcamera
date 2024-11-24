@@ -576,6 +576,8 @@ class CameraSensorHelperImx290 : public CameraSensorHelper
 public:
 	CameraSensorHelperImx290()
 	{
+		/* From datasheet: 0xf0 at 12bits. */
+		blackLevel_ = 3840;
 		gainType_ = AnalogueGainExponential;
 		gainConstants_.exp = { 1.0, expGainDb(0.3) };
 	}

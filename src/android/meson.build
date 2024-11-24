@@ -4,6 +4,7 @@ android_deps = [
     dependency('libexif', required : get_option('android')),
     dependency('libjpeg', required : get_option('android')),
     libcamera_private,
+    libyuv_dep,
 ]
 
 android_enabled = true
@@ -14,8 +15,6 @@ foreach dep : android_deps
         subdir_done()
     endif
 endforeach
-
-android_deps += [libyuv_dep]
 
 android_hal_sources = files([
     'camera3_hal.cpp',

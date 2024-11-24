@@ -27,11 +27,13 @@ else
     ipa_sign_module = false
 endif
 
+# libyuv, used by the Android adaptation layer and the virtual pipeline handler.
+# Fallback to a subproject if libyuv isn't found, as it's typically not provided
+# by distributions.
 libyuv_dep = dependency('libyuv', required : false)
 
-# Fallback to a subproject if libyuv isn't found, as it's typically not
-# provided by distributions.
-if not libyuv_dep.found()
+if (pipelines.contains('virtual') or get_option('android').allowed()) and \
+   not libyuv_dep.found()
     cmake = import('cmake')
 
     libyuv_vars = cmake.subproject_options()

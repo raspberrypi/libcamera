@@ -46,7 +46,8 @@ struct ipa_control_info_entry {
 	uint32_t id;
 	uint32_t type;
 	uint32_t offset;
-	uint32_t padding[1];
+	uint8_t direction;
+	uint8_t padding[3];
 };
 
 #ifdef __cplusplus

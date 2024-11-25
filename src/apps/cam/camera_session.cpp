@@ -159,12 +159,18 @@ CameraSession::~CameraSession()
 void CameraSession::listControls() const
 {
 	for (const auto &[id, info] : camera_->controls()) {
+		std::stringstream io;
+		io << "["
+		   << (id->isInput() ? "in" : "  ")
+		   << (id->isOutput() ? "out" : "   ")
+		   << "] ";
+
 		if (info.values().empty()) {
-			std::cout << "Control: "
+			std::cout << "Control: " << io.str()
 				  << id->vendor() << "::" << id->name() << ": "
 				  << info.toString() << std::endl;
 		} else {
-			std::cout << "Control: "
+			std::cout << "Control: " << io.str()
 				  << id->vendor() << "::" << id->name() << ":"
 				  << std::endl;
 			for (const auto &value : info.values()) {

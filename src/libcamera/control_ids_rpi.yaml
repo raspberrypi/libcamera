@@ -9,6 +9,7 @@ vendor: rpi
 controls:
   - StatsOutputEnable:
       type: bool
+      direction: inout
       description: |
         Toggles the Raspberry Pi IPA to output the hardware generated statistics.
 
@@ -21,6 +22,7 @@ controls:
   - Bcm2835StatsOutput:
       type: uint8_t
       size: [n]
+      direction: out
       description: |
         Span of the BCM2835 ISP generated statistics for the current frame.
 
@@ -33,6 +35,7 @@ controls:
   - ScalerCrops:
       type: Rectangle
       size: [n]
+      direction: out
       description: |
         An array of rectangles, where each singular value has identical
         functionality to the ScalerCrop control. This control allows the

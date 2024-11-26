@@ -105,7 +105,7 @@ CameraConfiguration::Status RPiCameraConfiguration::validateColorSpaces([[maybe_
 	Status status = Valid;
 	yuvColorSpace_.reset();
 
-	for (auto cfg : config_) {
+	for (auto &cfg : config_) {
 		/* First fix up raw streams to have the "raw" colour space. */
 		if (PipelineHandlerBase::isRaw(cfg.pixelFormat)) {
 			/* If there was no value here, that doesn't count as "adjusted". */
@@ -130,7 +130,7 @@ CameraConfiguration::Status RPiCameraConfiguration::validateColorSpaces([[maybe_
 	rgbColorSpace_->range = ColorSpace::Range::Full;
 
 	/* Go through the streams again and force everyone to the same colour space. */
-	for (auto cfg : config_) {
+	for (auto &cfg : config_) {
 		if (cfg.colorSpace == ColorSpace::Raw)
 			continue;
 

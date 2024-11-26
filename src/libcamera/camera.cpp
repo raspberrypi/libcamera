@@ -1178,8 +1178,8 @@ int Camera::configure(CameraConfiguration *config)
 	if (ret < 0)
 		return ret;
 
-	for (auto it : *config)
-		it.setStream(nullptr);
+	for (auto &cfg : *config)
+		cfg.setStream(nullptr);
 
 	if (config->validate() != CameraConfiguration::Valid) {
 		LOG(Camera, Error)

@@ -39,7 +39,7 @@ ImageFrameGenerator::create(ImageFrames &imageFrames)
 	 * For each file in the directory, load the image,
 	 * convert it to NV12, and store the pointer.
 	 */
-	for (std::filesystem::path path : imageFrames.files) {
+	for (const auto &path : imageFrames.files) {
 		File file(path);
 		if (!file.open(File::OpenModeFlag::ReadOnly)) {
 			LOG(Virtual, Error) << "Failed to open image file " << file.fileName()

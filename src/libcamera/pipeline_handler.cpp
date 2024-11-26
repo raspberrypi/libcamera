@@ -74,7 +74,7 @@ PipelineHandler::PipelineHandler(CameraManager *manager)
 
 PipelineHandler::~PipelineHandler()
 {
-	for (std::shared_ptr<MediaDevice> media : mediaDevices_)
+	for (std::shared_ptr<MediaDevice> &media : mediaDevices_)
 		media->release();
 }
 

@@ -325,8 +325,9 @@ std::vector<std::string> ConverterFactoryBase::names()
 
 	for (ConverterFactoryBase *factory : factories) {
 		list.push_back(factory->name_);
-		for (auto alias : factory->compatibles())
-			list.push_back(alias);
+
+		const auto &compatibles = factory->compatibles();
+		list.insert(list.end(), compatibles.begin(), compatibles.end());
 	}
 
 	return list;

@@ -388,7 +388,7 @@ std::shared_ptr<Camera> CameraManager::get(const std::string &id)
 
 	MutexLocker locker(d->mutex_);
 
-	for (std::shared_ptr<Camera> camera : d->cameras_) {
+	for (const std::shared_ptr<Camera> &camera : d->cameras_) {
 		if (camera->id() == id)
 			return camera;
 	}

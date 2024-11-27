@@ -2124,15 +2124,24 @@ V4L2PixelFormat V4L2VideoDevice::toV4L2PixelFormat(const PixelFormat &pixelForma
  * \class V4L2M2MDevice
  * \brief Memory-to-Memory video device
  *
+ * Memory to Memory devices in the kernel using the V4L2 M2M API can
+ * operate with multiple contexts for parallel operations on a single
+ * device. Each instance of a V4L2M2MDevice represents a single context.
+ *
  * The V4L2M2MDevice manages two V4L2VideoDevice instances on the same
  * deviceNode which operate together using two queues to implement the V4L2
  * Memory to Memory API.
  *
- * The two devices should be opened by calling open() on the V4L2M2MDevice, and
- * can be closed by calling close on the V4L2M2MDevice.
+ * Users of this class should create a new instance of the V4L2M2MDevice for
+ * each desired execution context and then open it by calling open() on the
+ * V4L2M2MDevice and close it by calling close() on the V4L2M2MDevice.
  *
  * Calling V4L2VideoDevice::open() and V4L2VideoDevice::close() on the capture
  * or output V4L2VideoDevice is not permitted.
+ *
+ * Once the M2M device is open, users can operate on the output and capture
+ * queues represented by the V4L2VideoDevice returned by the output() and
+ * capture() functions.
  */
 
 /**

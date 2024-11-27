@@ -331,6 +331,14 @@ const CameraSensorProperties *CameraSensorProperties::get(const std::string &sen
 		{ "ov5647", {
 			.unitCellSize = { 1400, 1400 },
 			.testPatternModes = {},
+			/*
+			 * We run this sensor in a mode where the gain delay is
+			 * bumped up to 2. It seems to be the only way to make
+			 * the delays "predictable".
+			 *
+			 * \todo Verify these delays properly, as the upstream
+			 * driver appears to configure _no_ delay.
+			 */
 			.sensorDelays = {
 				.exposureDelay = 2,
 				.gainDelay = 2,

@@ -18,8 +18,6 @@ public:
 	CamHelperOv64a40();
 	uint32_t gainCode(double gain) const override;
 	double gain(uint32_t gainCode) const override;
-	void getDelays(int &exposureDelay, int &gainDelay,
-		       int &vblankDelay, int &hblankDelay) const override;
 	double getModeSensitivity(const CameraMode &mode) const override;
 
 private:
@@ -43,16 +41,6 @@ uint32_t CamHelperOv64a40::gainCode(double gain) const
 double CamHelperOv64a40::gain(uint32_t gainCode) const
 {
 	return static_cast<double>(gainCode) / 128.0;
-}
-
-void CamHelperOv64a40::getDelays(int &exposureDelay, int &gainDelay,
-				 int &vblankDelay, int &hblankDelay) const
-{
-	/* The driver appears to behave as follows: */
-	exposureDelay = 2;
-	gainDelay = 2;
-	vblankDelay = 2;
-	hblankDelay = 2;
 }
 
 double CamHelperOv64a40::getModeSensitivity(const CameraMode &mode) const

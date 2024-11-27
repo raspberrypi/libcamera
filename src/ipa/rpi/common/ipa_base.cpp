@@ -134,18 +134,8 @@ int32_t IpaBase::init(const IPASettings &settings, const InitParams &params, Ini
 		return -EINVAL;
 	}
 
-	/*
-	 * Pass out the sensor config to the pipeline handler in order
-	 * to setup the staggered writer class.
-	 */
-	int gainDelay, exposureDelay, vblankDelay, hblankDelay, sensorMetadata;
-	helper_->getDelays(exposureDelay, gainDelay, vblankDelay, hblankDelay);
-	sensorMetadata = helper_->sensorEmbeddedDataPresent();
-
-	result->sensorConfig.gainDelay = gainDelay;
-	result->sensorConfig.exposureDelay = exposureDelay;
-	result->sensorConfig.vblankDelay = vblankDelay;
-	result->sensorConfig.hblankDelay = hblankDelay;
+	/* Pass out the sensor metadata to the pipeline handler */
+	int sensorMetadata = helper_->sensorEmbeddedDataPresent();
 	result->sensorConfig.sensorMetadata = sensorMetadata;
 
 	/* Load the tuning file for this sensor. */

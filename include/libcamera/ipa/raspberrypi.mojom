@@ -12,10 +12,6 @@ import "include/libcamera/ipa/core.mojom";
 const uint32 MaxLsGridSize = 0x8000;
 
 struct SensorConfig {
-	uint32 gainDelay;
-	uint32 exposureDelay;
-	uint32 vblankDelay;
-	uint32 hblankDelay;
 	uint32 sensorMetadata;
 };
 

@@ -46,7 +46,8 @@ LOG_DECLARE_CATEGORY(SoftwareIsp)
 class SoftwareIsp
 {
 public:
-	SoftwareIsp(PipelineHandler *pipe, const CameraSensor *sensor);
+	SoftwareIsp(PipelineHandler *pipe, const CameraSensor *sensor,
+		    ControlInfoMap *ipaControls);
 	~SoftwareIsp();
 
 	int loadConfiguration([[maybe_unused]] const std::string &filename) { return 0; }

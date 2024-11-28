@@ -50,7 +50,8 @@ public:
 	int init(const IPASettings &settings,
 		 const SharedFD &fdStats,
 		 const SharedFD &fdParams,
-		 const ControlInfoMap &sensorInfoMap) override;
+		 const ControlInfoMap &sensorInfoMap,
+		 ControlInfoMap *ipaControls) override;
 	int configure(const IPAConfigInfo &configInfo) override;
 
 	int start() override;
@@ -87,7 +88,8 @@ IPASoftSimple::~IPASoftSimple()
 int IPASoftSimple::init(const IPASettings &settings,
 			const SharedFD &fdStats,
 			const SharedFD &fdParams,
-			const ControlInfoMap &sensorInfoMap)
+			const ControlInfoMap &sensorInfoMap,
+			ControlInfoMap *ipaControls)
 {
 	camHelper_ = CameraSensorHelperFactoryBase::create(settings.sensorModel);
 	if (!camHelper_) {
@@ -157,6 +159,9 @@ int IPASoftSimple::init(const IPASettings &settings,
 
 		stats_ = static_cast<SwIspStats *>(mem);
 	}
+
+	ControlInfoMap::Map ctrlMap = context_.ctrlMap;
+	*ipaControls = ControlInfoMap(std::move(ctrlMap), controls::controls);
 
 	/*
 	 * Check if the sensor driver supports the controls required by the

@@ -13,6 +13,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <libcamera/controls.h>
 #include <libcamera/formats.h>
 #include <libcamera/stream.h>
 
@@ -60,9 +61,11 @@ LOG_DEFINE_CATEGORY(SoftwareIsp)
  * \brief Constructs SoftwareIsp object
  * \param[in] pipe The pipeline handler in use
  * \param[in] sensor Pointer to the CameraSensor instance owned by the pipeline
+ * \param[out] ipaControls The IPA controls to update
  * handler
  */
-SoftwareIsp::SoftwareIsp(PipelineHandler *pipe, const CameraSensor *sensor)
+SoftwareIsp::SoftwareIsp(PipelineHandler *pipe, const CameraSensor *sensor,
+			 ControlInfoMap *ipaControls)
 	: dmaHeap_(DmaBufAllocator::DmaBufAllocatorFlag::CmaHeap |
 		   DmaBufAllocator::DmaBufAllocatorFlag::SystemHeap |
 		   DmaBufAllocator::DmaBufAllocatorFlag::UDmaBuf)
@@ -124,7 +127,8 @@ SoftwareIsp::SoftwareIsp(PipelineHandler *pipe, const CameraSensor *sensor)
 	int ret = ipa_->init(IPASettings{ ipaTuningFile, sensor->model() },
 			     debayer_->getStatsFD(),
 			     sharedParams_.fd(),
-			     sensor->controls());
+			     sensor->controls(),
+			     ipaControls);
 	if (ret) {
 		LOG(SoftwareIsp, Error) << "IPA init failed";
 		debayer_.reset();

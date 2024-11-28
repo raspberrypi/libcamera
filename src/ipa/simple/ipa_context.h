@@ -54,6 +54,11 @@ struct IPAFrameContext : public FrameContext {
 };
 
 struct IPAContext {
+	IPAContext(unsigned int frameContextSize)
+		: frameContexts(frameContextSize)
+	{
+	}
+
 	IPASessionConfiguration configuration;
 	IPAActiveState activeState;
 	FCQueue<IPAFrameContext> frameContexts;

@@ -41,7 +41,7 @@ class IPASoftSimple : public ipa::soft::IPASoftInterface, public Module
 {
 public:
 	IPASoftSimple()
-		: context_({ {}, {}, { kMaxFrameContexts } })
+		: context_(kMaxFrameContexts)
 	{
 	}
 

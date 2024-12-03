@@ -7,6 +7,9 @@
 
 #pragma once
 
+#include <optional>
+#include <stdint.h>
+
 #include "algorithm.h"
 
 namespace libcamera {
@@ -29,6 +32,7 @@ public:
 private:
 	int32_t exposure_;
 	double gain_;
+	std::optional<uint8_t> definedLevel_;
 };
 
 } /* namespace ipa::soft::algorithms */

@@ -47,9 +47,9 @@ class AGCRkISP1(AGC):
         }
 
     def _generate_exposure_modes(self) -> dict:
-        normal = {'exposure-time': [100, 10000, 30000, 60000, 120000],
+        normal = {'exposureTime': [100, 10000, 30000, 60000, 120000],
                   'gain': [2.0, 4.0, 6.0, 6.0, 6.0]}
-        short = {'exposure-time': [100, 5000, 10000, 20000, 120000],
+        short = {'exposureTime': [100, 5000, 10000, 20000, 120000],
                  'gain': [2.0, 4.0, 6.0, 6.0, 6.0]}
 
         return {'ExposureNormal': normal, 'ExposureShort': short}

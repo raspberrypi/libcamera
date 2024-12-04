@@ -248,7 +248,7 @@ int AgcMeanLuminance::parseExposureModes(const YamlObject &tuningData)
 			}
 
 			std::vector<uint32_t> exposureTimes =
-				modeValues["exposure-time"].getList<uint32_t>().value_or(std::vector<uint32_t>{});
+				modeValues["exposureTime"].getList<uint32_t>().value_or(std::vector<uint32_t>{});
 			std::vector<double> gains =
 				modeValues["gain"].getList<double>().value_or(std::vector<double>{});
 
@@ -338,7 +338,7 @@ int AgcMeanLuminance::parseExposureModes(const YamlObject &tuningData)
  * For the AeExposureMode control the data should contain a dictionary called
  * AeExposureMode containing per-mode setting dictionaries with the key being a
  * value from \ref controls::AeExposureModeNameValueMap. Each mode dict should
- * contain an array of exposure times with the key "exposure-time" and an array
+ * contain an array of exposure times with the key "exposureTime" and an array
  * of gain values with the key "gain", in this format:
  *
  * \code{.unparsed}
@@ -346,10 +346,10 @@ int AgcMeanLuminance::parseExposureModes(const YamlObject &tuningData)
  *   - Agc:
  *       AeExposureMode:
  *         ExposureNormal:
- *           exposure-time: [ 100, 10000, 30000, 60000, 120000 ]
+ *           exposureTime: [ 100, 10000, 30000, 60000, 120000 ]
  *           gain: [ 2.0, 4.0, 6.0, 8.0, 10.0 ]
  *         ExposureShort:
- *           exposure-time: [ 100, 10000, 30000, 60000, 120000 ]
+ *           exposureTime: [ 100, 10000, 30000, 60000, 120000 ]
  *           gain: [ 2.0, 4.0, 6.0, 8.0, 10.0 ]
  *
  * \endcode

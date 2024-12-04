@@ -509,8 +509,17 @@ YamlParserContext::EventPtr YamlParserContext::nextEvent()
 	EventPtr event(new yaml_event_t);
 
 	/* yaml_parser_parse returns 1 when it succeeds */
-	if (!yaml_parser_parse(&parser_, event.get()))
+	if (!yaml_parser_parse(&parser_, event.get())) {
+		File *file = static_cast<File *>(parser_.read_handler_data);
+
+		LOG(YamlParser, Error) << file->fileName() << ":"
+				       << parser_.problem_mark.line << ":"
+				       << parser_.problem_mark.column << " "
+				       << parser_.problem << " "
+				       << parser_.context;
+
 		return nullptr;
+	}
 
 	return event;
 }

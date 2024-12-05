@@ -204,7 +204,11 @@ public:
 
 		iterator &operator++();
 		std::string operator*() const;
-		bool operator!=(const iterator &other) const;
+
+		bool operator!=(const iterator &other) const
+		{
+			return pos_ != other.pos_;
+		}
 
 	private:
 		const StringSplitter *ss_;
@@ -212,8 +216,15 @@ public:
 		std::string::size_type next_;
 	};
 
-	iterator begin() const;
-	iterator end() const;
+	iterator begin() const
+	{
+		return { this, 0 };
+	}
+
+	iterator end() const
+	{
+		return { this, std::string::npos };
+	}
 
 private:
 	std::string str_;

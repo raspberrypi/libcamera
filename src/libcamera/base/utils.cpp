@@ -276,21 +276,6 @@ std::string details::StringSplitter::iterator::operator*() const
 	return ss_->str_.substr(pos_, count);
 }
 
-bool details::StringSplitter::iterator::operator!=(const details::StringSplitter::iterator &other) const
-{
-	return pos_ != other.pos_;
-}
-
-details::StringSplitter::iterator details::StringSplitter::begin() const
-{
-	return iterator(this, 0);
-}
-
-details::StringSplitter::iterator details::StringSplitter::end() const
-{
-	return iterator(this, std::string::npos);
-}
-
 /**
  * \fn template<typename Container, typename UnaryOp> \
  * std::string utils::join(const Container &items, const std::string &sep, UnaryOp op)

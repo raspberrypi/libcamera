@@ -205,9 +205,14 @@ public:
 		iterator &operator++();
 		std::string operator*() const;
 
+		bool operator==(const iterator &other) const
+		{
+			return pos_ == other.pos_;
+		}
+
 		bool operator!=(const iterator &other) const
 		{
-			return pos_ != other.pos_;
+			return !(*this == other);
 		}
 
 	private:

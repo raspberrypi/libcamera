@@ -1276,6 +1276,11 @@ PiSPCameraData::platformValidate(RPi::RPiCameraConfiguration *rpiConfig) const
 		outStreams[i].format =
 			RPi::PipelineHandlerBase::toV4L2DeviceFormat(outStreams[i].dev, outStreams[i].cfg);
 
+		if (!outStreams[i].format.fourcc.isValid()) {
+		    LOG(RPI, Error) << "Unsupported Pixel Format";
+		    return CameraConfiguration::Status::Invalid;
+		}
+
 		/* Compute the optimal stride for the BE output buffers. */
 		computeOptimalStride(outStreams[i].format);
 

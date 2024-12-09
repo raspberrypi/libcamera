@@ -11,6 +11,7 @@
 #include <optional>
 #include <stdint.h>
 #include <string>
+#include <variant>
 #include <vector>
 
 #include <libcamera/base/class.h>
@@ -30,31 +31,20 @@ public:
 	virtual double gain(uint32_t gainCode) const;
 
 protected:
-	enum AnalogueGainType {
-		AnalogueGainLinear,
-		AnalogueGainExponential,
-	};
-
-	struct AnalogueGainLinearConstants {
+	struct AnalogueGainLinear {
 		int16_t m0;
 		int16_t c0;
 		int16_t m1;
 		int16_t c1;
 	};
 
-	struct AnalogueGainExpConstants {
+	struct AnalogueGainExp {
 		double a;
 		double m;
 	};
 
-	union AnalogueGainConstants {
-		AnalogueGainLinearConstants linear;
-		AnalogueGainExpConstants exp;
-	};
-
 	std::optional<int16_t> blackLevel_;
-	AnalogueGainType gainType_;
-	AnalogueGainConstants gainConstants_;
+	std::variant<std::monostate, AnalogueGainLinear, AnalogueGainExp> gain_;
 
 private:
 	LIBCAMERA_DISABLE_COPY_AND_MOVE(CameraSensorHelper)

@@ -87,21 +87,16 @@ namespace ipa {
  */
 uint32_t CameraSensorHelper::gainCode(double gain) const
 {
-	const AnalogueGainConstants &k = gainConstants_;
+	if (auto *l = std::get_if<AnalogueGainLinear>(&gain_)) {
+		ASSERT(l->m0 == 0 || l->m1 == 0);
 
-	switch (gainType_) {
-	case AnalogueGainLinear:
-		ASSERT(k.linear.m0 == 0 || k.linear.m1 == 0);
+		return (l->c0 - l->c1 * gain) /
+		       (l->m1 * gain - l->m0);
+	} else if (auto *e = std::get_if<AnalogueGainExp>(&gain_)) {
+		ASSERT(e->a != 0 && e->m != 0);
 
-		return (k.linear.c0 - k.linear.c1 * gain) /
-		       (k.linear.m1 * gain - k.linear.m0);
-
-	case AnalogueGainExponential:
-		ASSERT(k.exp.a != 0 && k.exp.m != 0);
-
-		return std::log2(gain / k.exp.a) / k.exp.m;
-
-	default:
+		return std::log2(gain / e->a) / e->m;
+	} else {
 		ASSERT(false);
 		return 0;
 	}
@@ -119,38 +114,26 @@ uint32_t CameraSensorHelper::gainCode(double gain) const
  */
 double CameraSensorHelper::gain(uint32_t gainCode) const
 {
-	const AnalogueGainConstants &k = gainConstants_;
 	double gain = static_cast<double>(gainCode);
 
-	switch (gainType_) {
-	case AnalogueGainLinear:
-		ASSERT(k.linear.m0 == 0 || k.linear.m1 == 0);
+	if (auto *l = std::get_if<AnalogueGainLinear>(&gain_)) {
+		ASSERT(l->m0 == 0 || l->m1 == 0);
 
-		return (k.linear.m0 * gain + k.linear.c0) /
-		       (k.linear.m1 * gain + k.linear.c1);
+		return (l->m0 * gain + l->c0) /
+		       (l->m1 * gain + l->c1);
+	} else if (auto *e = std::get_if<AnalogueGainExp>(&gain_)) {
+		ASSERT(e->a != 0 && e->m != 0);
 
-	case AnalogueGainExponential:
-		ASSERT(k.exp.a != 0 && k.exp.m != 0);
-
-		return k.exp.a * std::exp2(k.exp.m * gain);
-
-	default:
+		return e->a * std::exp2(e->m * gain);
+	} else {
 		ASSERT(false);
 		return 0.0;
 	}
 }
 
 /**
- * \enum CameraSensorHelper::AnalogueGainType
- * \brief The gain calculation modes as defined by the MIPI CCS
- *
- * Describes the image sensor analogue gain capabilities.
- * Two modes are possible, depending on the sensor: Linear and Exponential.
- */
-
-/**
- * \var CameraSensorHelper::AnalogueGainLinear
- * \brief Gain is computed using linear gain estimation
+ * \struct CameraSensorHelper::AnalogueGainLinear
+ * \brief Analogue gain constants for the linear gain model
  *
  * The relationship between the integer gain parameter and the resulting gain
  * multiplier is given by the following equation:
@@ -165,11 +148,27 @@ double CameraSensorHelper::gain(uint32_t gainCode) const
  * The full Gain equation therefore reduces to either:
  *
  * \f$gain=\frac{c0}{m1x+c1}\f$ or \f$\frac{m0x+c0}{c1}\f$
+ *
+ * \var CameraSensorHelper::AnalogueGainLinear::m0
+ * \brief Constant used in the linear gain coding/decoding
+ *
+ * \note Either m0 or m1 shall be zero.
+ *
+ * \var CameraSensorHelper::AnalogueGainLinear::c0
+ * \brief Constant used in the linear gain coding/decoding
+ *
+ * \var CameraSensorHelper::AnalogueGainLinear::m1
+ * \brief Constant used in the linear gain coding/decoding
+ *
+ * \note Either m0 or m1 shall be zero.
+ *
+ * \var CameraSensorHelper::AnalogueGainLinear::c1
+ * \brief Constant used in the linear gain coding/decoding
  */
 
 /**
- * \var CameraSensorHelper::AnalogueGainExponential
- * \brief Gain is expressed using an exponential model
+ * \struct CameraSensorHelper::AnalogueGainExp
+ * \brief Analogue gain constants for the exponential gain model
  *
  * The relationship between the integer gain parameter and the resulting gain
  * multiplier is given by the following equation:
@@ -185,52 +184,12 @@ double CameraSensorHelper::gain(uint32_t gainCode) const
  *
  * When the gain is expressed in dB, 'a' is equal to 1 and 'm' to
  * \f$log_{2}{10^{\frac{1}{20}}}\f$.
- */
-
-/**
- * \struct CameraSensorHelper::AnalogueGainLinearConstants
- * \brief Analogue gain constants for the linear gain model
  *
- * \var CameraSensorHelper::AnalogueGainLinearConstants::m0
- * \brief Constant used in the linear gain coding/decoding
- *
- * \note Either m0 or m1 shall be zero.
- *
- * \var CameraSensorHelper::AnalogueGainLinearConstants::c0
- * \brief Constant used in the linear gain coding/decoding
- *
- * \var CameraSensorHelper::AnalogueGainLinearConstants::m1
- * \brief Constant used in the linear gain coding/decoding
- *
- * \note Either m0 or m1 shall be zero.
- *
- * \var CameraSensorHelper::AnalogueGainLinearConstants::c1
- * \brief Constant used in the linear gain coding/decoding
- */
-
-/**
- * \struct CameraSensorHelper::AnalogueGainExpConstants
- * \brief Analogue gain constants for the exponential gain model
- *
- * \var CameraSensorHelper::AnalogueGainExpConstants::a
+ * \var CameraSensorHelper::AnalogueGainExp::a
  * \brief Constant used in the exponential gain coding/decoding
  *
- * \var CameraSensorHelper::AnalogueGainExpConstants::m
+ * \var CameraSensorHelper::AnalogueGainExp::m
  * \brief Constant used in the exponential gain coding/decoding
- */
-
-/**
- * \struct CameraSensorHelper::AnalogueGainConstants
- * \brief Analogue gain model constants
- *
- * This union stores the constants used to calculate the analogue gain. The
- * CameraSensorHelper::gainType_ variable selects which union member is valid.
- *
- * \var CameraSensorHelper::AnalogueGainConstants::linear
- * \brief Constants for the linear gain model
- *
- * \var CameraSensorHelper::AnalogueGainConstants::exp
- * \brief Constants for the exponential gain model
  */
 
 /**
@@ -240,12 +199,7 @@ double CameraSensorHelper::gain(uint32_t gainCode) const
  */
 
 /**
- * \var CameraSensorHelper::gainType_
- * \brief The analogue gain model type
- */
-
-/**
- * \var CameraSensorHelper::gainConstants_
+ * \var CameraSensorHelper::gain_
  * \brief The analogue gain parameters used for calculation
  *
  * The analogue gain is calculated through a formula, and its parameters are
@@ -526,8 +480,7 @@ public:
 	{
 		/* From datasheet: 64 at 10bits. */
 		blackLevel_ = 4096;
-		gainType_ = AnalogueGainLinear;
-		gainConstants_.linear = { 100, 0, 0, 1024 };
+		gain_ = AnalogueGainLinear{ 100, 0, 0, 1024 };
 	}
 };
 REGISTER_CAMERA_SENSOR_HELPER("gc05a2", CameraSensorHelperGc05a2)
@@ -539,8 +492,7 @@ public:
 	{
 		/* From datasheet: 64 at 10bits. */
 		blackLevel_ = 4096;
-		gainType_ = AnalogueGainLinear;
-		gainConstants_.linear = { 100, 0, 0, 1024 };
+		gain_ = AnalogueGainLinear{ 100, 0, 0, 1024 };
 	}
 };
 REGISTER_CAMERA_SENSOR_HELPER("gc08a3", CameraSensorHelperGc08a3)
@@ -552,8 +504,7 @@ public:
 	{
 		/* From datasheet: 64 at 10bits. */
 		blackLevel_ = 4096;
-		gainType_ = AnalogueGainLinear;
-		gainConstants_.linear = { 0, 512, -1, 512 };
+		gain_ = AnalogueGainLinear{ 0, 512, -1, 512 };
 	}
 };
 REGISTER_CAMERA_SENSOR_HELPER("imx214", CameraSensorHelperImx214)
@@ -565,8 +516,7 @@ public:
 	{
 		/* From datasheet: 64 at 10bits. */
 		blackLevel_ = 4096;
-		gainType_ = AnalogueGainLinear;
-		gainConstants_.linear = { 0, 256, -1, 256 };
+		gain_ = AnalogueGainLinear{ 0, 256, -1, 256 };
 	}
 };
 REGISTER_CAMERA_SENSOR_HELPER("imx219", CameraSensorHelperImx219)
@@ -578,8 +528,7 @@ public:
 	{
 		/* From datasheet: 0x40 at 10bits. */
 		blackLevel_ = 4096;
-		gainType_ = AnalogueGainLinear;
-		gainConstants_.linear = { 0, 512, -1, 512 };
+		gain_ = AnalogueGainLinear{ 0, 512, -1, 512 };
 	}
 };
 REGISTER_CAMERA_SENSOR_HELPER("imx258", CameraSensorHelperImx258)
@@ -591,8 +540,7 @@ public:
 	{
 		/* From datasheet: 0x32 at 10bits. */
 		blackLevel_ = 3200;
-		gainType_ = AnalogueGainLinear;
-		gainConstants_.linear = { 0, 2048, -1, 2048 };
+		gain_ = AnalogueGainLinear{ 0, 2048, -1, 2048 };
 	}
 };
 REGISTER_CAMERA_SENSOR_HELPER("imx283", CameraSensorHelperImx283)
@@ -604,8 +552,7 @@ public:
 	{
 		/* From datasheet: 0xf0 at 12bits. */
 		blackLevel_ = 3840;
-		gainType_ = AnalogueGainExponential;
-		gainConstants_.exp = { 1.0, expGainDb(0.3) };
+		gain_ = AnalogueGainExp{ 1.0, expGainDb(0.3) };
 	}
 };
 REGISTER_CAMERA_SENSOR_HELPER("imx290", CameraSensorHelperImx290)
@@ -615,8 +562,7 @@ class CameraSensorHelperImx296 : public CameraSensorHelper
 public:
 	CameraSensorHelperImx296()
 	{
-		gainType_ = AnalogueGainExponential;
-		gainConstants_.exp = { 1.0, expGainDb(0.1) };
+		gain_ = AnalogueGainExp{ 1.0, expGainDb(0.1) };
 	}
 };
 REGISTER_CAMERA_SENSOR_HELPER("imx296", CameraSensorHelperImx296)
@@ -633,8 +579,7 @@ public:
 	{
 		/* From datasheet: 0x32 at 10bits. */
 		blackLevel_ = 3200;
-		gainType_ = AnalogueGainExponential;
-		gainConstants_.exp = { 1.0, expGainDb(0.3) };
+		gain_ = AnalogueGainExp{ 1.0, expGainDb(0.3) };
 	}
 };
 REGISTER_CAMERA_SENSOR_HELPER("imx335", CameraSensorHelperImx335)
@@ -644,8 +589,7 @@ class CameraSensorHelperImx415 : public CameraSensorHelper
 public:
 	CameraSensorHelperImx415()
 	{
-		gainType_ = AnalogueGainExponential;
-		gainConstants_.exp = { 1.0, expGainDb(0.3) };
+		gain_ = AnalogueGainExp{ 1.0, expGainDb(0.3) };
 	}
 };
 REGISTER_CAMERA_SENSOR_HELPER("imx415", CameraSensorHelperImx415)
@@ -660,8 +604,7 @@ class CameraSensorHelperImx477 : public CameraSensorHelper
 public:
 	CameraSensorHelperImx477()
 	{
-		gainType_ = AnalogueGainLinear;
-		gainConstants_.linear = { 0, 1024, -1, 1024 };
+		gain_ = AnalogueGainLinear{ 0, 1024, -1, 1024 };
 	}
 };
 REGISTER_CAMERA_SENSOR_HELPER("imx477", CameraSensorHelperImx477)
@@ -675,8 +618,7 @@ public:
 		 * The Sensor Manual doesn't appear to document the gain model.
 		 * This has been validated with some empirical testing only.
 		 */
-		gainType_ = AnalogueGainLinear;
-		gainConstants_.linear = { 1, 0, 0, 128 };
+		gain_ = AnalogueGainLinear{ 1, 0, 0, 128 };
 	}
 };
 REGISTER_CAMERA_SENSOR_HELPER("ov2685", CameraSensorHelperOv2685)
@@ -686,8 +628,7 @@ class CameraSensorHelperOv2740 : public CameraSensorHelper
 public:
 	CameraSensorHelperOv2740()
 	{
-		gainType_ = AnalogueGainLinear;
-		gainConstants_.linear = { 1, 0, 0, 128 };
+		gain_ = AnalogueGainLinear{ 1, 0, 0, 128 };
 	}
 };
 REGISTER_CAMERA_SENSOR_HELPER("ov2740", CameraSensorHelperOv2740)
@@ -699,8 +640,7 @@ public:
 	{
 		/* From datasheet: 0x40 at 12bits. */
 		blackLevel_ = 1024;
-		gainType_ = AnalogueGainLinear;
-		gainConstants_.linear = { 1, 0, 0, 128 };
+		gain_ = AnalogueGainLinear{ 1, 0, 0, 128 };
 	}
 };
 REGISTER_CAMERA_SENSOR_HELPER("ov4689", CameraSensorHelperOv4689)
@@ -712,8 +652,7 @@ public:
 	{
 		/* From datasheet: 0x10 at 10bits. */
 		blackLevel_ = 1024;
-		gainType_ = AnalogueGainLinear;
-		gainConstants_.linear = { 1, 0, 0, 16 };
+		gain_ = AnalogueGainLinear{ 1, 0, 0, 16 };
 	}
 };
 REGISTER_CAMERA_SENSOR_HELPER("ov5640", CameraSensorHelperOv5640)
@@ -723,8 +662,7 @@ class CameraSensorHelperOv5647 : public CameraSensorHelper
 public:
 	CameraSensorHelperOv5647()
 	{
-		gainType_ = AnalogueGainLinear;
-		gainConstants_.linear = { 1, 0, 0, 16 };
+		gain_ = AnalogueGainLinear{ 1, 0, 0, 16 };
 	}
 };
 REGISTER_CAMERA_SENSOR_HELPER("ov5647", CameraSensorHelperOv5647)
@@ -734,8 +672,7 @@ class CameraSensorHelperOv5670 : public CameraSensorHelper
 public:
 	CameraSensorHelperOv5670()
 	{
-		gainType_ = AnalogueGainLinear;
-		gainConstants_.linear = { 1, 0, 0, 128 };
+		gain_ = AnalogueGainLinear{ 1, 0, 0, 128 };
 	}
 };
 REGISTER_CAMERA_SENSOR_HELPER("ov5670", CameraSensorHelperOv5670)
@@ -747,8 +684,7 @@ public:
 	{
 		/* From Linux kernel driver: 0x40 at 10bits. */
 		blackLevel_ = 4096;
-		gainType_ = AnalogueGainLinear;
-		gainConstants_.linear = { 1, 0, 0, 128 };
+		gain_ = AnalogueGainLinear{ 1, 0, 0, 128 };
 	}
 };
 REGISTER_CAMERA_SENSOR_HELPER("ov5675", CameraSensorHelperOv5675)
@@ -758,8 +694,7 @@ class CameraSensorHelperOv5693 : public CameraSensorHelper
 public:
 	CameraSensorHelperOv5693()
 	{
-		gainType_ = AnalogueGainLinear;
-		gainConstants_.linear = { 1, 0, 0, 16 };
+		gain_ = AnalogueGainLinear{ 1, 0, 0, 16 };
 	}
 };
 REGISTER_CAMERA_SENSOR_HELPER("ov5693", CameraSensorHelperOv5693)
@@ -769,8 +704,7 @@ class CameraSensorHelperOv64a40 : public CameraSensorHelper
 public:
 	CameraSensorHelperOv64a40()
 	{
-		gainType_ = AnalogueGainLinear;
-		gainConstants_.linear = { 1, 0, 0, 128 };
+		gain_ = AnalogueGainLinear{ 1, 0, 0, 128 };
 	}
 };
 REGISTER_CAMERA_SENSOR_HELPER("ov64a40", CameraSensorHelperOv64a40)
@@ -780,15 +714,13 @@ class CameraSensorHelperOv8858 : public CameraSensorHelper
 public:
 	CameraSensorHelperOv8858()
 	{
-		gainType_ = AnalogueGainLinear;
-
 		/*
 		 * \todo Validate the selected 1/128 step value as it differs
 		 * from what the sensor manual describes.
 		 *
 		 * See: https://patchwork.linuxtv.org/project/linux-media/patch/20221106171129.166892-2-nicholas@rothemail.net/#142267
 		 */
-		gainConstants_.linear = { 1, 0, 0, 128 };
+		gain_ = AnalogueGainLinear{ 1, 0, 0, 128 };
 	}
 };
 REGISTER_CAMERA_SENSOR_HELPER("ov8858", CameraSensorHelperOv8858)
@@ -798,8 +730,7 @@ class CameraSensorHelperOv8865 : public CameraSensorHelper
 public:
 	CameraSensorHelperOv8865()
 	{
-		gainType_ = AnalogueGainLinear;
-		gainConstants_.linear = { 1, 0, 0, 128 };
+		gain_ = AnalogueGainLinear{ 1, 0, 0, 128 };
 	}
 };
 REGISTER_CAMERA_SENSOR_HELPER("ov8865", CameraSensorHelperOv8865)
@@ -809,8 +740,7 @@ class CameraSensorHelperOv13858 : public CameraSensorHelper
 public:
 	CameraSensorHelperOv13858()
 	{
-		gainType_ = AnalogueGainLinear;
-		gainConstants_.linear = { 1, 0, 0, 128 };
+		gain_ = AnalogueGainLinear{ 1, 0, 0, 128 };
 	}
 };
 REGISTER_CAMERA_SENSOR_HELPER("ov13858", CameraSensorHelperOv13858)

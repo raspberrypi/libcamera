@@ -521,7 +521,7 @@ handler and camera manager using `registerCamera`_.
 Finally with a successful construction, we return 'true' indicating that the
 PipelineHandler successfully matched and constructed a device.
 
-.. _Camera::create: https://libcamera.org/api-html/classlibcamera_1_1Camera.html#a453740e0d2a2f495048ae307a85a2574
+.. _Camera::create: https://libcamera.org/internal-api-html/classlibcamera_1_1Camera.html#adf5e6c22411f953bfaa1ae21155d6c31
 .. _registerCamera: https://libcamera.org/api-html/classlibcamera_1_1PipelineHandler.html#adf02a7f1bbd87aca73c0e8d8e0e6c98b
 
 .. code-block:: cpp

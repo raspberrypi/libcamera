@@ -2031,10 +2031,9 @@ int V4L2VideoDevice::streamOff()
 	/* Send back all queued buffers. */
 	for (auto it : queuedBuffers_) {
 		FrameBuffer *buffer = it.second;
-		FrameMetadata &metadata = buffer->_d()->metadata();
 
 		cache_->put(it.first);
-		metadata.status = FrameMetadata::FrameCancelled;
+		buffer->_d()->cancel();
 		bufferReady.emit(buffer);
 	}
 

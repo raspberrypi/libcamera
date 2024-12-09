@@ -827,9 +827,7 @@ To generate a ``StreamConfiguration``, you need a list of pixel formats and
 frame sizes which are supported as outputs of the stream. You can fetch a map of
 the ``V4LPixelFormat`` and ``SizeRange`` supported by the underlying output
 device, but the pipeline handler needs to convert this to a
-``libcamera::PixelFormat`` type to pass to applications. We do this here using
-``std::transform`` to convert the formats and populate a new ``PixelFormat`` map
-as shown below.
+``libcamera::PixelFormat`` type to pass to applications.
 
 Continue adding the following code example to our ``generateConfiguration``
 implementation.
@@ -839,14 +837,12 @@ implementation.
    std::map<V4L2PixelFormat, std::vector<SizeRange>> v4l2Formats =
            data->video_->formats();
    std::map<PixelFormat, std::vector<SizeRange>> deviceFormats;
-   std::transform(v4l2Formats.begin(), v4l2Formats.end(),
-          std::inserter(deviceFormats, deviceFormats.begin()),
-          [&](const decltype(v4l2Formats)::value_type &format) {
-              return decltype(deviceFormats)::value_type{
-                  format.first.toPixelFormat(),
-                  format.second
-              };
-          });
+
+   for (auto &[v4l2PixelFormat, sizes] : v4l2Formats) {
+           PixelFormat pixelFormat = v4l2PixelFormat.toPixelFormat();
+           if (pixelFormat.isValid())
+                   deviceFormats.try_emplace(pixelFormat, std::move(sizes));
+   }
 
 The `StreamFormats`_ class holds information about the pixel formats and frame
 sizes that a stream can support. The class groups size information by the pixel

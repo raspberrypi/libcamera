@@ -799,8 +799,7 @@ derived class, and assign it to a base class pointer.
 
 .. code-block:: cpp
 
-   VividCameraData *data = cameraData(camera);
-   CameraConfiguration *config = new VividCameraConfiguration();
+   auto config = std::make_unique<VividCameraConfiguration>();
 
 A ``CameraConfiguration`` is specific to each pipeline, so you can only create
 it from the pipeline handler code path. Applications can also generate an empty

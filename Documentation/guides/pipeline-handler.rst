@@ -527,8 +527,8 @@ PipelineHandler successfully matched and constructed a device.
 .. code-block:: cpp
 
    std::set<Stream *> streams{ &data->stream_ };
-   std::shared_ptr<Camera> camera = Camera::create(this, data->video_->deviceName(), streams);
-   registerCamera(std::move(camera), std::move(data));
+   std::shared_ptr<Camera> camera = Camera::create(std::move(data), data->video_->deviceName(), streams);
+   registerCamera(std::move(camera));
 
    return true;
 
@@ -554,8 +554,7 @@ Our match function should now look like the following:
 
    	/* Create and register the camera. */
    	std::set<Stream *> streams{ &data->stream_ };
-   	const std::string &id = data->video_->deviceName();
-   	std::shared_ptr<Camera> camera = Camera::create(data.release(), id, streams);
+   	std::shared_ptr<Camera> camera = Camera::create(std::move(data), data->video_->deviceName(), streams);
    	registerCamera(std::move(camera));
 
    	return true;

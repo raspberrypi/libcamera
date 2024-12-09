@@ -932,9 +932,9 @@ Add the following function implementation to your file:
 
            StreamConfiguration &cfg = config_[0];
 
-           const std::vector<libcamera::PixelFormat> formats = cfg.formats().pixelformats();
+           const std::vector<libcamera::PixelFormat> &formats = cfg.formats().pixelformats();
            if (std::find(formats.begin(), formats.end(), cfg.pixelFormat) == formats.end()) {
-                  cfg.pixelFormat = cfg.formats().pixelformats()[0];
+                  cfg.pixelFormat = formats[0];
                   LOG(VIVID, Debug) << "Adjusting format to " << cfg.pixelFormat.toString();
                   status = Adjusted;
            }

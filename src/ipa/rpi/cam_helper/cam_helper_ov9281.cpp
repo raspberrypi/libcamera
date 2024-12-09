@@ -25,7 +25,7 @@ private:
 	 * Smallest difference between the frame length and integration time,
 	 * in units of lines.
 	 */
-	static constexpr int frameIntegrationDiff = 4;
+	static constexpr int frameIntegrationDiff = 25;
 };
 
 /*

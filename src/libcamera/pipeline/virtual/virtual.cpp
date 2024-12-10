@@ -275,8 +275,7 @@ int PipelineHandlerVirtual::exportFrameBuffers([[maybe_unused]] Camera *camera,
 		return -ENOBUFS;
 
 	const StreamConfiguration &config = stream->configuration();
-
-	auto info = PixelFormatInfo::info(config.pixelFormat);
+	const PixelFormatInfo &info = PixelFormatInfo::info(config.pixelFormat);
 
 	std::vector<unsigned int> planeSizes;
 	for (size_t i = 0; i < info.planes.size(); ++i)

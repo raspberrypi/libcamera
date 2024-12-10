@@ -25,7 +25,7 @@ int TestPatternGenerator::generateFrame(const Size &size,
 	MappedFrameBuffer mappedFrameBuffer(buffer,
 					    MappedFrameBuffer::MapFlag::Write);
 
-	auto planes = mappedFrameBuffer.planes();
+	const auto &planes = mappedFrameBuffer.planes();
 
 	shiftLeft(size);
 

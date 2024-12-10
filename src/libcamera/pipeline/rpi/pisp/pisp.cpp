@@ -399,7 +399,7 @@ void do14bitUnpack(void *mem, unsigned int width, unsigned int height,
 
 	for (unsigned int j = 0; j < height; j++) {
 		const uint8_t *in = ((uint8_t *)mem) + j * stride;
-		uint8_t *out = ((uint8_t *)mem) + j * width * 2;
+		uint8_t *out = ((uint8_t *)mem) + j * stride;
 		uint8_t *p = cache.data();
 
 		std::memcpy(p, in, stride);

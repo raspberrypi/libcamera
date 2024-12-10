@@ -278,7 +278,7 @@ int PipelineHandlerVirtual::exportFrameBuffers([[maybe_unused]] Camera *camera,
 	const PixelFormatInfo &info = PixelFormatInfo::info(config.pixelFormat);
 
 	std::vector<unsigned int> planeSizes;
-	for (size_t i = 0; i < info.planes.size(); ++i)
+	for (size_t i = 0; i < info.numPlanes(); ++i)
 		planeSizes.push_back(info.planeSize(config.size, i));
 
 	return dmaBufAllocator_.exportBuffers(config.bufferCount, planeSizes, buffers);

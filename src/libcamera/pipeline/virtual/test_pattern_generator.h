@@ -29,10 +29,6 @@ public:
 protected:
 	/* Buffer of test pattern template */
 	std::unique_ptr<uint8_t[]> template_;
-
-private:
-	/* Shift the buffer by 1 pixel left each frame */
-	void shiftLeft(const Size &size);
 };
 
 class ColorBarsGenerator : public TestPatternGenerator

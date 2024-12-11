@@ -7,11 +7,33 @@
 
 #include "test_pattern_generator.h"
 
+#include <string.h>
+
 #include <libcamera/base/log.h>
 
 #include "libcamera/internal/mapped_framebuffer.h"
 
 #include <libyuv/convert_from_argb.h>
+
+namespace {
+
+template<size_t SampleSize>
+void rotateLeft1Column(const libcamera::Size &size, uint8_t *image)
+{
+	if (size.width < 2)
+		return;
+
+	const size_t stride = size.width * SampleSize;
+	uint8_t first[SampleSize];
+
+	for (size_t i = 0; i < size.height; i++, image += stride) {
+		memcpy(first, &image[0], SampleSize);
+		memmove(&image[0], &image[SampleSize], stride - SampleSize);
+		memcpy(&image[stride - SampleSize], first, SampleSize);
+	}
+}
+
+} /* namespace */
 
 namespace libcamera {
 
@@ -27,7 +49,7 @@ int TestPatternGenerator::generateFrame(const Size &size,
 
 	const auto &planes = mappedFrameBuffer.planes();
 
-	shiftLeft(size);
+	rotateLeft1Column<kARGBSize>(size, template_.get());
 
 	/* Convert the template_ to the frame buffer */
 	int ret = libyuv::ARGBToNV12(template_.get(), size.width * kARGBSize,
@@ -38,39 +60,6 @@ int TestPatternGenerator::generateFrame(const Size &size,
 		LOG(Virtual, Error) << "ARGBToNV12() failed with " << ret;
 
 	return ret;
-}
-
-void TestPatternGenerator::shiftLeft(const Size &size)
-{
-	/* Store the first column temporarily */
-	auto firstColumn = std::make_unique<uint8_t[]>(size.height * kARGBSize);
-	for (size_t h = 0; h < size.height; h++) {
-		unsigned int index = h * size.width * kARGBSize;
-		unsigned int index1 = h * kARGBSize;
-		firstColumn[index1] = template_[index];
-		firstColumn[index1 + 1] = template_[index + 1];
-		firstColumn[index1 + 2] = template_[index + 2];
-		firstColumn[index1 + 3] = 0x00;
-	}
-
-	/* Overwrite template_ */
-	uint8_t *buf = template_.get();
-	for (size_t h = 0; h < size.height; h++) {
-		for (size_t w = 0; w < size.width - 1; w++) {
-			/* Overwrite with the pixel on the right */
-			unsigned int index = (h * size.width + w + 1) * kARGBSize;
-			*buf++ = template_[index]; /* B */
-			*buf++ = template_[index + 1]; /* G */
-			*buf++ = template_[index + 2]; /* R */
-			*buf++ = 0x00; /* A */
-		}
-		/* Overwrite the new last column with the original first column */
-		unsigned int index1 = h * kARGBSize;
-		*buf++ = firstColumn[index1]; /* B */
-		*buf++ = firstColumn[index1 + 1]; /* G */
-		*buf++ = firstColumn[index1 + 2]; /* R */
-		*buf++ = 0x00; /* A */
-	}
 }
 
 void ColorBarsGenerator::configure(const Size &size)

@@ -311,6 +311,18 @@ DmaSyncer::DmaSyncer(SharedFD fd, SyncType type)
 	sync(DMA_BUF_SYNC_START);
 }
 
+/**
+ * \fn DmaSyncer::DmaSyncer(DmaSyncer &&other);
+ * \param[in] other The other instance
+ * \brief Enable move on class DmaSyncer
+ */
+
+/**
+ * \fn DmaSyncer::operator=(DmaSyncer &&other);
+ * \param[in] other The other instance
+ * \brief Enable move on class DmaSyncer
+ */
+
 DmaSyncer::~DmaSyncer()
 {
 	sync(DMA_BUF_SYNC_END);

@@ -66,7 +66,7 @@ private:
 	 * Smallest difference between the frame length and integration time,
 	 * in units of lines.
 	 */
-	static constexpr int frameIntegrationDiff = 22;
+	static constexpr int frameIntegrationDiff = 48;
 	/* Maximum frame length allowable for long exposure calculations. */
 	static constexpr int frameLengthMax = 0xffdc;
 	/* Largest long exposure scale factor given as a left shift on the frame length. */

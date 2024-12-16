@@ -56,6 +56,7 @@ public:
 
 	virtual int configure(const StreamConfiguration &inputCfg,
 			      const std::vector<std::reference_wrapper<StreamConfiguration>> &outputCfgs) = 0;
+	virtual bool isConfigured(const Stream *stream) const = 0;
 	virtual int exportBuffers(const Stream *stream, unsigned int count,
 				  std::vector<std::unique_ptr<FrameBuffer>> *buffers) = 0;
 

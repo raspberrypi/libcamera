@@ -438,6 +438,14 @@ int V4L2M2MConverter::configure(const StreamConfiguration &inputCfg,
 }
 
 /**
+ * \copydoc libcamera::Converter::isConfigured
+ */
+bool V4L2M2MConverter::isConfigured(const Stream *stream) const
+{
+	return streams_.find(stream) != streams_.end();
+}
+
+/**
  * \copydoc libcamera::Converter::exportBuffers
  */
 int V4L2M2MConverter::exportBuffers(const Stream *stream, unsigned int count,

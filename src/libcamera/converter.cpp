@@ -127,6 +127,13 @@ Converter::~Converter()
  */
 
 /**
+ * \fn Converter::isConfigured()
+ * \brief Check if a given stream is configured
+ * \param[in] stream The output stream
+ * \return True if the \a stream is configured or false otherwise
+ */
+
+/**
  * \fn Converter::exportBuffers()
  * \brief Export buffers from the converter device
  * \param[in] stream Output stream pointer exporting the buffers

@@ -677,7 +677,8 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 			       [](const auto &value) { return value.second; });
 	}
 
-	sensorFormat_ = sensor->getFormat(mbusCodes, maxSize);
+	sensorFormat_ = sensor->getFormat(mbusCodes, maxSize,
+					  mainPath->maxResolution());
 
 	if (sensorFormat_.size.isNull())
 		sensorFormat_.size = sensor->resolution();

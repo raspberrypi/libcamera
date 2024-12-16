@@ -812,6 +812,19 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 	if (!isRaw_)
 		format.code = MEDIA_BUS_FMT_YUYV8_2X8;
 
+	/*
+	 * On devices without DUAL_CROP (like the imx8mp) cropping needs to be
+	 * done on the ISP/IS output.
+	 */
+	if (media_->hwRevision() == RKISP1_V_IMX8MP) {
+		/* imx8mp has only a single path. */
+		const auto &cfg = config->at(0);
+		Size ispCrop = format.size.boundedToAspectRatio(cfg.size)
+					  .alignedUpTo(2, 2);
+		rect = ispCrop.centeredTo(Rectangle(format.size).center());
+		format.size = ispCrop;
+	}
+
 	LOG(RkISP1, Debug)
 		<< "Configuring ISP output pad with " << format
 		<< " crop " << rect;

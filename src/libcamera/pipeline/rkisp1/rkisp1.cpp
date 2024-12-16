@@ -1220,8 +1220,11 @@ int PipelineHandlerRkISP1::updateControls(RkISP1CameraData *data)
 	ControlInfoMap::Map controls;
 
 	if (dewarper_) {
-		std::pair<Rectangle, Rectangle> cropLimits =
-			dewarper_->inputCropBounds(&data->mainPathStream_);
+		std::pair<Rectangle, Rectangle> cropLimits;
+		if (dewarper_->isConfigured(&data->mainPathStream_))
+			cropLimits = dewarper_->inputCropBounds(&data->mainPathStream_);
+		else
+			cropLimits = dewarper_->inputCropBounds();
 
 		controls[&controls::ScalerCrop] = ControlInfo(cropLimits.first,
 							      cropLimits.second,

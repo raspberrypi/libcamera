@@ -98,6 +98,7 @@ public:
 	}
 
 	PipelineHandlerRkISP1 *pipe();
+	const PipelineHandlerRkISP1 *pipe() const;
 	int loadIPA(unsigned int hwRevision);
 
 	Stream mainPathStream_;
@@ -176,6 +177,7 @@ private:
 	}
 
 	friend RkISP1CameraData;
+	friend RkISP1CameraConfiguration;
 	friend RkISP1Frames;
 
 	int initLinks(Camera *camera, const CameraSensor *sensor,
@@ -361,6 +363,11 @@ RkISP1FrameInfo *RkISP1Frames::find(Request *request)
 PipelineHandlerRkISP1 *RkISP1CameraData::pipe()
 {
 	return static_cast<PipelineHandlerRkISP1 *>(Camera::Private::pipe());
+}
+
+const PipelineHandlerRkISP1 *RkISP1CameraData::pipe() const
+{
+	return static_cast<const PipelineHandlerRkISP1 *>(Camera::Private::pipe());
 }
 
 int RkISP1CameraData::loadIPA(unsigned int hwRevision)

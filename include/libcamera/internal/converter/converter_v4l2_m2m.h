@@ -38,28 +38,29 @@ class V4L2M2MConverter : public Converter
 public:
 	V4L2M2MConverter(MediaDevice *media);
 
-	int loadConfiguration([[maybe_unused]] const std::string &filename) { return 0; }
-	bool isValid() const { return m2m_ != nullptr; }
+	int loadConfiguration([[maybe_unused]] const std::string &filename) override { return 0; }
+	bool isValid() const override { return m2m_ != nullptr; }
 
-	std::vector<PixelFormat> formats(PixelFormat input);
-	SizeRange sizes(const Size &input);
+	std::vector<PixelFormat> formats(PixelFormat input) override;
+	SizeRange sizes(const Size &input) override;
 
 	std::tuple<unsigned int, unsigned int>
-	strideAndFrameSize(const PixelFormat &pixelFormat, const Size &size);
+	strideAndFrameSize(const PixelFormat &pixelFormat, const Size &size) override;
 
 	int configure(const StreamConfiguration &inputCfg,
-		      const std::vector<std::reference_wrapper<StreamConfiguration>> &outputCfg);
+		      const std::vector<std::reference_wrapper<StreamConfiguration>>
+		      &outputCfg) override;
 	int exportBuffers(const Stream *stream, unsigned int count,
-			  std::vector<std::unique_ptr<FrameBuffer>> *buffers);
+			  std::vector<std::unique_ptr<FrameBuffer>> *buffers) override;
 
-	int start();
-	void stop();
+	int start() override;
+	void stop() override;
 
 	int queueBuffers(FrameBuffer *input,
-			 const std::map<const Stream *, FrameBuffer *> &outputs);
+			 const std::map<const Stream *, FrameBuffer *> &outputs) override;
 
-	int setInputCrop(const Stream *stream, Rectangle *rect);
-	std::pair<Rectangle, Rectangle> inputCropBounds(const Stream *stream);
+	int setInputCrop(const Stream *stream, Rectangle *rect) override;
+	std::pair<Rectangle, Rectangle> inputCropBounds(const Stream *stream) override;
 
 private:
 	class V4L2M2MStream : protected Loggable

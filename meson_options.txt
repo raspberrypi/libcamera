@@ -84,6 +84,7 @@ option('udev',
        description : 'Enable udev support for hotplug')
 
 option('v4l2',
-        type : 'boolean',
-        value : false,
-        description : 'Compile the V4L2 compatibility layer')
+        type : 'feature',
+        value : 'auto',
+        description : 'Compile the V4L2 compatibility layer',
+        deprecated : {'true': 'enabled', 'false': 'disabled'})

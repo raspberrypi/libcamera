@@ -169,6 +169,10 @@ struct IPAFrameContext : public FrameContext {
 	struct {
 		Matrix<float, 3, 3> ccm;
 	} ccm;
+
+	struct {
+		double lux;
+	} lux;
 };
 
 struct IPAContext {

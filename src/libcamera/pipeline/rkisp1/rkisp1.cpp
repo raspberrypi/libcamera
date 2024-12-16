@@ -843,6 +843,11 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 		<< "ISP output pad configured with " << format
 		<< " crop " << outputCrop;
 
+	IPACameraSensorInfo sensorInfo;
+	ret = data->sensor_->sensorInfo(&sensorInfo);
+	if (ret)
+		return ret;
+
 	std::map<unsigned int, IPAStream> streamConfig;
 	std::vector<std::reference_wrapper<StreamConfiguration>> outputCfgs;
 
@@ -882,14 +887,9 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 		return ret;
 
 	/* Inform IPA of stream configuration and sensor controls. */
-	ipa::rkisp1::IPAConfigInfo ipaConfig{};
-
-	ret = data->sensor_->sensorInfo(&ipaConfig.sensorInfo);
-	if (ret)
-		return ret;
-
-	ipaConfig.sensorControls = data->sensor_->controls();
-	ipaConfig.paramFormat = paramFormat.fourcc;
+	ipa::rkisp1::IPAConfigInfo ipaConfig{ sensorInfo,
+					      data->sensor_->controls(),
+					      paramFormat.fourcc };
 
 	ret = data->ipa_->configure(ipaConfig, streamConfig, &data->ipaControls_);
 	if (ret) {

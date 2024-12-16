@@ -51,6 +51,16 @@ LOG_DEFINE_CATEGORY(Converter)
  */
 
 /**
+ * \enum Converter::Alignment
+ * \brief The alignment mode specified when adjusting the converter input or
+ * output sizes
+ * \var Converter::Alignment::Down
+ * \brief Adjust the Converter sizes to a smaller valid size
+ * \var Converter::Alignment::Up
+ * \brief Adjust the Converter sizes to a larger valid size
+ */
+
+/**
  * \brief Construct a Converter instance
  * \param[in] media The media device implementing the converter
  * \param[in] features Features flags representing supported features
@@ -111,11 +121,41 @@ Converter::~Converter()
  */
 
 /**
+ * \fn Converter::adjustInputSize()
+ * \brief Adjust the converter input \a size to a valid value
+ * \param[in] pixFmt The pixel format of the converter input stream
+ * \param[in] size The converter input size to adjust to a valid value
+ * \param[in] align The desired alignment
+ * \return The adjusted converter input size or a null Size if \a size cannot
+ * be adjusted
+ */
+
+/**
+ * \fn Converter::adjustOutputSize()
+ * \brief Adjust the converter output \a size to a valid value
+ * \param[in] pixFmt The pixel format of the converter output stream
+ * \param[in] size The converter output size to adjust to a valid value
+ * \param[in] align The desired alignment
+ * \return The adjusted converter output size or a null Size if \a size cannot
+ * be adjusted
+ */
+
+/**
  * \fn Converter::strideAndFrameSize()
  * \brief Retrieve the output stride and frame size for an input configutation
  * \param[in] pixelFormat Input stream pixel format
  * \param[in] size Input stream size
  * \return A tuple indicating the stride and frame size or an empty tuple on error
+ */
+
+/**
+ * \fn Converter::validateOutput()
+ * \brief Validate and possibily adjust \a cfg to a valid converter output
+ * \param[inout] cfg The StreamConfiguration to validate and adjust
+ * \param[out] adjusted Set to true if \a cfg has been adjusted
+ * \param[in] align The desired alignment
+ * \return 0 if \a cfg is valid or has been adjusted, a negative error code
+ * otherwise if \a cfg cannot be adjusted
  */
 
 /**

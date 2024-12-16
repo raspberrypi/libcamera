@@ -8,6 +8,7 @@
 
 #include "libcamera/internal/converter/converter_v4l2_m2m.h"
 
+#include <algorithm>
 #include <limits.h>
 
 #include <libcamera/base/log.h>
@@ -401,6 +402,127 @@ V4L2M2MConverter::strideAndFrameSize(const PixelFormat &pixelFormat,
 }
 
 /**
+ * \copydoc libcamera::Converter::adjustInputSize
+ */
+Size V4L2M2MConverter::adjustInputSize(const PixelFormat &pixFmt,
+				       const Size &size, Alignment align)
+{
+	auto formats = m2m_->output()->formats();
+	V4L2PixelFormat v4l2PixFmt = m2m_->output()->toV4L2PixelFormat(pixFmt);
+
+	auto it = formats.find(v4l2PixFmt);
+	if (it == formats.end()) {
+		LOG(Converter, Info)
+			<< "Unsupported pixel format " << pixFmt;
+		return {};
+	}
+
+	return adjustSizes(size, it->second, align);
+}
+
+/**
+ * \copydoc libcamera::Converter::adjustOutputSize
+ */
+Size V4L2M2MConverter::adjustOutputSize(const PixelFormat &pixFmt,
+					const Size &size, Alignment align)
+{
+	auto formats = m2m_->capture()->formats();
+	V4L2PixelFormat v4l2PixFmt = m2m_->capture()->toV4L2PixelFormat(pixFmt);
+
+	auto it = formats.find(v4l2PixFmt);
+	if (it == formats.end()) {
+		LOG(Converter, Info)
+			<< "Unsupported pixel format " << pixFmt;
+		return {};
+	}
+
+	return adjustSizes(size, it->second, align);
+}
+
+Size V4L2M2MConverter::adjustSizes(const Size &cfgSize,
+				   const std::vector<SizeRange> &ranges,
+				   Alignment align)
+{
+	Size size = cfgSize;
+
+	if (ranges.size() == 1) {
+		/*
+		 * The device supports either V4L2_FRMSIZE_TYPE_CONTINUOUS or
+		 * V4L2_FRMSIZE_TYPE_STEPWISE.
+		 */
+		const SizeRange &range = *ranges.begin();
+
+		size.width = std::clamp(size.width, range.min.width,
+					range.max.width);
+		size.height = std::clamp(size.height, range.min.height,
+					 range.max.height);
+
+		/*
+		 * Check if any alignment is needed. If the sizes are already
+		 * aligned, or the device supports V4L2_FRMSIZE_TYPE_CONTINUOUS
+		 * with hStep and vStep equal to 1, we're done here.
+		 */
+		int widthR = size.width % range.hStep;
+		int heightR = size.height % range.vStep;
+
+		/* Align up or down according to the caller request. */
+
+		if (widthR != 0)
+			size.width = size.width - widthR
+				   + ((align == Alignment::Up) ? range.hStep : 0);
+
+		if (heightR != 0)
+			size.height = size.height - heightR
+				    + ((align == Alignment::Up) ? range.vStep : 0);
+	} else {
+		/*
+		 * The device supports V4L2_FRMSIZE_TYPE_DISCRETE, find the
+		 * size closer to the requested output configuration.
+		 *
+		 * The size ranges vector is not ordered, so we sort it first.
+		 * If we align up, start from the larger element.
+		 */
+		std::vector<Size> sizes(ranges.size());
+		std::transform(ranges.begin(), ranges.end(), std::back_inserter(sizes),
+			       [](const SizeRange &range) { return range.max; });
+		std::sort(sizes.begin(), sizes.end());
+
+		if (align == Alignment::Up)
+			std::reverse(sizes.begin(), sizes.end());
+
+		/*
+		 * Return true if s2 is valid according to the desired
+		 * alignment: smaller than s1 if we align down, larger than s1
+		 * if we align up.
+		 */
+		auto nextSizeValid = [](const Size &s1, const Size &s2, Alignment a) {
+			return a == Alignment::Down
+				? (s1.width > s2.width && s1.height > s2.height)
+				: (s1.width < s2.width && s1.height < s2.height);
+		};
+
+		Size newSize;
+		for (const Size &sz : sizes) {
+			if (!nextSizeValid(size, sz, align))
+				break;
+
+			newSize = sz;
+		}
+
+		if (newSize.isNull()) {
+			LOG(Converter, Error)
+				<< "Cannot adjust " << cfgSize
+				<< " to a supported converter size";
+			return {};
+		}
+
+		size = newSize;
+	}
+
+	return size;
+}
+
+/**
  * \copydoc libcamera::Converter::configure
  */
 int V4L2M2MConverter::configure(const StreamConfiguration &inputCfg,
@@ -520,6 +642,53 @@ void V4L2M2MConverter::stop()
 {
 	for (auto &iter : streams_)
 		iter.second->stop();
+}
+
+/**
+ * \copydoc libcamera::Converter::validateOutput
+ */
+int V4L2M2MConverter::validateOutput(StreamConfiguration *cfg, bool *adjusted,
+				     Alignment align)
+{
+	V4L2VideoDevice *capture = m2m_->capture();
+	V4L2VideoDevice::Formats fmts = capture->formats();
+
+	if (adjusted)
+		*adjusted = false;
+
+	PixelFormat fmt = cfg->pixelFormat;
+	V4L2PixelFormat v4l2PixFmt = capture->toV4L2PixelFormat(fmt);
+
+	auto it = fmts.find(v4l2PixFmt);
+	if (it == fmts.end()) {
+		it = fmts.begin();
+		v4l2PixFmt = it->first;
+		cfg->pixelFormat = v4l2PixFmt.toPixelFormat();
+
+		if (adjusted)
+			*adjusted = true;
+
+		LOG(Converter, Info)
+			<< "Converter output pixel format adjusted to "
+			<< cfg->pixelFormat;
+	}
+
+	const Size cfgSize = cfg->size;
+	cfg->size = adjustSizes(cfgSize, it->second, align);
+
+	if (cfg->size.isNull())
+		return -EINVAL;
+
+	if (cfg->size.width != cfgSize.width ||
+	    cfg->size.height != cfgSize.height) {
+		LOG(Converter, Info)
+			<< "Converter size adjusted to "
+			<< cfg->size;
+		if (adjusted)
+			*adjusted = true;
+	}
+
+	return 0;
 }
 
 /**

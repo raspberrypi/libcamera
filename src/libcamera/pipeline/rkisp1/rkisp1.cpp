@@ -795,15 +795,16 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 	if (ret < 0)
 		return ret;
 
-	Rectangle rect(0, 0, format.size);
-	ret = isp_->setSelection(0, V4L2_SEL_TGT_CROP, &rect);
+	Rectangle inputCrop(0, 0, format.size);
+	ret = isp_->setSelection(0, V4L2_SEL_TGT_CROP, &inputCrop);
 	if (ret < 0)
 		return ret;
 
 	LOG(RkISP1, Debug)
 		<< "ISP input pad configured with " << format
-		<< " crop " << rect;
+		<< " crop " << inputCrop;
 
+	Rectangle outputCrop = inputCrop;
 	const PixelFormat &streamFormat = config->at(0).pixelFormat;
 	const PixelFormatInfo &info = PixelFormatInfo::info(streamFormat);
 	isRaw_ = info.colourEncoding == PixelFormatInfo::ColourEncodingRAW;
@@ -821,15 +822,15 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 		const auto &cfg = config->at(0);
 		Size ispCrop = format.size.boundedToAspectRatio(cfg.size)
 					  .alignedUpTo(2, 2);
-		rect = ispCrop.centeredTo(Rectangle(format.size).center());
+		outputCrop = ispCrop.centeredTo(Rectangle(format.size).center());
 		format.size = ispCrop;
 	}
 
 	LOG(RkISP1, Debug)
 		<< "Configuring ISP output pad with " << format
-		<< " crop " << rect;
+		<< " crop " << outputCrop;
 
-	ret = isp_->setSelection(2, V4L2_SEL_TGT_CROP, &rect);
+	ret = isp_->setSelection(2, V4L2_SEL_TGT_CROP, &outputCrop);
 	if (ret < 0)
 		return ret;
 
@@ -840,7 +841,7 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 
 	LOG(RkISP1, Debug)
 		<< "ISP output pad configured with " << format
-		<< " crop " << rect;
+		<< " crop " << outputCrop;
 
 	std::map<unsigned int, IPAStream> streamConfig;
 	std::vector<std::reference_wrapper<StreamConfiguration>> outputCfgs;

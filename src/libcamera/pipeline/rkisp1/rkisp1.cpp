@@ -1044,8 +1044,8 @@ int PipelineHandlerRkISP1::start(Camera *camera, [[maybe_unused]] const ControlL
 				LOG(RkISP1, Error) << "Failed to start dewarper";
 				return ret;
 			}
+			actions += [&]() { dewarper_->stop(); };
 		}
-		actions += [&]() { dewarper_->stop(); };
 	}
 
 	if (data->mainPath_->isEnabled()) {

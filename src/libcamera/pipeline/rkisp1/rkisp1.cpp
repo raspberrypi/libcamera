@@ -558,50 +558,53 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 	if (config_.size() == 2 && fitsAllPaths(config_[0]))
 		std::reverse(order.begin(), order.end());
 
+	auto validateConfig = [&](StreamConfiguration &cfg, RkISP1Path *path,
+				  Stream *stream, Status expectedStatus) {
+		StreamConfiguration tryCfg = cfg;
+		if (path->validate(sensor, sensorConfig, &tryCfg) != expectedStatus)
+			return false;
+
+		cfg = tryCfg;
+		cfg.setStream(stream);
+		return true;
+	};
+
 	bool mainPathAvailable = true;
 	bool selfPathAvailable = data_->selfPath_;
+	RkISP1Path *mainPath = data_->mainPath_;
+	RkISP1Path *selfPath = data_->selfPath_;
+	Stream *mainPathStream = const_cast<Stream *>(&data_->mainPathStream_);
+	Stream *selfPathStream = const_cast<Stream *>(&data_->selfPathStream_);
 	for (unsigned int index : order) {
 		StreamConfiguration &cfg = config_[index];
 
 		/* Try to match stream without adjusting configuration. */
 		if (mainPathAvailable) {
-			StreamConfiguration tryCfg = cfg;
-			if (data_->mainPath_->validate(sensor, sensorConfig, &tryCfg) == Valid) {
+			if (validateConfig(cfg, mainPath, mainPathStream, Valid)) {
 				mainPathAvailable = false;
-				cfg = tryCfg;
-				cfg.setStream(const_cast<Stream *>(&data_->mainPathStream_));
 				continue;
 			}
 		}
 
 		if (selfPathAvailable) {
-			StreamConfiguration tryCfg = cfg;
-			if (data_->selfPath_->validate(sensor, sensorConfig, &tryCfg) == Valid) {
+			if (validateConfig(cfg, selfPath, selfPathStream, Valid)) {
 				selfPathAvailable = false;
-				cfg = tryCfg;
-				cfg.setStream(const_cast<Stream *>(&data_->selfPathStream_));
 				continue;
 			}
 		}
 
 		/* Try to match stream allowing adjusting configuration. */
 		if (mainPathAvailable) {
-			StreamConfiguration tryCfg = cfg;
-			if (data_->mainPath_->validate(sensor, sensorConfig, &tryCfg) == Adjusted) {
+			if (validateConfig(cfg, mainPath, mainPathStream, Adjusted)) {
 				mainPathAvailable = false;
-				cfg = tryCfg;
-				cfg.setStream(const_cast<Stream *>(&data_->mainPathStream_));
 				status = Adjusted;
 				continue;
 			}
 		}
 
 		if (selfPathAvailable) {
-			StreamConfiguration tryCfg = cfg;
-			if (data_->selfPath_->validate(sensor, sensorConfig, &tryCfg) == Adjusted) {
+			if (validateConfig(cfg, selfPath, selfPathStream, Adjusted)) {
 				selfPathAvailable = false;
-				cfg = tryCfg;
-				cfg.setStream(const_cast<Stream *>(&data_->selfPathStream_));
 				status = Adjusted;
 				continue;
 			}

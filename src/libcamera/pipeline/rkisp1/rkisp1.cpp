@@ -497,6 +497,7 @@ bool RkISP1CameraConfiguration::fitsAllPaths(const StreamConfiguration &cfg)
 
 CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 {
+	const PipelineHandlerRkISP1 *pipe = data_->pipe();
 	const CameraSensor *sensor = data_->sensor_.get();
 	unsigned int pathCount = data_->selfPath_ ? 2 : 1;
 	Status status;
@@ -553,6 +554,18 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 		}
 	}
 
+	bool useDewarper = false;
+	if (pipe->dewarper_) {
+		/*
+		 * Platforms with dewarper support, such as i.MX8MP, support
+		 * only a single stream. We can inspect config_[0] only here.
+		 */
+		bool isRaw = PixelFormatInfo::info(config_[0].pixelFormat).colourEncoding ==
+			     PixelFormatInfo::ColourEncodingRAW;
+		if (!isRaw)
+			useDewarper = true;
+	}
+
 	/*
 	 * If there are more than one stream in the configuration figure out the
 	 * order to evaluate the streams. The first stream has the highest
@@ -565,11 +578,30 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 	if (config_.size() == 2 && fitsAllPaths(config_[0]))
 		std::reverse(order.begin(), order.end());
 
+	/*
+	 * Validate the configuration against the desired path and, if the
+	 * platform supports it, the dewarper.
+	 */
 	auto validateConfig = [&](StreamConfiguration &cfg, RkISP1Path *path,
 				  Stream *stream, Status expectedStatus) {
 		StreamConfiguration tryCfg = cfg;
-		if (path->validate(sensor, sensorConfig, &tryCfg) != expectedStatus)
+
+		Status ret = path->validate(sensor, sensorConfig, &tryCfg);
+		if (ret == Invalid)
 			return false;
+
+		if (!useDewarper &&
+		    (expectedStatus == Valid && ret == Adjusted))
+			return false;
+
+		if (useDewarper) {
+			bool adjusted;
+
+			pipe->dewarper_->validateOutput(&tryCfg, &adjusted,
+							Converter::Alignment::Down);
+			if (expectedStatus == Valid && adjusted)
+				return false;
+		}
 
 		cfg = tryCfg;
 		cfg.setStream(stream);
@@ -820,6 +852,7 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 	const PixelFormat &streamFormat = config->at(0).pixelFormat;
 	const PixelFormatInfo &info = PixelFormatInfo::info(streamFormat);
 	isRaw_ = info.colourEncoding == PixelFormatInfo::ColourEncodingRAW;
+	useDewarper_ = dewarper_ && !isRaw_;
 
 	/* YUYV8_2X8 is required on the ISP source path pad for YUV output. */
 	if (!isRaw_)
@@ -832,8 +865,13 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 	if (media_->hwRevision() == RKISP1_V_IMX8MP) {
 		/* imx8mp has only a single path. */
 		const auto &cfg = config->at(0);
-		Size ispCrop = format.size.boundedToAspectRatio(cfg.size)
-					  .alignedUpTo(2, 2);
+		Size ispCrop = format.size.boundedToAspectRatio(cfg.size);
+		if (useDewarper_)
+			ispCrop = dewarper_->adjustInputSize(cfg.pixelFormat,
+							     ispCrop);
+		else
+			ispCrop.alignUpTo(2, 2);
+
 		outputCrop = ispCrop.centeredTo(Rectangle(format.size).center());
 		format.size = ispCrop;
 	}
@@ -874,8 +912,6 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 				ret = dewarper_->configure(cfg, outputCfgs);
 				if (ret)
 					return ret;
-
-				useDewarper_ = true;
 
 				/*
 				 * Calculate the crop rectangle of the data

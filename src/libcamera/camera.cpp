@@ -604,6 +604,11 @@ Camera::Private::~Private()
  */
 
 /**
+ * \fn Camera::Private::pipe() const
+ * \copydoc Camera::Private::pipe()
+ */
+
+/**
  * \fn Camera::Private::validator()
  * \brief Retrieve the control validator related to this camera
  * \return The control validator associated with this camera

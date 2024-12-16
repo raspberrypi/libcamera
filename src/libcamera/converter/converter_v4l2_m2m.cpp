@@ -273,10 +273,9 @@ V4L2M2MConverter::V4L2M2MConverter(MediaDevice *media)
 		return;
 	}
 
-	Rectangle minCrop;
-	Rectangle maxCrop;
-	ret = getCropBounds(m2m_->output(), minCrop, maxCrop);
-	if (!ret && minCrop != maxCrop) {
+	ret = getCropBounds(m2m_->output(), inputCropBounds_.first,
+			    inputCropBounds_.second);
+	if (!ret && inputCropBounds_.first != inputCropBounds_.second) {
 		features_ |= Feature::InputCrop;
 
 		LOG(Converter, Info)
@@ -469,14 +468,21 @@ int V4L2M2MConverter::setInputCrop(const Stream *stream, Rectangle *rect)
 }
 
 /**
- * \copydoc libcamera::Converter::inputCropBounds
+ * \fn libcamera::V4L2M2MConverter::inputCropBounds()
+ * \copydoc libcamera::Converter::inputCropBounds()
+ */
+
+/**
+ * \copydoc libcamera::Converter::inputCropBounds(const Stream *stream)
  */
 std::pair<Rectangle, Rectangle>
 V4L2M2MConverter::inputCropBounds(const Stream *stream)
 {
 	auto iter = streams_.find(stream);
-	if (iter == streams_.end())
+	if (iter == streams_.end()) {
+		LOG(Converter, Error) << "Invalid output stream";
 		return {};
+	}
 
 	return iter->second->inputCropBounds();
 }

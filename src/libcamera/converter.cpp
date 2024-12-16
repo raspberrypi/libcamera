@@ -185,6 +185,16 @@ Converter::~Converter()
 
 /**
  * \fn Converter::inputCropBounds()
+ * \brief Retrieve the crop bounds of the converter
+ *
+ * Retrieve the minimum and maximum crop bounds of the converter. This can be
+ * used to query the crop bounds before configuring a stream.
+ *
+ * \return A pair containing the minimum and maximum crop bound in that order
+ */
+
+/**
+ * \fn Converter::inputCropBounds(const Stream *stream)
  * \brief Retrieve the crop bounds for \a stream
  * \param[in] stream The output stream
  *
@@ -194,6 +204,9 @@ Converter::~Converter()
  * The crop bounds depend on the configuration of the output stream and hence
  * this function should be called after the \a stream has been configured using
  * configure().
+ *
+ * When called with an unconfigured \a stream, this function returns a pair of
+ * null rectangles.
  *
  * \return A pair containing the minimum and maximum crop bound in that order
  */

@@ -60,6 +60,7 @@ public:
 			 const std::map<const Stream *, FrameBuffer *> &outputs) override;
 
 	int setInputCrop(const Stream *stream, Rectangle *rect) override;
+	std::pair<Rectangle, Rectangle> inputCropBounds() override { return inputCropBounds_; }
 	std::pair<Rectangle, Rectangle> inputCropBounds(const Stream *stream) override;
 
 private:
@@ -106,6 +107,7 @@ private:
 
 	std::map<const Stream *, std::unique_ptr<V4L2M2MStream>> streams_;
 	std::map<FrameBuffer *, unsigned int> queue_;
+	std::pair<Rectangle, Rectangle> inputCropBounds_;
 };
 
 } /* namespace libcamera */

@@ -66,6 +66,7 @@ public:
 				 const std::map<const Stream *, FrameBuffer *> &outputs) = 0;
 
 	virtual int setInputCrop(const Stream *stream, Rectangle *rect) = 0;
+	virtual std::pair<Rectangle, Rectangle> inputCropBounds() = 0;
 	virtual std::pair<Rectangle, Rectangle> inputCropBounds(const Stream *stream) = 0;
 
 	Signal<FrameBuffer *> inputBufferReady;

@@ -30,6 +30,52 @@ namespace libcamera {
 
 LOG_DECLARE_CATEGORY(Converter)
 
+namespace {
+
+int getCropBounds(V4L2VideoDevice *device, Rectangle &minCrop,
+		  Rectangle &maxCrop)
+{
+	Rectangle minC;
+	Rectangle maxC;
+
+	/* Find crop bounds */
+	minC.width = 1;
+	minC.height = 1;
+	maxC.width = UINT_MAX;
+	maxC.height = UINT_MAX;
+
+	int ret = device->setSelection(V4L2_SEL_TGT_CROP, &minC);
+	if (ret) {
+		LOG(Converter, Error)
+			<< "Could not query minimum selection crop: "
+			<< strerror(-ret);
+		return ret;
+	}
+
+	ret = device->getSelection(V4L2_SEL_TGT_CROP_BOUNDS, &maxC);
+	if (ret) {
+		LOG(Converter, Error)
+			<< "Could not query maximum selection crop: "
+			<< strerror(-ret);
+		return ret;
+	}
+
+	/* Reset the crop to its maximum */
+	ret = device->setSelection(V4L2_SEL_TGT_CROP, &maxC);
+	if (ret) {
+		LOG(Converter, Error)
+			<< "Could not reset selection crop: "
+			<< strerror(-ret);
+		return ret;
+	}
+
+	minCrop = minC;
+	maxCrop = maxC;
+	return 0;
+}
+
+} /* namespace */
+
 /* -----------------------------------------------------------------------------
  * V4L2M2MConverter::V4L2M2MStream
  */
@@ -98,41 +144,10 @@ int V4L2M2MConverter::V4L2M2MStream::configure(const StreamConfiguration &inputC
 	outputBufferCount_ = outputCfg.bufferCount;
 
 	if (converter_->features() & Feature::InputCrop) {
-		Rectangle minCrop;
-		Rectangle maxCrop;
-
-		/* Find crop bounds */
-		minCrop.width = 1;
-		minCrop.height = 1;
-		maxCrop.width = UINT_MAX;
-		maxCrop.height = UINT_MAX;
-
-		ret = setInputSelection(V4L2_SEL_TGT_CROP, &minCrop);
-		if (ret) {
-			LOG(Converter, Error)
-				<< "Could not query minimum selection crop: "
-				<< strerror(-ret);
+		ret = getCropBounds(m2m_->output(), inputCropBounds_.first,
+				    inputCropBounds_.second);
+		if (ret)
 			return ret;
-		}
-
-		ret = getInputSelection(V4L2_SEL_TGT_CROP_BOUNDS, &maxCrop);
-		if (ret) {
-			LOG(Converter, Error)
-				<< "Could not query maximum selection crop: "
-				<< strerror(-ret);
-			return ret;
-		}
-
-		/* Reset the crop to its maximum */
-		ret = setInputSelection(V4L2_SEL_TGT_CROP, &maxCrop);
-		if (ret) {
-			LOG(Converter, Error)
-				<< "Could not reset selection crop: "
-				<< strerror(-ret);
-			return ret;
-		}
-
-		inputCropBounds_ = { minCrop, maxCrop };
 	}
 
 	return 0;
@@ -258,27 +273,10 @@ V4L2M2MConverter::V4L2M2MConverter(MediaDevice *media)
 		return;
 	}
 
-	/* Discover Feature::InputCrop */
+	Rectangle minCrop;
 	Rectangle maxCrop;
-	maxCrop.width = UINT_MAX;
-	maxCrop.height = UINT_MAX;
-
-	ret = m2m_->output()->setSelection(V4L2_SEL_TGT_CROP, &maxCrop);
-	if (ret)
-		return;
-
-	/*
-	 * Rectangles for cropping targets are defined even if the device
-	 * does not support cropping. Their sizes and positions will be
-	 * fixed in such cases.
-	 *
-	 * Set and inspect a crop equivalent to half of the maximum crop
-	 * returned earlier. Use this to determine whether the crop on
-	 * input is really supported.
-	 */
-	Rectangle halfCrop(maxCrop.size() / 2);
-	ret = m2m_->output()->setSelection(V4L2_SEL_TGT_CROP, &halfCrop);
-	if (!ret && halfCrop != maxCrop) {
+	ret = getCropBounds(m2m_->output(), minCrop, maxCrop);
+	if (!ret && minCrop != maxCrop) {
 		features_ |= Feature::InputCrop;
 
 		LOG(Converter, Info)

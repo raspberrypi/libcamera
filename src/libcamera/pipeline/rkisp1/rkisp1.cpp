@@ -865,7 +865,10 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 			if (dewarper_ && !isRaw_) {
 				outputCfgs.push_back(const_cast<StreamConfiguration &>(cfg));
 				ret = dewarper_->configure(cfg, outputCfgs);
-				useDewarper_ = ret ? false : true;
+				if (ret)
+					return ret;
+
+				useDewarper_ = true;
 
 				/*
 				 * Calculate the crop rectangle of the data

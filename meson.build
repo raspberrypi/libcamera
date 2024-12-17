@@ -204,7 +204,7 @@ liblttng = dependency('lttng-ust', required : get_option('tracing'))
 
 # Pipeline handlers
 #
-pipelines = get_option('pipelines')
+wanted_pipelines = get_option('pipelines')
 
 arch_arm = ['arm', 'aarch64']
 arch_x86 = ['x86', 'x86_64']
@@ -220,16 +220,18 @@ pipelines_support = {
     'virtual':      ['test'],
 }
 
-if pipelines.contains('all')
+if wanted_pipelines.contains('all')
     pipelines = pipelines_support.keys()
-elif pipelines.contains('auto')
+elif wanted_pipelines.contains('auto')
     host_cpu = host_machine.cpu_family()
     pipelines = []
     foreach pipeline, archs : pipelines_support
-        if host_cpu in archs or 'any' in archs
+        if pipeline in wanted_pipelines or host_cpu in archs or 'any' in archs
             pipelines += pipeline
         endif
     endforeach
+else
+    pipelines = wanted_pipelines
 endif
 
 # Tests require the vimc pipeline handler, include it automatically when tests

@@ -301,10 +301,10 @@ def get_alsc_patches(Img, colour_cals, grey=True):
     patches for each channel, remembering to subtract blacklevel
     If grey then only greyscale patches considered
     """
+    patches = Img.patches
     if grey:
         cen_coords = Img.cen_coords[3::4]
         col = Img.col
-        patches = [np.array(Img.patches[i]) for i in Img.order]
         r_patchs = patches[0][3::4] - Img.blacklevel_16
         b_patchs = patches[3][3::4] - Img.blacklevel_16
         """
@@ -314,7 +314,6 @@ def get_alsc_patches(Img, colour_cals, grey=True):
     else:
         cen_coords = Img.cen_coords
         col = Img.color
-        patches = [np.array(Img.patches[i]) for i in Img.order]
         r_patchs = patches[0] - Img.blacklevel_16
         b_patchs = patches[3] - Img.blacklevel_16
         g_patchs = (patches[1]+patches[2])/2 - Img.blacklevel_16

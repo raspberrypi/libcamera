@@ -494,8 +494,11 @@ void gst_libcamera_configure_stream_from_caps(StreamConfiguration &stream_cfg,
 
 	/* Configure colorimetry */
 	if (gst_structure_has_field(s, "colorimetry")) {
-		const gchar *colorimetry_str = gst_structure_get_string(s, "colorimetry");
+		const gchar *colorimetry_str;
 		GstVideoColorimetry colorimetry;
+
+		gst_structure_fixate_field(s, "colorimetry");
+		colorimetry_str = gst_structure_get_string(s, "colorimetry");
 
 		if (!gst_video_colorimetry_from_string(&colorimetry, colorimetry_str))
 			g_critical("Invalid colorimetry %s", colorimetry_str);

@@ -14,6 +14,8 @@
 
 #include "environment.h"
 
+namespace {
+
 using namespace libcamera;
 
 const std::vector<int> NUMREQUESTS = { 1, 2, 3, 5, 8, 13, 21, 34, 55, 89 };
@@ -134,3 +136,5 @@ INSTANTIATE_TEST_SUITE_P(CaptureTests,
 			 testing::Combine(testing::ValuesIn(ROLES),
 					  testing::ValuesIn(NUMREQUESTS)),
 			 SingleStream::nameParameters);
+
+} /* namespace */

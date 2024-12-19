@@ -30,7 +30,7 @@ protected:
 	EventLoop *loop_;
 
 	std::shared_ptr<libcamera::Camera> camera_;
-	std::unique_ptr<libcamera::FrameBufferAllocator> allocator_;
+	libcamera::FrameBufferAllocator allocator_;
 	std::unique_ptr<libcamera::CameraConfiguration> config_;
 	std::vector<std::unique_ptr<libcamera::Request>> requests_;
 };

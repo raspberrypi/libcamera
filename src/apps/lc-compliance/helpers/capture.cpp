@@ -13,7 +13,7 @@ using namespace libcamera;
 
 Capture::Capture(std::shared_ptr<Camera> camera)
 	: loop_(nullptr), camera_(std::move(camera)),
-	  allocator_(std::make_unique<FrameBufferAllocator>(camera_))
+	  allocator_(camera_)
 {
 }
 
@@ -45,7 +45,7 @@ void Capture::configure(StreamRole role)
 void Capture::start()
 {
 	Stream *stream = config_->at(0).stream();
-	int count = allocator_->allocate(stream);
+	int count = allocator_.allocate(stream);
 
 	ASSERT_GE(count, 0) << "Failed to allocate buffers";
 	EXPECT_EQ(count, config_->at(0).bufferCount) << "Allocated less buffers than expected";
@@ -57,7 +57,7 @@ void Capture::start()
 
 void Capture::stop()
 {
-	if (!config_ || !allocator_->allocated())
+	if (!config_ || !allocator_.allocated())
 		return;
 
 	camera_->stop();
@@ -66,7 +66,7 @@ void Capture::stop()
 
 	Stream *stream = config_->at(0).stream();
 	requests_.clear();
-	allocator_->free(stream);
+	allocator_.free(stream);
 }
 
 /* CaptureBalanced */
@@ -81,7 +81,7 @@ void CaptureBalanced::capture(unsigned int numRequests)
 	start();
 
 	Stream *stream = config_->at(0).stream();
-	const std::vector<std::unique_ptr<FrameBuffer>> &buffers = allocator_->buffers(stream);
+	const std::vector<std::unique_ptr<FrameBuffer>> &buffers = allocator_.buffers(stream);
 
 	/* No point in testing less requests then the camera depth. */
 	if (buffers.size() > numRequests) {
@@ -153,7 +153,7 @@ void CaptureUnbalanced::capture(unsigned int numRequests)
 	start();
 
 	Stream *stream = config_->at(0).stream();
-	const std::vector<std::unique_ptr<FrameBuffer>> &buffers = allocator_->buffers(stream);
+	const std::vector<std::unique_ptr<FrameBuffer>> &buffers = allocator_.buffers(stream);
 
 	captureCount_ = 0;
 	captureLimit_ = numRequests;

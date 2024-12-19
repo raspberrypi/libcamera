@@ -77,7 +77,7 @@ def awb(imgs, cal_cr_list, cal_cb_list, plot):
         r_g_hat = r_g/(1+r_g+b_g)
         b_g_hat = b_g/(1+r_g+b_g)
         logger.info(f'   r_hat : {r_g_hat:.4f}   b_hat : {b_g_hat:.4f}')
-        rbs_hat.append((r_g_hat, b_g_hat, Img.col))
+        rbs_hat.append((r_g_hat, b_g_hat, Img.color))
         rb_raw.append((r_g, b_g))
 
     logger.info('Finished processing images')
@@ -305,7 +305,7 @@ def get_alsc_patches(Img, colour_cals, grey=True):
     patches = Img.patches
     if grey:
         cen_coords = Img.cen_coords[3::4]
-        col = Img.col
+        col = Img.color
         r_patchs = patches[0][3::4] - Img.blacklevel_16
         b_patchs = patches[3][3::4] - Img.blacklevel_16
         """

@@ -45,7 +45,7 @@ class ThrowListener : public testing::EmptyTestEventListener
 static void listCameras(CameraManager *cm)
 {
 	for (const std::shared_ptr<Camera> &cam : cm->cameras())
-		std::cout << "- " << cam.get()->id() << std::endl;
+		std::cout << "- " << cam->id() << std::endl;
 }
 
 static int initCamera(CameraManager *cm, OptionsParser::Options options)

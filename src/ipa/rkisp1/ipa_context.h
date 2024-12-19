@@ -135,6 +135,7 @@ struct IPAFrameContext : public FrameContext {
 	struct {
 		RGB<double> gains;
 		bool autoEnabled;
+		unsigned int temperatureK;
 	} awb;
 
 	struct {

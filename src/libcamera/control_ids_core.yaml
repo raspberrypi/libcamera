@@ -298,7 +298,19 @@ controls:
       description: |
         Enable or disable the AWB.
 
+        When AWB is enabled, the algorithm estimates the colour temperature of
+        the scene and computes colour gains and the colour correction matrix
+        automatically. The computed colour temperature, gains and correction
+        matrix are reported in metadata. The corresponding controls are ignored
+        if set in a request.
+
+        When AWB is disabled, the colour temperature, gains and correction
+        matrix are not updated automatically and can be set manually in
+        requests.
+
+        \sa ColourCorrectionMatrix
         \sa ColourGains
+        \sa ColourTemperature
 
   # AwbMode needs further attention:
   # - Auto-generate max enum value.
@@ -357,17 +369,34 @@ controls:
         order.
 
         ColourGains can only be applied in a Request when the AWB is disabled.
+        If ColourGains is set in a request but ColourTemperature is not, the
+        implementation shall calculate and set the ColourTemperature based on
+        the ColourGains.
 
         \sa AwbEnable
+        \sa ColourTemperature
       size: [2]
 
   - ColourTemperature:
       type: int32_t
       direction: out
       description: |
-        Report the estimate of the colour temperature for the frame, in kelvin.
+        ColourTemperature of the frame, in kelvin.
 
-        The ColourTemperature control can only be returned in metadata.
+        ColourTemperature can only be applied in a Request when the AWB is
+        disabled.
+
+        If ColourTemperature is set in a request but ColourGains is not, the
+        implementation shall calculate and set the ColourGains based on the
+        given ColourTemperature. If ColourTemperature is set (either directly,
+        or indirectly by setting ColourGains) but ColourCorrectionMatrix is not,
+        the ColourCorrectionMatrix is updated based on the ColourTemperature.
+
+        The ColourTemperature used to process the frame is reported in metadata.
+
+        \sa AwbEnable
+        \sa ColourCorrectionMatrix
+        \sa ColourGains
 
   - Saturation:
       type: float
@@ -429,6 +458,11 @@ controls:
         stored in conventional reading order in an array of 9 floating point
         values.
 
+        ColourCorrectionMatrix can only be applied in a Request when the AWB is 
+        disabled.
+
+        \sa AwbEnable
+        \sa ColourTemperature
       size: [3,3]
 
   - ScalerCrop:

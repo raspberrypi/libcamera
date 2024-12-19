@@ -18,8 +18,7 @@ logger = logging.getLogger(__name__)
 """
 obtain piecewise linear approximation for colour curve
 """
-def awb(Cam, cal_cr_list, cal_cb_list, plot):
-    imgs = Cam.imgs
+def awb(imgs, cal_cr_list, cal_cb_list, plot):
     """
     condense alsc calibration tables into one dictionary
     """

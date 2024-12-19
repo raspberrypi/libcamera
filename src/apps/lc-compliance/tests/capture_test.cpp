@@ -18,8 +18,9 @@ namespace {
 
 using namespace libcamera;
 
-const std::vector<int> NUMREQUESTS = { 1, 2, 3, 5, 8, 13, 21, 34, 55, 89 };
-const std::vector<StreamRole> ROLES = {
+const int NUMREQUESTS[] = { 1, 2, 3, 5, 8, 13, 21, 34, 55, 89 };
+
+const StreamRole ROLES[] = {
 	StreamRole::Raw,
 	StreamRole::StillCapture,
 	StreamRole::VideoRecording,

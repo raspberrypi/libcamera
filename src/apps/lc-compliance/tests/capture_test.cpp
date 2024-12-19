@@ -87,11 +87,11 @@ TEST_P(SingleStream, Capture)
 {
 	auto [role, numRequests] = GetParam();
 
-	CaptureBalanced capture(camera_);
+	Capture capture(camera_);
 
 	capture.configure(role);
 
-	capture.capture(numRequests);
+	capture.run(numRequests, numRequests);
 }
 
 /*
@@ -106,12 +106,12 @@ TEST_P(SingleStream, CaptureStartStop)
 	auto [role, numRequests] = GetParam();
 	unsigned int numRepeats = 3;
 
-	CaptureBalanced capture(camera_);
+	Capture capture(camera_);
 
 	capture.configure(role);
 
 	for (unsigned int starts = 0; starts < numRepeats; starts++)
-		capture.capture(numRequests);
+		capture.run(numRequests, numRequests);
 }
 
 /*
@@ -125,11 +125,11 @@ TEST_P(SingleStream, UnbalancedStop)
 {
 	auto [role, numRequests] = GetParam();
 
-	CaptureUnbalanced capture(camera_);
+	Capture capture(camera_);
 
 	capture.configure(role);
 
-	capture.capture(numRequests);
+	capture.run(numRequests);
 }
 
 INSTANTIATE_TEST_SUITE_P(CaptureTests,

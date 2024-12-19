@@ -42,6 +42,24 @@ Awb::Awb()
 }
 
 /**
+ * \copydoc libcamera::ipa::Algorithm::init
+ */
+int Awb::init([[maybe_unused]] IPAContext &context, const YamlObject &tuningData)
+{
+	Interpolator<Vector<double, 2>> gainCurve;
+	int ret = gainCurve.readYaml(tuningData["colourGains"], "ct", "gains");
+	if (ret < 0)
+		LOG(RkISP1Awb, Warning)
+			<< "Failed to parse 'colourGains' "
+			<< "parameter from tuning file; "
+			<< "manual colour temperature will not work properly";
+	else
+		colourGainCurve_ = gainCurve;
+
+	return 0;
+}
+
+/**
  * \copydoc libcamera::ipa::Algorithm::configure
  */
 int Awb::configure(IPAContext &context,

@@ -7,6 +7,11 @@
 
 #pragma once
 
+#include <optional>
+
+#include "libipa/interpolator.h"
+#include "libipa/vector.h"
+
 #include "algorithm.h"
 
 namespace libcamera {
@@ -19,6 +24,7 @@ public:
 	Awb();
 	~Awb() = default;
 
+	int init(IPAContext &context, const YamlObject &tuningData) override;
 	int configure(IPAContext &context, const IPACameraSensorInfo &configInfo) override;
 	void queueRequest(IPAContext &context, const uint32_t frame,
 			  IPAFrameContext &frameContext,
@@ -32,6 +38,7 @@ public:
 		     ControlList &metadata) override;
 
 private:
+	std::optional<Interpolator<Vector<double, 2>>> colourGainCurve_;
 	bool rgbMode_;
 };
 

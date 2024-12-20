@@ -50,8 +50,6 @@ static void listCameras(CameraManager *cm)
 
 static int initCamera(CameraManager *cm, OptionsParser::Options options)
 {
-	std::shared_ptr<Camera> camera;
-
 	int ret = cm->start();
 	if (ret) {
 		std::cout << "Failed to start camera manager: "
@@ -66,7 +64,7 @@ static int initCamera(CameraManager *cm, OptionsParser::Options options)
 	}
 
 	const std::string &cameraId = options[OptCamera];
-	camera = cm->get(cameraId);
+	std::shared_ptr<Camera> camera = cm->get(cameraId);
 	if (!camera) {
 		std::cout << "Camera " << cameraId << " not found, available cameras:" << std::endl;
 		listCameras(cm);

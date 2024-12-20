@@ -12,8 +12,8 @@
 using namespace libcamera;
 
 Capture::Capture(std::shared_ptr<Camera> camera)
-	: loop_(nullptr), camera_(camera),
-	  allocator_(std::make_unique<FrameBufferAllocator>(camera))
+	: loop_(nullptr), camera_(std::move(camera)),
+	  allocator_(std::make_unique<FrameBufferAllocator>(camera_))
 {
 }
 
@@ -72,7 +72,7 @@ void Capture::stop()
 /* CaptureBalanced */
 
 CaptureBalanced::CaptureBalanced(std::shared_ptr<Camera> camera)
-	: Capture(camera)
+	: Capture(std::move(camera))
 {
 }
 
@@ -144,7 +144,7 @@ void CaptureBalanced::requestComplete(Request *request)
 /* CaptureUnbalanced */
 
 CaptureUnbalanced::CaptureUnbalanced(std::shared_ptr<Camera> camera)
-	: Capture(camera)
+	: Capture(std::move(camera))
 {
 }
 

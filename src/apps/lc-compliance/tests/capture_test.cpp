@@ -89,7 +89,7 @@ TEST_P(SingleStream, Capture)
 
 	Capture capture(camera_);
 
-	capture.configure(role);
+	capture.configure({ { role } });
 
 	capture.run(numRequests, numRequests);
 }
@@ -108,7 +108,7 @@ TEST_P(SingleStream, CaptureStartStop)
 
 	Capture capture(camera_);
 
-	capture.configure(role);
+	capture.configure({ { role } });
 
 	for (unsigned int starts = 0; starts < numRepeats; starts++)
 		capture.run(numRequests, numRequests);
@@ -127,7 +127,7 @@ TEST_P(SingleStream, UnbalancedStop)
 
 	Capture capture(camera_);
 
-	capture.configure(role);
+	capture.configure({ { role } });
 
 	capture.run(numRequests);
 }

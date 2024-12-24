@@ -2,6 +2,7 @@ libcamera (0.4.0-1) UNRELEASED; urgency=medium
 
   * New upstream version 0.4.0
   * Add new Build-Deps: libyuv-dev
+  * Add patch fixing detection of system libyuv
   * Drop workaround for doxygen-latex on sh4, no longer required since all
     these build-deps moved to Build-Depends-Indep.
   * Allow reprotest and blhc to fail in salsa-ci

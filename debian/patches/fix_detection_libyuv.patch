@@ -1,0 +1,16 @@
+Description: Fix detection of system libyuv by relying on the find_library
+ function as fallback detection mechanism.
+Author: Dylan Aïssi <daissi@debian.org>
+
+--- a/src/meson.build
++++ b/src/meson.build
+@@ -31,6 +31,9 @@
+ # Fallback to a subproject if libyuv isn't found, as it's typically not provided
+ # by distributions.
+ libyuv_dep = dependency('libyuv', required : false)
++if not libyuv_dep.found()
++    libyuv_dep = cc.find_library('yuv', required: false)
++endif
+ 
+ if (pipelines.contains('virtual') or get_option('android').allowed()) and \
+    not libyuv_dep.found()

@@ -1,9 +1,11 @@
-libcamera (0.3.2-3) UNRELEASED; urgency=medium
+libcamera (0.4.0-1) UNRELEASED; urgency=medium
 
+  * New upstream version 0.4.0
   * Drop workaround for doxygen-latex on sh4, no longer required since all
     these build-deps moved to Build-Depends-Indep.
+  * Allow reprotest and blhc to fail in salsa-ci
 
- -- Dylan Aïssi <daissi@debian.org>  Sat, 23 Nov 2024 09:52:58 +0100
+ -- Dylan Aïssi <daissi@debian.org>  Tue, 24 Dec 2024 16:11:35 +0100
 
 libcamera (0.3.2-2) unstable; urgency=medium
 

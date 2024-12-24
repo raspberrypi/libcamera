@@ -28,6 +28,7 @@
 #include "libcamera/internal/camera.h"
 #include "libcamera/internal/camera_lens.h"
 #include "libcamera/internal/camera_sensor.h"
+#include "libcamera/internal/camera_sensor_properties.h"
 #include "libcamera/internal/delayed_controls.h"
 #include "libcamera/internal/device_enumerator.h"
 #include "libcamera/internal/framebuffer.h"
@@ -88,7 +89,7 @@ public:
 
 private:
 	void metadataReady(unsigned int id, const ControlList &metadata);
-	void paramsBufferReady(unsigned int id);
+	void paramsComputed(unsigned int id);
 	void setSensorControls(unsigned int id, const ControlList &sensorControls,
 			       const ControlList &lensControls);
 };
@@ -958,7 +959,7 @@ int PipelineHandlerIPU3::updateControls(IPU3CameraData *data)
 		values.reserve(testPatternModes.size());
 
 		for (auto pattern : testPatternModes)
-			values.emplace_back(static_cast<int32_t>(pattern));
+			values.emplace_back(pattern);
 
 		controls[&controls::draft::TestPatternMode] = ControlInfo(values);
 	}
@@ -1077,14 +1078,10 @@ int PipelineHandlerIPU3::registerCameras()
 		if (ret)
 			continue;
 
-		/*
-		 * \todo Read delay values from the sensor itself or from a
-		 * a sensor database. For now use generic values taken from
-		 * the Raspberry Pi and listed as 'generic values'.
-		 */
+		const CameraSensorProperties::SensorDelays &delays = cio2->sensor()->sensorDelays();
 		std::unordered_map<uint32_t, DelayedControls::ControlParams> params = {
-			{ V4L2_CID_ANALOGUE_GAIN, { 1, false } },
-			{ V4L2_CID_EXPOSURE, { 2, false } },
+			{ V4L2_CID_ANALOGUE_GAIN, { delays.gainDelay, false } },
+			{ V4L2_CID_EXPOSURE, { delays.exposureDelay, false } },
 		};
 
 		data->delayedCtrls_ =
@@ -1156,7 +1153,7 @@ int IPU3CameraData::loadIPA()
 		return -ENOENT;
 
 	ipa_->setSensorControls.connect(this, &IPU3CameraData::setSensorControls);
-	ipa_->paramsBufferReady.connect(this, &IPU3CameraData::paramsBufferReady);
+	ipa_->paramsComputed.connect(this, &IPU3CameraData::paramsComputed);
 	ipa_->metadataReady.connect(this, &IPU3CameraData::metadataReady);
 
 	/*
@@ -1217,7 +1214,7 @@ void IPU3CameraData::setSensorControls([[maybe_unused]] unsigned int id,
 	focusLens->setFocusPosition(focusValue.get<int32_t>());
 }
 
-void IPU3CameraData::paramsBufferReady(unsigned int id)
+void IPU3CameraData::paramsComputed(unsigned int id)
 {
 	IPU3Frames::Info *info = frameInfos_.find(id);
 	if (!info)
@@ -1328,7 +1325,7 @@ void IPU3CameraData::cio2BufferReady(FrameBuffer *buffer)
 	if (request->findBuffer(&rawStream_))
 		pipe()->completeBuffer(request, buffer);
 
-	ipa_->fillParamsBuffer(info->id, info->paramBuffer->cookie());
+	ipa_->computeParams(info->id, info->paramBuffer->cookie());
 }
 
 void IPU3CameraData::paramBufferReady(FrameBuffer *buffer)
@@ -1372,8 +1369,8 @@ void IPU3CameraData::statBufferReady(FrameBuffer *buffer)
 		return;
 	}
 
-	ipa_->processStatsBuffer(info->id, request->metadata().get(controls::SensorTimestamp).value_or(0),
-				 info->statBuffer->cookie(), info->effectiveSensorControls);
+	ipa_->processStats(info->id, request->metadata().get(controls::SensorTimestamp).value_or(0),
+			   info->statBuffer->cookie(), info->effectiveSensorControls);
 }
 
 /*

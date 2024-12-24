@@ -262,6 +262,15 @@ public:
 	{
 	}
 
+	constexpr Rectangle(const Point &point1, const Point &point2)
+		: Rectangle(std::min(point1.x, point2.x), std::min(point1.y, point2.y),
+			    static_cast<unsigned int>(std::max(point1.x, point2.x)) -
+			    static_cast<unsigned int>(std::min(point1.x, point2.x)),
+			    static_cast<unsigned int>(std::max(point1.y, point2.y)) -
+			    static_cast<unsigned int>(std::min(point1.y, point2.y)))
+	{
+	}
+
 	int x;
 	int y;
 	unsigned int width;
@@ -290,6 +299,9 @@ public:
 	__nodiscard Rectangle scaledBy(const Size &numerator,
 				       const Size &denominator) const;
 	__nodiscard Rectangle translatedBy(const Point &point) const;
+
+	Rectangle transformedBetween(const Rectangle &source,
+				     const Rectangle &target) const;
 };
 
 bool operator==(const Rectangle &lhs, const Rectangle &rhs);

@@ -13,6 +13,8 @@
 
 #include <libcamera/control_ids.h>
 
+#include "libipa/colours.h"
+
 /**
  * \file awb.h
  */
@@ -301,51 +303,24 @@ void Awb::prepare(IPAContext &context,
 	params->use.acc_ccm = 1;
 }
 
-/**
- * The function estimates the correlated color temperature using
- * from RGB color space input.
- * In physics and color science, the Planckian locus or black body locus is
- * the path or locus that the color of an incandescent black body would take
- * in a particular chromaticity space as the blackbody temperature changes.
- *
- * If a narrow range of color temperatures is considered (those encapsulating
- * daylight being the most practical case) one can approximate the Planckian
- * locus in order to calculate the CCT in terms of chromaticity coordinates.
- *
- * More detailed information can be found in:
- * https://en.wikipedia.org/wiki/Color_temperature#Approximation
- */
-uint32_t Awb::estimateCCT(double red, double green, double blue)
-{
-	/* Convert the RGB values to CIE tristimulus values (XYZ) */
-	double X = (-0.14282) * (red) + (1.54924) * (green) + (-0.95641) * (blue);
-	double Y = (-0.32466) * (red) + (1.57837) * (green) + (-0.73191) * (blue);
-	double Z = (-0.68202) * (red) + (0.77073) * (green) + (0.56332) * (blue);
-
-	/* Calculate the normalized chromaticity values */
-	double x = X / (X + Y + Z);
-	double y = Y / (X + Y + Z);
-
-	/* Calculate CCT */
-	double n = (x - 0.3320) / (0.1858 - y);
-	return 449 * n * n * n + 3525 * n * n + 6823.3 * n + 5520.33;
-}
-
 /* Generate an RGB vector with the average values for each zone */
 void Awb::generateZones()
 {
 	zones_.clear();
 
 	for (unsigned int i = 0; i < kAwbStatsSizeX * kAwbStatsSizeY; i++) {
-		RGB zone;
 		double counted = awbStats_[i].counted;
 		if (counted >= cellsPerZoneThreshold_) {
-			zone.G = awbStats_[i].sum.green / counted;
-			if (zone.G >= kMinGreenLevelInZone) {
-				zone.R = awbStats_[i].sum.red / counted;
-				zone.B = awbStats_[i].sum.blue / counted;
+			RGB<double> zone{{
+				static_cast<double>(awbStats_[i].sum.red),
+				static_cast<double>(awbStats_[i].sum.green),
+				static_cast<double>(awbStats_[i].sum.blue)
+			}};
+
+			zone /= counted;
+
+			if (zone.g() >= kMinGreenLevelInZone)
 				zones_.push_back(zone);
-			}
 		}
 	}
 }
@@ -412,32 +387,32 @@ void Awb::awbGreyWorld()
 	 * consider some variations, such as normalising all the zones first, or
 	 * doing an L2 average etc.
 	 */
-	std::vector<RGB> &redDerivative(zones_);
-	std::vector<RGB> blueDerivative(redDerivative);
+	std::vector<RGB<double>> &redDerivative(zones_);
+	std::vector<RGB<double>> blueDerivative(redDerivative);
 	std::sort(redDerivative.begin(), redDerivative.end(),
-		  [](RGB const &a, RGB const &b) {
-			  return a.G * b.R < b.G * a.R;
+		  [](RGB<double> const &a, RGB<double> const &b) {
+			  return a.g() * b.r() < b.g() * a.r();
 		  });
 	std::sort(blueDerivative.begin(), blueDerivative.end(),
-		  [](RGB const &a, RGB const &b) {
-			  return a.G * b.B < b.G * a.B;
+		  [](RGB<double> const &a, RGB<double> const &b) {
+			  return a.g() * b.b() < b.g() * a.b();
 		  });
 
 	/* Average the middle half of the values. */
 	int discard = redDerivative.size() / 4;
 
-	RGB sumRed(0, 0, 0);
-	RGB sumBlue(0, 0, 0);
+	RGB<double> sumRed{ 0.0 };
+	RGB<double> sumBlue{ 0.0 };
 	for (auto ri = redDerivative.begin() + discard,
 		  bi = blueDerivative.begin() + discard;
 	     ri != redDerivative.end() - discard; ri++, bi++)
 		sumRed += *ri, sumBlue += *bi;
 
-	double redGain = sumRed.G / (sumRed.R + 1),
-	       blueGain = sumBlue.G / (sumBlue.B + 1);
+	double redGain = sumRed.g() / (sumRed.r() + 1),
+	       blueGain = sumBlue.g() / (sumBlue.b() + 1);
 
 	/* Color temperature is not relevant in Grey world but still useful to estimate it :-) */
-	asyncResults_.temperatureK = estimateCCT(sumRed.R, sumRed.G, sumBlue.B);
+	asyncResults_.temperatureK = estimateCCT({{ sumRed.r(), sumRed.g(), sumBlue.b() }});
 
 	/*
 	 * Gain values are unsigned integer value ranging [0, 8) with 13 bit

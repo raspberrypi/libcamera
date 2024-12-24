@@ -1215,6 +1215,38 @@ std::vector<SizeRange> V4L2VideoDevice::enumSizes(V4L2PixelFormat pixelFormat)
 }
 
 /**
+ * \brief Get the selection rectangle for \a target
+ * \param[in] target The selection target defined by the V4L2_SEL_TGT_* flags
+ * \param[out] rect The selection rectangle to retrieve
+ *
+ * \todo Define a V4L2SelectionTarget enum for the selection target
+ *
+ * \return 0 on success or a negative error code otherwise
+ */
+int V4L2VideoDevice::getSelection(unsigned int target, Rectangle *rect)
+{
+	struct v4l2_selection sel = {};
+
+	sel.type = bufferType_;
+	sel.target = target;
+	sel.flags = 0;
+
+	int ret = ioctl(VIDIOC_G_SELECTION, &sel);
+	if (ret < 0) {
+		LOG(V4L2, Error) << "Unable to get rectangle " << target
+				 << ": " << strerror(-ret);
+		return ret;
+	}
+
+	rect->x = sel.r.left;
+	rect->y = sel.r.top;
+	rect->width = sel.r.width;
+	rect->height = sel.r.height;
+
+	return 0;
+}
+
+/**
  * \brief Set a selection rectangle \a rect for \a target
  * \param[in] target The selection target defined by the V4L2_SEL_TGT_* flags
  * \param[inout] rect The selection rectangle to be applied
@@ -2092,15 +2124,24 @@ V4L2PixelFormat V4L2VideoDevice::toV4L2PixelFormat(const PixelFormat &pixelForma
  * \class V4L2M2MDevice
  * \brief Memory-to-Memory video device
  *
+ * Memory to Memory devices in the kernel using the V4L2 M2M API can
+ * operate with multiple contexts for parallel operations on a single
+ * device. Each instance of a V4L2M2MDevice represents a single context.
+ *
  * The V4L2M2MDevice manages two V4L2VideoDevice instances on the same
  * deviceNode which operate together using two queues to implement the V4L2
  * Memory to Memory API.
  *
- * The two devices should be opened by calling open() on the V4L2M2MDevice, and
- * can be closed by calling close on the V4L2M2MDevice.
+ * Users of this class should create a new instance of the V4L2M2MDevice for
+ * each desired execution context and then open it by calling open() on the
+ * V4L2M2MDevice and close it by calling close() on the V4L2M2MDevice.
  *
  * Calling V4L2VideoDevice::open() and V4L2VideoDevice::close() on the capture
  * or output V4L2VideoDevice is not permitted.
+ *
+ * Once the M2M device is open, users can operate on the output and capture
+ * queues represented by the V4L2VideoDevice returned by the output() and
+ * capture() functions.
  */
 
 /**

@@ -68,7 +68,7 @@ do
 		fi
 
 		# 2. The commit message shall have Signed-off-by lines
-		# corresponding the committer and the author.
+		# corresponding the committer, author, and all co-developers.
 		committer=$(echo "$msg" | grep '^committer ' | head -1 | \
 				cut -d ' ' -f 2- | rev | cut -d ' ' -f 3- | rev)
 		if ! echo -E "$msg" | grep -F -q "Signed-off-by: ${committer}"
@@ -84,6 +84,15 @@ do
 			echo >&2 "Missing author Signed-off-by in commit $commit"
 			errors=$((errors+1))
 		fi
+
+		while read -r codev
+		do
+			if ! echo -E "$msg" | grep -F -q "Signed-off-by: ${codev}"
+			then
+				echo >&2 "Missing co-developer '${codev}' Signed-off-by in commit $commit"
+				errors=$((errors+1))
+			fi
+		done < <(echo "$msg" | grep '^Co-developed-by: ' | cut -d ' ' -f 2-)
 
 		# 3. A Reviewed-by or Acked-by is required.
 		if ! echo -E "$msg" | grep -q '^\(Reviewed\|Acked\)-by: '

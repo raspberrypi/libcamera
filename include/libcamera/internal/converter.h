@@ -14,9 +14,11 @@
 #include <memory>
 #include <string>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 #include <libcamera/base/class.h>
+#include <libcamera/base/flags.h>
 #include <libcamera/base/signal.h>
 
 #include <libcamera/geometry.h>
@@ -32,7 +34,19 @@ struct StreamConfiguration;
 class Converter
 {
 public:
-	Converter(MediaDevice *media);
+	enum class Feature {
+		None = 0,
+		InputCrop = (1 << 0),
+	};
+
+	using Features = Flags<Feature>;
+
+	enum class Alignment {
+		Down = 0,
+		Up,
+	};
+
+	Converter(MediaDevice *media, Features features = Feature::None);
 	virtual ~Converter();
 
 	virtual int loadConfiguration(const std::string &filename) = 0;
@@ -42,11 +56,22 @@ public:
 	virtual std::vector<PixelFormat> formats(PixelFormat input) = 0;
 	virtual SizeRange sizes(const Size &input) = 0;
 
+	virtual Size adjustInputSize(const PixelFormat &pixFmt,
+				     const Size &size,
+				     Alignment align = Alignment::Down) = 0;
+	virtual Size adjustOutputSize(const PixelFormat &pixFmt,
+				      const Size &size,
+				      Alignment align = Alignment::Down) = 0;
+
 	virtual std::tuple<unsigned int, unsigned int>
 	strideAndFrameSize(const PixelFormat &pixelFormat, const Size &size) = 0;
 
+	virtual int validateOutput(StreamConfiguration *cfg, bool *adjusted,
+				   Alignment align = Alignment::Down) = 0;
+
 	virtual int configure(const StreamConfiguration &inputCfg,
 			      const std::vector<std::reference_wrapper<StreamConfiguration>> &outputCfgs) = 0;
+	virtual bool isConfigured(const Stream *stream) const = 0;
 	virtual int exportBuffers(const Stream *stream, unsigned int count,
 				  std::vector<std::unique_ptr<FrameBuffer>> *buffers) = 0;
 
@@ -56,10 +81,19 @@ public:
 	virtual int queueBuffers(FrameBuffer *input,
 				 const std::map<const Stream *, FrameBuffer *> &outputs) = 0;
 
+	virtual int setInputCrop(const Stream *stream, Rectangle *rect) = 0;
+	virtual std::pair<Rectangle, Rectangle> inputCropBounds() = 0;
+	virtual std::pair<Rectangle, Rectangle> inputCropBounds(const Stream *stream) = 0;
+
 	Signal<FrameBuffer *> inputBufferReady;
 	Signal<FrameBuffer *> outputBufferReady;
 
 	const std::string &deviceNode() const { return deviceNode_; }
+
+	Features features() const { return features_; }
+
+protected:
+	Features features_;
 
 private:
 	std::string deviceNode_;

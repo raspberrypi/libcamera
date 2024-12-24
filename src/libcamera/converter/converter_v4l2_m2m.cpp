@@ -8,6 +8,7 @@
 
 #include "libcamera/internal/converter/converter_v4l2_m2m.h"
 
+#include <algorithm>
 #include <limits.h>
 
 #include <libcamera/base/log.h>
@@ -29,6 +30,52 @@
 namespace libcamera {
 
 LOG_DECLARE_CATEGORY(Converter)
+
+namespace {
+
+int getCropBounds(V4L2VideoDevice *device, Rectangle &minCrop,
+		  Rectangle &maxCrop)
+{
+	Rectangle minC;
+	Rectangle maxC;
+
+	/* Find crop bounds */
+	minC.width = 1;
+	minC.height = 1;
+	maxC.width = UINT_MAX;
+	maxC.height = UINT_MAX;
+
+	int ret = device->setSelection(V4L2_SEL_TGT_CROP, &minC);
+	if (ret) {
+		LOG(Converter, Error)
+			<< "Could not query minimum selection crop: "
+			<< strerror(-ret);
+		return ret;
+	}
+
+	ret = device->getSelection(V4L2_SEL_TGT_CROP_BOUNDS, &maxC);
+	if (ret) {
+		LOG(Converter, Error)
+			<< "Could not query maximum selection crop: "
+			<< strerror(-ret);
+		return ret;
+	}
+
+	/* Reset the crop to its maximum */
+	ret = device->setSelection(V4L2_SEL_TGT_CROP, &maxC);
+	if (ret) {
+		LOG(Converter, Error)
+			<< "Could not reset selection crop: "
+			<< strerror(-ret);
+		return ret;
+	}
+
+	minCrop = minC;
+	maxCrop = maxC;
+	return 0;
+}
+
+} /* namespace */
 
 /* -----------------------------------------------------------------------------
  * V4L2M2MConverter::V4L2M2MStream
@@ -97,6 +144,13 @@ int V4L2M2MConverter::V4L2M2MStream::configure(const StreamConfiguration &inputC
 	inputBufferCount_ = inputCfg.bufferCount;
 	outputBufferCount_ = outputCfg.bufferCount;
 
+	if (converter_->features() & Feature::InputCrop) {
+		ret = getCropBounds(m2m_->output(), inputCropBounds_.first,
+				    inputCropBounds_.second);
+		if (ret)
+			return ret;
+	}
+
 	return 0;
 }
 
@@ -154,6 +208,21 @@ int V4L2M2MConverter::V4L2M2MStream::queueBuffers(FrameBuffer *input, FrameBuffe
 	return 0;
 }
 
+int V4L2M2MConverter::V4L2M2MStream::getInputSelection(unsigned int target, Rectangle *rect)
+{
+	return m2m_->output()->getSelection(target, rect);
+}
+
+int V4L2M2MConverter::V4L2M2MStream::setInputSelection(unsigned int target, Rectangle *rect)
+{
+	return m2m_->output()->setSelection(target, rect);
+}
+
+std::pair<Rectangle, Rectangle> V4L2M2MConverter::V4L2M2MStream::inputCropBounds()
+{
+	return inputCropBounds_;
+}
+
 std::string V4L2M2MConverter::V4L2M2MStream::logPrefix() const
 {
 	return stream_->configuration().toString();
@@ -203,6 +272,15 @@ V4L2M2MConverter::V4L2M2MConverter(MediaDevice *media)
 	if (ret < 0) {
 		m2m_.reset();
 		return;
+	}
+
+	ret = getCropBounds(m2m_->output(), inputCropBounds_.first,
+			    inputCropBounds_.second);
+	if (!ret && inputCropBounds_.first != inputCropBounds_.second) {
+		features_ |= Feature::InputCrop;
+
+		LOG(Converter, Info)
+			<< "Converter supports cropping on its input";
 	}
 }
 
@@ -324,6 +402,127 @@ V4L2M2MConverter::strideAndFrameSize(const PixelFormat &pixelFormat,
 }
 
 /**
+ * \copydoc libcamera::Converter::adjustInputSize
+ */
+Size V4L2M2MConverter::adjustInputSize(const PixelFormat &pixFmt,
+				       const Size &size, Alignment align)
+{
+	auto formats = m2m_->output()->formats();
+	V4L2PixelFormat v4l2PixFmt = m2m_->output()->toV4L2PixelFormat(pixFmt);
+
+	auto it = formats.find(v4l2PixFmt);
+	if (it == formats.end()) {
+		LOG(Converter, Info)
+			<< "Unsupported pixel format " << pixFmt;
+		return {};
+	}
+
+	return adjustSizes(size, it->second, align);
+}
+
+/**
+ * \copydoc libcamera::Converter::adjustOutputSize
+ */
+Size V4L2M2MConverter::adjustOutputSize(const PixelFormat &pixFmt,
+					const Size &size, Alignment align)
+{
+	auto formats = m2m_->capture()->formats();
+	V4L2PixelFormat v4l2PixFmt = m2m_->capture()->toV4L2PixelFormat(pixFmt);
+
+	auto it = formats.find(v4l2PixFmt);
+	if (it == formats.end()) {
+		LOG(Converter, Info)
+			<< "Unsupported pixel format " << pixFmt;
+		return {};
+	}
+
+	return adjustSizes(size, it->second, align);
+}
+
+Size V4L2M2MConverter::adjustSizes(const Size &cfgSize,
+				   const std::vector<SizeRange> &ranges,
+				   Alignment align)
+{
+	Size size = cfgSize;
+
+	if (ranges.size() == 1) {
+		/*
+		 * The device supports either V4L2_FRMSIZE_TYPE_CONTINUOUS or
+		 * V4L2_FRMSIZE_TYPE_STEPWISE.
+		 */
+		const SizeRange &range = *ranges.begin();
+
+		size.width = std::clamp(size.width, range.min.width,
+					range.max.width);
+		size.height = std::clamp(size.height, range.min.height,
+					 range.max.height);
+
+		/*
+		 * Check if any alignment is needed. If the sizes are already
+		 * aligned, or the device supports V4L2_FRMSIZE_TYPE_CONTINUOUS
+		 * with hStep and vStep equal to 1, we're done here.
+		 */
+		int widthR = size.width % range.hStep;
+		int heightR = size.height % range.vStep;
+
+		/* Align up or down according to the caller request. */
+
+		if (widthR != 0)
+			size.width = size.width - widthR
+				   + ((align == Alignment::Up) ? range.hStep : 0);
+
+		if (heightR != 0)
+			size.height = size.height - heightR
+				    + ((align == Alignment::Up) ? range.vStep : 0);
+	} else {
+		/*
+		 * The device supports V4L2_FRMSIZE_TYPE_DISCRETE, find the
+		 * size closer to the requested output configuration.
+		 *
+		 * The size ranges vector is not ordered, so we sort it first.
+		 * If we align up, start from the larger element.
+		 */
+		std::vector<Size> sizes(ranges.size());
+		std::transform(ranges.begin(), ranges.end(), std::back_inserter(sizes),
+			       [](const SizeRange &range) { return range.max; });
+		std::sort(sizes.begin(), sizes.end());
+
+		if (align == Alignment::Up)
+			std::reverse(sizes.begin(), sizes.end());
+
+		/*
+		 * Return true if s2 is valid according to the desired
+		 * alignment: smaller than s1 if we align down, larger than s1
+		 * if we align up.
+		 */
+		auto nextSizeValid = [](const Size &s1, const Size &s2, Alignment a) {
+			return a == Alignment::Down
+				? (s1.width > s2.width && s1.height > s2.height)
+				: (s1.width < s2.width && s1.height < s2.height);
+		};
+
+		Size newSize;
+		for (const Size &sz : sizes) {
+			if (!nextSizeValid(size, sz, align))
+				break;
+
+			newSize = sz;
+		}
+
+		if (newSize.isNull()) {
+			LOG(Converter, Error)
+				<< "Cannot adjust " << cfgSize
+				<< " to a supported converter size";
+			return {};
+		}
+
+		size = newSize;
+	}
+
+	return size;
+}
+
+/**
  * \copydoc libcamera::Converter::configure
  */
 int V4L2M2MConverter::configure(const StreamConfiguration &inputCfg,
@@ -361,6 +560,14 @@ int V4L2M2MConverter::configure(const StreamConfiguration &inputCfg,
 }
 
 /**
+ * \copydoc libcamera::Converter::isConfigured
+ */
+bool V4L2M2MConverter::isConfigured(const Stream *stream) const
+{
+	return streams_.find(stream) != streams_.end();
+}
+
+/**
  * \copydoc libcamera::Converter::exportBuffers
  */
 int V4L2M2MConverter::exportBuffers(const Stream *stream, unsigned int count,
@@ -371,6 +578,43 @@ int V4L2M2MConverter::exportBuffers(const Stream *stream, unsigned int count,
 		return -EINVAL;
 
 	return iter->second->exportBuffers(count, buffers);
+}
+
+/**
+ * \copydoc libcamera::Converter::setInputCrop
+ */
+int V4L2M2MConverter::setInputCrop(const Stream *stream, Rectangle *rect)
+{
+	if (!(features_ & Feature::InputCrop))
+		return -ENOTSUP;
+
+	auto iter = streams_.find(stream);
+	if (iter == streams_.end()) {
+		LOG(Converter, Error) << "Invalid output stream";
+		return -EINVAL;
+	}
+
+	return iter->second->setInputSelection(V4L2_SEL_TGT_CROP, rect);
+}
+
+/**
+ * \fn libcamera::V4L2M2MConverter::inputCropBounds()
+ * \copydoc libcamera::Converter::inputCropBounds()
+ */
+
+/**
+ * \copydoc libcamera::Converter::inputCropBounds(const Stream *stream)
+ */
+std::pair<Rectangle, Rectangle>
+V4L2M2MConverter::inputCropBounds(const Stream *stream)
+{
+	auto iter = streams_.find(stream);
+	if (iter == streams_.end()) {
+		LOG(Converter, Error) << "Invalid output stream";
+		return {};
+	}
+
+	return iter->second->inputCropBounds();
 }
 
 /**
@@ -398,6 +642,53 @@ void V4L2M2MConverter::stop()
 {
 	for (auto &iter : streams_)
 		iter.second->stop();
+}
+
+/**
+ * \copydoc libcamera::Converter::validateOutput
+ */
+int V4L2M2MConverter::validateOutput(StreamConfiguration *cfg, bool *adjusted,
+				     Alignment align)
+{
+	V4L2VideoDevice *capture = m2m_->capture();
+	V4L2VideoDevice::Formats fmts = capture->formats();
+
+	if (adjusted)
+		*adjusted = false;
+
+	PixelFormat fmt = cfg->pixelFormat;
+	V4L2PixelFormat v4l2PixFmt = capture->toV4L2PixelFormat(fmt);
+
+	auto it = fmts.find(v4l2PixFmt);
+	if (it == fmts.end()) {
+		it = fmts.begin();
+		v4l2PixFmt = it->first;
+		cfg->pixelFormat = v4l2PixFmt.toPixelFormat();
+
+		if (adjusted)
+			*adjusted = true;
+
+		LOG(Converter, Info)
+			<< "Converter output pixel format adjusted to "
+			<< cfg->pixelFormat;
+	}
+
+	const Size cfgSize = cfg->size;
+	cfg->size = adjustSizes(cfgSize, it->second, align);
+
+	if (cfg->size.isNull())
+		return -EINVAL;
+
+	if (cfg->size.width != cfgSize.width ||
+	    cfg->size.height != cfgSize.height) {
+		LOG(Converter, Info)
+			<< "Converter size adjusted to "
+			<< cfg->size;
+		if (adjusted)
+			*adjusted = true;
+	}
+
+	return 0;
 }
 
 /**
@@ -446,6 +737,10 @@ int V4L2M2MConverter::queueBuffers(FrameBuffer *input,
 	return 0;
 }
 
+/*
+ * \todo: This should be extended to include Feature::Flag to denote
+ * what each converter supports feature-wise.
+ */
 static std::initializer_list<std::string> compatibles = {
 	"mtk-mdp",
 	"pxp",

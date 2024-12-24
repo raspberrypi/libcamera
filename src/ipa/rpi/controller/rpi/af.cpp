@@ -7,8 +7,8 @@
 
 #include "af.h"
 
+#include <cmath>
 #include <iomanip>
-#include <math.h>
 #include <stdlib.h>
 
 #include <libcamera/base/log.h>

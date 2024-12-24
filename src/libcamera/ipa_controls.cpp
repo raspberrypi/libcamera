@@ -220,6 +220,10 @@ static_assert(sizeof(ipa_control_value_entry) == 16,
  * \var ipa_control_info_entry::offset
  * The offset in bytes from the beginning of the data section to the control
  * info data (shall be a multiple of 8 bytes)
+ * \var ipa_control_info_entry::direction
+ * The directions in which the control is allowed to be sent. This is a flags
+ * value, where 0x1 signifies input (as controls), and 0x2 signifies output (as
+ * metadata). \sa ControlId::Direction
  * \var ipa_control_info_entry::padding
  * Padding bytes (shall be set to 0)
  */

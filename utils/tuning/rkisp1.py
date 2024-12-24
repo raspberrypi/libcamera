@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 #
 # Copyright (C) 2022, Paul Elder <paul.elder@ideasonboard.com>
+# Copyright (C) 2024, Ideas On Board
 #
 # Tuning script for rkisp1
 
@@ -14,13 +15,14 @@ from libtuning.parsers import YamlParser
 from libtuning.generators import YamlOutput
 from libtuning.modules.lsc import LSCRkISP1
 from libtuning.modules.agc import AGCRkISP1
+from libtuning.modules.awb import AWBRkISP1
 from libtuning.modules.ccm import CCMRkISP1
 from libtuning.modules.static import StaticModule
 
 coloredlogs.install(level=logging.INFO, fmt='%(name)s %(levelname)s %(message)s')
 
 agc = AGCRkISP1(debug=[lt.Debug.Plot])
-awb = StaticModule('Awb')
+awb = AWBRkISP1(debug=[lt.Debug.Plot])
 blc = StaticModule('BlackLevelCorrection')
 ccm = CCMRkISP1(debug=[lt.Debug.Plot])
 color_processing = StaticModule('ColorProcessing')

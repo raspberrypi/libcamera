@@ -74,7 +74,7 @@ PipelineHandler::PipelineHandler(CameraManager *manager)
 
 PipelineHandler::~PipelineHandler()
 {
-	for (std::shared_ptr<MediaDevice> media : mediaDevices_)
+	for (std::shared_ptr<MediaDevice> &media : mediaDevices_)
 		media->release();
 }
 
@@ -367,9 +367,7 @@ void PipelineHandler::stop(Camera *camera)
 	while (!waitingRequests_.empty()) {
 		Request *request = waitingRequests_.front();
 		waitingRequests_.pop();
-
-		request->_d()->cancel();
-		completeRequest(request);
+		cancelRequest(request);
 	}
 
 	/* Make sure no requests are pending. */
@@ -470,10 +468,8 @@ void PipelineHandler::doQueueRequest(Request *request)
 	}
 
 	int ret = queueRequestDevice(camera, request);
-	if (ret) {
-		request->_d()->cancel();
-		completeRequest(request);
-	}
+	if (ret)
+		cancelRequest(request);
 }
 
 /**
@@ -569,6 +565,19 @@ void PipelineHandler::completeRequest(Request *request)
 }
 
 /**
+ * \brief Cancel request and signal its completion
+ * \param[in] request The request to cancel
+ *
+ * This function cancels and completes the request. The same rules as for
+ * completeRequest() apply.
+ */
+void PipelineHandler::cancelRequest(Request *request)
+{
+	request->_d()->cancel();
+	completeRequest(request);
+}
+
+/**
  * \brief Retrieve the absolute path to a platform configuration file
  * \param[in] subdir The pipeline handler specific subdirectory name
  * \param[in] name The configuration file name
@@ -637,9 +646,14 @@ void PipelineHandler::registerCamera(std::shared_ptr<Camera> camera)
 {
 	cameras_.push_back(camera);
 
-	if (mediaDevices_.empty())
-		LOG(Pipeline, Fatal)
-			<< "Registering camera with no media devices!";
+	if (mediaDevices_.empty()) {
+		/*
+		 * For virtual devices with no MediaDevice, there are no system
+		 * devices to register.
+		 */
+		manager_->_d()->addCamera(std::move(camera));
+		return;
+	}
 
 	/*
 	 * Walk the entity list and map the devnums of all capture video nodes

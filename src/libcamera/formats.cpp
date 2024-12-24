@@ -157,7 +157,7 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
 		.packed = false,
 		.pixelsPerGroup = 1,
-		.planes = {{ { 3, 1 }, { 0, 0 }, { 0, 0 } }},
+		.planes = {{ { 2, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
 	{ formats::RGB565_BE, {
 		.name = "RGB565_BE",
@@ -167,7 +167,7 @@ const std::map<PixelFormat, PixelFormatInfo> pixelFormatInfo{
 		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
 		.packed = false,
 		.pixelsPerGroup = 1,
-		.planes = {{ { 3, 1 }, { 0, 0 }, { 0, 0 } }},
+		.planes = {{ { 2, 1 }, { 0, 0 }, { 0, 0 } }},
 	} },
 	{ formats::BGR888, {
 		.name = "BGR888",

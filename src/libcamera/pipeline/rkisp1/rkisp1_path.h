@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <map>
 #include <memory>
 #include <set>
 #include <vector>
@@ -25,6 +26,7 @@ namespace libcamera {
 
 class CameraSensor;
 class MediaDevice;
+class SensorConfiguration;
 class V4L2Subdevice;
 struct StreamConfiguration;
 struct V4L2SubdeviceFormat;
@@ -32,8 +34,7 @@ struct V4L2SubdeviceFormat;
 class RkISP1Path
 {
 public:
-	RkISP1Path(const char *name, const Span<const PixelFormat> &formats,
-		   const Size &minResolution, const Size &maxResolution);
+	RkISP1Path(const char *name, const Span<const PixelFormat> &formats);
 
 	bool init(MediaDevice *media);
 
@@ -44,6 +45,7 @@ public:
 						  const Size &resolution,
 						  StreamRole role);
 	CameraConfiguration::Status validate(const CameraSensor *sensor,
+					     const std::optional<SensorConfiguration> &sensorConfig,
 					     StreamConfiguration *cfg);
 
 	int configure(const StreamConfiguration &config,
@@ -60,9 +62,11 @@ public:
 
 	int queueBuffer(FrameBuffer *buffer) { return video_->queueBuffer(buffer); }
 	Signal<FrameBuffer *> &bufferReady() { return video_->bufferReady; }
+	const Size &maxResolution() const { return maxResolution_; }
 
 private:
 	void populateFormats();
+	Size filterSensorResolution(const CameraSensor *sensor);
 
 	static constexpr unsigned int RKISP1_BUFFER_COUNT = 4;
 
@@ -77,6 +81,12 @@ private:
 	std::unique_ptr<V4L2Subdevice> resizer_;
 	std::unique_ptr<V4L2VideoDevice> video_;
 	MediaLink *link_;
+
+	/*
+	 * Map from camera sensors to the sizes (in increasing order),
+	 * which are guaranteed to be supported by the pipeline.
+	 */
+	std::map<const CameraSensor *, std::vector<Size>> sensorSizesMap_;
 };
 
 class RkISP1MainPath : public RkISP1Path

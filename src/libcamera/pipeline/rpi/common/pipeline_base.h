@@ -83,7 +83,7 @@ public:
 
 	Rectangle scaleIspCrop(const Rectangle &ispCrop) const;
 	void applyScalerCrop(const ControlList &controls);
-	virtual void platformSetIspCrop() = 0;
+	virtual void platformSetIspCrop(unsigned int index, const Rectangle &ispCrop) = 0;
 
 	void cameraTimeout();
 	void frameStarted(uint32_t sequence);
@@ -133,9 +133,23 @@ public:
 
 	/* For handling digital zoom. */
 	IPACameraSensorInfo sensorInfo_;
-	Rectangle ispCrop_; /* crop in ISP (camera mode) pixels */
-	Rectangle scalerCrop_; /* crop in sensor native pixels */
-	Size ispMinCropSize_;
+
+	struct CropParams {
+		CropParams(Rectangle ispCrop_, Size ispMinCropSize_, unsigned int ispIndex_)
+			: ispCrop(ispCrop_), ispMinCropSize(ispMinCropSize_), ispIndex(ispIndex_)
+		{
+		}
+
+		/* Crop in ISP (camera mode) pixels */
+		Rectangle ispCrop;
+		/* Minimum crop size in ISP output pixels */
+		Size ispMinCropSize;
+		/* Index of the ISP output channel for this crop */
+		unsigned int ispIndex;
+	};
+
+	/* Mapping of CropParams keyed by the output stream order in CameraConfiguration */
+	std::map<unsigned int, CropParams> cropParams_;
 
 	unsigned int dropFrameCount_;
 

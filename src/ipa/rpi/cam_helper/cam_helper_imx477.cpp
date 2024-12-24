@@ -51,8 +51,6 @@ public:
 	void prepare(libcamera::Span<const uint8_t> buffer, Metadata &metadata) override;
 	std::pair<uint32_t, uint32_t> getBlanking(Duration &exposure, Duration minFrameDuration,
 						  Duration maxFrameDuration) const override;
-	void getDelays(int &exposureDelay, int &gainDelay,
-		       int &vblankDelay, int &hblankDelay) const override;
 	bool sensorEmbeddedDataPresent() const override;
 
 private:
@@ -112,7 +110,7 @@ void CamHelperImx477::prepare(libcamera::Span<const uint8_t> buffer, Metadata &m
 		DeviceStatus parsedDeviceStatus;
 
 		metadata.get("device.status", parsedDeviceStatus);
-		parsedDeviceStatus.shutterSpeed = deviceStatus.shutterSpeed;
+		parsedDeviceStatus.exposureTime = deviceStatus.exposureTime;
 		parsedDeviceStatus.frameLength = deviceStatus.frameLength;
 		metadata.set("device.status", parsedDeviceStatus);
 
@@ -159,15 +157,6 @@ std::pair<uint32_t, uint32_t> CamHelperImx477::getBlanking(Duration &exposure,
 	return { frameLength - mode_.height, hblank };
 }
 
-void CamHelperImx477::getDelays(int &exposureDelay, int &gainDelay,
-				int &vblankDelay, int &hblankDelay) const
-{
-	exposureDelay = 2;
-	gainDelay = 2;
-	vblankDelay = 3;
-	hblankDelay = 3;
-}
-
 bool CamHelperImx477::sensorEmbeddedDataPresent() const
 {
 	return true;
@@ -180,7 +169,7 @@ void CamHelperImx477::populateMetadata(const MdParser::RegisterMap &registers,
 
 	deviceStatus.lineLength = lineLengthPckToDuration(registers.at(lineLengthHiReg) * 256 +
 							  registers.at(lineLengthLoReg));
-	deviceStatus.shutterSpeed = exposure(registers.at(expHiReg) * 256 + registers.at(expLoReg),
+	deviceStatus.exposureTime = exposure(registers.at(expHiReg) * 256 + registers.at(expLoReg),
 					     deviceStatus.lineLength);
 	deviceStatus.analogueGain = gain(registers.at(gainHiReg) * 256 + registers.at(gainLoReg));
 	deviceStatus.frameLength = registers.at(frameLengthHiReg) * 256 + registers.at(frameLengthLoReg);

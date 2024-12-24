@@ -1,0 +1,36 @@
+# SPDX-License-Identifier: CC0-1.0
+%YAML 1.1
+---
+"Virtual0":
+  supported_formats:
+  - width: 1920
+    height: 1080
+    frame_rates:
+    - 30
+    - 60
+  - width: 1680
+    height: 1050
+    frame_rates:
+    - 70
+    - 80
+  test_pattern: "lines"
+  location: "CameraLocationFront"
+  model: "Virtual Video Device"
+"Virtual1":
+  supported_formats:
+  - width: 800
+    height: 600
+    frame_rates:
+    - 60
+  test_pattern: "bars"
+  location: "CameraLocationBack"
+  model: "Virtual Video Device1"
+"Virtual2":
+  supported_formats:
+  - width: 400
+    height: 300
+  test_pattern: "lines"
+  location: "CameraLocationFront"
+  model: "Virtual Video Device2"
+"Virtual3":
+  test_pattern: "bars"

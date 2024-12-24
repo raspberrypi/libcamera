@@ -22,6 +22,9 @@
 
 #include <libcamera/base/log.h>
 #include <libcamera/base/memfd.h>
+#include <libcamera/base/shared_fd.h>
+
+#include <libcamera/framebuffer.h>
 
 /**
  * \file dma_buf_allocator.cpp
@@ -203,6 +206,134 @@ UniqueFD DmaBufAllocator::alloc(const char *name, std::size_t size)
 		return allocFromUDmaBuf(name, size);
 	else
 		return allocFromHeap(name, size);
+}
+
+/**
+ * \brief Allocate and export buffers from the DmaBufAllocator
+ * \param[in] count The number of requested FrameBuffers
+ * \param[in] planeSizes The sizes of planes in each FrameBuffer
+ * \param[out] buffers Array of buffers successfully allocated
+ *
+ * Planes in a FrameBuffer are allocated with a single dma buf.
+ * \todo Add the option to allocate each plane with a dma buf respectively.
+ *
+ * \return The number of allocated buffers on success or a negative error code
+ * otherwise
+ */
+int DmaBufAllocator::exportBuffers(unsigned int count,
+				   const std::vector<unsigned int> &planeSizes,
+				   std::vector<std::unique_ptr<FrameBuffer>> *buffers)
+{
+	for (unsigned int i = 0; i < count; ++i) {
+		std::unique_ptr<FrameBuffer> buffer =
+			createBuffer("frame-" + std::to_string(i), planeSizes);
+		if (!buffer) {
+			LOG(DmaBufAllocator, Error) << "Unable to create buffer";
+
+			buffers->clear();
+			return -EINVAL;
+		}
+
+		buffers->push_back(std::move(buffer));
+	}
+
+	return count;
+}
+
+std::unique_ptr<FrameBuffer>
+DmaBufAllocator::createBuffer(std::string name,
+			      const std::vector<unsigned int> &planeSizes)
+{
+	std::vector<FrameBuffer::Plane> planes;
+
+	unsigned int frameSize = 0, offset = 0;
+	for (auto planeSize : planeSizes)
+		frameSize += planeSize;
+
+	SharedFD fd(alloc(name.c_str(), frameSize));
+	if (!fd.isValid())
+		return nullptr;
+
+	for (auto planeSize : planeSizes) {
+		planes.emplace_back(FrameBuffer::Plane{ fd, offset, planeSize });
+		offset += planeSize;
+	}
+
+	return std::make_unique<FrameBuffer>(planes);
+}
+
+/**
+ * \class DmaSyncer
+ * \brief Helper class for dma-buf's synchronization
+ *
+ * This class wraps a userspace dma-buf's synchronization process with an
+ * object's lifetime.
+ *
+ * It's used when the user needs to access a dma-buf with CPU, mostly mapped
+ * with MappedFrameBuffer, so that the buffer is synchronized between CPU and
+ * ISP.
+ */
+
+/**
+ * \enum DmaSyncer::SyncType
+ * \brief Read and/or write access via the CPU map
+ * \var DmaSyncer::Read
+ * \brief Indicates that the mapped dma-buf will be read by the client via the
+ * CPU map
+ * \var DmaSyncer::Write
+ * \brief Indicates that the mapped dm-buf will be written by the client via the
+ * CPU map
+ * \var DmaSyncer::ReadWrite
+ * \brief Indicates that the mapped dma-buf will be read and written by the
+ * client via the CPU map
+ */
+
+/**
+ * \brief Construct a DmaSyncer with a dma-buf's fd and the access type
+ * \param[in] fd The dma-buf's file descriptor to synchronize
+ * \param[in] type Read and/or write access via the CPU map
+ */
+DmaSyncer::DmaSyncer(SharedFD fd, SyncType type)
+	: fd_(fd)
+{
+	switch (type) {
+	case SyncType::Read:
+		flags_ = DMA_BUF_SYNC_READ;
+		break;
+	case SyncType::Write:
+		flags_ = DMA_BUF_SYNC_WRITE;
+		break;
+	case SyncType::ReadWrite:
+		flags_ = DMA_BUF_SYNC_RW;
+		break;
+	}
+
+	sync(DMA_BUF_SYNC_START);
+}
+
+DmaSyncer::~DmaSyncer()
+{
+	sync(DMA_BUF_SYNC_END);
+}
+
+void DmaSyncer::sync(uint64_t step)
+{
+	struct dma_buf_sync sync = {
+		.flags = flags_ | step
+	};
+
+	int ret;
+	do {
+		ret = ioctl(fd_.get(), DMA_BUF_IOCTL_SYNC, &sync);
+	} while (ret && (errno == EINTR || errno == EAGAIN));
+
+	if (ret) {
+		ret = errno;
+		LOG(DmaBufAllocator, Error)
+			<< "Unable to sync dma fd: " << fd_.get()
+			<< ", err: " << strerror(ret)
+			<< ", flags: " << sync.flags;
+	}
 }
 
 } /* namespace libcamera */

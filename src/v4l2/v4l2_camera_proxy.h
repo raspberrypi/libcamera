@@ -67,6 +67,7 @@ private:
 	int vidioc_expbuf(V4L2CameraFile *file, struct v4l2_exportbuffer *arg);
 	int vidioc_streamon(V4L2CameraFile *file, int *arg);
 	int vidioc_streamoff(V4L2CameraFile *file, int *arg);
+	int vidioc_g_parm(V4L2CameraFile *file, struct v4l2_streamparm *arg);
 	int vidioc_s_parm(V4L2CameraFile *file, struct v4l2_streamparm *arg);
 
 	bool hasOwnership(V4L2CameraFile *file);
@@ -85,6 +86,7 @@ private:
 
 	struct v4l2_capability capabilities_;
 	struct v4l2_pix_format v4l2PixFormat_;
+	struct v4l2_fract v4l2TimePerFrame_;
 
 	std::vector<struct v4l2_buffer> buffers_;
 	std::map<void *, unsigned int> mmaps_;

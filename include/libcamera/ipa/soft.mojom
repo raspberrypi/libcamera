@@ -8,18 +8,26 @@ module ipa.soft;
 
 import "include/libcamera/ipa/core.mojom";
 
+struct IPAConfigInfo {
+	libcamera.ControlInfoMap sensorControls;
+};
+
 interface IPASoftInterface {
 	init(libcamera.IPASettings settings,
 	     libcamera.SharedFD fdStats,
 	     libcamera.SharedFD fdParams,
 	     libcamera.ControlInfoMap sensorCtrlInfoMap)
-		=> (int32 ret);
+		=> (int32 ret, libcamera.ControlInfoMap ipaControls);
 	start() => (int32 ret);
 	stop();
-	configure(libcamera.ControlInfoMap sensorCtrlInfoMap)
+	configure(IPAConfigInfo configInfo)
 		=> (int32 ret);
 
-	[async] processStats(libcamera.ControlList sensorControls);
+	[async] queueRequest(uint32 frame, libcamera.ControlList sensorControls);
+	[async] computeParams(uint32 frame);
+	[async] processStats(uint32 frame,
+			     uint32 bufferId,
+			     libcamera.ControlList sensorControls);
 };
 
 interface IPASoftEventInterface {

@@ -159,8 +159,43 @@ CameraSession::~CameraSession()
 void CameraSession::listControls() const
 {
 	for (const auto &[id, info] : camera_->controls()) {
-		std::cout << "Control: " << id->name() << ": "
-			  << info.toString() << std::endl;
+		std::stringstream io;
+		io << "["
+		   << (id->isInput() ? "in" : "  ")
+		   << (id->isOutput() ? "out" : "   ")
+		   << "] ";
+
+		if (info.values().empty()) {
+			std::cout << "Control: " << io.str()
+				  << id->vendor() << "::" << id->name() << ": "
+				  << info.toString() << std::endl;
+		} else {
+			std::cout << "Control: " << io.str()
+				  << id->vendor() << "::" << id->name() << ":"
+				  << std::endl;
+			for (const auto &value : info.values()) {
+				int32_t val = value.get<int32_t>();
+				const auto &it = id->enumerators().find(val);
+
+				std::cout << "  - ";
+				if (it == id->enumerators().end())
+					std::cout << "UNKNOWN";
+				else
+					std::cout << it->second;
+				std::cout << " (" << val << ")" << std::endl;
+			}
+		}
+
+		if (id->isArray()) {
+			std::size_t size = id->size();
+
+			std::cout << "   Size: ";
+			if (size == std::numeric_limits<std::size_t>::max())
+				std::cout << "n";
+			else
+				std::cout << std::to_string(size);
+			std::cout << std::endl;
+		}
 	}
 }
 
@@ -230,11 +265,16 @@ int CameraSession::start()
 #endif
 
 	if (options_.isSet(OptFile)) {
-		if (!options_[OptFile].toString().empty())
-			sink_ = std::make_unique<FileSink>(camera_.get(), streamNames_,
-							   options_[OptFile]);
-		else
-			sink_ = std::make_unique<FileSink>(camera_.get(), streamNames_);
+		std::unique_ptr<FileSink> sink =
+			std::make_unique<FileSink>(camera_.get(), streamNames_);
+
+		if (!options_[OptFile].toString().empty()) {
+			ret = sink->setFilePattern(options_[OptFile]);
+			if (ret)
+				return ret;
+		}
+
+		sink_ = std::move(sink);
 	}
 
 	if (sink_) {

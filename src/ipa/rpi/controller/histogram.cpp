@@ -4,7 +4,7 @@
  *
  * histogram calculations
  */
-#include <math.h>
+#include <cmath>
 #include <stdio.h>
 
 #include "histogram.h"
@@ -49,9 +49,9 @@ double Histogram::interBinMean(double binLo, double binHi) const
 {
 	assert(binHi >= binLo);
 	double sumBinFreq = 0, cumulFreq = 0;
-	for (double binNext = floor(binLo) + 1.0; binNext <= ceil(binHi);
+	for (double binNext = std::floor(binLo) + 1.0; binNext <= std::ceil(binHi);
 	     binLo = binNext, binNext += 1.0) {
-		int bin = floor(binLo);
+		int bin = std::floor(binLo);
 		double freq = (cumulative_[bin + 1] - cumulative_[bin]) *
 			      (std::min(binNext, binHi) - binLo);
 		sumBinFreq += bin * freq;

@@ -30,11 +30,13 @@ namespace {{vendor}} {
 #define LIBCAMERA_HAS_{{vendor|upper}}_VENDOR_{{mode|upper}}
 {%- endif %}
 
+{% if ctrls %}
 enum {
 {%- for ctrl in ctrls %}
 	{{ctrl.name|snake_case|upper}} = {{ctrl.id}},
 {%- endfor %}
 };
+{% endif %}
 
 {% for ctrl in ctrls -%}
 {% if ctrl.is_enum -%}

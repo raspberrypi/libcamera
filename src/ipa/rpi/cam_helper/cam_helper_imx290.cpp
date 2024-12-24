@@ -5,7 +5,7 @@
  * camera helper for imx290 sensor
  */
 
-#include <math.h>
+#include <cmath>
 
 #include "cam_helper.h"
 
@@ -17,8 +17,6 @@ public:
 	CamHelperImx290();
 	uint32_t gainCode(double gain) const override;
 	double gain(uint32_t gainCode) const override;
-	void getDelays(int &exposureDelay, int &gainDelay,
-		       int &vblankDelay, int &hblankDelay) const override;
 	unsigned int hideFramesStartup() const override;
 	unsigned int hideFramesModeSwitch() const override;
 
@@ -37,22 +35,13 @@ CamHelperImx290::CamHelperImx290()
 
 uint32_t CamHelperImx290::gainCode(double gain) const
 {
-	int code = 66.6667 * log10(gain);
+	int code = 66.6667 * std::log10(gain);
 	return std::max(0, std::min(code, 0xf0));
 }
 
 double CamHelperImx290::gain(uint32_t gainCode) const
 {
-	return pow(10, 0.015 * gainCode);
-}
-
-void CamHelperImx290::getDelays(int &exposureDelay, int &gainDelay,
-				int &vblankDelay, int &hblankDelay) const
-{
-	exposureDelay = 2;
-	gainDelay = 2;
-	vblankDelay = 2;
-	hblankDelay = 2;
+	return std::pow(10, 0.015 * gainCode);
 }
 
 unsigned int CamHelperImx290::hideFramesStartup() const
@@ -73,3 +62,5 @@ static CamHelper *create()
 }
 
 static RegisterCamHelper reg("imx290", &create);
+static RegisterCamHelper reg327("imx327", &create);
+static RegisterCamHelper reg462("imx462", &create);

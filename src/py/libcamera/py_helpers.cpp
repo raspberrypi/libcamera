@@ -34,6 +34,8 @@ static py::object valueOrTuple(const ControlValue &cv)
 py::object controlValueToPy(const ControlValue &cv)
 {
 	switch (cv.type()) {
+	case ControlTypeNone:
+		return py::none();
 	case ControlTypeBool:
 		return valueOrTuple<bool>(cv);
 	case ControlTypeByte:
@@ -46,14 +48,14 @@ py::object controlValueToPy(const ControlValue &cv)
 		return valueOrTuple<float>(cv);
 	case ControlTypeString:
 		return py::cast(cv.get<std::string>());
-	case ControlTypeRectangle:
-		return valueOrTuple<Rectangle>(cv);
 	case ControlTypeSize: {
 		const Size *v = reinterpret_cast<const Size *>(cv.data().data());
 		return py::cast(v);
 	}
-	case ControlTypeNone:
-		return py::none();
+	case ControlTypeRectangle:
+		return valueOrTuple<Rectangle>(cv);
+	case ControlTypePoint:
+		return valueOrTuple<Point>(cv);
 	default:
 		throw std::runtime_error("Unsupported ControlValue type");
 	}
@@ -73,6 +75,8 @@ static ControlValue controlValueMaybeArray(const py::object &ob)
 ControlValue pyToControlValue(const py::object &ob, ControlType type)
 {
 	switch (type) {
+	case ControlTypeNone:
+		return ControlValue();
 	case ControlTypeBool:
 		return ControlValue(ob.cast<bool>());
 	case ControlTypeByte:
@@ -89,8 +93,8 @@ ControlValue pyToControlValue(const py::object &ob, ControlType type)
 		return controlValueMaybeArray<Rectangle>(ob);
 	case ControlTypeSize:
 		return ControlValue(ob.cast<Size>());
-	case ControlTypeNone:
-		return ControlValue();
+	case ControlTypePoint:
+		return controlValueMaybeArray<Point>(ob);
 	default:
 		throw std::runtime_error("Control type not implemented");
 	}

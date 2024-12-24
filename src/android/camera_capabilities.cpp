@@ -11,6 +11,7 @@
 #include <array>
 #include <cmath>
 #include <map>
+#include <stdint.h>
 #include <type_traits>
 
 #include <hardware/camera3.h>
@@ -1176,11 +1177,46 @@ int CameraCapabilities::initializeStaticMetadata()
 				  maxFrameDuration_);
 
 	/* Statistics static metadata. */
-	uint8_t faceDetectMode = ANDROID_STATISTICS_FACE_DETECT_MODE_OFF;
-	staticMetadata_->addEntry(ANDROID_STATISTICS_INFO_AVAILABLE_FACE_DETECT_MODES,
-				  faceDetectMode);
-
 	int32_t maxFaceCount = 0;
+	auto iter = camera_->controls().find(controls::draft::FaceDetectMode.id());
+	if (iter != camera_->controls().end()) {
+		const ControlInfo &faceDetectCtrlInfo = iter->second;
+		std::vector<uint8_t> faceDetectModes;
+		bool hasFaceDetection = false;
+
+		for (const auto &value : faceDetectCtrlInfo.values()) {
+			int32_t mode = value.get<int32_t>();
+			uint8_t androidMode = 0;
+
+			switch (mode) {
+			case controls::draft::FaceDetectModeOff:
+				androidMode = ANDROID_STATISTICS_FACE_DETECT_MODE_OFF;
+				break;
+			case controls::draft::FaceDetectModeSimple:
+				androidMode = ANDROID_STATISTICS_FACE_DETECT_MODE_SIMPLE;
+				hasFaceDetection = true;
+				break;
+			default:
+				LOG(HAL, Fatal) << "Received invalid face detect mode: " << mode;
+			}
+			faceDetectModes.push_back(androidMode);
+		}
+		if (hasFaceDetection) {
+			/*
+			 * \todo Create new libcamera controls to query max
+			 * possible faces detected.
+			 */
+			maxFaceCount = 10;
+			staticMetadata_->addEntry(
+				ANDROID_STATISTICS_INFO_AVAILABLE_FACE_DETECT_MODES,
+				faceDetectModes.data(), faceDetectModes.size());
+		}
+	} else {
+		uint8_t faceDetectMode = ANDROID_STATISTICS_FACE_DETECT_MODE_OFF;
+		staticMetadata_->addEntry(ANDROID_STATISTICS_INFO_AVAILABLE_FACE_DETECT_MODES,
+					  faceDetectMode);
+	}
+
 	staticMetadata_->addEntry(ANDROID_STATISTICS_INFO_MAX_FACE_COUNT,
 				  maxFaceCount);
 

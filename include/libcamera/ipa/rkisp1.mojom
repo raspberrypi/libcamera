@@ -31,13 +31,13 @@ interface IPARkISP1Interface {
 	unmapBuffers(array<uint32> ids);
 
 	[async] queueRequest(uint32 frame, libcamera.ControlList reqControls);
-	[async] fillParamsBuffer(uint32 frame, uint32 bufferId);
-	[async] processStatsBuffer(uint32 frame, uint32 bufferId,
-				   libcamera.ControlList sensorControls);
+	[async] computeParams(uint32 frame, uint32 bufferId);
+	[async] processStats(uint32 frame, uint32 bufferId,
+			     libcamera.ControlList sensorControls);
 };
 
 interface IPARkISP1EventInterface {
-	paramsBufferReady(uint32 frame, uint32 bytesused);
+	paramsComputed(uint32 frame, uint32 bytesused);
 	setSensorControls(uint32 frame, libcamera.ControlList sensorControls);
 	metadataReady(uint32 frame, libcamera.ControlList metadata);
 };

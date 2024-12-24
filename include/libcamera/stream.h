@@ -61,6 +61,8 @@ private:
 	StreamFormats formats_;
 };
 
+std::ostream &operator<<(std::ostream &out, const StreamConfiguration &cfg);
+
 enum class StreamRole {
 	Raw,
 	StillCapture,

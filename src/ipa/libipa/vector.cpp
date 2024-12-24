@@ -29,7 +29,13 @@ namespace ipa {
 
 /**
  * \fn Vector::Vector()
- * \brief Construct a zero vector
+ * \brief Construct an uninitialized vector
+ */
+
+/**
+ * \fn Vector::Vector(T scalar)
+ * \brief Construct a vector filled with a \a scalar value
+ * \param[in] scalar The scalar value
  */
 
 /**
@@ -53,62 +59,222 @@ namespace ipa {
  */
 
 /**
- * \fn Vector::x()
- * \brief Convenience function to access the first element of the vector
- * \return The first element of the vector
- */
-
-/**
- * \fn Vector::y()
- * \brief Convenience function to access the second element of the vector
- * \return The second element of the vector
- */
-
-/**
- * \fn Vector::z()
- * \brief Convenience function to access the third element of the vector
- * \return The third element of the vector
- */
-
-/**
  * \fn Vector::operator-() const
  * \brief Negate a Vector by negating both all of its coordinates
  * \return The negated vector
  */
 
 /**
+ * \fn Vector::operator+(Vector const &other) const
+ * \brief Calculate the sum of this vector and \a other element-wise
+ * \param[in] other The other vector
+ * \return The element-wise sum of this vector and \a other
+ */
+
+/**
+ * \fn Vector::operator+(T scalar) const
+ * \brief Calculate the sum of this vector and \a scalar element-wise
+ * \param[in] scalar The scalar
+ * \return The element-wise sum of this vector and \a other
+ */
+
+/**
  * \fn Vector::operator-(Vector const &other) const
- * \brief Subtract one vector from another
+ * \brief Calculate the difference of this vector and \a other element-wise
  * \param[in] other The other vector
- * \return The difference of \a other from this vector
+ * \return The element-wise subtraction of \a other from this vector
  */
 
 /**
- * \fn Vector::operator+()
- * \brief Add two vectors together
- * \param[in] other The other vector
- * \return The sum of the two vectors
+ * \fn Vector::operator-(T scalar) const
+ * \brief Calculate the difference of this vector and \a scalar element-wise
+ * \param[in] scalar The scalar
+ * \return The element-wise subtraction of \a scalar from this vector
  */
 
 /**
- * \fn Vector::operator*(const Vector<T, Rows> &other) const
+ * \fn Vector::operator*(const Vector &other) const
+ * \brief Calculate the product of this vector and \a other element-wise
+ * \param[in] other The other vector
+ * \return The element-wise product of this vector and \a other
+ */
+
+/**
+ * \fn Vector::operator*(T scalar) const
+ * \brief Calculate the product of this vector and \a scalar element-wise
+ * \param[in] scalar The scalar
+ * \return The element-wise product of this vector and \a scalar
+ */
+
+/**
+ * \fn Vector::operator/(const Vector &other) const
+ * \brief Calculate the quotient of this vector and \a other element-wise
+ * \param[in] other The other vector
+ * \return The element-wise division of this vector by \a other
+ */
+
+/**
+ * \fn Vector::operator/(T scalar) const
+ * \brief Calculate the quotient of this vector and \a scalar element-wise
+ * \param[in] scalar The scalar
+ * \return The element-wise division of this vector by \a scalar
+ */
+
+/**
+ * \fn Vector::operator+=(Vector const &other)
+ * \brief Add \a other element-wise to this vector
+ * \param[in] other The other vector
+ * \return This vector
+ */
+
+/**
+ * \fn Vector::operator+=(T scalar)
+ * \brief Add \a scalar element-wise to this vector
+ * \param[in] scalar The scalar
+ * \return This vector
+ */
+
+/**
+ * \fn Vector::operator-=(Vector const &other)
+ * \brief Subtract \a other element-wise from this vector
+ * \param[in] other The other vector
+ * \return This vector
+ */
+
+/**
+ * \fn Vector::operator-=(T scalar)
+ * \brief Subtract \a scalar element-wise from this vector
+ * \param[in] scalar The scalar
+ * \return This vector
+ */
+
+/**
+ * \fn Vector::operator*=(const Vector &other)
+ * \brief Multiply this vector by \a other element-wise
+ * \param[in] other The other vector
+ * \return This vector
+ */
+
+/**
+ * \fn Vector::operator*=(T scalar)
+ * \brief Multiply this vector by \a scalar element-wise
+ * \param[in] scalar The scalar
+ * \return This vector
+ */
+
+/**
+ * \fn Vector::operator/=(const Vector &other)
+ * \brief Divide this vector by \a other element-wise
+ * \param[in] other The other vector
+ * \return This vector
+ */
+
+/**
+ * \fn Vector::operator/=(T scalar)
+ * \brief Divide this vector by \a scalar element-wise
+ * \param[in] scalar The scalar
+ * \return This vector
+ */
+
+/**
+ * \fn Vector::min(const Vector &other) const
+ * \brief Calculate the minimum of this vector and \a other element-wise
+ * \param[in] other The other vector
+ * \return The element-wise minimum of this vector and \a other
+ */
+
+/**
+ * \fn Vector::min(T scalar) const
+ * \brief Calculate the minimum of this vector and \a scalar element-wise
+ * \param[in] scalar The scalar
+ * \return The element-wise minimum of this vector and \a scalar
+ */
+
+/**
+ * \fn Vector::max(const Vector &other) const
+ * \brief Calculate the maximum of this vector and \a other element-wise
+ * \param[in] other The other vector
+ * \return The element-wise maximum of this vector and \a other
+ */
+
+/**
+ * \fn Vector::max(T scalar) const
+ * \brief Calculate the maximum of this vector and \a scalar element-wise
+ * \param[in] scalar The scalar
+ * \return The element-wise maximum of this vector and \a scalar
+ */
+
+/**
+ * \fn Vector::dot(const Vector<T, Rows> &other) const
  * \brief Compute the dot product
  * \param[in] other The other vector
  * \return The dot product of the two vectors
  */
 
 /**
- * \fn Vector::operator*(T factor) const
- * \brief Multiply the vector by a scalar
- * \param[in] factor The factor
- * \return The vector multiplied by \a factor
+ * \fn constexpr T &Vector::x()
+ * \brief Convenience function to access the first element of the vector
+ * \return The first element of the vector
  */
 
 /**
- * \fn Vector::operator/()
- * \brief Divide the vector by a scalar
- * \param[in] factor The factor
- * \return The vector divided by \a factor
+ * \fn constexpr T &Vector::y()
+ * \brief Convenience function to access the second element of the vector
+ * \return The second element of the vector
+ */
+
+/**
+ * \fn constexpr T &Vector::z()
+ * \brief Convenience function to access the third element of the vector
+ * \return The third element of the vector
+ */
+
+/**
+ * \fn constexpr const T &Vector::x() const
+ * \copydoc Vector::x()
+ */
+
+/**
+ * \fn constexpr const T &Vector::y() const
+ * \copydoc Vector::y()
+ */
+
+/**
+ * \fn constexpr const T &Vector::z() const
+ * \copydoc Vector::z()
+ */
+
+/**
+ * \fn constexpr T &Vector::r()
+ * \brief Convenience function to access the first element of the vector
+ * \return The first element of the vector
+ */
+
+/**
+ * \fn constexpr T &Vector::g()
+ * \brief Convenience function to access the second element of the vector
+ * \return The second element of the vector
+ */
+
+/**
+ * \fn constexpr T &Vector::b()
+ * \brief Convenience function to access the third element of the vector
+ * \return The third element of the vector
+ */
+
+/**
+ * \fn constexpr const T &Vector::r() const
+ * \copydoc Vector::r()
+ */
+
+/**
+ * \fn constexpr const T &Vector::g() const
+ * \copydoc Vector::g()
+ */
+
+/**
+ * \fn constexpr const T &Vector::b() const
+ * \copydoc Vector::b()
  */
 
 /**
@@ -124,6 +290,18 @@ namespace ipa {
  */
 
 /**
+ * \fn Vector::sum() const
+ * \brief Calculate the sum of all the vector elements
+ * \tparam R The type of the sum
+ *
+ * The type R of the sum defaults to the type T of the elements, but can be set
+ * explicitly to use a different type in case the type T would risk
+ * overflowing.
+ *
+ * \return The sum of all the vector elements
+ */
+
+/**
  * \fn Vector<T, Rows> operator*(const Matrix<T, Rows, Cols> &m, const Vector<T, Cols> &v)
  * \brief Multiply a matrix by a vector
  * \tparam T Numerical type of the contents of the matrix and vector
@@ -132,6 +310,11 @@ namespace ipa {
  * \param m The matrix
  * \param v The vector
  * \return Product of matrix \a m and vector \a v
+ */
+
+/**
+ * \typedef RGB
+ * \brief A Vector of 3 elements representing an RGB pixel value
  */
 
 /**

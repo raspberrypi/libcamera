@@ -17,11 +17,15 @@
 #include <libcamera/control_ids.h>
 #include <libcamera/controls.h>
 #include <libcamera/geometry.h>
+
 #include <libcamera/ipa/core_ipa_interface.h>
+
+#include "libcamera/internal/debug_controls.h"
+#include "libcamera/internal/matrix.h"
 
 #include <libipa/camera_sensor_helper.h>
 #include <libipa/fc_queue.h>
-#include <libipa/matrix.h>
+#include <libipa/vector.h>
 
 namespace libcamera {
 
@@ -50,8 +54,8 @@ struct IPASessionConfiguration {
 	} lsc;
 
 	struct {
-		utils::Duration minShutterSpeed;
-		utils::Duration maxShutterSpeed;
+		utils::Duration minExposureTime;
+		utils::Duration maxExposureTime;
 		double minAnalogueGain;
 		double maxAnalogueGain;
 
@@ -84,16 +88,8 @@ struct IPAActiveState {
 
 	struct {
 		struct {
-			struct {
-				double red;
-				double green;
-				double blue;
-			} manual;
-			struct {
-				double red;
-				double green;
-				double blue;
-			} automatic;
+			RGB<double> manual;
+			RGB<double> automatic;
 		} gains;
 
 		unsigned int temperatureK;
@@ -137,13 +133,9 @@ struct IPAFrameContext : public FrameContext {
 	} agc;
 
 	struct {
-		struct {
-			double red;
-			double green;
-			double blue;
-		} gains;
-
+		RGB<double> gains;
 		bool autoEnabled;
+		unsigned int temperatureK;
 	} awb;
 
 	struct {
@@ -177,9 +169,18 @@ struct IPAFrameContext : public FrameContext {
 	struct {
 		Matrix<float, 3, 3> ccm;
 	} ccm;
+
+	struct {
+		double lux;
+	} lux;
 };
 
 struct IPAContext {
+	IPAContext(unsigned int frameContextSize)
+		: hw(nullptr), frameContexts(frameContextSize)
+	{
+	}
+
 	const IPAHwSettings *hw;
 	IPACameraSensorInfo sensorInfo;
 	IPASessionConfiguration configuration;
@@ -188,6 +189,8 @@ struct IPAContext {
 	FCQueue<IPAFrameContext> frameContexts;
 
 	ControlInfoMap::Map ctrlMap;
+
+	DebugMetadata debugMetadata;
 
 	/* Interface to the Camera Helper */
 	std::unique_ptr<CameraSensorHelper> camHelper;

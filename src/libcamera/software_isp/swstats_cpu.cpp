@@ -311,13 +311,15 @@ void SwStatsCpu::startFrame(void)
 
 /**
  * \brief Finish statistics calculation for the current frame
+ * \param[in] frame The frame number
+ * \param[in] bufferId ID of the statistics buffer
  *
  * This may only be called after a successful setWindow() call.
  */
-void SwStatsCpu::finishFrame(void)
+void SwStatsCpu::finishFrame(uint32_t frame, uint32_t bufferId)
 {
 	*sharedStats_ = stats_;
-	statsReady.emit();
+	statsReady.emit(frame, bufferId);
 }
 
 /**

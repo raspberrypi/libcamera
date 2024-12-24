@@ -87,14 +87,14 @@ namespace ipa::ipu3 {
  * parameter buffer, and adapting the settings of the sensor attached to the
  * IPU3 CIO2 through sensor-specific V4L2 controls.
  *
- * In fillParamsBuffer(), we populate the ImgU parameter buffer with
+ * In computeParams(), we populate the ImgU parameter buffer with
  * settings to configure the device in preparation for handling the frame
  * queued in the Request.
  *
  * When the frame has completed processing, the ImgU will generate a statistics
- * buffer which is given to the IPA with processStatsBuffer(). In this we run the
+ * buffer which is given to the IPA with processStats(). In this we run the
  * algorithms to parse the statistics and cache any results for the next
- * fillParamsBuffer() call.
+ * computeParams() call.
  *
  * The individual algorithms are split into modular components that are called
  * iteratively to allow them to process statistics from the ImgU in the order
@@ -112,7 +112,7 @@ namespace ipa::ipu3 {
  * blue gains to apply to generate a neutral grey frame overall.
  *
  * AGC is handled by calculating a histogram of the green channel to estimate an
- * analogue gain and shutter time which will provide a well exposed frame. A
+ * analogue gain and exposure time which will provide a well exposed frame. A
  * low-pass IIR filter is used to smooth the changes to the sensor to reduce
  * perceivable steps.
  *
@@ -155,10 +155,10 @@ public:
 	void unmapBuffers(const std::vector<unsigned int> &ids) override;
 
 	void queueRequest(const uint32_t frame, const ControlList &controls) override;
-	void fillParamsBuffer(const uint32_t frame, const uint32_t bufferId) override;
-	void processStatsBuffer(const uint32_t frame, const int64_t frameTimestamp,
-				const uint32_t bufferId,
-				const ControlList &sensorControls) override;
+	void computeParams(const uint32_t frame, const uint32_t bufferId) override;
+	void processStats(const uint32_t frame, const int64_t frameTimestamp,
+			  const uint32_t bufferId,
+			  const ControlList &sensorControls) override;
 
 protected:
 	std::string logPrefix() const override;
@@ -187,7 +187,7 @@ private:
 };
 
 IPAIPU3::IPAIPU3()
-	: context_({ {}, {}, { kMaxFrameContexts }, {} })
+	: context_(kMaxFrameContexts)
 {
 }
 
@@ -215,13 +215,13 @@ void IPAIPU3::updateSessionConfiguration(const ControlInfoMap &sensorControls)
 
 	/*
 	 * When the AGC computes the new exposure values for a frame, it needs
-	 * to know the limits for shutter speed and analogue gain.
+	 * to know the limits for exposure time and analogue gain.
 	 * As it depends on the sensor, update it with the controls.
 	 *
-	 * \todo take VBLANK into account for maximum shutter speed
+	 * \todo take VBLANK into account for maximum exposure time
 	 */
-	context_.configuration.agc.minShutterSpeed = minExposure * context_.configuration.sensor.lineDuration;
-	context_.configuration.agc.maxShutterSpeed = maxExposure * context_.configuration.sensor.lineDuration;
+	context_.configuration.agc.minExposureTime = minExposure * context_.configuration.sensor.lineDuration;
+	context_.configuration.agc.maxExposureTime = maxExposure * context_.configuration.sensor.lineDuration;
 	context_.configuration.agc.minAnalogueGain = camHelper_->gain(minGain);
 	context_.configuration.agc.maxAnalogueGain = camHelper_->gain(maxGain);
 }
@@ -538,7 +538,7 @@ void IPAIPU3::unmapBuffers(const std::vector<unsigned int> &ids)
  * Algorithms are expected to fill the IPU3 parameter buffer for the next
  * frame given their most recent processing of the ImgU statistics.
  */
-void IPAIPU3::fillParamsBuffer(const uint32_t frame, const uint32_t bufferId)
+void IPAIPU3::computeParams(const uint32_t frame, const uint32_t bufferId)
 {
 	auto it = buffers_.find(bufferId);
 	if (it == buffers_.end()) {
@@ -566,7 +566,7 @@ void IPAIPU3::fillParamsBuffer(const uint32_t frame, const uint32_t bufferId)
 	for (auto const &algo : algorithms())
 		algo->prepare(context_, frame, frameContext, params);
 
-	paramsBufferReady.emit(frame);
+	paramsComputed.emit(frame);
 }
 
 /**
@@ -580,9 +580,9 @@ void IPAIPU3::fillParamsBuffer(const uint32_t frame, const uint32_t bufferId)
  * statistics are passed to each algorithm module to run their calculations and
  * update their state accordingly.
  */
-void IPAIPU3::processStatsBuffer(const uint32_t frame,
-				 [[maybe_unused]] const int64_t frameTimestamp,
-				 const uint32_t bufferId, const ControlList &sensorControls)
+void IPAIPU3::processStats(const uint32_t frame,
+			   [[maybe_unused]] const int64_t frameTimestamp,
+			   const uint32_t bufferId, const ControlList &sensorControls)
 {
 	auto it = buffers_.find(bufferId);
 	if (it == buffers_.end()) {

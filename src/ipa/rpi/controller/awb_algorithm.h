@@ -19,6 +19,7 @@ public:
 	virtual void initialValues(double &gainR, double &gainB) = 0;
 	virtual void setMode(std::string const &modeName) = 0;
 	virtual void setManualGains(double manualR, double manualB) = 0;
+	virtual void setColourTemperature(double temperatureK) = 0;
 	virtual void enableAuto() = 0;
 	virtual void disableAuto() = 0;
 };

@@ -87,6 +87,10 @@ struct AwbConfig {
 	double whitepointR;
 	double whitepointB;
 	bool bayes; /* use Bayesian algorithm */
+	/* proportion of counted samples to add for the search bias */
+	double biasProportion;
+	/* CT target for the search bias */
+	double biasCT;
 };
 
 class Awb : public AwbAlgorithm
@@ -101,6 +105,7 @@ public:
 	void initialValues(double &gainR, double &gainB) override;
 	void setMode(std::string const &name) override;
 	void setManualGains(double manualR, double manualB) override;
+	void setColourTemperature(double temperatureK) override;
 	void enableAuto() override;
 	void disableAuto() override;
 	void switchMode(CameraMode const &cameraMode, Metadata *metadata) override;

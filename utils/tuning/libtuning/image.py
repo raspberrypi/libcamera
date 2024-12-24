@@ -135,6 +135,6 @@ class Image:
 
             all_patches.append(ch_patches)
 
-        self.patches = all_patches
+        self.patches = np.array(all_patches)
 
         return not saturated

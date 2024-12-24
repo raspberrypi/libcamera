@@ -32,7 +32,8 @@ void init_py_enums(py::module &m)
 		.value("Float", ControlType::ControlTypeFloat)
 		.value("String", ControlType::ControlTypeString)
 		.value("Rectangle", ControlType::ControlTypeRectangle)
-		.value("Size", ControlType::ControlTypeSize);
+		.value("Size", ControlType::ControlTypeSize)
+		.value("Point", ControlType::ControlTypePoint);
 
 	py::enum_<Orientation>(m, "Orientation")
 		.value("Rotate0", Orientation::Rotate0)

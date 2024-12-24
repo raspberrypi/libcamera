@@ -481,6 +481,31 @@ protected:
 			return TestFail;
 		}
 
+		Point topLeft(3, 3);
+		Point bottomRight(30, 30);
+		Point topRight(30, 3);
+		Point bottomLeft(3, 30);
+		Rectangle rect1(topLeft, bottomRight);
+		Rectangle rect2(topRight, bottomLeft);
+		Rectangle rect3(bottomRight, topLeft);
+		Rectangle rect4(bottomLeft, topRight);
+
+		if (rect1 != rect2 || rect1 != rect3 || rect1 != rect4) {
+			cout << "Point-to-point construction failed" << endl;
+			return TestFail;
+		}
+
+		Rectangle f1 = Rectangle(100, 200, 3000, 2000);
+		Rectangle f2 = Rectangle(200, 300, 1500, 1000);
+		/* Bottom right quarter of the corresponding frames. */
+		Rectangle r1 = Rectangle(100 + 1500, 200 + 1000, 1500, 1000);
+		Rectangle r2 = Rectangle(200 + 750, 300 + 500, 750, 500);
+		if (r1.transformedBetween(f1, f2) != r2 ||
+		    r2.transformedBetween(f2, f1) != r1) {
+			cout << "Rectangle::transformedBetween() test failed" << endl;
+			return TestFail;
+		}
+
 		return TestPass;
 	}
 };

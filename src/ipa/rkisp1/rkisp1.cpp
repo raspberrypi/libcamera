@@ -65,9 +65,9 @@ public:
 	void unmapBuffers(const std::vector<unsigned int> &ids) override;
 
 	void queueRequest(const uint32_t frame, const ControlList &controls) override;
-	void fillParamsBuffer(const uint32_t frame, const uint32_t bufferId) override;
-	void processStatsBuffer(const uint32_t frame, const uint32_t bufferId,
-				const ControlList &sensorControls) override;
+	void computeParams(const uint32_t frame, const uint32_t bufferId) override;
+	void processStats(const uint32_t frame, const uint32_t bufferId,
+			  const ControlList &sensorControls) override;
 
 protected:
 	std::string logPrefix() const override;
@@ -117,6 +117,7 @@ const IPAHwSettings ipaHwSettingsV12{
 const ControlInfoMap::Map rkisp1Controls{
 	{ &controls::AwbEnable, ControlInfo(false, true) },
 	{ &controls::ColourGains, ControlInfo(0.0f, 3.996f, 1.0f) },
+	{ &controls::DebugMetadataEnable, ControlInfo(false, true, false) },
 	{ &controls::Sharpness, ControlInfo(0.0f, 10.0f, 1.0f) },
 	{ &controls::draft::NoiseReductionMode, ControlInfo(controls::draft::NoiseReductionModeValues) },
 };
@@ -124,7 +125,7 @@ const ControlInfoMap::Map rkisp1Controls{
 } /* namespace */
 
 IPARkISP1::IPARkISP1()
-	: context_({ {}, {}, {}, {}, { kMaxFrameContexts }, {}, {} })
+	: context_(kMaxFrameContexts)
 {
 }
 
@@ -256,14 +257,14 @@ int IPARkISP1::configure(const IPAConfigInfo &ipaConfig,
 
 	/*
 	 * When the AGC computes the new exposure values for a frame, it needs
-	 * to know the limits for shutter speed and analogue gain.
-	 * As it depends on the sensor, update it with the controls.
+	 * to know the limits for exposure time and analogue gain. As it depends
+	 * on the sensor, update it with the controls.
 	 *
-	 * \todo take VBLANK into account for maximum shutter speed
+	 * \todo take VBLANK into account for maximum exposure time
 	 */
-	context_.configuration.sensor.minShutterSpeed =
+	context_.configuration.sensor.minExposureTime =
 		minExposure * context_.configuration.sensor.lineDuration;
-	context_.configuration.sensor.maxShutterSpeed =
+	context_.configuration.sensor.maxExposureTime =
 		maxExposure * context_.configuration.sensor.lineDuration;
 	context_.configuration.sensor.minAnalogueGain =
 		context_.camHelper->gain(minGain);
@@ -326,6 +327,7 @@ void IPARkISP1::unmapBuffers(const std::vector<unsigned int> &ids)
 void IPARkISP1::queueRequest(const uint32_t frame, const ControlList &controls)
 {
 	IPAFrameContext &frameContext = context_.frameContexts.alloc(frame);
+	context_.debugMetadata.enableByControl(controls);
 
 	for (auto const &a : algorithms()) {
 		Algorithm *algo = static_cast<Algorithm *>(a.get());
@@ -335,7 +337,7 @@ void IPARkISP1::queueRequest(const uint32_t frame, const ControlList &controls)
 	}
 }
 
-void IPARkISP1::fillParamsBuffer(const uint32_t frame, const uint32_t bufferId)
+void IPARkISP1::computeParams(const uint32_t frame, const uint32_t bufferId)
 {
 	IPAFrameContext &frameContext = context_.frameContexts.get(frame);
 
@@ -345,11 +347,11 @@ void IPARkISP1::fillParamsBuffer(const uint32_t frame, const uint32_t bufferId)
 	for (auto const &algo : algorithms())
 		algo->prepare(context_, frame, frameContext, &params);
 
-	paramsBufferReady.emit(frame, params.size());
+	paramsComputed.emit(frame, params.size());
 }
 
-void IPARkISP1::processStatsBuffer(const uint32_t frame, const uint32_t bufferId,
-				   const ControlList &sensorControls)
+void IPARkISP1::processStats(const uint32_t frame, const uint32_t bufferId,
+			     const ControlList &sensorControls)
 {
 	IPAFrameContext &frameContext = context_.frameContexts.get(frame);
 
@@ -378,6 +380,7 @@ void IPARkISP1::processStatsBuffer(const uint32_t frame, const uint32_t bufferId
 
 	setControls(frame);
 
+	context_.debugMetadata.moveEntries(metadata);
 	metadataReady.emit(frame, metadata);
 }
 

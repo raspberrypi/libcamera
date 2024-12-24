@@ -208,6 +208,7 @@ public:
 	int setFormat(V4L2DeviceFormat *format);
 	Formats formats(uint32_t code = 0);
 
+	int getSelection(unsigned int target, Rectangle *rect);
 	int setSelection(unsigned int target, Rectangle *rect);
 
 	int allocateBuffers(unsigned int count,

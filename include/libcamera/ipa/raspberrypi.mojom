@@ -12,10 +12,6 @@ import "include/libcamera/ipa/core.mojom";
 const uint32 MaxLsGridSize = 0x8000;
 
 struct SensorConfig {
-	uint32 gainDelay;
-	uint32 exposureDelay;
-	uint32 vblankDelay;
-	uint32 hblankDelay;
 	uint32 sensorMetadata;
 };
 
@@ -272,7 +268,7 @@ interface IPARPiEventInterface {
 	 * \param[in] delayContext IPA context index used for this request
 	 *
 	 * This asynchronous event is signalled to the pipeline handler when
-	 * the IPA requires sensor specific controls (e.g. shutter speed, gain,
+	 * the IPA requires sensor specific controls (e.g. exposure time, gain,
 	 * blanking) to be applied.
 	 */
 	setDelayedControls(libcamera.ControlList controls, uint32 delayContext);

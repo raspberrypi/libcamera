@@ -12,6 +12,7 @@
 #include <set>
 #include <string>
 
+#include <linux/mali-c55-config.h>
 #include <linux/media-bus-format.h>
 #include <linux/media.h>
 
@@ -20,14 +21,24 @@
 #include <libcamera/camera.h>
 #include <libcamera/formats.h>
 #include <libcamera/geometry.h>
+#include <libcamera/property_ids.h>
 #include <libcamera/stream.h>
+
+#include <libcamera/ipa/core_ipa_interface.h>
+#include <libcamera/ipa/mali-c55_ipa_interface.h>
+#include <libcamera/ipa/mali-c55_ipa_proxy.h>
 
 #include "libcamera/internal/bayer_format.h"
 #include "libcamera/internal/camera.h"
 #include "libcamera/internal/camera_sensor.h"
+#include "libcamera/internal/camera_sensor_properties.h"
+#include "libcamera/internal/delayed_controls.h"
 #include "libcamera/internal/device_enumerator.h"
+#include "libcamera/internal/framebuffer.h"
+#include "libcamera/internal/ipa_manager.h"
 #include "libcamera/internal/media_device.h"
 #include "libcamera/internal/pipeline_handler.h"
+#include "libcamera/internal/request.h"
 #include "libcamera/internal/v4l2_subdevice.h"
 #include "libcamera/internal/v4l2_videodevice.h"
 
@@ -57,31 +68,26 @@ const std::map<libcamera::PixelFormat, unsigned int> maliC55FmtToCode = {
 	{ formats::NV21, MEDIA_BUS_FMT_YUV10_1X30 },
 
 	/* RAW formats, FR pipe only. */
-	{ formats::SGBRG8, MEDIA_BUS_FMT_SGBRG8_1X8 },
-	{ formats::SRGGB8, MEDIA_BUS_FMT_SRGGB8_1X8 },
-	{ formats::SBGGR8, MEDIA_BUS_FMT_SBGGR8_1X8 },
-	{ formats::SGRBG8, MEDIA_BUS_FMT_SGRBG8_1X8 },
-	{ formats::SGBRG10, MEDIA_BUS_FMT_SGBRG10_1X10 },
-	{ formats::SRGGB10, MEDIA_BUS_FMT_SRGGB10_1X10 },
-	{ formats::SBGGR10, MEDIA_BUS_FMT_SBGGR10_1X10 },
-	{ formats::SGRBG10, MEDIA_BUS_FMT_SGRBG10_1X10 },
-	{ formats::SGBRG12, MEDIA_BUS_FMT_SGBRG12_1X12 },
-	{ formats::SRGGB12, MEDIA_BUS_FMT_SRGGB12_1X12 },
-	{ formats::SBGGR12, MEDIA_BUS_FMT_SBGGR12_1X12 },
-	{ formats::SGRBG12, MEDIA_BUS_FMT_SGRBG12_1X12 },
-	{ formats::SGBRG14, MEDIA_BUS_FMT_SGBRG14_1X14 },
-	{ formats::SRGGB14, MEDIA_BUS_FMT_SRGGB14_1X14 },
-	{ formats::SBGGR14, MEDIA_BUS_FMT_SBGGR14_1X14 },
-	{ formats::SGRBG14, MEDIA_BUS_FMT_SGRBG14_1X14 },
 	{ formats::SGBRG16, MEDIA_BUS_FMT_SGBRG16_1X16 },
 	{ formats::SRGGB16, MEDIA_BUS_FMT_SRGGB16_1X16 },
 	{ formats::SBGGR16, MEDIA_BUS_FMT_SBGGR16_1X16 },
 	{ formats::SGRBG16, MEDIA_BUS_FMT_SGRBG16_1X16 },
 };
 
+constexpr Size kMaliC55MinInputSize = { 640, 480 };
 constexpr Size kMaliC55MinSize = { 128, 128 };
 constexpr Size kMaliC55MaxSize = { 8192, 8192 };
 constexpr unsigned int kMaliC55ISPInternalFormat = MEDIA_BUS_FMT_RGB121212_1X36;
+
+struct MaliC55FrameInfo {
+	Request *request;
+
+	FrameBuffer *paramBuffer;
+	FrameBuffer *statBuffer;
+
+	bool paramsDone;
+	bool statsDone;
+};
 
 class MaliC55CameraData : public Camera::Private
 {
@@ -92,13 +98,16 @@ public:
 	}
 
 	int init();
+	int loadIPA();
 
 	/* Deflect these functionalities to either TPG or CameraSensor. */
-	const std::vector<unsigned int> mbusCodes() const;
 	const std::vector<Size> sizes(unsigned int mbusCode) const;
 	const Size resolution() const;
 
-	PixelFormat bestRawFormat() const;
+	int pixfmtToMbusCode(const PixelFormat &pixFmt) const;
+	const PixelFormat &bestRawFormat() const;
+
+	void updateControls(const ControlInfoMap &ipaControls);
 
 	PixelFormat adjustRawFormat(const PixelFormat &pixFmt) const;
 	Size adjustRawSizes(const PixelFormat &pixFmt, const Size &rawSize) const;
@@ -111,8 +120,15 @@ public:
 	Stream frStream_;
 	Stream dsStream_;
 
+	std::unique_ptr<ipa::mali_c55::IPAProxyMaliC55> ipa_;
+	std::vector<IPABuffer> ipaStatBuffers_;
+	std::vector<IPABuffer> ipaParamBuffers_;
+
+	std::unique_ptr<DelayedControls> delayedCtrls_;
+
 private:
 	void initTPGData();
+	void setSensorControls(const ControlList &sensorControls);
 
 	std::string id_;
 	std::vector<unsigned int> tpgCodes_;
@@ -141,9 +157,8 @@ int MaliC55CameraData::init()
 	 * Register a CameraSensor if we connect to a sensor and create
 	 * an entity for the connected CSI-2 receiver.
 	 */
-	sensor_ = std::make_unique<CameraSensor>(entity_);
-	ret = sensor_->init();
-	if (ret)
+	sensor_ = CameraSensorFactoryBase::create(entity_);
+	if (!sensor_)
 		return ret;
 
 	const MediaPad *sourcePad = entity_->getPadByIndex(0);
@@ -177,12 +192,9 @@ void MaliC55CameraData::initTPGData()
 	tpgResolution_ = tpgSizes_.back();
 }
 
-const std::vector<unsigned int> MaliC55CameraData::mbusCodes() const
+void MaliC55CameraData::setSensorControls(const ControlList &sensorControls)
 {
-	if (sensor_)
-		return sensor_->mbusCodes();
-
-	return tpgCodes_;
+	delayedCtrls_->push(sensorControls);
 }
 
 const std::vector<Size> MaliC55CameraData::sizes(unsigned int mbusCode) const
@@ -216,33 +228,102 @@ const Size MaliC55CameraData::resolution() const
 	return tpgResolution_;
 }
 
-PixelFormat MaliC55CameraData::bestRawFormat() const
+/*
+ * The Mali C55 ISP can only produce 16-bit RAW output in bypass modes, but the
+ * sensors connected to it might produce 8/10/12/16 bits. We simply search the
+ * sensor's supported formats for the one with a matching bayer order and the
+ * greatest bitdepth.
+ */
+int MaliC55CameraData::pixfmtToMbusCode(const PixelFormat &pixFmt) const
 {
+	auto it = maliC55FmtToCode.find(pixFmt);
+	if (it == maliC55FmtToCode.end())
+		return -EINVAL;
+
+	BayerFormat bayerFormat = BayerFormat::fromMbusCode(it->second);
+	if (!bayerFormat.isValid())
+		return -EINVAL;
+
+	V4L2Subdevice::Formats formats = sd_->formats(0);
+	unsigned int sensorMbusCode = 0;
 	unsigned int bitDepth = 0;
-	PixelFormat rawFormat;
 
-	/*
-	 * Iterate over all the supported PixelFormat and find the one
-	 * supported by the camera with the largest bitdepth.
-	 */
-	for (const auto &maliFormat : maliC55FmtToCode) {
-		PixelFormat pixFmt = maliFormat.first;
-		if (!isFormatRaw(pixFmt))
+	for (const auto &[code, sizes] : formats) {
+		BayerFormat sdBayerFormat = BayerFormat::fromMbusCode(code);
+		if (!sdBayerFormat.isValid())
 			continue;
 
-		unsigned int rawCode = maliFormat.second;
-		const auto rawSizes = sizes(rawCode);
-		if (rawSizes.empty())
+		if (sdBayerFormat.order != bayerFormat.order)
 			continue;
 
-		BayerFormat bayer = BayerFormat::fromMbusCode(rawCode);
-		if (bayer.bitDepth > bitDepth) {
-			bitDepth = bayer.bitDepth;
-			rawFormat = pixFmt;
+		if (sdBayerFormat.bitDepth > bitDepth) {
+			bitDepth = sdBayerFormat.bitDepth;
+			sensorMbusCode = code;
 		}
 	}
 
-	return rawFormat;
+	if (!sensorMbusCode)
+		return -EINVAL;
+
+	return sensorMbusCode;
+}
+
+/*
+ * Find a RAW PixelFormat supported by both the ISP and the sensor.
+ *
+ * The situation is mildly complicated by the fact that we expect the sensor to
+ * output something like RAW8/10/12/16, but the ISP can only accept as input
+ * RAW20 and can only produce as output RAW16. The one constant in that is the
+ * bayer order of the data, so we'll simply check that the sensor produces a
+ * format with a bayer order that matches that of one of the formats we support,
+ * and select that.
+ */
+const PixelFormat &MaliC55CameraData::bestRawFormat() const
+{
+	static const PixelFormat invalidPixFmt = {};
+
+	for (const auto &fmt : sd_->formats(0)) {
+		BayerFormat sensorBayer = BayerFormat::fromMbusCode(fmt.first);
+
+		if (!sensorBayer.isValid())
+			continue;
+
+		for (const auto &[pixFmt, rawCode] : maliC55FmtToCode) {
+			if (!isFormatRaw(pixFmt))
+				continue;
+
+			BayerFormat bayer = BayerFormat::fromMbusCode(rawCode);
+			if (bayer.order == sensorBayer.order)
+				return pixFmt;
+		}
+	}
+
+	LOG(MaliC55, Error) << "Sensor doesn't provide a compatible format";
+	return invalidPixFmt;
+}
+
+void MaliC55CameraData::updateControls(const ControlInfoMap &ipaControls)
+{
+	if (!sensor_)
+		return;
+
+	IPACameraSensorInfo sensorInfo;
+	int ret = sensor_->sensorInfo(&sensorInfo);
+	if (ret) {
+		LOG(MaliC55, Error) << "Failed to retrieve sensor info";
+		return;
+	}
+
+	ControlInfoMap::Map controls;
+	Rectangle ispMinCrop{ 0, 0, 640, 480 };
+	controls[&controls::ScalerCrop] =
+		ControlInfo(ispMinCrop, sensorInfo.analogCrop,
+			    sensorInfo.analogCrop);
+
+	for (auto const &c : ipaControls)
+		controls.emplace(c.first, c.second);
+
+	controlInfo_ = ControlInfoMap(std::move(controls), controls::controls);
 }
 
 /*
@@ -251,13 +332,11 @@ PixelFormat MaliC55CameraData::bestRawFormat() const
  */
 PixelFormat MaliC55CameraData::adjustRawFormat(const PixelFormat &rawFmt) const
 {
-	/* Make sure the provided raw format is supported by the pipeline. */
-	auto it = maliC55FmtToCode.find(rawFmt);
-	if (it == maliC55FmtToCode.end())
+	/* Make sure the RAW mbus code is supported by the image source. */
+	int rawCode = pixfmtToMbusCode(rawFmt);
+	if (rawCode < 0)
 		return bestRawFormat();
 
-	/* Now make sure the RAW mbus code is supported by the image source. */
-	unsigned int rawCode = it->second;
 	const auto rawSizes = sizes(rawCode);
 	if (rawSizes.empty())
 		return bestRawFormat();
@@ -265,15 +344,16 @@ PixelFormat MaliC55CameraData::adjustRawFormat(const PixelFormat &rawFmt) const
 	return rawFmt;
 }
 
-Size MaliC55CameraData::adjustRawSizes(const PixelFormat &rawFmt, const Size &rawSize) const
+Size MaliC55CameraData::adjustRawSizes(const PixelFormat &rawFmt, const Size &size) const
 {
-	/* Just make sure the format is supported. */
-	auto it = maliC55FmtToCode.find(rawFmt);
-	if (it == maliC55FmtToCode.end())
-		return {};
+	/* Expand the RAW size to the minimum ISP input size. */
+	Size rawSize = size.expandedTo(kMaliC55MinInputSize);
 
 	/* Check if the size is natively supported. */
-	unsigned int rawCode = it->second;
+	int rawCode = pixfmtToMbusCode(rawFmt);
+	if (rawCode < 0)
+		return {};
+
 	const auto rawSizes = sizes(rawCode);
 	auto sizeIt = std::find(rawSizes.begin(), rawSizes.end(), rawSize);
 	if (sizeIt != rawSizes.end())
@@ -282,18 +362,57 @@ Size MaliC55CameraData::adjustRawSizes(const PixelFormat &rawFmt, const Size &ra
 	/* Or adjust it to the closest supported size. */
 	uint16_t distance = std::numeric_limits<uint16_t>::max();
 	Size bestSize;
-	for (const Size &size : rawSizes) {
+	for (const Size &sz : rawSizes) {
 		uint16_t dist = std::abs(static_cast<int>(rawSize.width) -
-					 static_cast<int>(size.width)) +
+					 static_cast<int>(sz.width)) +
 				std::abs(static_cast<int>(rawSize.height) -
-					 static_cast<int>(size.height));
+					 static_cast<int>(sz.height));
 		if (dist < distance) {
 			dist = distance;
-			bestSize = size;
+			bestSize = sz;
 		}
 	}
 
 	return bestSize;
+}
+
+int MaliC55CameraData::loadIPA()
+{
+	int ret;
+
+	/* Do not initialize IPA for TPG. */
+	if (!sensor_)
+		return 0;
+
+	ipa_ = IPAManager::createIPA<ipa::mali_c55::IPAProxyMaliC55>(pipe(), 1, 1);
+	if (!ipa_)
+		return -ENOENT;
+
+	ipa_->setSensorControls.connect(this, &MaliC55CameraData::setSensorControls);
+
+	std::string ipaTuningFile = ipa_->configurationFile(sensor_->model() + ".yaml",
+							    "uncalibrated.yaml");
+
+	/* We need to inform the IPA of the sensor configuration */
+	ipa::mali_c55::IPAConfigInfo ipaConfig{};
+
+	ret = sensor_->sensorInfo(&ipaConfig.sensorInfo);
+	if (ret)
+		return ret;
+
+	ipaConfig.sensorControls = sensor_->controls();
+
+	ControlInfoMap ipaControls;
+	ret = ipa_->init({ ipaTuningFile, sensor_->model() }, ipaConfig,
+			 &ipaControls);
+	if (ret) {
+		LOG(MaliC55, Error) << "Failed to initialise the Mali-C55 IPA";
+		return ret;
+	}
+
+	updateControls(ipaControls);
+
+	return 0;
 }
 
 class MaliC55CameraConfiguration : public CameraConfiguration
@@ -305,6 +424,7 @@ public:
 	}
 
 	Status validate() override;
+	const Transform &combinedTransform() { return combinedTransform_; }
 
 	V4L2SubdeviceFormat sensorFormat_;
 
@@ -312,6 +432,7 @@ private:
 	static constexpr unsigned int kMaxStreams = 2;
 
 	const MaliC55CameraData *data_;
+	Transform combinedTransform_;
 };
 
 CameraConfiguration::Status MaliC55CameraConfiguration::validate()
@@ -320,6 +441,19 @@ CameraConfiguration::Status MaliC55CameraConfiguration::validate()
 
 	if (config_.empty())
 		return Invalid;
+
+	/*
+	 * The TPG doesn't support flips, so we only need to calculate a
+	 * transform if we have a sensor.
+	 */
+	if (data_->sensor_) {
+		Orientation requestedOrientation = orientation;
+		combinedTransform_ = data_->sensor_->computeTransform(&orientation);
+		if (orientation != requestedOrientation)
+			status = Adjusted;
+	} else {
+		combinedTransform_ = Transform::Rot0;
+	}
 
 	/* Only 2 streams available. */
 	if (config_.size() > kMaxStreams) {
@@ -342,7 +476,11 @@ CameraConfiguration::Status MaliC55CameraConfiguration::validate()
 		rawConfig = &config;
 	}
 
-	Size maxSize = kMaliC55MaxSize;
+	/*
+	 * The C55 can not upscale. Limit the configuration to the ISP
+	 * capabilities and the sensor resolution.
+	 */
+	Size maxSize = kMaliC55MaxSize.boundedTo(data_->resolution());
 	if (rawConfig) {
 		/*
 		 * \todo Take into account the Bayer components ordering once
@@ -350,6 +488,10 @@ CameraConfiguration::Status MaliC55CameraConfiguration::validate()
 		 */
 		PixelFormat rawFormat =
 			data_->adjustRawFormat(rawConfig->pixelFormat);
+
+		if (!rawFormat.isValid())
+			return Invalid;
+
 		if (rawFormat != rawConfig->pixelFormat) {
 			LOG(MaliC55, Debug)
 				<< "RAW format adjusted to " << rawFormat;
@@ -368,12 +510,21 @@ CameraConfiguration::Status MaliC55CameraConfiguration::validate()
 
 		maxSize = rawSize;
 
+		const PixelFormatInfo &info = PixelFormatInfo::info(rawConfig->pixelFormat);
+		rawConfig->stride = info.stride(rawConfig->size.width, 0, 4);
+		rawConfig->frameSize = info.frameSize(rawConfig->size, 4);
+
 		rawConfig->setStream(const_cast<Stream *>(&data_->frStream_));
 		frPipeAvailable = false;
 	}
 
-	/* Adjust processed streams. */
-	Size maxYuvSize;
+	/*
+	 * Adjust processed streams.
+	 *
+	 * Compute the minimum sensor size to be later used to select the
+	 * sensor configuration.
+	 */
+	Size minSensorSize = kMaliC55MinInputSize;
 	for (StreamConfiguration &config : config_) {
 		if (isFormatRaw(config.pixelFormat))
 			continue;
@@ -395,8 +546,8 @@ CameraConfiguration::Status MaliC55CameraConfiguration::validate()
 			status = Adjusted;
 		}
 
-		if (maxYuvSize < size)
-			maxYuvSize = size;
+		if (minSensorSize < size)
+			minSensorSize = size;
 
 		if (frPipeAvailable) {
 			config.setStream(const_cast<Stream *>(&data_->frStream_));
@@ -410,30 +561,30 @@ CameraConfiguration::Status MaliC55CameraConfiguration::validate()
 
 	/* If there's a RAW config, sensor configuration follows it. */
 	if (rawConfig) {
-		const auto it = maliC55FmtToCode.find(rawConfig->pixelFormat);
-		sensorFormat_.code = it->second;
-		sensorFormat_.size = rawConfig->size;
+		sensorFormat_.code = data_->pixfmtToMbusCode(rawConfig->pixelFormat);
+		sensorFormat_.size = rawConfig->size.expandedTo(minSensorSize);
 
 		return status;
 	}
 
 	/* If there's no RAW config, compute the sensor configuration here. */
 	PixelFormat rawFormat = data_->bestRawFormat();
-	const auto it = maliC55FmtToCode.find(rawFormat);
-	sensorFormat_.code = it->second;
+	if (!rawFormat.isValid())
+		return Invalid;
+
+	sensorFormat_.code = data_->pixfmtToMbusCode(rawFormat);
 
 	uint16_t distance = std::numeric_limits<uint16_t>::max();
-	const auto sizes = data_->sizes(it->second);
+	const auto sizes = data_->sizes(sensorFormat_.code);
 	Size bestSize;
 	for (const auto &size : sizes) {
-		/* Skip sensor sizes that are smaller than the max YUV size. */
-		if (maxYuvSize.width > size.width ||
-		    maxYuvSize.height > size.height)
+		if (minSensorSize.width > size.width ||
+		    minSensorSize.height > size.height)
 			continue;
 
-		uint16_t dist = std::abs(static_cast<int>(maxYuvSize.width) -
+		uint16_t dist = std::abs(static_cast<int>(minSensorSize.width) -
 					 static_cast<int>(size.width)) +
-				std::abs(static_cast<int>(maxYuvSize.height) -
+				std::abs(static_cast<int>(minSensorSize.height) -
 					 static_cast<int>(size.height));
 		if (dist < distance) {
 			dist = distance;
@@ -458,13 +609,19 @@ public:
 
 	int exportFrameBuffers(Camera *camera, Stream *stream,
 			       std::vector<std::unique_ptr<FrameBuffer>> *buffers) override;
+	int allocateBuffers(Camera *camera);
+	void freeBuffers(Camera *camera);
 
 	int start(Camera *camera, const ControlList *controls) override;
 	void stopDevice(Camera *camera) override;
 
 	int queueRequestDevice(Camera *camera, Request *request) override;
 
-	void bufferReady(FrameBuffer *buffer);
+	void imageBufferReady(FrameBuffer *buffer);
+	void paramsBufferReady(FrameBuffer *buffer);
+	void statsBufferReady(FrameBuffer *buffer);
+	void paramsComputed(unsigned int requestId);
+	void statsProcessed(unsigned int requestId, const ControlList &metadata);
 
 	bool match(DeviceEnumerator *enumerator) override;
 
@@ -472,6 +629,7 @@ private:
 	struct MaliC55Pipe {
 		std::unique_ptr<V4L2Subdevice> resizer;
 		std::unique_ptr<V4L2VideoDevice> cap;
+		MediaLink *link;
 		Stream *stream;
 	};
 
@@ -508,6 +666,10 @@ private:
 			pipe.stream = nullptr;
 	}
 
+	MaliC55FrameInfo *findFrameInfo(FrameBuffer *buffer);
+	MaliC55FrameInfo *findFrameInfo(Request *request);
+	void tryComplete(MaliC55FrameInfo *info);
+
 	int configureRawStream(MaliC55CameraData *data,
 			       const StreamConfiguration &config,
 			       V4L2SubdeviceFormat &subdevFormat);
@@ -515,13 +677,25 @@ private:
 				     const StreamConfiguration &config,
 				     V4L2SubdeviceFormat &subdevFormat);
 
-	void registerMaliCamera(std::unique_ptr<MaliC55CameraData> data,
+	void applyScalerCrop(Camera *camera, const ControlList &controls);
+
+	bool registerMaliCamera(std::unique_ptr<MaliC55CameraData> data,
 				const std::string &name);
 	bool registerTPGCamera(MediaLink *link);
 	bool registerSensorCamera(MediaLink *link);
 
 	MediaDevice *media_;
 	std::unique_ptr<V4L2Subdevice> isp_;
+	std::unique_ptr<V4L2VideoDevice> stats_;
+	std::unique_ptr<V4L2VideoDevice> params_;
+
+	std::vector<std::unique_ptr<FrameBuffer>> statsBuffers_;
+	std::queue<FrameBuffer *> availableStatsBuffers_;
+
+	std::vector<std::unique_ptr<FrameBuffer>> paramsBuffers_;
+	std::queue<FrameBuffer *> availableParamsBuffers_;
+
+	std::map<unsigned int, MaliC55FrameInfo> frameInfoMap_;
 
 	std::array<MaliC55Pipe, MaliC55NumPipes> pipes_;
 
@@ -607,7 +781,10 @@ PipelineHandlerMaliC55::generateConfiguration(Camera *camera,
 
 			if (isRaw) {
 				/* Make sure the mbus code is supported. */
-				unsigned int rawCode = maliFormat.second;
+				int rawCode = data->pixfmtToMbusCode(pixFmt);
+				if (rawCode < 0)
+					continue;
+
 				const auto sizes = data->sizes(rawCode);
 				if (sizes.empty())
 					continue;
@@ -715,16 +892,28 @@ int PipelineHandlerMaliC55::configureProcessedStream(MaliC55CameraData *data,
 	if (ret)
 		return ret;
 
-	/* \todo Configure the resizer crop/compose rectangles. */
-	Rectangle ispCrop = { 0, 0, config.size };
+	/*
+	 * Compute the scaler-in to scaler-out ratio: first center-crop to align
+	 * the FOV to the desired resolution, then scale to the desired size.
+	 */
+	Size scalerIn = subdevFormat.size.boundedToAspectRatio(config.size);
+	int xCrop = (subdevFormat.size.width - scalerIn.width) / 2;
+	int yCrop = (subdevFormat.size.height - scalerIn.height) / 2;
+	Rectangle ispCrop = { xCrop, yCrop, scalerIn };
 	ret = pipe->resizer->setSelection(0, V4L2_SEL_TGT_CROP, &ispCrop);
 	if (ret)
 		return ret;
 
-	ret = pipe->resizer->setSelection(0, V4L2_SEL_TGT_COMPOSE, &ispCrop);
+	Rectangle ispCompose = { 0, 0, config.size };
+	ret = pipe->resizer->setSelection(0, V4L2_SEL_TGT_COMPOSE, &ispCompose);
 	if (ret)
 		return ret;
 
+	/*
+	 * The source pad format size comes directly from the sink
+	 * compose rectangle.
+	 */
+	subdevFormat.size = ispCompose.size();
 	subdevFormat.code = maliC55FmtToCode.find(config.pixelFormat)->second;
 	return pipe->resizer->setFormat(1, &subdevFormat);
 }
@@ -756,14 +945,31 @@ int PipelineHandlerMaliC55::configure(Camera *camera,
 	if (ret)
 		return ret;
 
+	if (data->sensor_) {
+		ret = data->sensor_->setFormat(&subdevFormat,
+					       maliConfig->combinedTransform());
+		if (ret)
+			return ret;
+	}
+
 	if (data->csi_) {
 		ret = data->csi_->setFormat(0, &subdevFormat);
 		if (ret)
 			return ret;
 
-		ret = data->csi_->setFormat(1, &subdevFormat);
+		ret = data->csi_->getFormat(1, &subdevFormat);
 		if (ret)
 			return ret;
+	}
+
+	V4L2DeviceFormat statsFormat;
+	ret = stats_->getFormat(&statsFormat);
+	if (ret)
+		return ret;
+
+	if (statsFormat.planes[0].size != sizeof(struct mali_c55_stats_buffer)) {
+		LOG(MaliC55, Error) << "3a stats buffer size invalid";
+		return -EINVAL;
 	}
 
 	/*
@@ -795,6 +1001,17 @@ int PipelineHandlerMaliC55::configure(Camera *camera,
 		Stream *stream = streamConfig.stream();
 		MaliC55Pipe *pipe = pipeFromStream(data, stream);
 
+		/*
+		 * Enable the media link between the pipe's resizer and the
+		 * capture video device
+		 */
+
+		ret = pipe->link->setEnabled(true);
+		if (ret) {
+			LOG(MaliC55, Error) << "Couldn't enable resizer's link";
+			return ret;
+		}
+
 		if (isFormatRaw(streamConfig.pixelFormat))
 			ret = configureRawStream(data, streamConfig, subdevFormat);
 		else
@@ -816,6 +1033,56 @@ int PipelineHandlerMaliC55::configure(Camera *camera,
 		pipe->stream = stream;
 	}
 
+	if (!data->ipa_)
+		return 0;
+
+	/*
+	 * Enable the media link between the ISP subdevice and the statistics
+	 * video device.
+	 */
+	const MediaEntity *ispEntity = isp_->entity();
+	ret = ispEntity->getPadByIndex(3)->links()[0]->setEnabled(true);
+	if (ret) {
+		LOG(MaliC55, Error) << "Couldn't enable statistics link";
+		return ret;
+	}
+
+	/*
+	 * Enable the media link between the ISP subdevice and the parameters
+	 * video device.
+	 */
+	ret = ispEntity->getPadByIndex(4)->links()[0]->setEnabled(true);
+	if (ret) {
+		LOG(MaliC55, Error) << "Couldn't enable parameters link";
+		return ret;
+	}
+
+	/* We need to inform the IPA of the sensor configuration */
+	ipa::mali_c55::IPAConfigInfo ipaConfig{};
+
+	ret = data->sensor_->sensorInfo(&ipaConfig.sensorInfo);
+	if (ret)
+		return ret;
+
+	ipaConfig.sensorControls = data->sensor_->controls();
+
+	/*
+	 * And we also need to tell the IPA the bayerOrder of the data (as
+	 * affected by any flips that we've configured)
+	 */
+	const Transform &combinedTransform = maliConfig->combinedTransform();
+	BayerFormat::Order bayerOrder = data->sensor_->bayerOrder(combinedTransform);
+
+	ControlInfoMap ipaControls;
+	ret = data->ipa_->configure(ipaConfig, utils::to_underlying(bayerOrder),
+				    &ipaControls);
+	if (ret) {
+		LOG(MaliC55, Error) << "Failed to configure IPA";
+		return ret;
+	}
+
+	data->updateControls(ipaControls);
+
 	return 0;
 }
 
@@ -828,32 +1095,166 @@ int PipelineHandlerMaliC55::exportFrameBuffers(Camera *camera, Stream *stream,
 	return pipe->cap->exportBuffers(count, buffers);
 }
 
-int PipelineHandlerMaliC55::start([[maybe_unused]] Camera *camera, [[maybe_unused]] const ControlList *controls)
+void PipelineHandlerMaliC55::freeBuffers(Camera *camera)
 {
+	MaliC55CameraData *data = cameraData(camera);
+
+	while (!availableStatsBuffers_.empty())
+		availableStatsBuffers_.pop();
+	while (!availableParamsBuffers_.empty())
+		availableParamsBuffers_.pop();
+
+	statsBuffers_.clear();
+	paramsBuffers_.clear();
+
+	if (data->ipa_) {
+		data->ipa_->unmapBuffers(data->ipaStatBuffers_);
+		data->ipa_->unmapBuffers(data->ipaParamBuffers_);
+	}
+	data->ipaStatBuffers_.clear();
+	data->ipaParamBuffers_.clear();
+
+	if (stats_->releaseBuffers())
+		LOG(MaliC55, Error) << "Failed to release stats buffers";
+
+	if (params_->releaseBuffers())
+		LOG(MaliC55, Error) << "Failed to release params buffers";
+
+	return;
+}
+
+int PipelineHandlerMaliC55::allocateBuffers(Camera *camera)
+{
+	MaliC55CameraData *data = cameraData(camera);
+	unsigned int ipaBufferId = 1;
+	unsigned int bufferCount;
+	int ret;
+
+	bufferCount = std::max({
+		data->frStream_.configuration().bufferCount,
+		data->dsStream_.configuration().bufferCount,
+	});
+
+	ret = stats_->allocateBuffers(bufferCount, &statsBuffers_);
+	if (ret < 0)
+		return ret;
+
+	for (std::unique_ptr<FrameBuffer> &buffer : statsBuffers_) {
+		buffer->setCookie(ipaBufferId++);
+		data->ipaStatBuffers_.emplace_back(buffer->cookie(),
+						   buffer->planes());
+		availableStatsBuffers_.push(buffer.get());
+	}
+
+	ret = params_->allocateBuffers(bufferCount, &paramsBuffers_);
+	if (ret < 0)
+		return ret;
+
+	for (std::unique_ptr<FrameBuffer> &buffer : paramsBuffers_) {
+		buffer->setCookie(ipaBufferId++);
+		data->ipaParamBuffers_.emplace_back(buffer->cookie(),
+						    buffer->planes());
+		availableParamsBuffers_.push(buffer.get());
+	}
+
+	if (data->ipa_) {
+		data->ipa_->mapBuffers(data->ipaStatBuffers_, true);
+		data->ipa_->mapBuffers(data->ipaParamBuffers_, false);
+	}
+
+	return 0;
+}
+
+int PipelineHandlerMaliC55::start(Camera *camera, [[maybe_unused]] const ControlList *controls)
+{
+	MaliC55CameraData *data = cameraData(camera);
+	int ret;
+
+	ret = allocateBuffers(camera);
+	if (ret)
+		return ret;
+
+	if (data->ipa_) {
+		ret = data->ipa_->start();
+		if (ret) {
+			LOG(MaliC55, Error)
+				<< "Failed to start IPA" << camera->id();
+			freeBuffers(camera);
+			return ret;
+		}
+	}
+
 	for (MaliC55Pipe &pipe : pipes_) {
 		if (!pipe.stream)
 			continue;
 
 		Stream *stream = pipe.stream;
 
-		int ret = pipe.cap->importBuffers(stream->configuration().bufferCount);
+		ret = pipe.cap->importBuffers(stream->configuration().bufferCount);
 		if (ret) {
 			LOG(MaliC55, Error) << "Failed to import buffers";
+			if (data->ipa_)
+				data->ipa_->stop();
+			freeBuffers(camera);
 			return ret;
 		}
 
 		ret = pipe.cap->streamOn();
 		if (ret) {
 			LOG(MaliC55, Error) << "Failed to start stream";
+			if (data->ipa_)
+				data->ipa_->stop();
+			freeBuffers(camera);
 			return ret;
 		}
 	}
 
+	ret = stats_->streamOn();
+	if (ret) {
+		LOG(MaliC55, Error) << "Failed to start stats stream";
+
+		if (data->ipa_)
+			data->ipa_->stop();
+
+		for (MaliC55Pipe &pipe : pipes_) {
+			if (pipe.stream)
+				pipe.cap->streamOff();
+		}
+
+		freeBuffers(camera);
+		return ret;
+	}
+
+	ret = params_->streamOn();
+	if (ret) {
+		LOG(MaliC55, Error) << "Failed to start params stream";
+
+		stats_->streamOff();
+		if (data->ipa_)
+			data->ipa_->stop();
+
+		for (MaliC55Pipe &pipe : pipes_) {
+			if (pipe.stream)
+				pipe.cap->streamOff();
+		}
+
+		freeBuffers(camera);
+		return ret;
+	}
+
+	ret = isp_->setFrameStartEnabled(true);
+	if (ret)
+		LOG(MaliC55, Error) << "Failed to enable frame start events";
+
 	return 0;
 }
 
-void PipelineHandlerMaliC55::stopDevice([[maybe_unused]] Camera *camera)
+void PipelineHandlerMaliC55::stopDevice(Camera *camera)
 {
+	MaliC55CameraData *data = cameraData(camera);
+
+	isp_->setFrameStartEnabled(false);
+
 	for (MaliC55Pipe &pipe : pipes_) {
 		if (!pipe.stream)
 			continue;
@@ -861,38 +1262,285 @@ void PipelineHandlerMaliC55::stopDevice([[maybe_unused]] Camera *camera)
 		pipe.cap->streamOff();
 		pipe.cap->releaseBuffers();
 	}
+
+	stats_->streamOff();
+	params_->streamOff();
+	if (data->ipa_)
+		data->ipa_->stop();
+	freeBuffers(camera);
+}
+
+void PipelineHandlerMaliC55::applyScalerCrop(Camera *camera,
+					     const ControlList &controls)
+{
+	MaliC55CameraData *data = cameraData(camera);
+
+	const auto &scalerCrop = controls.get<Rectangle>(controls::ScalerCrop);
+	if (!scalerCrop)
+		return;
+
+	if (!data->sensor_) {
+		LOG(MaliC55, Error) << "ScalerCrop not supported for TPG";
+		return;
+	}
+
+	Rectangle nativeCrop = *scalerCrop;
+
+	IPACameraSensorInfo sensorInfo;
+	int ret = data->sensor_->sensorInfo(&sensorInfo);
+	if (ret) {
+		LOG(MaliC55, Error) << "Failed to retrieve sensor info";
+		return;
+	}
+
+	/*
+	 * The ScalerCrop rectangle re-scaling in the ISP crop rectangle
+	 * comes straight from the RPi pipeline handler.
+	 *
+	 * Create a version of the crop rectangle aligned to the analogue crop
+	 * rectangle top-left coordinates and scaled in the [analogue crop to
+	 * output frame] ratio to take into account binning/skipping on the
+	 * sensor.
+	 */
+	Rectangle ispCrop = nativeCrop.translatedBy(-sensorInfo.analogCrop
+							       .topLeft());
+	ispCrop.scaleBy(sensorInfo.outputSize, sensorInfo.analogCrop.size());
+
+	/*
+	 * The crop rectangle should be:
+	 * 1. At least as big as ispMinCropSize_, once that's been
+	 *    enlarged to the same aspect ratio.
+	 * 2. With the same mid-point, if possible.
+	 * 3. But it can't go outside the sensor area.
+	 */
+	Rectangle ispMinCrop{ 0, 0, 640, 480 };
+	Size minSize = ispMinCrop.size().expandedToAspectRatio(nativeCrop.size());
+	Size size = ispCrop.size().expandedTo(minSize);
+	ispCrop = size.centeredTo(ispCrop.center())
+		      .enclosedIn(Rectangle(sensorInfo.outputSize));
+
+	/*
+	 * As the resizer can't upscale, the crop rectangle has to be larger
+	 * than the larger stream output size.
+	 */
+	Size maxYuvSize;
+	for (MaliC55Pipe &pipe : pipes_) {
+		if (!pipe.stream)
+			continue;
+
+		const StreamConfiguration &config = pipe.stream->configuration();
+		if (isFormatRaw(config.pixelFormat)) {
+			LOG(MaliC55, Debug) << "Cannot crop with a RAW stream";
+			return;
+		}
+
+		Size streamSize = config.size;
+		if (streamSize.width > maxYuvSize.width)
+			maxYuvSize.width = streamSize.width;
+		if (streamSize.height > maxYuvSize.height)
+			maxYuvSize.height = streamSize.height;
+	}
+
+	ispCrop.size().expandTo(maxYuvSize);
+
+	/*
+	 * Now apply the scaler crop to each enabled output. This overrides the
+	 * crop configuration performed at configure() time and can cause
+	 * square pixels if the crop rectangle and scaler output FOV ratio are
+	 * different.
+	 */
+	for (MaliC55Pipe &pipe : pipes_) {
+		if (!pipe.stream)
+			continue;
+
+		/* Create a copy to avoid setSelection() to modify ispCrop. */
+		Rectangle pipeCrop = ispCrop;
+		ret = pipe.resizer->setSelection(0, V4L2_SEL_TGT_CROP, &pipeCrop);
+		if (ret) {
+			LOG(MaliC55, Error)
+				<< "Failed to apply crop to "
+				<< (pipe.stream == &data->frStream_ ?
+				    "FR" : "DS") << " pipe";
+			return;
+		}
+	}
 }
 
 int PipelineHandlerMaliC55::queueRequestDevice(Camera *camera, Request *request)
 {
-	int ret;
+	MaliC55CameraData *data = cameraData(camera);
 
-	for (auto &[stream, buffer] : request->buffers()) {
-		MaliC55Pipe *pipe = pipeFromStream(cameraData(camera), stream);
+	/* Do not run the IPA if the TPG is in use. */
+	if (!data->ipa_) {
+		MaliC55FrameInfo frameInfo;
+		frameInfo.request = request;
+		frameInfo.statBuffer = nullptr;
+		frameInfo.paramBuffer = nullptr;
+		frameInfo.paramsDone = true;
+		frameInfo.statsDone = true;
 
-		ret = pipe->cap->queueBuffer(buffer);
-		if (ret)
-			return ret;
+		frameInfoMap_[request->sequence()] = frameInfo;
+
+		for (auto &[stream, buffer] : request->buffers()) {
+			MaliC55Pipe *pipe = pipeFromStream(data, stream);
+
+			pipe->cap->queueBuffer(buffer);
+		}
+
+		return 0;
 	}
+
+	if (availableStatsBuffers_.empty()) {
+		LOG(MaliC55, Error) << "Stats buffer underrun";
+		return -ENOENT;
+	}
+
+	if (availableParamsBuffers_.empty()) {
+		LOG(MaliC55, Error) << "Params buffer underrun";
+		return -ENOENT;
+	}
+
+	MaliC55FrameInfo frameInfo;
+	frameInfo.request = request;
+
+	frameInfo.statBuffer = availableStatsBuffers_.front();
+	availableStatsBuffers_.pop();
+	frameInfo.paramBuffer = availableParamsBuffers_.front();
+	availableParamsBuffers_.pop();
+
+	frameInfo.paramsDone = false;
+	frameInfo.statsDone = false;
+
+	frameInfoMap_[request->sequence()] = frameInfo;
+
+	data->ipa_->queueRequest(request->sequence(), request->controls());
+	data->ipa_->fillParams(request->sequence(),
+			       frameInfo.paramBuffer->cookie());
 
 	return 0;
 }
 
-void PipelineHandlerMaliC55::bufferReady(FrameBuffer *buffer)
+MaliC55FrameInfo *PipelineHandlerMaliC55::findFrameInfo(Request *request)
 {
-	Request *request = buffer->request();
+	for (auto &[sequence, info] : frameInfoMap_) {
+		if (info.request == request)
+			return &info;
+	}
 
-	completeBuffer(request, buffer);
+	return nullptr;
+}
 
+MaliC55FrameInfo *PipelineHandlerMaliC55::findFrameInfo(FrameBuffer *buffer)
+{
+	for (auto &[sequence, info] : frameInfoMap_) {
+		if (info.paramBuffer == buffer ||
+		    info.statBuffer == buffer)
+			return &info;
+	}
+
+	return nullptr;
+}
+
+void PipelineHandlerMaliC55::tryComplete(MaliC55FrameInfo *info)
+{
+	if (!info->paramsDone)
+		return;
+	if (!info->statsDone)
+		return;
+
+	Request *request = info->request;
 	if (request->hasPendingBuffers())
 		return;
+
+	if (info->statBuffer)
+		availableStatsBuffers_.push(info->statBuffer);
+	if (info->paramBuffer)
+		availableParamsBuffers_.push(info->paramBuffer);
+
+	frameInfoMap_.erase(request->sequence());
 
 	completeRequest(request);
 }
 
-void PipelineHandlerMaliC55::registerMaliCamera(std::unique_ptr<MaliC55CameraData> data,
+void PipelineHandlerMaliC55::imageBufferReady(FrameBuffer *buffer)
+{
+	Request *request = buffer->request();
+	MaliC55FrameInfo *info = findFrameInfo(request);
+	ASSERT(info);
+
+	if (completeBuffer(request, buffer))
+		tryComplete(info);
+}
+
+void PipelineHandlerMaliC55::paramsBufferReady(FrameBuffer *buffer)
+{
+	MaliC55FrameInfo *info = findFrameInfo(buffer);
+	ASSERT(info);
+
+	info->paramsDone = true;
+
+	tryComplete(info);
+}
+
+void PipelineHandlerMaliC55::statsBufferReady(FrameBuffer *buffer)
+{
+	MaliC55FrameInfo *info = findFrameInfo(buffer);
+	ASSERT(info);
+
+	Request *request = info->request;
+	MaliC55CameraData *data = cameraData(request->_d()->camera());
+
+	ControlList sensorControls = data->delayedCtrls_->get(buffer->metadata().sequence);
+
+	data->ipa_->processStats(request->sequence(), buffer->cookie(),
+				 sensorControls);
+}
+
+void PipelineHandlerMaliC55::paramsComputed(unsigned int requestId)
+{
+	MaliC55FrameInfo &frameInfo = frameInfoMap_[requestId];
+	Request *request = frameInfo.request;
+	MaliC55CameraData *data = cameraData(request->_d()->camera());
+
+	/*
+	 * Queue buffers for stats and params, then queue buffers to the capture
+	 * video devices.
+	 */
+
+	frameInfo.paramBuffer->_d()->metadata().planes()[0].bytesused =
+		sizeof(struct mali_c55_params_buffer);
+	params_->queueBuffer(frameInfo.paramBuffer);
+	stats_->queueBuffer(frameInfo.statBuffer);
+
+	for (auto &[stream, buffer] : request->buffers()) {
+		MaliC55Pipe *pipe = pipeFromStream(data, stream);
+
+		pipe->cap->queueBuffer(buffer);
+	}
+}
+
+void PipelineHandlerMaliC55::statsProcessed(unsigned int requestId,
+					    const ControlList &metadata)
+{
+	MaliC55FrameInfo &frameInfo = frameInfoMap_[requestId];
+
+	frameInfo.statsDone = true;
+	frameInfo.request->metadata().merge(metadata);
+
+	tryComplete(&frameInfo);
+}
+
+bool PipelineHandlerMaliC55::registerMaliCamera(std::unique_ptr<MaliC55CameraData> data,
 						const std::string &name)
 {
+	if (data->loadIPA())
+		return false;
+
+	if (data->ipa_) {
+		data->ipa_->statsProcessed.connect(this, &PipelineHandlerMaliC55::statsProcessed);
+		data->ipa_->paramsComputed.connect(this, &PipelineHandlerMaliC55::paramsComputed);
+	}
+
 	std::set<Stream *> streams{ &data->frStream_ };
 	if (dsFitted_)
 		streams.insert(&data->dsStream_);
@@ -900,6 +1548,8 @@ void PipelineHandlerMaliC55::registerMaliCamera(std::unique_ptr<MaliC55CameraDat
 	std::shared_ptr<Camera> camera = Camera::create(std::move(data),
 							name, streams);
 	registerCamera(std::move(camera));
+
+	return true;
 }
 
 /*
@@ -925,9 +1575,7 @@ bool PipelineHandlerMaliC55::registerTPGCamera(MediaLink *link)
 	if (data->init())
 		return false;
 
-	registerMaliCamera(std::move(data), name);
-
-	return true;
+	return registerMaliCamera(std::move(data), name);
 }
 
 /*
@@ -953,9 +1601,24 @@ bool PipelineHandlerMaliC55::registerSensorCamera(MediaLink *ispLink)
 		if (data->init())
 			return false;
 
-		/* \todo: Init properties and controls. */
+		data->properties_ = data->sensor_->properties();
 
-		registerMaliCamera(std::move(data), sensor->name());
+		const CameraSensorProperties::SensorDelays &delays = data->sensor_->sensorDelays();
+		std::unordered_map<uint32_t, DelayedControls::ControlParams> params = {
+			{ V4L2_CID_ANALOGUE_GAIN, { delays.gainDelay, false } },
+			{ V4L2_CID_EXPOSURE, { delays.exposureDelay, false } },
+		};
+
+		data->delayedCtrls_ =
+			std::make_unique<DelayedControls>(data->sensor_->device(),
+							  params);
+		isp_->frameStart.connect(data->delayedCtrls_.get(),
+					 &DelayedControls::applyControls);
+
+		/* \todo: Init properties. */
+
+		if (!registerMaliCamera(std::move(data), sensor->name()))
+			return false;
 	}
 
 	return true;
@@ -966,7 +1629,7 @@ bool PipelineHandlerMaliC55::match(DeviceEnumerator *enumerator)
 	const MediaPad *ispSink;
 
 	/*
-	 * We search for just the ISP subdevice and the full resolution pipe.
+	 * We search for just the always-available elements of the media graph.
 	 * The TPG and the downscale pipe are both optional blocks and may not
 	 * be fitted.
 	 */
@@ -974,6 +1637,8 @@ bool PipelineHandlerMaliC55::match(DeviceEnumerator *enumerator)
 	dm.add("mali-c55 isp");
 	dm.add("mali-c55 resizer fr");
 	dm.add("mali-c55 fr");
+	dm.add("mali-c55 3a stats");
+	dm.add("mali-c55 3a params");
 
 	media_ = acquireMediaDevice(enumerator, dm);
 	if (!media_)
@@ -981,6 +1646,14 @@ bool PipelineHandlerMaliC55::match(DeviceEnumerator *enumerator)
 
 	isp_ = V4L2Subdevice::fromEntityName(media_, "mali-c55 isp");
 	if (isp_->open() < 0)
+		return false;
+
+	stats_ = V4L2VideoDevice::fromEntityName(media_, "mali-c55 3a stats");
+	if (stats_->open() < 0)
+		return false;
+
+	params_ = V4L2VideoDevice::fromEntityName(media_, "mali-c55 3a params");
+	if (params_->open() < 0)
 		return false;
 
 	MaliC55Pipe *frPipe = &pipes_[MaliC55FR];
@@ -992,7 +1665,13 @@ bool PipelineHandlerMaliC55::match(DeviceEnumerator *enumerator)
 	if (frPipe->cap->open() < 0)
 		return false;
 
-	frPipe->cap->bufferReady.connect(this, &PipelineHandlerMaliC55::bufferReady);
+	frPipe->link = media_->link("mali-c55 resizer fr", 1, "mali-c55 fr", 0);
+	if (!frPipe->link) {
+		LOG(MaliC55, Error) << "No link between fr resizer and video node";
+		return false;
+	}
+
+	frPipe->cap->bufferReady.connect(this, &PipelineHandlerMaliC55::imageBufferReady);
 
 	dsFitted_ = !!media_->getEntityByName("mali-c55 ds");
 	if (dsFitted_) {
@@ -1008,8 +1687,18 @@ bool PipelineHandlerMaliC55::match(DeviceEnumerator *enumerator)
 		if (dsPipe->cap->open() < 0)
 			return false;
 
-		dsPipe->cap->bufferReady.connect(this, &PipelineHandlerMaliC55::bufferReady);
+		dsPipe->link = media_->link("mali-c55 resizer ds", 1,
+					    "mali-c55 ds", 0);
+		if (!dsPipe->link) {
+			LOG(MaliC55, Error) << "No link between ds resizer and video node";
+			return false;
+		}
+
+		dsPipe->cap->bufferReady.connect(this, &PipelineHandlerMaliC55::imageBufferReady);
 	}
+
+	stats_->bufferReady.connect(this, &PipelineHandlerMaliC55::statsBufferReady);
+	params_->bufferReady.connect(this, &PipelineHandlerMaliC55::paramsBufferReady);
 
 	ispSink = isp_->entity()->getPadByIndex(0);
 	if (!ispSink || ispSink->links().empty()) {

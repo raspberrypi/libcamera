@@ -25,6 +25,7 @@ struct FrameContext {
 private:
 	template<typename T> friend class FCQueue;
 	uint32_t frame;
+	bool initialised = false;
 };
 
 template<typename FrameContext>
@@ -38,8 +39,10 @@ public:
 
 	void clear()
 	{
-		for (FrameContext &ctx : contexts_)
+		for (FrameContext &ctx : contexts_) {
+			ctx.initialised = false;
 			ctx.frame = 0;
+		}
 	}
 
 	FrameContext &alloc(const uint32_t frame)
@@ -83,6 +86,21 @@ public:
 					    << " has been overwritten by "
 					    << frameContext.frame;
 
+		if (frame == 0 && !frameContext.initialised) {
+			/*
+			 * If the IPA calls get() at start() time it will get an
+			 * un-intialized FrameContext as the below "frame ==
+			 * frameContext.frame" check will return success because
+			 * FrameContexts are zeroed at creation time.
+			 *
+			 * Make sure the FrameContext gets initialised if get()
+			 * is called before alloc() by the IPA for frame#0.
+			 */
+			init(frameContext, frame);
+
+			return frameContext;
+		}
+
 		if (frame == frameContext.frame)
 			return frameContext;
 
@@ -108,6 +126,7 @@ private:
 	{
 		frameContext = {};
 		frameContext.frame = frame;
+		frameContext.initialised = true;
 	}
 
 	std::vector<FrameContext> contexts_;

@@ -37,10 +37,11 @@
 
 #include <gst/base/base.h>
 
+#include "gstlibcamera-controls.h"
+#include "gstlibcamera-utils.h"
 #include "gstlibcameraallocator.h"
 #include "gstlibcamerapad.h"
 #include "gstlibcamerapool.h"
-#include "gstlibcamera-utils.h"
 
 using namespace libcamera;
 
@@ -128,6 +129,7 @@ struct GstLibcameraSrcState {
 
 	ControlList initControls_;
 	guint group_id_;
+	GstCameraControls controls_;
 
 	int queueRequest();
 	void requestCompleted(Request *request);
@@ -142,7 +144,6 @@ struct _GstLibcameraSrc {
 	GstTask *task;
 
 	gchar *camera_name;
-	controls::AfModeEnum auto_focus_mode = controls::AfModeManual;
 
 	std::atomic<GstEvent *> pending_eos;
 
@@ -154,7 +155,7 @@ struct _GstLibcameraSrc {
 enum {
 	PROP_0,
 	PROP_CAMERA_NAME,
-	PROP_AUTO_FOCUS_MODE,
+	PROP_LAST
 };
 
 static void gst_libcamera_src_child_proxy_init(gpointer g_iface,
@@ -184,6 +185,9 @@ int GstLibcameraSrcState::queueRequest()
 	std::unique_ptr<Request> request = cam_->createRequest();
 	if (!request)
 		return -ENOMEM;
+
+	/* Apply controls */
+	controls_.applyControls(request);
 
 	std::unique_ptr<RequestWrap> wrap =
 		std::make_unique<RequestWrap>(std::move(request));
@@ -228,6 +232,9 @@ GstLibcameraSrcState::requestCompleted(Request *request)
 
 	{
 		GLibLocker locker(&lock_);
+
+		controls_.readMetadata(request);
+
 		wrap = std::move(queuedRequests_.front());
 		queuedRequests_.pop();
 	}
@@ -410,6 +417,8 @@ gst_libcamera_src_open(GstLibcameraSrc *self)
 		return false;
 	}
 
+	self->state->controls_.setCamera(cam);
+
 	cam->requestCompleted.connect(self->state, &GstLibcameraSrcState::requestCompleted);
 
 	/* No need to lock here, we didn't start our threads yet. */
@@ -424,6 +433,8 @@ static bool
 gst_libcamera_src_negotiate(GstLibcameraSrc *self)
 {
 	GstLibcameraSrcState *state = self->state;
+	std::vector<GstVideoTransferFunction> transfer(state->srcpads_.size(),
+						       GST_VIDEO_TRANSFER_UNKNOWN);
 
 	g_autoptr(GstStructure) element_caps = gst_structure_new_empty("caps");
 
@@ -439,7 +450,7 @@ gst_libcamera_src_negotiate(GstLibcameraSrc *self)
 
 		/* Fixate caps and configure the stream. */
 		caps = gst_caps_make_writable(caps);
-		gst_libcamera_configure_stream_from_caps(stream_cfg, caps);
+		gst_libcamera_configure_stream_from_caps(stream_cfg, caps, &transfer[i]);
 		gst_libcamera_get_framerate_from_caps(caps, element_caps);
 	}
 
@@ -467,7 +478,7 @@ gst_libcamera_src_negotiate(GstLibcameraSrc *self)
 		GstPad *srcpad = state->srcpads_[i];
 		const StreamConfiguration &stream_cfg = state->config_->at(i);
 
-		g_autoptr(GstCaps) caps = gst_libcamera_stream_configuration_to_caps(stream_cfg);
+		g_autoptr(GstCaps) caps = gst_libcamera_stream_configuration_to_caps(stream_cfg, transfer[i]);
 		gst_libcamera_framerate_to_caps(caps, element_caps);
 
 		if (!gst_pad_push_event(srcpad, gst_event_new_caps(caps)))
@@ -663,18 +674,6 @@ gst_libcamera_src_task_enter(GstTask *task, [[maybe_unused]] GThread *thread,
 		gst_pad_push_event(srcpad, gst_event_new_segment(&segment));
 	}
 
-	if (self->auto_focus_mode != controls::AfModeManual) {
-		const ControlInfoMap &infoMap = state->cam_->controls();
-		if (infoMap.find(&controls::AfMode) != infoMap.end()) {
-			state->initControls_.set(controls::AfMode, self->auto_focus_mode);
-		} else {
-			GST_ELEMENT_ERROR(self, RESOURCE, SETTINGS,
-					  ("Failed to enable auto focus"),
-					  ("AfMode not supported by this camera, "
-					   "please retry with 'auto-focus-mode=AfModeManual'"));
-		}
-	}
-
 	ret = state->cam_->start(&state->initControls_);
 	if (ret) {
 		GST_ELEMENT_ERROR(self, RESOURCE, SETTINGS,
@@ -736,17 +735,16 @@ gst_libcamera_src_set_property(GObject *object, guint prop_id,
 {
 	GLibLocker lock(GST_OBJECT(object));
 	GstLibcameraSrc *self = GST_LIBCAMERA_SRC(object);
+	GstLibcameraSrcState *state = self->state;
 
 	switch (prop_id) {
 	case PROP_CAMERA_NAME:
 		g_free(self->camera_name);
 		self->camera_name = g_value_dup_string(value);
 		break;
-	case PROP_AUTO_FOCUS_MODE:
-		self->auto_focus_mode = static_cast<controls::AfModeEnum>(g_value_get_enum(value));
-		break;
 	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+		if (!state->controls_.setProperty(prop_id - PROP_LAST, value, pspec))
+			G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
 		break;
 	}
 }
@@ -757,16 +755,15 @@ gst_libcamera_src_get_property(GObject *object, guint prop_id, GValue *value,
 {
 	GLibLocker lock(GST_OBJECT(object));
 	GstLibcameraSrc *self = GST_LIBCAMERA_SRC(object);
+	GstLibcameraSrcState *state = self->state;
 
 	switch (prop_id) {
 	case PROP_CAMERA_NAME:
 		g_value_set_string(value, self->camera_name);
 		break;
-	case PROP_AUTO_FOCUS_MODE:
-		g_value_set_enum(value, static_cast<gint>(self->auto_focus_mode));
-		break;
 	default:
-		G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
+		if (!state->controls_.getProperty(prop_id - PROP_LAST, value, pspec))
+			G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
 		break;
 	}
 }
@@ -967,14 +964,7 @@ gst_libcamera_src_class_init(GstLibcameraSrcClass *klass)
 							     | G_PARAM_STATIC_STRINGS));
 	g_object_class_install_property(object_class, PROP_CAMERA_NAME, spec);
 
-	spec = g_param_spec_enum("auto-focus-mode",
-				 "Set auto-focus mode",
-				 "Available options: AfModeManual, "
-				 "AfModeAuto or AfModeContinuous.",
-				 gst_libcamera_auto_focus_get_type(),
-				 static_cast<gint>(controls::AfModeManual),
-				 G_PARAM_WRITABLE);
-	g_object_class_install_property(object_class, PROP_AUTO_FOCUS_MODE, spec);
+	GstCameraControls::installProperties(object_class, PROP_LAST);
 }
 
 /* GstChildProxy implementation */

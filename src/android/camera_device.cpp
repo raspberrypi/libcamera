@@ -22,6 +22,7 @@
 #include <libcamera/controls.h>
 #include <libcamera/fence.h>
 #include <libcamera/formats.h>
+#include <libcamera/geometry.h>
 #include <libcamera/property_ids.h>
 
 #include "system/graphics.h"
@@ -813,6 +814,11 @@ int CameraDevice::processControls(Camera3RequestDescriptor *descriptor)
 		controls.set(controls::ScalerCrop, cropRegion);
 	}
 
+	if (settings.getEntry(ANDROID_STATISTICS_FACE_DETECT_MODE, &entry)) {
+		const uint8_t *data = entry.data.u8;
+		controls.set(controls::draft::FaceDetectMode, data[0]);
+	}
+
 	if (settings.getEntry(ANDROID_SENSOR_TEST_PATTERN_MODE, &entry)) {
 		const int32_t data = *entry.data.i32;
 		int32_t testPatternMode = controls::draft::TestPatternModeOff;
@@ -1540,8 +1546,9 @@ CameraDevice::getResultMetadata(const Camera3RequestDescriptor &descriptor) cons
 	value32 = ANDROID_SENSOR_TEST_PATTERN_MODE_OFF;
 	resultMetadata->addEntry(ANDROID_SENSOR_TEST_PATTERN_MODE, value32);
 
-	value = ANDROID_STATISTICS_FACE_DETECT_MODE_OFF;
-	resultMetadata->addEntry(ANDROID_STATISTICS_FACE_DETECT_MODE, value);
+	if (settings.getEntry(ANDROID_STATISTICS_FACE_DETECT_MODE, &entry))
+		resultMetadata->addEntry(ANDROID_STATISTICS_FACE_DETECT_MODE,
+					 entry.data.u8, 1);
 
 	value = ANDROID_STATISTICS_LENS_SHADING_MAP_MODE_OFF;
 	resultMetadata->addEntry(ANDROID_STATISTICS_LENS_SHADING_MAP_MODE,
@@ -1579,6 +1586,61 @@ CameraDevice::getResultMetadata(const Camera3RequestDescriptor &descriptor) cons
 	if (frameDuration)
 		resultMetadata->addEntry(ANDROID_SENSOR_FRAME_DURATION,
 					 *frameDuration * 1000);
+
+	const auto &faceDetectRectangles =
+		metadata.get(controls::draft::FaceDetectFaceRectangles);
+	if (faceDetectRectangles) {
+		std::vector<int32_t> flatRectangles;
+		for (const Rectangle &rect : *faceDetectRectangles) {
+			flatRectangles.push_back(rect.x);
+			flatRectangles.push_back(rect.y);
+			flatRectangles.push_back(rect.x + rect.width);
+			flatRectangles.push_back(rect.y + rect.height);
+		}
+		resultMetadata->addEntry(
+			ANDROID_STATISTICS_FACE_RECTANGLES, flatRectangles);
+	}
+
+	const auto &faceDetectFaceScores =
+		metadata.get(controls::draft::FaceDetectFaceScores);
+	if (faceDetectRectangles && faceDetectFaceScores) {
+		if (faceDetectFaceScores->size() != faceDetectRectangles->size()) {
+			LOG(HAL, Error) << "Pipeline returned wrong number of face scores; "
+					<< "Expected: " << faceDetectRectangles->size()
+					<< ", got: " << faceDetectFaceScores->size();
+		}
+		resultMetadata->addEntry(ANDROID_STATISTICS_FACE_SCORES,
+					 *faceDetectFaceScores);
+	}
+
+	const auto &faceDetectFaceLandmarks =
+		metadata.get(controls::draft::FaceDetectFaceLandmarks);
+	if (faceDetectRectangles && faceDetectFaceLandmarks) {
+		size_t expectedLandmarks = faceDetectRectangles->size() * 3;
+		if (faceDetectFaceLandmarks->size() != expectedLandmarks) {
+			LOG(HAL, Error) << "Pipeline returned wrong number of face landmarks; "
+					<< "Expected: " << expectedLandmarks
+					<< ", got: " << faceDetectFaceLandmarks->size();
+		}
+
+		std::vector<int32_t> androidLandmarks;
+		for (const Point &landmark : *faceDetectFaceLandmarks) {
+			androidLandmarks.push_back(landmark.x);
+			androidLandmarks.push_back(landmark.y);
+		}
+		resultMetadata->addEntry(
+			ANDROID_STATISTICS_FACE_LANDMARKS, androidLandmarks);
+	}
+
+	const auto &faceDetectFaceIds = metadata.get(controls::draft::FaceDetectFaceIds);
+	if (faceDetectRectangles && faceDetectFaceIds) {
+		if (faceDetectFaceIds->size() != faceDetectRectangles->size()) {
+			LOG(HAL, Error) << "Pipeline returned wrong number of face ids; "
+					<< "Expected: " << faceDetectRectangles->size()
+					<< ", got: " << faceDetectFaceIds->size();
+		}
+		resultMetadata->addEntry(ANDROID_STATISTICS_FACE_IDS, *faceDetectFaceIds);
+	}
 
 	const auto &scalerCrop = metadata.get(controls::ScalerCrop);
 	if (scalerCrop) {

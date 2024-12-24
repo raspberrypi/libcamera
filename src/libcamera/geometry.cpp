@@ -594,6 +594,8 @@ std::ostream &operator<<(std::ostream &out, const SizeRange &sr)
  *
  * Rectangles are used to identify an area of an image. They are specified by
  * the coordinates of top-left corner and their horizontal and vertical size.
+ * By convention, the top-left corner is defined as the corner with the lowest
+ * x and y coordinates, regardless of the origin and direction of the axes.
  *
  * The measure unit of the rectangle coordinates and size, as well as the
  * reference point from which the Rectangle::x and Rectangle::y displacements
@@ -611,6 +613,8 @@ std::ostream &operator<<(std::ostream &out, const SizeRange &sr)
  * \param[in] x The horizontal coordinate of the top-left corner
  * \param[in] y The vertical coordinate of the top-left corner
  * \param[in] size The size
+ *
+ * The rectangle's top-left corner is the point with the smaller x and y values.
  */
 
 /**
@@ -620,6 +624,8 @@ std::ostream &operator<<(std::ostream &out, const SizeRange &sr)
  * \param[in] y The vertical coordinate of the top-left corner
  * \param[in] width The width
  * \param[in] height The height
+ *
+ * The rectangle's top-left corner is the point with the smaller x and y values.
  */
 
 /**
@@ -630,13 +636,24 @@ std::ostream &operator<<(std::ostream &out, const SizeRange &sr)
  */
 
 /**
+ * \fn Rectangle::Rectangle(const Point &point1, const Point &point2)
+ * \brief Construct a Rectangle from two opposite corners
+ * \param[in] point1 One of corners of the rectangle
+ * \param[in] point2 The opposite corner of \a point1
+ */
+
+/**
  * \var Rectangle::x
  * \brief The horizontal coordinate of the rectangle's top-left corner
+ *
+ * The rectangle's top-left corner is the point with the smaller x and y values.
  */
 
 /**
  * \var Rectangle::y
  * \brief The vertical coordinate of the rectangle's top-left corner
+ *
+ * The rectangle's top-left corner is the point with the smaller x and y values.
  */
 
 /**
@@ -685,6 +702,9 @@ Point Rectangle::center() const
 /**
  * \fn Point Rectangle::topLeft() const
  * \brief Retrieve the coordinates of the top left corner of this Rectangle
+ *
+ * The rectangle's top-left corner is the point with the smaller x and y values.
+ *
  * \return The Rectangle's top left corner
  */
 
@@ -815,6 +835,55 @@ Rectangle Rectangle::scaledBy(const Size &numerator, const Size &denominator) co
 Rectangle Rectangle::translatedBy(const Point &point) const
 {
 	return { x + point.x, y + point.y, width, height };
+}
+
+/**
+ * \brief Transform a Rectangle from one reference rectangle to another
+ * \param[in] source The \a source reference rectangle
+ * \param[in] destination The \a destination reference rectangle
+ *
+ * The \a source and \a destination parameters describe two rectangles defined
+ * in different reference systems. The Rectangle is translated from the source
+ * reference system into the destination reference system.
+ *
+ * The typical use case for this function is to translate a selection rectangle
+ * specified in a reference system, in example the sensor's pixel array, into
+ * the same rectangle re-scaled and translated into a different reference
+ * system, in example the output frame on which the selection rectangle is
+ * applied to.
+ *
+ * For example, consider a sensor with a resolution of 4040x2360 pixels and a
+ * assume a rectangle of (100, 100)/3840x2160 (sensorFrame) in sensor
+ * coordinates is mapped to a rectangle (0,0)/(1920,1080) (displayFrame) in
+ * display coordinates. This function can be used to transform an arbitrary
+ * rectangle from display coordinates to sensor coordinates or vice versa:
+ *
+ * \code{.cpp}
+ * Rectangle sensorReference(100, 100, 3840, 2160);
+ * Rectangle displayReference(0, 0, 1920, 1080);
+ *
+ * // Bottom right quarter in sensor coordinates
+ * Rectangle sensorRect(2020, 100, 1920, 1080);
+ * displayRect = sensorRect.transformedBetween(sensorReference, displayReference);
+ * // displayRect is now (960, 540)/960x540
+ *
+ * // Transformation back to sensor coordinates
+ * sensorRect = displayRect.transformedBetween(displayReference, sensorReference);
+ * \endcode
+ */
+Rectangle Rectangle::transformedBetween(const Rectangle &source,
+					const Rectangle &destination) const
+{
+	Rectangle r;
+	double sx = static_cast<double>(destination.width) / source.width;
+	double sy = static_cast<double>(destination.height) / source.height;
+
+	r.x = static_cast<int>((x - source.x) * sx) + destination.x;
+	r.y = static_cast<int>((y - source.y) * sy) + destination.y;
+	r.width = static_cast<int>(width * sx);
+	r.height = static_cast<int>(height * sy);
+
+	return r;
 }
 
 /**

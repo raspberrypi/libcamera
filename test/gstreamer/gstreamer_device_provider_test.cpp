@@ -52,19 +52,12 @@ protected:
 		for (l = devices; l != NULL; l = g_list_next(l)) {
 			GstDevice *device = GST_DEVICE(l->data);
 			g_autofree gchar *gst_name;
-			bool matched = false;
 
 			g_autoptr(GstElement) element = gst_device_create_element(device, NULL);
 			g_object_get(element, "camera-name", &gst_name, NULL);
 
-			for (auto name : cameraNames) {
-				if (strcmp(name.c_str(), gst_name) == 0) {
-					matched = true;
-					break;
-				}
-			}
-
-			if (!matched)
+			if (std::find(cameraNames.begin(), cameraNames.end(), gst_name) ==
+			    cameraNames.end())
 				return TestFail;
 		}
 

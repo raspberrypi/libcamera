@@ -11,6 +11,7 @@
 #include <initializer_list>
 #include <map>
 #include <memory>
+#include <stdint.h>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -45,7 +46,8 @@ LOG_DECLARE_CATEGORY(SoftwareIsp)
 class SoftwareIsp
 {
 public:
-	SoftwareIsp(PipelineHandler *pipe, const CameraSensor *sensor);
+	SoftwareIsp(PipelineHandler *pipe, const CameraSensor *sensor,
+		    ControlInfoMap *ipaControls);
 	~SoftwareIsp();
 
 	int loadConfiguration([[maybe_unused]] const std::string &filename) { return 0; }
@@ -61,30 +63,32 @@ public:
 
 	int configure(const StreamConfiguration &inputCfg,
 		      const std::vector<std::reference_wrapper<StreamConfiguration>> &outputCfgs,
-		      const ControlInfoMap &sensorControls);
+		      const ipa::soft::IPAConfigInfo &configInfo);
 
 	int exportBuffers(const Stream *stream, unsigned int count,
 			  std::vector<std::unique_ptr<FrameBuffer>> *buffers);
 
-	void processStats(const ControlList &sensorControls);
+	void processStats(const uint32_t frame, const uint32_t bufferId,
+			  const ControlList &sensorControls);
 
 	int start();
 	void stop();
 
-	int queueBuffers(FrameBuffer *input,
+	void queueRequest(const uint32_t frame, const ControlList &controls);
+	int queueBuffers(uint32_t frame, FrameBuffer *input,
 			 const std::map<const Stream *, FrameBuffer *> &outputs);
 
-	void process(FrameBuffer *input, FrameBuffer *output);
+	void process(uint32_t frame, FrameBuffer *input, FrameBuffer *output);
 
 	Signal<FrameBuffer *> inputBufferReady;
 	Signal<FrameBuffer *> outputBufferReady;
-	Signal<> ispStatsReady;
+	Signal<uint32_t, uint32_t> ispStatsReady;
 	Signal<const ControlList &> setSensorControls;
 
 private:
 	void saveIspParams();
 	void setSensorCtrls(const ControlList &sensorControls);
-	void statsReady();
+	void statsReady(uint32_t frame, uint32_t bufferId);
 	void inputReady(FrameBuffer *input);
 	void outputReady(FrameBuffer *output);
 

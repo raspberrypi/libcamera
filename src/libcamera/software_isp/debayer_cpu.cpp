@@ -20,6 +20,7 @@
 #include <libcamera/formats.h>
 
 #include "libcamera/internal/bayer_format.h"
+#include "libcamera/internal/dma_buf_allocator.h"
 #include "libcamera/internal/framebuffer.h"
 #include "libcamera/internal/mapped_framebuffer.h"
 
@@ -611,8 +612,7 @@ void DebayerCpu::memcpyNextLine(const uint8_t *linePointers[])
 	memcpy(lineBuffers_[lineBufferIndex_].data(),
 	       linePointers[patternHeight] - lineBufferPadding_,
 	       lineBufferLength_);
-	linePointers[patternHeight] = lineBuffers_[lineBufferIndex_].data()
-				    + lineBufferPadding_;
+	linePointers[patternHeight] = lineBuffers_[lineBufferIndex_].data() + lineBufferPadding_;
 
 	lineBufferIndex_ = (lineBufferIndex_ + 1) % (patternHeight + 1);
 }
@@ -723,23 +723,6 @@ void DebayerCpu::process4(const uint8_t *src, uint8_t *dst)
 
 namespace {
 
-void syncBufferForCPU(FrameBuffer *buffer, uint64_t syncFlags)
-{
-	for (const FrameBuffer::Plane &plane : buffer->planes()) {
-		const int fd = plane.fd.get();
-		struct dma_buf_sync sync = { syncFlags };
-		int ret;
-
-		ret = ioctl(fd, DMA_BUF_IOCTL_SYNC, &sync);
-		if (ret < 0) {
-			ret = errno;
-			LOG(Debayer, Error)
-				<< "Syncing buffer FD " << fd << " with flags "
-				<< syncFlags << " failed: " << strerror(ret);
-		}
-	}
-}
-
 inline int64_t timeDiff(timespec &after, timespec &before)
 {
 	return (after.tv_sec - before.tv_sec) * 1000000000LL +
@@ -748,7 +731,7 @@ inline int64_t timeDiff(timespec &after, timespec &before)
 
 } /* namespace */
 
-void DebayerCpu::process(FrameBuffer *input, FrameBuffer *output, DebayerParams params)
+void DebayerCpu::process(uint32_t frame, FrameBuffer *input, FrameBuffer *output, DebayerParams params)
 {
 	timespec frameStartTime;
 
@@ -757,8 +740,12 @@ void DebayerCpu::process(FrameBuffer *input, FrameBuffer *output, DebayerParams 
 		clock_gettime(CLOCK_MONOTONIC_RAW, &frameStartTime);
 	}
 
-	syncBufferForCPU(input, DMA_BUF_SYNC_START | DMA_BUF_SYNC_READ);
-	syncBufferForCPU(output, DMA_BUF_SYNC_START | DMA_BUF_SYNC_WRITE);
+	std::vector<DmaSyncer> dmaSyncers;
+	for (const FrameBuffer::Plane &plane : input->planes())
+		dmaSyncers.emplace_back(plane.fd, DmaSyncer::SyncType::Read);
+
+	for (const FrameBuffer::Plane &plane : output->planes())
+		dmaSyncers.emplace_back(plane.fd, DmaSyncer::SyncType::Write);
 
 	green_ = params.green;
 	red_ = swapRedBlueGains_ ? params.blue : params.red;
@@ -787,8 +774,7 @@ void DebayerCpu::process(FrameBuffer *input, FrameBuffer *output, DebayerParams 
 
 	metadata.planes()[0].bytesused = out.planes()[0].size();
 
-	syncBufferForCPU(output, DMA_BUF_SYNC_END | DMA_BUF_SYNC_WRITE);
-	syncBufferForCPU(input, DMA_BUF_SYNC_END | DMA_BUF_SYNC_READ);
+	dmaSyncers.clear();
 
 	/* Measure before emitting signals */
 	if (measuredFrames_ < DebayerCpu::kLastFrameToMeasure &&
@@ -807,7 +793,12 @@ void DebayerCpu::process(FrameBuffer *input, FrameBuffer *output, DebayerParams 
 		}
 	}
 
-	stats_->finishFrame();
+	/*
+	 * Buffer ids are currently not used, so pass zeros as its parameter.
+	 *
+	 * \todo Pass real bufferId once stats buffer passing is changed.
+	 */
+	stats_->finishFrame(frame, 0);
 	outputBufferReady.emit(output);
 	inputBufferReady.emit(input);
 }

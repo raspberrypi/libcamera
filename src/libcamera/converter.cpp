@@ -11,6 +11,8 @@
 
 #include <libcamera/base/log.h>
 
+#include <libcamera/stream.h>
+
 #include "libcamera/internal/media_device.h"
 
 /**
@@ -35,13 +37,38 @@ LOG_DEFINE_CATEGORY(Converter)
  */
 
 /**
+ * \enum Converter::Feature
+ * \brief Specify the features supported by the converter
+ * \var Converter::Feature::None
+ * \brief No extra features supported by the converter
+ * \var Converter::Feature::InputCrop
+ * \brief Cropping capability at input is supported by the converter
+ */
+
+/**
+ * \typedef Converter::Features
+ * \brief A bitwise combination of features supported by the converter
+ */
+
+/**
+ * \enum Converter::Alignment
+ * \brief The alignment mode specified when adjusting the converter input or
+ * output sizes
+ * \var Converter::Alignment::Down
+ * \brief Adjust the Converter sizes to a smaller valid size
+ * \var Converter::Alignment::Up
+ * \brief Adjust the Converter sizes to a larger valid size
+ */
+
+/**
  * \brief Construct a Converter instance
  * \param[in] media The media device implementing the converter
+ * \param[in] features Features flags representing supported features
  *
  * This searches for the entity implementing the data streaming function in the
  * media graph entities and use its device node as the converter device node.
  */
-Converter::Converter(MediaDevice *media)
+Converter::Converter(MediaDevice *media, Features features)
 {
 	const std::vector<MediaEntity *> &entities = media->entities();
 	auto it = std::find_if(entities.begin(), entities.end(),
@@ -56,6 +83,7 @@ Converter::Converter(MediaDevice *media)
 	}
 
 	deviceNode_ = (*it)->deviceNode();
+	features_ = features;
 }
 
 Converter::~Converter()
@@ -93,6 +121,26 @@ Converter::~Converter()
  */
 
 /**
+ * \fn Converter::adjustInputSize()
+ * \brief Adjust the converter input \a size to a valid value
+ * \param[in] pixFmt The pixel format of the converter input stream
+ * \param[in] size The converter input size to adjust to a valid value
+ * \param[in] align The desired alignment
+ * \return The adjusted converter input size or a null Size if \a size cannot
+ * be adjusted
+ */
+
+/**
+ * \fn Converter::adjustOutputSize()
+ * \brief Adjust the converter output \a size to a valid value
+ * \param[in] pixFmt The pixel format of the converter output stream
+ * \param[in] size The converter output size to adjust to a valid value
+ * \param[in] align The desired alignment
+ * \return The adjusted converter output size or a null Size if \a size cannot
+ * be adjusted
+ */
+
+/**
  * \fn Converter::strideAndFrameSize()
  * \brief Retrieve the output stride and frame size for an input configutation
  * \param[in] pixelFormat Input stream pixel format
@@ -101,11 +149,28 @@ Converter::~Converter()
  */
 
 /**
+ * \fn Converter::validateOutput()
+ * \brief Validate and possibily adjust \a cfg to a valid converter output
+ * \param[inout] cfg The StreamConfiguration to validate and adjust
+ * \param[out] adjusted Set to true if \a cfg has been adjusted
+ * \param[in] align The desired alignment
+ * \return 0 if \a cfg is valid or has been adjusted, a negative error code
+ * otherwise if \a cfg cannot be adjusted
+ */
+
+/**
  * \fn Converter::configure()
  * \brief Configure a set of output stream conversion from an input stream
  * \param[in] inputCfg Input stream configuration
  * \param[out] outputCfgs A list of output stream configurations
  * \return 0 on success or a negative error code otherwise
+ */
+
+/**
+ * \fn Converter::isConfigured()
+ * \brief Check if a given stream is configured
+ * \param[in] stream The output stream
+ * \return True if the \a stream is configured or false otherwise
  */
 
 /**
@@ -148,6 +213,52 @@ Converter::~Converter()
  */
 
 /**
+ * \fn Converter::setInputCrop()
+ * \brief Set the crop rectangle \a rect for \a stream
+ * \param[in] stream The output stream
+ * \param[inout] rect The crop rectangle to apply and return the rectangle
+ * that is actually applied
+ *
+ * Set the crop rectangle \a rect for \a stream provided the converter supports
+ * cropping. The converter has the Feature::InputCrop flag in this case.
+ *
+ * The underlying hardware can adjust the rectangle supplied by the user
+ * due to hardware constraints. The caller can inspect \a rect to determine the
+ * actual rectangle that has been applied by the converter, after this function
+ * returns.
+ *
+ * \return 0 on success or a negative error code otherwise
+ */
+
+/**
+ * \fn Converter::inputCropBounds()
+ * \brief Retrieve the crop bounds of the converter
+ *
+ * Retrieve the minimum and maximum crop bounds of the converter. This can be
+ * used to query the crop bounds before configuring a stream.
+ *
+ * \return A pair containing the minimum and maximum crop bound in that order
+ */
+
+/**
+ * \fn Converter::inputCropBounds(const Stream *stream)
+ * \brief Retrieve the crop bounds for \a stream
+ * \param[in] stream The output stream
+ *
+ * Retrieve the minimum and maximum crop bounds for \a stream. The converter
+ * should support cropping (Feature::InputCrop).
+ *
+ * The crop bounds depend on the configuration of the output stream and hence
+ * this function should be called after the \a stream has been configured using
+ * configure().
+ *
+ * When called with an unconfigured \a stream, this function returns a pair of
+ * null rectangles.
+ *
+ * \return A pair containing the minimum and maximum crop bound in that order
+ */
+
+/**
  * \var Converter::inputBufferReady
  * \brief A signal emitted when the input frame buffer completes
  */
@@ -158,9 +269,20 @@ Converter::~Converter()
  */
 
 /**
+ * \var Converter::features_
+ * \brief Stores the features supported by the converter
+ */
+
+/**
  * \fn Converter::deviceNode()
  * \brief The converter device node attribute accessor
  * \return The converter device node string
+ */
+
+/**
+ * \fn Converter::features()
+ * \brief Retrieve the features supported by the converter
+ * \return The converter Features flags
  */
 
 /**
@@ -263,8 +385,9 @@ std::vector<std::string> ConverterFactoryBase::names()
 
 	for (ConverterFactoryBase *factory : factories) {
 		list.push_back(factory->name_);
-		for (auto alias : factory->compatibles())
-			list.push_back(alias);
+
+		const auto &compatibles = factory->compatibles();
+		list.insert(list.end(), compatibles.begin(), compatibles.end());
 	}
 
 	return list;

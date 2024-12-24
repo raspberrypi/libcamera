@@ -5,7 +5,7 @@
  * Matrix and related operations
  */
 
-#include "matrix.h"
+#include "libcamera/internal/matrix.h"
 
 #include <libcamera/base/log.h>
 
@@ -17,8 +17,6 @@
 namespace libcamera {
 
 LOG_DEFINE_CATEGORY(Matrix)
-
-namespace ipa {
 
 /**
  * \class Matrix
@@ -34,7 +32,7 @@ namespace ipa {
  */
 
 /**
- * \fn Matrix::Matrix(const std::vector<T> &data)
+ * \fn Matrix::Matrix(const std::array<T, Rows * Cols> &data)
  * \brief Construct a matrix from supplied data
  * \param[in] data Data from which to construct a matrix
  *
@@ -143,7 +141,5 @@ bool matrixValidateYaml(const YamlObject &obj, unsigned int size)
 	return true;
 }
 #endif /* __DOXYGEN__ */
-
-} /* namespace ipa */
 
 } /* namespace libcamera */

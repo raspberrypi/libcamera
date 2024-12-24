@@ -34,8 +34,9 @@ libcamera_headers_install_dir = get_option('includedir') / libcamera_include_dir
 
 controls_map = {
     'controls': {
-        'draft': 'control_ids_draft.yaml',
         'core': 'control_ids_core.yaml',
+        'debug': 'control_ids_debug.yaml',
+        'draft': 'control_ids_draft.yaml',
         'rpi/vc4': 'control_ids_rpi.yaml',
     },
 
@@ -55,7 +56,7 @@ foreach mode, entry : controls_map
     files_list = []
     input_files = []
     foreach vendor, header : entry
-        if vendor != 'core' and vendor != 'draft'
+        if vendor not in ['core', 'debug', 'draft']
             if vendor not in pipelines
                 continue
             endif

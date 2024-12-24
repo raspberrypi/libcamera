@@ -50,9 +50,9 @@ struct CameraMode {
 	double sensitivity;
 	/* pixel clock rate */
 	uint64_t pixelRate;
-	/* Mode specific shutter speed limits */
-	libcamera::utils::Duration minShutter;
-	libcamera::utils::Duration maxShutter;
+	/* Mode specific exposure time limits */
+	libcamera::utils::Duration minExposureTime;
+	libcamera::utils::Duration maxExposureTime;
 	/* Mode specific analogue gain limits */
 	double minAnalogueGain;
 	double maxAnalogueGain;

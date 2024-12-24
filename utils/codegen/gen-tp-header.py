@@ -6,7 +6,6 @@
 #
 # Generate header file to contain lttng tracepoints
 
-import datetime
 import jinja2
 import pathlib
 import os
@@ -20,7 +19,6 @@ def main(argv):
     output = argv[2]
     template = argv[3]
 
-    year = datetime.datetime.now().year
     path = pathlib.Path(output).absolute().relative_to(argv[1])
 
     source = ''
@@ -28,7 +26,7 @@ def main(argv):
         source += open(fname, 'r', encoding='utf-8').read() + '\n\n'
 
     template = jinja2.Template(open(template, 'r', encoding='utf-8').read())
-    string = template.render(year=year, path=path, source=source)
+    string = template.render(path=path, source=source)
 
     f = open(output, 'w', encoding='utf-8').write(string)
 

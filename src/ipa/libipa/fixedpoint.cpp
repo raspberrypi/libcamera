@@ -2,18 +2,18 @@
 /*
  * Copyright (C) 2024, Paul Elder <paul.elder@ideasonboard.com>
  *
- * Miscellaneous utility functions specific to rkisp1
+ * Fixed / floating point conversions
  */
 
-#include "utils.h"
+#include "fixedpoint.h"
 
 /**
- * \file utils.h
+ * \file fixedpoint.h
  */
 
 namespace libcamera {
 
-namespace ipa::rkisp1::utils {
+namespace ipa {
 
 /**
  * \fn R floatingToFixedPoint(T number)
@@ -37,6 +37,6 @@ namespace ipa::rkisp1::utils {
  * \return The converted value
  */
 
-} /* namespace ipa::rkisp1::utils */
+} /* namespace ipa */
 
 } /* namespace libcamera */

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2024, Paul Elder <paul.elder@ideasonboard.com>
  *
- * Miscellaneous utility functions specific to rkisp1
+ * Fixed / floating point conversions
  */
 
 #pragma once
@@ -12,7 +12,7 @@
 
 namespace libcamera {
 
-namespace ipa::rkisp1::utils {
+namespace ipa {
 
 #ifndef __DOXYGEN__
 template<unsigned int I, unsigned int F, typename R, typename T,
@@ -60,6 +60,6 @@ constexpr R fixedToFloatingPoint(T number)
 	return static_cast<R>(t) / static_cast<R>(1 << F);
 }
 
-} /* namespace ipa::rkisp1::utils */
+} /* namespace ipa */
 
 } /* namespace libcamera */

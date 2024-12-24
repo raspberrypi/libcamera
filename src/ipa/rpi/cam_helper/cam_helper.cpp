@@ -156,19 +156,6 @@ void CamHelper::setCameraMode(const CameraMode &mode)
 	}
 }
 
-void CamHelper::getDelays(int &exposureDelay, int &gainDelay,
-			  int &vblankDelay, int &hblankDelay) const
-{
-	/*
-	 * These values are correct for many sensors. Other sensors will
-	 * need to over-ride this function.
-	 */
-	exposureDelay = 2;
-	gainDelay = 1;
-	vblankDelay = 2;
-	hblankDelay = 2;
-}
-
 bool CamHelper::sensorEmbeddedDataPresent() const
 {
 	return false;
@@ -241,7 +228,7 @@ void CamHelper::parseEmbeddedData(Span<const uint8_t> buffer,
 		return;
 	}
 
-	deviceStatus.shutterSpeed = parsedDeviceStatus.shutterSpeed;
+	deviceStatus.exposureTime = parsedDeviceStatus.exposureTime;
 	deviceStatus.analogueGain = parsedDeviceStatus.analogueGain;
 	deviceStatus.frameLength = parsedDeviceStatus.frameLength;
 	deviceStatus.lineLength = parsedDeviceStatus.lineLength;

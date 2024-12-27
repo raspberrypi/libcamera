@@ -1,4 +1,4 @@
-libcamera (0.4.0-1) UNRELEASED; urgency=medium
+libcamera (0.4.0-1) experimental; urgency=medium
 
   * New upstream version 0.4.0
   * Bump SONAME to libcamera0.4
@@ -9,7 +9,7 @@ libcamera (0.4.0-1) UNRELEASED; urgency=medium
     these build-deps moved to Build-Depends-Indep.
   * Allow reprotest and blhc to fail in salsa-ci
 
- -- Dylan Aïssi <daissi@debian.org>  Tue, 24 Dec 2024 16:11:35 +0100
+ -- Dylan Aïssi <daissi@debian.org>  Fri, 27 Dec 2024 12:52:33 +0100
 
 libcamera (0.3.2-2) unstable; urgency=medium
 

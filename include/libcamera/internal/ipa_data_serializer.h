@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <stdint.h>
 #include <string.h>
 #include <tuple>
 #include <type_traits>

@@ -10,6 +10,7 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <stdint.h>
 #include <vector>
 
 #include <linux/videodev2.h>

@@ -147,7 +147,6 @@ Description: complex camera support library (GStreamer plugin)
 
 Package: python3-libcamera
 Architecture: linux-any
-Multi-Arch: same
 Section: python
 Depends: ${misc:Depends},
          ${python3:Depends},

@@ -1,6 +1,7 @@
 libcamera (0.4.0-3) UNRELEASED; urgency=medium
 
   * Fix install location of the python module
+  * Drop "Multi-Arch: same" for python3-libcamera
 
  -- Dylan Aïssi <daissi@debian.org>  Sat, 04 Jan 2025 23:01:14 +0100
 

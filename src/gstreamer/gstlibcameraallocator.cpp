@@ -214,7 +214,7 @@ gst_libcamera_allocator_new(std::shared_ptr<Camera> camera,
 		Stream *stream = streamCfg.stream();
 
 		ret = self->fb_allocator->allocate(stream);
-		if (ret == 0)
+		if (ret <= 0)
 			return nullptr;
 
 		GQueue *pool = g_queue_new();

@@ -10,6 +10,7 @@ vendor: draft
 controls:
   - AePrecaptureTrigger:
       type: int32_t
+      direction: inout
       description: |
         Control for AE metering trigger. Currently identical to
         ANDROID_CONTROL_AE_PRECAPTURE_TRIGGER.
@@ -31,6 +32,7 @@ controls:
 
   - NoiseReductionMode:
       type: int32_t
+      direction: inout
       description: |
        Control to select the noise reduction algorithm mode. Currently
        identical to ANDROID_NOISE_REDUCTION_MODE.
@@ -59,6 +61,7 @@ controls:
 
   - ColorCorrectionAberrationMode:
       type: int32_t
+      direction: inout
       description: |
        Control to select the color correction aberration mode. Currently
        identical to ANDROID_COLOR_CORRECTION_ABERRATION_MODE.
@@ -79,6 +82,7 @@ controls:
 
   - AeState:
       type: int32_t
+      direction: out
       description: |
        Control to report the current AE algorithm state. Currently identical to
        ANDROID_CONTROL_AE_STATE.
@@ -108,6 +112,7 @@ controls:
 
   - AwbState:
       type: int32_t
+      direction: out
       description: |
        Control to report the current AWB algorithm state. Currently identical
        to ANDROID_CONTROL_AWB_STATE.
@@ -129,6 +134,7 @@ controls:
 
   - SensorRollingShutterSkew:
       type: int64_t
+      direction: out
       description: |
        Control to report the time between the start of exposure of the first
        row and the start of exposure of the last row. Currently identical to
@@ -136,6 +142,7 @@ controls:
 
   - LensShadingMapMode:
       type: int32_t
+      direction: inout
       description: |
        Control to report if the lens shading map is available. Currently
        identical to ANDROID_STATISTICS_LENS_SHADING_MAP_MODE.
@@ -149,6 +156,7 @@ controls:
 
   - PipelineDepth:
       type: int32_t
+      direction: out
       description: |
         Specifies the number of pipeline stages the frame went through from when
         it was exposed to when the final completed result was available to the
@@ -163,6 +171,7 @@ controls:
 
   - MaxLatency:
       type: int32_t
+      direction: out
       description: |
         The maximum number of frames that can occur after a request (different
         than the previous) has been submitted, and before the result's state
@@ -172,6 +181,7 @@ controls:
 
   - TestPatternMode:
       type: int32_t
+      direction: inout
       description: |
         Control to select the test pattern mode. Currently identical to
         ANDROID_SENSOR_TEST_PATTERN_MODE.
@@ -229,6 +239,7 @@ controls:
 
   - FaceDetectMode:
       type: int32_t
+      direction: inout
       description: |
         Control to select the face detection mode used by the pipeline.
 
@@ -262,6 +273,7 @@ controls:
 
   - FaceDetectFaceRectangles:
       type: Rectangle
+      direction: out
       description: |
         Boundary rectangles of the detected faces. The number of values is
         the number of detected faces.
@@ -273,6 +285,7 @@ controls:
 
   - FaceDetectFaceScores:
       type: uint8_t
+      direction: out
       description: |
         Confidence score of each of the detected faces. The range of score is
         [0, 100]. The number of values should be the number of faces reported
@@ -285,6 +298,7 @@ controls:
 
   - FaceDetectFaceLandmarks:
       type: Point
+      direction: out
       description: |
         Array of human face landmark coordinates in format [..., left_eye_i,
         right_eye_i, mouth_i, left_eye_i+1, ...], with i = index of face. The
@@ -298,6 +312,7 @@ controls:
 
   - FaceDetectFaceIds:
       type: int32_t
+      direction: out
       description: |
         Each detected face is given a unique ID that is valid for as long as the
         face is visible to the camera device. A face that leaves the field of

@@ -161,19 +161,6 @@ void CamHelper::setHwConfig(const Controller::HardwareConfig &hwConfig)
 	hwConfig_ = hwConfig;
 }
 
-void CamHelper::getDelays(int &exposureDelay, int &gainDelay,
-			  int &vblankDelay, int &hblankDelay) const
-{
-	/*
-	 * These values are correct for many sensors. Other sensors will
-	 * need to over-ride this function.
-	 */
-	exposureDelay = 2;
-	gainDelay = 1;
-	vblankDelay = 2;
-	hblankDelay = 2;
-}
-
 bool CamHelper::sensorEmbeddedDataPresent() const
 {
 	return false;

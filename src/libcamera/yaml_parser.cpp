@@ -194,7 +194,7 @@ YamlObject::Getter<double>::get(const YamlObject &obj) const
 	if (obj.type_ != Type::Value)
 		return std::nullopt;
 
-	if (obj.value_ == "")
+	if (obj.value_.empty())
 		return std::nullopt;
 
 	char *end;

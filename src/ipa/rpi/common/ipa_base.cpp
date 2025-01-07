@@ -82,6 +82,7 @@ const ControlInfoMap::Map ipaColourControls{
 	{ &controls::AwbEnable, ControlInfo(false, true) },
 	{ &controls::AwbMode, ControlInfo(controls::AwbModeValues) },
 	{ &controls::ColourGains, ControlInfo(0.0f, 32.0f) },
+	{ &controls::ColourTemperature, ControlInfo(100, 100000) },
 	{ &controls::Saturation, ControlInfo(0.0f, 32.0f, 1.0f) },
 };
 
@@ -135,18 +136,8 @@ int32_t IpaBase::init(const IPASettings &settings, const InitParams &params, Ini
 		return -EINVAL;
 	}
 
-	/*
-	 * Pass out the sensor config to the pipeline handler in order
-	 * to setup the staggered writer class.
-	 */
-	int gainDelay, exposureDelay, vblankDelay, hblankDelay, sensorMetadata;
-	helper_->getDelays(exposureDelay, gainDelay, vblankDelay, hblankDelay);
-	sensorMetadata = helper_->sensorEmbeddedDataPresent();
-
-	result->sensorConfig.gainDelay = gainDelay;
-	result->sensorConfig.exposureDelay = exposureDelay;
-	result->sensorConfig.vblankDelay = vblankDelay;
-	result->sensorConfig.hblankDelay = hblankDelay;
+	/* Pass out the sensor metadata to the pipeline handler */
+	int sensorMetadata = helper_->sensorEmbeddedDataPresent();
 	result->sensorConfig.sensorMetadata = sensorMetadata;
 
 	/* Load the tuning file for this sensor. */
@@ -1020,6 +1011,25 @@ void IpaBase::applyControls(const ControlList &controls)
 				/* A gain of 0.0f will switch back to auto mode. */
 				libcameraMetadata_.set(controls::ColourGains,
 						       { gains[0], gains[1] });
+			break;
+		}
+
+		case controls::COLOUR_TEMPERATURE: {
+			/* Silently ignore this control for a mono sensor. */
+			if (monoSensor_)
+				break;
+
+			auto temperatureK = ctrl.second.get<int32_t>();
+			RPiController::AwbAlgorithm *awb = dynamic_cast<RPiController::AwbAlgorithm *>(
+				controller_.getAlgorithm("awb"));
+			if (!awb) {
+				LOG(IPARPI, Warning)
+					<< "Could not set COLOUR_TEMPERATURE - no AWB algorithm";
+				break;
+			}
+
+			awb->setColourTemperature(temperatureK);
+			/* This metadata will get reported back automatically. */
 			break;
 		}
 

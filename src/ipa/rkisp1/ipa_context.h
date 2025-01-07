@@ -135,6 +135,7 @@ struct IPAFrameContext : public FrameContext {
 	struct {
 		RGB<double> gains;
 		bool autoEnabled;
+		unsigned int temperatureK;
 	} awb;
 
 	struct {
@@ -168,6 +169,10 @@ struct IPAFrameContext : public FrameContext {
 	struct {
 		Matrix<float, 3, 3> ccm;
 	} ccm;
+
+	struct {
+		double lux;
+	} lux;
 };
 
 struct IPAContext {

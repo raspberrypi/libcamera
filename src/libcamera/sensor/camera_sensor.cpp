@@ -116,6 +116,7 @@ CameraSensor::~CameraSensor() = default;
  * \brief Retrieve the best sensor format for a desired output
  * \param[in] mbusCodes The list of acceptable media bus codes
  * \param[in] size The desired size
+ * \param[in] maxSize The maximum size
  *
  * Media bus codes are selected from \a mbusCodes, which lists all acceptable
  * codes in decreasing order of preference. Media bus codes supported by the
@@ -134,6 +135,8 @@ CameraSensor::~CameraSensor() = default;
  *   bandwidth.
  * - The desired \a size shall be supported by one of the media bus code listed
  *   in \a mbusCodes.
+ * - The desired \a size shall fit into the maximum size \a maxSize if it is not
+ *   null.
  *
  * When multiple media bus codes can produce the same size, the code at the
  * lowest position in \a mbusCodes is selected.

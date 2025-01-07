@@ -17,8 +17,6 @@ public:
 	CamHelperImx290();
 	uint32_t gainCode(double gain) const override;
 	double gain(uint32_t gainCode) const override;
-	void getDelays(int &exposureDelay, int &gainDelay,
-		       int &vblankDelay, int &hblankDelay) const override;
 	unsigned int hideFramesStartup() const override;
 	unsigned int hideFramesModeSwitch() const override;
 
@@ -44,15 +42,6 @@ uint32_t CamHelperImx290::gainCode(double gain) const
 double CamHelperImx290::gain(uint32_t gainCode) const
 {
 	return std::pow(10, 0.015 * gainCode);
-}
-
-void CamHelperImx290::getDelays(int &exposureDelay, int &gainDelay,
-				int &vblankDelay, int &hblankDelay) const
-{
-	exposureDelay = 2;
-	gainDelay = 2;
-	vblankDelay = 2;
-	hblankDelay = 2;
 }
 
 unsigned int CamHelperImx290::hideFramesStartup() const

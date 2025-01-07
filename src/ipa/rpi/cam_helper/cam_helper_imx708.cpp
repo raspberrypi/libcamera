@@ -54,8 +54,6 @@ public:
 	void process(StatisticsPtr &stats, Metadata &metadata) override;
 	std::pair<uint32_t, uint32_t> getBlanking(Duration &exposure, Duration minFrameDuration,
 						  Duration maxFrameDuration) const override;
-	void getDelays(int &exposureDelay, int &gainDelay,
-		       int &vblankDelay, int &hblankDelay) const override;
 	bool sensorEmbeddedDataPresent() const override;
 	double getModeSensitivity(const CameraMode &mode) const override;
 	unsigned int hideFramesModeSwitch() const override;
@@ -206,15 +204,6 @@ std::pair<uint32_t, uint32_t> CamHelperImx708::getBlanking(Duration &exposure,
 	}
 
 	return { frameLength - mode_.height, hblank };
-}
-
-void CamHelperImx708::getDelays(int &exposureDelay, int &gainDelay,
-				int &vblankDelay, int &hblankDelay) const
-{
-	exposureDelay = 2;
-	gainDelay = 2;
-	vblankDelay = 3;
-	hblankDelay = 3;
 }
 
 bool CamHelperImx708::sensorEmbeddedDataPresent() const

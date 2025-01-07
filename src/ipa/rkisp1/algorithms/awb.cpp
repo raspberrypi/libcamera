@@ -33,12 +33,39 @@ namespace ipa::rkisp1::algorithms {
 
 LOG_DEFINE_CATEGORY(RkISP1Awb)
 
+constexpr int32_t kMinColourTemperature = 2500;
+constexpr int32_t kMaxColourTemperature = 10000;
+constexpr int32_t kDefaultColourTemperature = 5000;
+
 /* Minimum mean value below which AWB can't operate. */
 constexpr double kMeanMinThreshold = 2.0;
 
 Awb::Awb()
 	: rgbMode_(false)
 {
+}
+
+/**
+ * \copydoc libcamera::ipa::Algorithm::init
+ */
+int Awb::init(IPAContext &context, const YamlObject &tuningData)
+{
+	auto &cmap = context.ctrlMap;
+	cmap[&controls::ColourTemperature] = ControlInfo(kMinColourTemperature,
+							 kMaxColourTemperature,
+							 kDefaultColourTemperature);
+
+	Interpolator<Vector<double, 2>> gainCurve;
+	int ret = gainCurve.readYaml(tuningData["colourGains"], "ct", "gains");
+	if (ret < 0)
+		LOG(RkISP1Awb, Warning)
+			<< "Failed to parse 'colourGains' "
+			<< "parameter from tuning file; "
+			<< "manual colour temperature will not work properly";
+	else
+		colourGainCurve_ = gainCurve;
+
+	return 0;
 }
 
 /**
@@ -50,6 +77,7 @@ int Awb::configure(IPAContext &context,
 	context.activeState.awb.gains.manual = RGB<double>{ 1.0 };
 	context.activeState.awb.gains.automatic = RGB<double>{ 1.0 };
 	context.activeState.awb.autoEnabled = true;
+	context.activeState.awb.temperatureK = kDefaultColourTemperature;
 
 	/*
 	 * Define the measurement window for AWB as a centered rectangle
@@ -83,19 +111,37 @@ void Awb::queueRequest(IPAContext &context,
 			<< (*awbEnable ? "Enabling" : "Disabling") << " AWB";
 	}
 
-	const auto &colourGains = controls.get(controls::ColourGains);
-	if (colourGains && !awb.autoEnabled) {
-		awb.gains.manual.r() = (*colourGains)[0];
-		awb.gains.manual.b() = (*colourGains)[1];
-
-		LOG(RkISP1Awb, Debug)
-			<< "Set colour gains to " << awb.gains.manual;
-	}
-
 	frameContext.awb.autoEnabled = awb.autoEnabled;
 
-	if (!awb.autoEnabled)
-		frameContext.awb.gains = awb.gains.manual;
+	if (awb.autoEnabled)
+		return;
+
+	const auto &colourGains = controls.get(controls::ColourGains);
+	const auto &colourTemperature = controls.get(controls::ColourTemperature);
+	bool update = false;
+	if (colourGains) {
+		awb.gains.manual.r() = (*colourGains)[0];
+		awb.gains.manual.b() = (*colourGains)[1];
+		/*
+		 * \todo: Colour temperature reported in metadata is now
+		 * incorrect, as we can't deduce the temperature from the gains.
+		 * This will be fixed with the bayes AWB algorithm.
+		 */
+		update = true;
+	} else if (colourTemperature && colourGainCurve_) {
+		const auto &gains = colourGainCurve_->getInterpolated(*colourTemperature);
+		awb.gains.manual.r() = gains[0];
+		awb.gains.manual.b() = gains[1];
+		awb.temperatureK = *colourTemperature;
+		update = true;
+	}
+
+	if (update)
+		LOG(RkISP1Awb, Debug)
+			<< "Set colour gains to " << awb.gains.manual;
+
+	frameContext.awb.gains = awb.gains.manual;
+	frameContext.awb.temperatureK = awb.temperatureK;
 }
 
 /**
@@ -108,8 +154,10 @@ void Awb::prepare(IPAContext &context, const uint32_t frame,
 	 * This is the latest time we can read the active state. This is the
 	 * most up-to-date automatic values we can read.
 	 */
-	if (frameContext.awb.autoEnabled)
+	if (frameContext.awb.autoEnabled) {
 		frameContext.awb.gains = context.activeState.awb.gains.automatic;
+		frameContext.awb.temperatureK = context.activeState.awb.temperatureK;
+	}
 
 	auto gainConfig = params->block<BlockType::AwbGain>();
 	gainConfig.setEnabled(true);
@@ -188,7 +236,7 @@ void Awb::process(IPAContext &context,
 			static_cast<float>(frameContext.awb.gains.r()),
 			static_cast<float>(frameContext.awb.gains.b())
 		});
-	metadata.set(controls::ColourTemperature, activeState.awb.temperatureK);
+	metadata.set(controls::ColourTemperature, frameContext.awb.temperatureK);
 
 	if (!stats || !(stats->meas_type & RKISP1_CIF_ISP_STAT_AWB)) {
 		LOG(RkISP1Awb, Error) << "AWB data is missing in statistics";
@@ -262,9 +310,6 @@ void Awb::process(IPAContext &context,
 		return;
 
 	activeState.awb.temperatureK = estimateCCT(rgbMeans);
-
-	/* Metadata shall contain the up to date measurement */
-	metadata.set(controls::ColourTemperature, activeState.awb.temperatureK);
 
 	/*
 	 * Estimate the red and blue gains to apply in a grey world. The green

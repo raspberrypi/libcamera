@@ -154,7 +154,7 @@ def main(argv):
         ctrls = controls.setdefault(vendor, [])
 
         for ctrl in data['controls']:
-            ctrl = Control(*ctrl.popitem(), vendor)
+            ctrl = Control(*ctrl.popitem(), vendor, mode='controls')
 
             if ctrl.name in exposed_controls:
                 ctrls.append(extend_control(ctrl))

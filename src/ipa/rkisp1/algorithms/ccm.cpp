@@ -18,7 +18,7 @@
 
 #include "libcamera/internal/yaml_parser.h"
 
-#include "../utils.h"
+#include "libipa/fixedpoint.h"
 #include "libipa/interpolator.h"
 
 /**
@@ -72,7 +72,7 @@ void Ccm::setParameters(struct rkisp1_cif_isp_ctk_config &config,
 	for (unsigned int i = 0; i < 3; i++) {
 		for (unsigned int j = 0; j < 3; j++)
 			config.coeff[i][j] =
-				utils::floatingToFixedPoint<4, 7, uint16_t, double>(matrix[i][j]);
+				floatingToFixedPoint<4, 7, uint16_t, double>(matrix[i][j]);
 	}
 
 	for (unsigned int i = 0; i < 3; i++)

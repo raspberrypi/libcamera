@@ -433,6 +433,8 @@ static bool
 gst_libcamera_src_negotiate(GstLibcameraSrc *self)
 {
 	GstLibcameraSrcState *state = self->state;
+	std::vector<GstVideoTransferFunction> transfer(state->srcpads_.size(),
+						       GST_VIDEO_TRANSFER_UNKNOWN);
 
 	g_autoptr(GstStructure) element_caps = gst_structure_new_empty("caps");
 
@@ -448,7 +450,7 @@ gst_libcamera_src_negotiate(GstLibcameraSrc *self)
 
 		/* Fixate caps and configure the stream. */
 		caps = gst_caps_make_writable(caps);
-		gst_libcamera_configure_stream_from_caps(stream_cfg, caps);
+		gst_libcamera_configure_stream_from_caps(stream_cfg, caps, &transfer[i]);
 		gst_libcamera_get_framerate_from_caps(caps, element_caps);
 	}
 
@@ -476,7 +478,7 @@ gst_libcamera_src_negotiate(GstLibcameraSrc *self)
 		GstPad *srcpad = state->srcpads_[i];
 		const StreamConfiguration &stream_cfg = state->config_->at(i);
 
-		g_autoptr(GstCaps) caps = gst_libcamera_stream_configuration_to_caps(stream_cfg);
+		g_autoptr(GstCaps) caps = gst_libcamera_stream_configuration_to_caps(stream_cfg, transfer[i]);
 		gst_libcamera_framerate_to_caps(caps, element_caps);
 
 		if (!gst_pad_push_event(srcpad, gst_event_new_caps(caps)))

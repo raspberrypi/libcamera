@@ -83,7 +83,7 @@ def main(argv):
             vendors.append(vendor)
 
         for ctrl in data['controls']:
-            ctrl = Control(*ctrl.popitem(), vendor)
+            ctrl = Control(*ctrl.popitem(), vendor, args.mode)
             controls.append(extend_control(ctrl, args.mode))
 
     data = {

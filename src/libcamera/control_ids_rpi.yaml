@@ -9,6 +9,7 @@ vendor: rpi
 controls:
   - StatsOutputEnable:
       type: bool
+      direction: inout
       description: |
         Toggles the Raspberry Pi IPA to output the hardware generated statistics.
 
@@ -21,6 +22,7 @@ controls:
   - Bcm2835StatsOutput:
       type: uint8_t
       size: [n]
+      direction: out
       description: |
         Span of the BCM2835 ISP generated statistics for the current frame.
 
@@ -33,6 +35,7 @@ controls:
   - ScalerCrops:
       type: Rectangle
       size: [n]
+      direction: out
       description: |
         An array of rectangles, where each singular value has identical
         functionality to the ScalerCrop control. This control allows the
@@ -59,6 +62,7 @@ controls:
   - PispStatsOutput:
       type: uint8_t
       size: [n]
+      direction: out
       description: |
         Span of the PiSP Frontend ISP generated statistics for the current
         frame. This is sent in the Request metadata if the StatsOutputEnable is
@@ -70,6 +74,7 @@ controls:
   - CnnOutputTensor:
       type: float
       size: [n]
+      direction: out
       description: |
         This control returns a span of floating point values that represent the
         output tensors from a Convolutional Neural Network (CNN). The size and
@@ -87,6 +92,7 @@ controls:
   - CnnOutputTensorInfo:
       type: uint8_t
       size: [n]
+      direction: out
       description: |
         This control returns the structure of the CnnOutputTensor. This structure
         takes the following form:
@@ -119,6 +125,7 @@ controls:
 
   - CnnEnableInputTensor:
       type: bool
+      direction: in
       description: |
         Boolean to control if the IPA returns the input tensor used by the CNN
         to generate the output tensors via the CnnInputTensor control. Because
@@ -130,6 +137,7 @@ controls:
   - CnnInputTensor:
        type: uint8_t
        size: [n]
+       direction: out
        description: |
         This control returns a span of uint8_t pixel values that represent the
         input tensor for a Convolutional Neural Network (CNN). The size and
@@ -146,6 +154,7 @@ controls:
   - CnnInputTensorInfo:
       type: uint8_t
       size: [n]
+      direction: out
       description: |
         This control returns the structure of the CnnInputTensor. This structure
         takes the following form:
@@ -170,6 +179,7 @@ controls:
   - CnnKpiInfo:
       type: int32_t
       size: [2]
+      direction: out
       description: |
         This control returns performance metrics for the CNN processing stage.
         Two values are returned in this span, the runtime of the CNN/DNN stage

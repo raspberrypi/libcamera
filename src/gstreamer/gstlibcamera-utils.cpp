@@ -85,7 +85,7 @@ static struct {
 };
 
 static GstVideoColorimetry
-colorimetry_from_colorspace(const ColorSpace &colorSpace)
+colorimetry_from_colorspace(const ColorSpace &colorSpace, GstVideoTransferFunction transfer)
 {
 	GstVideoColorimetry colorimetry;
 
@@ -113,6 +113,8 @@ colorimetry_from_colorspace(const ColorSpace &colorSpace)
 		break;
 	case ColorSpace::TransferFunction::Rec709:
 		colorimetry.transfer = GST_VIDEO_TRANSFER_BT709;
+		if (transfer != GST_VIDEO_TRANSFER_UNKNOWN)
+			colorimetry.transfer = transfer;
 		break;
 	}
 
@@ -144,7 +146,8 @@ colorimetry_from_colorspace(const ColorSpace &colorSpace)
 }
 
 static std::optional<ColorSpace>
-colorspace_from_colorimetry(const GstVideoColorimetry &colorimetry)
+colorspace_from_colorimetry(const GstVideoColorimetry &colorimetry,
+			    GstVideoTransferFunction *transfer)
 {
 	std::optional<ColorSpace> colorspace = ColorSpace::Raw;
 
@@ -188,6 +191,7 @@ colorspace_from_colorimetry(const GstVideoColorimetry &colorimetry)
 	case GST_VIDEO_TRANSFER_BT2020_12:
 	case GST_VIDEO_TRANSFER_BT709:
 		colorspace->transferFunction = ColorSpace::TransferFunction::Rec709;
+		*transfer = colorimetry.transfer;
 		break;
 	default:
 		GST_WARNING("Colorimetry transfer function %d not mapped in gstlibcamera",
@@ -379,7 +383,8 @@ gst_libcamera_stream_formats_to_caps(const StreamFormats &formats)
 }
 
 GstCaps *
-gst_libcamera_stream_configuration_to_caps(const StreamConfiguration &stream_cfg)
+gst_libcamera_stream_configuration_to_caps(const StreamConfiguration &stream_cfg,
+					   GstVideoTransferFunction transfer)
 {
 	GstCaps *caps = gst_caps_new_empty();
 	GstStructure *s = bare_structure_from_format(stream_cfg.pixelFormat);
@@ -390,7 +395,7 @@ gst_libcamera_stream_configuration_to_caps(const StreamConfiguration &stream_cfg
 			  nullptr);
 
 	if (stream_cfg.colorSpace) {
-		GstVideoColorimetry colorimetry = colorimetry_from_colorspace(stream_cfg.colorSpace.value());
+		GstVideoColorimetry colorimetry = colorimetry_from_colorspace(stream_cfg.colorSpace.value(), transfer);
 		g_autofree gchar *colorimetry_str = gst_video_colorimetry_to_string(&colorimetry);
 
 		if (colorimetry_str)
@@ -405,9 +410,8 @@ gst_libcamera_stream_configuration_to_caps(const StreamConfiguration &stream_cfg
 	return caps;
 }
 
-void
-gst_libcamera_configure_stream_from_caps(StreamConfiguration &stream_cfg,
-					 GstCaps *caps)
+void gst_libcamera_configure_stream_from_caps(StreamConfiguration &stream_cfg,
+					      GstCaps *caps, GstVideoTransferFunction *transfer)
 {
 	GstVideoFormat gst_format = pixel_format_to_gst_format(stream_cfg.pixelFormat);
 	guint i;
@@ -495,7 +499,7 @@ gst_libcamera_configure_stream_from_caps(StreamConfiguration &stream_cfg,
 		if (!gst_video_colorimetry_from_string(&colorimetry, colorimetry_str))
 			g_critical("Invalid colorimetry %s", colorimetry_str);
 
-		stream_cfg.colorSpace = colorspace_from_colorimetry(colorimetry);
+		stream_cfg.colorSpace = colorspace_from_colorimetry(colorimetry, transfer);
 	}
 }
 

@@ -53,7 +53,7 @@ public:
 
 	virtual V4L2SubdeviceFormat
 	getFormat(const std::vector<unsigned int> &mbusCodes,
-		  const Size &size) const = 0;
+		  const Size &size, const Size maxSize = Size()) const = 0;
 	virtual int setFormat(V4L2SubdeviceFormat *format,
 			      Transform transform = Transform::Identity) = 0;
 	virtual int tryFormat(V4L2SubdeviceFormat *format) const = 0;

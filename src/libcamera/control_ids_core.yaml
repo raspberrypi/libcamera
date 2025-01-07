@@ -10,6 +10,7 @@ vendor: libcamera
 controls:
   - AeEnable:
       type: bool
+      direction: inout
       description: |
         Enable or disable the AE.
 
@@ -17,6 +18,7 @@ controls:
 
   - AeLocked:
       type: bool
+      direction: out
       description: |
         Report the lock status of a running AE algorithm.
 
@@ -31,6 +33,7 @@ controls:
   # - Better handling of custom types.
   - AeMeteringMode:
       type: int32_t
+      direction: inout
       description: |
         Specify a metering mode for the AE algorithm to use.
 
@@ -56,6 +59,7 @@ controls:
   # - Better handling of custom types.
   - AeConstraintMode:
       type: int32_t
+      direction: inout
       description: |
         Specify a constraint mode for the AE algorithm to use.
 
@@ -98,6 +102,7 @@ controls:
   # - Better handling of custom types.
   - AeExposureMode:
       type: int32_t
+      direction: inout
       description: |
         Specify an exposure mode for the AE algorithm to use.
 
@@ -120,6 +125,7 @@ controls:
 
   - ExposureValue:
       type: float
+      direction: inout
       description: |
         Specify an Exposure Value (EV) parameter.
 
@@ -134,6 +140,7 @@ controls:
 
   - ExposureTime:
       type: int32_t
+      direction: inout
       description: |
         Exposure time for the frame applied in the sensor device.
 
@@ -153,6 +160,7 @@ controls:
 
   - AnalogueGain:
       type: float
+      direction: inout
       description: |
         Analogue gain value applied in the sensor device.
 
@@ -173,6 +181,7 @@ controls:
 
   - AeFlickerMode:
       type: int32_t
+      direction: inout
       description: |
         Set the flicker avoidance mode for AGC/AEC.
 
@@ -215,6 +224,7 @@ controls:
 
   - AeFlickerPeriod:
       type: int32_t
+      direction: inout
       description: |
         Manual flicker period in microseconds.
 
@@ -235,6 +245,7 @@ controls:
 
   - AeFlickerDetected:
       type: int32_t
+      direction: out
       description: |
         Flicker period detected in microseconds.
 
@@ -257,6 +268,7 @@ controls:
 
   - Brightness:
       type: float
+      direction: inout
       description: |
         Specify a fixed brightness parameter.
 
@@ -265,6 +277,7 @@ controls:
 
   - Contrast:
       type: float
+      direction: inout
       description:  |
         Specify a fixed contrast parameter.
 
@@ -273,6 +286,7 @@ controls:
 
   - Lux:
       type: float
+      direction: out
       description: |
         Report an estimate of the current illuminance level in lux.
 
@@ -280,16 +294,30 @@ controls:
 
   - AwbEnable:
       type: bool
+      direction: inout
       description: |
         Enable or disable the AWB.
 
+        When AWB is enabled, the algorithm estimates the colour temperature of
+        the scene and computes colour gains and the colour correction matrix
+        automatically. The computed colour temperature, gains and correction
+        matrix are reported in metadata. The corresponding controls are ignored
+        if set in a request.
+
+        When AWB is disabled, the colour temperature, gains and correction
+        matrix are not updated automatically and can be set manually in
+        requests.
+
+        \sa ColourCorrectionMatrix
         \sa ColourGains
+        \sa ColourTemperature
 
   # AwbMode needs further attention:
   # - Auto-generate max enum value.
   # - Better handling of custom types.
   - AwbMode:
       type: int32_t
+      direction: inout
       description: |
         Specify the range of illuminants to use for the AWB algorithm.
 
@@ -323,6 +351,7 @@ controls:
 
   - AwbLocked:
       type: bool
+      direction: out
       description: |
         Report the lock status of a running AWB algorithm.
 
@@ -334,24 +363,44 @@ controls:
 
   - ColourGains:
       type: float
+      direction: inout
       description: |
         Pair of gain values for the Red and Blue colour channels, in that
         order.
 
         ColourGains can only be applied in a Request when the AWB is disabled.
+        If ColourGains is set in a request but ColourTemperature is not, the
+        implementation shall calculate and set the ColourTemperature based on
+        the ColourGains.
 
         \sa AwbEnable
+        \sa ColourTemperature
       size: [2]
 
   - ColourTemperature:
       type: int32_t
+      direction: out
       description: |
-        Report the estimate of the colour temperature for the frame, in kelvin.
+        ColourTemperature of the frame, in kelvin.
 
-        The ColourTemperature control can only be returned in metadata.
+        ColourTemperature can only be applied in a Request when the AWB is
+        disabled.
+
+        If ColourTemperature is set in a request but ColourGains is not, the
+        implementation shall calculate and set the ColourGains based on the
+        given ColourTemperature. If ColourTemperature is set (either directly,
+        or indirectly by setting ColourGains) but ColourCorrectionMatrix is not,
+        the ColourCorrectionMatrix is updated based on the ColourTemperature.
+
+        The ColourTemperature used to process the frame is reported in metadata.
+
+        \sa AwbEnable
+        \sa ColourCorrectionMatrix
+        \sa ColourGains
 
   - Saturation:
       type: float
+      direction: inout
       description:  |
         Specify a fixed saturation parameter.
 
@@ -360,6 +409,7 @@ controls:
 
   - SensorBlackLevels:
       type: int32_t
+      direction: out
       description: |
         Reports the sensor black levels used for processing a frame.
 
@@ -370,6 +420,7 @@ controls:
 
   - Sharpness:
       type: float
+      direction: inout
       description:  |
         Intensity of the sharpening applied to the image.
 
@@ -384,6 +435,7 @@ controls:
 
   - FocusFoM:
       type: int32_t
+      direction: out
       description: |
         Reports a Figure of Merit (FoM) to indicate how in-focus the frame is.
 
@@ -396,6 +448,7 @@ controls:
 
   - ColourCorrectionMatrix:
       type: float
+      direction: inout
       description: |
         The 3x3 matrix that converts camera RGB to sRGB within the imaging
         pipeline.
@@ -405,10 +458,16 @@ controls:
         stored in conventional reading order in an array of 9 floating point
         values.
 
+        ColourCorrectionMatrix can only be applied in a Request when the AWB is 
+        disabled.
+
+        \sa AwbEnable
+        \sa ColourTemperature
       size: [3,3]
 
   - ScalerCrop:
       type: Rectangle
+      direction: inout
       description: |
         Sets the image portion that will be scaled to form the whole of
         the final output image.
@@ -424,6 +483,7 @@ controls:
 
   - DigitalGain:
       type: float
+      direction: inout
       description: |
         Digital gain value applied during the processing steps applied
         to the image as captured from the sensor.
@@ -441,6 +501,7 @@ controls:
 
   - FrameDuration:
       type: int64_t
+      direction: out
       description: |
         The instantaneous frame duration from start of frame exposure to start
         of next exposure, expressed in microseconds.
@@ -449,6 +510,7 @@ controls:
 
   - FrameDurationLimits:
       type: int64_t
+      direction: inout
       description: |
         The minimum and maximum (in that order) frame duration, expressed in
         microseconds.
@@ -485,6 +547,7 @@ controls:
 
   - SensorTemperature:
       type: float
+      direction: out
       description: |
         Temperature measure from the camera sensor in Celsius.
 
@@ -497,6 +560,7 @@ controls:
 
   - SensorTimestamp:
       type: int64_t
+      direction: out
       description: |
         The time when the first row of the image sensor active array is exposed.
 
@@ -511,6 +575,7 @@ controls:
 
   - AfMode:
       type: int32_t
+      direction: inout
       description: |
         The mode of the AF (autofocus) algorithm.
 
@@ -575,6 +640,7 @@ controls:
 
   - AfRange:
       type: int32_t
+      direction: inout
       description: |
         The range of focus distances that is scanned.
 
@@ -602,6 +668,7 @@ controls:
 
   - AfSpeed:
       type: int32_t
+      direction: inout
       description: |
         Determine whether the AF is to move the lens as quickly as possible or
         more steadily.
@@ -620,6 +687,7 @@ controls:
 
   - AfMetering:
       type: int32_t
+      direction: inout
       description: |
         The parts of the image used by the AF algorithm to measure focus.
       enum:
@@ -636,6 +704,7 @@ controls:
 
   - AfWindows:
       type: Rectangle
+      direction: inout
       description: |
         The focus windows used by the AF algorithm when AfMetering is set to
         AfMeteringWindows.
@@ -665,6 +734,7 @@ controls:
 
   - AfTrigger:
       type: int32_t
+      direction: in
       description: |
         Start an autofocus scan.
 
@@ -690,6 +760,7 @@ controls:
 
   - AfPause:
       type: int32_t
+      direction: in
       description: |
         Pause lens movements when in continuous autofocus mode.
 
@@ -734,6 +805,7 @@ controls:
 
   - LensPosition:
       type: float
+      direction: inout
       description: |
         Set and report the focus lens position.
 
@@ -768,6 +840,7 @@ controls:
 
   - AfState:
       type: int32_t
+      direction: out
       description: |
         The current state of the AF algorithm.
 
@@ -825,6 +898,7 @@ controls:
 
   - AfPauseState:
       type: int32_t
+      direction: out
       description: |
         Report whether the autofocus is currently running, paused or pausing.
 
@@ -860,6 +934,7 @@ controls:
 
   - HdrMode:
       type: int32_t
+      direction: inout
       description: |
         Set the mode to be used for High Dynamic Range (HDR) imaging.
 
@@ -926,6 +1001,7 @@ controls:
 
   - HdrChannel:
       type: int32_t
+      direction: out
       description: |
         The HDR channel used to capture the frame.
 
@@ -960,6 +1036,7 @@ controls:
 
   - Gamma:
       type: float
+      direction: inout
       description:  |
         Specify a fixed gamma value.
 
@@ -968,6 +1045,7 @@ controls:
 
   - DebugMetadataEnable:
       type: bool
+      direction: inout
       description: |
         Enable or disable the debug metadata.
 

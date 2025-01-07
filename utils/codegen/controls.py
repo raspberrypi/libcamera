@@ -28,7 +28,7 @@ class ControlEnum(object):
 
 
 class Control(object):
-    def __init__(self, name, data, vendor):
+    def __init__(self, name, data, vendor, mode):
         self.__name = name
         self.__data = data
         self.__enum_values = None
@@ -59,6 +59,16 @@ class Control(object):
                 num_elems *= dim
 
             self.__size = num_elems
+
+        if mode == 'properties':
+            self.__direction = 'out'
+        else:
+            direction = self.__data.get('direction')
+            if direction is None:
+                raise RuntimeError(f'Control `{self.__name}` missing required field `{direction}`')
+            if direction not in ['in', 'out', 'inout']:
+                raise RuntimeError(f'Control `{self.__name}` direction `{direction}` is invalid; must be one of `in`, `out`, or `inout`')
+            self.__direction = direction
 
     @property
     def description(self):
@@ -110,6 +120,18 @@ class Control(object):
             return f"Span<const {typ}, {self.__size}>"
         else:
             return f"Span<const {typ}>"
+
+    @property
+    def direction(self):
+        in_flag = 'ControlId::Direction::In'
+        out_flag = 'ControlId::Direction::Out'
+
+        if self.__direction == 'inout':
+            return f'{in_flag} | {out_flag}'
+        if self.__direction == 'in':
+            return in_flag
+        if self.__direction == 'out':
+            return out_flag
 
     @property
     def element_type(self):

@@ -74,7 +74,8 @@ public:
 	Size resolution() const override;
 
 	V4L2SubdeviceFormat getFormat(const std::vector<unsigned int> &mbusCodes,
-				      const Size &size) const override;
+				      const Size &size,
+				      const Size maxSize) const override;
 	int setFormat(V4L2SubdeviceFormat *format,
 		      Transform transform = Transform::Identity) override;
 	int tryFormat(V4L2SubdeviceFormat *format) const override;
@@ -699,7 +700,7 @@ Size CameraSensorLegacy::resolution() const
 
 V4L2SubdeviceFormat
 CameraSensorLegacy::getFormat(const std::vector<unsigned int> &mbusCodes,
-			      const Size &size) const
+			      const Size &size, Size maxSize) const
 {
 	unsigned int desiredArea = size.width * size.height;
 	unsigned int bestArea = UINT_MAX;
@@ -715,6 +716,10 @@ CameraSensorLegacy::getFormat(const std::vector<unsigned int> &mbusCodes,
 
 		for (const SizeRange &range : formats->second) {
 			const Size &sz = range.max;
+
+			if (!maxSize.isNull() &&
+			    (sz.width > maxSize.width || sz.height > maxSize.height))
+				continue;
 
 			if (sz.width < size.width || sz.height < size.height)
 				continue;

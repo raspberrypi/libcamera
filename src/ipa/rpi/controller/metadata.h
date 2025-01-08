@@ -91,6 +91,12 @@ public:
 		data_.insert(other.data_.begin(), other.data_.end());
 	}
 
+	void erase(std::string const &tag)
+	{
+		std::scoped_lock lock(mutex_);
+		eraseLocked(tag);
+	}
+
 	template<typename T>
 	T *getLocked(std::string const &tag)
 	{
@@ -109,6 +115,14 @@ public:
 	{
 		/* Use this only if you're holding the lock yourself. */
 		data_[tag] = std::forward<T>(value);
+	}
+
+	void eraseLocked(std::string const &tag)
+	{
+		auto it = data_.find(tag);
+		if (it == data_.end())
+			return;
+		data_.erase(it);
 	}
 
 	/*

@@ -39,7 +39,7 @@ static const std::map<std::string, Controller::HardwareConfig> HardwareConfigMap
 			.pipelineWidth = 13,
 			.statsInline = false,
 			.minPixelProcessingTime = 0s,
-			.cfeDataBufferStrided = true,
+			.dataBufferStrided = true,
 		}
 	},
 	{
@@ -72,7 +72,7 @@ static const std::map<std::string, Controller::HardwareConfig> HardwareConfigMap
 			 * frames wider than ~16,000 pixels.
 			 */
 			.minPixelProcessingTime = 1.0us / 380,
-			.cfeDataBufferStrided = false,
+			.dataBufferStrided = false,
 		}
 	},
 };

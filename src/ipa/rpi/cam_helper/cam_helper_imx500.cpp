@@ -180,7 +180,7 @@ void CamHelperImx500::parseInferenceData(libcamera::Span<const uint8_t> buffer,
 	/* Inference data comes after 2 lines of embedded data. */
 	constexpr unsigned int StartLine = 2;
 	size_t bytesPerLine = (mode_.width * mode_.bitdepth) >> 3;
-	if (hwConfig_.cfeDataBufferStrided)
+	if (hwConfig_.dataBufferStrided)
 		bytesPerLine = (bytesPerLine + 15) & ~15;
 
 	if (buffer.size() <= StartLine * bytesPerLine)

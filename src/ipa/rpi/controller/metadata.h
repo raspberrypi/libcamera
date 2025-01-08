@@ -12,6 +12,7 @@
 #include <map>
 #include <mutex>
 #include <string>
+#include <utility>
 
 #include <libcamera/base/thread_annotations.h>
 

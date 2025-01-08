@@ -12,6 +12,7 @@
 #include <map>
 #include <mutex>
 #include <string>
+#include <utility>
 
 #include <libcamera/base/thread_annotations.h>
 
@@ -36,10 +37,10 @@ public:
 	}
 
 	template<typename T>
-	void set(std::string const &tag, T const &value)
+	void set(std::string const &tag, T &&value)
 	{
 		std::scoped_lock lock(mutex_);
-		data_[tag] = value;
+		data_[tag] = std::forward<T>(value);
 	}
 
 	template<typename T>
@@ -104,10 +105,10 @@ public:
 	}
 
 	template<typename T>
-	void setLocked(std::string const &tag, T const &value)
+	void setLocked(std::string const &tag, T &&value)
 	{
 		/* Use this only if you're holding the lock yourself. */
-		data_[tag] = value;
+		data_[tag] = std::forward<T>(value);
 	}
 
 	/*

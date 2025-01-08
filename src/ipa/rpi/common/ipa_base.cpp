@@ -151,6 +151,7 @@ int32_t IpaBase::init(const IPASettings &settings, const InitParams &params, Ini
 	lensPresent_ = params.lensPresent;
 
 	controller_.initialise();
+	helper_->setHwConfig(controller_.getHardwareConfig());
 
 	/* Return the controls handled by the IPA */
 	ControlInfoMap::Map ctrlMap = ipaControls;

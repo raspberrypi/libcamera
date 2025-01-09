@@ -61,7 +61,7 @@ private:
 	std::queue<FrameBuffer *> availableParamBuffers_;
 	std::queue<FrameBuffer *> availableStatBuffers_;
 
-	std::map<unsigned int, std::unique_ptr<Info>> frameInfo_;
+	std::map<unsigned int, Info> frameInfo_;
 };
 
 } /* namespace libcamera */

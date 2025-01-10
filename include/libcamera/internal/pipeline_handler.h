@@ -63,7 +63,8 @@ public:
 	void cancelRequest(Request *request);
 
 	std::string configurationFile(const std::string &subdir,
-				      const std::string &name) const;
+				      const std::string &name,
+				      bool silent = false) const;
 
 	const char *name() const { return name_; }
 

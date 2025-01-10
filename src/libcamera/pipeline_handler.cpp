@@ -581,6 +581,7 @@ void PipelineHandler::cancelRequest(Request *request)
  * \brief Retrieve the absolute path to a platform configuration file
  * \param[in] subdir The pipeline handler specific subdirectory name
  * \param[in] name The configuration file name
+ * \param[in] silent Disable error messages
  *
  * This function locates a named platform configuration file and returns
  * its absolute path to the pipeline handler. It searches the following
@@ -596,7 +597,8 @@ void PipelineHandler::cancelRequest(Request *request)
  * string if no configuration file can be found
  */
 std::string PipelineHandler::configurationFile(const std::string &subdir,
-					       const std::string &name) const
+					       const std::string &name,
+					       bool silent) const
 {
 	std::string confPath;
 	struct stat statbuf;
@@ -626,9 +628,11 @@ std::string PipelineHandler::configurationFile(const std::string &subdir,
 	if (ret == 0 && (statbuf.st_mode & S_IFMT) == S_IFREG)
 		return confPath;
 
-	LOG(Pipeline, Error)
-		<< "Configuration file '" << confPath
-		<< "' not found for pipeline handler '" << PipelineHandler::name() << "'";
+	if (!silent)
+		LOG(Pipeline, Error)
+			<< "Configuration file '" << confPath
+			<< "' not found for pipeline handler '"
+			<< PipelineHandler::name() << "'";
 
 	return std::string();
 }

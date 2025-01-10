@@ -329,10 +329,17 @@ bool PipelineHandlerVirtual::match([[maybe_unused]] DeviceEnumerator *enumerator
 
 	created_ = true;
 
-	File file(configurationFile("virtual", "virtual.yaml"));
-	bool isOpen = file.open(File::OpenModeFlag::ReadOnly);
-	if (!isOpen) {
-		LOG(Virtual, Error) << "Failed to open config file: " << file.fileName();
+	std::string configFile = configurationFile("virtual", "virtual.yaml", true);
+	if (configFile.empty()) {
+		LOG(Virtual, Debug)
+			<< "Configuration file not found, skipping virtual cameras";
+		return false;
+	}
+
+	File file(configFile);
+	if (!file.open(File::OpenModeFlag::ReadOnly)) {
+		LOG(Virtual, Error)
+			<< "Failed to open config file `" << file.fileName() << "`";
 		return false;
 	}
 

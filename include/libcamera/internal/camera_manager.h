@@ -65,7 +65,6 @@ private:
 	std::unique_ptr<DeviceEnumerator> enumerator_;
 
 	std::unique_ptr<IPAManager> ipaManager_;
-	ProcessManager processManager_;
 };
 
 } /* namespace libcamera */

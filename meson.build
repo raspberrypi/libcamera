@@ -265,7 +265,7 @@ subdir('Documentation')
 subdir('test')
 
 if not meson.is_cross_build()
-    kernel_version_req = '>= 5.0.0'
+    kernel_version_req = '>= 5.4.0'
     kernel_version = run_command('uname', '-r', check : true).stdout().strip()
     if not kernel_version.version_compare(kernel_version_req)
         warning('The current running kernel version @0@ is too old to run libcamera.'

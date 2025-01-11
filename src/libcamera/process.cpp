@@ -10,14 +10,18 @@
 #include <algorithm>
 #include <dirent.h>
 #include <fcntl.h>
-#include <list>
 #include <signal.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <sys/syscall.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <utility>
 #include <vector>
+
+#include <linux/sched.h>
+#include <linux/wait.h> /* glibc only provides `P_PIDFD` in `sys/wait.h` since 2.36 */
 
 #include <libcamera/base/event_notifier.h>
 #include <libcamera/base/log.h>
@@ -32,36 +36,7 @@ namespace libcamera {
 
 LOG_DEFINE_CATEGORY(Process)
 
-/**
- * \class ProcessManager
- * \brief Manager of processes
- *
- * The ProcessManager singleton keeps track of all created Process instances,
- * and manages the signal handling involved in terminating processes.
- */
-
 namespace {
-
-void sigact(int signal, siginfo_t *info, void *ucontext)
-{
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-result"
-	/*
-	 * We're in a signal handler so we can't log any message, and we need
-	 * to continue anyway.
-	 */
-	char data = 0;
-	write(ProcessManager::instance()->writePipe(), &data, sizeof(data));
-#pragma GCC diagnostic pop
-
-	const struct sigaction &oldsa = ProcessManager::instance()->oldsa();
-	if (oldsa.sa_flags & SA_SIGINFO) {
-		oldsa.sa_sigaction(signal, info, ucontext);
-	} else {
-		if (oldsa.sa_handler != SIG_IGN && oldsa.sa_handler != SIG_DFL)
-			oldsa.sa_handler(signal);
-	}
-}
 
 void closeAllFdsExcept(std::vector<int> v)
 {
@@ -117,129 +92,6 @@ void closeAllFdsExcept(std::vector<int> v)
 
 } /* namespace */
 
-void ProcessManager::sighandler()
-{
-	char data;
-	ssize_t ret = read(pipe_[0].get(), &data, sizeof(data));
-	if (ret < 0) {
-		LOG(Process, Error)
-			<< "Failed to read byte from signal handler pipe";
-		return;
-	}
-
-	for (auto it = processes_.begin(); it != processes_.end();) {
-		Process *process = *it;
-
-		int wstatus;
-		pid_t pid = waitpid(process->pid_, &wstatus, WNOHANG);
-		if (process->pid_ != pid) {
-			++it;
-			continue;
-		}
-
-		it = processes_.erase(it);
-		process->died(wstatus);
-	}
-}
-
-/**
- * \brief Register process with process manager
- * \param[in] proc Process to register
- *
- * This function registers the \a proc with the process manager. It
- * shall be called by the parent process after successfully forking, in
- * order to let the parent signal process termination.
- */
-void ProcessManager::registerProcess(Process *proc)
-{
-	processes_.push_back(proc);
-}
-
-ProcessManager *ProcessManager::self_ = nullptr;
-
-/**
- * \brief Construct a ProcessManager instance
- *
- * The ProcessManager class is meant to only be instantiated once, by the
- * CameraManager.
- */
-ProcessManager::ProcessManager()
-{
-	if (self_)
-		LOG(Process, Fatal)
-			<< "Multiple ProcessManager objects are not allowed";
-
-	sigaction(SIGCHLD, NULL, &oldsa_);
-
-	struct sigaction sa;
-	memset(&sa, 0, sizeof(sa));
-	sa.sa_sigaction = &sigact;
-	memcpy(&sa.sa_mask, &oldsa_.sa_mask, sizeof(sa.sa_mask));
-	sigaddset(&sa.sa_mask, SIGCHLD);
-	sa.sa_flags = oldsa_.sa_flags | SA_SIGINFO;
-
-	sigaction(SIGCHLD, &sa, NULL);
-
-	int pipe[2];
-	if (pipe2(pipe, O_CLOEXEC | O_DIRECT | O_NONBLOCK))
-		LOG(Process, Fatal)
-			<< "Failed to initialize pipe for signal handling";
-
-	pipe_[0] = UniqueFD(pipe[0]);
-	pipe_[1] = UniqueFD(pipe[1]);
-
-	sigEvent_ = new EventNotifier(pipe_[0].get(), EventNotifier::Read);
-	sigEvent_->activated.connect(this, &ProcessManager::sighandler);
-
-	self_ = this;
-}
-
-ProcessManager::~ProcessManager()
-{
-	sigaction(SIGCHLD, &oldsa_, NULL);
-
-	delete sigEvent_;
-
-	self_ = nullptr;
-}
-
-/**
- * \brief Retrieve the Process manager instance
- *
- * The ProcessManager is constructed by the CameraManager. This function shall
- * be used to retrieve the single instance of the manager.
- *
- * \return The Process manager instance
- */
-ProcessManager *ProcessManager::instance()
-{
-	return self_;
-}
-
-/**
- * \brief Retrieve the Process manager's write pipe
- *
- * This function is meant only to be used by the static signal handler.
- *
- * \return Pipe for writing
- */
-int ProcessManager::writePipe() const
-{
-	return pipe_[1].get();
-}
-
-/**
- * \brief Retrive the old signal action data
- *
- * This function is meant only to be used by the static signal handler.
- *
- * \return The old signal action data
- */
-const struct sigaction &ProcessManager::oldsa() const
-{
-	return oldsa_;
-}
-
 /**
  * \class Process
  * \brief Process object
@@ -290,8 +142,6 @@ int Process::start(const std::string &path,
 		   Span<const std::string> args,
 		   Span<const int> fds)
 {
-	int ret;
-
 	if (pid_ > 0)
 		return -EBUSY;
 
@@ -300,20 +150,29 @@ int Process::start(const std::string &path,
 			return -EINVAL;
 	}
 
-	int childPid = fork();
-	if (childPid == -1) {
-		ret = -errno;
+	clone_args cargs = {};
+	int pidfd;
+
+	cargs.flags = CLONE_PIDFD | CLONE_NEWUSER | CLONE_NEWNET;
+	cargs.pidfd = reinterpret_cast<uintptr_t>(&pidfd);
+	cargs.exit_signal = SIGCHLD;
+
+	long childPid = syscall(SYS_clone3, &cargs, sizeof(cargs));
+	if (childPid < 0) {
+		int ret = -errno;
 		LOG(Process, Error) << "Failed to fork: " << strerror(-ret);
 		return ret;
-	} else if (childPid) {
+	}
+
+	if (childPid) {
 		pid_ = childPid;
-		ProcessManager::instance()->registerProcess(this);
+		pidfd_ = UniqueFD(pidfd);
+		pidfdNotify_ = std::make_unique<EventNotifier>(pidfd_.get(), EventNotifier::Type::Read);
+		pidfdNotify_->activated.connect(this, &Process::onPidfdNotify);
 
-		return 0;
+		LOG(Process, Debug) << this << "[" << childPid << ':' << pidfd << "]"
+				    << " forked";
 	} else {
-		if (isolate())
-			_exit(EXIT_FAILURE);
-
 		std::vector<int> v(fds.begin(), fds.end());
 		v.push_back(STDERR_FILENO);
 		closeAllFdsExcept(std::move(v));
@@ -346,35 +205,44 @@ int Process::start(const std::string &path,
 
 		_exit(EXIT_FAILURE);
 	}
-}
-
-int Process::isolate()
-{
-	int ret = unshare(CLONE_NEWUSER | CLONE_NEWNET);
-	if (ret) {
-		ret = -errno;
-		LOG(Process, Error) << "Failed to unshare execution context: "
-				    << strerror(-ret);
-		return ret;
-	}
 
 	return 0;
 }
 
-/**
- * \brief SIGCHLD handler
- * \param[in] wstatus The status as output by waitpid()
- *
- * This function is called when the process associated with Process terminates.
- * It emits the Process::finished signal.
- */
-void Process::died(int wstatus)
+void Process::onPidfdNotify()
 {
-	pid_ = -1;
-	exitStatus_ = WIFEXITED(wstatus) ? NormalExit : SignalExit;
-	exitCode_ = exitStatus_ == NormalExit ? WEXITSTATUS(wstatus) : -1;
+	auto pidfdNotify = std::exchange(pidfdNotify_, {});
+	auto pidfd = std::exchange(pidfd_, {});
+	auto pid = std::exchange(pid_, -1);
 
-	finished.emit(exitStatus_, exitCode_);
+	ASSERT(pidfdNotify);
+	ASSERT(pidfd.isValid());
+	ASSERT(pid > 0);
+
+	siginfo_t info;
+
+	/*
+	 * `static_cast` is needed because `P_PIDFD` is not defined in `sys/wait.h` if the C standard library
+	 * is old enough. So `P_PIDFD` is taken from `linux/wait.h`, where it is just an integer #define.
+	 */
+	if (waitid(static_cast<idtype_t>(P_PIDFD), pidfd.get(), &info, WNOHANG | WEXITED) >= 0) {
+		ASSERT(info.si_pid == pid);
+
+		LOG(Process, Debug)
+			<< this << "[" << pid << ':' << pidfd.get() << "]"
+			<< " code: " << info.si_code
+			<< " status: " << info.si_status;
+
+		exitStatus_ = info.si_code == CLD_EXITED ? Process::NormalExit : Process::SignalExit;
+		exitCode_ = info.si_code == CLD_EXITED ? info.si_status : -1;
+
+		finished.emit(exitStatus_, exitCode_);
+	} else {
+		int err = errno;
+		LOG(Process, Warning)
+			<< this << "[" << pid << ":" << pidfd.get() << "]"
+			<< " waitid() failed: " << strerror(err);
+	}
 }
 
 /**
@@ -412,8 +280,8 @@ void Process::died(int wstatus)
  */
 void Process::kill()
 {
-	if (pid_ > 0)
-		::kill(pid_, SIGKILL);
+	if (pidfd_.isValid())
+		syscall(SYS_pidfd_send_signal, pidfd_.get(), SIGKILL, nullptr, 0);
 }
 
 } /* namespace libcamera */

@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include <signal.h>
 #include <string>
 
 #include <libcamera/base/class.h>
@@ -45,41 +44,14 @@ public:
 private:
 	LIBCAMERA_DISABLE_COPY_AND_MOVE(Process)
 
-	int isolate();
-	void died(int wstatus);
+	void onPidfdNotify();
 
 	pid_t pid_;
 	enum ExitStatus exitStatus_;
 	int exitCode_;
 
-	friend class ProcessManager;
-};
-
-class ProcessManager
-{
-public:
-	ProcessManager();
-	~ProcessManager();
-
-	void registerProcess(Process *proc);
-
-	static ProcessManager *instance();
-
-	int writePipe() const;
-
-	const struct sigaction &oldsa() const;
-
-private:
-	static ProcessManager *self_;
-
-	void sighandler();
-
-	std::list<Process *> processes_;
-
-	struct sigaction oldsa_;
-
-	EventNotifier *sigEvent_;
-	UniqueFD pipe_[2];
+	UniqueFD pidfd_;
+	std::unique_ptr<EventNotifier> pidfdNotify_;
 };
 
 } /* namespace libcamera */

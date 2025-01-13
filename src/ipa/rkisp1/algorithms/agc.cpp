@@ -156,6 +156,8 @@ int Agc::init(IPAContext &context, const YamlObject &tuningData)
 		ControlInfo(static_cast<int32_t>(controls::AnalogueGainModeAuto),
 			    static_cast<int32_t>(controls::AnalogueGainModeManual),
 			    static_cast<int32_t>(controls::AnalogueGainModeAuto));
+	/* \todo Move this to the Camera class */
+	context.ctrlMap[&controls::AeEnable] = ControlInfo(false, true, true);
 	context.ctrlMap.merge(controls());
 
 	return 0;

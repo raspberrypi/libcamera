@@ -50,20 +50,20 @@ void EventLoop::exit(int code)
 	event_base_loopbreak(base_);
 }
 
-void EventLoop::callLater(const std::function<void()> &func)
+void EventLoop::callLater(std::function<void()> &&func)
 {
 	{
 		std::unique_lock<std::mutex> locker(lock_);
-		calls_.push_back(func);
+		calls_.push_back(std::move(func));
 	}
 
 	event_base_once(base_, -1, EV_TIMEOUT, dispatchCallback, this, nullptr);
 }
 
 void EventLoop::addFdEvent(int fd, EventType type,
-			   const std::function<void()> &callback)
+			   std::function<void()> &&callback)
 {
-	std::unique_ptr<Event> event = std::make_unique<Event>(callback);
+	std::unique_ptr<Event> event = std::make_unique<Event>(std::move(callback));
 	short events = (type & Read ? EV_READ : 0)
 		     | (type & Write ? EV_WRITE : 0)
 		     | EV_PERSIST;
@@ -85,9 +85,9 @@ void EventLoop::addFdEvent(int fd, EventType type,
 }
 
 void EventLoop::addTimerEvent(const std::chrono::microseconds period,
-			      const std::function<void()> &callback)
+			      std::function<void()> &&callback)
 {
-	std::unique_ptr<Event> event = std::make_unique<Event>(callback);
+	std::unique_ptr<Event> event = std::make_unique<Event>(std::move(callback));
 	event->event_ = event_new(base_, -1, EV_PERSIST, &EventLoop::Event::dispatch,
 				  event.get());
 	if (!event->event_) {
@@ -131,8 +131,8 @@ void EventLoop::dispatchCall()
 	call();
 }
 
-EventLoop::Event::Event(const std::function<void()> &callback)
-	: callback_(callback), event_(nullptr)
+EventLoop::Event::Event(std::function<void()> &&callback)
+	: callback_(std::move(callback)), event_(nullptr)
 {
 }
 

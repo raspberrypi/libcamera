@@ -33,18 +33,18 @@ public:
 	int exec();
 	void exit(int code = 0);
 
-	void callLater(const std::function<void()> &func);
+	void callLater(std::function<void()> &&func);
 
 	void addFdEvent(int fd, EventType type,
-			const std::function<void()> &handler);
+			std::function<void()> &&handler);
 
 	using duration = std::chrono::steady_clock::duration;
 	void addTimerEvent(const std::chrono::microseconds period,
-			   const std::function<void()> &handler);
+			   std::function<void()> &&handler);
 
 private:
 	struct Event {
-		Event(const std::function<void()> &callback);
+		Event(std::function<void()> &&callback);
 		~Event();
 
 		static void dispatch(int fd, short events, void *arg);

@@ -26,10 +26,8 @@ void Capture::configure(StreamRole role)
 {
 	config_ = camera_->generateConfiguration({ role });
 
-	if (!config_) {
-		std::cout << "Role not supported by camera" << std::endl;
-		GTEST_SKIP();
-	}
+	if (!config_)
+		GTEST_SKIP() << "Role not supported by camera";
 
 	if (config_->validate() != CameraConfiguration::Valid) {
 		config_.reset();
@@ -85,10 +83,8 @@ void CaptureBalanced::capture(unsigned int numRequests)
 
 	/* No point in testing less requests then the camera depth. */
 	if (buffers.size() > numRequests) {
-		std::cout << "Camera needs " + std::to_string(buffers.size())
-			+ " requests, can't test only "
-			+ std::to_string(numRequests) << std::endl;
-		GTEST_SKIP();
+		GTEST_SKIP() << "Camera needs " << buffers.size()
+			     << " requests, can't test only " << numRequests;
 	}
 
 	queueCount_ = 0;

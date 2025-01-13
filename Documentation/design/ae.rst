@@ -185,6 +185,10 @@ A diagram of our solution:
     0: Auto
     1: Manual
 
+  AeEnable
+    - True -> ExposureTimeMode:Auto + AnalogueGainMode:Auto
+    - False -> ExposureTimeMode:Manual + AnalogueGainMode:Manual
+
 
 The diagram is divided in four sections horizontally:
 
@@ -225,10 +229,14 @@ This simulates an auto -> locked -> manual or auto -> manual state transition,
 and makes it impossible to do the nonsensical manual -> locked state
 transition.
 
-We specifically do not have a "master AE control" like the old AeEnable. This
-is because we have the individual mode controls, and if we had a master AE
-control it would be a "control that sets other controls", which could easily
-get out of control.
+AeEnable still exists to allow applications to set the mode of all the
+sub-controls at once. Besides being for convenience, this will also be useful
+when we eventually implement an aperture control. This is because applications
+that will be made before aperture will have been available would still be able
+to set aperture mode to auto or manual, as opposed to having the aperture stuck
+at auto while the application really wanted manual. Although the aperture would
+still be stuck at an uncontrollable value, at least it would be at a static
+usable value as opposed to varying via the AEGC algorithm.
 
 With this solution, the earlier example would become:
 
@@ -277,9 +285,12 @@ and gain:
 
 - AeState
 
+- AeEnable
+
 Auto-exposure and auto-gain can be enabled and disabled separately using the
-ExposureTimeMode and AnalogueGainMode controls respectively. There is no
-overarching AeEnable control.
+ExposureTimeMode and AnalogueGainMode controls respectively. The AeEnable
+control can also be used, as it sets both of the modes simultaneously. The
+AeEnable control is not returned in metadata.
 
 When the respective mode is set to auto, the respective value that is computed
 by the AEGC algorithm is applied to the image sensor. Any value that is

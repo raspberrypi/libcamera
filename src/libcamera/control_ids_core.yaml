@@ -10,11 +10,17 @@ vendor: libcamera
 controls:
   - AeEnable:
       type: bool
-      direction: inout
+      direction: in
       description: |
-        Enable or disable the AE.
+        Enable or disable the AEGC algorithm. When this control is set to true,
+        both ExposureTimeMode and AnalogueGainMode are set to auto, and if this
+        control is set to false then both are set to manual.
 
-        \sa ExposureTime AnalogueGain
+        If ExposureTimeMode or AnalogueGainMode are also set in the same
+        request as AeEnable, then the modes supplied by ExposureTimeMode or
+        AnalogueGainMode will take precedence.
+
+        \sa ExposureTimeMode AnalogueGainMode
 
   - AeState:
       type: int32_t

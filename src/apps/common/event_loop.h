@@ -13,6 +13,8 @@
 #include <memory>
 #include <mutex>
 
+#include <libcamera/base/class.h>
+
 #include <event2/util.h>
 
 struct event_base;
@@ -43,8 +45,11 @@ public:
 			   std::function<void()> &&handler);
 
 private:
+	LIBCAMERA_DISABLE_COPY_AND_MOVE(EventLoop)
+
 	struct Event {
 		Event(std::function<void()> &&callback);
+		LIBCAMERA_DISABLE_COPY_AND_MOVE(Event)
 		~Event();
 
 		static void dispatch(int fd, short events, void *arg);

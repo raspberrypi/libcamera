@@ -298,7 +298,7 @@ int PipelineHandlerUVC::processControl(ControlList *controls, unsigned int id,
 		cid = V4L2_CID_CONTRAST;
 	else if (id == controls::Saturation)
 		cid = V4L2_CID_SATURATION;
-	else if (id == controls::AeEnable)
+	else if (id == controls::ExposureTimeMode)
 		cid = V4L2_CID_EXPOSURE_AUTO;
 	else if (id == controls::ExposureTime)
 		cid = V4L2_CID_EXPOSURE_ABSOLUTE;
@@ -647,7 +647,7 @@ void UVCCameraData::addControl(uint32_t cid, const ControlInfo &v4l2Info,
 		id = &controls::Saturation;
 		break;
 	case V4L2_CID_EXPOSURE_AUTO:
-		id = &controls::AeEnable;
+		id = &controls::ExposureTimeMode;
 		break;
 	case V4L2_CID_EXPOSURE_ABSOLUTE:
 		id = &controls::ExposureTime;
@@ -660,6 +660,7 @@ void UVCCameraData::addControl(uint32_t cid, const ControlInfo &v4l2Info,
 	}
 
 	/* Map the control info. */
+	const std::vector<ControlValue> &v4l2Values = v4l2Info.values();
 	int32_t min = v4l2Info.min().get<int32_t>();
 	int32_t max = v4l2Info.max().get<int32_t>();
 	int32_t def = v4l2Info.def().get<int32_t>();
@@ -697,10 +698,52 @@ void UVCCameraData::addControl(uint32_t cid, const ControlInfo &v4l2Info,
 		};
 		break;
 
-	case V4L2_CID_EXPOSURE_AUTO:
-		info = ControlInfo{ false, true, true };
-		break;
+	case V4L2_CID_EXPOSURE_AUTO: {
+		/*
+		 * From the V4L2_CID_EXPOSURE_AUTO documentation:
+		 *
+		 * ------------------------------------------------------------
+		 * V4L2_EXPOSURE_AUTO:
+		 * Automatic exposure time, automatic iris aperture.
+		 *
+		 * V4L2_EXPOSURE_MANUAL:
+		 * Manual exposure time, manual iris.
+		 *
+		 * V4L2_EXPOSURE_SHUTTER_PRIORITY:
+		 * Manual exposure time, auto iris.
+		 *
+		 * V4L2_EXPOSURE_APERTURE_PRIORITY:
+		 * Auto exposure time, manual iris.
+		 *-------------------------------------------------------------
+		 *
+		 * ExposureTimeModeAuto = { V4L2_EXPOSURE_AUTO,
+		 * 			    V4L2_EXPOSURE_APERTURE_PRIORITY }
+		 *
+		 *
+		 * ExposureTimeModeManual = { V4L2_EXPOSURE_MANUAL,
+		 *			      V4L2_EXPOSURE_SHUTTER_PRIORITY }
+		 */
+		std::array<int32_t, 2> values{};
 
+		auto it = std::find_if(v4l2Values.begin(), v4l2Values.end(),
+			[&](const ControlValue &val) {
+				return (val.get<int32_t>() == V4L2_EXPOSURE_APERTURE_PRIORITY ||
+					val.get<int32_t>() == V4L2_EXPOSURE_AUTO) ? true : false;
+			});
+		if (it != v4l2Values.end())
+			values.back() = static_cast<int32_t>(controls::ExposureTimeModeAuto);
+
+		it = std::find_if(v4l2Values.begin(), v4l2Values.end(),
+			[&](const ControlValue &val) {
+				return (val.get<int32_t>() == V4L2_EXPOSURE_SHUTTER_PRIORITY ||
+					val.get<int32_t>() == V4L2_EXPOSURE_MANUAL) ? true : false;
+			});
+		if (it != v4l2Values.end())
+			values.back() = static_cast<int32_t>(controls::ExposureTimeModeManual);
+
+		info = ControlInfo{Span<int32_t>{values}, values[0]};
+		break;
+	}
 	case V4L2_CID_EXPOSURE_ABSOLUTE:
 		/*
 		 * ExposureTime is in units of 1 µs, and UVC expects

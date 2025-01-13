@@ -128,6 +128,7 @@ if sphinx.found()
         'coding-style.rst',
         'conf.py',
         'contributing.rst',
+        'design/ae.rst',
         'documentation-contents.rst',
         'environment_variables.rst',
         'feature_requirements.rst',

@@ -65,11 +65,8 @@ private:
 	int exitCode_;
 
 	std::deque<std::function<void()>> calls_;
+	struct event *callsTrigger_ = nullptr;
 
 	std::list<std::unique_ptr<Event>> events_;
 	std::mutex lock_;
-
-	static void dispatchCallback(evutil_socket_t fd, short flags,
-				     void *param);
-	void dispatchCall();
 };

@@ -319,16 +319,34 @@ int AgcChannel::read(const libcamera::YamlObject &params,
 	return 0;
 }
 
-void AgcChannel::disableAuto()
+void AgcChannel::disableAutoExposure()
 {
 	fixedExposureTime_ = status_.exposureTime;
+}
+
+void AgcChannel::enableAutoExposure()
+{
+	fixedExposureTime_ = 0s;
+}
+
+bool AgcChannel::autoExposureEnabled() const
+{
+	return fixedExposureTime_ == 0s;
+}
+
+void AgcChannel::disableAutoGain()
+{
 	fixedAnalogueGain_ = status_.analogueGain;
 }
 
-void AgcChannel::enableAuto()
+void AgcChannel::enableAutoGain()
 {
-	fixedExposureTime_ = 0s;
 	fixedAnalogueGain_ = 0;
+}
+
+bool AgcChannel::autoGainEnabled() const
+{
+	return fixedAnalogueGain_ == 0;
 }
 
 unsigned int AgcChannel::getConvergenceFrames() const

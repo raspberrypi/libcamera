@@ -96,8 +96,12 @@ public:
 	void setMeteringMode(std::string const &meteringModeName);
 	void setExposureMode(std::string const &exposureModeName);
 	void setConstraintMode(std::string const &contraintModeName);
-	void enableAuto();
-	void disableAuto();
+	void enableAutoExposure();
+	void disableAutoExposure();
+	bool autoExposureEnabled() const;
+	void enableAutoGain();
+	void disableAutoGain();
+	bool autoGainEnabled() const;
 	void switchMode(CameraMode const &cameraMode, Metadata *metadata);
 	void prepare(Metadata *imageMetadata);
 	void process(StatisticsPtr &stats, DeviceStatus const &deviceStatus, Metadata *imageMetadata,

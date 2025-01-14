@@ -8,6 +8,7 @@
 #pragma once
 
 #include <chrono>
+#include <deque>
 #include <functional>
 #include <list>
 #include <memory>
@@ -63,7 +64,8 @@ private:
 	struct event_base *base_;
 	int exitCode_;
 
-	std::list<std::function<void()>> calls_;
+	std::deque<std::function<void()>> calls_;
+
 	std::list<std::unique_ptr<Event>> events_;
 	std::mutex lock_;
 

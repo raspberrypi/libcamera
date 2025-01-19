@@ -76,9 +76,9 @@ namespace ipa {
  */
 
 /**
-  * \brief Construct the Lux helper module
-  * \param[in] binSize The maximum count of each bin
-  */
+ * \brief Construct the Lux helper module
+ * \param[in] binSize The maximum count of each bin
+ */
 Lux::Lux(unsigned int binSize)
 	: binSize_(binSize)
 {

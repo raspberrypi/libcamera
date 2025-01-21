@@ -64,7 +64,7 @@ class LogMessage
 public:
 	LogMessage(const char *fileName, unsigned int line,
 		   const LogCategory &category, LogSeverity severity,
-		   const std::string &prefix = std::string());
+		   std::string prefix = {});
 	~LogMessage();
 
 	std::ostream &stream() { return msgStream_; }

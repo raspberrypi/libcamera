@@ -858,11 +858,11 @@ const LogCategory &LogCategory::defaultCategory()
  */
 LogMessage::LogMessage(const char *fileName, unsigned int line,
 		       const LogCategory &category, LogSeverity severity,
-		       const std::string &prefix)
+		       std::string prefix)
 	: category_(category), severity_(severity),
 	  timestamp_(utils::clock::now()),
 	  fileInfo_(static_cast<std::ostringstream &&>(std::ostringstream() << utils::basename(fileName) << ":" << line).str()),
-	  prefix_(prefix)
+	  prefix_(std::move(prefix))
 {
 }
 

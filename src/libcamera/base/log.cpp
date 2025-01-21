@@ -866,25 +866,6 @@ LogMessage::LogMessage(const char *fileName, unsigned int line,
 	init(fileName, line);
 }
 
-/**
- * \brief Move-construct a log message
- * \param[in] other The other message
- *
- * The move constructor is meant to support the _log() functions. Thanks to copy
- * elision it will likely never be called, but C++11 only permits copy elision,
- * it doesn't enforce it unlike C++17. To avoid potential link errors depending
- * on the compiler type and version, and optimization level, the move
- * constructor is defined even if it will likely never be called, and ensures
- * that the destructor of the \a other message will not output anything to the
- * log by setting the severity to LogInvalid.
- */
-LogMessage::LogMessage(LogMessage &&other)
-	: msgStream_(std::move(other.msgStream_)), category_(other.category_),
-	  severity_(other.severity_)
-{
-	other.severity_ = LogInvalid;
-}
-
 void LogMessage::init(const char *fileName, unsigned int line)
 {
 	/* Log the timestamp, severity and file information. */

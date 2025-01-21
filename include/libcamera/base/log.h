@@ -61,8 +61,6 @@ public:
 	LogMessage(const char *fileName, unsigned int line,
 		   const LogCategory &category, LogSeverity severity,
 		   const std::string &prefix = std::string());
-
-	LogMessage(LogMessage &&);
 	~LogMessage();
 
 	std::ostream &stream() { return msgStream_; }
@@ -75,7 +73,7 @@ public:
 	const std::string msg() const { return msgStream_.str(); }
 
 private:
-	LIBCAMERA_DISABLE_COPY(LogMessage)
+	LIBCAMERA_DISABLE_COPY_AND_MOVE(LogMessage)
 
 	void init(const char *fileName, unsigned int line);
 

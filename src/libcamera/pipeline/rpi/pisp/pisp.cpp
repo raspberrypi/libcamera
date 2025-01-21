@@ -1893,7 +1893,8 @@ int PiSPCameraData::configureCfe()
 
 	pisp_fe_global_config global;
 	fe_->GetGlobal(global);
-	global.enables &= ~PISP_FE_ENABLE_COMPRESS0;
+	global.enables &= ~(PISP_FE_ENABLE_COMPRESS0 | PISP_FE_ENABLE_DECIMATE |
+			    PISP_FE_ENABLE_STATS_CROP);
 
 	global.enables |= PISP_FE_ENABLE_OUTPUT0;
 	global.bayer_order = toPiSPBayerOrder(cfeFormat.fourcc);
@@ -1918,8 +1919,23 @@ int PiSPCameraData::configureCfe()
 		fe_->SetCompress(0, compress);
 	}
 
-	if (input.format.width > pispVariant_.FrontEndDownscalerMaxWidth(0, 0))
+	const unsigned int maxStatsWidth = pispVariant_.FrontEndDownscalerMaxWidth(0, 0);
+	if (input.format.width > maxStatsWidth) {
+		/* The line is too wide for the stats generation, so try to decimate. */
 		global.enables |= PISP_FE_ENABLE_DECIMATE;
+		if ((input.format.width >> 1) > maxStatsWidth) {
+			/* Still too wide, crop a window before the decimation. */
+			pisp_fe_crop_config statsCrop{};
+			statsCrop.width = maxStatsWidth << 1;
+			statsCrop.height = input.format.height;
+			statsCrop.offset_x =
+				(((input.format.width - statsCrop.width) >> 1) & ~1);
+			statsCrop.offset_y = 0;
+			fe_->SetStatsCrop(statsCrop);
+			global.enables |= PISP_FE_ENABLE_STATS_CROP;
+			LOG(RPI, Warning) << "Cropping FE stats window";
+		}
+	}
 
 	fe_->SetGlobal(global);
 	fe_->SetInput(input);

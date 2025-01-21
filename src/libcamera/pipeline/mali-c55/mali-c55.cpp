@@ -157,15 +157,16 @@ int MaliC55CameraData::init()
 	 */
 	sensor_ = CameraSensorFactoryBase::create(entity_);
 	if (!sensor_)
-		return ret;
+		return -ENODEV;
 
 	const MediaPad *sourcePad = entity_->getPadByIndex(0);
 	MediaEntity *csiEntity = sourcePad->links()[0]->sink()->entity();
 
 	csi_ = std::make_unique<V4L2Subdevice>(csiEntity);
-	if (csi_->open()) {
+	ret = csi_->open();
+	if (ret) {
 		LOG(MaliC55, Error) << "Failed to open CSI-2 subdevice";
-		return false;
+		return ret;
 	}
 
 	return 0;

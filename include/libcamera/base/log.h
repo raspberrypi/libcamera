@@ -75,8 +75,6 @@ public:
 private:
 	LIBCAMERA_DISABLE_COPY_AND_MOVE(LogMessage)
 
-	void init(const char *fileName, unsigned int line);
-
 	std::ostringstream msgStream_;
 	const LogCategory &category_;
 	LogSeverity severity_;

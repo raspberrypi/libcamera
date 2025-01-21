@@ -9,6 +9,7 @@
 
 #include <atomic>
 #include <sstream>
+#include <string_view>
 
 #include <libcamera/base/private.h>
 
@@ -29,7 +30,7 @@ enum LogSeverity {
 class LogCategory
 {
 public:
-	static LogCategory *create(const char *name);
+	static LogCategory *create(std::string_view name);
 
 	const std::string &name() const { return name_; }
 	LogSeverity severity() const { return severity_.load(std::memory_order_relaxed); }
@@ -38,7 +39,7 @@ public:
 	static const LogCategory &defaultCategory();
 
 private:
-	explicit LogCategory(const char *name);
+	explicit LogCategory(std::string_view name);
 
 	const std::string name_;
 

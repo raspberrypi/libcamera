@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <string_view>
 #include <syslog.h>
 #include <time.h>
 #include <unordered_set>
@@ -313,11 +314,11 @@ private:
 
 	void parseLogFile();
 	void parseLogLevels();
-	static LogSeverity parseLogLevel(const std::string &level);
+	static LogSeverity parseLogLevel(std::string_view level);
 
 	friend LogCategory;
 	void registerCategory(LogCategory *category);
-	LogCategory *findCategory(const char *name) const;
+	LogCategory *findCategory(std::string_view name) const;
 
 	static bool destroyed_;
 
@@ -642,17 +643,17 @@ void Logger::parseLogLevels()
 		if (!len)
 			continue;
 
-		std::string category;
-		std::string level;
+		std::string_view category;
+		std::string_view level;
 
 		const char *colon = static_cast<const char *>(memchr(pair, ':', len));
 		if (!colon) {
 			/* 'x' is a shortcut for '*:x'. */
 			category = "*";
-			level = std::string(pair, len);
+			level = std::string_view(pair, len);
 		} else {
-			category = std::string(pair, colon - pair);
-			level = std::string(colon + 1, comma - colon - 1);
+			category = std::string_view(pair, colon - pair);
+			level = std::string_view(colon + 1, comma - colon - 1);
 		}
 
 		/* Both the category and the level must be specified. */
@@ -663,7 +664,7 @@ void Logger::parseLogLevels()
 		if (severity == LogInvalid)
 			continue;
 
-		levels_.push_back({ category, severity });
+		levels_.emplace_back(category, severity);
 	}
 }
 
@@ -677,7 +678,7 @@ void Logger::parseLogLevels()
  *
  * \return The log severity, or LogInvalid if the string is invalid
  */
-LogSeverity Logger::parseLogLevel(const std::string &level)
+LogSeverity Logger::parseLogLevel(std::string_view level)
 {
 	static const char *const names[] = {
 		"DEBUG",
@@ -729,7 +730,7 @@ void Logger::registerCategory(LogCategory *category)
  * \param[in] name Name of the log category
  * \return The pointer to the found log category or nullptr if not found
  */
-LogCategory *Logger::findCategory(const char *name) const
+LogCategory *Logger::findCategory(std::string_view name) const
 {
 	if (auto it = std::find_if(categories_.begin(), categories_.end(),
 				   [name](auto c) { return c->name() == name; });
@@ -773,7 +774,7 @@ LogCategory *Logger::findCategory(const char *name) const
  *
  * \return The pointer to the LogCategory
  */
-LogCategory *LogCategory::create(const char *name)
+LogCategory *LogCategory::create(std::string_view name)
 {
 	static Mutex mutex_;
 	MutexLocker locker(mutex_);
@@ -791,7 +792,7 @@ LogCategory *LogCategory::create(const char *name)
  * \brief Construct a log category
  * \param[in] name The category name
  */
-LogCategory::LogCategory(const char *name)
+LogCategory::LogCategory(std::string_view name)
 	: name_(name), severity_(LogSeverity::LogInfo)
 {
 }

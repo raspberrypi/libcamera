@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <sstream>
 
 #include <libcamera/base/private.h>
@@ -31,8 +32,8 @@ public:
 	static LogCategory *create(const char *name);
 
 	const std::string &name() const { return name_; }
-	LogSeverity severity() const { return severity_; }
-	void setSeverity(LogSeverity severity);
+	LogSeverity severity() const { return severity_.load(std::memory_order_relaxed); }
+	void setSeverity(LogSeverity severity) { severity_.store(severity, std::memory_order_relaxed); }
 
 	static const LogCategory &defaultCategory();
 
@@ -40,7 +41,9 @@ private:
 	explicit LogCategory(const char *name);
 
 	const std::string name_;
-	LogSeverity severity_;
+
+	std::atomic<LogSeverity> severity_;
+	static_assert(decltype(severity_)::is_always_lock_free);
 };
 
 #define LOG_DECLARE_CATEGORY(name)					\

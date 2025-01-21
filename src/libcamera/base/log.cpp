@@ -810,15 +810,12 @@ LogCategory::LogCategory(const char *name)
  */
 
 /**
+ * \fn LogCategory::setSeverity(LogSeverity severity)
  * \brief Set the severity of the log category
  *
  * Messages of severity higher than or equal to the severity of the log category
  * are printed, other messages are discarded.
  */
-void LogCategory::setSeverity(LogSeverity severity)
-{
-	severity_ = severity;
-}
 
 /**
  * \brief Retrieve the default log category

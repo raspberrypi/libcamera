@@ -8,6 +8,7 @@
 #include <libcamera/base/log.h>
 
 #include <array>
+#include <charconv>
 #include <fnmatch.h>
 #include <fstream>
 #include <iostream>
@@ -686,12 +687,11 @@ LogSeverity Logger::parseLogLevel(const std::string &level)
 		"FATAL",
 	};
 
-	int severity;
+	unsigned int severity;
 
 	if (std::isdigit(level[0])) {
-		char *endptr;
-		severity = strtoul(level.c_str(), &endptr, 10);
-		if (*endptr != '\0' || severity > LogFatal)
+		auto [end, ec] = std::from_chars(level.data(), level.data() + level.size(), severity);
+		if (ec != std::errc() || *end != '\0' || severity > LogFatal)
 			severity = LogInvalid;
 	} else {
 		severity = LogInvalid;

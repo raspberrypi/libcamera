@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <memory>
 #include <stdint.h>
 #include <vector>
 
@@ -67,7 +68,7 @@ private:
 
 	bool isSignatureValid(IPAModule *ipa) const;
 
-	std::vector<IPAModule *> modules_;
+	std::vector<std::unique_ptr<IPAModule>> modules_;
 
 #if HAVE_IPA_PUBKEY
 	static const uint8_t publicKeyData_[];

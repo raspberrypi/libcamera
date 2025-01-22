@@ -235,8 +235,8 @@ Process::~Process()
  * or a negative error code otherwise
  */
 int Process::start(const std::string &path,
-		   const std::vector<std::string> &args,
-		   const std::vector<int> &fds)
+		   Span<const std::string> args,
+		   Span<const int> fds)
 {
 	int ret;
 
@@ -262,7 +262,7 @@ int Process::start(const std::string &path,
 		if (isolate())
 			_exit(EXIT_FAILURE);
 
-		std::vector<int> v(fds);
+		std::vector<int> v(fds.begin(), fds.end());
 		v.push_back(STDERR_FILENO);
 		closeAllFdsExcept(v);
 

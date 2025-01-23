@@ -7,7 +7,11 @@
 
 #pragma once
 
+#include <map>
+
+#include <libcamera/control_ids.h>
 #include <libcamera/controls.h>
+
 #include "libcamera/internal/vector.h"
 #include "libcamera/internal/yaml_parser.h"
 
@@ -42,7 +46,16 @@ public:
 	virtual void handleControls([[maybe_unused]] const ControlList &controls) {}
 
 protected:
+	int parseModeConfigs(const YamlObject &tuningData,
+			     const ControlValue &def = {});
+
+	struct ModeConfig {
+		double ctHi;
+		double ctLo;
+	};
+
 	ControlInfoMap::Map controls_;
+	std::map<controls::AwbModeEnum, AwbAlgorithm::ModeConfig> modes_;
 };
 
 } /* namespace ipa */

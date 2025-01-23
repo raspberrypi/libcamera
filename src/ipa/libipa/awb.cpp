@@ -9,6 +9,8 @@
 
 #include <libcamera/base/log.h>
 
+#include <libcamera/control_ids.h>
+
 /**
  * \file awb.h
  * \brief Base classes for AWB algorithms
@@ -131,6 +133,131 @@ namespace ipa {
  * \var AwbAlgorithm::controls_
  * \brief Controls info map for the controls provided by the algorithm
  */
+
+/**
+ * \var AwbAlgorithm::modes_
+ * \brief Map of all configured modes
+ * \sa AwbAlgorithm::parseModeConfigs
+ */
+
+/**
+ * \class AwbAlgorithm::ModeConfig
+ * \brief Holds the configuration of a single AWB mode
+ *
+ * Awb modes limit the regulation of the AWB algorithm to a specific range of
+ * colour temperatures.
+ */
+
+/**
+ * \var AwbAlgorithm::ModeConfig::ctLo
+ * \brief The lowest valid colour temperature of that mode
+ */
+
+/**
+ * \var AwbAlgorithm::ModeConfig::ctHi
+ * \brief The highest valid colour temperature of that mode
+ */
+
+/**
+ * \brief Parse the mode configurations from the tuning data
+ * \param[in] tuningData the YamlObject representing the tuning data
+ * \param[in] def The default value for the AwbMode control
+ *
+ * Utility function to parse the tuning data for an AwbMode entry and read all
+ * provided modes. It adds controls::AwbMode to AwbAlgorithm::controls_ and
+ * populates AwbAlgorithm::modes_. For a list of possible modes see \ref
+ * controls::AwbModeEnum.
+ *
+ * Each mode entry must contain a "lo" and "hi" key to specify the lower and
+ * upper colour temperature of that mode. For example:
+ *
+ * \code{.unparsed}
+ * algorithms:
+ *   - Awb:
+ *     AwbMode:
+ *       AwbAuto:
+ *         lo: 2500
+ *         hi: 8000
+ *       AwbIncandescent:
+ *         lo: 2500
+ *         hi: 3000
+ *       ...
+ * \endcode
+ *
+ * If \a def is supplied but not contained in the the \a tuningData, -EINVAL is
+ * returned.
+ *
+ * \sa controls::AwbModeEnum
+ * \return Zero on success, negative error code otherwise
+ */
+int AwbAlgorithm::parseModeConfigs(const YamlObject &tuningData,
+				   const ControlValue &def)
+{
+	std::vector<ControlValue> availableModes;
+
+	const YamlObject &yamlModes = tuningData[controls::AwbMode.name()];
+	if (!yamlModes.isDictionary()) {
+		LOG(Awb, Error)
+			<< "AwbModes must be a dictionary.";
+		return -EINVAL;
+	}
+
+	for (const auto &[modeName, modeDict] : yamlModes.asDict()) {
+		if (controls::AwbModeNameValueMap.find(modeName) ==
+		    controls::AwbModeNameValueMap.end()) {
+			LOG(Awb, Warning)
+				<< "Skipping unknown awb mode '"
+				<< modeName << "'";
+			continue;
+		}
+
+		if (!modeDict.isDictionary()) {
+			LOG(Awb, Error)
+				<< "Invalid awb mode '" << modeName << "'";
+			return -EINVAL;
+		}
+
+		const auto &modeValue = static_cast<controls::AwbModeEnum>(
+			controls::AwbModeNameValueMap.at(modeName));
+
+		ModeConfig &config = modes_[modeValue];
+
+		auto hi = modeDict["hi"].get<double>();
+		if (!hi) {
+			LOG(Awb, Error) << "Failed to read hi param of mode "
+					<< modeName;
+			return -EINVAL;
+		}
+		config.ctHi = *hi;
+
+		auto lo = modeDict["lo"].get<double>();
+		if (!lo) {
+			LOG(Awb, Error) << "Failed to read low param of mode "
+					<< modeName;
+			return -EINVAL;
+		}
+		config.ctLo = *lo;
+
+		availableModes.push_back(modeValue);
+	}
+
+	if (modes_.empty()) {
+		LOG(Awb, Error) << "No AWB modes configured";
+		return -EINVAL;
+	}
+
+	if (!def.isNone() &&
+	    modes_.find(def.get<controls::AwbModeEnum>()) == modes_.end()) {
+		const auto &names = controls::AwbMode.enumerators();
+		LOG(Awb, Error) << names.at(def.get<controls::AwbModeEnum>())
+				<< " mode is missing in the configuration.";
+		return -EINVAL;
+	}
+
+	controls_[&controls::AwbMode] = ControlInfo(availableModes, def);
+
+	return 0;
+}
 
 } /* namespace ipa */
 

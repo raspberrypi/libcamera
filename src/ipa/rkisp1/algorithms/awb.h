@@ -39,6 +39,9 @@ public:
 		     ControlList &metadata) override;
 
 private:
+	RGB<double> calculateRgbMeans(const IPAFrameContext &frameContext,
+				      const rkisp1_cif_isp_awb_stat *awb) const;
+
 	std::optional<Interpolator<Vector<double, 2>>> colourGainCurve_;
 	bool rgbMode_;
 };

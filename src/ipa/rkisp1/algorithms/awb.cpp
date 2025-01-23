@@ -229,7 +229,7 @@ void Awb::process(IPAContext &context,
 	const rkisp1_cif_isp_stat *params = &stats->params;
 	const rkisp1_cif_isp_awb_stat *awb = &params->awb;
 	IPAActiveState &activeState = context.activeState;
-	RGB<double> rgbMeans;
+	RGB<double> rgbMeans = calculateRgbMeans(frameContext, awb);
 
 	metadata.set(controls::AwbEnable, frameContext.awb.autoEnabled);
 	metadata.set(controls::ColourGains, {
@@ -242,6 +242,53 @@ void Awb::process(IPAContext &context,
 		LOG(RkISP1Awb, Error) << "AWB data is missing in statistics";
 		return;
 	}
+
+	/*
+	 * If the means are too small we don't have enough information to
+	 * meaningfully calculate gains. Freeze the algorithm in that case.
+	 */
+	if (rgbMeans.r() < kMeanMinThreshold && rgbMeans.g() < kMeanMinThreshold &&
+	    rgbMeans.b() < kMeanMinThreshold)
+		return;
+
+	activeState.awb.temperatureK = estimateCCT(rgbMeans);
+
+	/* Metadata shall contain the up to date measurement */
+	metadata.set(controls::ColourTemperature, activeState.awb.temperatureK);
+
+	/*
+	 * Estimate the red and blue gains to apply in a grey world. The green
+	 * gain is hardcoded to 1.0. Avoid divisions by zero by clamping the
+	 * divisor to a minimum value of 1.0.
+	 */
+	RGB<double> gains({ rgbMeans.g() / std::max(rgbMeans.r(), 1.0),
+			    1.0,
+			    rgbMeans.g() / std::max(rgbMeans.b(), 1.0) });
+
+	/*
+	 * Clamp the gain values to the hardware, which expresses gains as Q2.8
+	 * unsigned integer values. Set the minimum just above zero to avoid
+	 * divisions by zero when computing the raw means in subsequent
+	 * iterations.
+	 */
+	gains = gains.max(1.0 / 256).min(1023.0 / 256);
+
+	/* Filter the values to avoid oscillations. */
+	double speed = 0.2;
+	gains = gains * speed + activeState.awb.gains.automatic * (1 - speed);
+
+	activeState.awb.gains.automatic = gains;
+
+	LOG(RkISP1Awb, Debug)
+		<< std::showpoint
+		<< "Means " << rgbMeans << ", gains "
+		<< activeState.awb.gains.automatic << ", temp "
+		<< activeState.awb.temperatureK << "K";
+}
+
+RGB<double> Awb::calculateRgbMeans(const IPAFrameContext &frameContext, const rkisp1_cif_isp_awb_stat *awb) const
+{
+	Vector<double, 3> rgbMeans;
 
 	if (rgbMode_) {
 		rgbMeans = {{
@@ -301,46 +348,7 @@ void Awb::process(IPAContext &context,
 	 */
 	rgbMeans /= frameContext.awb.gains;
 
-	/*
-	 * If the means are too small we don't have enough information to
-	 * meaningfully calculate gains. Freeze the algorithm in that case.
-	 */
-	if (rgbMeans.r() < kMeanMinThreshold && rgbMeans.g() < kMeanMinThreshold &&
-	    rgbMeans.b() < kMeanMinThreshold)
-		return;
-
-	activeState.awb.temperatureK = estimateCCT(rgbMeans);
-
-	/*
-	 * Estimate the red and blue gains to apply in a grey world. The green
-	 * gain is hardcoded to 1.0. Avoid divisions by zero by clamping the
-	 * divisor to a minimum value of 1.0.
-	 */
-	RGB<double> gains({
-		rgbMeans.g() / std::max(rgbMeans.r(), 1.0),
-		1.0,
-		rgbMeans.g() / std::max(rgbMeans.b(), 1.0)
-	});
-
-	/*
-	 * Clamp the gain values to the hardware, which expresses gains as Q2.8
-	 * unsigned integer values. Set the minimum just above zero to avoid
-	 * divisions by zero when computing the raw means in subsequent
-	 * iterations.
-	 */
-	gains = gains.max(1.0 / 256).min(1023.0 / 256);
-
-	/* Filter the values to avoid oscillations. */
-	double speed = 0.2;
-	gains = gains * speed + activeState.awb.gains.automatic * (1 - speed);
-
-	activeState.awb.gains.automatic = gains;
-
-	LOG(RkISP1Awb, Debug)
-		<< std::showpoint
-		<< "Means " << rgbMeans << ", gains "
-		<< activeState.awb.gains.automatic << ", temp "
-		<< activeState.awb.temperatureK << "K";
+	return rgbMeans;
 }
 
 REGISTER_IPA_ALGORITHM(Awb, "Awb")

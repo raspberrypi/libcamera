@@ -50,6 +50,43 @@ namespace libcamera {
 
 LOG_DECLARE_CATEGORY(Awb)
 
+namespace {
+
+template<typename T>
+class LimitsRecorder
+{
+public:
+	LimitsRecorder()
+		: min_(std::numeric_limits<T>::max()),
+		  max_(std::numeric_limits<T>::min())
+	{
+	}
+
+	void record(const T &value)
+	{
+		min_ = std::min(min_, value);
+		max_ = std::max(max_, value);
+	}
+
+	const T &min() const { return min_; }
+	const T &max() const { return max_; }
+
+private:
+	T min_;
+	T max_;
+};
+
+#ifndef __DOXYGEN__
+template<typename T>
+std::ostream &operator<<(std::ostream &out, const LimitsRecorder<T> &v)
+{
+	out << "[ " << v.min() << ", " << v.max() << " ]";
+	return out;
+}
+#endif
+
+} /* namespace */
+
 namespace ipa {
 
 /**
@@ -277,6 +314,8 @@ double AwbBayes::coarseSearch(const ipa::Pwl &prior, const AwbStats &stats) cons
 	double t = currentMode_->ctLo;
 	int spanR = -1;
 	int spanB = -1;
+	LimitsRecorder<double> errorLimits;
+	LimitsRecorder<double> priorLogLikelihoodLimits;
 
 	/* Step down the CT curve evaluating log likelihood. */
 	while (true) {
@@ -286,6 +325,9 @@ double AwbBayes::coarseSearch(const ipa::Pwl &prior, const AwbStats &stats) cons
 		double delta2Sum = stats.computeColourError(gains);
 		double priorLogLikelihood = prior.eval(prior.domain().clamp(t));
 		double finalLogLikelihood = delta2Sum - priorLogLikelihood;
+
+		errorLimits.record(delta2Sum);
+		priorLogLikelihoodLimits.record(priorLogLikelihood);
 
 		LOG(Awb, Debug) << "Coarse search t: " << t
 				<< " gains: " << gains
@@ -308,7 +350,9 @@ double AwbBayes::coarseSearch(const ipa::Pwl &prior, const AwbStats &stats) cons
 	}
 
 	t = points[bestPoint].x();
-	LOG(Awb, Debug) << "Coarse search found CT " << t;
+	LOG(Awb, Debug) << "Coarse search found CT " << t
+			<< " error limits:" << errorLimits
+			<< " prior log likelihood limits:" << priorLogLikelihoodLimits;
 
 	/*
 	 * We have the best point of the search, but refine it with a quadratic
@@ -352,6 +396,9 @@ void AwbBayes::fineSearch(double &t, double &r, double &b, ipa::Pwl const &prior
 	Pwl::Point bestRB(0);
 	double transverseRange = transverseNeg_ + transversePos_;
 	const int maxNumDeltas = 12;
+	LimitsRecorder<double> errorLimits;
+	LimitsRecorder<double> priorLogLikelihoodLimits;
+
 
 	/* a transverse step approximately every 0.01 r/b units */
 	int numDeltas = floor(transverseRange * 100 + 0.5) + 1;
@@ -366,6 +413,7 @@ void AwbBayes::fineSearch(double &t, double &r, double &b, ipa::Pwl const &prior
 		double tTest = t + i * step;
 		double priorLogLikelihood =
 			prior.eval(prior.domain().clamp(tTest));
+		priorLogLikelihoodLimits.record(priorLogLikelihood);
 		Pwl::Point rbStart{ { ctR_.eval(tTest, &spanR),
 				      ctB_.eval(tTest, &spanB) } };
 		Pwl::Point samples[maxNumDeltas];
@@ -384,6 +432,7 @@ void AwbBayes::fineSearch(double &t, double &r, double &b, ipa::Pwl const &prior
 			Pwl::Point rbTest = rbStart + transverse * p.x();
 			RGB<double> gains({ 1 / rbTest[0], 1.0, 1 / rbTest[1] });
 			double delta2Sum = stats.computeColourError(gains);
+			errorLimits.record(delta2Sum);
 			p.y() = delta2Sum - priorLogLikelihood;
 
 			if (p.y() < samples[bestPoint].y())
@@ -401,6 +450,7 @@ void AwbBayes::fineSearch(double &t, double &r, double &b, ipa::Pwl const &prior
 		Pwl::Point rbTest = rbStart + transverse * bestOffset;
 		RGB<double> gains({ 1 / rbTest[0], 1.0, 1 / rbTest[1] });
 		double delta2Sum = stats.computeColourError(gains);
+		errorLimits.record(delta2Sum);
 		double finalLogLikelihood = delta2Sum - priorLogLikelihood;
 		LOG(Awb, Debug)
 			<< "Fine search t: " << tTest
@@ -421,7 +471,9 @@ void AwbBayes::fineSearch(double &t, double &r, double &b, ipa::Pwl const &prior
 	r = bestRB[0];
 	b = bestRB[1];
 	LOG(Awb, Debug)
-		<< "Fine search found t " << t << " r " << r << " b " << b;
+		<< "Fine search found t " << t << " r " << r << " b " << b
+		<< " error limits: " << errorLimits
+		<< " prior log likelihood limits: " << priorLogLikelihoodLimits;
 }
 
 /**

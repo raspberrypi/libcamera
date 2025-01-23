@@ -1,3 +1,9 @@
+libcamera (0.4.0-5) UNRELEASED; urgency=medium
+
+  * Cherry-pick upstream patches demoting error messages (Closes: #1091966)
+
+ -- Dylan Aïssi <daissi@debian.org>  Mon, 27 Jan 2025 10:53:25 +0100
+
 libcamera (0.4.0-4) unstable; urgency=medium
 
   * Add patch disabling libunwind integration (Closes: #1093688)

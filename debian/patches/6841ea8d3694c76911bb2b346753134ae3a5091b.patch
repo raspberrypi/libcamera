@@ -1,0 +1,49 @@
+From 6841ea8d3694c76911bb2b346753134ae3a5091b Mon Sep 17 00:00:00 2001
+From: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Date: Fri, 10 Jan 2025 04:21:42 +0200
+Subject: [PATCH] libcamera: pipeline: virtual: Demote config file error
+ message to debug
+
+The virtual pipeline handler prints an error message when its
+configuration file can't be opened. Not providing a configuration file
+is the default method to disable virtual cameras, so this error is
+confusing for users. Replace it with a debug message when the
+configuration file is not found, and keep an error message when it
+exists but can't be opened.
+
+Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
+Tested-by: Julien Vuillaumier <julien.vuillaumier@nxp.com>
+Reviewed-by: Kieran Bingham <kieran.bingham@ideasonboard.com>
+---
+ src/libcamera/pipeline/virtual/virtual.cpp | 15 +++++++++++----
+ 1 file changed, 11 insertions(+), 4 deletions(-)
+
+diff --git a/src/libcamera/pipeline/virtual/virtual.cpp b/src/libcamera/pipeline/virtual/virtual.cpp
+index e692a5433..469f56556 100644
+--- a/src/libcamera/pipeline/virtual/virtual.cpp
++++ b/src/libcamera/pipeline/virtual/virtual.cpp
+@@ -329,10 +329,17 @@ bool PipelineHandlerVirtual::match([[maybe_unused]] DeviceEnumerator *enumerator
+ 
+ 	created_ = true;
+ 
+-	File file(configurationFile("virtual", "virtual.yaml"));
+-	bool isOpen = file.open(File::OpenModeFlag::ReadOnly);
+-	if (!isOpen) {
+-		LOG(Virtual, Error) << "Failed to open config file: " << file.fileName();
++	std::string configFile = configurationFile("virtual", "virtual.yaml", true);
++	if (configFile.empty()) {
++		LOG(Virtual, Debug)
++			<< "Configuration file not found, skipping virtual cameras";
++		return false;
++	}
++
++	File file(configFile);
++	if (!file.open(File::OpenModeFlag::ReadOnly)) {
++		LOG(Virtual, Error)
++			<< "Failed to open config file `" << file.fileName() << "`";
+ 		return false;
+ 	}
+ 
+-- 
+GitLab
+

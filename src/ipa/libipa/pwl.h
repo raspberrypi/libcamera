@@ -49,6 +49,7 @@ public:
 	void append(double x, double y, double eps = 1e-6);
 
 	bool empty() const { return points_.empty(); }
+	void clear() { points_.clear(); }
 	size_t size() const { return points_.size(); }
 
 	Interval domain() const;

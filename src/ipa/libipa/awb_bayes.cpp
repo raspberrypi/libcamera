@@ -329,12 +329,6 @@ double AwbBayes::coarseSearch(const ipa::Pwl &prior, const AwbStats &stats) cons
 		errorLimits.record(delta2Sum);
 		priorLogLikelihoodLimits.record(priorLogLikelihood);
 
-		LOG(Awb, Debug) << "Coarse search t: " << t
-				<< " gains: " << gains
-				<< " error: " << delta2Sum
-				<< " prior: " << priorLogLikelihood
-				<< " likelihood: " << finalLogLikelihood;
-
 		points.push_back({ { t, finalLogLikelihood } });
 		if (points.back().y() < points[bestPoint].y())
 			bestPoint = points.size() - 1;
@@ -452,13 +446,6 @@ void AwbBayes::fineSearch(double &t, double &r, double &b, ipa::Pwl const &prior
 		double delta2Sum = stats.computeColourError(gains);
 		errorLimits.record(delta2Sum);
 		double finalLogLikelihood = delta2Sum - priorLogLikelihood;
-		LOG(Awb, Debug)
-			<< "Fine search t: " << tTest
-			<< " r: " << rbTest[0]
-			<< " b: " << rbTest[1]
-			<< " offset: " << bestOffset
-			<< " likelihood: " << finalLogLikelihood
-			<< (finalLogLikelihood < bestLogLikelihood ? " NEW BEST" : "");
 
 		if (bestT == 0 || finalLogLikelihood < bestLogLikelihood) {
 			bestLogLikelihood = finalLogLikelihood;

@@ -8,6 +8,7 @@
 #include <libcamera/base/log.h>
 
 #include <array>
+#include <fnmatch.h>
 #include <fstream>
 #include <iostream>
 #include <list>
@@ -38,8 +39,8 @@
  * The levels are configurable through the LIBCAMERA_LOG_LEVELS environment
  * variable that contains a comma-separated list of 'category:level' pairs.
  *
- * The category names are strings and can include a wildcard ('*') character at
- * the end to match multiple categories.
+ * The category names are strings and can include a wildcard ('*') character to
+ * match multiple categories.
  *
  * The level are either numeric values, or strings containing the log level
  * name. The available log levels are DEBUG, INFO, WARN, ERROR and FATAL. Log
@@ -717,24 +718,9 @@ void Logger::registerCategory(LogCategory *category)
 	categories_.push_back(category);
 
 	const std::string &name = category->name();
-	for (const std::pair<std::string, LogSeverity> &level : levels_) {
-		bool match = true;
-
-		for (unsigned int i = 0; i < level.first.size(); ++i) {
-			if (level.first[i] == '*')
-				break;
-
-			if (i >= name.size() ||
-			    name[i] != level.first[i]) {
-				match = false;
-				break;
-			}
-		}
-
-		if (match) {
-			category->setSeverity(level.second);
-			break;
-		}
+	for (const auto &[pattern, severity] : levels_) {
+		if (fnmatch(pattern.c_str(), name.c_str(), FNM_NOESCAPE) == 0)
+			category->setSeverity(severity);
 	}
 }
 

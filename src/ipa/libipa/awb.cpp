@@ -57,8 +57,9 @@ namespace ipa {
  * applied. To keep the actual implementations computationally inexpensive,
  * the squared colour error shall be returned.
  *
- * If the awb statistics provide multiple zones, the sum over all zones needs to
- * calculated.
+ * If the awb statistics provide multiple zones, the average of the individual
+ * squared errors shall be returned. Averaging/normalizing is necessary so that
+ * the numeric dimensions are the same on all hardware platforms.
  *
  * \return The computed error value
  */

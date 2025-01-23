@@ -7,21 +7,21 @@ general:
   awb:
     # Algorithm can either be 'grey' or 'bayes'
     algorithm: bayes
-    # Priors is only used for the bayes algorithm. They are defined in
-    # logarithmic space. A good staring point is:
+    # Priors is only used for the bayes algorithm. They are defined in linear
+    # space. A good staring point is:
     # - lux: 0
     #   ct: [ 2000, 3000, 13000 ]
-    #   probability: [ 1.0, 0.0, 0.0 ]
+    #   probability: [ 1.005, 1.0, 1.0 ]
     # - lux: 800
     #   ct: [ 2000, 6000, 13000 ]
-    #   probability: [ 0.0, 2.0, 2.0 ]
+    #   probability: [ 1.0, 1.01, 1.01 ]
     # - lux: 1500
     #   ct: [ 2000, 4000, 6000, 6500, 7000, 13000 ]
-    #   probability: [ 0.0, 1.0, 6.0, 7.0, 1.0, 1.0 ]
+    #   probability: [ 1.0, 1.005, 1.032, 1.037, 1.01, 1.01 ]
     priors:
       - lux: 0
         ct: [ 2000, 13000 ]
-        probability: [ 0.0, 0.0 ]
+        probability: [ 1.0, 1.0 ]
     AwbMode:
       AwbAuto:
         lo: 2500

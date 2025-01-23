@@ -234,6 +234,10 @@ int AwbBayes::readPriors(const YamlObject &tuningData)
 
 		auto &pwl = priors[lux];
 		for (const auto &[ct, prob] : ctToProbability) {
+			if (prob < 1e-6) {
+				LOG(Awb, Error) << "Prior probability must be larger than 1e-6";
+				return -EINVAL;
+			}
 			pwl.append(ct, prob);
 		}
 	}
@@ -323,7 +327,7 @@ double AwbBayes::coarseSearch(const ipa::Pwl &prior, const AwbStats &stats) cons
 		double b = ctB_.eval(t, &spanB);
 		RGB<double> gains({ 1 / r, 1.0, 1 / b });
 		double delta2Sum = stats.computeColourError(gains);
-		double priorLogLikelihood = prior.eval(prior.domain().clamp(t));
+		double priorLogLikelihood = log(prior.eval(prior.domain().clamp(t)));
 		double finalLogLikelihood = delta2Sum - priorLogLikelihood;
 
 		errorLimits.record(delta2Sum);
@@ -406,7 +410,7 @@ void AwbBayes::fineSearch(double &t, double &r, double &b, ipa::Pwl const &prior
 	for (int i = -nsteps; i <= nsteps; i++) {
 		double tTest = t + i * step;
 		double priorLogLikelihood =
-			prior.eval(prior.domain().clamp(tTest));
+			log(prior.eval(prior.domain().clamp(tTest)));
 		priorLogLikelihoodLimits.record(priorLogLikelihood);
 		Pwl::Point rbStart{ { ctR_.eval(tTest, &spanR),
 				      ctB_.eval(tTest, &spanB) } };

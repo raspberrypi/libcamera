@@ -17,11 +17,9 @@ Reviewed-by: Kieran Bingham <kieran.bingham@ideasonboard.com>
  src/libcamera/pipeline_handler.cpp            | 12 ++++++++----
  2 files changed, 10 insertions(+), 5 deletions(-)
 
-diff --git a/include/libcamera/internal/pipeline_handler.h b/include/libcamera/internal/pipeline_handler.h
-index fb28a18d0..972a2fa65 100644
 --- a/include/libcamera/internal/pipeline_handler.h
 +++ b/include/libcamera/internal/pipeline_handler.h
-@@ -63,7 +63,8 @@ public:
+@@ -63,7 +63,8 @@
  	void cancelRequest(Request *request);
  
  	std::string configurationFile(const std::string &subdir,
@@ -31,11 +29,9 @@ index fb28a18d0..972a2fa65 100644
  
  	const char *name() const { return name_; }
  
-diff --git a/src/libcamera/pipeline_handler.cpp b/src/libcamera/pipeline_handler.cpp
-index caa5c20e7..d84dff3c9 100644
 --- a/src/libcamera/pipeline_handler.cpp
 +++ b/src/libcamera/pipeline_handler.cpp
-@@ -581,6 +581,7 @@ void PipelineHandler::cancelRequest(Request *request)
+@@ -581,6 +581,7 @@
   * \brief Retrieve the absolute path to a platform configuration file
   * \param[in] subdir The pipeline handler specific subdirectory name
   * \param[in] name The configuration file name
@@ -43,7 +39,7 @@ index caa5c20e7..d84dff3c9 100644
   *
   * This function locates a named platform configuration file and returns
   * its absolute path to the pipeline handler. It searches the following
-@@ -596,7 +597,8 @@ void PipelineHandler::cancelRequest(Request *request)
+@@ -596,7 +597,8 @@
   * string if no configuration file can be found
   */
  std::string PipelineHandler::configurationFile(const std::string &subdir,
@@ -53,7 +49,7 @@ index caa5c20e7..d84dff3c9 100644
  {
  	std::string confPath;
  	struct stat statbuf;
-@@ -626,9 +628,11 @@ std::string PipelineHandler::configurationFile(const std::string &subdir,
+@@ -626,9 +628,11 @@
  	if (ret == 0 && (statbuf.st_mode & S_IFMT) == S_IFREG)
  		return confPath;
  
@@ -68,6 +64,3 @@ index caa5c20e7..d84dff3c9 100644
  
  	return std::string();
  }
--- 
-GitLab
-

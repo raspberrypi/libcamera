@@ -18,11 +18,9 @@ Reviewed-by: Kieran Bingham <kieran.bingham@ideasonboard.com>
  src/libcamera/pipeline/virtual/virtual.cpp | 15 +++++++++++----
  1 file changed, 11 insertions(+), 4 deletions(-)
 
-diff --git a/src/libcamera/pipeline/virtual/virtual.cpp b/src/libcamera/pipeline/virtual/virtual.cpp
-index e692a5433..469f56556 100644
 --- a/src/libcamera/pipeline/virtual/virtual.cpp
 +++ b/src/libcamera/pipeline/virtual/virtual.cpp
-@@ -329,10 +329,17 @@ bool PipelineHandlerVirtual::match([[maybe_unused]] DeviceEnumerator *enumerator
+@@ -330,10 +330,17 @@
  
  	created_ = true;
  
@@ -44,6 +42,3 @@ index e692a5433..469f56556 100644
  		return false;
  	}
  
--- 
-GitLab
-

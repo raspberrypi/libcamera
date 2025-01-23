@@ -3,6 +3,7 @@
 libipa_headers = files([
     'agc_mean_luminance.h',
     'algorithm.h',
+    'awb.h',
     'camera_sensor_helper.h',
     'colours.h',
     'exposure_mode_helper.h',
@@ -19,6 +20,7 @@ libipa_headers = files([
 libipa_sources = files([
     'agc_mean_luminance.cpp',
     'algorithm.cpp',
+    'awb.cpp',
     'camera_sensor_helper.cpp',
     'colours.cpp',
     'exposure_mode_helper.cpp',

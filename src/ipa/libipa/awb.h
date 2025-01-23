@@ -1,0 +1,50 @@
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
+/*
+ * Copyright (C) 2024 Ideas on Board Oy
+ *
+ * Generic AWB algorithms
+ */
+
+#pragma once
+
+#include <libcamera/controls.h>
+#include "libcamera/internal/vector.h"
+#include "libcamera/internal/yaml_parser.h"
+
+namespace libcamera {
+
+namespace ipa {
+
+struct AwbResult {
+	RGB<double> gains;
+	double colourTemperature;
+};
+
+struct AwbStats {
+	virtual double computeColourError(const RGB<double> &gains) const = 0;
+	virtual RGB<double> getRGBMeans() const = 0;
+};
+
+class AwbAlgorithm
+{
+public:
+	virtual ~AwbAlgorithm() = default;
+
+	virtual int init(const YamlObject &tuningData) = 0;
+	virtual AwbResult calculateAwb(const AwbStats &stats, int lux) = 0;
+	virtual RGB<double> gainsFromColourTemperature(double colourTemperature) = 0;
+
+	const ControlInfoMap::Map &controls() const
+	{
+		return controls_;
+	}
+
+	virtual void handleControls([[maybe_unused]] const ControlList &controls) {}
+
+protected:
+	ControlInfoMap::Map controls_;
+};
+
+} /* namespace ipa */
+
+} /* namespace libcamera */

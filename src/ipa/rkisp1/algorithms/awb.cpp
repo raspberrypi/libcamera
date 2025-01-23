@@ -125,7 +125,8 @@ int Awb::configure(IPAContext &context,
 		   const IPACameraSensorInfo &configInfo)
 {
 	context.activeState.awb.gains.manual = RGB<double>{ 1.0 };
-	context.activeState.awb.gains.automatic = RGB<double>{ 1.0 };
+	context.activeState.awb.gains.automatic =
+		awbAlgo_->gainsFromColourTemperature(kDefaultColourTemperature);
 	context.activeState.awb.autoEnabled = true;
 	context.activeState.awb.temperatureK = kDefaultColourTemperature;
 

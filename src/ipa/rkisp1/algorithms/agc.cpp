@@ -149,13 +149,13 @@ int Agc::init(IPAContext &context, const YamlObject &tuningData)
 		return ret;
 
 	context.ctrlMap[&controls::ExposureTimeMode] =
-		ControlInfo(static_cast<int32_t>(controls::ExposureTimeModeAuto),
-			    static_cast<int32_t>(controls::ExposureTimeModeManual),
-			    static_cast<int32_t>(controls::ExposureTimeModeAuto));
+		ControlInfo({ { ControlValue(controls::ExposureTimeModeAuto),
+				ControlValue(controls::ExposureTimeModeManual) } },
+			    controls::ExposureTimeModeAuto);
 	context.ctrlMap[&controls::AnalogueGainMode] =
-		ControlInfo(static_cast<int32_t>(controls::AnalogueGainModeAuto),
-			    static_cast<int32_t>(controls::AnalogueGainModeManual),
-			    static_cast<int32_t>(controls::AnalogueGainModeAuto));
+		ControlInfo({ { ControlValue(controls::AnalogueGainModeAuto),
+				ControlValue(controls::AnalogueGainModeManual) } },
+			    controls::AnalogueGainModeAuto);
 	/* \todo Move this to the Camera class */
 	context.ctrlMap[&controls::AeEnable] = ControlInfo(false, true, true);
 	context.ctrlMap.merge(controls());

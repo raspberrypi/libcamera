@@ -7,6 +7,7 @@
 
 #include "ppm_writer.h"
 
+#include <errno.h>
 #include <fstream>
 #include <iostream>
 

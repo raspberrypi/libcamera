@@ -291,10 +291,12 @@ int SoftwareIsp::queueBuffers(uint32_t frame, FrameBuffer *input,
 	if (outputs.empty())
 		return -EINVAL;
 
+	/* We only support a single stream for now. */
+	if (outputs.size() != 1)
+		return -EINVAL;
+
 	for (auto [stream, buffer] : outputs) {
 		if (!buffer)
-			return -EINVAL;
-		if (outputs.size() != 1) /* only single stream atm */
 			return -EINVAL;
 	}
 

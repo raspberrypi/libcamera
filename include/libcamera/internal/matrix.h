@@ -66,6 +66,8 @@ public:
 		return out.str();
 	}
 
+	Span<const T, Rows * Cols> data() const { return data_; }
+
 	Span<const T, Cols> operator[](size_t i) const
 	{
 		return Span<const T, Cols>{ &data_.data()[i * Cols], Cols };

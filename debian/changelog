@@ -1,6 +1,7 @@
 libcamera (0.4.0-4) UNRELEASED; urgency=medium
 
   * Add patch disabling libunwind integration (Closes: #1093688)
+  * Add Forwarded field for fix_detection_libyuv.patch
 
  -- Dylan Aïssi <daissi@debian.org>  Mon, 27 Jan 2025 10:11:51 +0100
 

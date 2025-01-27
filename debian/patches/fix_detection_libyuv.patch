@@ -1,6 +1,7 @@
 Description: Fix detection of system libyuv by relying on the find_library
  function as fallback detection mechanism.
 Author: Dylan Aïssi <daissi@debian.org>
+Forwarded: https://lists.libcamera.org/pipermail/libcamera-devel/2025-January/048215.html
 
 --- a/src/meson.build
 +++ b/src/meson.build

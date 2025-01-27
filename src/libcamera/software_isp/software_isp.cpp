@@ -13,6 +13,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <libcamera/controls.h>
 #include <libcamera/formats.h>
 #include <libcamera/stream.h>
 
@@ -60,9 +61,11 @@ LOG_DEFINE_CATEGORY(SoftwareIsp)
  * \brief Constructs SoftwareIsp object
  * \param[in] pipe The pipeline handler in use
  * \param[in] sensor Pointer to the CameraSensor instance owned by the pipeline
+ * \param[out] ipaControls The IPA controls to update
  * handler
  */
-SoftwareIsp::SoftwareIsp(PipelineHandler *pipe, const CameraSensor *sensor)
+SoftwareIsp::SoftwareIsp(PipelineHandler *pipe, const CameraSensor *sensor,
+			 ControlInfoMap *ipaControls)
 	: dmaHeap_(DmaBufAllocator::DmaBufAllocatorFlag::CmaHeap |
 		   DmaBufAllocator::DmaBufAllocatorFlag::SystemHeap |
 		   DmaBufAllocator::DmaBufAllocatorFlag::UDmaBuf)
@@ -124,7 +127,8 @@ SoftwareIsp::SoftwareIsp(PipelineHandler *pipe, const CameraSensor *sensor)
 	int ret = ipa_->init(IPASettings{ ipaTuningFile, sensor->model() },
 			     debayer_->getStatsFD(),
 			     sharedParams_.fd(),
-			     sensor->controls());
+			     sensor->controls(),
+			     ipaControls);
 	if (ret) {
 		LOG(SoftwareIsp, Error) << "IPA init failed";
 		debayer_.reset();
@@ -256,25 +260,7 @@ int SoftwareIsp::exportBuffers(const Stream *stream, unsigned int count,
 	if (stream == nullptr)
 		return -EINVAL;
 
-	for (unsigned int i = 0; i < count; i++) {
-		const std::string name = "frame-" + std::to_string(i);
-		const size_t frameSize = debayer_->frameSize();
-
-		FrameBuffer::Plane outPlane;
-		outPlane.fd = SharedFD(dmaHeap_.alloc(name.c_str(), frameSize));
-		if (!outPlane.fd.isValid()) {
-			LOG(SoftwareIsp, Error)
-				<< "failed to allocate a dma_buf";
-			return -ENOMEM;
-		}
-		outPlane.offset = 0;
-		outPlane.length = frameSize;
-
-		std::vector<FrameBuffer::Plane> planes{ outPlane };
-		buffers->emplace_back(std::make_unique<FrameBuffer>(std::move(planes)));
-	}
-
-	return count;
+	return dmaHeap_.exportBuffers(count, { debayer_->frameSize() }, buffers);
 }
 
 /**
@@ -351,7 +337,7 @@ void SoftwareIsp::stop()
  */
 void SoftwareIsp::process(uint32_t frame, FrameBuffer *input, FrameBuffer *output)
 {
-	ipa_->fillParamsBuffer(frame);
+	ipa_->computeParams(frame);
 	debayer_->invokeMethod(&DebayerCpu::process,
 			       ConnectionTypeQueued, frame, input, output, debayerParams_);
 }

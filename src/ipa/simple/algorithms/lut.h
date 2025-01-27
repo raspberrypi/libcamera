@@ -19,7 +19,13 @@ public:
 	Lut() = default;
 	~Lut() = default;
 
+	int init(IPAContext &context, const YamlObject &tuningData) override;
 	int configure(IPAContext &context, const IPAConfigInfo &configInfo) override;
+	void queueRequest(typename Module::Context &context,
+			  const uint32_t frame,
+			  typename Module::FrameContext &frameContext,
+			  const ControlList &controls)
+		override;
 	void prepare(IPAContext &context,
 		     const uint32_t frame,
 		     IPAFrameContext &frameContext,

@@ -188,6 +188,20 @@ const std::map<uint32_t, MediaBusFormatInfo> mediaBusFormatInfo{
 		.bitsPerPixel = 24,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
 	} },
+	{ MEDIA_BUS_FMT_RGB121212_1X36, {
+		.name = "RGB121212_1X36",
+		.code = MEDIA_BUS_FMT_RGB121212_1X36,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 36,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
+	} },
+	{ MEDIA_BUS_FMT_RGB202020_1X60, {
+		.name = "RGB202020_1X60",
+		.code = MEDIA_BUS_FMT_RGB202020_1X60,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 60,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRGB,
+	} },
 	{ MEDIA_BUS_FMT_ARGB8888_1X32, {
 		.name = "ARGB8888_1X32",
 		.code = MEDIA_BUS_FMT_ARGB8888_1X32,
@@ -678,6 +692,34 @@ const std::map<uint32_t, MediaBusFormatInfo> mediaBusFormatInfo{
 		.bitsPerPixel = 16,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW
 	} },
+	{ MEDIA_BUS_FMT_SBGGR20_1X20, {
+		.name = "SBGGR20_1X20",
+		.code = MEDIA_BUS_FMT_SBGGR20_1X20,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 20,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW
+	} },
+	{ MEDIA_BUS_FMT_SGBRG20_1X20, {
+		.name = "SGBRG20_1X20",
+		.code = MEDIA_BUS_FMT_SGBRG20_1X20,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 20,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW
+	} },
+	{ MEDIA_BUS_FMT_SGRBG20_1X20, {
+		.name = "SGRBG20_1X20",
+		.code = MEDIA_BUS_FMT_SGRBG20_1X20,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 20,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW
+	} },
+	{ MEDIA_BUS_FMT_SRGGB20_1X20, {
+		.name = "SRGGB20_1X20",
+		.code = MEDIA_BUS_FMT_SRGGB20_1X20,
+		.type = MediaBusFormatInfo::Type::Image,
+		.bitsPerPixel = 20,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW
+	} },
 	/* \todo Clarify colour encoding for HSV formats */
 	{ MEDIA_BUS_FMT_AHSV8888_1X32, {
 		.name = "AHSV8888_1X32",
@@ -697,6 +739,69 @@ const std::map<uint32_t, MediaBusFormatInfo> mediaBusFormatInfo{
 		.name = "METADATA_FIXED",
 		.code = MEDIA_BUS_FMT_METADATA_FIXED,
 		.type = MediaBusFormatInfo::Type::Metadata,
+		.bitsPerPixel = 0,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+	} },
+	{ MEDIA_BUS_FMT_META_8, {
+		.name = "META_8",
+		.code = MEDIA_BUS_FMT_META_8,
+		.type = MediaBusFormatInfo::Type::Metadata,
+		.bitsPerPixel = 8,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+	} },
+	{ MEDIA_BUS_FMT_META_10, {
+		.name = "META_10",
+		.code = MEDIA_BUS_FMT_META_10,
+		.type = MediaBusFormatInfo::Type::Metadata,
+		.bitsPerPixel = 10,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+	} },
+	{ MEDIA_BUS_FMT_META_12, {
+		.name = "META_12",
+		.code = MEDIA_BUS_FMT_META_12,
+		.type = MediaBusFormatInfo::Type::Metadata,
+		.bitsPerPixel = 12,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+	} },
+	{ MEDIA_BUS_FMT_META_14, {
+		.name = "META_14",
+		.code = MEDIA_BUS_FMT_META_14,
+		.type = MediaBusFormatInfo::Type::Metadata,
+		.bitsPerPixel = 14,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+	} },
+	{ MEDIA_BUS_FMT_META_16, {
+		.name = "META_16",
+		.code = MEDIA_BUS_FMT_META_16,
+		.type = MediaBusFormatInfo::Type::Metadata,
+		.bitsPerPixel = 16,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+	} },
+	{ MEDIA_BUS_FMT_META_20, {
+		.name = "META_20",
+		.code = MEDIA_BUS_FMT_META_20,
+		.type = MediaBusFormatInfo::Type::Metadata,
+		.bitsPerPixel = 20,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+	} },
+	{ MEDIA_BUS_FMT_META_24, {
+		.name = "META_24",
+		.code = MEDIA_BUS_FMT_META_24,
+		.type = MediaBusFormatInfo::Type::Metadata,
+		.bitsPerPixel = 24,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+	} },
+	{ MEDIA_BUS_FMT_CCS_EMBEDDED, {
+		.name = "CCS_EMBEDDED",
+		.code = MEDIA_BUS_FMT_CCS_EMBEDDED,
+		.type = MediaBusFormatInfo::Type::EmbeddedData,
+		.bitsPerPixel = 0,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+	} },
+	{ MEDIA_BUS_FMT_OV2740_EMBEDDED, {
+		.name = "OV2740_EMBEDDED",
+		.code = MEDIA_BUS_FMT_CCS_EMBEDDED,
+		.type = MediaBusFormatInfo::Type::EmbeddedData,
 		.bitsPerPixel = 0,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 	} },

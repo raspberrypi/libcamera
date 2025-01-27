@@ -17,14 +17,14 @@ interface IPASoftInterface {
 	     libcamera.SharedFD fdStats,
 	     libcamera.SharedFD fdParams,
 	     libcamera.ControlInfoMap sensorCtrlInfoMap)
-		=> (int32 ret);
+		=> (int32 ret, libcamera.ControlInfoMap ipaControls);
 	start() => (int32 ret);
 	stop();
 	configure(IPAConfigInfo configInfo)
 		=> (int32 ret);
 
 	[async] queueRequest(uint32 frame, libcamera.ControlList sensorControls);
-	[async] fillParamsBuffer(uint32 frame);
+	[async] computeParams(uint32 frame);
 	[async] processStats(uint32 frame,
 			     uint32 bufferId,
 			     libcamera.ControlList sensorControls);

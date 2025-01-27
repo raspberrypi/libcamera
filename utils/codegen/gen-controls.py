@@ -71,7 +71,7 @@ def main(argv):
         ctrls = controls.setdefault(vendor, [])
 
         for i, ctrl in enumerate(data['controls']):
-            ctrl = Control(*ctrl.popitem(), vendor)
+            ctrl = Control(*ctrl.popitem(), vendor, args.mode)
             ctrls.append(extend_control(ctrl, i, ranges))
 
     # Sort the vendors by range numerical value

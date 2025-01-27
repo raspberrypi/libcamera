@@ -7,6 +7,7 @@
 
 #include "py_main.h"
 
+#include <limits>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -401,10 +402,22 @@ PYBIND11_MODULE(_libcamera, m)
 		.def_property_readonly("name", &ControlId::name)
 		.def_property_readonly("vendor", &ControlId::vendor)
 		.def_property_readonly("type", &ControlId::type)
+		.def_property_readonly("isArray", &ControlId::isArray)
+		.def_property_readonly("size", &ControlId::size)
 		.def("__str__", [](const ControlId &self) { return self.name(); })
 		.def("__repr__", [](const ControlId &self) {
-			return py::str("libcamera.ControlId({}, {}.{}, {})")
-				.format(self.id(), self.vendor(), self.name(), self.type());
+			std::string sizeStr = "";
+			if (self.isArray()) {
+				sizeStr = "[";
+				size_t size = self.size();
+				if (size == std::numeric_limits<size_t>::max())
+					sizeStr += "n";
+				else
+					sizeStr += std::to_string(size);
+				sizeStr += "]";
+			}
+			return py::str("libcamera.ControlId({}, {}.{}{}, {})")
+				.format(self.id(), self.vendor(), self.name(), sizeStr, self.type());
 		})
 		.def("enumerators", &ControlId::enumerators);
 

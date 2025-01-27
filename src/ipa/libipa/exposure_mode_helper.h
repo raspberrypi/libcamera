@@ -24,26 +24,26 @@ public:
 	ExposureModeHelper(const Span<std::pair<utils::Duration, double>> stages);
 	~ExposureModeHelper() = default;
 
-	void setLimits(utils::Duration minShutter, utils::Duration maxShutter,
+	void setLimits(utils::Duration minExposureTime, utils::Duration maxExposureTime,
 		       double minGain, double maxGain);
 
 	std::tuple<utils::Duration, double, double>
 	splitExposure(utils::Duration exposure) const;
 
-	utils::Duration minShutter() const { return minShutter_; }
-	utils::Duration maxShutter() const { return maxShutter_; }
+	utils::Duration minExposureTime() const { return minExposureTime_; }
+	utils::Duration maxExposureTime() const { return maxExposureTime_; }
 	double minGain() const { return minGain_; }
 	double maxGain() const { return maxGain_; }
 
 private:
-	utils::Duration clampShutter(utils::Duration shutter) const;
+	utils::Duration clampExposureTime(utils::Duration exposureTime) const;
 	double clampGain(double gain) const;
 
-	std::vector<utils::Duration> shutters_;
+	std::vector<utils::Duration> exposureTimes_;
 	std::vector<double> gains_;
 
-	utils::Duration minShutter_;
-	utils::Duration maxShutter_;
+	utils::Duration minExposureTime_;
+	utils::Duration maxExposureTime_;
 	double minGain_;
 	double maxGain_;
 };

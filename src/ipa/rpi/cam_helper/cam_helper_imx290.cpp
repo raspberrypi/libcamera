@@ -17,8 +17,6 @@ public:
 	CamHelperImx290();
 	uint32_t gainCode(double gain) const override;
 	double gain(uint32_t gainCode) const override;
-	void getDelays(int &exposureDelay, int &gainDelay,
-		       int &vblankDelay, int &hblankDelay) const override;
 	unsigned int hideFramesStartup() const override;
 	unsigned int hideFramesModeSwitch() const override;
 
@@ -46,15 +44,6 @@ double CamHelperImx290::gain(uint32_t gainCode) const
 	return std::pow(10, 0.015 * gainCode);
 }
 
-void CamHelperImx290::getDelays(int &exposureDelay, int &gainDelay,
-				int &vblankDelay, int &hblankDelay) const
-{
-	exposureDelay = 2;
-	gainDelay = 2;
-	vblankDelay = 2;
-	hblankDelay = 2;
-}
-
 unsigned int CamHelperImx290::hideFramesStartup() const
 {
 	/* On startup, we seem to get 1 bad frame. */
@@ -73,3 +62,5 @@ static CamHelper *create()
 }
 
 static RegisterCamHelper reg("imx290", &create);
+static RegisterCamHelper reg327("imx327", &create);
+static RegisterCamHelper reg462("imx462", &create);

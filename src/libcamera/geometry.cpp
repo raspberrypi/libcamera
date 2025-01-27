@@ -838,6 +838,55 @@ Rectangle Rectangle::translatedBy(const Point &point) const
 }
 
 /**
+ * \brief Transform a Rectangle from one reference rectangle to another
+ * \param[in] source The \a source reference rectangle
+ * \param[in] destination The \a destination reference rectangle
+ *
+ * The \a source and \a destination parameters describe two rectangles defined
+ * in different reference systems. The Rectangle is translated from the source
+ * reference system into the destination reference system.
+ *
+ * The typical use case for this function is to translate a selection rectangle
+ * specified in a reference system, in example the sensor's pixel array, into
+ * the same rectangle re-scaled and translated into a different reference
+ * system, in example the output frame on which the selection rectangle is
+ * applied to.
+ *
+ * For example, consider a sensor with a resolution of 4040x2360 pixels and a
+ * assume a rectangle of (100, 100)/3840x2160 (sensorFrame) in sensor
+ * coordinates is mapped to a rectangle (0,0)/(1920,1080) (displayFrame) in
+ * display coordinates. This function can be used to transform an arbitrary
+ * rectangle from display coordinates to sensor coordinates or vice versa:
+ *
+ * \code{.cpp}
+ * Rectangle sensorReference(100, 100, 3840, 2160);
+ * Rectangle displayReference(0, 0, 1920, 1080);
+ *
+ * // Bottom right quarter in sensor coordinates
+ * Rectangle sensorRect(2020, 100, 1920, 1080);
+ * displayRect = sensorRect.transformedBetween(sensorReference, displayReference);
+ * // displayRect is now (960, 540)/960x540
+ *
+ * // Transformation back to sensor coordinates
+ * sensorRect = displayRect.transformedBetween(displayReference, sensorReference);
+ * \endcode
+ */
+Rectangle Rectangle::transformedBetween(const Rectangle &source,
+					const Rectangle &destination) const
+{
+	Rectangle r;
+	double sx = static_cast<double>(destination.width) / source.width;
+	double sy = static_cast<double>(destination.height) / source.height;
+
+	r.x = static_cast<int>((x - source.x) * sx) + destination.x;
+	r.y = static_cast<int>((y - source.y) * sy) + destination.y;
+	r.width = static_cast<int>(width * sx);
+	r.height = static_cast<int>(height * sy);
+
+	return r;
+}
+
+/**
  * \brief Compare rectangles for equality
  * \return True if the two rectangles are equal, false otherwise
  */

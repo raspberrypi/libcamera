@@ -1,0 +1,34 @@
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
+
+module ipa.mali_c55;
+
+import "include/libcamera/ipa/core.mojom";
+
+struct IPAConfigInfo {
+	libcamera.IPACameraSensorInfo sensorInfo;
+	libcamera.ControlInfoMap sensorControls;
+};
+
+interface IPAMaliC55Interface {
+	init(libcamera.IPASettings settings, IPAConfigInfo configInfo)
+		=> (int32 ret, libcamera.ControlInfoMap ipaControls);
+	start() => (int32 ret);
+	stop();
+
+	configure(IPAConfigInfo configInfo, uint8 bayerOrder)
+		=> (int32 ret, libcamera.ControlInfoMap ipaControls);
+
+	mapBuffers(array<libcamera.IPABuffer> buffers, bool readOnly);
+	unmapBuffers(array<libcamera.IPABuffer> buffers);
+
+	[async] queueRequest(uint32 request, libcamera.ControlList reqControls);
+	[async] fillParams(uint32 request, uint32 bufferId);
+	[async] processStats(uint32 request, uint32 bufferId,
+			     libcamera.ControlList sensorControls);
+};
+
+interface IPAMaliC55EventInterface {
+	paramsComputed(uint32 request);
+	statsProcessed(uint32 request, libcamera.ControlList metadata);
+	setSensorControls(libcamera.ControlList sensorControls);
+};

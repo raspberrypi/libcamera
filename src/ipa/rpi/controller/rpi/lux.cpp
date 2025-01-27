@@ -40,7 +40,7 @@ int Lux::read(const libcamera::YamlObject &params)
 	auto value = params["reference_shutter_speed"].get<double>();
 	if (!value)
 		return -EINVAL;
-	referenceShutterSpeed_ = *value * 1.0us;
+	referenceExposureTime_ = *value * 1.0us;
 
 	value = params["reference_gain"].get<double>();
 	if (!value)
@@ -82,11 +82,11 @@ void Lux::process(StatisticsPtr &stats, Metadata *imageMetadata)
 		double currentAperture = deviceStatus.aperture.value_or(currentAperture_);
 		double currentY = stats->yHist.interQuantileMean(0, 1);
 		double gainRatio = referenceGain_ / currentGain;
-		double shutterSpeedRatio =
-			referenceShutterSpeed_ / deviceStatus.shutterSpeed;
+		double exposureTimeRatio =
+			referenceExposureTime_ / deviceStatus.exposureTime;
 		double apertureRatio = referenceAperture_ / currentAperture;
 		double yRatio = currentY * (65536 / stats->yHist.bins()) / referenceY_;
-		double estimatedLux = shutterSpeedRatio * gainRatio *
+		double estimatedLux = exposureTimeRatio * gainRatio *
 				      apertureRatio * apertureRatio *
 				      yRatio * referenceLux_;
 		LuxStatus status;

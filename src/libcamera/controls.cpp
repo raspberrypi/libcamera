@@ -54,6 +54,8 @@ static constexpr size_t ControlValueSize[] = {
 	[ControlTypeNone]		= 0,
 	[ControlTypeBool]		= sizeof(bool),
 	[ControlTypeByte]		= sizeof(uint8_t),
+	[ControlTypeUnsigned16]		= sizeof(uint16_t),
+	[ControlTypeUnsigned32]		= sizeof(uint32_t),
 	[ControlTypeInteger32]		= sizeof(int32_t),
 	[ControlTypeInteger64]		= sizeof(int64_t),
 	[ControlTypeFloat]		= sizeof(float),
@@ -74,10 +76,14 @@ static constexpr size_t ControlValueSize[] = {
  * The control stores a boolean value
  * \var ControlTypeByte
  * The control stores a byte value as an unsigned 8-bit integer
+ * \var ControlTypeUnsigned16
+ * The control stores an unsigned 16-bit integer value
+ * \var ControlTypeUnsigned32
+ * The control stores an unsigned 32-bit integer value
  * \var ControlTypeInteger32
- * The control stores a 32-bit integer value
+ * The control stores a signed 32-bit integer value
  * \var ControlTypeInteger64
- * The control stores a 64-bit integer value
+ * The control stores a signed 64-bit integer value
  * \var ControlTypeFloat
  * The control stores a 32-bit floating point value
  * \var ControlTypeString
@@ -227,6 +233,16 @@ std::string ControlValue::toString() const
 		}
 		case ControlTypeByte: {
 			const uint8_t *value = reinterpret_cast<const uint8_t *>(data);
+			str += std::to_string(*value);
+			break;
+		}
+		case ControlTypeUnsigned16: {
+			const uint16_t *value = reinterpret_cast<const uint16_t *>(data);
+			str += std::to_string(*value);
+			break;
+		}
+		case ControlTypeUnsigned32: {
+			const uint32_t *value = reinterpret_cast<const uint32_t *>(data);
 			str += std::to_string(*value);
 			break;
 		}
@@ -396,15 +412,16 @@ void ControlValue::reserve(ControlType type, bool isArray, std::size_t numElemen
  * \param[in] name The control name
  * \param[in] vendor The vendor name
  * \param[in] type The control data type
+ * \param[in] direction The direction of the control, if it can be used in Controls or Metadata
  * \param[in] size The size of the array control, or 0 if scalar control
  * \param[in] enumStrMap The map from enum names to values (optional)
  */
 ControlId::ControlId(unsigned int id, const std::string &name,
 		     const std::string &vendor, ControlType type,
-		     std::size_t size,
+		     DirectionFlags direction, std::size_t size,
 		     const std::map<std::string, int32_t> &enumStrMap)
-	: id_(id), name_(name), vendor_(vendor), type_(type), size_(size),
-	  enumStrMap_(enumStrMap)
+	: id_(id), name_(name), vendor_(vendor), type_(type),
+	  direction_(direction), size_(size), enumStrMap_(enumStrMap)
 {
 	for (const auto &pair : enumStrMap_)
 		reverseMap_[pair.second] = pair.first;
@@ -432,6 +449,37 @@ ControlId::ControlId(unsigned int id, const std::string &name,
  * \fn ControlType ControlId::type() const
  * \brief Retrieve the control data type
  * \return The control data type
+ */
+
+/**
+ * \fn DirectionFlags ControlId::direction() const
+ * \brief Return the direction that the control can be used in
+ *
+ * This is similar to \sa isInput() and \sa isOutput(), but returns the flags
+ * direction instead of booleans for each direction.
+ *
+ * \return The direction flags corresponding to if the control can be used as
+ * an input control or as output metadata
+ */
+
+/**
+ * \fn bool ControlId::isInput() const
+ * \brief Determine if the control is available to be used as an input control
+ *
+ * Controls can be used either as input in controls, or as output in metadata.
+ * This function checks if the control is allowed to be used as the former.
+ *
+ * \return True if the control can be used as an input control, false otherwise
+ */
+
+/**
+ * \fn bool ControlId::isOutput() const
+ * \brief Determine if the control is available to be used in output metadata
+ *
+ * Controls can be used either as input in controls, or as output in metadata.
+ * This function checks if the control is allowed to be used as the latter.
+ *
+ * \return True if the control can be returned in output metadata, false otherwise
  */
 
 /**
@@ -472,6 +520,22 @@ ControlId::ControlId(unsigned int id, const std::string &name,
  */
 
 /**
+ * \enum ControlId::Direction
+ * \brief The direction the control is capable of being passed from/to
+ *
+ * \var ControlId::Direction::In
+ * \brief The control can be passed as input in controls
+ *
+ * \var ControlId::Direction::Out
+ * \brief The control can be returned as output in metadata
+ */
+
+/**
+ * \typedef ControlId::DirectionFlags
+ * \brief A wrapper for ControlId::Direction so that it can be used as flags
+ */
+
+/**
  * \class Control
  * \brief Describe a control and its intrinsic properties
  *
@@ -504,6 +568,8 @@ ControlId::ControlId(unsigned int id, const std::string &name,
  * \param[in] id The control numerical ID
  * \param[in] name The control name
  * \param[in] vendor The vendor name
+ * \param[in] direction The direction of the control, if it can be used in
+ * Controls or Metadata
  * \param[in] enumStrMap The map from enum names to values (optional)
  *
  * The control data type is automatically deduced from the template type T.

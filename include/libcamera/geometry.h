@@ -299,6 +299,9 @@ public:
 	__nodiscard Rectangle scaledBy(const Size &numerator,
 				       const Size &denominator) const;
 	__nodiscard Rectangle translatedBy(const Point &point) const;
+
+	Rectangle transformedBetween(const Rectangle &source,
+				     const Rectangle &target) const;
 };
 
 bool operator==(const Rectangle &lhs, const Rectangle &rhs);

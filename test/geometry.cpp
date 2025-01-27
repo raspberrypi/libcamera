@@ -495,6 +495,17 @@ protected:
 			return TestFail;
 		}
 
+		Rectangle f1 = Rectangle(100, 200, 3000, 2000);
+		Rectangle f2 = Rectangle(200, 300, 1500, 1000);
+		/* Bottom right quarter of the corresponding frames. */
+		Rectangle r1 = Rectangle(100 + 1500, 200 + 1000, 1500, 1000);
+		Rectangle r2 = Rectangle(200 + 750, 300 + 500, 750, 500);
+		if (r1.transformedBetween(f1, f2) != r2 ||
+		    r2.transformedBetween(f2, f1) != r1) {
+			cout << "Rectangle::transformedBetween() test failed" << endl;
+			return TestFail;
+		}
+
 		return TestPass;
 	}
 };

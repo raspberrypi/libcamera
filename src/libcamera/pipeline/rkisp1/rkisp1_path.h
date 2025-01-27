@@ -62,6 +62,7 @@ public:
 
 	int queueBuffer(FrameBuffer *buffer) { return video_->queueBuffer(buffer); }
 	Signal<FrameBuffer *> &bufferReady() { return video_->bufferReady; }
+	const Size &maxResolution() const { return maxResolution_; }
 
 private:
 	void populateFormats();

@@ -105,7 +105,7 @@ CameraConfiguration::Status RPiCameraConfiguration::validateColorSpaces([[maybe_
 	Status status = Valid;
 	yuvColorSpace_.reset();
 
-	for (auto cfg : config_) {
+	for (auto &cfg : config_) {
 		/* First fix up raw streams to have the "raw" colour space. */
 		if (PipelineHandlerBase::isRaw(cfg.pixelFormat)) {
 			/* If there was no value here, that doesn't count as "adjusted". */
@@ -130,7 +130,7 @@ CameraConfiguration::Status RPiCameraConfiguration::validateColorSpaces([[maybe_
 	rgbColorSpace_->range = ColorSpace::Range::Full;
 
 	/* Go through the streams again and force everyone to the same colour space. */
-	for (auto cfg : config_) {
+	for (auto &cfg : config_) {
 		if (cfg.colorSpace == ColorSpace::Raw)
 			continue;
 
@@ -686,6 +686,9 @@ int PipelineHandlerBase::start(Camera *camera, const ControlList *controls)
 		return ret;
 	}
 
+	/* A good moment to add an initial clock sample. */
+	data->wallClockRecovery_.addSample();
+
 	/*
 	 * Reset the delayed controls with the gain and exposure values set by
 	 * the IPA.
@@ -790,11 +793,8 @@ int PipelineHandlerBase::registerCamera(std::unique_ptr<RPi::CameraData> &camera
 	CameraData *data = cameraData.get();
 	int ret;
 
-	data->sensor_ = std::make_unique<CameraSensor>(sensorEntity);
+	data->sensor_ = CameraSensorFactoryBase::create(sensorEntity);
 	if (!data->sensor_)
-		return -EINVAL;
-
-	if (data->sensor_->init())
 		return -EINVAL;
 
 	/* Populate the map of sensor supported formats and sizes. */
@@ -819,11 +819,12 @@ int PipelineHandlerBase::registerCamera(std::unique_ptr<RPi::CameraData> &camera
 	 * Setup our delayed control writer with the sensor default
 	 * gain and exposure delays. Mark VBLANK for priority write.
 	 */
+	const CameraSensorProperties::SensorDelays &delays = data->sensor_->sensorDelays();
 	std::unordered_map<uint32_t, RPi::DelayedControls::ControlParams> params = {
-		{ V4L2_CID_ANALOGUE_GAIN, { result.sensorConfig.gainDelay, false } },
-		{ V4L2_CID_EXPOSURE, { result.sensorConfig.exposureDelay, false } },
-		{ V4L2_CID_HBLANK, { result.sensorConfig.hblankDelay, false } },
-		{ V4L2_CID_VBLANK, { result.sensorConfig.vblankDelay, true } }
+		{ V4L2_CID_ANALOGUE_GAIN, { delays.gainDelay, false } },
+		{ V4L2_CID_EXPOSURE, { delays.exposureDelay, false } },
+		{ V4L2_CID_HBLANK, { delays.hblankDelay, false } },
+		{ V4L2_CID_VBLANK, { delays.vblankDelay, true } }
 	};
 	data->delayedCtrls_ = std::make_unique<RPi::DelayedControls>(data->sensor_->device(), params);
 	data->sensorMetadata_ = result.sensorConfig.sensorMetadata;
@@ -1512,6 +1513,8 @@ void CameraData::fillRequestMetadata(const ControlList &bufferControls, Request 
 {
 	request->metadata().set(controls::SensorTimestamp,
 				bufferControls.get(controls::SensorTimestamp).value_or(0));
+	request->metadata().set(controls::FrameWallClock,
+				bufferControls.get(controls::FrameWallClock).value_or(0));
 
 	if (cropParams_.size()) {
 		std::vector<Rectangle> crops;

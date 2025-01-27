@@ -32,6 +32,7 @@ public:
 	~Private();
 
 	PipelineHandler *pipe() { return pipe_.get(); }
+	const PipelineHandler *pipe() const { return pipe_.get(); }
 
 	std::list<Request *> queuedRequests_;
 	ControlInfoMap controlInfo_;

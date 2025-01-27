@@ -431,7 +431,7 @@ void IpaPiSP::platformPrepareIsp([[maybe_unused]] const PrepareParams &params,
 	be_->SetGlobal(global);
 
 	/* Save this for TDN and HDR on the next frame. */
-	lastExposure_ = deviceStatus->shutterSpeed * deviceStatus->analogueGain;
+	lastExposure_ = deviceStatus->exposureTime * deviceStatus->analogueGain;
 
 	/* Lens control */
 	const AfStatus *afStatus = rpiMetadata.getLocked<AfStatus>("af.status");
@@ -689,7 +689,7 @@ void IpaPiSP::applySdn(const SdnStatus *sdnStatus, pisp_be_global_config &global
 void IpaPiSP::applyTdn(const TdnStatus *tdnStatus, const DeviceStatus *deviceStatus,
 		       pisp_be_global_config &global)
 {
-	utils::Duration exposure = deviceStatus->shutterSpeed * deviceStatus->analogueGain;
+	utils::Duration exposure = deviceStatus->exposureTime * deviceStatus->analogueGain;
 	pisp_be_tdn_config tdn = {};
 
 	double ratio = tdnReset_ ? 1.0 : exposure / lastExposure_;
@@ -833,7 +833,7 @@ bool IpaPiSP::applyStitch(const StitchStatus *stitchStatus, const DeviceStatus *
 	/* Whatever happens, we're going to output this buffer now. */
 	global.bayer_enables |= PISP_BE_BAYER_ENABLE_STITCH_OUTPUT;
 
-	utils::Duration exposure = deviceStatus->shutterSpeed * deviceStatus->analogueGain;
+	utils::Duration exposure = deviceStatus->exposureTime * deviceStatus->analogueGain;
 	lastStitchExposures_[hdrStatus->channel] = exposure;
 
 	/* If the other channel hasn't been seen there's nothing more we can do. */

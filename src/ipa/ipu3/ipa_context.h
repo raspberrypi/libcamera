@@ -33,8 +33,8 @@ struct IPASessionConfiguration {
 	} af;
 
 	struct {
-		utils::Duration minShutterSpeed;
-		utils::Duration maxShutterSpeed;
+		utils::Duration minExposureTime;
+		utils::Duration maxExposureTime;
 		double minAnalogueGain;
 		double maxAnalogueGain;
 	} agc;
@@ -84,6 +84,11 @@ struct IPAFrameContext : public FrameContext {
 };
 
 struct IPAContext {
+	IPAContext(unsigned int frameContextSize)
+		: frameContexts(frameContextSize)
+	{
+	}
+
 	IPASessionConfiguration configuration;
 	IPAActiveState activeState;
 

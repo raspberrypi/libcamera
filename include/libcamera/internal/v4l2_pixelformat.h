@@ -49,6 +49,8 @@ public:
 	static const std::vector<V4L2PixelFormat> &
 	fromPixelFormat(const PixelFormat &pixelFormat);
 
+	bool isGenericLineBasedMetadata() const;
+
 private:
 	uint32_t fourcc_;
 };

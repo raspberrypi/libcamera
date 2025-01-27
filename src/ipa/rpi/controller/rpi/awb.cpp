@@ -293,6 +293,24 @@ void Awb::setManualGains(double manualR, double manualB)
 	}
 }
 
+void Awb::setColourTemperature(double temperatureK)
+{
+	if (!config_.bayes) {
+		LOG(RPiAwb, Warning) << "AWB uncalibrated - cannot set colour temperature";
+		return;
+	}
+
+	temperatureK = config_.ctR.domain().clamp(temperatureK);
+	manualR_ = 1 / config_.ctR.eval(temperatureK);
+	manualB_ = 1 / config_.ctB.eval(temperatureK);
+
+	syncResults_.temperatureK = temperatureK;
+	syncResults_.gainR = manualR_;
+	syncResults_.gainG = 1.0;
+	syncResults_.gainB = manualB_;
+	prevSyncResults_ = syncResults_;
+}
+
 void Awb::switchMode([[maybe_unused]] CameraMode const &cameraMode,
 		     Metadata *metadata)
 {

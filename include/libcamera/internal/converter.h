@@ -41,6 +41,11 @@ public:
 
 	using Features = Flags<Feature>;
 
+	enum class Alignment {
+		Down = 0,
+		Up,
+	};
+
 	Converter(MediaDevice *media, Features features = Feature::None);
 	virtual ~Converter();
 
@@ -51,11 +56,22 @@ public:
 	virtual std::vector<PixelFormat> formats(PixelFormat input) = 0;
 	virtual SizeRange sizes(const Size &input) = 0;
 
+	virtual Size adjustInputSize(const PixelFormat &pixFmt,
+				     const Size &size,
+				     Alignment align = Alignment::Down) = 0;
+	virtual Size adjustOutputSize(const PixelFormat &pixFmt,
+				      const Size &size,
+				      Alignment align = Alignment::Down) = 0;
+
 	virtual std::tuple<unsigned int, unsigned int>
 	strideAndFrameSize(const PixelFormat &pixelFormat, const Size &size) = 0;
 
+	virtual int validateOutput(StreamConfiguration *cfg, bool *adjusted,
+				   Alignment align = Alignment::Down) = 0;
+
 	virtual int configure(const StreamConfiguration &inputCfg,
 			      const std::vector<std::reference_wrapper<StreamConfiguration>> &outputCfgs) = 0;
+	virtual bool isConfigured(const Stream *stream) const = 0;
 	virtual int exportBuffers(const Stream *stream, unsigned int count,
 				  std::vector<std::unique_ptr<FrameBuffer>> *buffers) = 0;
 
@@ -66,6 +82,7 @@ public:
 				 const std::map<const Stream *, FrameBuffer *> &outputs) = 0;
 
 	virtual int setInputCrop(const Stream *stream, Rectangle *rect) = 0;
+	virtual std::pair<Rectangle, Rectangle> inputCropBounds() = 0;
 	virtual std::pair<Rectangle, Rectangle> inputCropBounds(const Stream *stream) = 0;
 
 	Signal<FrameBuffer *> inputBufferReady;

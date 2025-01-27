@@ -392,7 +392,23 @@ StreamConfiguration::StreamConfiguration(const StreamFormats &formats)
  */
 std::string StreamConfiguration::toString() const
 {
-	return size.toString() + "-" + pixelFormat.toString();
+	std::stringstream ss;
+	ss << *this;
+
+	return ss.str();
+}
+
+/**
+ * \brief Insert a text representation of a StreamConfiguration into an output
+ * stream
+ * \param[in] out The output stream
+ * \param[in] cfg The StreamConfiguration
+ * \return The output stream \a out
+ */
+std::ostream &operator<<(std::ostream &out, const StreamConfiguration &cfg)
+{
+	out << cfg.size << "-" << cfg.pixelFormat;
+	return out;
 }
 
 /**

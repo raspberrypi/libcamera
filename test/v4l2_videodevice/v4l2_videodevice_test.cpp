@@ -64,8 +64,8 @@ int V4L2VideoDeviceTest::init()
 	format.size.height = 480;
 
 	if (driver_ == "vimc") {
-		sensor_ = new CameraSensor(media_->getEntityByName("Sensor A"));
-		if (sensor_->init())
+		sensor_ = CameraSensorFactoryBase::create(media_->getEntityByName("Sensor A"));
+		if (!sensor_)
 			return TestFail;
 
 		debayer_ = new V4L2Subdevice(media_->getEntityByName("Debayer A"));
@@ -98,6 +98,5 @@ void V4L2VideoDeviceTest::cleanup()
 	capture_->close();
 
 	delete debayer_;
-	delete sensor_;
 	delete capture_;
 }

@@ -28,6 +28,8 @@
 #include "controller/lux_status.h"
 #include "controller/sharpen_algorithm.h"
 #include "controller/statistics.h"
+#include "controller/sync_algorithm.h"
+#include "controller/sync_status.h"
 
 namespace libcamera {
 
@@ -72,6 +74,8 @@ const ControlInfoMap::Map ipaControls{
 	{ &controls::Sharpness, ControlInfo(0.0f, 16.0f, 1.0f) },
 	{ &controls::ScalerCrop, ControlInfo(Rectangle{}, Rectangle(65535, 65535, 65535, 65535), Rectangle{}) },
 	{ &controls::FrameDurationLimits, ControlInfo(INT64_C(33333), INT64_C(120000)) },
+	{ &controls::rpi::SyncMode, ControlInfo(controls::rpi::SyncModeValues) },
+	{ &controls::rpi::SyncFrames, ControlInfo(1, 1000000, 100) },
 	{ &controls::draft::NoiseReductionMode, ControlInfo(controls::draft::NoiseReductionModeValues) },
 	{ &controls::rpi::StatsOutputEnable, ControlInfo(false, true, false) },
 	{ &controls::rpi::CnnEnableInputTensor, ControlInfo(false, true, false) },
@@ -82,6 +86,7 @@ const ControlInfoMap::Map ipaColourControls{
 	{ &controls::AwbEnable, ControlInfo(false, true) },
 	{ &controls::AwbMode, ControlInfo(controls::AwbModeValues) },
 	{ &controls::ColourGains, ControlInfo(0.0f, 32.0f) },
+	{ &controls::ColourTemperature, ControlInfo(100, 100000) },
 	{ &controls::Saturation, ControlInfo(0.0f, 32.0f, 1.0f) },
 };
 
@@ -135,18 +140,8 @@ int32_t IpaBase::init(const IPASettings &settings, const InitParams &params, Ini
 		return -EINVAL;
 	}
 
-	/*
-	 * Pass out the sensor config to the pipeline handler in order
-	 * to setup the staggered writer class.
-	 */
-	int gainDelay, exposureDelay, vblankDelay, hblankDelay, sensorMetadata;
-	helper_->getDelays(exposureDelay, gainDelay, vblankDelay, hblankDelay);
-	sensorMetadata = helper_->sensorEmbeddedDataPresent();
-
-	result->sensorConfig.gainDelay = gainDelay;
-	result->sensorConfig.exposureDelay = exposureDelay;
-	result->sensorConfig.vblankDelay = vblankDelay;
-	result->sensorConfig.hblankDelay = hblankDelay;
+	/* Pass out the sensor metadata to the pipeline handler */
+	int sensorMetadata = helper_->sensorEmbeddedDataPresent();
 	result->sensorConfig.sensorMetadata = sensorMetadata;
 
 	/* Load the tuning file for this sensor. */
@@ -226,7 +221,7 @@ int32_t IpaBase::configure(const IPACameraSensorInfo &sensorInfo, const ConfigPa
 
 		/* Supply initial values for gain and exposure. */
 		AgcStatus agcStatus;
-		agcStatus.shutterTime = defaultExposureTime;
+		agcStatus.exposureTime = defaultExposureTime;
 		agcStatus.analogueGain = defaultAnalogueGain;
 		applyAGC(&agcStatus, ctrls);
 
@@ -267,8 +262,8 @@ int32_t IpaBase::configure(const IPACameraSensorInfo &sensorInfo, const ConfigPa
 			    static_cast<float>(mode_.maxAnalogueGain));
 
 	ctrlMap[&controls::ExposureTime] =
-		ControlInfo(static_cast<int32_t>(mode_.minShutter.get<std::micro>()),
-			    static_cast<int32_t>(mode_.maxShutter.get<std::micro>()));
+		ControlInfo(static_cast<int32_t>(mode_.minExposureTime.get<std::micro>()),
+			    static_cast<int32_t>(mode_.maxExposureTime.get<std::micro>()));
 
 	/* Declare colour processing related controls for non-mono sensors. */
 	if (!monoSensor_)
@@ -301,11 +296,11 @@ void IpaBase::start(const ControlList &controls, StartResult *result)
 
 	/* SwitchMode may supply updated exposure/gain values to use. */
 	AgcStatus agcStatus;
-	agcStatus.shutterTime = 0.0s;
+	agcStatus.exposureTime = 0.0s;
 	agcStatus.analogueGain = 0.0;
 
 	metadata.get("agc.status", agcStatus);
-	if (agcStatus.shutterTime && agcStatus.analogueGain) {
+	if (agcStatus.exposureTime && agcStatus.analogueGain) {
 		ControlList ctrls(sensorCtrls_);
 		applyAGC(&agcStatus, ctrls);
 		result->controls = std::move(ctrls);
@@ -400,6 +395,7 @@ void IpaBase::prepareIsp(const PrepareParams &params)
 
 	rpiMetadata.clear();
 	fillDeviceStatus(params.sensorControls, ipaContext);
+	fillSyncParams(params, ipaContext);
 
 	if (params.buffers.embedded) {
 		/*
@@ -498,10 +494,24 @@ void IpaBase::processStats(const ProcessParams &params)
 		helper_->process(statistics, rpiMetadata);
 		controller_.process(statistics, &rpiMetadata);
 
+		/* Send any sync algorithm outputs back to the pipeline handler */
+		Duration offset(0s);
+		struct SyncStatus syncStatus;
+		if (rpiMetadata.get("sync.status", syncStatus) == 0) {
+			if (minFrameDuration_ != maxFrameDuration_)
+				LOG(IPARPI, Error) << "Sync algorithm enabled with variable framerate. "
+						   << minFrameDuration_ << " " << maxFrameDuration_;
+			offset = syncStatus.frameDurationOffset;
+
+			libcameraMetadata_.set(controls::rpi::SyncReady, syncStatus.ready);
+			if (syncStatus.timerKnown)
+				libcameraMetadata_.set(controls::rpi::SyncTimer, syncStatus.timerValue);
+		}
+
 		struct AgcStatus agcStatus;
 		if (rpiMetadata.get("agc.status", agcStatus) == 0) {
 			ControlList ctrls(sensorCtrls_);
-			applyAGC(&agcStatus, ctrls);
+			applyAGC(&agcStatus, ctrls, offset);
 			setDelayedControls.emit(ctrls, ipaContext);
 			setCameraTimeoutValue();
 		}
@@ -601,7 +611,7 @@ void IpaBase::setMode(const IPACameraSensorInfo &sensorInfo)
 	mode_.sensitivity = helper_->getModeSensitivity(mode_);
 
 	const ControlInfo &gainCtrl = sensorCtrls_.at(V4L2_CID_ANALOGUE_GAIN);
-	const ControlInfo &shutterCtrl = sensorCtrls_.at(V4L2_CID_EXPOSURE);
+	const ControlInfo &exposureTimeCtrl = sensorCtrls_.at(V4L2_CID_EXPOSURE);
 
 	mode_.minAnalogueGain = helper_->gain(gainCtrl.min().get<int32_t>());
 	mode_.maxAnalogueGain = helper_->gain(gainCtrl.max().get<int32_t>());
@@ -612,11 +622,15 @@ void IpaBase::setMode(const IPACameraSensorInfo &sensorInfo)
 	 */
 	helper_->setCameraMode(mode_);
 
-	/* Shutter speed is calculated based on the limits of the frame durations. */
-	mode_.minShutter = helper_->exposure(shutterCtrl.min().get<int32_t>(), mode_.minLineLength);
-	mode_.maxShutter = Duration::max();
-	helper_->getBlanking(mode_.maxShutter,
-			     mode_.minFrameDuration, mode_.maxFrameDuration);
+	/*
+	 * Exposure time is calculated based on the limits of the frame
+	 * durations.
+	 */
+	mode_.minExposureTime = helper_->exposure(exposureTimeCtrl.min().get<int32_t>(),
+						  mode_.minLineLength);
+	mode_.maxExposureTime = Duration::max();
+	helper_->getBlanking(mode_.maxExposureTime, mode_.minFrameDuration,
+			     mode_.maxFrameDuration);
 }
 
 void IpaBase::setCameraTimeoutValue()
@@ -734,6 +748,7 @@ void IpaBase::applyControls(const ControlList &controls)
 	using RPiController::ContrastAlgorithm;
 	using RPiController::DenoiseAlgorithm;
 	using RPiController::HdrAlgorithm;
+	using RPiController::SyncAlgorithm;
 
 	/* Clear the return metadata buffer. */
 	libcameraMetadata_.clear();
@@ -790,7 +805,7 @@ void IpaBase::applyControls(const ControlList &controls)
 			}
 
 			/* The control provides units of microseconds. */
-			agc->setFixedShutter(0, ctrl.second.get<int32_t>() * 1.0us);
+			agc->setFixedExposureTime(0, ctrl.second.get<int32_t>() * 1.0us);
 
 			libcameraMetadata_.set(controls::ExposureTime, ctrl.second.get<int32_t>());
 			break;
@@ -1016,6 +1031,25 @@ void IpaBase::applyControls(const ControlList &controls)
 				/* A gain of 0.0f will switch back to auto mode. */
 				libcameraMetadata_.set(controls::ColourGains,
 						       { gains[0], gains[1] });
+			break;
+		}
+
+		case controls::COLOUR_TEMPERATURE: {
+			/* Silently ignore this control for a mono sensor. */
+			if (monoSensor_)
+				break;
+
+			auto temperatureK = ctrl.second.get<int32_t>();
+			RPiController::AwbAlgorithm *awb = dynamic_cast<RPiController::AwbAlgorithm *>(
+				controller_.getAlgorithm("awb"));
+			if (!awb) {
+				LOG(IPARPI, Warning)
+					<< "Could not set COLOUR_TEMPERATURE - no AWB algorithm";
+				break;
+			}
+
+			awb->setColourTemperature(temperatureK);
+			/* This metadata will get reported back automatically. */
 			break;
 		}
 
@@ -1265,6 +1299,35 @@ void IpaBase::applyControls(const ControlList &controls)
 			cnnEnableInputTensor_ = ctrl.second.get<bool>();
 			break;
 
+		case controls::rpi::SYNC_MODE: {
+			SyncAlgorithm *sync = dynamic_cast<SyncAlgorithm *>(controller_.getAlgorithm("sync"));
+
+			if (sync) {
+				int mode = ctrl.second.get<int32_t>();
+				SyncAlgorithm::Mode m = SyncAlgorithm::Mode::Off;
+				if (mode == controls::rpi::SyncModeServer) {
+					m = SyncAlgorithm::Mode::Server;
+					LOG(IPARPI, Info) << "Sync mode set to server";
+				} else if (mode == controls::rpi::SyncModeClient) {
+					m = SyncAlgorithm::Mode::Client;
+					LOG(IPARPI, Info) << "Sync mode set to client";
+				}
+				sync->setMode(m);
+			}
+			break;
+		}
+
+		case controls::rpi::SYNC_FRAMES: {
+			SyncAlgorithm *sync = dynamic_cast<SyncAlgorithm *>(controller_.getAlgorithm("sync"));
+
+			if (sync) {
+				int frames = ctrl.second.get<int32_t>();
+				if (frames > 0)
+					sync->setReadyFrame(frames);
+			}
+			break;
+		}
+
 		default:
 			LOG(IPARPI, Warning)
 				<< "Ctrl " << controls::controls.at(ctrl.first)->name()
@@ -1287,7 +1350,7 @@ void IpaBase::fillDeviceStatus(const ControlList &sensorControls, unsigned int i
 	int32_t hblank = sensorControls.get(V4L2_CID_HBLANK).get<int32_t>();
 
 	deviceStatus.lineLength = helper_->hblankToLineLength(hblank);
-	deviceStatus.shutterSpeed = helper_->exposure(exposureLines, deviceStatus.lineLength);
+	deviceStatus.exposureTime = helper_->exposure(exposureLines, deviceStatus.lineLength);
 	deviceStatus.analogueGain = helper_->gain(gainCode);
 	deviceStatus.frameLength = mode_.height + vblank;
 
@@ -1299,6 +1362,19 @@ void IpaBase::fillDeviceStatus(const ControlList &sensorControls, unsigned int i
 	LOG(IPARPI, Debug) << "Metadata - " << deviceStatus;
 
 	rpiMetadata_[ipaContext].set("device.status", deviceStatus);
+}
+
+void IpaBase::fillSyncParams(const PrepareParams &params, unsigned int ipaContext)
+{
+	RPiController::SyncAlgorithm *sync = dynamic_cast<RPiController::SyncAlgorithm *>(
+		controller_.getAlgorithm("sync"));
+	if (!sync)
+		return;
+
+	SyncParams syncParams;
+	syncParams.wallClock = *params.sensorControls.get(controls::FrameWallClock);
+	syncParams.sensorTimestamp = *params.sensorControls.get(controls::SensorTimestamp);
+	rpiMetadata_[ipaContext].set("sync.params", syncParams);
 }
 
 void IpaBase::reportMetadata(unsigned int ipaContext)
@@ -1314,7 +1390,7 @@ void IpaBase::reportMetadata(unsigned int ipaContext)
 	DeviceStatus *deviceStatus = rpiMetadata.getLocked<DeviceStatus>("device.status");
 	if (deviceStatus) {
 		libcameraMetadata_.set(controls::ExposureTime,
-				       deviceStatus->shutterSpeed.get<std::micro>());
+				       deviceStatus->exposureTime.get<std::micro>());
 		libcameraMetadata_.set(controls::AnalogueGain, deviceStatus->analogueGain);
 		libcameraMetadata_.set(controls::FrameDuration,
 				       helper_->exposure(deviceStatus->frameLength, deviceStatus->lineLength).get<std::micro>());
@@ -1510,18 +1586,26 @@ void IpaBase::applyFrameDurations(Duration minFrameDuration, Duration maxFrameDu
 
 	/*
 	 * Calculate the maximum exposure time possible for the AGC to use.
-	 * getBlanking() will update maxShutter with the largest exposure
+	 * getBlanking() will update maxExposureTime with the largest exposure
 	 * value possible.
 	 */
-	Duration maxShutter = Duration::max();
-	helper_->getBlanking(maxShutter, minFrameDuration_, maxFrameDuration_);
+	Duration maxExposureTime = Duration::max();
+	auto [vblank, hblank] = helper_->getBlanking(maxExposureTime, minFrameDuration_, maxFrameDuration_);
 
 	RPiController::AgcAlgorithm *agc = dynamic_cast<RPiController::AgcAlgorithm *>(
 		controller_.getAlgorithm("agc"));
-	agc->setMaxShutter(maxShutter);
+	agc->setMaxExposureTime(maxExposureTime);
+
+	RPiController::SyncAlgorithm *sync = dynamic_cast<RPiController::SyncAlgorithm *>(
+		controller_.getAlgorithm("sync"));
+	if (sync) {
+		Duration duration = (mode_.height + vblank) * ((mode_.width + hblank) * 1.0s / mode_.pixelRate);
+		LOG(IPARPI, Debug) << "setting sync frame duration to  " << duration;
+		sync->setFrameDuration(duration);
+	}
 }
 
-void IpaBase::applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls)
+void IpaBase::applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls, Duration frameDurationOffset)
 {
 	const int32_t minGainCode = helper_->gainCode(mode_.minAnalogueGain);
 	const int32_t maxGainCode = helper_->gainCode(mode_.maxAnalogueGain);
@@ -1535,14 +1619,15 @@ void IpaBase::applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls)
 	gainCode = std::clamp<int32_t>(gainCode, minGainCode, maxGainCode);
 
 	/* getBlanking might clip exposure time to the fps limits. */
-	Duration exposure = agcStatus->shutterTime;
-	auto [vblank, hblank] = helper_->getBlanking(exposure, minFrameDuration_, maxFrameDuration_);
+	Duration exposure = agcStatus->exposureTime;
+	auto [vblank, hblank] = helper_->getBlanking(exposure, minFrameDuration_ - frameDurationOffset,
+						     maxFrameDuration_ - frameDurationOffset);
 	int32_t exposureLines = helper_->exposureLines(exposure,
 						       helper_->hblankToLineLength(hblank));
 
 	LOG(IPARPI, Debug) << "Applying AGC Exposure: " << exposure
-			   << " (Shutter lines: " << exposureLines << ", AGC requested "
-			   << agcStatus->shutterTime << ") Gain: "
+			   << " (Exposure lines: " << exposureLines << ", AGC requested "
+			   << agcStatus->exposureTime << ") Gain: "
 			   << agcStatus->analogueGain << " (Gain Code: "
 			   << gainCode << ")";
 

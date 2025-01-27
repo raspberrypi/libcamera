@@ -41,7 +41,7 @@ class IPASoftSimple : public ipa::soft::IPASoftInterface, public Module
 {
 public:
 	IPASoftSimple()
-		: context_({ {}, {}, { kMaxFrameContexts } })
+		: context_(kMaxFrameContexts)
 	{
 	}
 
@@ -50,14 +50,15 @@ public:
 	int init(const IPASettings &settings,
 		 const SharedFD &fdStats,
 		 const SharedFD &fdParams,
-		 const ControlInfoMap &sensorInfoMap) override;
+		 const ControlInfoMap &sensorInfoMap,
+		 ControlInfoMap *ipaControls) override;
 	int configure(const IPAConfigInfo &configInfo) override;
 
 	int start() override;
 	void stop() override;
 
 	void queueRequest(const uint32_t frame, const ControlList &controls) override;
-	void fillParamsBuffer(const uint32_t frame) override;
+	void computeParams(const uint32_t frame) override;
 	void processStats(const uint32_t frame, const uint32_t bufferId,
 			  const ControlList &sensorControls) override;
 
@@ -87,7 +88,8 @@ IPASoftSimple::~IPASoftSimple()
 int IPASoftSimple::init(const IPASettings &settings,
 			const SharedFD &fdStats,
 			const SharedFD &fdParams,
-			const ControlInfoMap &sensorInfoMap)
+			const ControlInfoMap &sensorInfoMap,
+			ControlInfoMap *ipaControls)
 {
 	camHelper_ = CameraSensorHelperFactoryBase::create(settings.sensorModel);
 	if (!camHelper_) {
@@ -158,6 +160,9 @@ int IPASoftSimple::init(const IPASettings &settings,
 		stats_ = static_cast<SwIspStats *>(mem);
 	}
 
+	ControlInfoMap::Map ctrlMap = context_.ctrlMap;
+	*ipaControls = ControlInfoMap(std::move(ctrlMap), controls::controls);
+
 	/*
 	 * Check if the sensor driver supports the controls required by the
 	 * Soft IPA.
@@ -206,8 +211,7 @@ int IPASoftSimple::configure(const IPAConfigInfo &configInfo)
 			(context_.configuration.agc.againMax -
 			 context_.configuration.agc.againMin) /
 			100.0;
-		if (!context_.configuration.black.level.has_value() &&
-		    camHelper_->blackLevel().has_value()) {
+		if (camHelper_->blackLevel().has_value()) {
 			/*
 			 * The black level from camHelper_ is a 16 bit value, software ISP
 			 * works with 8 bit pixel values, both regardless of the actual
@@ -272,7 +276,7 @@ void IPASoftSimple::queueRequest(const uint32_t frame, const ControlList &contro
 		algo->queueRequest(context_, frame, frameContext, controls);
 }
 
-void IPASoftSimple::fillParamsBuffer(const uint32_t frame)
+void IPASoftSimple::computeParams(const uint32_t frame)
 {
 	IPAFrameContext &frameContext = context_.frameContexts.get(frame);
 	for (auto const &algo : algorithms())
@@ -310,8 +314,8 @@ void IPASoftSimple::processStats(const uint32_t frame,
 
 	ControlList ctrls(sensorInfoMap_);
 
-	auto &againNew = context_.activeState.agc.again;
-	ctrls.set(V4L2_CID_EXPOSURE, context_.activeState.agc.exposure);
+	auto &againNew = frameContext.sensor.gain;
+	ctrls.set(V4L2_CID_EXPOSURE, frameContext.sensor.exposure);
 	ctrls.set(V4L2_CID_ANALOGUE_GAIN,
 		  static_cast<int32_t>(camHelper_ ? camHelper_->gainCode(againNew) : againNew));
 

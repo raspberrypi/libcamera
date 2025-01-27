@@ -12,4 +12,5 @@ rkisp1_ipa_algorithms = files([
     'goc.cpp',
     'gsl.cpp',
     'lsc.cpp',
+    'lux.cpp',
 ])

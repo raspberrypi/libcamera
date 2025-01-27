@@ -105,6 +105,7 @@ public:
 	void initialValues(double &gainR, double &gainB) override;
 	void setMode(std::string const &name) override;
 	void setManualGains(double manualR, double manualB) override;
+	void setColourTemperature(double temperatureK) override;
 	void enableAuto() override;
 	void disableAuto() override;
 	void switchMode(CameraMode const &cameraMode, Metadata *metadata) override;

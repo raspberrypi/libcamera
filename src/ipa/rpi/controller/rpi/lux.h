@@ -32,7 +32,7 @@ private:
 	 * These values define the conditions of the reference image, against
 	 * which we compare the new image.
 	 */
-	libcamera::utils::Duration referenceShutterSpeed_;
+	libcamera::utils::Duration referenceExposureTime_;
 	double referenceGain_;
 	double referenceAperture_; /* units of 1/f */
 	double referenceY_; /* out of 65536 */

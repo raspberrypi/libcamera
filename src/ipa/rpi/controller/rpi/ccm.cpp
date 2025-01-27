@@ -29,34 +29,7 @@ LOG_DEFINE_CATEGORY(RPiCcm)
 
 #define NAME "rpi.ccm"
 
-Matrix::Matrix()
-{
-	memset(m, 0, sizeof(m));
-}
-Matrix::Matrix(double m0, double m1, double m2, double m3, double m4, double m5,
-	       double m6, double m7, double m8)
-{
-	m[0][0] = m0, m[0][1] = m1, m[0][2] = m2, m[1][0] = m3, m[1][1] = m4,
-	m[1][2] = m5, m[2][0] = m6, m[2][1] = m7, m[2][2] = m8;
-}
-int Matrix::read(const libcamera::YamlObject &params)
-{
-	double *ptr = (double *)m;
-
-	if (params.size() != 9) {
-		LOG(RPiCcm, Error) << "Wrong number of values in CCM";
-		return -EINVAL;
-	}
-
-	for (const auto &param : params.asList()) {
-		auto value = param.get<double>();
-		if (!value)
-			return -EINVAL;
-		*ptr++ = *value;
-	}
-
-	return 0;
-}
+using Matrix3x3 = Matrix<double, 3, 3>;
 
 Ccm::Ccm(Controller *controller)
 	: CcmAlgorithm(controller), saturation_(1.0) {}
@@ -68,8 +41,6 @@ char const *Ccm::name() const
 
 int Ccm::read(const libcamera::YamlObject &params)
 {
-	int ret;
-
 	if (params.contains("saturation")) {
 		config_.saturation = params["saturation"].get<ipa::Pwl>(ipa::Pwl{});
 		if (config_.saturation.empty())
@@ -83,9 +54,12 @@ int Ccm::read(const libcamera::YamlObject &params)
 
 		CtCcm ctCcm;
 		ctCcm.ct = *value;
-		ret = ctCcm.ccm.read(p["ccm"]);
-		if (ret)
-			return ret;
+
+		auto ccm = p["ccm"].get<Matrix3x3>();
+		if (!ccm)
+			return -EINVAL;
+
+		ctCcm.ccm = *ccm;
 
 		if (!config_.ccms.empty() && ctCcm.ct <= config_.ccms.back().ct) {
 			LOG(RPiCcm, Error)
@@ -125,7 +99,7 @@ bool getLocked(Metadata *metadata, std::string const &tag, T &value)
 	return true;
 }
 
-Matrix calculateCcm(std::vector<CtCcm> const &ccms, double ct)
+Matrix3x3 calculateCcm(std::vector<CtCcm> const &ccms, double ct)
 {
 	if (ct <= ccms.front().ct)
 		return ccms.front().ccm;
@@ -141,13 +115,20 @@ Matrix calculateCcm(std::vector<CtCcm> const &ccms, double ct)
 	}
 }
 
-Matrix applySaturation(Matrix const &ccm, double saturation)
+Matrix3x3 applySaturation(Matrix3x3 const &ccm, double saturation)
 {
-	Matrix RGB2Y(0.299, 0.587, 0.114, -0.169, -0.331, 0.500, 0.500, -0.419,
-		     -0.081);
-	Matrix Y2RGB(1.000, 0.000, 1.402, 1.000, -0.345, -0.714, 1.000, 1.771,
-		     0.000);
-	Matrix S(1, 0, 0, 0, saturation, 0, 0, 0, saturation);
+	static const Matrix3x3 RGB2Y({ 0.299, 0.587, 0.114,
+				       -0.169, -0.331, 0.500,
+				       0.500, -0.419, -0.081 });
+
+	static const Matrix3x3 Y2RGB({ 1.000, 0.000, 1.402,
+				       1.000, -0.345, -0.714,
+				       1.000, 1.771, 0.000 });
+
+	Matrix3x3 S({ 1, 0, 0,
+		      0, saturation, 0,
+		      0, 0, saturation });
+
 	return Y2RGB * S * RGB2Y * ccm;
 }
 
@@ -170,7 +151,7 @@ void Ccm::prepare(Metadata *imageMetadata)
 		LOG(RPiCcm, Warning) << "no colour temperature found";
 	if (!luxOk)
 		LOG(RPiCcm, Warning) << "no lux value found";
-	Matrix ccm = calculateCcm(config_.ccms, awb.temperatureK);
+	Matrix3x3 ccm = calculateCcm(config_.ccms, awb.temperatureK);
 	double saturation = saturation_;
 	struct CcmStatus ccmStatus;
 	ccmStatus.saturation = saturation;
@@ -181,7 +162,7 @@ void Ccm::prepare(Metadata *imageMetadata)
 	for (int j = 0; j < 3; j++)
 		for (int i = 0; i < 3; i++)
 			ccmStatus.matrix[j * 3 + i] =
-				std::max(-8.0, std::min(7.9999, ccm.m[j][i]));
+				std::max(-8.0, std::min(7.9999, ccm[j][i]));
 	LOG(RPiCcm, Debug)
 		<< "colour temperature " << awb.temperatureK << "K";
 	LOG(RPiCcm, Debug)

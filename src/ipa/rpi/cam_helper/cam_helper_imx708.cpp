@@ -54,8 +54,6 @@ public:
 	void process(StatisticsPtr &stats, Metadata &metadata) override;
 	std::pair<uint32_t, uint32_t> getBlanking(Duration &exposure, Duration minFrameDuration,
 						  Duration maxFrameDuration) const override;
-	void getDelays(int &exposureDelay, int &gainDelay,
-		       int &vblankDelay, int &hblankDelay) const override;
 	bool sensorEmbeddedDataPresent() const override;
 	double getModeSensitivity(const CameraMode &mode) const override;
 	unsigned int hideFramesModeSwitch() const override;
@@ -66,7 +64,7 @@ private:
 	 * Smallest difference between the frame length and integration time,
 	 * in units of lines.
 	 */
-	static constexpr int frameIntegrationDiff = 22;
+	static constexpr int frameIntegrationDiff = 48;
 	/* Maximum frame length allowable for long exposure calculations. */
 	static constexpr int frameLengthMax = 0xffdc;
 	/* Largest long exposure scale factor given as a left shift on the frame length. */
@@ -155,7 +153,7 @@ void CamHelperImx708::prepare(libcamera::Span<const uint8_t> buffer, Metadata &m
 		DeviceStatus parsedDeviceStatus;
 
 		metadata.get("device.status", parsedDeviceStatus);
-		parsedDeviceStatus.shutterSpeed = deviceStatus.shutterSpeed;
+		parsedDeviceStatus.exposureTime = deviceStatus.exposureTime;
 		parsedDeviceStatus.frameLength = deviceStatus.frameLength;
 		metadata.set("device.status", parsedDeviceStatus);
 
@@ -208,15 +206,6 @@ std::pair<uint32_t, uint32_t> CamHelperImx708::getBlanking(Duration &exposure,
 	return { frameLength - mode_.height, hblank };
 }
 
-void CamHelperImx708::getDelays(int &exposureDelay, int &gainDelay,
-				int &vblankDelay, int &hblankDelay) const
-{
-	exposureDelay = 2;
-	gainDelay = 2;
-	vblankDelay = 3;
-	hblankDelay = 3;
-}
-
 bool CamHelperImx708::sensorEmbeddedDataPresent() const
 {
 	return true;
@@ -255,7 +244,7 @@ void CamHelperImx708::populateMetadata(const MdParser::RegisterMap &registers,
 
 	deviceStatus.lineLength = lineLengthPckToDuration(registers.at(lineLengthHiReg) * 256 +
 							  registers.at(lineLengthLoReg));
-	deviceStatus.shutterSpeed = exposure(registers.at(expHiReg) * 256 + registers.at(expLoReg),
+	deviceStatus.exposureTime = exposure(registers.at(expHiReg) * 256 + registers.at(expLoReg),
 					     deviceStatus.lineLength);
 	deviceStatus.analogueGain = gain(registers.at(gainHiReg) * 256 + registers.at(gainLoReg));
 	deviceStatus.frameLength = registers.at(frameLengthHiReg) * 256 + registers.at(frameLengthLoReg);

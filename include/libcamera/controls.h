@@ -17,6 +17,7 @@
 #include <vector>
 
 #include <libcamera/base/class.h>
+#include <libcamera/base/flags.h>
 #include <libcamera/base/span.h>
 
 #include <libcamera/geometry.h>
@@ -29,6 +30,8 @@ enum ControlType {
 	ControlTypeNone,
 	ControlTypeBool,
 	ControlTypeByte,
+	ControlTypeUnsigned16,
+	ControlTypeUnsigned32,
 	ControlTypeInteger32,
 	ControlTypeInteger64,
 	ControlTypeFloat,
@@ -59,6 +62,18 @@ struct control_type<bool> {
 template<>
 struct control_type<uint8_t> {
 	static constexpr ControlType value = ControlTypeByte;
+	static constexpr std::size_t size = 0;
+};
+
+template<>
+struct control_type<uint16_t> {
+	static constexpr ControlType value = ControlTypeUnsigned16;
+	static constexpr std::size_t size = 0;
+};
+
+template<>
+struct control_type<uint32_t> {
+	static constexpr ControlType value = ControlTypeUnsigned32;
 	static constexpr std::size_t size = 0;
 };
 
@@ -235,14 +250,25 @@ private:
 class ControlId
 {
 public:
+	enum class Direction {
+		In = (1 << 0),
+		Out = (1 << 1),
+	};
+
+	using DirectionFlags = Flags<Direction>;
+
 	ControlId(unsigned int id, const std::string &name, const std::string &vendor,
-		  ControlType type, std::size_t size = 0,
+		  ControlType type, DirectionFlags direction,
+		  std::size_t size = 0,
 		  const std::map<std::string, int32_t> &enumStrMap = {});
 
 	unsigned int id() const { return id_; }
 	const std::string &name() const { return name_; }
 	const std::string &vendor() const { return vendor_; }
 	ControlType type() const { return type_; }
+	DirectionFlags direction() const { return direction_; }
+	bool isInput() const { return !!(direction_ & Direction::In); }
+	bool isOutput() const { return !!(direction_ & Direction::Out); }
 	bool isArray() const { return size_ > 0; }
 	std::size_t size() const { return size_; }
 	const std::map<int32_t, std::string> &enumerators() const { return reverseMap_; }
@@ -254,10 +280,13 @@ private:
 	std::string name_;
 	std::string vendor_;
 	ControlType type_;
+	DirectionFlags direction_;
 	std::size_t size_;
 	std::map<std::string, int32_t> enumStrMap_;
 	std::map<int32_t, std::string> reverseMap_;
 };
+
+LIBCAMERA_FLAGS_ENABLE_OPERATORS(ControlId::Direction)
 
 static inline bool operator==(unsigned int lhs, const ControlId &rhs)
 {
@@ -286,9 +315,10 @@ public:
 	using type = T;
 
 	Control(unsigned int id, const char *name, const char *vendor,
+		ControlId::DirectionFlags direction,
 		const std::map<std::string, int32_t> &enumStrMap = {})
 		: ControlId(id, name, vendor, details::control_type<std::remove_cv_t<T>>::value,
-			    details::control_type<std::remove_cv_t<T>>::size, enumStrMap)
+			    direction, details::control_type<std::remove_cv_t<T>>::size, enumStrMap)
 	{
 	}
 

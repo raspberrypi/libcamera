@@ -16,9 +16,10 @@
 #include <gst/video/video.h>
 
 GstCaps *gst_libcamera_stream_formats_to_caps(const libcamera::StreamFormats &formats);
-GstCaps *gst_libcamera_stream_configuration_to_caps(const libcamera::StreamConfiguration &stream_cfg);
+GstCaps *gst_libcamera_stream_configuration_to_caps(const libcamera::StreamConfiguration &stream_cfg,
+						    GstVideoTransferFunction transfer);
 void gst_libcamera_configure_stream_from_caps(libcamera::StreamConfiguration &stream_cfg,
-					      GstCaps *caps);
+					      GstCaps *caps, GstVideoTransferFunction *transfer);
 void gst_libcamera_get_framerate_from_caps(GstCaps *caps, GstStructure *element_caps);
 void gst_libcamera_clamp_and_set_frameduration(libcamera::ControlList &controls,
 					       const libcamera::ControlInfoMap &camera_controls,

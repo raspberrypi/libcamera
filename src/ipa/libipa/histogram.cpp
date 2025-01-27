@@ -63,6 +63,12 @@ Histogram::Histogram(Span<const uint32_t> data)
  */
 
 /**
+ * \fn Histogram::data()
+ * \brief Retrieve the internal data
+ * \return The data
+ */
+
+/**
  * \fn Histogram::total()
  * \brief Retrieve the total number of values in the data set
  * \return Number of values

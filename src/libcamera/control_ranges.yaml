@@ -13,6 +13,8 @@ ranges:
   draft: 10000
   # Raspberry Pi vendor controls
   rpi: 20000
-  # Next range starts at 30000
+  # Controls for debug metadata
+  debug: 30000
+  # Next range starts at 40000
 
 ...

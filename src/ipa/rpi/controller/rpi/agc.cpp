@@ -127,21 +127,21 @@ void Agc::setFlickerPeriod(Duration flickerPeriod)
 		data.channel.setFlickerPeriod(flickerPeriod);
 }
 
-void Agc::setMaxShutter(Duration maxShutter)
+void Agc::setMaxExposureTime(Duration maxExposureTime)
 {
 	/* Frame durations will be the same across all channels too. */
 	for (auto &data : channelData_)
-		data.channel.setMaxShutter(maxShutter);
+		data.channel.setMaxExposureTime(maxExposureTime);
 }
 
-void Agc::setFixedShutter(unsigned int channelIndex, Duration fixedShutter)
+void Agc::setFixedExposureTime(unsigned int channelIndex, Duration fixedExposureTime)
 {
 	if (checkChannel(channelIndex))
 		return;
 
-	LOG(RPiAgc, Debug) << "setFixedShutter " << fixedShutter
+	LOG(RPiAgc, Debug) << "setFixedExposureTime " << fixedExposureTime
 			   << " for channel " << channelIndex;
-	channelData_[channelIndex].channel.setFixedShutter(fixedShutter);
+	channelData_[channelIndex].channel.setFixedExposureTime(fixedExposureTime);
 }
 
 void Agc::setFixedAnalogueGain(unsigned int channelIndex, double fixedAnalogueGain)

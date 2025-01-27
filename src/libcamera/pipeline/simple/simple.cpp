@@ -31,6 +31,7 @@
 
 #include "libcamera/internal/camera.h"
 #include "libcamera/internal/camera_sensor.h"
+#include "libcamera/internal/camera_sensor_properties.h"
 #include "libcamera/internal/converter.h"
 #include "libcamera/internal/delayed_controls.h"
 #include "libcamera/internal/device_enumerator.h"
@@ -225,7 +226,8 @@ public:
 	int setupFormats(V4L2SubdeviceFormat *format,
 			 V4L2Subdevice::Whence whence,
 			 Transform transform = Transform::Identity);
-	void bufferReady(FrameBuffer *buffer);
+	void imageBufferReady(FrameBuffer *buffer);
+	void clearIncompleteRequests();
 
 	unsigned int streamIndex(const Stream *stream) const
 	{
@@ -282,7 +284,11 @@ public:
 	std::unique_ptr<DelayedControls> delayedCtrls_;
 
 	std::vector<std::unique_ptr<FrameBuffer>> conversionBuffers_;
-	std::queue<std::map<const Stream *, FrameBuffer *>> conversionQueue_;
+	struct RequestOutputs {
+		Request *request;
+		std::map<const Stream *, FrameBuffer *> outputs;
+	};
+	std::queue<RequestOutputs> conversionQueue_;
 	bool useConversion_;
 
 	std::unique_ptr<Converter> converter_;
@@ -388,8 +394,6 @@ SimpleCameraData::SimpleCameraData(SimplePipelineHandler *pipe,
 				   MediaEntity *sensor)
 	: Camera::Private(pipe), streams_(numStreams)
 {
-	int ret;
-
 	/*
 	 * Find the shortest path from the camera sensor to a video capture
 	 * device using the breadth-first search algorithm. This heuristic will
@@ -480,12 +484,9 @@ SimpleCameraData::SimpleCameraData(SimplePipelineHandler *pipe,
 	}
 
 	/* Finally also remember the sensor. */
-	sensor_ = std::make_unique<CameraSensor>(sensor);
-	ret = sensor_->init();
-	if (ret) {
-		sensor_.reset();
+	sensor_ = CameraSensorFactoryBase::create(sensor);
+	if (!sensor_)
 		return;
-	}
 
 	LOG(SimplePipeline, Debug)
 		<< "Found pipeline: "
@@ -530,7 +531,7 @@ int SimpleCameraData::init()
 	 * Instantiate Soft ISP if this is enabled for the given driver and no converter is used.
 	 */
 	if (!converter_ && pipe->swIspEnabled()) {
-		swIsp_ = std::make_unique<SoftwareIsp>(pipe, sensor_.get());
+		swIsp_ = std::make_unique<SoftwareIsp>(pipe, sensor_.get(), &controlInfo_);
 		if (!swIsp_->isValid()) {
 			LOG(SimplePipeline, Warning)
 				<< "Failed to create software ISP, disabling software debayering";
@@ -784,7 +785,7 @@ int SimpleCameraData::setupFormats(V4L2SubdeviceFormat *format,
 	return 0;
 }
 
-void SimpleCameraData::bufferReady(FrameBuffer *buffer)
+void SimpleCameraData::imageBufferReady(FrameBuffer *buffer)
 {
 	SimplePipelineHandler *pipe = SimpleCameraData::pipe();
 
@@ -813,16 +814,12 @@ void SimpleCameraData::bufferReady(FrameBuffer *buffer)
 		if (conversionQueue_.empty())
 			return;
 
-		Request *request = nullptr;
-		for (auto &item : conversionQueue_.front()) {
-			FrameBuffer *outputBuffer = item.second;
-			request = outputBuffer->request();
-			pipe->completeBuffer(request, outputBuffer);
-		}
+		const RequestOutputs &outputs = conversionQueue_.front();
+		for (auto &[stream, buf] : outputs.outputs)
+			pipe->completeBuffer(outputs.request, buf);
+		pipe->completeRequest(outputs.request);
 		conversionQueue_.pop();
 
-		if (request)
-			pipe->completeRequest(request);
 		return;
 	}
 
@@ -838,7 +835,7 @@ void SimpleCameraData::bufferReady(FrameBuffer *buffer)
 
 	if (useConversion_ && !conversionQueue_.empty()) {
 		const std::map<const Stream *, FrameBuffer *> &outputs =
-			conversionQueue_.front();
+			conversionQueue_.front().outputs;
 		if (!outputs.empty()) {
 			FrameBuffer *outputBuffer = outputs.begin()->second;
 			if (outputBuffer)
@@ -862,7 +859,7 @@ void SimpleCameraData::bufferReady(FrameBuffer *buffer)
 		}
 
 		if (converter_)
-			converter_->queueBuffers(buffer, conversionQueue_.front());
+			converter_->queueBuffers(buffer, conversionQueue_.front().outputs);
 		else
 			/*
 			 * request->sequence() cannot be retrieved from `buffer' inside
@@ -870,7 +867,7 @@ void SimpleCameraData::bufferReady(FrameBuffer *buffer)
 			 * already here.
 			 */
 			swIsp_->queueBuffers(request->sequence(), buffer,
-					     conversionQueue_.front());
+					     conversionQueue_.front().outputs);
 
 		conversionQueue_.pop();
 		return;
@@ -879,6 +876,14 @@ void SimpleCameraData::bufferReady(FrameBuffer *buffer)
 	/* Otherwise simply complete the request. */
 	pipe->completeBuffer(request, buffer);
 	pipe->completeRequest(request);
+}
+
+void SimpleCameraData::clearIncompleteRequests()
+{
+	while (!conversionQueue_.empty()) {
+		pipe()->cancelRequest(conversionQueue_.front().request);
+		conversionQueue_.pop();
+	}
 }
 
 void SimpleCameraData::conversionInputDone(FrameBuffer *buffer)
@@ -1286,9 +1291,10 @@ int SimplePipelineHandler::configure(Camera *camera, CameraConfiguration *c)
 	if (outputCfgs.empty())
 		return 0;
 
+	const CameraSensorProperties::SensorDelays &delays = data->sensor_->sensorDelays();
 	std::unordered_map<uint32_t, DelayedControls::ControlParams> params = {
-		{ V4L2_CID_ANALOGUE_GAIN, { 2, false } },
-		{ V4L2_CID_EXPOSURE, { 2, false } },
+		{ V4L2_CID_ANALOGUE_GAIN, { delays.gainDelay, false } },
+		{ V4L2_CID_EXPOSURE, { delays.exposureDelay, false } },
 	};
 	data->delayedCtrls_ =
 		std::make_unique<DelayedControls>(data->sensor_->device(),
@@ -1360,7 +1366,7 @@ int SimplePipelineHandler::start(Camera *camera, [[maybe_unused]] const ControlL
 		return ret;
 	}
 
-	video->bufferReady.connect(data, &SimpleCameraData::bufferReady);
+	video->bufferReady.connect(data, &SimpleCameraData::imageBufferReady);
 
 	ret = video->streamOn();
 	if (ret < 0) {
@@ -1404,8 +1410,9 @@ void SimplePipelineHandler::stopDevice(Camera *camera)
 	video->streamOff();
 	video->releaseBuffers();
 
-	video->bufferReady.disconnect(data, &SimpleCameraData::bufferReady);
+	video->bufferReady.disconnect(data, &SimpleCameraData::imageBufferReady);
 
+	data->clearIncompleteRequests();
 	data->conversionBuffers_.clear();
 
 	releasePipeline(data);
@@ -1434,7 +1441,7 @@ int SimplePipelineHandler::queueRequestDevice(Camera *camera, Request *request)
 	}
 
 	if (data->useConversion_) {
-		data->conversionQueue_.push(std::move(buffers));
+		data->conversionQueue_.push({ request, std::move(buffers) });
 		if (data->swIsp_)
 			data->swIsp_->queueRequest(request->sequence(), request->controls());
 	}

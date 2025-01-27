@@ -42,8 +42,8 @@ private:
 	Histogram parseStatistics(const ipu3_uapi_stats_3a *stats,
 				  const ipu3_uapi_grid_config &grid);
 
-	utils::Duration minShutterSpeed_;
-	utils::Duration maxShutterSpeed_;
+	utils::Duration minExposureTime_;
+	utils::Duration maxExposureTime_;
 
 	double minAnalogueGain_;
 	double maxAnalogueGain_;

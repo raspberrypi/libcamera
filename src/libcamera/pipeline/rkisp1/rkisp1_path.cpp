@@ -417,11 +417,14 @@ int RkISP1Path::configure(const StreamConfiguration &config,
 	/*
 	 * Crop on the resizer input to maintain FOV before downscaling.
 	 *
-	 * \todo The alignment to a multiple of 2 pixels is required but may
-	 * change the aspect ratio very slightly. A more advanced algorithm to
-	 * compute the resizer input crop rectangle is needed, and it should
-	 * also take into account the need to crop away the edge pixels affected
-	 * by the ISP processing blocks.
+	 * Note that this does not apply to devices without DUAL_CROP support
+	 * (like imx8mp) , where the cropping needs to be done on the
+	 * ImageStabilizer block on the ISP source pad and therefore is
+	 * configured before this stage. For simplicity we still set the crop.
+	 * This gets ignored by the kernel driver because the hardware is
+	 * missing the capability.
+	 *
+	 * Alignment to a multiple of 2 pixels is required by the resizer.
 	 */
 	Size ispCrop = inputFormat.size.boundedToAspectRatio(config.size)
 				       .alignedUpTo(2, 2);

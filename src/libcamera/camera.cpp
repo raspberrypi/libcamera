@@ -604,6 +604,11 @@ Camera::Private::~Private()
  */
 
 /**
+ * \fn Camera::Private::pipe() const
+ * \copydoc Camera::Private::pipe()
+ */
+
+/**
  * \fn Camera::Private::validator()
  * \brief Retrieve the control validator related to this camera
  * \return The control validator associated with this camera
@@ -1178,8 +1183,8 @@ int Camera::configure(CameraConfiguration *config)
 	if (ret < 0)
 		return ret;
 
-	for (auto it : *config)
-		it.setStream(nullptr);
+	for (auto &cfg : *config)
+		cfg.setStream(nullptr);
 
 	if (config->validate() != CameraConfiguration::Valid) {
 		LOG(Camera, Error)

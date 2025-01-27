@@ -1,3 +1,4 @@
 ppc64el-fix-ftbfs-gcc.patch
 skip_failing_tests.patch
 fix_detection_libyuv.patch
+Disable_libunwind_integration.patch

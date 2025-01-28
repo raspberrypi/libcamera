@@ -41,7 +41,6 @@ public:
 	void addFdEvent(int fd, EventType type,
 			std::function<void()> &&handler);
 
-	using duration = std::chrono::steady_clock::duration;
 	void addTimerEvent(const std::chrono::microseconds period,
 			   std::function<void()> &&handler);
 

@@ -244,7 +244,7 @@ Thread::Thread(std::string name)
 
 Thread::~Thread()
 {
-	delete data_->dispatcher_.load(std::memory_order_relaxed);
+	delete data_->dispatcher_.load(std::memory_order_acquire);
 }
 
 /**
@@ -379,7 +379,7 @@ void Thread::exit(int code)
 	data_->exitCode_ = code;
 	data_->exit_.store(true, std::memory_order_release);
 
-	EventDispatcher *dispatcher = data_->dispatcher_.load(std::memory_order_relaxed);
+	EventDispatcher *dispatcher = data_->dispatcher_.load(std::memory_order_acquire);
 	if (!dispatcher)
 		return;
 

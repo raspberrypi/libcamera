@@ -322,7 +322,7 @@ private:
 	static bool destroyed_;
 
 	Mutex mutex_;
-	std::vector<LogCategory *> categories_ LIBCAMERA_TSA_GUARDED_BY(mutex_);
+	std::vector<std::unique_ptr<LogCategory>> categories_ LIBCAMERA_TSA_GUARDED_BY(mutex_);
 	std::list<std::pair<std::string, LogSeverity>> levels_;
 
 	std::shared_ptr<LogOutput> output_;
@@ -439,9 +439,6 @@ void logSetLevel(const char *category, const char *level)
 Logger::~Logger()
 {
 	destroyed_ = true;
-
-	for (LogCategory *category : categories_)
-		delete category;
 }
 
 /**
@@ -574,7 +571,7 @@ void Logger::logSetLevel(const char *category, const char *level)
 
 	MutexLocker locker(mutex_);
 
-	for (LogCategory *c : categories_) {
+	for (const auto &c : categories_) {
 		if (c->name() == category) {
 			c->setSeverity(severity);
 			break;
@@ -718,12 +715,12 @@ LogCategory *Logger::findOrCreateCategory(std::string_view name)
 {
 	MutexLocker locker(mutex_);
 
-	for (LogCategory *category : categories_) {
+	for (const auto &category : categories_) {
 		if (category->name() == name)
-			return category;
+			return category.get();
 	}
 
-	LogCategory *category = categories_.emplace_back(new LogCategory(name));
+	LogCategory *category = categories_.emplace_back(std::unique_ptr<LogCategory>(new LogCategory(name))).get();
 	const char *categoryName = category->name().c_str();
 
 	for (const auto &[pattern, severity] : levels_) {

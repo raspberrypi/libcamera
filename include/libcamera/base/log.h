@@ -39,6 +39,7 @@ public:
 	static const LogCategory &defaultCategory();
 
 private:
+	friend class Logger;
 	explicit LogCategory(std::string_view name);
 
 	const std::string name_;

@@ -128,7 +128,7 @@ available.
 
    std::string cameraId = cameras[0]->id();
 
-   auto camera = cm->get(cameraId);
+   camera = cm->get(cameraId);
    /*
     * Note that `camera` may not compare equal to `cameras[0]`.
     * In fact, it might simply be a `nullptr`, as the particular

@@ -12,6 +12,7 @@
 #include <vector>
 
 #include <libcamera/base/bound_method.h>
+#include <libcamera/base/class.h>
 
 namespace libcamera {
 
@@ -52,6 +53,8 @@ protected:
 	bool assertThreadBound(const char *message);
 
 private:
+	LIBCAMERA_DISABLE_COPY_AND_MOVE(Object)
+
 	friend class SignalBase;
 	friend class Thread;
 

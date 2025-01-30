@@ -13,6 +13,7 @@
 
 #include <libcamera/base/private.h>
 
+#include <libcamera/base/class.h>
 #include <libcamera/base/message.h>
 #include <libcamera/base/signal.h>
 #include <libcamera/base/span.h>
@@ -54,6 +55,8 @@ protected:
 	virtual void run();
 
 private:
+	LIBCAMERA_DISABLE_COPY_AND_MOVE(Thread)
+
 	void startThread();
 	void finishThread();
 

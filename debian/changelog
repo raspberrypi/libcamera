@@ -1,8 +1,8 @@
-libcamera (0.4.0-5) UNRELEASED; urgency=medium
+libcamera (0.4.0-5) unstable; urgency=medium
 
   * Cherry-pick upstream patches demoting error messages (Closes: #1091966)
 
- -- Dylan Aïssi <daissi@debian.org>  Mon, 27 Jan 2025 10:53:25 +0100
+ -- Dylan Aïssi <daissi@debian.org>  Thu, 30 Jan 2025 12:07:44 +0100
 
 libcamera (0.4.0-4) unstable; urgency=medium
 

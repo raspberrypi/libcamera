@@ -322,7 +322,7 @@ int PipelineHandlerVirtual::queueRequestDevice([[maybe_unused]] Camera *camera,
 
 				if (streamConfig.frameGenerator->generateFrame(
 					    stream->configuration().size, buffer))
-					buffer->_d()->cancel();
+					fmd.status = FrameMetadata::Status::FrameError;
 
 				completeBuffer(request, buffer);
 				break;

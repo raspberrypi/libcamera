@@ -232,8 +232,7 @@ PipelineHandlerVirtual::generateConfiguration(Camera *camera,
 		default:
 			LOG(Virtual, Error)
 				<< "Requested stream role not supported: " << role;
-			config.reset();
-			return config;
+			return {};
 		}
 
 		std::map<PixelFormat, std::vector<SizeRange>> streamFormats;

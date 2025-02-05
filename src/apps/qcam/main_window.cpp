@@ -386,10 +386,7 @@ int MainWindow::startCapture()
 	/* Use a format supported by the viewfinder if available. */
 	std::vector<PixelFormat> formats = vfConfig.formats().pixelformats();
 	for (const PixelFormat &format : viewfinder_->nativeFormats()) {
-		auto match = std::find_if(formats.begin(), formats.end(),
-					  [&](const PixelFormat &f) {
-						  return f == format;
-					  });
+		auto match = std::find(formats.begin(), formats.end(), format);
 		if (match != formats.end()) {
 			vfConfig.pixelFormat = format;
 			break;

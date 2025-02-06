@@ -202,24 +202,24 @@ void CameraManager::Private::addCamera(std::shared_ptr<Camera> camera)
 {
 	ASSERT(Thread::current() == this);
 
-	MutexLocker locker(mutex_);
+	{
+		MutexLocker locker(mutex_);
 
-	for (const std::shared_ptr<Camera> &c : cameras_) {
-		if (c->id() == camera->id()) {
-			LOG(Camera, Fatal)
-				<< "Trying to register a camera with a duplicated ID '"
-				<< camera->id() << "'";
-			return;
+		for (const std::shared_ptr<Camera> &c : cameras_) {
+			if (c->id() == camera->id()) {
+				LOG(Camera, Fatal)
+					<< "Trying to register a camera with a duplicated ID '"
+					<< camera->id() << "'";
+				return;
+			}
 		}
+
+		cameras_.push_back(camera);
 	}
-
-	cameras_.push_back(std::move(camera));
-
-	unsigned int index = cameras_.size() - 1;
 
 	/* Report the addition to the public signal */
 	CameraManager *const o = LIBCAMERA_O_PTR();
-	o->cameraAdded.emit(cameras_[index]);
+	o->cameraAdded.emit(camera);
 }
 
 /**
@@ -236,19 +236,21 @@ void CameraManager::Private::removeCamera(std::shared_ptr<Camera> camera)
 {
 	ASSERT(Thread::current() == this);
 
-	MutexLocker locker(mutex_);
+	{
+		MutexLocker locker(mutex_);
 
-	auto iter = std::find_if(cameras_.begin(), cameras_.end(),
-				 [camera](std::shared_ptr<Camera> &c) {
-					 return c.get() == camera.get();
-				 });
-	if (iter == cameras_.end())
-		return;
+		auto iter = std::find_if(cameras_.begin(), cameras_.end(),
+					 [camera](std::shared_ptr<Camera> &c) {
+						 return c.get() == camera.get();
+					 });
+		if (iter == cameras_.end())
+			return;
+
+		cameras_.erase(iter);
+	}
 
 	LOG(Camera, Debug)
 		<< "Unregistering camera '" << camera->id() << "'";
-
-	cameras_.erase(iter);
 
 	/* Report the removal to the public signal */
 	CameraManager *const o = LIBCAMERA_O_PTR();

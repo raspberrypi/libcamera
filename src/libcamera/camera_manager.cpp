@@ -239,10 +239,7 @@ void CameraManager::Private::removeCamera(std::shared_ptr<Camera> camera)
 	{
 		MutexLocker locker(mutex_);
 
-		auto iter = std::find_if(cameras_.begin(), cameras_.end(),
-					 [camera](std::shared_ptr<Camera> &c) {
-						 return c.get() == camera.get();
-					 });
+		auto iter = std::find(cameras_.begin(), cameras_.end(), camera);
 		if (iter == cameras_.end())
 			return;
 

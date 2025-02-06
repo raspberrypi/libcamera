@@ -12,7 +12,7 @@
 #include <utility>
 #include <vector>
 
-#include "vector.h"
+#include "libcamera/internal/vector.h"
 
 namespace libcamera {
 

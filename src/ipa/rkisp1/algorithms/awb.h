@@ -9,8 +9,9 @@
 
 #include <optional>
 
+#include "libcamera/internal/vector.h"
+
 #include "libipa/interpolator.h"
-#include "libipa/vector.h"
 
 #include "algorithm.h"
 

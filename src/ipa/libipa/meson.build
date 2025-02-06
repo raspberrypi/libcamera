@@ -14,7 +14,6 @@ libipa_headers = files([
     'lux.h',
     'module.h',
     'pwl.h',
-    'vector.h',
 ])
 
 libipa_sources = files([
@@ -31,7 +30,6 @@ libipa_sources = files([
     'lux.cpp',
     'module.cpp',
     'pwl.cpp',
-    'vector.cpp',
 ])
 
 libipa_includes = include_directories('..')

@@ -326,6 +326,11 @@ private:
 	std::vector<std::unique_ptr<LogCategory>> categories_ LIBCAMERA_TSA_GUARDED_BY(mutex_);
 	std::list<std::pair<std::string, LogSeverity>> levels_;
 
+	/*
+	 * \todo Use `std::atomic<std::shared_ptr<>>` and drop the pragma
+	 * once it works on all supported platforms.
+	 */
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 	std::shared_ptr<LogOutput> output_;
 };
 

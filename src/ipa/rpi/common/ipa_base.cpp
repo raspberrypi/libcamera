@@ -58,8 +58,9 @@ constexpr Duration controllerMinFrameDuration = 1.0s / 30.0;
 /* List of controls handled by the Raspberry Pi IPA */
 const ControlInfoMap::Map ipaControls{
 	{ &controls::AeEnable, ControlInfo(false, true) },
-	{ &controls::ExposureTime, ControlInfo(0, 66666) },
-	{ &controls::AnalogueGain, ControlInfo(1.0f, 16.0f) },
+	{ &controls::ExposureTime,
+	  ControlInfo(1, 66666, static_cast<int64_t>(defaultExposureTime.get<std::micro>())) },
+	{ &controls::AnalogueGain, ControlInfo(1.0f, 16.0f, 1.0f) },
 	{ &controls::AeMeteringMode, ControlInfo(controls::AeMeteringModeValues) },
 	{ &controls::AeConstraintMode, ControlInfo(controls::AeConstraintModeValues) },
 	{ &controls::AeExposureMode, ControlInfo(controls::AeExposureModeValues) },
@@ -73,7 +74,8 @@ const ControlInfoMap::Map ipaControls{
 	{ &controls::HdrMode, ControlInfo(controls::HdrModeValues) },
 	{ &controls::Sharpness, ControlInfo(0.0f, 16.0f, 1.0f) },
 	{ &controls::ScalerCrop, ControlInfo(Rectangle{}, Rectangle(65535, 65535, 65535, 65535), Rectangle{}) },
-	{ &controls::FrameDurationLimits, ControlInfo(INT64_C(33333), INT64_C(120000)) },
+	{ &controls::FrameDurationLimits,
+	  ControlInfo(INT64_C(33333), INT64_C(120000), static_cast<int64_t>(defaultMinFrameDuration.get<std::micro>())) },
 	{ &controls::rpi::SyncMode, ControlInfo(controls::rpi::SyncModeValues) },
 	{ &controls::rpi::SyncFrames, ControlInfo(1, 1000000, 100) },
 	{ &controls::draft::NoiseReductionMode, ControlInfo(controls::draft::NoiseReductionModeValues) },

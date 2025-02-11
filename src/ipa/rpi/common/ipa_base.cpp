@@ -61,12 +61,13 @@ const ControlInfoMap::Map ipaControls{
 	  ControlInfo(static_cast<int32_t>(controls::ExposureTimeModeAuto),
 		      static_cast<int32_t>(controls::ExposureTimeModeManual),
 		      static_cast<int32_t>(controls::ExposureTimeModeAuto)) },
-	{ &controls::ExposureTime, ControlInfo(0, 66666) },
+	{ &controls::ExposureTime,
+	  ControlInfo(1, 66666, static_cast<int64_t>(defaultExposureTime.get<std::micro>())) },
 	{ &controls::AnalogueGainMode,
 	  ControlInfo(static_cast<int32_t>(controls::AnalogueGainModeAuto),
 		      static_cast<int32_t>(controls::AnalogueGainModeManual),
 		      static_cast<int32_t>(controls::AnalogueGainModeAuto)) },
-	{ &controls::AnalogueGain, ControlInfo(1.0f, 16.0f) },
+	{ &controls::AnalogueGain, ControlInfo(1.0f, 16.0f, 1.0f) },
 	{ &controls::AeMeteringMode, ControlInfo(controls::AeMeteringModeValues) },
 	{ &controls::AeConstraintMode, ControlInfo(controls::AeConstraintModeValues) },
 	{ &controls::AeExposureMode, ControlInfo(controls::AeExposureModeValues) },
@@ -80,7 +81,9 @@ const ControlInfoMap::Map ipaControls{
 	{ &controls::HdrMode, ControlInfo(controls::HdrModeValues) },
 	{ &controls::Sharpness, ControlInfo(0.0f, 16.0f, 1.0f) },
 	{ &controls::ScalerCrop, ControlInfo(Rectangle{}, Rectangle(65535, 65535, 65535, 65535), Rectangle{}) },
-	{ &controls::FrameDurationLimits, ControlInfo(INT64_C(33333), INT64_C(120000)) },
+	{ &controls::FrameDurationLimits,
+	  ControlInfo(INT64_C(33333), INT64_C(120000),
+		      static_cast<int64_t>(defaultMinFrameDuration.get<std::micro>())) },
 	{ &controls::draft::NoiseReductionMode, ControlInfo(controls::draft::NoiseReductionModeValues) },
 	{ &controls::rpi::StatsOutputEnable, ControlInfo(false, true, false) },
 };
@@ -259,15 +262,18 @@ int32_t IpaBase::configure(const IPACameraSensorInfo &sensorInfo, const ConfigPa
 	ControlInfoMap::Map ctrlMap = ipaControls;
 	ctrlMap[&controls::FrameDurationLimits] =
 		ControlInfo(static_cast<int64_t>(mode_.minFrameDuration.get<std::micro>()),
-			    static_cast<int64_t>(mode_.maxFrameDuration.get<std::micro>()));
+			    static_cast<int64_t>(mode_.maxFrameDuration.get<std::micro>()),
+			    static_cast<int64_t>(defaultMinFrameDuration.get<std::micro>()));
 
 	ctrlMap[&controls::AnalogueGain] =
 		ControlInfo(static_cast<float>(mode_.minAnalogueGain),
-			    static_cast<float>(mode_.maxAnalogueGain));
+			    static_cast<float>(mode_.maxAnalogueGain),
+			    static_cast<float>(defaultAnalogueGain));
 
 	ctrlMap[&controls::ExposureTime] =
 		ControlInfo(static_cast<int32_t>(mode_.minExposureTime.get<std::micro>()),
-			    static_cast<int32_t>(mode_.maxExposureTime.get<std::micro>()));
+			    static_cast<int32_t>(mode_.maxExposureTime.get<std::micro>()),
+			    static_cast<int32_t>(defaultExposureTime.get<std::micro>()));
 
 	/* Declare colour processing related controls for non-mono sensors. */
 	if (!monoSensor_)

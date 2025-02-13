@@ -2,6 +2,9 @@ libcamera (0.4.0-6) UNRELEASED; urgency=medium
 
   * Make libcamera-tools depends on libcamera-ipa because libcamerify
     requires v4l2-compat.so to work.
+  * Use libexec/${DEB_HOST_MULTIARCH} to override --libexecdir,
+    otherwise v4l2-compat.so ends up in the same folder as IPA modules
+    and IPA manager tries to parse it leading to errors.
 
  -- Dylan Aïssi <daissi@debian.org>  Wed, 19 Feb 2025 16:11:33 +0100
 

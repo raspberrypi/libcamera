@@ -23,7 +23,7 @@ endif
 
 override_dh_auto_configure:
 	dh_auto_configure -- \
-		--libexecdir=lib/${DEB_HOST_MULTIARCH} \
+               --libexecdir=libexec/${DEB_HOST_MULTIARCH} \
 		-Dgstreamer=enabled \
 		-Dlibunwind=disabled \
 		-Dpycamera=enabled \

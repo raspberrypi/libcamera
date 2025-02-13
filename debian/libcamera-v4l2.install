@@ -1,1 +1,1 @@
-usr/lib/*/libcamera/v4l2-compat.so
+usr/libexec/*/libcamera/v4l2-compat.so

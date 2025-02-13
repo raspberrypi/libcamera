@@ -62,7 +62,7 @@ const ControlInfoMap::Map ipaControls{
 		      static_cast<int32_t>(controls::ExposureTimeModeManual),
 		      static_cast<int32_t>(controls::ExposureTimeModeAuto)) },
 	{ &controls::ExposureTime,
-	  ControlInfo(1, 66666, static_cast<int64_t>(defaultExposureTime.get<std::micro>())) },
+	  ControlInfo(1, 66666, static_cast<int32_t>(defaultExposureTime.get<std::micro>())) },
 	{ &controls::AnalogueGainMode,
 	  ControlInfo(static_cast<int32_t>(controls::AnalogueGainModeAuto),
 		      static_cast<int32_t>(controls::AnalogueGainModeManual),

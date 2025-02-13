@@ -466,7 +466,7 @@ void Agc::process(IPAContext &context, [[maybe_unused]] const uint32_t frame,
 		fillMetadata(context, frameContext, metadata);
 		return;
 	}
-	
+
 	if (!(stats->meas_type & RKISP1_CIF_ISP_STAT_AUTOEXP)) {
 		fillMetadata(context, frameContext, metadata);
 		LOG(RkISP1Agc, Error) << "AUTOEXP data is missing in statistics";

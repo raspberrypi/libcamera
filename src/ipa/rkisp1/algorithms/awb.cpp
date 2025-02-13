@@ -342,8 +342,8 @@ RGB<double> Awb::calculateRgbMeans(const IPAFrameContext &frameContext, const rk
 
 	if (rgbMode_) {
 		rgbMeans = {{
-			static_cast<double>(awb->awb_mean[0].mean_y_or_g),
 			static_cast<double>(awb->awb_mean[0].mean_cr_or_r),
+			static_cast<double>(awb->awb_mean[0].mean_y_or_g),
 			static_cast<double>(awb->awb_mean[0].mean_cb_or_b)
 		}};
 	} else {

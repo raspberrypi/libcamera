@@ -59,7 +59,7 @@ constexpr Duration controllerMinFrameDuration = 1.0s / 30.0;
 const ControlInfoMap::Map ipaControls{
 	{ &controls::AeEnable, ControlInfo(false, true) },
 	{ &controls::ExposureTime,
-	  ControlInfo(1, 66666, static_cast<int64_t>(defaultExposureTime.get<std::micro>())) },
+	  ControlInfo(1, 66666, static_cast<int32_t>(defaultExposureTime.get<std::micro>())) },
 	{ &controls::AnalogueGain, ControlInfo(1.0f, 16.0f, 1.0f) },
 	{ &controls::AeMeteringMode, ControlInfo(controls::AeMeteringModeValues) },
 	{ &controls::AeConstraintMode, ControlInfo(controls::AeConstraintModeValues) },

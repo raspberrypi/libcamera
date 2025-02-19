@@ -14,6 +14,9 @@ exists but can't be opened.
 Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 Tested-by: Julien Vuillaumier <julien.vuillaumier@nxp.com>
 Reviewed-by: Kieran Bingham <kieran.bingham@ideasonboard.com>
+
+Origin: upstream, https://git.libcamera.org/libcamera/libcamera.git/commit/?id=6841ea8d3694c76911bb2b346753134ae3a5091b
+Forwarded: not-needed
 ---
  src/libcamera/pipeline/virtual/virtual.cpp | 15 +++++++++++----
  1 file changed, 11 insertions(+), 4 deletions(-)

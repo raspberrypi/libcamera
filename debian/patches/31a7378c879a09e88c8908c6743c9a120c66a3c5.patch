@@ -12,6 +12,9 @@ themselves. Add a silent parameter to the function to enable this.
 Signed-off-by: Laurent Pinchart <laurent.pinchart@ideasonboard.com>
 Tested-by: Julien Vuillaumier <julien.vuillaumier@nxp.com>
 Reviewed-by: Kieran Bingham <kieran.bingham@ideasonboard.com>
+
+Origin: upstream, https://git.libcamera.org/libcamera/libcamera.git/commit/?id=31a7378c879a09e88c8908c6743c9a120c66a3c5
+Forwarded: not-needed
 ---
  include/libcamera/internal/pipeline_handler.h |  3 ++-
  src/libcamera/pipeline_handler.cpp            | 12 ++++++++----

@@ -1,6 +1,6 @@
 Description: Disable libunwind integration
 Bug-Debian: https://bugs.debian.org/1093688
-Forwarded: TODO
+Forwarded: no
 Author: Dylan Aïssi <daissi@debian.org>
 
 --- a/meson_options.txt

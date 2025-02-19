@@ -108,7 +108,8 @@ Architecture: linux-any
 Multi-Arch: foreign
 Section: video
 Depends: ${misc:Depends},
-         ${shlibs:Depends}
+         ${shlibs:Depends},
+         libcamera-v4l2 (= ${binary:Version})
 Pre-Depends: ${misc:Pre-Depends}
 Description: complex camera support library (tools)
  libcamera is a complex camera support library which handles low-level

@@ -1,3 +1,10 @@
+libcamera (0.4.0-6) UNRELEASED; urgency=medium
+
+  * Make libcamera-tools depends on libcamera-ipa because libcamerify
+    requires v4l2-compat.so to work.
+
+ -- Dylan Aïssi <daissi@debian.org>  Wed, 19 Feb 2025 16:11:33 +0100
+
 libcamera (0.4.0-5) unstable; urgency=medium
 
   * Cherry-pick upstream patches demoting error messages (Closes: #1091966)

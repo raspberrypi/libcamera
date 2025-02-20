@@ -131,7 +131,6 @@ private:
 	void setSensorControls(const ControlList &sensorControls);
 
 	std::string id_;
-	std::vector<unsigned int> tpgCodes_;
 	std::vector<Size> tpgSizes_;
 	Size tpgResolution_;
 };
@@ -179,9 +178,6 @@ void MaliC55CameraData::initTPGData()
 	V4L2Subdevice::Formats formats = sd_->formats(0);
 	if (formats.empty())
 		return;
-
-	tpgCodes_ = utils::map_keys(formats);
-	std::sort(tpgCodes_.begin(), tpgCodes_.end());
 
 	for (const auto &format : formats) {
 		const std::vector<SizeRange> &ranges = format.second;

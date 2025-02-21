@@ -115,7 +115,7 @@ std::string IPAProxy::configurationFile(const std::string &name,
 	ipaEnvName = "LIBCAMERA_" + ipaEnvName + "_TUNING_FILE";
 
 	char const *configFromEnv = utils::secure_getenv(ipaEnvName.c_str());
-	if (configFromEnv && *configFromEnv == '\0')
+	if (configFromEnv && *configFromEnv != '\0')
 		return { configFromEnv };
 
 	struct stat statbuf;

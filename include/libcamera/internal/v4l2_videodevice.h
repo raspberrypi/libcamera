@@ -178,7 +178,7 @@ public:
 	std::array<Plane, 3> planes;
 	unsigned int planesCount = 0;
 
-	const std::string toString() const;
+	std::string toString() const;
 };
 
 std::ostream &operator<<(std::ostream &out, const V4L2DeviceFormat &f);

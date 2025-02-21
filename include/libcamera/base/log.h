@@ -75,7 +75,7 @@ public:
 	const LogCategory &category() const { return category_; }
 	const std::string &fileInfo() const { return fileInfo_; }
 	const std::string &prefix() const { return prefix_; }
-	const std::string msg() const { return msgStream_.str(); }
+	std::string msg() const { return msgStream_.str(); }
 
 private:
 	LIBCAMERA_DISABLE_COPY_AND_MOVE(LogMessage)

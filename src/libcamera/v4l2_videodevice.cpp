@@ -429,7 +429,7 @@ bool V4L2BufferCache::Entry::operator==(const FrameBuffer &buffer) const
  * \brief Assemble and return a string describing the format
  * \return A string describing the V4L2DeviceFormat
  */
-const std::string V4L2DeviceFormat::toString() const
+std::string V4L2DeviceFormat::toString() const
 {
 	std::stringstream ss;
 	ss << *this;

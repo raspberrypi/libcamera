@@ -279,10 +279,7 @@ void Awb::process(IPAContext &context,
 		  const rkisp1_stat_buffer *stats,
 		  ControlList &metadata)
 {
-	const rkisp1_cif_isp_stat *params = &stats->params;
-	const rkisp1_cif_isp_awb_stat *awb = &params->awb;
 	IPAActiveState &activeState = context.activeState;
-	RGB<double> rgbMeans = calculateRgbMeans(frameContext, awb);
 
 	metadata.set(controls::AwbEnable, frameContext.awb.autoEnabled);
 	metadata.set(controls::ColourGains, {
@@ -295,6 +292,11 @@ void Awb::process(IPAContext &context,
 		LOG(RkISP1Awb, Error) << "AWB data is missing in statistics";
 		return;
 	}
+
+	const rkisp1_cif_isp_stat *params = &stats->params;
+	const rkisp1_cif_isp_awb_stat *awb = &params->awb;
+
+	RGB<double> rgbMeans = calculateRgbMeans(frameContext, awb);
 
 	/*
 	 * If the means are too small we don't have enough information to

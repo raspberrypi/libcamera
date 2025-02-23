@@ -70,7 +70,7 @@ namespace ipa {
  *
  * Fetch the RGB means from the statistics. The values of each channel are
  * dimensionless and only the ratios are used for further calculations. This is
- * used by the simple gray world model to calculate the gains to apply.
+ * used by the simple grey world model to calculate the gains to apply.
  *
  * \return The RGB means
  */

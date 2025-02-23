@@ -176,7 +176,7 @@ void Awb::queueRequest(IPAContext &context,
 		awb.gains.manual.r() = (*colourGains)[0];
 		awb.gains.manual.b() = (*colourGains)[1];
 		/*
-		 * \todo: Colour temperature reported in metadata is now
+		 * \todo Colour temperature reported in metadata is now
 		 * incorrect, as we can't deduce the temperature from the gains.
 		 * This will be fixed with the bayes AWB algorithm.
 		 */

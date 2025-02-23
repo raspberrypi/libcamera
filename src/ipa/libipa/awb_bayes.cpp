@@ -26,7 +26,8 @@
  *
  * This implementation is based on the initial implementation done by
  * RaspberryPi.
- * \todo: Documentation
+ *
+ * \todo Documentation
  *
  * \todo Not all the features implemented by RaspberryPi were ported over to
  * this algorithm because they either rely on hardware features not generally
@@ -272,7 +273,7 @@ void AwbBayes::handleControls(const ControlList &controls)
 RGB<double> AwbBayes::gainsFromColourTemperature(double colourTemperature)
 {
 	/*
-	 * \todo: In the RaspberryPi code, the ct curve was interpolated in
+	 * \todo In the RaspberryPi code, the ct curve was interpolated in
 	 * the white point space (1/x) not in gains space. This feels counter
 	 * intuitive, as the gains are in linear space. But I can't prove it.
 	 */

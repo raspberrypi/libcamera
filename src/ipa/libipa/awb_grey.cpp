@@ -57,7 +57,7 @@ int AwbGrey::init(const YamlObject &tuningData)
 }
 
 /**
- * \brief Calculate awb data from the given statistics
+ * \brief Calculate AWB data from the given statistics
  * \param[in] stats The statistics to use for the calculation
  * \param[in] lux The lux value of the scene
  *
@@ -68,7 +68,7 @@ int AwbGrey::init(const YamlObject &tuningData)
  *
  * The \a lux parameter is not used in this algorithm.
  *
- * \return The awb result
+ * \return The AWB result
  */
 AwbResult AwbGrey::calculateAwb(const AwbStats &stats, [[maybe_unused]] int lux)
 {

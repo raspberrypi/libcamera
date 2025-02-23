@@ -24,7 +24,7 @@ namespace ipa {
 
 /**
  * \class AwbResult
- * \brief The result of an awb calculation
+ * \brief The result of an AWB calculation
  *
  * This class holds the result of an auto white balance calculation.
  */
@@ -57,7 +57,7 @@ namespace ipa {
  * applied. To keep the actual implementations computationally inexpensive,
  * the squared colour error shall be returned.
  *
- * If the awb statistics provide multiple zones, the average of the individual
+ * If the AWB statistics provide multiple zones, the average of the individual
  * squared errors shall be returned. Averaging/normalizing is necessary so that
  * the numeric dimensions are the same on all hardware platforms.
  *
@@ -94,7 +94,7 @@ namespace ipa {
 
 /**
  * \fn AwbAlgorithm::calculateAwb
- * \brief Calculate awb data from the given statistics
+ * \brief Calculate AWB data from the given statistics
  * \param[in] stats The statistics to use for the calculation
  * \param[in] lux The lux value of the scene
  *
@@ -102,7 +102,7 @@ namespace ipa {
  * lux value of 0 means it is unknown or invalid and the algorithm shall ignore
  * it.
  *
- * \return The awb result
+ * \return The AWB result
  */
 
 /**
@@ -178,14 +178,14 @@ int AwbAlgorithm::parseModeConfigs(const YamlObject &tuningData,
 		if (controls::AwbModeNameValueMap.find(modeName) ==
 		    controls::AwbModeNameValueMap.end()) {
 			LOG(Awb, Warning)
-				<< "Skipping unknown awb mode '"
+				<< "Skipping unknown AWB mode '"
 				<< modeName << "'";
 			continue;
 		}
 
 		if (!modeDict.isDictionary()) {
 			LOG(Awb, Error)
-				<< "Invalid awb mode '" << modeName << "'";
+				<< "Invalid AWB mode '" << modeName << "'";
 			return -EINVAL;
 		}
 
@@ -235,7 +235,7 @@ int AwbAlgorithm::parseModeConfigs(const YamlObject &tuningData,
  * \class AwbAlgorithm::ModeConfig
  * \brief Holds the configuration of a single AWB mode
  *
- * Awb modes limit the regulation of the AWB algorithm to a specific range of
+ * AWB modes limit the regulation of the AWB algorithm to a specific range of
  * colour temperatures.
  */
 

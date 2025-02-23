@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2024 Ideas on Board Oy
  *
- * Base class for grey world AWB algorithm
+ * Implementation of grey world AWB algorithm
  */
 
 #include "awb_grey.h"
@@ -61,10 +61,10 @@ int AwbGrey::init(const YamlObject &tuningData)
  * \param[in] stats The statistics to use for the calculation
  * \param[in] lux The lux value of the scene
  *
- * Estimates the colour temperature based on the colours::estimateCCT function.
- * The gains are calculated purely based on the RGB means provided by the \a
- * stats. The colour temperature is not taken into account when calculating the
- * gains.
+ * The colour temperature is estimated based on the colours::estimateCCT()
+ * function. The gains are calculated purely based on the RGB means provided by
+ * the \a stats. The colour temperature is not taken into account when
+ * calculating the gains.
  *
  * The \a lux parameter is not used in this algorithm.
  *

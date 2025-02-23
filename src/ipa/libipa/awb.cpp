@@ -49,7 +49,7 @@ namespace ipa {
  */
 
 /**
- * \fn AwbStats::computeColourError
+ * \fn AwbStats::computeColourError()
  * \brief Compute an error value for when the given gains would be applied
  * \param[in] gains The gains to apply
  *
@@ -65,7 +65,7 @@ namespace ipa {
  */
 
 /**
- * \fn AwbStats::getRGBMeans
+ * \fn AwbStats::getRGBMeans()
  * \brief Get RGB means of the statistics
  *
  * Fetch the RGB means from the statistics. The values of each channel are
@@ -85,7 +85,7 @@ namespace ipa {
  */
 
 /**
- * \fn AwbAlgorithm::init
+ * \fn AwbAlgorithm::init()
  * \brief Initialize the algorithm with the given tuning data
  * \param[in] tuningData The tuning data to use for the algorithm
  *
@@ -93,7 +93,7 @@ namespace ipa {
  */
 
 /**
- * \fn AwbAlgorithm::calculateAwb
+ * \fn AwbAlgorithm::calculateAwb()
  * \brief Calculate AWB data from the given statistics
  * \param[in] stats The statistics to use for the calculation
  * \param[in] lux The lux value of the scene
@@ -106,7 +106,7 @@ namespace ipa {
  */
 
 /**
- * \fn AwbAlgorithm::gainsFromColourTemperature
+ * \fn AwbAlgorithm::gainsFromColourTemperature()
  * \brief Compute white balance gains from a colour temperature
  * \param[in] colourTemperature The colour temperature in Kelvin
  *
@@ -118,14 +118,14 @@ namespace ipa {
  */
 
 /**
- * \fn AwbAlgorithm::controls
+ * \fn AwbAlgorithm::controls()
  * \brief Get the controls info map for this algorithm
  *
  * \return The controls info map
  */
 
 /**
- * \fn AwbAlgorithm::handleControls
+ * \fn AwbAlgorithm::handleControls()
  * \param[in] controls The controls to handle
  * \brief Handle the controls supplied in a request
  */

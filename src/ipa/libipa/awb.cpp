@@ -43,8 +43,8 @@ namespace ipa {
  * \class AwbStats
  * \brief An abstraction class wrapping hardware-specific AWB statistics
  *
- * Pipeline handlers using an AWB algorithm based on the AwbAlgorithm class need
- * to implement this class to give the algorithm access to the hardware-specific
+ * IPA modules using an AWB algorithm based on the AwbAlgorithm class need to
+ * implement this class to give the algorithm access to the hardware-specific
  * statistics data.
  */
 

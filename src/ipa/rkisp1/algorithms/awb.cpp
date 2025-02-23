@@ -92,7 +92,7 @@ int Awb::init(IPAContext &context, const YamlObject &tuningData)
 							 kDefaultColourTemperature);
 
 	if (!tuningData.contains("algorithm"))
-		LOG(RkISP1Awb, Info) << "No awb algorithm specified."
+		LOG(RkISP1Awb, Info) << "No AWB algorithm specified."
 				     << " Default to grey world";
 
 	auto mode = tuningData["algorithm"].get<std::string>("grey");
@@ -101,14 +101,14 @@ int Awb::init(IPAContext &context, const YamlObject &tuningData)
 	} else if (mode == "bayes") {
 		awbAlgo_ = std::make_unique<AwbBayes>();
 	} else {
-		LOG(RkISP1Awb, Error) << "Unknown awb algorithm: " << mode;
+		LOG(RkISP1Awb, Error) << "Unknown AWB algorithm: " << mode;
 		return -EINVAL;
 	}
-	LOG(RkISP1Awb, Debug) << "Using awb algorithm: " << mode;
+	LOG(RkISP1Awb, Debug) << "Using AWB algorithm: " << mode;
 
 	int ret = awbAlgo_->init(tuningData);
 	if (ret) {
-		LOG(RkISP1Awb, Error) << "Failed to init awb algorithm";
+		LOG(RkISP1Awb, Error) << "Failed to init AWB algorithm";
 		return ret;
 	}
 

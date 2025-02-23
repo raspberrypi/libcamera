@@ -131,35 +131,6 @@ namespace ipa {
  */
 
 /**
- * \var AwbAlgorithm::controls_
- * \brief Controls info map for the controls provided by the algorithm
- */
-
-/**
- * \var AwbAlgorithm::modes_
- * \brief Map of all configured modes
- * \sa AwbAlgorithm::parseModeConfigs
- */
-
-/**
- * \class AwbAlgorithm::ModeConfig
- * \brief Holds the configuration of a single AWB mode
- *
- * Awb modes limit the regulation of the AWB algorithm to a specific range of
- * colour temperatures.
- */
-
-/**
- * \var AwbAlgorithm::ModeConfig::ctLo
- * \brief The lowest valid colour temperature of that mode
- */
-
-/**
- * \var AwbAlgorithm::ModeConfig::ctHi
- * \brief The highest valid colour temperature of that mode
- */
-
-/**
  * \brief Parse the mode configurations from the tuning data
  * \param[in] tuningData the YamlObject representing the tuning data
  * \param[in] def The default value for the AwbMode control
@@ -259,6 +230,35 @@ int AwbAlgorithm::parseModeConfigs(const YamlObject &tuningData,
 
 	return 0;
 }
+
+/**
+ * \class AwbAlgorithm::ModeConfig
+ * \brief Holds the configuration of a single AWB mode
+ *
+ * Awb modes limit the regulation of the AWB algorithm to a specific range of
+ * colour temperatures.
+ */
+
+/**
+ * \var AwbAlgorithm::ModeConfig::ctLo
+ * \brief The lowest valid colour temperature of that mode
+ */
+
+/**
+ * \var AwbAlgorithm::ModeConfig::ctHi
+ * \brief The highest valid colour temperature of that mode
+ */
+
+/**
+ * \var AwbAlgorithm::controls_
+ * \brief Controls info map for the controls provided by the algorithm
+ */
+
+/**
+ * \var AwbAlgorithm::modes_
+ * \brief Map of all configured modes
+ * \sa AwbAlgorithm::parseModeConfigs
+ */
 
 } /* namespace ipa */
 

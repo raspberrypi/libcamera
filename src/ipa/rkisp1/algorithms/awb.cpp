@@ -55,9 +55,9 @@ public:
 	double computeColourError(const RGB<double> &gains) const override
 	{
 		/*
-		* Compute the sum of the squared colour error (non-greyness) as it
-		* appears in the log likelihood equation.
-		*/
+		 * Compute the sum of the squared colour error (non-greyness) as
+		 * it appears in the log likelihood equation.
+		 */
 		double deltaR = gains.r() * rg_ - 1.0;
 		double deltaB = gains.b() * bg_ - 1.0;
 		double delta2 = deltaR * deltaR + deltaB * deltaB;

@@ -8,7 +8,12 @@
 
 #include "awb_bayes.h"
 
+#include <algorithm>
 #include <cmath>
+#include <limits>
+#include <map>
+#include <ostream>
+#include <vector>
 
 #include <libcamera/base/log.h>
 #include <libcamera/control_ids.h>

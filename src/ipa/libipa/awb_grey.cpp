@@ -7,7 +7,7 @@
 
 #include "awb_grey.h"
 
-#include <cmath>
+#include <algorithm>
 
 #include <libcamera/base/log.h>
 #include <libcamera/control_ids.h>

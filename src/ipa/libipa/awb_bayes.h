@@ -7,14 +7,6 @@
 
 #pragma once
 
-#include <map>
-#include <memory>
-#include <tuple>
-#include <vector>
-
-#include <libcamera/base/utils.h>
-
-#include <libcamera/control_ids.h>
 #include <libcamera/controls.h>
 
 #include "libcamera/internal/vector.h"

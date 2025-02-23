@@ -7,8 +7,9 @@
 
 #pragma once
 
+#include <optional>
+
 #include "libcamera/internal/vector.h"
-#include "libcamera/internal/yaml_parser.h"
 
 #include "awb.h"
 #include "interpolator.h"

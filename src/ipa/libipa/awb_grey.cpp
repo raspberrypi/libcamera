@@ -73,7 +73,7 @@ int AwbGrey::init(const YamlObject &tuningData)
 AwbResult AwbGrey::calculateAwb(const AwbStats &stats, [[maybe_unused]] unsigned int lux)
 {
 	AwbResult result;
-	auto means = stats.getRGBMeans();
+	auto means = stats.rgbMeans();
 	result.colourTemperature = estimateCCT(means);
 
 	/*

@@ -26,7 +26,7 @@ struct AwbResult {
 
 struct AwbStats {
 	virtual double computeColourError(const RGB<double> &gains) const = 0;
-	virtual RGB<double> getRGBMeans() const = 0;
+	virtual RGB<double> rgbMeans() const = 0;
 };
 
 class AwbAlgorithm

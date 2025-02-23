@@ -65,7 +65,7 @@ public:
 		return delta2;
 	}
 
-	RGB<double> getRGBMeans() const override
+	RGB<double> rgbMeans() const override
 	{
 		return rgbMeans_;
 	}

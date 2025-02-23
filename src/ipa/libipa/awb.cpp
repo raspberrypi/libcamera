@@ -65,7 +65,7 @@ namespace ipa {
  */
 
 /**
- * \fn AwbStats::getRGBMeans()
+ * \fn AwbStats::rgbMeans()
  * \brief Get RGB means of the statistics
  *
  * Fetch the RGB means from the statistics. The values of each channel are

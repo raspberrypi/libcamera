@@ -70,7 +70,7 @@ int AwbGrey::init(const YamlObject &tuningData)
  *
  * \return The AWB result
  */
-AwbResult AwbGrey::calculateAwb(const AwbStats &stats, [[maybe_unused]] int lux)
+AwbResult AwbGrey::calculateAwb(const AwbStats &stats, [[maybe_unused]] unsigned int lux)
 {
 	AwbResult result;
 	auto means = stats.getRGBMeans();

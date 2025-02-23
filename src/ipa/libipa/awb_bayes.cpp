@@ -275,7 +275,7 @@ RGB<double> AwbBayes::gainsFromColourTemperature(double colourTemperature)
 	return { { gains[0], 1.0, gains[1] } };
 }
 
-AwbResult AwbBayes::calculateAwb(const AwbStats &stats, int lux)
+AwbResult AwbBayes::calculateAwb(const AwbStats &stats, unsigned int lux)
 {
 	ipa::Pwl prior;
 	if (lux > 0) {

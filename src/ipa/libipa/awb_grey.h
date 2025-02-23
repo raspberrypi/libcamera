@@ -23,7 +23,7 @@ public:
 	AwbGrey() = default;
 
 	int init(const YamlObject &tuningData) override;
-	AwbResult calculateAwb(const AwbStats &stats, int lux) override;
+	AwbResult calculateAwb(const AwbStats &stats, unsigned int lux) override;
 	RGB<double> gainsFromColourTemperature(double colourTemperature) override;
 
 private:

@@ -42,7 +42,7 @@ constexpr int32_t kDefaultColourTemperature = 5000;
 /* Minimum mean value below which AWB can't operate. */
 constexpr double kMeanMinThreshold = 2.0;
 
-class RkISP1AwbStats : public AwbStats
+class RkISP1AwbStats final : public AwbStats
 {
 public:
 	RkISP1AwbStats(const RGB<double> &rgbMeans)

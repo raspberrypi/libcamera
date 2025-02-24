@@ -61,6 +61,9 @@ override_dh_strip:
 	  ./obj-${DEB_HOST_GNU_TYPE}/src/apps/ipa-verify/ipa_verify $${IPA_MOD}; \
 	done
 
+execute_after_dh_fixperms:
+	find debian/ -name 'v4l2-compat.so' -exec chmod -x '{}' \;
+
 .PHONY: licensecheck
 licensecheck:
 	licensecheck --deb-machine -r * \

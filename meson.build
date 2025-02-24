@@ -110,7 +110,9 @@ common_arguments = [
 ]
 
 c_arguments = []
-cpp_arguments = []
+cpp_arguments = [
+    '-Wnon-virtual-dtor',
+]
 
 cxx_stdlib = 'libstdc++'
 

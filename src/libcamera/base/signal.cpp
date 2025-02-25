@@ -49,7 +49,7 @@ void SignalBase::disconnect(std::function<bool(SlotList::iterator &)> match)
 {
 	MutexLocker locker(signalsLock);
 
-	for (auto iter = slots_.begin(); iter != slots_.end(); ) {
+	for (auto iter = slots_.begin(); iter != slots_.end();) {
 		if (match(iter)) {
 			Object *object = (*iter)->object();
 			if (object)

@@ -13,10 +13,13 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <libcamera/base/log.h>
+
 #include <libcamera/controls.h>
 #include <libcamera/formats.h>
 #include <libcamera/stream.h>
 
+#include "libcamera/internal/framebuffer.h"
 #include "libcamera/internal/ipa_manager.h"
 #include "libcamera/internal/software_isp/debayer_params.h"
 
@@ -300,8 +303,11 @@ int SoftwareIsp::queueBuffers(uint32_t frame, FrameBuffer *input,
 			return -EINVAL;
 	}
 
-	for (auto iter = outputs.begin(); iter != outputs.end(); iter++)
-		process(frame, input, iter->second);
+	for (auto iter = outputs.begin(); iter != outputs.end(); iter++) {
+		FrameBuffer *const buffer = iter->second;
+		queuedOutputBuffers_.push_back(buffer);
+		process(frame, input, buffer);
+	}
 
 	return 0;
 }
@@ -331,6 +337,13 @@ void SoftwareIsp::stop()
 
 	running_ = false;
 	ipa_->stop();
+
+	for (auto buffer : queuedOutputBuffers_) {
+		FrameMetadata &metadata = buffer->_d()->metadata();
+		metadata.status = FrameMetadata::FrameCancelled;
+		outputBufferReady.emit(buffer);
+	}
+	queuedOutputBuffers_.clear();
 }
 
 /**
@@ -369,7 +382,11 @@ void SoftwareIsp::inputReady(FrameBuffer *input)
 
 void SoftwareIsp::outputReady(FrameBuffer *output)
 {
-	outputBufferReady.emit(output);
+	if (running_) {
+		ASSERT(queuedOutputBuffers_.front() == output);
+		queuedOutputBuffers_.pop_front();
+		outputBufferReady.emit(output);
+	}
 }
 
 } /* namespace libcamera */

@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <deque>
 #include <functional>
 #include <initializer_list>
 #include <map>
@@ -101,6 +102,7 @@ private:
 
 	std::unique_ptr<ipa::soft::IPAProxySoft> ipa_;
 	bool running_;
+	std::deque<FrameBuffer *> queuedOutputBuffers_;
 };
 
 } /* namespace libcamera */

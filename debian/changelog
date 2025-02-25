@@ -1,4 +1,4 @@
-libcamera (0.4.0-6) UNRELEASED; urgency=medium
+libcamera (0.4.0-6) unstable; urgency=medium
 
   * Make libcamera-tools depends on libcamera-ipa because libcamerify
     requires v4l2-compat.so to work.
@@ -6,7 +6,7 @@ libcamera (0.4.0-6) UNRELEASED; urgency=medium
     otherwise v4l2-compat.so ends up in the same folder as IPA modules
     and IPA manager tries to parse it leading to errors.
 
- -- Dylan Aïssi <daissi@debian.org>  Wed, 19 Feb 2025 16:11:33 +0100
+ -- Dylan Aïssi <daissi@debian.org>  Tue, 25 Feb 2025 11:48:40 +0100
 
 libcamera (0.4.0-5) unstable; urgency=medium
 

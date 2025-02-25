@@ -102,6 +102,7 @@ private:
 
 	std::unique_ptr<ipa::soft::IPAProxySoft> ipa_;
 	bool running_;
+	std::deque<FrameBuffer *> queuedInputBuffers_;
 	std::deque<FrameBuffer *> queuedOutputBuffers_;
 };
 

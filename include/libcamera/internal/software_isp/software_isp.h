@@ -100,6 +100,7 @@ private:
 	DmaBufAllocator dmaHeap_;
 
 	std::unique_ptr<ipa::soft::IPAProxySoft> ipa_;
+	bool running_;
 };
 
 } /* namespace libcamera */

@@ -315,6 +315,7 @@ int SoftwareIsp::start()
 	int ret = ipa_->start();
 	if (ret)
 		return ret;
+	running_ = true;
 
 	ispWorkerThread_.start();
 	return 0;
@@ -328,6 +329,7 @@ void SoftwareIsp::stop()
 	ispWorkerThread_.exit();
 	ispWorkerThread_.wait();
 
+	running_ = false;
 	ipa_->stop();
 }
 
@@ -356,7 +358,8 @@ void SoftwareIsp::setSensorCtrls(const ControlList &sensorControls)
 
 void SoftwareIsp::statsReady(uint32_t frame, uint32_t bufferId)
 {
-	ispStatsReady.emit(frame, bufferId);
+	if (running_)
+		ispStatsReady.emit(frame, bufferId);
 }
 
 void SoftwareIsp::inputReady(FrameBuffer *input)

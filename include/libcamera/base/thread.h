@@ -48,7 +48,8 @@ public:
 
 	EventDispatcher *eventDispatcher();
 
-	void dispatchMessages(Message::Type type = Message::Type::None);
+	void dispatchMessages(Message::Type type = Message::Type::None,
+			      Object *receiver = nullptr);
 
 protected:
 	int exec();

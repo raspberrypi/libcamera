@@ -604,10 +604,12 @@ void Thread::removeMessages(Object *receiver)
 /**
  * \brief Dispatch posted messages for this thread
  * \param[in] type The message type
+ * \param[in] receiver The receiver whose messages to dispatch
  *
- * This function immediately dispatches all the messages previously posted for
- * this thread with postMessage() that match the message \a type. If the \a type
- * is Message::Type::None, all messages are dispatched.
+ * This function immediately dispatches all the messages of the given \a type
+ * previously posted to this thread for the \a receiver with postMessage(). If
+ * the \a type is Message::Type::None, all messages types are dispatched. If the
+ * \a receiver is null, messages to all receivers are dispatched.
  *
  * Messages shall only be dispatched from the current thread, typically within
  * the thread from the run() function. Calling this function outside of the
@@ -617,7 +619,7 @@ void Thread::removeMessages(Object *receiver)
  * same thread from an object's message handler. It guarantees delivery of
  * messages in the order they have been posted in all cases.
  */
-void Thread::dispatchMessages(Message::Type type)
+void Thread::dispatchMessages(Message::Type type, Object *receiver)
 {
 	ASSERT(data_ == ThreadData::current());
 
@@ -634,6 +636,9 @@ void Thread::dispatchMessages(Message::Type type)
 		if (type != Message::Type::None && msg->type() != type)
 			continue;
 
+		if (receiver && receiver != msg->receiver_)
+			continue;
+
 		/*
 		 * Move the message, setting the entry in the list to null. It
 		 * will cause recursive calls to ignore the entry, and the erase
@@ -641,12 +646,12 @@ void Thread::dispatchMessages(Message::Type type)
 		 */
 		std::unique_ptr<Message> message = std::move(msg);
 
-		Object *receiver = message->receiver_;
-		ASSERT(data_ == receiver->thread()->data_);
-		receiver->pendingMessages_--;
+		Object *messageReceiver = message->receiver_;
+		ASSERT(data_ == messageReceiver->thread()->data_);
+		messageReceiver->pendingMessages_--;
 
 		locker.unlock();
-		receiver->message(message.get());
+		messageReceiver->message(message.get());
 		message.reset();
 		locker.lock();
 	}

@@ -14,6 +14,7 @@
 #include <unistd.h>
 
 #include <libcamera/base/log.h>
+#include <libcamera/base/thread.h>
 
 #include <libcamera/controls.h>
 #include <libcamera/formats.h>
@@ -323,7 +324,6 @@ int SoftwareIsp::start()
 	int ret = ipa_->start();
 	if (ret)
 		return ret;
-	running_ = true;
 
 	ispWorkerThread_.start();
 	return 0;
@@ -340,7 +340,8 @@ void SoftwareIsp::stop()
 	ispWorkerThread_.exit();
 	ispWorkerThread_.wait();
 
-	running_ = false;
+	Thread::current()->dispatchMessages(Message::Type::InvokeMessage, this);
+
 	ipa_->stop();
 
 	for (auto buffer : queuedOutputBuffers_) {
@@ -383,26 +384,21 @@ void SoftwareIsp::setSensorCtrls(const ControlList &sensorControls)
 
 void SoftwareIsp::statsReady(uint32_t frame, uint32_t bufferId)
 {
-	if (running_)
-		ispStatsReady.emit(frame, bufferId);
+	ispStatsReady.emit(frame, bufferId);
 }
 
 void SoftwareIsp::inputReady(FrameBuffer *input)
 {
-	if (running_) {
-		ASSERT(queuedInputBuffers_.front() == input);
-		queuedInputBuffers_.pop_front();
-		inputBufferReady.emit(input);
-	}
+	ASSERT(queuedInputBuffers_.front() == input);
+	queuedInputBuffers_.pop_front();
+	inputBufferReady.emit(input);
 }
 
 void SoftwareIsp::outputReady(FrameBuffer *output)
 {
-	if (running_) {
-		ASSERT(queuedOutputBuffers_.front() == output);
-		queuedOutputBuffers_.pop_front();
-		outputBufferReady.emit(output);
-	}
+	ASSERT(queuedOutputBuffers_.front() == output);
+	queuedOutputBuffers_.pop_front();
+	outputBufferReady.emit(output);
 }
 
 } /* namespace libcamera */

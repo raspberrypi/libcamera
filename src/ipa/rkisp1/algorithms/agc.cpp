@@ -526,9 +526,7 @@ void Agc::process(IPAContext &context, [[maybe_unused]] const uint32_t frame,
 	double maxAnalogueGain;
 
 	if (frameContext.agc.autoExposureEnabled) {
-		minExposureTime = std::clamp(frameContext.agc.minFrameDuration,
-					     context.configuration.sensor.minExposureTime,
-					     context.configuration.sensor.maxExposureTime);
+		minExposureTime = context.configuration.sensor.minExposureTime;
 		maxExposureTime = std::clamp(frameContext.agc.maxFrameDuration,
 					     context.configuration.sensor.minExposureTime,
 					     context.configuration.sensor.maxExposureTime);

@@ -74,6 +74,10 @@ cc = meson.get_compiler('c')
 cxx = meson.get_compiler('cpp')
 config_h = configuration_data()
 
+if cc.has_header_symbol('unistd.h', 'close_range', prefix : '#define _GNU_SOURCE')
+    config_h.set('HAVE_CLOSE_RANGE', 1)
+endif
+
 if cc.has_header_symbol('fcntl.h', 'F_ADD_SEALS', prefix : '#define _GNU_SOURCE')
     config_h.set('HAVE_FILE_SEALS', 1)
 endif

@@ -69,6 +69,31 @@ void closeAllFdsExcept(std::vector<int> v)
 
 	ASSERT(v.empty() || v.front() >= 0);
 
+#if HAVE_CLOSE_RANGE
+	/*
+	 * At the moment libcamera does not require at least Linux 5.9,
+	 * which introduced the `close_range()` system call, so a runtime
+	 * check is also needed to make sure that it is supported.
+	 */
+	static const bool hasCloseRange = [] {
+		return close_range(~0u, 0, 0) < 0 && errno == EINVAL;
+	}();
+
+	if (hasCloseRange) {
+		unsigned int prev = 0;
+
+		for (unsigned int curr : v) {
+			ASSERT(prev <= curr + 1);
+			if (prev < curr)
+				close_range(prev, curr - 1, 0);
+			prev = curr + 1;
+		}
+
+		close_range(prev, ~0u, 0);
+		return;
+	}
+#endif
+
 	DIR *dir = opendir("/proc/self/fd");
 	if (!dir)
 		return;

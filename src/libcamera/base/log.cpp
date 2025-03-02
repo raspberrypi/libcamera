@@ -687,14 +687,13 @@ LogSeverity Logger::parseLogLevel(std::string_view level)
 		"FATAL",
 	};
 
-	unsigned int severity;
+	unsigned int severity = LogInvalid;
 
 	if (std::isdigit(level[0])) {
 		auto [end, ec] = std::from_chars(level.data(), level.data() + level.size(), severity);
 		if (ec != std::errc() || *end != '\0' || severity > LogFatal)
 			severity = LogInvalid;
 	} else {
-		severity = LogInvalid;
 		for (unsigned int i = 0; i < std::size(names); ++i) {
 			if (names[i] == level) {
 				severity = i;

@@ -108,10 +108,16 @@ LogMessage _log(const LogCategory &category, LogSeverity severity,
 #ifndef __DOXYGEN__
 #define _LOG_CATEGORY(name) logCategory##name
 
+#define _LOG(cat, sev)                                                 \
+	switch (const auto &_logCategory = (cat);                      \
+		static_cast<int>(_logCategory.severity() <= Log##sev)) \
+	case 1:                                                        \
+		_log(_logCategory, Log##sev).stream()
+
 #define _LOG1(severity) \
-	_log(LogCategory::defaultCategory(), Log##severity).stream()
+	_LOG(LogCategory::defaultCategory(), severity)
 #define _LOG2(category, severity) \
-	_log(_LOG_CATEGORY(category)(), Log##severity).stream()
+	_LOG(_LOG_CATEGORY(category)(), severity)
 
 /*
  * Expand the LOG() macro to _LOG1() or _LOG2() based on the number of

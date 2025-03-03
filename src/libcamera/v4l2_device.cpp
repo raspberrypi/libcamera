@@ -1032,6 +1032,8 @@ template std::optional<ColorSpace> V4L2Device::toColorSpace(const struct v4l2_mb
 template<typename T>
 int V4L2Device::fromColorSpace(const std::optional<ColorSpace> &colorSpace, T &v4l2Format)
 {
+	using libcamera::_log;
+
 	v4l2Format.colorspace = V4L2_COLORSPACE_DEFAULT;
 	v4l2Format.xfer_func = V4L2_XFER_FUNC_DEFAULT;
 	v4l2Format.ycbcr_enc = V4L2_YCBCR_ENC_DEFAULT;
@@ -1060,7 +1062,7 @@ int V4L2Device::fromColorSpace(const std::optional<ColorSpace> &colorSpace, T &v
 	if (itPrimaries != primariesToV4l2.end()) {
 		v4l2Format.colorspace = itPrimaries->second;
 	} else {
-		libcamera::LOG(V4L2, Warning)
+		LOG(V4L2, Warning)
 			<< "Unrecognised primaries in "
 			<< ColorSpace::toString(colorSpace);
 		ret = -EINVAL;
@@ -1070,7 +1072,7 @@ int V4L2Device::fromColorSpace(const std::optional<ColorSpace> &colorSpace, T &v
 	if (itTransfer != transferFunctionToV4l2.end()) {
 		v4l2Format.xfer_func = itTransfer->second;
 	} else {
-		libcamera::LOG(V4L2, Warning)
+		LOG(V4L2, Warning)
 			<< "Unrecognised transfer function in "
 			<< ColorSpace::toString(colorSpace);
 		ret = -EINVAL;
@@ -1080,7 +1082,7 @@ int V4L2Device::fromColorSpace(const std::optional<ColorSpace> &colorSpace, T &v
 	if (itYcbcrEncoding != ycbcrEncodingToV4l2.end()) {
 		v4l2Format.ycbcr_enc = itYcbcrEncoding->second;
 	} else {
-		libcamera::LOG(V4L2, Warning)
+		LOG(V4L2, Warning)
 			<< "Unrecognised YCbCr encoding in "
 			<< ColorSpace::toString(colorSpace);
 		ret = -EINVAL;
@@ -1090,7 +1092,7 @@ int V4L2Device::fromColorSpace(const std::optional<ColorSpace> &colorSpace, T &v
 	if (itRange != rangeToV4l2.end()) {
 		v4l2Format.quantization = itRange->second;
 	} else {
-		libcamera::LOG(V4L2, Warning)
+		LOG(V4L2, Warning)
 			<< "Unrecognised quantization in "
 			<< ColorSpace::toString(colorSpace);
 		ret = -EINVAL;

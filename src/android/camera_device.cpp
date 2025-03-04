@@ -1079,7 +1079,7 @@ int CameraDevice::processCaptureRequest(camera3_capture_request_t *camera3Reques
 		buffer.internalBuffer = frameBuffer;
 
 		descriptor->request_->addBuffer(sourceStream->stream(),
-						frameBuffer, nullptr);
+						frameBuffer);
 
 		requestedStreams.insert(sourceStream);
 	}

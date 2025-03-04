@@ -329,6 +329,8 @@ int PipelineHandlerUVC::processControl(const UVCCameraData *data, ControlList *c
 		cid = V4L2_CID_EXPOSURE_ABSOLUTE;
 	else if (id == controls::AnalogueGain)
 		cid = V4L2_CID_GAIN;
+	else if (id == controls::Gamma)
+		cid = V4L2_CID_GAMMA;
 	else
 		return -EINVAL;
 
@@ -393,6 +395,10 @@ int PipelineHandlerUVC::processControl(const UVCCameraData *data, ControlList *c
 		controls->set(cid, static_cast<int32_t>(std::lround(fvalue)));
 		break;
 	}
+
+	case V4L2_CID_GAMMA:
+		controls->set(cid, static_cast<int32_t>(std::lround(value.get<float>() * 100)));
+		break;
 
 	default: {
 		int32_t ivalue = value.get<int32_t>();
@@ -691,6 +697,9 @@ void UVCCameraData::addControl(uint32_t cid, const ControlInfo &v4l2Info,
 	case V4L2_CID_GAIN:
 		id = &controls::AnalogueGain;
 		break;
+	case V4L2_CID_GAMMA:
+		id = &controls::Gamma;
+		break;
 	default:
 		return;
 	}
@@ -844,6 +853,15 @@ void UVCCameraData::addControl(uint32_t cid, const ControlInfo &v4l2Info,
 		};
 		break;
 	}
+
+	case V4L2_CID_GAMMA:
+		/* UVC gamma is in units of 1/100 gamma. */
+		info = ControlInfo{
+			{ min / 100.0f },
+			{ max / 100.0f },
+			{ def / 100.0f }
+		};
+		break;
 
 	default:
 		info = v4l2Info;

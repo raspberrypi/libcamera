@@ -75,7 +75,7 @@ void ProcessManager::sighandler()
 		return;
 	}
 
-	for (auto it = processes_.begin(); it != processes_.end(); ) {
+	for (auto it = processes_.begin(); it != processes_.end();) {
 		Process *process = *it;
 
 		int wstatus;

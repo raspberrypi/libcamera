@@ -8,12 +8,15 @@
 #include <libcamera/base/log.h>
 
 #include <array>
+#include <charconv>
+#include <fnmatch.h>
 #include <fstream>
 #include <iostream>
 #include <list>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <string_view>
 #include <syslog.h>
 #include <time.h>
 #include <unordered_set>
@@ -38,8 +41,8 @@
  * The levels are configurable through the LIBCAMERA_LOG_LEVELS environment
  * variable that contains a comma-separated list of 'category:level' pairs.
  *
- * The category names are strings and can include a wildcard ('*') character at
- * the end to match multiple categories.
+ * The category names are strings and can include a wildcard ('*') character to
+ * match multiple categories.
  *
  * The level are either numeric values, or strings containing the log level
  * name. The available log levels are DEBUG, INFO, WARN, ERROR and FATAL. Log
@@ -311,15 +314,15 @@ private:
 
 	void parseLogFile();
 	void parseLogLevels();
-	static LogSeverity parseLogLevel(const std::string &level);
+	static LogSeverity parseLogLevel(std::string_view level);
 
 	friend LogCategory;
-	void registerCategory(LogCategory *category);
-	LogCategory *findCategory(const char *name) const;
+	LogCategory *findOrCreateCategory(std::string_view name);
 
 	static bool destroyed_;
 
-	std::vector<LogCategory *> categories_;
+	Mutex mutex_;
+	std::vector<std::unique_ptr<LogCategory>> categories_ LIBCAMERA_TSA_GUARDED_BY(mutex_);
 	std::list<std::pair<std::string, LogSeverity>> levels_;
 
 	std::shared_ptr<LogOutput> output_;
@@ -436,9 +439,6 @@ void logSetLevel(const char *category, const char *level)
 Logger::~Logger()
 {
 	destroyed_ = true;
-
-	for (LogCategory *category : categories_)
-		delete category;
 }
 
 /**
@@ -569,7 +569,9 @@ void Logger::logSetLevel(const char *category, const char *level)
 	if (severity == LogInvalid)
 		return;
 
-	for (LogCategory *c : categories_) {
+	MutexLocker locker(mutex_);
+
+	for (const auto &c : categories_) {
 		if (c->name() == category) {
 			c->setSeverity(severity);
 			break;
@@ -640,17 +642,17 @@ void Logger::parseLogLevels()
 		if (!len)
 			continue;
 
-		std::string category;
-		std::string level;
+		std::string_view category;
+		std::string_view level;
 
 		const char *colon = static_cast<const char *>(memchr(pair, ':', len));
 		if (!colon) {
 			/* 'x' is a shortcut for '*:x'. */
 			category = "*";
-			level = std::string(pair, len);
+			level = std::string_view(pair, len);
 		} else {
-			category = std::string(pair, colon - pair);
-			level = std::string(colon + 1, comma - colon - 1);
+			category = std::string_view(pair, colon - pair);
+			level = std::string_view(colon + 1, comma - colon - 1);
 		}
 
 		/* Both the category and the level must be specified. */
@@ -661,7 +663,7 @@ void Logger::parseLogLevels()
 		if (severity == LogInvalid)
 			continue;
 
-		levels_.push_back({ category, severity });
+		levels_.emplace_back(category, severity);
 	}
 }
 
@@ -675,7 +677,7 @@ void Logger::parseLogLevels()
  *
  * \return The log severity, or LogInvalid if the string is invalid
  */
-LogSeverity Logger::parseLogLevel(const std::string &level)
+LogSeverity Logger::parseLogLevel(std::string_view level)
 {
 	static const char *const names[] = {
 		"DEBUG",
@@ -685,15 +687,13 @@ LogSeverity Logger::parseLogLevel(const std::string &level)
 		"FATAL",
 	};
 
-	int severity;
+	unsigned int severity = LogInvalid;
 
 	if (std::isdigit(level[0])) {
-		char *endptr;
-		severity = strtoul(level.c_str(), &endptr, 10);
-		if (*endptr != '\0' || severity > LogFatal)
+		auto [end, ec] = std::from_chars(level.data(), level.data() + level.size(), severity);
+		if (ec != std::errc() || *end != '\0' || severity > LogFatal)
 			severity = LogInvalid;
 	} else {
-		severity = LogInvalid;
 		for (unsigned int i = 0; i < std::size(names); ++i) {
 			if (names[i] == level) {
 				severity = i;
@@ -706,52 +706,28 @@ LogSeverity Logger::parseLogLevel(const std::string &level)
 }
 
 /**
- * \brief Register a log category with the logger
- * \param[in] category The log category
- *
- * Log categories must have unique names. It is invalid to call this function
- * if a log category with the same name already exists.
- */
-void Logger::registerCategory(LogCategory *category)
-{
-	categories_.push_back(category);
-
-	const std::string &name = category->name();
-	for (const std::pair<std::string, LogSeverity> &level : levels_) {
-		bool match = true;
-
-		for (unsigned int i = 0; i < level.first.size(); ++i) {
-			if (level.first[i] == '*')
-				break;
-
-			if (i >= name.size() ||
-			    name[i] != level.first[i]) {
-				match = false;
-				break;
-			}
-		}
-
-		if (match) {
-			category->setSeverity(level.second);
-			break;
-		}
-	}
-}
-
-/**
- * \brief Find an existing log category with the given name
+ * \brief Find an existing log category with the given name or create one
  * \param[in] name Name of the log category
- * \return The pointer to the found log category or nullptr if not found
+ * \return The pointer to the log category found or created
  */
-LogCategory *Logger::findCategory(const char *name) const
+LogCategory *Logger::findOrCreateCategory(std::string_view name)
 {
-	if (auto it = std::find_if(categories_.begin(), categories_.end(),
-				   [name](auto c) { return c->name() == name; });
-	    it != categories_.end()) {
-		return *it;
+	MutexLocker locker(mutex_);
+
+	for (const auto &category : categories_) {
+		if (category->name() == name)
+			return category.get();
 	}
 
-	return nullptr;
+	LogCategory *category = categories_.emplace_back(std::unique_ptr<LogCategory>(new LogCategory(name))).get();
+	const char *categoryName = category->name().c_str();
+
+	for (const auto &[pattern, severity] : levels_) {
+		if (fnmatch(pattern.c_str(), categoryName, FNM_NOESCAPE) == 0)
+			category->setSeverity(severity);
+	}
+
+	return category;
 }
 
 /**
@@ -787,25 +763,16 @@ LogCategory *Logger::findCategory(const char *name) const
  *
  * \return The pointer to the LogCategory
  */
-LogCategory *LogCategory::create(const char *name)
+LogCategory *LogCategory::create(std::string_view name)
 {
-	static Mutex mutex_;
-	MutexLocker locker(mutex_);
-	LogCategory *category = Logger::instance()->findCategory(name);
-
-	if (!category) {
-		category = new LogCategory(name);
-		Logger::instance()->registerCategory(category);
-	}
-
-	return category;
+	return Logger::instance()->findOrCreateCategory(name);
 }
 
 /**
  * \brief Construct a log category
  * \param[in] name The category name
  */
-LogCategory::LogCategory(const char *name)
+LogCategory::LogCategory(std::string_view name)
 	: name_(name), severity_(LogSeverity::LogInfo)
 {
 }
@@ -824,15 +791,12 @@ LogCategory::LogCategory(const char *name)
  */
 
 /**
+ * \fn LogCategory::setSeverity(LogSeverity severity)
  * \brief Set the severity of the log category
  *
  * Messages of severity higher than or equal to the severity of the log category
  * are printed, other messages are discarded.
  */
-void LogCategory::setSeverity(LogSeverity severity)
-{
-	severity_ = severity;
-}
 
 /**
  * \brief Retrieve the default log category
@@ -874,39 +838,12 @@ const LogCategory &LogCategory::defaultCategory()
  */
 LogMessage::LogMessage(const char *fileName, unsigned int line,
 		       const LogCategory &category, LogSeverity severity,
-		       const std::string &prefix)
-	: category_(category), severity_(severity), prefix_(prefix)
+		       std::string prefix)
+	: category_(category), severity_(severity),
+	  timestamp_(utils::clock::now()),
+	  fileInfo_(static_cast<std::ostringstream &&>(std::ostringstream() << utils::basename(fileName) << ":" << line).str()),
+	  prefix_(std::move(prefix))
 {
-	init(fileName, line);
-}
-
-/**
- * \brief Move-construct a log message
- * \param[in] other The other message
- *
- * The move constructor is meant to support the _log() functions. Thanks to copy
- * elision it will likely never be called, but C++11 only permits copy elision,
- * it doesn't enforce it unlike C++17. To avoid potential link errors depending
- * on the compiler type and version, and optimization level, the move
- * constructor is defined even if it will likely never be called, and ensures
- * that the destructor of the \a other message will not output anything to the
- * log by setting the severity to LogInvalid.
- */
-LogMessage::LogMessage(LogMessage &&other)
-	: msgStream_(std::move(other.msgStream_)), category_(other.category_),
-	  severity_(other.severity_)
-{
-	other.severity_ = LogInvalid;
-}
-
-void LogMessage::init(const char *fileName, unsigned int line)
-{
-	/* Log the timestamp, severity and file information. */
-	timestamp_ = utils::clock::now();
-
-	std::ostringstream ossFileInfo;
-	ossFileInfo << utils::basename(fileName) << ":" << line;
-	fileInfo_ = ossFileInfo.str();
 }
 
 LogMessage::~LogMessage()

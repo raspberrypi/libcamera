@@ -5,7 +5,49 @@ general:
     do_alsc_colour: 1
     luminance_strength: 0.5
   awb:
-    greyworld: 0
+    # Algorithm can either be 'grey' or 'bayes'
+    algorithm: bayes
+    # Priors is only used for the bayes algorithm. They are defined in linear
+    # space. A good staring point is:
+    # - lux: 0
+    #   ct: [ 2000, 3000, 13000 ]
+    #   probability: [ 1.005, 1.0, 1.0 ]
+    # - lux: 800
+    #   ct: [ 2000, 6000, 13000 ]
+    #   probability: [ 1.0, 1.01, 1.01 ]
+    # - lux: 1500
+    #   ct: [ 2000, 4000, 6000, 6500, 7000, 13000 ]
+    #   probability: [ 1.0, 1.005, 1.032, 1.037, 1.01, 1.01 ]
+    priors:
+      - lux: 0
+        ct: [ 2000, 13000 ]
+        probability: [ 1.0, 1.0 ]
+    AwbMode:
+      AwbAuto:
+        lo: 2500
+        hi: 8000
+      AwbIncandescent:
+        lo: 2500
+        hi: 3000
+      AwbTungsten:
+        lo: 3000
+        hi: 3500
+      AwbFluorescent:
+        lo: 4000
+        hi: 4700
+      AwbIndoor:
+        lo: 3000
+        hi: 5000
+      AwbDaylight:
+        lo: 5500
+        hi: 6500
+      AwbCloudy:
+        lo: 6500
+        hi: 8000
+      # One custom mode can be defined if needed
+      #AwbCustom:
+      #  lo: 2000
+      #  hi: 1300
   macbeth:
     small: 1
     show: 0

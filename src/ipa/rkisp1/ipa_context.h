@@ -22,10 +22,10 @@
 
 #include "libcamera/internal/debug_controls.h"
 #include "libcamera/internal/matrix.h"
+#include "libcamera/internal/vector.h"
 
 #include <libipa/camera_sensor_helper.h>
 #include <libipa/fc_queue.h>
-#include <libipa/vector.h>
 
 namespace libcamera {
 
@@ -79,10 +79,12 @@ struct IPAActiveState {
 			double gain;
 		} automatic;
 
-		bool autoEnabled;
+		bool autoExposureEnabled;
+		bool autoGainEnabled;
 		controls::AeConstraintModeEnum constraintMode;
 		controls::AeExposureModeEnum exposureMode;
 		controls::AeMeteringModeEnum meteringMode;
+		utils::Duration minFrameDuration;
 		utils::Duration maxFrameDuration;
 	} agc;
 
@@ -124,12 +126,18 @@ struct IPAFrameContext : public FrameContext {
 	struct {
 		uint32_t exposure;
 		double gain;
-		bool autoEnabled;
+		uint32_t vblank;
+		bool autoExposureEnabled;
+		bool autoGainEnabled;
 		controls::AeConstraintModeEnum constraintMode;
 		controls::AeExposureModeEnum exposureMode;
 		controls::AeMeteringModeEnum meteringMode;
+		utils::Duration minFrameDuration;
 		utils::Duration maxFrameDuration;
+		utils::Duration frameDuration;
 		bool updateMetering;
+		bool autoExposureModeChange;
+		bool autoGainModeChange;
 	} agc;
 
 	struct {

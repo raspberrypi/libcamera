@@ -13,7 +13,7 @@
 
 #include <libcamera/geometry.h>
 
-#include "libipa/vector.h"
+#include "libcamera/internal/vector.h"
 
 #include "algorithm.h"
 

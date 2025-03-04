@@ -16,6 +16,8 @@
 
 #include <libcamera/ipa/core_ipa_interface.h>
 
+#include "libipa/awb_bayes.h"
+#include "libipa/awb_grey.h"
 #include "libipa/colours.h"
 
 /**
@@ -40,6 +42,40 @@ constexpr int32_t kDefaultColourTemperature = 5000;
 /* Minimum mean value below which AWB can't operate. */
 constexpr double kMeanMinThreshold = 2.0;
 
+class RkISP1AwbStats final : public AwbStats
+{
+public:
+	RkISP1AwbStats(const RGB<double> &rgbMeans)
+		: rgbMeans_(rgbMeans)
+	{
+		rg_ = rgbMeans_.r() / rgbMeans_.g();
+		bg_ = rgbMeans_.b() / rgbMeans_.g();
+	}
+
+	double computeColourError(const RGB<double> &gains) const override
+	{
+		/*
+		 * Compute the sum of the squared colour error (non-greyness) as
+		 * it appears in the log likelihood equation.
+		 */
+		double deltaR = gains.r() * rg_ - 1.0;
+		double deltaB = gains.b() * bg_ - 1.0;
+		double delta2 = deltaR * deltaR + deltaB * deltaB;
+
+		return delta2;
+	}
+
+	RGB<double> rgbMeans() const override
+	{
+		return rgbMeans_;
+	}
+
+private:
+	RGB<double> rgbMeans_;
+	double rg_;
+	double bg_;
+};
+
 Awb::Awb()
 	: rgbMode_(false)
 {
@@ -55,15 +91,29 @@ int Awb::init(IPAContext &context, const YamlObject &tuningData)
 							 kMaxColourTemperature,
 							 kDefaultColourTemperature);
 
-	Interpolator<Vector<double, 2>> gainCurve;
-	int ret = gainCurve.readYaml(tuningData["colourGains"], "ct", "gains");
-	if (ret < 0)
-		LOG(RkISP1Awb, Warning)
-			<< "Failed to parse 'colourGains' "
-			<< "parameter from tuning file; "
-			<< "manual colour temperature will not work properly";
-	else
-		colourGainCurve_ = gainCurve;
+	if (!tuningData.contains("algorithm"))
+		LOG(RkISP1Awb, Info) << "No AWB algorithm specified."
+				     << " Default to grey world";
+
+	auto mode = tuningData["algorithm"].get<std::string>("grey");
+	if (mode == "grey") {
+		awbAlgo_ = std::make_unique<AwbGrey>();
+	} else if (mode == "bayes") {
+		awbAlgo_ = std::make_unique<AwbBayes>();
+	} else {
+		LOG(RkISP1Awb, Error) << "Unknown AWB algorithm: " << mode;
+		return -EINVAL;
+	}
+	LOG(RkISP1Awb, Debug) << "Using AWB algorithm: " << mode;
+
+	int ret = awbAlgo_->init(tuningData);
+	if (ret) {
+		LOG(RkISP1Awb, Error) << "Failed to init AWB algorithm";
+		return ret;
+	}
+
+	const auto &src = awbAlgo_->controls();
+	cmap.insert(src.begin(), src.end());
 
 	return 0;
 }
@@ -75,7 +125,8 @@ int Awb::configure(IPAContext &context,
 		   const IPACameraSensorInfo &configInfo)
 {
 	context.activeState.awb.gains.manual = RGB<double>{ 1.0 };
-	context.activeState.awb.gains.automatic = RGB<double>{ 1.0 };
+	context.activeState.awb.gains.automatic =
+		awbAlgo_->gainsFromColourTemperature(kDefaultColourTemperature);
 	context.activeState.awb.autoEnabled = true;
 	context.activeState.awb.temperatureK = kDefaultColourTemperature;
 
@@ -111,6 +162,8 @@ void Awb::queueRequest(IPAContext &context,
 			<< (*awbEnable ? "Enabling" : "Disabling") << " AWB";
 	}
 
+	awbAlgo_->handleControls(controls);
+
 	frameContext.awb.autoEnabled = awb.autoEnabled;
 
 	if (awb.autoEnabled)
@@ -123,15 +176,15 @@ void Awb::queueRequest(IPAContext &context,
 		awb.gains.manual.r() = (*colourGains)[0];
 		awb.gains.manual.b() = (*colourGains)[1];
 		/*
-		 * \todo: Colour temperature reported in metadata is now
+		 * \todo Colour temperature reported in metadata is now
 		 * incorrect, as we can't deduce the temperature from the gains.
 		 * This will be fixed with the bayes AWB algorithm.
 		 */
 		update = true;
-	} else if (colourTemperature && colourGainCurve_) {
-		const auto &gains = colourGainCurve_->getInterpolated(*colourTemperature);
-		awb.gains.manual.r() = gains[0];
-		awb.gains.manual.b() = gains[1];
+	} else if (colourTemperature) {
+		const auto &gains = awbAlgo_->gainsFromColourTemperature(*colourTemperature);
+		awb.gains.manual.r() = gains.r();
+		awb.gains.manual.b() = gains.b();
 		awb.temperatureK = *colourTemperature;
 		update = true;
 	}
@@ -226,10 +279,7 @@ void Awb::process(IPAContext &context,
 		  const rkisp1_stat_buffer *stats,
 		  ControlList &metadata)
 {
-	const rkisp1_cif_isp_stat *params = &stats->params;
-	const rkisp1_cif_isp_awb_stat *awb = &params->awb;
 	IPAActiveState &activeState = context.activeState;
-	RGB<double> rgbMeans;
 
 	metadata.set(controls::AwbEnable, frameContext.awb.autoEnabled);
 	metadata.set(controls::ColourGains, {
@@ -243,10 +293,57 @@ void Awb::process(IPAContext &context,
 		return;
 	}
 
+	const rkisp1_cif_isp_stat *params = &stats->params;
+	const rkisp1_cif_isp_awb_stat *awb = &params->awb;
+
+	RGB<double> rgbMeans = calculateRgbMeans(frameContext, awb);
+
+	/*
+	 * If the means are too small we don't have enough information to
+	 * meaningfully calculate gains. Freeze the algorithm in that case.
+	 */
+	if (rgbMeans.r() < kMeanMinThreshold && rgbMeans.g() < kMeanMinThreshold &&
+	    rgbMeans.b() < kMeanMinThreshold)
+		return;
+
+	RkISP1AwbStats awbStats{ rgbMeans };
+	AwbResult awbResult = awbAlgo_->calculateAwb(awbStats, frameContext.lux.lux);
+
+	activeState.awb.temperatureK = awbResult.colourTemperature;
+
+	/* Metadata shall contain the up to date measurement */
+	metadata.set(controls::ColourTemperature, activeState.awb.temperatureK);
+
+	/*
+	 * Clamp the gain values to the hardware, which expresses gains as Q2.8
+	 * unsigned integer values. Set the minimum just above zero to avoid
+	 * divisions by zero when computing the raw means in subsequent
+	 * iterations.
+	 */
+	awbResult.gains = awbResult.gains.max(1.0 / 256).min(1023.0 / 256);
+
+	/* Filter the values to avoid oscillations. */
+	double speed = 0.2;
+	awbResult.gains = awbResult.gains * speed +
+			  activeState.awb.gains.automatic * (1 - speed);
+
+	activeState.awb.gains.automatic = awbResult.gains;
+
+	LOG(RkISP1Awb, Debug)
+		<< std::showpoint
+		<< "Means " << rgbMeans << ", gains "
+		<< activeState.awb.gains.automatic << ", temp "
+		<< activeState.awb.temperatureK << "K";
+}
+
+RGB<double> Awb::calculateRgbMeans(const IPAFrameContext &frameContext, const rkisp1_cif_isp_awb_stat *awb) const
+{
+	Vector<double, 3> rgbMeans;
+
 	if (rgbMode_) {
 		rgbMeans = {{
-			static_cast<double>(awb->awb_mean[0].mean_y_or_g),
 			static_cast<double>(awb->awb_mean[0].mean_cr_or_r),
+			static_cast<double>(awb->awb_mean[0].mean_y_or_g),
 			static_cast<double>(awb->awb_mean[0].mean_cb_or_b)
 		}};
 	} else {
@@ -301,46 +398,7 @@ void Awb::process(IPAContext &context,
 	 */
 	rgbMeans /= frameContext.awb.gains;
 
-	/*
-	 * If the means are too small we don't have enough information to
-	 * meaningfully calculate gains. Freeze the algorithm in that case.
-	 */
-	if (rgbMeans.r() < kMeanMinThreshold && rgbMeans.g() < kMeanMinThreshold &&
-	    rgbMeans.b() < kMeanMinThreshold)
-		return;
-
-	activeState.awb.temperatureK = estimateCCT(rgbMeans);
-
-	/*
-	 * Estimate the red and blue gains to apply in a grey world. The green
-	 * gain is hardcoded to 1.0. Avoid divisions by zero by clamping the
-	 * divisor to a minimum value of 1.0.
-	 */
-	RGB<double> gains({
-		rgbMeans.g() / std::max(rgbMeans.r(), 1.0),
-		1.0,
-		rgbMeans.g() / std::max(rgbMeans.b(), 1.0)
-	});
-
-	/*
-	 * Clamp the gain values to the hardware, which expresses gains as Q2.8
-	 * unsigned integer values. Set the minimum just above zero to avoid
-	 * divisions by zero when computing the raw means in subsequent
-	 * iterations.
-	 */
-	gains = gains.max(1.0 / 256).min(1023.0 / 256);
-
-	/* Filter the values to avoid oscillations. */
-	double speed = 0.2;
-	gains = gains * speed + activeState.awb.gains.automatic * (1 - speed);
-
-	activeState.awb.gains.automatic = gains;
-
-	LOG(RkISP1Awb, Debug)
-		<< std::showpoint
-		<< "Means " << rgbMeans << ", gains "
-		<< activeState.awb.gains.automatic << ", temp "
-		<< activeState.awb.temperatureK << "K";
+	return rgbMeans;
 }
 
 REGISTER_IPA_ALGORITHM(Awb, "Awb")

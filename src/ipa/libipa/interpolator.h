@@ -81,6 +81,11 @@ public:
 		lastInterpolatedKey_.reset();
 	}
 
+	const std::map<unsigned int, T> &data() const
+	{
+		return data_;
+	}
+
 	const T &getInterpolated(unsigned int key, unsigned int *quantizedKey = nullptr)
 	{
 		ASSERT(data_.size() > 0);

@@ -39,7 +39,7 @@ static void value_set_rectangle(GValue *value, const Rectangle &rect)
 
 	GValue height = G_VALUE_INIT;
 	g_value_init(&height, G_TYPE_INT);
-	g_value_set_int(&x, size.height);
+	g_value_set_int(&height, size.height);
 	gst_value_array_append_and_take_value(value, &height);
 }
 

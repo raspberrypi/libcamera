@@ -40,8 +40,12 @@ public:
 	void setMeteringMode(std::string const &meteringModeName) override;
 	void setExposureMode(std::string const &exposureModeName) override;
 	void setConstraintMode(std::string const &contraintModeName) override;
-	void enableAuto() override;
-	void disableAuto() override;
+	void enableAutoExposure() override;
+	void disableAutoExposure() override;
+	bool autoExposureEnabled() const override;
+	void enableAutoGain() override;
+	void disableAutoGain() override;
+	bool autoGainEnabled() const override;
 	void switchMode(CameraMode const &cameraMode, Metadata *metadata) override;
 	void prepare(Metadata *imageMetadata) override;
 	void process(StatisticsPtr &stats, Metadata *imageMetadata) override;

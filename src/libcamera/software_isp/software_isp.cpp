@@ -13,10 +13,14 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <libcamera/base/log.h>
+#include <libcamera/base/thread.h>
+
 #include <libcamera/controls.h>
 #include <libcamera/formats.h>
 #include <libcamera/stream.h>
 
+#include "libcamera/internal/framebuffer.h"
 #include "libcamera/internal/ipa_manager.h"
 #include "libcamera/internal/software_isp/debayer_params.h"
 
@@ -291,15 +295,22 @@ int SoftwareIsp::queueBuffers(uint32_t frame, FrameBuffer *input,
 	if (outputs.empty())
 		return -EINVAL;
 
+	/* We only support a single stream for now. */
+	if (outputs.size() != 1)
+		return -EINVAL;
+
 	for (auto [stream, buffer] : outputs) {
 		if (!buffer)
 			return -EINVAL;
-		if (outputs.size() != 1) /* only single stream atm */
-			return -EINVAL;
 	}
 
-	for (auto iter = outputs.begin(); iter != outputs.end(); iter++)
-		process(frame, input, iter->second);
+	queuedInputBuffers_.push_back(input);
+
+	for (auto iter = outputs.begin(); iter != outputs.end(); iter++) {
+		FrameBuffer *const buffer = iter->second;
+		queuedOutputBuffers_.push_back(buffer);
+		process(frame, input, buffer);
+	}
 
 	return 0;
 }
@@ -320,13 +331,32 @@ int SoftwareIsp::start()
 
 /**
  * \brief Stops the Software ISP streaming operation
+ *
+ * All pending buffers are returned back as canceled before this function
+ * returns.
  */
 void SoftwareIsp::stop()
 {
 	ispWorkerThread_.exit();
 	ispWorkerThread_.wait();
 
+	Thread::current()->dispatchMessages(Message::Type::InvokeMessage, this);
+
 	ipa_->stop();
+
+	for (auto buffer : queuedOutputBuffers_) {
+		FrameMetadata &metadata = buffer->_d()->metadata();
+		metadata.status = FrameMetadata::FrameCancelled;
+		outputBufferReady.emit(buffer);
+	}
+	queuedOutputBuffers_.clear();
+
+	for (auto buffer : queuedInputBuffers_) {
+		FrameMetadata &metadata = buffer->_d()->metadata();
+		metadata.status = FrameMetadata::FrameCancelled;
+		inputBufferReady.emit(buffer);
+	}
+	queuedInputBuffers_.clear();
 }
 
 /**
@@ -359,11 +389,15 @@ void SoftwareIsp::statsReady(uint32_t frame, uint32_t bufferId)
 
 void SoftwareIsp::inputReady(FrameBuffer *input)
 {
+	ASSERT(queuedInputBuffers_.front() == input);
+	queuedInputBuffers_.pop_front();
 	inputBufferReady.emit(input);
 }
 
 void SoftwareIsp::outputReady(FrameBuffer *output)
 {
+	ASSERT(queuedOutputBuffers_.front() == output);
+	queuedOutputBuffers_.pop_front();
 	outputBufferReady.emit(output);
 }
 

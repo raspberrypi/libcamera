@@ -5,7 +5,6 @@ libcamera_base_include_dir = libcamera_include_dir / 'base'
 libcamera_base_public_headers = files([
     'bound_method.h',
     'class.h',
-    'compiler.h',
     'flags.h',
     'object.h',
     'shared_fd.h',

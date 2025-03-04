@@ -232,8 +232,7 @@ PipelineHandlerVirtual::generateConfiguration(Camera *camera,
 		default:
 			LOG(Virtual, Error)
 				<< "Requested stream role not supported: " << role;
-			config.reset();
-			return config;
+			return {};
 		}
 
 		std::map<PixelFormat, std::vector<SizeRange>> streamFormats;
@@ -287,6 +286,11 @@ int PipelineHandlerVirtual::exportFrameBuffers([[maybe_unused]] Camera *camera,
 int PipelineHandlerVirtual::start([[maybe_unused]] Camera *camera,
 				  [[maybe_unused]] const ControlList *controls)
 {
+	VirtualCameraData *data = cameraData(camera);
+
+	for (auto &s : data->streamConfigs_)
+		s.seq = 0;
+
 	return 0;
 }
 
@@ -298,16 +302,27 @@ int PipelineHandlerVirtual::queueRequestDevice([[maybe_unused]] Camera *camera,
 					       Request *request)
 {
 	VirtualCameraData *data = cameraData(camera);
+	const auto timestamp = currentTimestamp();
 
 	for (auto const &[stream, buffer] : request->buffers()) {
 		bool found = false;
 		/* map buffer and fill test patterns */
 		for (auto &streamConfig : data->streamConfigs_) {
 			if (stream == &streamConfig.stream) {
+				FrameMetadata &fmd = buffer->_d()->metadata();
+
+				fmd.status = FrameMetadata::Status::FrameSuccess;
+				fmd.sequence = streamConfig.seq++;
+				fmd.timestamp = timestamp;
+
+				for (const auto [i, p] : utils::enumerate(buffer->planes()))
+					fmd.planes()[i].bytesused = p.length;
+
 				found = true;
+
 				if (streamConfig.frameGenerator->generateFrame(
 					    stream->configuration().size, buffer))
-					buffer->_d()->cancel();
+					fmd.status = FrameMetadata::Status::FrameError;
 
 				completeBuffer(request, buffer);
 				break;
@@ -316,7 +331,7 @@ int PipelineHandlerVirtual::queueRequestDevice([[maybe_unused]] Camera *camera,
 		ASSERT(found);
 	}
 
-	request->metadata().set(controls::SensorTimestamp, currentTimestamp());
+	request->metadata().set(controls::SensorTimestamp, timestamp);
 	completeRequest(request);
 
 	return 0;
@@ -329,10 +344,17 @@ bool PipelineHandlerVirtual::match([[maybe_unused]] DeviceEnumerator *enumerator
 
 	created_ = true;
 
-	File file(configurationFile("virtual", "virtual.yaml"));
-	bool isOpen = file.open(File::OpenModeFlag::ReadOnly);
-	if (!isOpen) {
-		LOG(Virtual, Error) << "Failed to open config file: " << file.fileName();
+	std::string configFile = configurationFile("virtual", "virtual.yaml", true);
+	if (configFile.empty()) {
+		LOG(Virtual, Debug)
+			<< "Configuration file not found, skipping virtual cameras";
+		return false;
+	}
+
+	File file(configFile);
+	if (!file.open(File::OpenModeFlag::ReadOnly)) {
+		LOG(Virtual, Error)
+			<< "Failed to open config file `" << file.fileName() << "`";
 		return false;
 	}
 

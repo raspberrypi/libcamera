@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <deque>
 #include <functional>
 #include <initializer_list>
 #include <map>
@@ -18,6 +19,7 @@
 
 #include <libcamera/base/class.h>
 #include <libcamera/base/log.h>
+#include <libcamera/base/object.h>
 #include <libcamera/base/signal.h>
 #include <libcamera/base/thread.h>
 
@@ -43,7 +45,7 @@ struct StreamConfiguration;
 
 LOG_DECLARE_CATEGORY(SoftwareIsp)
 
-class SoftwareIsp
+class SoftwareIsp : public Object
 {
 public:
 	SoftwareIsp(PipelineHandler *pipe, const CameraSensor *sensor,
@@ -99,6 +101,8 @@ private:
 	DmaBufAllocator dmaHeap_;
 
 	std::unique_ptr<ipa::soft::IPAProxySoft> ipa_;
+	std::deque<FrameBuffer *> queuedInputBuffers_;
+	std::deque<FrameBuffer *> queuedOutputBuffers_;
 };
 
 } /* namespace libcamera */

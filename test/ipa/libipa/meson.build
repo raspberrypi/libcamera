@@ -3,7 +3,6 @@
 libipa_test = [
     {'name': 'fixedpoint', 'sources': ['fixedpoint.cpp']},
     {'name': 'interpolator', 'sources': ['interpolator.cpp']},
-    {'name': 'vector', 'sources': ['vector.cpp']},
 ]
 
 foreach test : libipa_test

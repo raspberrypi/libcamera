@@ -10,7 +10,6 @@
 #include <utility>
 
 #include <libcamera/base/class.h>
-#include <libcamera/base/compiler.h>
 
 namespace libcamera {
 
@@ -43,7 +42,7 @@ public:
 		return *this;
 	}
 
-	__nodiscard int release()
+	[[nodiscard]] int release()
 	{
 		int fd = fd_;
 		fd_ = -1;

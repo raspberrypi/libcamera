@@ -7,6 +7,7 @@
 
 #include "ppm_writer.h"
 
+#include <errno.h>
 #include <fstream>
 #include <iostream>
 
@@ -28,7 +29,7 @@ int PPMWriter::write(const char *filename,
 	std::ofstream output(filename, std::ios::binary);
 	if (!output) {
 		std::cerr << "Failed to open ppm file: " << filename << std::endl;
-		return -EINVAL;
+		return -EIO;
 	}
 
 	output << "P6" << std::endl
@@ -36,7 +37,7 @@ int PPMWriter::write(const char *filename,
 	       << "255" << std::endl;
 	if (!output) {
 		std::cerr << "Failed to write the file header" << std::endl;
-		return -EINVAL;
+		return -EIO;
 	}
 
 	const unsigned int rowLength = config.size.width * 3;
@@ -45,7 +46,7 @@ int PPMWriter::write(const char *filename,
 		output.write(row, rowLength);
 		if (!output) {
 			std::cerr << "Failed to write image data at row " << y << std::endl;
-			return -EINVAL;
+			return -EIO;
 		}
 	}
 

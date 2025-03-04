@@ -13,6 +13,7 @@
 
 #include <libcamera/base/private.h>
 
+#include <libcamera/base/class.h>
 #include <libcamera/base/message.h>
 #include <libcamera/base/signal.h>
 #include <libcamera/base/span.h>
@@ -47,13 +48,16 @@ public:
 
 	EventDispatcher *eventDispatcher();
 
-	void dispatchMessages(Message::Type type = Message::Type::None);
+	void dispatchMessages(Message::Type type = Message::Type::None,
+			      Object *receiver = nullptr);
 
 protected:
 	int exec();
 	virtual void run();
 
 private:
+	LIBCAMERA_DISABLE_COPY_AND_MOVE(Thread)
+
 	void startThread();
 	void finishThread();
 

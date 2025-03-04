@@ -1615,7 +1615,7 @@ bool PipelineHandlerMaliC55::registerSensorCamera(MediaLink *ispLink)
 		isp_->frameStart.connect(data->delayedCtrls_.get(),
 					 &DelayedControls::applyControls);
 
-		/* \todo: Init properties. */
+		/* \todo Init properties. */
 
 		if (!registerMaliCamera(std::move(data), sensor->name()))
 			return false;

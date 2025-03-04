@@ -9,7 +9,7 @@
 
 #include <stdint.h>
 
-#include "vector.h"
+#include "libcamera/internal/vector.h"
 
 namespace libcamera {
 

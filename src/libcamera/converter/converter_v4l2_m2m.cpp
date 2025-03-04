@@ -738,7 +738,7 @@ int V4L2M2MConverter::queueBuffers(FrameBuffer *input,
 }
 
 /*
- * \todo: This should be extended to include Feature::Flag to denote
+ * \todo This should be extended to include Feature::Flag to denote
  * what each converter supports feature-wise.
  */
 static std::initializer_list<std::string> compatibles = {

@@ -14,9 +14,9 @@
 
 #include <libcamera/base/log.h>
 
-#include "simple/ipa_context.h"
+#include <libcamera/control_ids.h>
 
-#include "control_ids.h"
+#include "simple/ipa_context.h"
 
 namespace libcamera {
 

@@ -10,6 +10,7 @@
 #include <iomanip>
 #include <iostream>
 #include <limits.h>
+#include <optional>
 #include <sstream>
 
 #include <libcamera/control_ids.h>
@@ -174,6 +175,11 @@ void CameraSession::listControls() const
 			std::cout << "Control: " << io.str()
 				  << id->vendor() << "::" << id->name() << ":"
 				  << std::endl;
+
+			std::optional<int32_t> def;
+			if (!info.def().isNone())
+				def = info.def().get<int32_t>();
+
 			for (const auto &value : info.values()) {
 				int32_t val = value.get<int32_t>();
 				const auto &it = id->enumerators().find(val);
@@ -183,7 +189,10 @@ void CameraSession::listControls() const
 					std::cout << "UNKNOWN";
 				else
 					std::cout << it->second;
-				std::cout << " (" << val << ")" << std::endl;
+
+				std::cout << " (" << val << ")"
+					  << (val == def ? " [default]" : "")
+					  << std::endl;
 			}
 		}
 

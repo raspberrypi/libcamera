@@ -5,6 +5,8 @@
  * Camera capture session
  */
 
+#include "camera_session.h"
+
 #include <iomanip>
 #include <iostream>
 #include <limits.h>
@@ -16,7 +18,6 @@
 #include "../common/event_loop.h"
 #include "../common/stream_options.h"
 
-#include "camera_session.h"
 #include "capture_script.h"
 #include "file_sink.h"
 #ifdef HAVE_KMS

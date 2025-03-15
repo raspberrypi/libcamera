@@ -1,0 +1,11 @@
+#!/bin/sh
+# Copyright 2025 Collabora Ltd.
+# SPDX-License-Identifier: MIT
+
+set -eux
+
+export GST_INSPECT_NO_COLORS=1
+export PAGER=cat
+
+gst-inspect-1.0 libcamera
+gst-inspect-1.0 libcamerasrc

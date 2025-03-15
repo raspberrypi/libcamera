@@ -1,3 +1,9 @@
+libcamera (0.4.0-7) UNRELEASED; urgency=medium
+
+  * Add superficial test for gstreamer1.0-libcamera
+
+ -- Dylan Aïssi <daissi@debian.org>  Sat, 15 Mar 2025 09:06:39 +0100
+
 libcamera (0.4.0-6) unstable; urgency=medium
 
   * Make libcamera-tools depends on libcamera-ipa because libcamerify

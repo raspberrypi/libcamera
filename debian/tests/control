@@ -9,3 +9,7 @@ Restrictions: superficial
 Test-Command: echo "ok"
 Depends: @builddeps@
 Restrictions: build-needed
+
+Tests: gstreamer1.0-libcamera
+Restrictions: allow-stderr, superficial
+Depends: gstreamer1.0-libcamera, gstreamer1.0-tools

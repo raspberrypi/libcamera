@@ -193,14 +193,10 @@ int Agc::configure(IPAContext &context, const IPACameraSensorInfo &configInfo)
 	context.activeState.agc.minFrameDuration = std::chrono::microseconds(frameDurationLimits.min().get<int64_t>());
 	context.activeState.agc.maxFrameDuration = std::chrono::microseconds(frameDurationLimits.max().get<int64_t>());
 
-	/*
-	 * Define the measurement window for AGC as a centered rectangle
-	 * covering 3/4 of the image width and height.
-	 */
-	context.configuration.agc.measureWindow.h_offs = configInfo.outputSize.width / 8;
-	context.configuration.agc.measureWindow.v_offs = configInfo.outputSize.height / 8;
-	context.configuration.agc.measureWindow.h_size = 3 * configInfo.outputSize.width / 4;
-	context.configuration.agc.measureWindow.v_size = 3 * configInfo.outputSize.height / 4;
+	context.configuration.agc.measureWindow.h_offs = 0;
+	context.configuration.agc.measureWindow.v_offs = 0;
+	context.configuration.agc.measureWindow.h_size = configInfo.outputSize.width;
+	context.configuration.agc.measureWindow.v_size = configInfo.outputSize.height;
 
 	setLimits(context.configuration.sensor.minExposureTime,
 		  context.configuration.sensor.maxExposureTime,

@@ -98,21 +98,15 @@ public:
 	using PackType = BoundMethodPack<R, Args...>;
 
 private:
-	template<std::size_t... I, typename T = R>
-	std::enable_if_t<!std::is_void<T>::value, void>
-	invokePack(BoundMethodPackBase *pack, std::index_sequence<I...>)
+	template<std::size_t... I>
+	void invokePack(BoundMethodPackBase *pack, std::index_sequence<I...>)
 	{
-		PackType *args = static_cast<PackType *>(pack);
-		args->ret_ = invoke(std::get<I>(args->args_)...);
-	}
+		[[maybe_unused]] auto *args = static_cast<PackType *>(pack);
 
-	template<std::size_t... I, typename T = R>
-	std::enable_if_t<std::is_void<T>::value, void>
-	invokePack(BoundMethodPackBase *pack, std::index_sequence<I...>)
-	{
-		/* args is effectively unused when the sequence I is empty. */
-		PackType *args [[gnu::unused]] = static_cast<PackType *>(pack);
-		invoke(std::get<I>(args->args_)...);
+		if constexpr (!std::is_void_v<R>)
+			args->ret_ = invoke(std::get<I>(args->args_)...);
+		else
+			invoke(std::get<I>(args->args_)...);
 	}
 
 public:

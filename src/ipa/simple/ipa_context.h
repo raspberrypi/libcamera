@@ -39,6 +39,8 @@ struct IPASessionConfiguration {
 struct IPAActiveState {
 	struct {
 		uint8_t level;
+		int32_t lastExposure;
+		double lastGain;
 	} blc;
 
 	struct {

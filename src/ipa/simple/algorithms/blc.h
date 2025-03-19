@@ -30,8 +30,6 @@ public:
 		     ControlList &metadata) override;
 
 private:
-	int32_t exposure_;
-	double gain_;
 	std::optional<uint8_t> definedLevel_;
 };
 

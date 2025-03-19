@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later */
 /*
- * Copyright (C) 2024, Red Hat Inc.
+ * Copyright (C) 2024-2025, Red Hat Inc.
  *
  * Black level handling
  */
@@ -63,8 +63,8 @@ void BlackLevel::process(IPAContext &context,
 	if (context.configuration.black.level.has_value())
 		return;
 
-	if (frameContext.sensor.exposure == exposure_ &&
-	    frameContext.sensor.gain == gain_) {
+	if (frameContext.sensor.exposure == context.activeState.blc.lastExposure &&
+	    frameContext.sensor.gain == context.activeState.blc.lastGain) {
 		return;
 	}
 
@@ -88,8 +88,8 @@ void BlackLevel::process(IPAContext &context,
 		seen += histogram[i];
 		if (seen >= pixelThreshold) {
 			context.activeState.blc.level = i * histogramRatio;
-			exposure_ = frameContext.sensor.exposure;
-			gain_ = frameContext.sensor.gain;
+			context.activeState.blc.lastExposure = frameContext.sensor.exposure;
+			context.activeState.blc.lastGain = frameContext.sensor.gain;
 			LOG(IPASoftBL, Debug)
 				<< "Auto-set black level: "
 				<< i << "/" << SwIspStats::kYHistogramSize

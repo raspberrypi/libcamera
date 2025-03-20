@@ -1700,7 +1700,7 @@ void PiSPCameraData::platformFreeBuffers()
 void PiSPCameraData::cfeBufferDequeue(FrameBuffer *buffer)
 {
 	RPi::Stream *stream = nullptr;
-	int index;
+	int index = 0;
 
 	if (!isRunning())
 		return;

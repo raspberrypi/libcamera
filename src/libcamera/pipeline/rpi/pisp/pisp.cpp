@@ -1350,9 +1350,9 @@ int PiSPCameraData::platformPipelineConfigure(const std::unique_ptr<YamlObject> 
 	}
 
 	std::optional<std::string> target = (*root)["target"].get<std::string>();
-	if (!target || *target != "pisp") {
+	if (target != "pisp") {
 		LOG(RPI, Error) << "Unexpected target reported: expected \"pisp\", got "
-				<< *target;
+				<< (target ? target->c_str() : "(unknown)");
 		return -EINVAL;
 	}
 

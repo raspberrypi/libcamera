@@ -159,16 +159,17 @@ if cc.get_id() == 'gcc'
         error('gcc version is too old, libcamera requires 9.0 or newer')
     endif
 
-    # gcc 13 implements the C++23 version of automatic move from local
-    # variables in return statements (see
-    # https://en.cppreference.com/w/cpp/language/return). As a result, some
-    # previously required explicit std::move() in return statements generate
-    # warnings. Those moves can't be removed as older compiler versions could
-    # use copy constructors instead of move constructors. The easiest fix is to
-    # disable the warning. With -Wpessimizing-move enabled, the compiler will
-    # still warn of pessimizing moves, only the redundant but not pessimizing
-    # moves will be ignored.
-    if cc.version().version_compare('>=13')
+    # In C++20 mode, prior to gcc 11, object slicing in a return statement didn't
+    # perform automatic move. It required explicit std::move() usage, which now
+    # generate warnings. Those moves can't be removed as older compiler versions
+    # could use copy constructors instead of move constructors. The easiest fix
+    # is to disable the warning. With -Wpessimizing-move enabled, the compiler
+    # will still warn of pessimizing moves, only the redundant but not
+    # pessimizing moves will be ignored.
+    #
+    # \todo When dropping support for compilers older than gcc 11, drop the
+    # argument and remove the unneeded std::move() calls.
+    if cc.version().version_compare('>=11')
         cpp_arguments += [
             '-Wno-redundant-move',
         ]

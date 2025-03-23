@@ -2,6 +2,9 @@
 include:
   - https://salsa.debian.org/salsa-ci-team/pipeline/raw/master/recipes/debian.yml
 
+variables:
+  SALSA_CI_DISABLE_BUILD_PACKAGE_ARM64: 0
+
 reprotest:
   allow_failure: true
 

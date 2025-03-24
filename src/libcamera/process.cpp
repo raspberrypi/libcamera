@@ -208,7 +208,7 @@ const struct sigaction &ProcessManager::oldsa() const
  */
 
 Process::Process()
-	: pid_(-1), running_(false), exitStatus_(NotExited), exitCode_(0)
+	: pid_(-1), exitStatus_(NotExited), exitCode_(0)
 {
 }
 
@@ -240,7 +240,7 @@ int Process::start(const std::string &path,
 {
 	int ret;
 
-	if (running_)
+	if (pid_ > 0)
 		return -EBUSY;
 
 	for (int fd : fds) {
@@ -256,8 +256,6 @@ int Process::start(const std::string &path,
 	} else if (childPid) {
 		pid_ = childPid;
 		ProcessManager::instance()->registerProcess(this);
-
-		running_ = true;
 
 		return 0;
 	} else {
@@ -348,7 +346,7 @@ int Process::isolate()
  */
 void Process::died(int wstatus)
 {
-	running_ = false;
+	pid_ = -1;
 	exitStatus_ = WIFEXITED(wstatus) ? NormalExit : SignalExit;
 	exitCode_ = exitStatus_ == NormalExit ? WEXITSTATUS(wstatus) : -1;
 

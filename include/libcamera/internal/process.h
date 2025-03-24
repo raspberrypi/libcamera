@@ -50,7 +50,6 @@ private:
 	void died(int wstatus);
 
 	pid_t pid_;
-	bool running_;
 	enum ExitStatus exitStatus_;
 	int exitCode_;
 

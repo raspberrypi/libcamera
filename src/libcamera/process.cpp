@@ -241,7 +241,7 @@ int Process::start(const std::string &path,
 	int ret;
 
 	if (running_)
-		return 0;
+		return -EBUSY;
 
 	int childPid = fork();
 	if (childPid == -1) {

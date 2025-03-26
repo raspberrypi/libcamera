@@ -57,10 +57,11 @@ Debayer::~Debayer()
 }
 
 /**
- * \fn int Debayer::configure(const StreamConfiguration &inputCfg, const std::vector<std::reference_wrapper<StreamConfiguration>> &outputCfgs)
+ * \fn int Debayer::configure()
  * \brief Configure the debayer object according to the passed in parameters
  * \param[in] inputCfg The input configuration
  * \param[in] outputCfgs The output configurations
+ * \param[in] ccmEnabled Whether a color correction matrix is applied
  *
  * \return 0 on success, a negative errno on failure
  */

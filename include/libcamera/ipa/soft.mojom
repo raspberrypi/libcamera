@@ -17,7 +17,7 @@ interface IPASoftInterface {
 	     libcamera.SharedFD fdStats,
 	     libcamera.SharedFD fdParams,
 	     libcamera.ControlInfoMap sensorCtrlInfoMap)
-		=> (int32 ret, libcamera.ControlInfoMap ipaControls);
+		=> (int32 ret, libcamera.ControlInfoMap ipaControls, bool ccmEnabled);
 	start() => (int32 ret);
 	stop();
 	configure(IPAConfigInfo configInfo)

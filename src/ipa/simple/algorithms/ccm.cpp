@@ -34,6 +34,8 @@ int Ccm::init([[maybe_unused]] IPAContext &context, const YamlObject &tuningData
 		return ret;
 	}
 
+	context.ccmEnabled = true;
+
 	return 0;
 }
 

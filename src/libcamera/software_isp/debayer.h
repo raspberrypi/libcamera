@@ -33,7 +33,8 @@ public:
 	virtual ~Debayer() = 0;
 
 	virtual int configure(const StreamConfiguration &inputCfg,
-			      const std::vector<std::reference_wrapper<StreamConfiguration>> &outputCfgs) = 0;
+			      const std::vector<std::reference_wrapper<StreamConfiguration>> &outputCfgs,
+			      bool ccmEnabled) = 0;
 
 	virtual std::vector<PixelFormat> formats(PixelFormat inputFormat) = 0;
 

@@ -114,7 +114,7 @@ DebayerCpu::~DebayerCpu() = default;
 		(prev[x] + curr[x - p] + curr[x + n] + next[x]) / (4 * (div)),         \
 		curr[x] / (div))
 
-template<bool addAlphaByte>
+template<bool addAlphaByte, bool ccmEnabled>
 void DebayerCpu::debayer8_BGBG_BGR888(uint8_t *dst, const uint8_t *src[])
 {
 	DECLARE_SRC_POINTERS(uint8_t)
@@ -125,7 +125,7 @@ void DebayerCpu::debayer8_BGBG_BGR888(uint8_t *dst, const uint8_t *src[])
 	}
 }
 
-template<bool addAlphaByte>
+template<bool addAlphaByte, bool ccmEnabled>
 void DebayerCpu::debayer8_GRGR_BGR888(uint8_t *dst, const uint8_t *src[])
 {
 	DECLARE_SRC_POINTERS(uint8_t)
@@ -136,7 +136,7 @@ void DebayerCpu::debayer8_GRGR_BGR888(uint8_t *dst, const uint8_t *src[])
 	}
 }
 
-template<bool addAlphaByte>
+template<bool addAlphaByte, bool ccmEnabled>
 void DebayerCpu::debayer10_BGBG_BGR888(uint8_t *dst, const uint8_t *src[])
 {
 	DECLARE_SRC_POINTERS(uint16_t)
@@ -148,7 +148,7 @@ void DebayerCpu::debayer10_BGBG_BGR888(uint8_t *dst, const uint8_t *src[])
 	}
 }
 
-template<bool addAlphaByte>
+template<bool addAlphaByte, bool ccmEnabled>
 void DebayerCpu::debayer10_GRGR_BGR888(uint8_t *dst, const uint8_t *src[])
 {
 	DECLARE_SRC_POINTERS(uint16_t)
@@ -160,7 +160,7 @@ void DebayerCpu::debayer10_GRGR_BGR888(uint8_t *dst, const uint8_t *src[])
 	}
 }
 
-template<bool addAlphaByte>
+template<bool addAlphaByte, bool ccmEnabled>
 void DebayerCpu::debayer12_BGBG_BGR888(uint8_t *dst, const uint8_t *src[])
 {
 	DECLARE_SRC_POINTERS(uint16_t)
@@ -172,7 +172,7 @@ void DebayerCpu::debayer12_BGBG_BGR888(uint8_t *dst, const uint8_t *src[])
 	}
 }
 
-template<bool addAlphaByte>
+template<bool addAlphaByte, bool ccmEnabled>
 void DebayerCpu::debayer12_GRGR_BGR888(uint8_t *dst, const uint8_t *src[])
 {
 	DECLARE_SRC_POINTERS(uint16_t)
@@ -184,7 +184,7 @@ void DebayerCpu::debayer12_GRGR_BGR888(uint8_t *dst, const uint8_t *src[])
 	}
 }
 
-template<bool addAlphaByte>
+template<bool addAlphaByte, bool ccmEnabled>
 void DebayerCpu::debayer10P_BGBG_BGR888(uint8_t *dst, const uint8_t *src[])
 {
 	const int widthInBytes = window_.width * 5 / 4;
@@ -210,7 +210,7 @@ void DebayerCpu::debayer10P_BGBG_BGR888(uint8_t *dst, const uint8_t *src[])
 	}
 }
 
-template<bool addAlphaByte>
+template<bool addAlphaByte, bool ccmEnabled>
 void DebayerCpu::debayer10P_GRGR_BGR888(uint8_t *dst, const uint8_t *src[])
 {
 	const int widthInBytes = window_.width * 5 / 4;
@@ -231,7 +231,7 @@ void DebayerCpu::debayer10P_GRGR_BGR888(uint8_t *dst, const uint8_t *src[])
 	}
 }
 
-template<bool addAlphaByte>
+template<bool addAlphaByte, bool ccmEnabled>
 void DebayerCpu::debayer10P_GBGB_BGR888(uint8_t *dst, const uint8_t *src[])
 {
 	const int widthInBytes = window_.width * 5 / 4;
@@ -252,7 +252,7 @@ void DebayerCpu::debayer10P_GBGB_BGR888(uint8_t *dst, const uint8_t *src[])
 	}
 }
 
-template<bool addAlphaByte>
+template<bool addAlphaByte, bool ccmEnabled>
 void DebayerCpu::debayer10P_RGRG_BGR888(uint8_t *dst, const uint8_t *src[])
 {
 	const int widthInBytes = window_.width * 5 / 4;
@@ -368,11 +368,17 @@ int DebayerCpu::setupStandardBayerOrder(BayerFormat::Order order)
 	return 0;
 }
 
-#define SET_DEBAYER_METHODS(method0, method1)                                                \
-	debayer0_ = addAlphaByte ? &DebayerCpu::method0<true> : &DebayerCpu::method0<false>; \
-	debayer1_ = addAlphaByte ? &DebayerCpu::method1<true> : &DebayerCpu::method1<false>;
+#define SET_DEBAYER_METHODS(method0, method1)                                                                        \
+	debayer0_ = addAlphaByte                                                                                     \
+			    ? (ccmEnabled ? &DebayerCpu::method0<true, true> : &DebayerCpu::method0<true, false>)    \
+			    : (ccmEnabled ? &DebayerCpu::method0<false, true> : &DebayerCpu::method0<false, false>); \
+	debayer1_ = addAlphaByte                                                                                     \
+			    ? (ccmEnabled ? &DebayerCpu::method1<true, true> : &DebayerCpu::method1<true, false>)    \
+			    : (ccmEnabled ? &DebayerCpu::method1<false, true> : &DebayerCpu::method1<false, false>);
 
-int DebayerCpu::setDebayerFunctions(PixelFormat inputFormat, PixelFormat outputFormat)
+int DebayerCpu::setDebayerFunctions(PixelFormat inputFormat,
+				    PixelFormat outputFormat,
+				    bool ccmEnabled)
 {
 	BayerFormat bayerFormat =
 		BayerFormat::fromPixelFormat(inputFormat);
@@ -464,7 +470,8 @@ int DebayerCpu::setDebayerFunctions(PixelFormat inputFormat, PixelFormat outputF
 }
 
 int DebayerCpu::configure(const StreamConfiguration &inputCfg,
-			  const std::vector<std::reference_wrapper<StreamConfiguration>> &outputCfgs)
+			  const std::vector<std::reference_wrapper<StreamConfiguration>> &outputCfgs,
+			  bool ccmEnabled)
 {
 	if (getInputConfig(inputCfg.pixelFormat, inputConfig_) != 0)
 		return -EINVAL;
@@ -503,7 +510,10 @@ int DebayerCpu::configure(const StreamConfiguration &inputCfg,
 		return -EINVAL;
 	}
 
-	if (setDebayerFunctions(inputCfg.pixelFormat, outputCfg.pixelFormat) != 0)
+	int ret = setDebayerFunctions(inputCfg.pixelFormat,
+				      outputCfg.pixelFormat,
+				      ccmEnabled);
+	if (ret != 0)
 		return -EINVAL;
 
 	window_.x = ((inputCfg.size.width - outputCfg.size.width) / 2) &

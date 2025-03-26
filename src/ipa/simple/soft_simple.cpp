@@ -51,7 +51,8 @@ public:
 		 const SharedFD &fdStats,
 		 const SharedFD &fdParams,
 		 const ControlInfoMap &sensorInfoMap,
-		 ControlInfoMap *ipaControls) override;
+		 ControlInfoMap *ipaControls,
+		 bool *ccmEnabled) override;
 	int configure(const IPAConfigInfo &configInfo) override;
 
 	int start() override;
@@ -89,7 +90,8 @@ int IPASoftSimple::init(const IPASettings &settings,
 			const SharedFD &fdStats,
 			const SharedFD &fdParams,
 			const ControlInfoMap &sensorInfoMap,
-			ControlInfoMap *ipaControls)
+			ControlInfoMap *ipaControls,
+			bool *ccmEnabled)
 {
 	camHelper_ = CameraSensorHelperFactoryBase::create(settings.sensorModel);
 	if (!camHelper_) {
@@ -124,6 +126,8 @@ int IPASoftSimple::init(const IPASettings &settings,
 	int ret = createAlgorithms(context_, (*data)["algorithms"]);
 	if (ret)
 		return ret;
+
+	*ccmEnabled = context_.ccmEnabled;
 
 	params_ = nullptr;
 	stats_ = nullptr;

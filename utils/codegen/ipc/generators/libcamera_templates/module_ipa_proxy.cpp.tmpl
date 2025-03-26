@@ -239,10 +239,7 @@ void {{proxy_name}}::{{method.mojom_name}}IPC(
 	[[maybe_unused]] size_t dataSize,
 	[[maybe_unused]] const std::vector<SharedFD> &fds)
 {
-{%- for param in method.parameters %}
-	{{param|name}} {{param.mojom_name}};
-{%- endfor %}
-{{proxy_funcs.deserialize_call(method.parameters, 'data', 'fds', false, false, true, 'dataSize')}}
+{{proxy_funcs.deserialize_call(method.parameters, 'data', 'fds', false, true, true, 'dataSize')}}
 	{{method.mojom_name}}.emit({{method.parameters|params_comma_sep}});
 }
 {% endfor %}

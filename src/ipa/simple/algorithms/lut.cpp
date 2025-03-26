@@ -83,7 +83,7 @@ void Lut::updateGammaTable(IPAContext &context)
 void Lut::prepare(IPAContext &context,
 		  [[maybe_unused]] const uint32_t frame,
 		  [[maybe_unused]] IPAFrameContext &frameContext,
-		  [[maybe_unused]] DebayerParams *params)
+		  DebayerParams *params)
 {
 	/*
 	 * Update the gamma table if needed. This means if black level changes

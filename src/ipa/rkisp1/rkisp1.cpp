@@ -211,8 +211,7 @@ int IPARkISP1::init(const IPASettings &settings, unsigned int hwRevision,
 
 int IPARkISP1::start()
 {
-	setControls(0);
-
+	/* \todo Properly handle startup controls. */
 	return 0;
 }
 

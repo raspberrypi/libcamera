@@ -368,6 +368,10 @@ int DebayerCpu::setupStandardBayerOrder(BayerFormat::Order order)
 	return 0;
 }
 
+#define SET_DEBAYER_METHODS(method0, method1)                                                \
+	debayer0_ = addAlphaByte ? &DebayerCpu::method0<true> : &DebayerCpu::method0<false>; \
+	debayer1_ = addAlphaByte ? &DebayerCpu::method1<true> : &DebayerCpu::method1<false>;
+
 int DebayerCpu::setDebayerFunctions(PixelFormat inputFormat, PixelFormat outputFormat)
 {
 	BayerFormat bayerFormat =
@@ -423,16 +427,13 @@ int DebayerCpu::setDebayerFunctions(PixelFormat inputFormat, PixelFormat outputF
 	    isStandardBayerOrder(bayerFormat.order)) {
 		switch (bayerFormat.bitDepth) {
 		case 8:
-			debayer0_ = addAlphaByte ? &DebayerCpu::debayer8_BGBG_BGR888<true> : &DebayerCpu::debayer8_BGBG_BGR888<false>;
-			debayer1_ = addAlphaByte ? &DebayerCpu::debayer8_GRGR_BGR888<true> : &DebayerCpu::debayer8_GRGR_BGR888<false>;
+			SET_DEBAYER_METHODS(debayer8_BGBG_BGR888, debayer8_GRGR_BGR888)
 			break;
 		case 10:
-			debayer0_ = addAlphaByte ? &DebayerCpu::debayer10_BGBG_BGR888<true> : &DebayerCpu::debayer10_BGBG_BGR888<false>;
-			debayer1_ = addAlphaByte ? &DebayerCpu::debayer10_GRGR_BGR888<true> : &DebayerCpu::debayer10_GRGR_BGR888<false>;
+			SET_DEBAYER_METHODS(debayer10_BGBG_BGR888, debayer10_GRGR_BGR888)
 			break;
 		case 12:
-			debayer0_ = addAlphaByte ? &DebayerCpu::debayer12_BGBG_BGR888<true> : &DebayerCpu::debayer12_BGBG_BGR888<false>;
-			debayer1_ = addAlphaByte ? &DebayerCpu::debayer12_GRGR_BGR888<true> : &DebayerCpu::debayer12_GRGR_BGR888<false>;
+			SET_DEBAYER_METHODS(debayer12_BGBG_BGR888, debayer12_GRGR_BGR888)
 			break;
 		}
 		setupStandardBayerOrder(bayerFormat.order);
@@ -443,20 +444,16 @@ int DebayerCpu::setDebayerFunctions(PixelFormat inputFormat, PixelFormat outputF
 	    bayerFormat.packing == BayerFormat::Packing::CSI2) {
 		switch (bayerFormat.order) {
 		case BayerFormat::BGGR:
-			debayer0_ = addAlphaByte ? &DebayerCpu::debayer10P_BGBG_BGR888<true> : &DebayerCpu::debayer10P_BGBG_BGR888<false>;
-			debayer1_ = addAlphaByte ? &DebayerCpu::debayer10P_GRGR_BGR888<true> : &DebayerCpu::debayer10P_GRGR_BGR888<false>;
+			SET_DEBAYER_METHODS(debayer10P_BGBG_BGR888, debayer10P_GRGR_BGR888)
 			return 0;
 		case BayerFormat::GBRG:
-			debayer0_ = addAlphaByte ? &DebayerCpu::debayer10P_GBGB_BGR888<true> : &DebayerCpu::debayer10P_GBGB_BGR888<false>;
-			debayer1_ = addAlphaByte ? &DebayerCpu::debayer10P_RGRG_BGR888<true> : &DebayerCpu::debayer10P_RGRG_BGR888<false>;
+			SET_DEBAYER_METHODS(debayer10P_GBGB_BGR888, debayer10P_RGRG_BGR888)
 			return 0;
 		case BayerFormat::GRBG:
-			debayer0_ = addAlphaByte ? &DebayerCpu::debayer10P_GRGR_BGR888<true> : &DebayerCpu::debayer10P_GRGR_BGR888<false>;
-			debayer1_ = addAlphaByte ? &DebayerCpu::debayer10P_BGBG_BGR888<true> : &DebayerCpu::debayer10P_BGBG_BGR888<false>;
+			SET_DEBAYER_METHODS(debayer10P_GRGR_BGR888, debayer10P_BGBG_BGR888)
 			return 0;
 		case BayerFormat::RGGB:
-			debayer0_ = addAlphaByte ? &DebayerCpu::debayer10P_RGRG_BGR888<true> : &DebayerCpu::debayer10P_RGRG_BGR888<false>;
-			debayer1_ = addAlphaByte ? &DebayerCpu::debayer10P_GBGB_BGR888<true> : &DebayerCpu::debayer10P_GBGB_BGR888<false>;
+			SET_DEBAYER_METHODS(debayer10P_RGRG_BGR888, debayer10P_GBGB_BGR888)
 			return 0;
 		default:
 			break;

@@ -12,6 +12,7 @@
 
 #include <libcamera/base/log.h>
 
+#include "libipa/colours.h"
 #include "simple/ipa_context.h"
 
 namespace libcamera {
@@ -23,7 +24,7 @@ namespace ipa::soft::algorithms {
 int Awb::configure(IPAContext &context,
 		   [[maybe_unused]] const IPAConfigInfo &configInfo)
 {
-	auto &gains = context.activeState.gains;
+	auto &gains = context.activeState.awb.gains;
 	gains.red = gains.green = gains.blue = 1.0;
 
 	return 0;
@@ -54,12 +55,17 @@ void Awb::process(IPAContext &context,
 	 * Calculate red and blue gains for AWB.
 	 * Clamp max gain at 4.0, this also avoids 0 division.
 	 */
-	auto &gains = context.activeState.gains;
+	auto &gains = context.activeState.awb.gains;
 	gains.red = sumR <= sumG / 4 ? 4.0 : static_cast<double>(sumG) / sumR;
 	gains.blue = sumB <= sumG / 4 ? 4.0 : static_cast<double>(sumG) / sumB;
 	/* Green gain is fixed to 1.0 */
 
-	LOG(IPASoftAwb, Debug) << "gain R/B " << gains.red << "/" << gains.blue;
+	RGB<double> rgbGains{ { 1 / gains.red, 1 / gains.green, 1 / gains.blue } };
+	context.activeState.awb.temperatureK = estimateCCT(rgbGains);
+
+	LOG(IPASoftAwb, Debug)
+		<< "gain R/B: " << gains.red << "/" << gains.blue
+		<< "; temperature: " << context.activeState.awb.temperatureK;
 }
 
 REGISTER_IPA_ALGORITHM(Awb, "Awb")

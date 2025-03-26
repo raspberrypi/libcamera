@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later */
 /*
- * Copyright (C) 2024, Red Hat Inc.
+ * Copyright (C) 2024-2025, Red Hat Inc.
  *
  * Color lookup tables construction
  */
@@ -80,6 +80,11 @@ void Lut::updateGammaTable(IPAContext &context)
 	context.activeState.gamma.contrast = contrast;
 }
 
+int16_t Lut::ccmValue(unsigned int i, float ccm) const
+{
+	return std::round(i * ccm);
+}
+
 void Lut::prepare(IPAContext &context,
 		  [[maybe_unused]] const uint32_t frame,
 		  [[maybe_unused]] IPAFrameContext &frameContext,
@@ -91,22 +96,46 @@ void Lut::prepare(IPAContext &context,
 	 * observed, it's not permanently prone to minor fluctuations or
 	 * rounding errors.
 	 */
-	if (context.activeState.gamma.blackLevel != context.activeState.blc.level ||
-	    context.activeState.gamma.contrast != context.activeState.knobs.contrast)
+	const bool gammaUpdateNeeded =
+		context.activeState.gamma.blackLevel != context.activeState.blc.level ||
+		context.activeState.gamma.contrast != context.activeState.knobs.contrast;
+	if (gammaUpdateNeeded)
 		updateGammaTable(context);
 
 	auto &gains = context.activeState.awb.gains;
 	auto &gammaTable = context.activeState.gamma.gammaTable;
 	const unsigned int gammaTableSize = gammaTable.size();
+	const double div = static_cast<double>(DebayerParams::kRGBLookupSize) /
+			   gammaTableSize;
 
-	for (unsigned int i = 0; i < DebayerParams::kRGBLookupSize; i++) {
-		const double div = static_cast<double>(DebayerParams::kRGBLookupSize) /
-				   gammaTableSize;
-		/* Apply gamma after gain! */
-		const RGB<float> lutGains = (gains * i / div).min(gammaTableSize - 1);
-		params->red[i] = gammaTable[static_cast<unsigned int>(lutGains.r())];
-		params->green[i] = gammaTable[static_cast<unsigned int>(lutGains.g())];
-		params->blue[i] = gammaTable[static_cast<unsigned int>(lutGains.b())];
+	if (!context.ccmEnabled) {
+		for (unsigned int i = 0; i < DebayerParams::kRGBLookupSize; i++) {
+			/* Apply gamma after gain! */
+			const RGB<float> lutGains = (gains * i / div).min(gammaTableSize - 1);
+			params->red[i] = gammaTable[static_cast<unsigned int>(lutGains.r())];
+			params->green[i] = gammaTable[static_cast<unsigned int>(lutGains.g())];
+			params->blue[i] = gammaTable[static_cast<unsigned int>(lutGains.b())];
+		}
+	} else if (context.activeState.ccm.changed || gammaUpdateNeeded) {
+		Matrix<float, 3, 3> gainCcm = { { gains.r(), 0, 0,
+						  0, gains.g(), 0,
+						  0, 0, gains.b() } };
+		auto ccm = gainCcm * context.activeState.ccm.ccm;
+		auto &red = params->redCcm;
+		auto &green = params->greenCcm;
+		auto &blue = params->blueCcm;
+		for (unsigned int i = 0; i < DebayerParams::kRGBLookupSize; i++) {
+			red[i].r = ccmValue(i, ccm[0][0]);
+			red[i].g = ccmValue(i, ccm[1][0]);
+			red[i].b = ccmValue(i, ccm[2][0]);
+			green[i].r = ccmValue(i, ccm[0][1]);
+			green[i].g = ccmValue(i, ccm[1][1]);
+			green[i].b = ccmValue(i, ccm[2][1]);
+			blue[i].r = ccmValue(i, ccm[0][2]);
+			blue[i].g = ccmValue(i, ccm[1][2]);
+			blue[i].b = ccmValue(i, ccm[2][2]);
+			params->gammaLut[i] = gammaTable[i / div];
+		}
 	}
 }
 

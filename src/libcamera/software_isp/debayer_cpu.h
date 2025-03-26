@@ -138,9 +138,13 @@ private:
 	/* Max. supported Bayer pattern height is 4, debayering this requires 5 lines */
 	static constexpr unsigned int kMaxLineBuffers = 5;
 
-	DebayerParams::ColorLookupTable red_;
-	DebayerParams::ColorLookupTable green_;
-	DebayerParams::ColorLookupTable blue_;
+	DebayerParams::LookupTable red_;
+	DebayerParams::LookupTable green_;
+	DebayerParams::LookupTable blue_;
+	DebayerParams::CcmLookupTable redCcm_;
+	DebayerParams::CcmLookupTable greenCcm_;
+	DebayerParams::CcmLookupTable blueCcm_;
+	DebayerParams::LookupTable gammaLut_;
 	debayerFn debayer0_;
 	debayerFn debayer1_;
 	debayerFn debayer2_;

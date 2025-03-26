@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later */
 /*
  * Copyright (C) 2023, Linaro Ltd
- * Copyright (C) 2023, Red Hat Inc.
+ * Copyright (C) 2023-2025 Red Hat Inc.
  *
  * Authors:
  * Hans de Goede <hdegoede@redhat.com>
@@ -11,9 +11,11 @@
 
 #include "debayer_cpu.h"
 
+#include <algorithm>
 #include <stdlib.h>
 #include <sys/ioctl.h>
 #include <time.h>
+#include <utility>
 
 #include <linux/dma-buf.h>
 
@@ -51,8 +53,12 @@ DebayerCpu::DebayerCpu(std::unique_ptr<SwStatsCpu> stats)
 	enableInputMemcpy_ = true;
 
 	/* Initialize color lookup tables */
-	for (unsigned int i = 0; i < DebayerParams::kRGBLookupSize; i++)
+	for (unsigned int i = 0; i < DebayerParams::kRGBLookupSize; i++) {
 		red_[i] = green_[i] = blue_[i] = i;
+		redCcm_[i] = { static_cast<int16_t>(i), 0, 0 };
+		greenCcm_[i] = { 0, static_cast<int16_t>(i), 0 };
+		blueCcm_[i] = { 0, 0, static_cast<int16_t>(i) };
+	}
 }
 
 DebayerCpu::~DebayerCpu() = default;
@@ -62,12 +68,24 @@ DebayerCpu::~DebayerCpu() = default;
 	const pixel_t *curr = (const pixel_t *)src[1] + xShift_; \
 	const pixel_t *next = (const pixel_t *)src[2] + xShift_;
 
-#define STORE_PIXEL(b, g, r)        \
-	*dst++ = blue_[b];          \
-	*dst++ = green_[g];         \
-	*dst++ = red_[r];           \
-	if constexpr (addAlphaByte) \
-		*dst++ = 255;       \
+#define GAMMA(value) \
+	*dst++ = gammaLut_[std::clamp(value, 0, static_cast<int>(gammaLut_.size()) - 1)]
+
+#define STORE_PIXEL(b_, g_, r_)                                        \
+	if constexpr (ccmEnabled) {                                    \
+		const DebayerParams::CcmColumn &blue = blueCcm_[b_];   \
+		const DebayerParams::CcmColumn &green = greenCcm_[g_]; \
+		const DebayerParams::CcmColumn &red = redCcm_[r_];     \
+		GAMMA(blue.b + green.b + red.b);                       \
+		GAMMA(blue.g + green.g + red.g);                       \
+		GAMMA(blue.r + green.r + red.r);                       \
+	} else {                                                       \
+		*dst++ = blue_[b_];                                    \
+		*dst++ = green_[g_];                                   \
+		*dst++ = red_[r_];                                     \
+	}                                                              \
+	if constexpr (addAlphaByte)                                    \
+		*dst++ = 255;                                          \
 	x++;
 
 /*
@@ -755,8 +773,23 @@ void DebayerCpu::process(uint32_t frame, FrameBuffer *input, FrameBuffer *output
 		dmaSyncers.emplace_back(plane.fd, DmaSyncer::SyncType::Write);
 
 	green_ = params.green;
-	red_ = swapRedBlueGains_ ? params.blue : params.red;
-	blue_ = swapRedBlueGains_ ? params.red : params.blue;
+	greenCcm_ = params.greenCcm;
+	if (swapRedBlueGains_) {
+		red_ = params.blue;
+		blue_ = params.red;
+		redCcm_ = params.blueCcm;
+		blueCcm_ = params.redCcm;
+		for (unsigned int i = 0; i < 256; i++) {
+			std::swap(redCcm_[i].r, redCcm_[i].b);
+			std::swap(blueCcm_[i].r, blueCcm_[i].b);
+		}
+	} else {
+		red_ = params.red;
+		blue_ = params.blue;
+		redCcm_ = params.redCcm;
+		blueCcm_ = params.blueCcm;
+	}
+	gammaLut_ = params.gammaLut;
 
 	/* Copy metadata from the input buffer */
 	FrameMetadata &metadata = output->_d()->metadata();

@@ -59,9 +59,9 @@ void Awb::process(IPAContext &context,
 	 */
 	auto &gains = context.activeState.awb.gains;
 	gains = { {
-		sumR <= sumG / 4 ? 4.0 : static_cast<double>(sumG) / sumR,
+		sumR <= sumG / 4 ? 4.0f : static_cast<float>(sumG) / sumR,
 		1.0,
-		sumB <= sumG / 4 ? 4.0 : static_cast<double>(sumG) / sumB,
+		sumB <= sumG / 4 ? 4.0f : static_cast<float>(sumG) / sumB,
 	} };
 
 	RGB<double> rgbGains{ { 1 / gains.r(), 1 / gains.g(), 1 / gains.b() } };

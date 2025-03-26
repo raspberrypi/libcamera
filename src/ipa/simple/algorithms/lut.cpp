@@ -103,7 +103,7 @@ void Lut::prepare(IPAContext &context,
 		const double div = static_cast<double>(DebayerParams::kRGBLookupSize) /
 				   gammaTableSize;
 		/* Apply gamma after gain! */
-		const RGB<double> lutGains = (gains * i / div).min(gammaTableSize - 1);
+		const RGB<float> lutGains = (gains * i / div).min(gammaTableSize - 1);
 		params->red[i] = gammaTable[static_cast<unsigned int>(lutGains.r())];
 		params->green[i] = gammaTable[static_cast<unsigned int>(lutGains.g())];
 		params->blue[i] = gammaTable[static_cast<unsigned int>(lutGains.b())];

@@ -13,6 +13,7 @@
 
 #include <libcamera/controls.h>
 
+#include "libcamera/internal/matrix.h"
 #include "libcamera/internal/vector.h"
 
 #include <libipa/fc_queue.h>
@@ -38,7 +39,7 @@ struct IPAActiveState {
 	} blc;
 
 	struct {
-		RGB<double> gains;
+		RGB<float> gains;
 		unsigned int temperatureK;
 	} awb;
 
@@ -48,6 +49,12 @@ struct IPAActiveState {
 		uint8_t blackLevel;
 		double contrast;
 	} gamma;
+
+	struct {
+		Matrix<float, 3, 3> ccm;
+		bool changed;
+	} ccm;
+
 	struct {
 		/* 0..2 range, 1.0 = normal */
 		std::optional<double> contrast;
@@ -55,6 +62,10 @@ struct IPAActiveState {
 };
 
 struct IPAFrameContext : public FrameContext {
+	struct {
+		Matrix<float, 3, 3> ccm;
+	} ccm;
+
 	struct {
 		int32_t exposure;
 		double gain;

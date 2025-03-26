@@ -62,57 +62,57 @@ DebayerCpu::~DebayerCpu() = default;
 	const pixel_t *curr = (const pixel_t *)src[1] + xShift_; \
 	const pixel_t *next = (const pixel_t *)src[2] + xShift_;
 
+#define STORE_PIXEL(b, g, r)        \
+	*dst++ = blue_[b];          \
+	*dst++ = green_[g];         \
+	*dst++ = red_[r];           \
+	if constexpr (addAlphaByte) \
+		*dst++ = 255;       \
+	x++;
+
 /*
  * RGR
  * GBG
  * RGR
  */
-#define BGGR_BGR888(p, n, div)                                                                \
-	*dst++ = blue_[curr[x] / (div)];                                                      \
-	*dst++ = green_[(prev[x] + curr[x - p] + curr[x + n] + next[x]) / (4 * (div))];       \
-	*dst++ = red_[(prev[x - p] + prev[x + n] + next[x - p] + next[x + n]) / (4 * (div))]; \
-	if constexpr (addAlphaByte)                                                           \
-		*dst++ = 255;                                                                 \
-	x++;
+#define BGGR_BGR888(p, n, div)                                                 \
+	STORE_PIXEL(                                                           \
+		curr[x] / (div),                                               \
+		(prev[x] + curr[x - p] + curr[x + n] + next[x]) / (4 * (div)), \
+		(prev[x - p] + prev[x + n] + next[x - p] + next[x + n]) / (4 * (div)))
 
 /*
  * GBG
  * RGR
  * GBG
  */
-#define GRBG_BGR888(p, n, div)                                    \
-	*dst++ = blue_[(prev[x] + next[x]) / (2 * (div))];        \
-	*dst++ = green_[curr[x] / (div)];                         \
-	*dst++ = red_[(curr[x - p] + curr[x + n]) / (2 * (div))]; \
-	if constexpr (addAlphaByte)                               \
-		*dst++ = 255;                                     \
-	x++;
+#define GRBG_BGR888(p, n, div)                     \
+	STORE_PIXEL(                               \
+		(prev[x] + next[x]) / (2 * (div)), \
+		curr[x] / (div),                   \
+		(curr[x - p] + curr[x + n]) / (2 * (div)))
 
 /*
  * GRG
  * BGB
  * GRG
  */
-#define GBRG_BGR888(p, n, div)                                     \
-	*dst++ = blue_[(curr[x - p] + curr[x + n]) / (2 * (div))]; \
-	*dst++ = green_[curr[x] / (div)];                          \
-	*dst++ = red_[(prev[x] + next[x]) / (2 * (div))];          \
-	if constexpr (addAlphaByte)                                \
-		*dst++ = 255;                                      \
-	x++;
+#define GBRG_BGR888(p, n, div)                             \
+	STORE_PIXEL(                                       \
+		(curr[x - p] + curr[x + n]) / (2 * (div)), \
+		curr[x] / (div),                           \
+		(prev[x] + next[x]) / (2 * (div)))
 
 /*
  * BGB
  * GRG
  * BGB
  */
-#define RGGB_BGR888(p, n, div)                                                                 \
-	*dst++ = blue_[(prev[x - p] + prev[x + n] + next[x - p] + next[x + n]) / (4 * (div))]; \
-	*dst++ = green_[(prev[x] + curr[x - p] + curr[x + n] + next[x]) / (4 * (div))];        \
-	*dst++ = red_[curr[x] / (div)];                                                        \
-	if constexpr (addAlphaByte)                                                            \
-		*dst++ = 255;                                                                  \
-	x++;
+#define RGGB_BGR888(p, n, div)                                                         \
+	STORE_PIXEL(                                                                   \
+		(prev[x - p] + prev[x + n] + next[x - p] + next[x + n]) / (4 * (div)), \
+		(prev[x] + curr[x - p] + curr[x + n] + next[x]) / (4 * (div)),         \
+		curr[x] / (div))
 
 template<bool addAlphaByte>
 void DebayerCpu::debayer8_BGBG_BGR888(uint8_t *dst, const uint8_t *src[])

@@ -13,6 +13,8 @@
 
 #include <libcamera/controls.h>
 
+#include "libcamera/internal/vector.h"
+
 #include <libipa/fc_queue.h>
 
 namespace libcamera {
@@ -36,11 +38,7 @@ struct IPAActiveState {
 	} blc;
 
 	struct {
-		struct {
-			double red;
-			double green;
-			double blue;
-		} gains;
+		RGB<double> gains;
 		unsigned int temperatureK;
 	} awb;
 

@@ -25,7 +25,7 @@ int Awb::configure(IPAContext &context,
 		   [[maybe_unused]] const IPAConfigInfo &configInfo)
 {
 	auto &gains = context.activeState.awb.gains;
-	gains.red = gains.green = gains.blue = 1.0;
+	gains = { { 1.0, 1.0, 1.0 } };
 
 	return 0;
 }
@@ -56,16 +56,18 @@ void Awb::process(IPAContext &context,
 	 * Clamp max gain at 4.0, this also avoids 0 division.
 	 */
 	auto &gains = context.activeState.awb.gains;
-	gains.red = sumR <= sumG / 4 ? 4.0 : static_cast<double>(sumG) / sumR;
-	gains.blue = sumB <= sumG / 4 ? 4.0 : static_cast<double>(sumG) / sumB;
-	/* Green gain is fixed to 1.0 */
+	gains = { {
+		sumR <= sumG / 4 ? 4.0 : static_cast<double>(sumG) / sumR,
+		1.0,
+		sumB <= sumG / 4 ? 4.0 : static_cast<double>(sumG) / sumB,
+	} };
 
-	RGB<double> rgbGains{ { 1 / gains.red, 1 / gains.green, 1 / gains.blue } };
+	RGB<double> rgbGains{ { 1 / gains.r(), 1 / gains.g(), 1 / gains.b() } };
 	context.activeState.awb.temperatureK = estimateCCT(rgbGains);
 
 	LOG(IPASoftAwb, Debug)
-		<< "gain R/B: " << gains.red << "/" << gains.blue
-		<< "; temperature: " << context.activeState.awb.temperatureK;
+		<< "gain R/B: " << gains << "; temperature: "
+		<< context.activeState.awb.temperatureK;
 }
 
 REGISTER_IPA_ALGORITHM(Awb, "Awb")

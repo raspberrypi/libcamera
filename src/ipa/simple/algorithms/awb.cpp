@@ -12,6 +12,8 @@
 
 #include <libcamera/base/log.h>
 
+#include <libcamera/control_ids.h>
+
 #include "libipa/colours.h"
 #include "simple/ipa_context.h"
 
@@ -34,7 +36,7 @@ void Awb::process(IPAContext &context,
 		  [[maybe_unused]] const uint32_t frame,
 		  [[maybe_unused]] IPAFrameContext &frameContext,
 		  const SwIspStats *stats,
-		  [[maybe_unused]] ControlList &metadata)
+		  ControlList &metadata)
 {
 	const SwIspStats::Histogram &histogram = stats->yHistogram;
 	const uint8_t blackLevel = context.activeState.blc.level;
@@ -64,6 +66,7 @@ void Awb::process(IPAContext &context,
 
 	RGB<double> rgbGains{ { 1 / gains.r(), 1 / gains.g(), 1 / gains.b() } };
 	context.activeState.awb.temperatureK = estimateCCT(rgbGains);
+	metadata.set(controls::ColourTemperature, context.activeState.awb.temperatureK);
 
 	LOG(IPASoftAwb, Debug)
 		<< "gain R/B: " << gains << "; temperature: "

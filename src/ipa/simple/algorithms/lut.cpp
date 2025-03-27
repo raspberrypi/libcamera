@@ -87,9 +87,11 @@ int16_t Lut::ccmValue(unsigned int i, float ccm) const
 
 void Lut::prepare(IPAContext &context,
 		  [[maybe_unused]] const uint32_t frame,
-		  [[maybe_unused]] IPAFrameContext &frameContext,
+		  IPAFrameContext &frameContext,
 		  DebayerParams *params)
 {
+	frameContext.contrast = context.activeState.knobs.contrast;
+
 	/*
 	 * Update the gamma table if needed. This means if black level changes
 	 * and since the black level gets updated only if a lower value is
@@ -137,6 +139,17 @@ void Lut::prepare(IPAContext &context,
 			params->gammaLut[i] = gammaTable[i / div];
 		}
 	}
+}
+
+void Lut::process([[maybe_unused]] IPAContext &context,
+		  [[maybe_unused]] const uint32_t frame,
+		  [[maybe_unused]] IPAFrameContext &frameContext,
+		  [[maybe_unused]] const SwIspStats *stats,
+		  ControlList &metadata)
+{
+	const auto &contrast = frameContext.contrast;
+	if (contrast)
+		metadata.set(controls::Contrast, contrast.value());
 }
 
 REGISTER_IPA_ALGORITHM(Lut, "Lut")

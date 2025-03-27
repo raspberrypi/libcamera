@@ -299,15 +299,10 @@ void IPASoftSimple::processStats(const uint32_t frame,
 	int32_t again = sensorControls.get(V4L2_CID_ANALOGUE_GAIN).get<int32_t>();
 	frameContext.sensor.gain = camHelper_ ? camHelper_->gain(again) : again;
 
-	/*
-	 * Software ISP currently does not produce any metadata. Use an empty
-	 * ControlList for now.
-	 *
-	 * \todo Implement proper metadata handling
-	 */
 	ControlList metadata(controls::controls);
 	for (auto const &algo : algorithms())
 		algo->process(context_, frame, frameContext, stats_, metadata);
+	metadataReady.emit(frame, metadata);
 
 	/* Sanity check */
 	if (!sensorControls.contains(V4L2_CID_EXPOSURE) ||

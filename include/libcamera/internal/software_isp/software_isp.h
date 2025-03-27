@@ -85,6 +85,7 @@ public:
 	Signal<FrameBuffer *> inputBufferReady;
 	Signal<FrameBuffer *> outputBufferReady;
 	Signal<uint32_t, uint32_t> ispStatsReady;
+	Signal<uint32_t, const ControlList &> metadataReady;
 	Signal<const ControlList &> setSensorControls;
 
 private:

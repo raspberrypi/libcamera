@@ -56,6 +56,11 @@ LOG_DEFINE_CATEGORY(SoftwareIsp)
  */
 
 /**
+ * \var SoftwareIsp::metadataReady
+ * \brief A signal emitted when the metadata for IPA is ready
+ */
+
+/**
  * \var SoftwareIsp::setSensorControls
  * \brief A signal emitted when the values to write to the sensor controls are
  * ready
@@ -141,6 +146,10 @@ SoftwareIsp::SoftwareIsp(PipelineHandler *pipe, const CameraSensor *sensor,
 	}
 
 	ipa_->setIspParams.connect(this, &SoftwareIsp::saveIspParams);
+	ipa_->metadataReady.connect(this,
+				    [this](uint32_t frame, const ControlList &metadata) {
+					    metadataReady.emit(frame, metadata);
+				    });
 	ipa_->setSensorControls.connect(this, &SoftwareIsp::setSensorCtrls);
 
 	debayer_->moveToThread(&ispWorkerThread_);

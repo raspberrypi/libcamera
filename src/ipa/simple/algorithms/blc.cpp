@@ -11,6 +11,8 @@
 
 #include <libcamera/base/log.h>
 
+#include "control_ids.h"
+
 namespace libcamera {
 
 namespace ipa::soft::algorithms {
@@ -49,8 +51,15 @@ void BlackLevel::process(IPAContext &context,
 			 [[maybe_unused]] const uint32_t frame,
 			 IPAFrameContext &frameContext,
 			 const SwIspStats *stats,
-			 [[maybe_unused]] ControlList &metadata)
+			 ControlList &metadata)
 {
+	/* Assign each of the R G G B channels as the same black level. */
+	const int32_t blackLevel = context.activeState.blc.level * 256;
+	const int32_t blackLevels[] = {
+		blackLevel, blackLevel, blackLevel, blackLevel
+	};
+	metadata.set(controls::SensorBlackLevels, blackLevels);
+
 	if (context.configuration.black.level.has_value())
 		return;
 

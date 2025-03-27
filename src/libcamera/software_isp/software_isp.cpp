@@ -133,12 +133,20 @@ SoftwareIsp::SoftwareIsp(PipelineHandler *pipe, const CameraSensor *sensor,
 	std::string ipaTuningFile =
 		ipa_->configurationFile(sensor->model() + ".yaml", "uncalibrated.yaml");
 
-	int ret = ipa_->init(IPASettings{ ipaTuningFile, sensor->model() },
-			     debayer_->getStatsFD(),
-			     sharedParams_.fd(),
-			     sensor->controls(),
-			     ipaControls,
-			     &ccmEnabled_);
+	IPACameraSensorInfo sensorInfo{};
+	int ret = sensor->sensorInfo(&sensorInfo);
+	if (ret) {
+		LOG(SoftwareIsp, Error) << "Camera sensor information not available";
+		return;
+	}
+
+	ret = ipa_->init(IPASettings{ ipaTuningFile, sensor->model() },
+			 debayer_->getStatsFD(),
+			 sharedParams_.fd(),
+			 sensorInfo,
+			 sensor->controls(),
+			 ipaControls,
+			 &ccmEnabled_);
 	if (ret) {
 		LOG(SoftwareIsp, Error) << "IPA init failed";
 		debayer_.reset();

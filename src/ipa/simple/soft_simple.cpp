@@ -5,6 +5,7 @@
  * Simple Software Image Processing Algorithm module
  */
 
+#include <chrono>
 #include <stdint.h>
 #include <sys/mman.h>
 
@@ -32,6 +33,8 @@
 namespace libcamera {
 LOG_DEFINE_CATEGORY(IPASoft)
 
+using namespace std::literals::chrono_literals;
+
 namespace ipa::soft {
 
 /* Maximum number of frame contexts to be held */
@@ -50,7 +53,8 @@ public:
 	int init(const IPASettings &settings,
 		 const SharedFD &fdStats,
 		 const SharedFD &fdParams,
-		 const ControlInfoMap &sensorInfoMap,
+		 const IPACameraSensorInfo &sensorInfo,
+		 const ControlInfoMap &sensorControls,
 		 ControlInfoMap *ipaControls,
 		 bool *ccmEnabled) override;
 	int configure(const IPAConfigInfo &configInfo) override;
@@ -89,7 +93,8 @@ IPASoftSimple::~IPASoftSimple()
 int IPASoftSimple::init(const IPASettings &settings,
 			const SharedFD &fdStats,
 			const SharedFD &fdParams,
-			const ControlInfoMap &sensorInfoMap,
+			const IPACameraSensorInfo &sensorInfo,
+			const ControlInfoMap &sensorControls,
 			ControlInfoMap *ipaControls,
 			bool *ccmEnabled)
 {
@@ -99,6 +104,8 @@ int IPASoftSimple::init(const IPASettings &settings,
 			<< "Failed to create camera sensor helper for "
 			<< settings.sensorModel;
 	}
+
+	context_.sensorInfo = sensorInfo;
 
 	/* Load the tuning data file */
 	File file(settings.configurationFile);
@@ -173,12 +180,12 @@ int IPASoftSimple::init(const IPASettings &settings,
 	 * Don't save the min and max control values yet, as e.g. the limits
 	 * for V4L2_CID_EXPOSURE depend on the configured sensor resolution.
 	 */
-	if (sensorInfoMap.find(V4L2_CID_EXPOSURE) == sensorInfoMap.end()) {
+	if (sensorControls.find(V4L2_CID_EXPOSURE) == sensorControls.end()) {
 		LOG(IPASoft, Error) << "Don't have exposure control";
 		return -EINVAL;
 	}
 
-	if (sensorInfoMap.find(V4L2_CID_ANALOGUE_GAIN) == sensorInfoMap.end()) {
+	if (sensorControls.find(V4L2_CID_ANALOGUE_GAIN) == sensorControls.end()) {
 		LOG(IPASoft, Error) << "Don't have gain control";
 		return -EINVAL;
 	}
@@ -198,6 +205,8 @@ int IPASoftSimple::configure(const IPAConfigInfo &configInfo)
 	context_.activeState = {};
 	context_.frameContexts.clear();
 
+	context_.configuration.agc.lineDuration =
+		context_.sensorInfo.minLineLength * 1.0s / context_.sensorInfo.pixelRate;
 	context_.configuration.agc.exposureMin = exposureInfo.min().get<int32_t>();
 	context_.configuration.agc.exposureMax = exposureInfo.max().get<int32_t>();
 	if (!context_.configuration.agc.exposureMin) {

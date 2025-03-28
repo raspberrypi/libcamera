@@ -223,7 +223,6 @@ bool GstCameraControls::setProperty(guint propId, const GValue *value,
 {%- for ctrl in ctrls %}
 
 	case controls::{{ ctrl.namespace }}{{ ctrl.name|snake_case|upper }}: {
-		ControlValue control;
 {%- if ctrl.is_array %}
 		size_t size = gst_value_array_get_size(value);
 {%- if ctrl.size != 0 %}
@@ -254,12 +253,9 @@ bool GstCameraControls::setProperty(guint propId, const GValue *value,
 		}
 
 {%- if ctrl.size == 0 %}
-		control.set(Span<const {{ ctrl.element_type }}>(values.data(),
-								size));
+		Span<const {{ ctrl.element_type }}> val(values.data(), size);
 {%- else %}
-		control.set(Span<const {{ ctrl.element_type }},
-			         {{ ctrl.size }}>(values.data(),
-						  {{ ctrl.size }}));
+		Span<const {{ ctrl.element_type }}, {{ ctrl.size }}> val(values.data(), size);
 {%- endif %}
 {%- else %}
 {%- if ctrl.is_rectangle %}
@@ -273,10 +269,9 @@ bool GstCameraControls::setProperty(guint propId, const GValue *value,
 {%- else %}
 		auto val = g_value_get_{{ ctrl.gtype }}(value);
 {%- endif %}
-		control.set(val);
 {%- endif %}
-		controls_.set(propId, control);
-		controls_acc_.set(propId, control);
+		controls_.set(controls::{{ ctrl.namespace }}{{ ctrl.name }}, val);
+		controls_acc_.set(controls::{{ ctrl.namespace }}{{ ctrl.name }}, val);
 		return true;
 	}
 {%- endfor %}

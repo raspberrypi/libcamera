@@ -381,7 +381,7 @@ std::vector<std::shared_ptr<Camera>> CameraManager::cameras() const
  *
  * \return Shared pointer to Camera object or nullptr if camera not found
  */
-std::shared_ptr<Camera> CameraManager::get(const std::string &id)
+std::shared_ptr<Camera> CameraManager::get(std::string_view id)
 {
 	Private *const d = _d();
 

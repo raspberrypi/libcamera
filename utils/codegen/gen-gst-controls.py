@@ -19,7 +19,7 @@ from controls import Control
 
 
 exposed_controls = [
-    'AeMeteringMode', 'AeConstraintMode', 'AeExposureMode',
+    'AeEnable', 'AeMeteringMode', 'AeConstraintMode', 'AeExposureMode',
     'ExposureValue', 'ExposureTime', 'ExposureTimeMode',
     'AnalogueGain', 'AnalogueGainMode', 'AeFlickerPeriod',
     'Brightness', 'Contrast', 'AwbEnable', 'AwbMode', 'ColourGains',

@@ -42,9 +42,18 @@ protected:
 		ASSERT_EQ(hist.quantile(1.0), 2.0);
 		ASSERT_EQ(hist.quantile(0.5), 1.0);
 
+		/* Test quantile in the middle of a bin. */
+		ASSERT_EQ(hist.quantile(0.75), 1.5);
+
+		/* Test quantile smaller than the smallest histogram step. */
+		ASSERT_EQ(hist.quantile(0.001), 0.002);
+
 		ASSERT_EQ(hist.interQuantileMean(0.0, 1.0), 1.0);
 		ASSERT_EQ(hist.interQuantileMean(0.0, 0.5), 0.5);
 		ASSERT_EQ(hist.interQuantileMean(0.5, 1.0), 1.5);
+
+		/* Test interquantile mean that starts and ends in the middle of a bin. */
+		ASSERT_EQ(hist.interQuantileMean(0.25, 0.75), 1.0);
 
 		return TestPass;
 	}

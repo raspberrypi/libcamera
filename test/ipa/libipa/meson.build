@@ -2,6 +2,7 @@
 
 libipa_test = [
     {'name': 'fixedpoint', 'sources': ['fixedpoint.cpp']},
+    {'name': 'histogram', 'sources': ['histogram.cpp']},
     {'name': 'interpolator', 'sources': ['interpolator.cpp']},
 ]
 

@@ -130,7 +130,8 @@ double Histogram::quantile(double q, uint32_t first, uint32_t last) const
 	if (cumulative_[first + 1] == cumulative_[first])
 		frac = 0;
 	else
-		frac = (item - cumulative_[first]) / (cumulative_[first + 1] - cumulative_[first]);
+		frac = (q * total() - cumulative_[first])
+		     / (cumulative_[first + 1] - cumulative_[first]);
 	return first + frac;
 }
 

@@ -596,6 +596,11 @@ int UVCCameraData::init(MediaDevice *media)
 		addControl(cid, info, &ctrls);
 	}
 
+	if (autoExposureMode_ && manualExposureMode_) {
+		/* \todo Move this to the Camera class */
+		ctrls[&controls::AeEnable] = ControlInfo(false, true, true);
+	}
+
 	controlInfo_ = ControlInfoMap(std::move(ctrls), controls::controls);
 
 	/*

@@ -318,9 +318,6 @@ void Awb::process(IPAContext &context,
 
 	activeState.awb.temperatureK = awbResult.colourTemperature;
 
-	/* Metadata shall contain the up to date measurement */
-	metadata.set(controls::ColourTemperature, activeState.awb.temperatureK);
-
 	/*
 	 * Clamp the gain values to the hardware, which expresses gains as Q2.8
 	 * unsigned integer values. Set the minimum just above zero to avoid

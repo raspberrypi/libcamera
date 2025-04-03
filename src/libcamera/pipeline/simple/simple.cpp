@@ -327,6 +327,7 @@ public:
 	std::list<Entity> entities_;
 	std::unique_ptr<CameraSensor> sensor_;
 	V4L2VideoDevice *video_;
+	V4L2Subdevice *frameStartEmitter_;
 
 	std::vector<Configuration> configs_;
 	std::map<PixelFormat, std::vector<const Configuration *>> formats_;
@@ -632,6 +633,20 @@ int SimpleCameraData::init()
 	}
 
 	properties_ = sensor_->properties();
+
+	/* Find the first subdev that can generate a frame start signal, if any. */
+	frameStartEmitter_ = nullptr;
+	for (const Entity &entity : entities_) {
+		V4L2Subdevice *sd = pipe->subdev(entity.entity);
+		if (!sd || !sd->supportsFrameStartEvent())
+			continue;
+
+		LOG(SimplePipeline, Debug)
+			<< "Using frameStart signal from '"
+			<< entity.entity->name() << "'";
+		frameStartEmitter_ = sd;
+		break;
+	}
 
 	return 0;
 }
@@ -983,8 +998,18 @@ void SimpleCameraData::metadataReady(uint32_t frame, const ControlList &metadata
 void SimpleCameraData::setSensorControls(const ControlList &sensorControls)
 {
 	delayedCtrls_->push(sensorControls);
-	ControlList ctrls(sensorControls);
-	sensor_->setControls(&ctrls);
+	/*
+	 * Directly apply controls now if there is no frameStart signal.
+	 *
+	 * \todo Applying controls directly not only increases the risk of
+	 * applying them to the wrong frame (or across a frame boundary),
+	 * but it also bypasses delayedCtrls_, creating AGC regulation issues.
+	 * Both problems should be fixed.
+	 */
+	if (!frameStartEmitter_) {
+		ControlList ctrls(sensorControls);
+		sensor_->setControls(&ctrls);
+	}
 }
 
 /* Retrieve all source pads connected to a sink pad through active routes. */
@@ -1409,6 +1434,7 @@ int SimplePipelineHandler::start(Camera *camera, [[maybe_unused]] const ControlL
 {
 	SimpleCameraData *data = cameraData(camera);
 	V4L2VideoDevice *video = data->video_;
+	V4L2Subdevice *frameStartEmitter = data->frameStartEmitter_;
 	int ret;
 
 	const MediaPad *pad = acquirePipeline(data);
@@ -1438,8 +1464,15 @@ int SimplePipelineHandler::start(Camera *camera, [[maybe_unused]] const ControlL
 
 	video->bufferReady.connect(data, &SimpleCameraData::imageBufferReady);
 
-	data->video_->frameStart.connect(data->delayedCtrls_.get(),
-					 &DelayedControls::applyControls);
+	if (frameStartEmitter) {
+		ret = frameStartEmitter->setFrameStartEnabled(true);
+		if (ret) {
+			stop(camera);
+			return ret;
+		}
+		frameStartEmitter->frameStart.connect(data->delayedCtrls_.get(),
+						      &DelayedControls::applyControls);
+	}
 
 	ret = video->streamOn();
 	if (ret < 0) {
@@ -1472,9 +1505,13 @@ void SimplePipelineHandler::stopDevice(Camera *camera)
 {
 	SimpleCameraData *data = cameraData(camera);
 	V4L2VideoDevice *video = data->video_;
+	V4L2Subdevice *frameStartEmitter = data->frameStartEmitter_;
 
-	data->video_->frameStart.disconnect(data->delayedCtrls_.get(),
-					    &DelayedControls::applyControls);
+	if (frameStartEmitter) {
+		frameStartEmitter->setFrameStartEnabled(false);
+		frameStartEmitter->frameStart.disconnect(data->delayedCtrls_.get(),
+							 &DelayedControls::applyControls);
+	}
 
 	if (data->useConversion_) {
 		if (data->converter_)

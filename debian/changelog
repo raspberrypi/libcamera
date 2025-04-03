@@ -1,6 +1,7 @@
 libcamera (0.5.0-1) UNRELEASED; urgency=medium
 
   * New upstream version 0.5.0
+  * Bump SONAME to libcamera0.5
   * debian/gbp.conf: Set debian-branch to debian/experimental
   * Refresh patches and drop those included in upstream release
 

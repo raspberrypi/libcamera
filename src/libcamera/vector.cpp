@@ -45,6 +45,14 @@ LOG_DEFINE_CATEGORY(Vector)
  */
 
 /**
+ * \fn Vector::Vector(const Span<const T, Rows> data)
+ * \brief Construct vector from supplied data
+ * \param data Data from which to construct a vector
+ *
+ * The size of \a data must be equal to the dimension size Rows of the vector.
+ */
+
+/**
  * \fn T Vector::operator[](size_t i) const
  * \brief Index to an element in the vector
  * \param i Index of element to retrieve

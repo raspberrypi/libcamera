@@ -42,8 +42,12 @@ public:
 
 	constexpr Vector(const std::array<T, Rows> &data)
 	{
-		for (unsigned int i = 0; i < Rows; i++)
-			data_[i] = data[i];
+		std::copy(data.begin(), data.end(), data_.begin());
+	}
+
+	constexpr Vector(const Span<const T, Rows> data)
+	{
+		std::copy(data.begin(), data.end(), data_.begin());
 	}
 
 	const T &operator[](size_t i) const

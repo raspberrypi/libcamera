@@ -1371,8 +1371,6 @@ int SimplePipelineHandler::configure(Camera *camera, CameraConfiguration *c)
 	data->delayedCtrls_ =
 		std::make_unique<DelayedControls>(data->sensor_->device(),
 						  params);
-	data->video_->frameStart.connect(data->delayedCtrls_.get(),
-					 &DelayedControls::applyControls);
 
 	StreamConfiguration inputCfg;
 	inputCfg.pixelFormat = pipeConfig->captureFormat;
@@ -1440,6 +1438,9 @@ int SimplePipelineHandler::start(Camera *camera, [[maybe_unused]] const ControlL
 
 	video->bufferReady.connect(data, &SimpleCameraData::imageBufferReady);
 
+	data->video_->frameStart.connect(data->delayedCtrls_.get(),
+					 &DelayedControls::applyControls);
+
 	ret = video->streamOn();
 	if (ret < 0) {
 		stop(camera);
@@ -1471,6 +1472,9 @@ void SimplePipelineHandler::stopDevice(Camera *camera)
 {
 	SimpleCameraData *data = cameraData(camera);
 	V4L2VideoDevice *video = data->video_;
+
+	data->video_->frameStart.disconnect(data->delayedCtrls_.get(),
+					    &DelayedControls::applyControls);
 
 	if (data->useConversion_) {
 		if (data->converter_)

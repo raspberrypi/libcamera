@@ -25,9 +25,8 @@ class Matrix
 	static_assert(std::is_arithmetic_v<T>, "Matrix type must be arithmetic");
 
 public:
-	Matrix()
+	constexpr Matrix()
 	{
-		data_.fill(static_cast<T>(0));
 	}
 
 	Matrix(const std::array<T, Rows * Cols> &data)
@@ -35,7 +34,7 @@ public:
 		std::copy(data.begin(), data.end(), data_.begin());
 	}
 
-	static Matrix identity()
+	static constexpr Matrix identity()
 	{
 		Matrix ret;
 		for (size_t i = 0; i < std::min(Rows, Cols); i++)
@@ -63,14 +62,14 @@ public:
 		return out.str();
 	}
 
-	Span<const T, Rows * Cols> data() const { return data_; }
+	constexpr Span<const T, Rows * Cols> data() const { return data_; }
 
-	Span<const T, Cols> operator[](size_t i) const
+	constexpr Span<const T, Cols> operator[](size_t i) const
 	{
 		return Span<const T, Cols>{ &data_.data()[i * Cols], Cols };
 	}
 
-	Span<T, Cols> operator[](size_t i)
+	constexpr Span<T, Cols> operator[](size_t i)
 	{
 		return Span<T, Cols>{ &data_.data()[i * Cols], Cols };
 	}
@@ -88,7 +87,12 @@ public:
 	}
 
 private:
-	std::array<T, Rows * Cols> data_;
+	/*
+	 * \todo The initializer is only necessary for the constructor to be
+	 * constexpr in C++17. Remove the initializer as soon as we are on
+	 * C++20.
+	 */
+	std::array<T, Rows * Cols> data_ = {};
 };
 
 #ifndef __DOXYGEN__
@@ -141,7 +145,7 @@ constexpr Matrix<T, R1, C2> operator*(const Matrix<T, R1, C1> &m1, const Matrix<
 }
 
 template<typename T, unsigned int Rows, unsigned int Cols>
-Matrix<T, Rows, Cols> operator+(const Matrix<T, Rows, Cols> &m1, const Matrix<T, Rows, Cols> &m2)
+constexpr Matrix<T, Rows, Cols> operator+(const Matrix<T, Rows, Cols> &m1, const Matrix<T, Rows, Cols> &m2)
 {
 	Matrix<T, Rows, Cols> result;
 

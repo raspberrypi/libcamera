@@ -19,6 +19,12 @@ namespace libcamera {
 
 LOG_DECLARE_CATEGORY(Matrix)
 
+#ifndef __DOXYGEN__
+template<typename T>
+bool matrixInvert(Span<const T> dataIn, Span<T> dataOut, unsigned int dim,
+		  Span<T> scratchBuffer, Span<unsigned int> swapBuffer);
+#endif /* __DOXYGEN__ */
+
 template<typename T, unsigned int Rows, unsigned int Cols>
 class Matrix
 {
@@ -89,6 +95,23 @@ public:
 		for (unsigned int i = 0; i < Rows * Cols; i++)
 			data_[i] *= d;
 		return *this;
+	}
+
+	Matrix<T, Rows, Cols> inverse(bool *ok = nullptr) const
+	{
+		static_assert(Rows == Cols, "Matrix must be square");
+
+		Matrix<T, Rows, Cols> inverse;
+		std::array<T, Rows * Cols * 2> scratchBuffer;
+		std::array<unsigned int, Rows> swapBuffer;
+		bool res = matrixInvert(Span<const T>(data_),
+					Span<T>(inverse.data_),
+					Rows,
+					Span<T>(scratchBuffer),
+					Span<unsigned int>(swapBuffer));
+		if (ok)
+			*ok = res;
+		return inverse;
 	}
 
 private:

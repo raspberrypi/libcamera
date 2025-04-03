@@ -7,6 +7,12 @@
 
 #include "libcamera/internal/matrix.h"
 
+#include <algorithm>
+#include <assert.h>
+#include <cmath>
+#include <numeric>
+#include <vector>
+
 #include <libcamera/base/log.h>
 
 /**
@@ -88,6 +94,20 @@ LOG_DEFINE_CATEGORY(Matrix)
  */
 
 /**
+ * \fn Matrix::inverse(bool *ok) const
+ * \param[out] ok Indicate if the matrix was successfully inverted
+ * \brief Compute the inverse of the matrix
+ *
+ * This function computes the inverse of the matrix. It is only implemented for
+ * matrices of float and double types. If \a ok is provided it will be set to a
+ * boolean value to indicate of the inversion was successful. This can be used
+ * to check if the matrix is singular, in which case the function will return
+ * an identity matrix.
+ *
+ * \return The inverse of the matrix
+ */
+
+/**
  * \fn Matrix::operator[](size_t i)
  * \copydoc Matrix::operator[](size_t i) const
  */
@@ -142,6 +162,152 @@ LOG_DEFINE_CATEGORY(Matrix)
  */
 
 #ifndef __DOXYGEN__
+template<typename T>
+bool matrixInvert(Span<const T> dataIn, Span<T> dataOut, unsigned int dim,
+		  Span<T> scratchBuffer, Span<unsigned int> swapBuffer)
+{
+	/*
+	 * Convenience class to access matrix data, providing a row-major (i,j)
+	 * element accessor through the call operator, and the ability to swap
+	 * rows without modifying the backing storage.
+	 */
+	class MatrixAccessor
+	{
+	public:
+		MatrixAccessor(Span<T> data, Span<unsigned int> swapBuffer, unsigned int rows, unsigned int cols)
+			: data_(data), swap_(swapBuffer), rows_(rows), cols_(cols)
+		{
+			ASSERT(swap_.size() == rows);
+			std::iota(swap_.begin(), swap_.end(), T{ 0 });
+		}
+
+		T &operator()(unsigned int row, unsigned int col)
+		{
+			assert(row < rows_ && col < cols_);
+			return data_[index(row, col)];
+		}
+
+		void swap(unsigned int a, unsigned int b)
+		{
+			assert(a < rows_ && a < cols_);
+			std::swap(swap_[a], swap_[b]);
+		}
+
+	private:
+		unsigned int index(unsigned int row, unsigned int col) const
+		{
+			return swap_[row] * cols_ + col;
+		}
+
+		Span<T> data_;
+		Span<unsigned int> swap_;
+		unsigned int rows_;
+		unsigned int cols_;
+	};
+
+	/*
+	 * Matrix inversion using Gaussian elimination.
+	 *
+	 * Start by augmenting the original matrix with an identiy matrix of
+	 * the same size.
+	 */
+	ASSERT(scratchBuffer.size() == dim * dim * 2);
+	MatrixAccessor matrix(scratchBuffer, swapBuffer, dim, dim * 2);
+
+	for (unsigned int i = 0; i < dim; ++i) {
+		for (unsigned int j = 0; j < dim; ++j) {
+			matrix(i, j) = dataIn[i * dim + j];
+			matrix(i, j + dim) = T{ 0 };
+		}
+		matrix(i, i + dim) = T{ 1 };
+	}
+
+	/* Start by triangularizing the input . */
+	for (unsigned int pivot = 0; pivot < dim; ++pivot) {
+		/*
+		 * Locate the next pivot. To improve numerical stability, use
+		 * the row with the largest value in the pivot's column.
+		 */
+		unsigned int row;
+		T maxValue{ 0 };
+
+		for (unsigned int i = pivot; i < dim; ++i) {
+			T value = std::abs(matrix(i, pivot));
+			if (maxValue < value) {
+				maxValue = value;
+				row = i;
+			}
+		}
+
+		/*
+		 * If no pivot is found in the column, the matrix is not
+		 * invertible. Return an identity matrix.
+		 */
+		if (maxValue == 0) {
+			std::fill(dataOut.begin(), dataOut.end(), T{ 0 });
+			for (unsigned int i = 0; i < dim; ++i)
+				dataOut[i * dim + i] = T{ 1 };
+			return false;
+		}
+
+		/* Swap rows to bring the pivot in the right location. */
+		matrix.swap(pivot, row);
+
+		/* Process all rows below the pivot to zero the pivot column. */
+		const T pivotValue = matrix(pivot, pivot);
+
+		for (unsigned int i = pivot + 1; i < dim; ++i) {
+			const T factor = matrix(i, pivot) / pivotValue;
+
+			/*
+			 * We know the element in the pivot column will be 0,
+			 * hardcode it instead of computing it.
+			 */
+			matrix(i, pivot) = T{ 0 };
+
+			for (unsigned int j = pivot + 1; j < dim * 2; ++j)
+				matrix(i, j) -= matrix(pivot, j) * factor;
+		}
+	}
+
+	/*
+	 * Then diagonalize the input, walking the diagonal backwards. There's
+	 * no need to update the input matrix, as all the values we would write
+	 * in the top-right triangle aren't used in further calculations (and
+	 * would all by definition be zero).
+	 */
+	for (unsigned int pivot = dim - 1; pivot > 0; --pivot) {
+		const T pivotValue = matrix(pivot, pivot);
+
+		for (unsigned int i = 0; i < pivot; ++i) {
+			const T factor = matrix(i, pivot) / pivotValue;
+
+			for (unsigned int j = dim; j < dim * 2; ++j)
+				matrix(i, j) -= matrix(pivot, j) * factor;
+		}
+	}
+
+	/*
+	 * Finally, normalize the diagonal and store the result in the output
+	 * data.
+	 */
+	for (unsigned int i = 0; i < dim; ++i) {
+		const T factor = matrix(i, i);
+
+		for (unsigned int j = 0; j < dim; ++j)
+			dataOut[i * dim + j] = matrix(i, j + dim) / factor;
+	}
+
+	return true;
+}
+
+template bool matrixInvert<float>(Span<const float> dataIn, Span<float> dataOut,
+				  unsigned int dim, Span<float> scratchBuffer,
+				  Span<unsigned int> swapBuffer);
+template bool matrixInvert<double>(Span<const double> data, Span<double> dataOut,
+				   unsigned int dim, Span<double> scratchBuffer,
+				   Span<unsigned int> swapBuffer);
+
 /*
  * The YAML data shall be a list of numerical values. Its size shall be equal
  * to the product of the number of rows and columns of the matrix (Rows x

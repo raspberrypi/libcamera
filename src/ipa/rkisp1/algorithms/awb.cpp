@@ -413,9 +413,9 @@ RGB<double> Awb::calculateRgbMeans(const IPAFrameContext &frameContext, const rk
 	/*
 	 * The ISP computes the AWB means after applying the colour gains,
 	 * divide by the gains that were used to get the raw means from the
-	 * sensor.
+	 * sensor. Apply a minimum value to avoid divisions by near-zero.
 	 */
-	rgbMeans /= frameContext.awb.gains;
+	rgbMeans /= frameContext.awb.gains.max(0.01);
 
 	return rgbMeans;
 }

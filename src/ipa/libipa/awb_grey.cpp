@@ -98,15 +98,15 @@ AwbResult AwbGrey::calculateAwb(const AwbStats &stats, [[maybe_unused]] unsigned
  * \return The colour gains if a colour temperature curve is available,
  * [1, 1, 1] otherwise.
  */
-RGB<double> AwbGrey::gainsFromColourTemperature(double colourTemperature)
+std::optional<RGB<double>> AwbGrey::gainsFromColourTemperature(double colourTemperature)
 {
 	if (!colourGainCurve_) {
 		LOG(Awb, Error) << "No gains defined";
-		return RGB<double>({ 1.0, 1.0, 1.0 });
+		return std::nullopt;
 	}
 
 	auto gains = colourGainCurve_->getInterpolated(colourTemperature);
-	return { { gains[0], 1.0, gains[1] } };
+	return RGB<double>{ { gains[0], 1.0, gains[1] } };
 }
 
 } /* namespace ipa */

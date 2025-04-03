@@ -1040,7 +1040,7 @@ void OptionsParser::usageOptions(const std::list<Option> &options,
 
 		std::cerr << std::setw(indent) << argument;
 
-		for (const char *help = option.help, *end = help; end; ) {
+		for (const char *help = option.help, *end = help; end;) {
 			end = strchr(help, '\n');
 			if (end) {
 				std::cerr << std::string(help, end - help + 1);

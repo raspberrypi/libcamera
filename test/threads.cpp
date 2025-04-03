@@ -52,14 +52,8 @@ protected:
 	{
 		cancelled_ = true;
 
-		/*
-		 * Cancel the thread and call a guaranteed cancellation point
-		 * (nanosleep).
-		 */
 		pthread_cancel(pthread_self());
-
-		struct timespec req{ 0, 100*000*000 };
-		nanosleep(&req, nullptr);
+		pthread_testcancel();
 
 		cancelled_ = false;
 	}

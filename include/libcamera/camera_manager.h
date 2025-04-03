@@ -9,6 +9,7 @@
 
 #include <memory>
 #include <string>
+#include <string_view>
 #include <sys/types.h>
 #include <vector>
 
@@ -31,7 +32,7 @@ public:
 	void stop();
 
 	std::vector<std::shared_ptr<Camera>> cameras() const;
-	std::shared_ptr<Camera> get(const std::string &id);
+	std::shared_ptr<Camera> get(std::string_view id);
 
 	static const std::string &version() { return version_; }
 

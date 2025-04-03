@@ -53,6 +53,7 @@ libcamera_internal_sources = files([
     'v4l2_pixelformat.cpp',
     'v4l2_subdevice.cpp',
     'v4l2_videodevice.cpp',
+    'vector.cpp',
     'yaml_parser.cpp',
 ])
 

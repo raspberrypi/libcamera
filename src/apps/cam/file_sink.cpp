@@ -5,6 +5,8 @@
  * File Sink
  */
 
+#include "file_sink.h"
+
 #include <array>
 #include <assert.h>
 #include <fcntl.h>
@@ -20,8 +22,6 @@
 #include "../common/dng_writer.h"
 #include "../common/image.h"
 #include "../common/ppm_writer.h"
-
-#include "file_sink.h"
 
 using namespace libcamera;
 

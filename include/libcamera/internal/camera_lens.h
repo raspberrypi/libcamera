@@ -7,6 +7,7 @@
 #pragma once
 
 #include <memory>
+#include <stdint.h>
 #include <string>
 
 #include <libcamera/base/class.h>

@@ -6,9 +6,6 @@
 
 from .awb import AWB
 
-import libtuning as lt
-
-
 class AWBRkISP1(AWB):
     hr_name = 'AWB (RkISP1)'
     out_name = 'Awb'
@@ -20,8 +17,20 @@ class AWBRkISP1(AWB):
         return True
 
     def process(self, config: dict, images: list, outputs: dict) -> dict:
-        output = {}
+        if not 'awb' in config['general']:
+            raise ValueError('AWB configuration missing')
+        awb_config = config['general']['awb']
+        algorithm = awb_config['algorithm']
 
-        output['colourGains'] = self.do_calculation(images)
+        output = {'algorithm': algorithm}
+        data = self.do_calculation(images)
+        if algorithm == 'grey':
+            output['colourGains'] = data['colourGains']
+        elif algorithm == 'bayes':
+            output['AwbMode'] = awb_config['AwbMode']
+            output['priors'] = awb_config['priors']
+            output.update(data)
+        else:
+            raise ValueError(f"Unknown AWB algorithm {output['algorithm']}")
 
         return output

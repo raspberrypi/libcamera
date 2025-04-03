@@ -3,6 +3,9 @@
 libipa_headers = files([
     'agc_mean_luminance.h',
     'algorithm.h',
+    'awb_bayes.h',
+    'awb_grey.h',
+    'awb.h',
     'camera_sensor_helper.h',
     'colours.h',
     'exposure_mode_helper.h',
@@ -14,12 +17,14 @@ libipa_headers = files([
     'lux.h',
     'module.h',
     'pwl.h',
-    'vector.h',
 ])
 
 libipa_sources = files([
     'agc_mean_luminance.cpp',
     'algorithm.cpp',
+    'awb_bayes.cpp',
+    'awb_grey.cpp',
+    'awb.cpp',
     'camera_sensor_helper.cpp',
     'colours.cpp',
     'exposure_mode_helper.cpp',
@@ -31,7 +36,6 @@ libipa_sources = files([
     'lux.cpp',
     'module.cpp',
     'pwl.cpp',
-    'vector.cpp',
 ])
 
 libipa_includes = include_directories('..')

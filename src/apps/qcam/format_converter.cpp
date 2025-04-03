@@ -249,7 +249,7 @@ void FormatConverter::convertYUVPacked(const Image *srcImage, unsigned char *dst
 	dst_stride = width_ * 4;
 
 	for (src_y = 0, dst_y = 0; dst_y < height_; src_y++, dst_y++) {
-		for (src_x = 0, dst_x = 0; dst_x < width_; ) {
+		for (src_x = 0, dst_x = 0; dst_x < width_;) {
 			cb = src[src_y * src_stride + src_x * 4 + cb_pos_];
 			cr = src[src_y * src_stride + src_x * 4 + cr_pos];
 

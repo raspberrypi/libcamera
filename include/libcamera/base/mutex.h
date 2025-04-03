@@ -23,10 +23,6 @@ namespace libcamera {
 class LIBCAMERA_TSA_CAPABILITY("mutex") Mutex final
 {
 public:
-	constexpr Mutex()
-	{
-	}
-
 	void lock() LIBCAMERA_TSA_ACQUIRE()
 	{
 		mutex_.lock();
@@ -84,10 +80,6 @@ private:
 class ConditionVariable final
 {
 public:
-	ConditionVariable()
-	{
-	}
-
 	void notify_one() noexcept
 	{
 		cv_.notify_one();

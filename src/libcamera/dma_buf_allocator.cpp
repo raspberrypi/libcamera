@@ -311,9 +311,26 @@ DmaSyncer::DmaSyncer(SharedFD fd, SyncType type)
 	sync(DMA_BUF_SYNC_START);
 }
 
+/**
+ * \fn DmaSyncer::DmaSyncer(DmaSyncer &&other);
+ * \param[in] other The other instance
+ * \brief Enable move on class DmaSyncer
+ */
+
+/**
+ * \fn DmaSyncer::operator=(DmaSyncer &&other);
+ * \param[in] other The other instance
+ * \brief Enable move on class DmaSyncer
+ */
+
 DmaSyncer::~DmaSyncer()
 {
-	sync(DMA_BUF_SYNC_END);
+	/*
+	 * DmaSyncer might be moved and left with an empty SharedFD.
+	 * Avoid syncing with an invalid file descriptor in this case.
+	 */
+	if (fd_.isValid())
+		sync(DMA_BUF_SYNC_END);
 }
 
 void DmaSyncer::sync(uint64_t step)

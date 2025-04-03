@@ -346,13 +346,7 @@ public:
 	}
 
 	constexpr Span(const Span &other) noexcept = default;
-
-	constexpr Span &operator=(const Span &other) noexcept
-	{
-		data_ = other.data_;
-		size_ = other.size_;
-		return *this;
-	}
+	constexpr Span &operator=(const Span &other) noexcept = default;
 
 	constexpr iterator begin() const { return data(); }
 	constexpr const_iterator cbegin() const { return begin(); }

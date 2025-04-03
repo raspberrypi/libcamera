@@ -9,6 +9,7 @@
 
 #include <map>
 #include <memory>
+#include <stdint.h>
 
 #include "libcamera/internal/ipc_pipe.h"
 #include "libcamera/internal/ipc_unixsocket.h"

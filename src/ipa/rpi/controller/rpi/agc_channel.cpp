@@ -12,8 +12,9 @@
 
 #include <libcamera/base/log.h>
 
+#include "libcamera/internal/vector.h"
+
 #include "libipa/colours.h"
-#include "libipa/vector.h"
 
 #include "../awb_status.h"
 #include "../device_status.h"
@@ -319,16 +320,34 @@ int AgcChannel::read(const libcamera::YamlObject &params,
 	return 0;
 }
 
-void AgcChannel::disableAuto()
+void AgcChannel::disableAutoExposure()
 {
 	fixedExposureTime_ = status_.exposureTime;
+}
+
+void AgcChannel::enableAutoExposure()
+{
+	fixedExposureTime_ = 0s;
+}
+
+bool AgcChannel::autoExposureEnabled() const
+{
+	return fixedExposureTime_ == 0s;
+}
+
+void AgcChannel::disableAutoGain()
+{
 	fixedAnalogueGain_ = status_.analogueGain;
 }
 
-void AgcChannel::enableAuto()
+void AgcChannel::enableAutoGain()
 {
-	fixedExposureTime_ = 0s;
 	fixedAnalogueGain_ = 0;
+}
+
+bool AgcChannel::autoGainEnabled() const
+{
+	return fixedAnalogueGain_ == 0;
 }
 
 unsigned int AgcChannel::getConvergenceFrames() const
@@ -682,7 +701,7 @@ static double computeInitialY(StatisticsPtr &stats, AwbStatus const &awb,
 	 * Note that the weights are applied by the IPA to the statistics directly,
 	 * before they are given to us here.
 	 */
-	ipa::RGB<double> sum{ 0.0 };
+	RGB<double> sum{ 0.0 };
 	double pixelSum = 0;
 	for (unsigned int i = 0; i < stats->agcRegions.numRegions(); i++) {
 		auto &region = stats->agcRegions.get(i);
@@ -698,7 +717,7 @@ static double computeInitialY(StatisticsPtr &stats, AwbStatus const &awb,
 
 	/* Factor in the AWB correction if needed. */
 	if (stats->agcStatsPos == Statistics::AgcStatsPos::PreWb)
-		sum *= ipa::RGB<double>{{ awb.gainR, awb.gainR, awb.gainB }};
+		sum *= RGB<double>{ { awb.gainR, awb.gainR, awb.gainB } };
 
 	double ySum = ipa::rec601LuminanceFromRGB(sum);
 

@@ -156,6 +156,11 @@ void CamHelper::setCameraMode(const CameraMode &mode)
 	}
 }
 
+void CamHelper::setHwConfig(const Controller::HardwareConfig &hwConfig)
+{
+	hwConfig_ = hwConfig;
+}
+
 bool CamHelper::sensorEmbeddedDataPresent() const
 {
 	return false;

@@ -21,11 +21,34 @@ EventLoop::EventLoop()
 	evthread_use_pthreads();
 	base_ = event_base_new();
 	instance_ = this;
+
+	callsTrigger_ = event_new(base_, -1, EV_PERSIST, [](evutil_socket_t, short, void *closure) {
+		auto *self = static_cast<EventLoop *>(closure);
+
+		for (;;) {
+			std::function<void()> call;
+
+			{
+				std::lock_guard locker(self->lock_);
+				if (self->calls_.empty())
+					break;
+
+				call = std::move(self->calls_.front());
+				self->calls_.pop_front();
+			}
+
+			call();
+		}
+	}, this);
+	assert(callsTrigger_);
+	event_add(callsTrigger_, nullptr);
 }
 
 EventLoop::~EventLoop()
 {
 	instance_ = nullptr;
+
+	event_free(callsTrigger_);
 
 	events_.clear();
 	event_base_free(base_);
@@ -50,20 +73,20 @@ void EventLoop::exit(int code)
 	event_base_loopbreak(base_);
 }
 
-void EventLoop::callLater(const std::function<void()> &func)
+void EventLoop::callLater(std::function<void()> &&func)
 {
 	{
 		std::unique_lock<std::mutex> locker(lock_);
-		calls_.push_back(func);
+		calls_.push_back(std::move(func));
 	}
 
-	event_base_once(base_, -1, EV_TIMEOUT, dispatchCallback, this, nullptr);
+	event_active(callsTrigger_, 0, 0);
 }
 
 void EventLoop::addFdEvent(int fd, EventType type,
-			   const std::function<void()> &callback)
+			   std::function<void()> &&callback)
 {
-	std::unique_ptr<Event> event = std::make_unique<Event>(callback);
+	std::unique_ptr<Event> event = std::make_unique<Event>(std::move(callback));
 	short events = (type & Read ? EV_READ : 0)
 		     | (type & Write ? EV_WRITE : 0)
 		     | EV_PERSIST;
@@ -85,9 +108,9 @@ void EventLoop::addFdEvent(int fd, EventType type,
 }
 
 void EventLoop::addTimerEvent(const std::chrono::microseconds period,
-			      const std::function<void()> &callback)
+			      std::function<void()> &&callback)
 {
-	std::unique_ptr<Event> event = std::make_unique<Event>(callback);
+	std::unique_ptr<Event> event = std::make_unique<Event>(std::move(callback));
 	event->event_ = event_new(base_, -1, EV_PERSIST, &EventLoop::Event::dispatch,
 				  event.get());
 	if (!event->event_) {
@@ -108,31 +131,8 @@ void EventLoop::addTimerEvent(const std::chrono::microseconds period,
 	events_.push_back(std::move(event));
 }
 
-void EventLoop::dispatchCallback([[maybe_unused]] evutil_socket_t fd,
-				 [[maybe_unused]] short flags, void *param)
-{
-	EventLoop *loop = static_cast<EventLoop *>(param);
-	loop->dispatchCall();
-}
-
-void EventLoop::dispatchCall()
-{
-	std::function<void()> call;
-
-	{
-		std::unique_lock<std::mutex> locker(lock_);
-		if (calls_.empty())
-			return;
-
-		call = calls_.front();
-		calls_.pop_front();
-	}
-
-	call();
-}
-
-EventLoop::Event::Event(const std::function<void()> &callback)
-	: callback_(callback), event_(nullptr)
+EventLoop::Event::Event(std::function<void()> &&callback)
+	: callback_(std::move(callback)), event_(nullptr)
 {
 }
 

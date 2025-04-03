@@ -27,10 +27,14 @@ class AWB(Module):
 
         imgs = [img for img in images if img.macbeth is not None]
 
-        gains, _, _ = awb(imgs, None, None, False)
-        gains = np.reshape(gains, (-1, 3))
+        ct_curve, transverse_pos, transverse_neg = awb(imgs, None, None, False)
+        ct_curve = np.reshape(ct_curve, (-1, 3))
+        gains = [{
+            'ct': int(v[0]),
+            'gains': [float(1.0 / v[1]), float(1.0 / v[2])]
+        } for v in ct_curve]
 
-        return [{
-                    'ct': int(v[0]),
-                    'gains': [float(1.0 / v[1]), float(1.0 / v[2])]
-                } for v in gains]
+        return {'colourGains': gains,
+                'transversePos': transverse_pos,
+                'transverseNeg': transverse_neg}
+

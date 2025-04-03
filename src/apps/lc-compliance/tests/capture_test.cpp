@@ -14,10 +14,13 @@
 
 #include "environment.h"
 
+namespace {
+
 using namespace libcamera;
 
-const std::vector<int> NUMREQUESTS = { 1, 2, 3, 5, 8, 13, 21, 34, 55, 89 };
-const std::vector<StreamRole> ROLES = {
+const int NUMREQUESTS[] = { 1, 2, 3, 5, 8, 13, 21, 34, 55, 89 };
+
+const StreamRole ROLES[] = {
 	StreamRole::Raw,
 	StreamRole::StillCapture,
 	StreamRole::VideoRecording,
@@ -84,11 +87,11 @@ TEST_P(SingleStream, Capture)
 {
 	auto [role, numRequests] = GetParam();
 
-	CaptureBalanced capture(camera_);
+	Capture capture(camera_);
 
 	capture.configure(role);
 
-	capture.capture(numRequests);
+	capture.run(numRequests, numRequests);
 }
 
 /*
@@ -103,12 +106,12 @@ TEST_P(SingleStream, CaptureStartStop)
 	auto [role, numRequests] = GetParam();
 	unsigned int numRepeats = 3;
 
-	CaptureBalanced capture(camera_);
+	Capture capture(camera_);
 
 	capture.configure(role);
 
 	for (unsigned int starts = 0; starts < numRepeats; starts++)
-		capture.capture(numRequests);
+		capture.run(numRequests, numRequests);
 }
 
 /*
@@ -122,11 +125,11 @@ TEST_P(SingleStream, UnbalancedStop)
 {
 	auto [role, numRequests] = GetParam();
 
-	CaptureUnbalanced capture(camera_);
+	Capture capture(camera_);
 
 	capture.configure(role);
 
-	capture.capture(numRequests);
+	capture.run(numRequests);
 }
 
 INSTANTIATE_TEST_SUITE_P(CaptureTests,
@@ -134,3 +137,5 @@ INSTANTIATE_TEST_SUITE_P(CaptureTests,
 			 testing::Combine(testing::ValuesIn(ROLES),
 					  testing::ValuesIn(NUMREQUESTS)),
 			 SingleStream::nameParameters);
+
+} /* namespace */

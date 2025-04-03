@@ -350,7 +350,7 @@ void Object::connect(SignalBase *signal)
 
 void Object::disconnect(SignalBase *signal)
 {
-	for (auto iter = signals_.begin(); iter != signals_.end(); ) {
+	for (auto iter = signals_.begin(); iter != signals_.end();) {
 		if (*iter == signal)
 			iter = signals_.erase(iter);
 		else

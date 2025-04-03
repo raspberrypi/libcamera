@@ -129,7 +129,7 @@ int ImageFrameGenerator::generateFrame(const Size &size, const FrameBuffer *buff
 
 	MappedFrameBuffer mappedFrameBuffer(buffer, MappedFrameBuffer::MapFlag::Write);
 
-	auto planes = mappedFrameBuffer.planes();
+	const auto &planes = mappedFrameBuffer.planes();
 
 	/* Loop only around the number of images available */
 	frameIndex_ %= imageFrameDatas_.size();

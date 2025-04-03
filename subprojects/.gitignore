@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 /googletest-release*
+/libpisp
 /libyaml
 /libyuv
 /packagecache

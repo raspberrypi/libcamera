@@ -232,7 +232,12 @@ const CameraSensorProperties *CameraSensorProperties::get(const std::string &sen
 		{ "imx415", {
 			.unitCellSize = { 1450, 1450 },
 			.testPatternModes = {},
-			.sensorDelays = { },
+			.sensorDelays = {
+				.exposureDelay = 2,
+				.gainDelay = 2,
+				.vblankDelay = 2,
+				.hblankDelay = 2
+			},
 		} },
 		{ "imx462", {
 			.unitCellSize = { 2900, 2900 },

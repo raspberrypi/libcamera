@@ -34,7 +34,8 @@ struct V4L2SubdeviceFormat;
 class RkISP1Path
 {
 public:
-	RkISP1Path(const char *name, const Span<const PixelFormat> &formats);
+	RkISP1Path(const char *name, const Span<const PixelFormat> &formats,
+		   const Size &minResolution, const Size &maxResolution);
 
 	bool init(MediaDevice *media);
 

@@ -1,8 +1,3 @@
 ppc64el-fix-ftbfs-gcc.patch
 skip_failing_tests.patch
-fix_detection_libyuv.patch
 Disable_libunwind_integration.patch
-
-# https://bugs.debian.org/1091966
-31a7378c879a09e88c8908c6743c9a120c66a3c5.patch
-6841ea8d3694c76911bb2b346753134ae3a5091b.patch

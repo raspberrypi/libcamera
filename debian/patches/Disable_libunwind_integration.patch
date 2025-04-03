@@ -5,7 +5,7 @@ Author: Dylan Aïssi <daissi@debian.org>
 
 --- a/meson_options.txt
 +++ b/meson_options.txt
-@@ -40,6 +40,11 @@
+@@ -41,6 +41,11 @@
          value : 'auto',
          description : 'Compile the lc-compliance test application')
  

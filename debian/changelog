@@ -2,6 +2,7 @@ libcamera (0.5.0-1) UNRELEASED; urgency=medium
 
   * New upstream version 0.5.0
   * debian/gbp.conf: Set debian-branch to debian/experimental
+  * Refresh patches and drop those included in upstream release
 
  -- Dylan Aïssi <daissi@debian.org>  Thu, 03 Apr 2025 22:00:34 +0200
 

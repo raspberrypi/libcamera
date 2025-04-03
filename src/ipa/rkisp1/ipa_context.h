@@ -101,7 +101,8 @@ struct IPAActiveState {
 	} awb;
 
 	struct {
-		Matrix<float, 3, 3> ccm;
+		Matrix<float, 3, 3> manual;
+		Matrix<float, 3, 3> automatic;
 	} ccm;
 
 	struct {

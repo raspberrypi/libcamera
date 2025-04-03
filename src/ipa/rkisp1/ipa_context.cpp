@@ -211,6 +211,17 @@ namespace libcamera::ipa::rkisp1 {
  */
 
 /**
+ * \var IPAActiveState::ccm
+ * \brief State for the Colour Correction Matrix algorithm
+ *
+ * \var IPAActiveState::ccm.manual
+ * \brief Manual CCM (set through requests)
+ *
+ * \var IPAActiveState::awb.automatic
+ * \brief Automatic CCM (computed by the algorithm)
+ */
+
+/**
  * \var IPAActiveState::cproc
  * \brief State for the Color Processing algorithm
  *
@@ -356,6 +367,14 @@ namespace libcamera::ipa::rkisp1 {
  *
  * \var IPAFrameContext::awb.autoEnabled
  * \brief Whether the Auto White Balance algorithm is enabled
+ */
+
+/**
+ * \var IPAFrameContext::ccm
+ * \brief Colour Correction Matrix parameters for this frame
+ *
+ * \struct IPAFrameContext::ccm.ccm
+ * \brief Colour Correction Matrix
  */
 
 /**

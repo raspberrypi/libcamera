@@ -191,14 +191,17 @@ namespace libcamera::ipa::rkisp1 {
  * \var IPAActiveState::awb
  * \brief State for the Automatic White Balance algorithm
  *
- * \struct IPAActiveState::awb.gains
+ * \struct IPAActiveState::awb::AwbState
+ * \brief Struct for the AWB regulation state
+ *
+ * \var IPAActiveState::awb::AwbState.gains
  * \brief White balance gains
  *
- * \var IPAActiveState::awb.gains.manual
- * \brief Manual white balance gains (set through requests)
+ * \var IPAActiveState::awb.manual
+ * \brief Manual regulation state (set through requests)
  *
- * \var IPAActiveState::awb.gains.automatic
- * \brief Automatic white balance gains (computed by the algorithm)
+ * \var IPAActiveState::awb.automatic
+ * \brief Automatic regulation state (computed by the algorithm)
  *
  * \var IPAActiveState::awb.temperatureK
  * \brief Estimated color temperature

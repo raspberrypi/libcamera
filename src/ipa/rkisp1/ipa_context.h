@@ -89,10 +89,12 @@ struct IPAActiveState {
 	} agc;
 
 	struct {
-		struct {
-			RGB<double> manual;
-			RGB<double> automatic;
-		} gains;
+		struct AwbState {
+			RGB<double> gains;
+		};
+
+		AwbState manual;
+		AwbState automatic;
 
 		unsigned int temperatureK;
 		bool autoEnabled;

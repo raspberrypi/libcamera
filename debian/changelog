@@ -1,3 +1,10 @@
+libcamera (0.5.0-1) UNRELEASED; urgency=medium
+
+  * New upstream version 0.5.0
+  * debian/gbp.conf: Set debian-branch to debian/experimental
+
+ -- Dylan Aïssi <daissi@debian.org>  Thu, 03 Apr 2025 22:00:34 +0200
+
 libcamera (0.4.0-7) unstable; urgency=medium
 
   * Add superficial test for gstreamer1.0-libcamera

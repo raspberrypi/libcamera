@@ -405,6 +405,12 @@ RGB<double> Awb::calculateRgbMeans(const IPAFrameContext &frameContext, const rk
 	}
 
 	/*
+	 * The ISP computes the AWB means after applying the CCM. Apply the
+	 * inverse as we want to get the raw means before the colour gains.
+	 */
+	rgbMeans = frameContext.ccm.ccm.inverse() * rgbMeans;
+
+	/*
 	 * The ISP computes the AWB means after applying the colour gains,
 	 * divide by the gains that were used to get the raw means from the
 	 * sensor.

@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <sstream>
+#include <type_traits>
 #include <vector>
 
 #include <libcamera/base/log.h>
@@ -152,15 +153,16 @@ Matrix<U, Rows, Cols> operator*(const Matrix<U, Rows, Cols> &m, T d)
 	return d * m;
 }
 
-template<typename T, unsigned int R1, unsigned int C1, unsigned int R2, unsigned int C2>
-constexpr Matrix<T, R1, C2> operator*(const Matrix<T, R1, C1> &m1, const Matrix<T, R2, C2> &m2)
+template<typename T1, unsigned int R1, unsigned int C1, typename T2, unsigned int R2, unsigned int C2>
+constexpr Matrix<std::common_type_t<T1, T2>, R1, C2> operator*(const Matrix<T1, R1, C1> &m1,
+							       const Matrix<T2, R2, C2> &m2)
 {
 	static_assert(C1 == R2, "Matrix dimensions must match for multiplication");
-	Matrix<T, R1, C2> result;
+	Matrix<std::common_type_t<T1, T2>, R1, C2> result;
 
 	for (unsigned int i = 0; i < R1; i++) {
 		for (unsigned int j = 0; j < C2; j++) {
-			T sum = 0;
+			std::common_type_t<T1, T2> sum = 0;
 
 			for (unsigned int k = 0; k < C1; k++)
 				sum += m1[i][k] * m2[k][j];

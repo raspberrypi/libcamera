@@ -138,11 +138,12 @@ LOG_DEFINE_CATEGORY(Matrix)
  */
 
 /**
- * \fn Matrix<T, R1, C2> operator*(const Matrix<T, R1, C1> &m1, const Matrix<T, R2, C2> &m2)
+ * \fn operator*(const Matrix<T1, R1, C1> &m1, const Matrix<T2, R2, C2> &m2)
  * \brief Matrix multiplication
- * \tparam T Type of numerical values in the matrices
+ * \tparam T1 Type of numerical values in the first matrix
  * \tparam R1 Number of rows in the first matrix
  * \tparam C1 Number of columns in the first matrix
+ * \tparam T2 Type of numerical values in the secont matrix
  * \tparam R2 Number of rows in the second matrix
  * \tparam C2 Number of columns in the second matrix
  * \param m1 Multiplicand matrix

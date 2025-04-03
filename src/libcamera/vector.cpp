@@ -308,9 +308,10 @@ LOG_DEFINE_CATEGORY(Vector)
  */
 
 /**
- * \fn Vector<T, Rows> operator*(const Matrix<T, Rows, Cols> &m, const Vector<T, Cols> &v)
+ * \fn operator*(const Matrix<T, Rows, Cols> &m, const Vector<U, Cols> &v)
  * \brief Multiply a matrix by a vector
- * \tparam T Numerical type of the contents of the matrix and vector
+ * \tparam T Numerical type of the contents of the matrix
+ * \tparam U Numerical type of the contents of the vector
  * \tparam Rows The number of rows in the matrix
  * \tparam Cols The number of columns in the matrix (= rows in the vector)
  * \param m The matrix

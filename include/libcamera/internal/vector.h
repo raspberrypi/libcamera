@@ -13,6 +13,7 @@
 #include <numeric>
 #include <optional>
 #include <ostream>
+#include <type_traits>
 
 #include <libcamera/base/log.h>
 #include <libcamera/base/span.h>
@@ -295,13 +296,13 @@ private:
 template<typename T>
 using RGB = Vector<T, 3>;
 
-template<typename T, unsigned int Rows, unsigned int Cols>
-Vector<T, Rows> operator*(const Matrix<T, Rows, Cols> &m, const Vector<T, Cols> &v)
+template<typename T, typename U, unsigned int Rows, unsigned int Cols>
+Vector<std::common_type_t<T, U>, Rows> operator*(const Matrix<T, Rows, Cols> &m, const Vector<U, Cols> &v)
 {
-	Vector<T, Rows> result;
+	Vector<std::common_type_t<T, U>, Rows> result;
 
 	for (unsigned int i = 0; i < Rows; i++) {
-		T sum = 0;
+		std::common_type_t<T, U> sum = 0;
 		for (unsigned int j = 0; j < Cols; j++)
 			sum += m[i][j] * v[j];
 		result[i] = sum;

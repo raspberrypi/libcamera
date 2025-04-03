@@ -142,10 +142,6 @@ void Ccm::prepare(IPAContext &context, const uint32_t frame,
 	}
 
 	uint32_t ct = frameContext.awb.temperatureK;
-	/*
-	 * \todo The colour temperature will likely be noisy, add filtering to
-	 * avoid updating the CCM matrix all the time.
-	 */
 	if (frame > 0 && ct == ct_) {
 		frameContext.ccm.ccm = context.activeState.ccm.automatic;
 		return;

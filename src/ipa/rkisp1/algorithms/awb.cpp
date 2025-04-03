@@ -324,8 +324,6 @@ void Awb::process(IPAContext &context,
 	RkISP1AwbStats awbStats{ rgbMeans };
 	AwbResult awbResult = awbAlgo_->calculateAwb(awbStats, frameContext.lux.lux);
 
-	activeState.awb.automatic.temperatureK = awbResult.colourTemperature;
-
 	/*
 	 * Clamp the gain values to the hardware, which expresses gains as Q2.8
 	 * unsigned integer values. Set the minimum just above zero to avoid
@@ -336,9 +334,12 @@ void Awb::process(IPAContext &context,
 
 	/* Filter the values to avoid oscillations. */
 	double speed = 0.2;
+	double ct = awbResult.colourTemperature;
+	ct = ct * speed + activeState.awb.automatic.temperatureK * (1 - speed);
 	awbResult.gains = awbResult.gains * speed +
 			  activeState.awb.automatic.gains * (1 - speed);
 
+	activeState.awb.automatic.temperatureK = static_cast<unsigned int>(ct);
 	activeState.awb.automatic.gains = awbResult.gains;
 
 	LOG(RkISP1Awb, Debug)

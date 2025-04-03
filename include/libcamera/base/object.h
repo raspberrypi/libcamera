@@ -9,9 +9,11 @@
 
 #include <list>
 #include <memory>
+#include <utility>
 #include <vector>
 
 #include <libcamera/base/bound_method.h>
+#include <libcamera/base/class.h>
 
 namespace libcamera {
 
@@ -38,7 +40,7 @@ public:
 	{
 		T *obj = static_cast<T *>(this);
 		auto *method = new BoundMethodMember<T, R, FuncArgs...>(obj, this, func, type);
-		return method->activate(args..., true);
+		return method->activate(std::forward<Args>(args)..., true);
 	}
 
 	Thread *thread() const { return thread_; }
@@ -52,6 +54,8 @@ protected:
 	bool assertThreadBound(const char *message);
 
 private:
+	LIBCAMERA_DISABLE_COPY_AND_MOVE(Object)
+
 	friend class SignalBase;
 	friend class Thread;
 

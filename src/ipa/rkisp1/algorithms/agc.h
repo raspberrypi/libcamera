@@ -50,8 +50,12 @@ private:
 	void fillMetadata(IPAContext &context, IPAFrameContext &frameContext,
 			  ControlList &metadata);
 	double estimateLuminance(double gain) const override;
+	void processFrameDuration(IPAContext &context,
+				  IPAFrameContext &frameContext,
+				  utils::Duration frameDuration);
 
 	Span<const uint8_t> expMeans_;
+	Span<const uint8_t> weights_;
 
 	std::map<int32_t, std::vector<uint8_t>> meteringModes_;
 };

@@ -45,13 +45,11 @@ class ThrowListener : public testing::EmptyTestEventListener
 static void listCameras(CameraManager *cm)
 {
 	for (const std::shared_ptr<Camera> &cam : cm->cameras())
-		std::cout << "- " << cam.get()->id() << std::endl;
+		std::cout << "- " << cam->id() << std::endl;
 }
 
 static int initCamera(CameraManager *cm, OptionsParser::Options options)
 {
-	std::shared_ptr<Camera> camera;
-
 	int ret = cm->start();
 	if (ret) {
 		std::cout << "Failed to start camera manager: "
@@ -66,7 +64,7 @@ static int initCamera(CameraManager *cm, OptionsParser::Options options)
 	}
 
 	const std::string &cameraId = options[OptCamera];
-	camera = cm->get(cameraId);
+	std::shared_ptr<Camera> camera = cm->get(cameraId);
 	if (!camera) {
 		std::cout << "Camera " << cameraId << " not found, available cameras:" << std::endl;
 		listCameras(cm);
@@ -82,45 +80,27 @@ static int initCamera(CameraManager *cm, OptionsParser::Options options)
 
 static int initGtestParameters(char *arg0, OptionsParser::Options options)
 {
-	const std::map<std::string, std::string> gtestFlags = { { "list", "--gtest_list_tests" },
-								{ "filter", "--gtest_filter" } };
-
-	int argc = 0;
+	std::vector<const char *> argv;
 	std::string filterParam;
 
-	/*
-	 * +2 to have space for both the 0th argument that is needed but not
-	 * used and the null at the end.
-	 */
-	char **argv = new char *[(gtestFlags.size() + 2)];
-	if (!argv)
-		return -ENOMEM;
+	argv.push_back(arg0);
 
-	argv[0] = arg0;
-	argc++;
-
-	if (options.isSet(OptList)) {
-		argv[argc] = const_cast<char *>(gtestFlags.at("list").c_str());
-		argc++;
-	}
+	if (options.isSet(OptList))
+		argv.push_back("--gtest_list_tests");
 
 	if (options.isSet(OptFilter)) {
 		/*
 		 * The filter flag needs to be passed as a single parameter, in
 		 * the format --gtest_filter=filterStr
 		 */
-		filterParam = gtestFlags.at("filter") + "=" +
-			      static_cast<const std::string &>(options[OptFilter]);
-
-		argv[argc] = const_cast<char *>(filterParam.c_str());
-		argc++;
+		filterParam = "--gtest_filter=" + options[OptFilter].toString();
+		argv.push_back(filterParam.c_str());
 	}
 
-	argv[argc] = nullptr;
+	argv.push_back(nullptr);
 
-	::testing::InitGoogleTest(&argc, argv);
-
-	delete[] argv;
+	int argc = argv.size();
+	::testing::InitGoogleTest(&argc, const_cast<char **>(argv.data()));
 
 	return 0;
 }

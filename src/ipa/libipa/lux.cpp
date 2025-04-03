@@ -44,11 +44,6 @@ namespace ipa {
  */
 
 /**
- * \var Lux::binSize_
- * \brief The maximum count of each bin
- */
-
-/**
  * \var Lux::referenceExposureTime_
  * \brief The exposure time of the reference image, in microseconds
  */
@@ -65,9 +60,8 @@ namespace ipa {
 
 /**
  * \var Lux::referenceY_
- * \brief The measured luminance of the reference image, out of the bin size
+ * \brief The measured luminance of the reference image, normalized to 1
  *
- * \sa binSize_
  */
 
 /**
@@ -77,10 +71,8 @@ namespace ipa {
 
 /**
   * \brief Construct the Lux helper module
-  * \param[in] binSize The maximum count of each bin
   */
-Lux::Lux(unsigned int binSize)
-	: binSize_(binSize)
+Lux::Lux()
 {
 }
 
@@ -97,7 +89,7 @@ Lux::Lux(unsigned int binSize)
  *       referenceExposureTime: 10000
  *       referenceAnalogueGain: 4.0
  *       referenceDigitalGain: 1.0
- *       referenceY: 12000
+ *       referenceY: 0.1831
  *       referenceLux: 1000
  * \endcode
  *
@@ -167,7 +159,7 @@ double Lux::estimateLux(utils::Duration exposureTime,
 	double exposureTimeRatio = referenceExposureTime_ / exposureTime;
 	double aGainRatio = referenceAnalogueGain_ / aGain;
 	double dGainRatio = referenceDigitalGain_ / dGain;
-	double yRatio = currentY * (binSize_ / yHist.bins()) / referenceY_;
+	double yRatio = (currentY / yHist.bins()) / referenceY_;
 
 	double estimatedLux = exposureTimeRatio * aGainRatio * dGainRatio *
 			      yRatio * referenceLux_;

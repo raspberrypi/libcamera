@@ -65,7 +65,7 @@ class Control(object):
         else:
             direction = self.__data.get('direction')
             if direction is None:
-                raise RuntimeError(f'Control `{self.__name}` missing required field `{direction}`')
+                raise RuntimeError(f'Control `{self.__name}` missing required field `direction`')
             if direction not in ['in', 'out', 'inout']:
                 raise RuntimeError(f'Control `{self.__name}` direction `{direction}` is invalid; must be one of `in`, `out`, or `inout`')
             self.__direction = direction

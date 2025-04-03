@@ -74,6 +74,7 @@ static struct {
 	{ GST_VIDEO_FORMAT_I420, formats::YUV420 },
 	{ GST_VIDEO_FORMAT_YV12, formats::YVU420 },
 	{ GST_VIDEO_FORMAT_Y42B, formats::YUV422 },
+	{ GST_VIDEO_FORMAT_Y444, formats::YUV444 },
 
 	/* YUV Packed */
 	{ GST_VIDEO_FORMAT_UYVY, formats::UYVY },

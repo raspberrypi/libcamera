@@ -37,6 +37,7 @@ controls_map = {
         'core': 'control_ids_core.yaml',
         'debug': 'control_ids_debug.yaml',
         'draft': 'control_ids_draft.yaml',
+        'rpi/pisp': 'control_ids_rpi.yaml',
         'rpi/vc4': 'control_ids_rpi.yaml',
     },
 

@@ -13,6 +13,7 @@
 #include <iterator>
 #include <ostream>
 #include <sstream>
+#include <stdint.h>
 #include <string.h>
 #include <string>
 #include <sys/time.h>

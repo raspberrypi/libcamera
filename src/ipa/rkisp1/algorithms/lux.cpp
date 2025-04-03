@@ -33,12 +33,8 @@ namespace ipa::rkisp1::algorithms {
 
 /**
  * \brief Construct an rkisp1 Lux algo module
- *
- * The Lux helper is initialized to 65535 as that is the max bin count on the
- * rkisp1.
  */
 Lux::Lux()
-	: lux_(65535)
 {
 }
 

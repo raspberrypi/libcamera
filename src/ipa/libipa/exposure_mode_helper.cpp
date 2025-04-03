@@ -182,6 +182,7 @@ ExposureModeHelper::splitExposure(utils::Duration exposure) const
 		 * the stage limits are initialised.
 		 */
 
+		/* Clamp the gain to lastStageGain and regulate exposureTime. */
 		if (stageExposureTime * lastStageGain >= exposure) {
 			exposureTime = clampExposureTime(exposure / clampGain(lastStageGain));
 			gain = clampGain(exposure / exposureTime);
@@ -189,8 +190,9 @@ ExposureModeHelper::splitExposure(utils::Duration exposure) const
 			return { exposureTime, gain, exposure / (exposureTime * gain) };
 		}
 
+		/* Clamp the exposureTime to stageExposureTime and regulate gain. */
 		if (stageExposureTime * stageGain >= exposure) {
-			exposureTime = clampExposureTime(exposure / clampGain(stageGain));
+			exposureTime = clampExposureTime(stageExposureTime);
 			gain = clampGain(exposure / exposureTime);
 
 			return { exposureTime, gain, exposure / (exposureTime * gain) };

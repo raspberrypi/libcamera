@@ -8,11 +8,17 @@
 #include "libcamera/internal/v4l2_subdevice.h"
 
 #include <fcntl.h>
-#include <regex>
 #include <sstream>
 #include <string.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
+
+#pragma GCC diagnostic push
+#if defined __SANITIZE_ADDRESS__ && defined __OPTIMIZE__
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
+#include <regex>
+#pragma GCC diagnostic pop
 
 #include <linux/media-bus-format.h>
 #include <linux/v4l2-subdev.h>
@@ -739,6 +745,69 @@ const std::map<uint32_t, MediaBusFormatInfo> mediaBusFormatInfo{
 		.name = "METADATA_FIXED",
 		.code = MEDIA_BUS_FMT_METADATA_FIXED,
 		.type = MediaBusFormatInfo::Type::Metadata,
+		.bitsPerPixel = 0,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+	} },
+	{ MEDIA_BUS_FMT_META_8, {
+		.name = "META_8",
+		.code = MEDIA_BUS_FMT_META_8,
+		.type = MediaBusFormatInfo::Type::Metadata,
+		.bitsPerPixel = 8,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+	} },
+	{ MEDIA_BUS_FMT_META_10, {
+		.name = "META_10",
+		.code = MEDIA_BUS_FMT_META_10,
+		.type = MediaBusFormatInfo::Type::Metadata,
+		.bitsPerPixel = 10,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+	} },
+	{ MEDIA_BUS_FMT_META_12, {
+		.name = "META_12",
+		.code = MEDIA_BUS_FMT_META_12,
+		.type = MediaBusFormatInfo::Type::Metadata,
+		.bitsPerPixel = 12,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+	} },
+	{ MEDIA_BUS_FMT_META_14, {
+		.name = "META_14",
+		.code = MEDIA_BUS_FMT_META_14,
+		.type = MediaBusFormatInfo::Type::Metadata,
+		.bitsPerPixel = 14,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+	} },
+	{ MEDIA_BUS_FMT_META_16, {
+		.name = "META_16",
+		.code = MEDIA_BUS_FMT_META_16,
+		.type = MediaBusFormatInfo::Type::Metadata,
+		.bitsPerPixel = 16,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+	} },
+	{ MEDIA_BUS_FMT_META_20, {
+		.name = "META_20",
+		.code = MEDIA_BUS_FMT_META_20,
+		.type = MediaBusFormatInfo::Type::Metadata,
+		.bitsPerPixel = 20,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+	} },
+	{ MEDIA_BUS_FMT_META_24, {
+		.name = "META_24",
+		.code = MEDIA_BUS_FMT_META_24,
+		.type = MediaBusFormatInfo::Type::Metadata,
+		.bitsPerPixel = 24,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+	} },
+	{ MEDIA_BUS_FMT_CCS_EMBEDDED, {
+		.name = "CCS_EMBEDDED",
+		.code = MEDIA_BUS_FMT_CCS_EMBEDDED,
+		.type = MediaBusFormatInfo::Type::EmbeddedData,
+		.bitsPerPixel = 0,
+		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
+	} },
+	{ MEDIA_BUS_FMT_OV2740_EMBEDDED, {
+		.name = "OV2740_EMBEDDED",
+		.code = MEDIA_BUS_FMT_CCS_EMBEDDED,
+		.type = MediaBusFormatInfo::Type::EmbeddedData,
 		.bitsPerPixel = 0,
 		.colourEncoding = PixelFormatInfo::ColourEncodingRAW,
 	} },

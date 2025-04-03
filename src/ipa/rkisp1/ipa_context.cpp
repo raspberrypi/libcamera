@@ -165,8 +165,11 @@ namespace libcamera::ipa::rkisp1 {
  * \var IPAActiveState::agc.automatic.gain
  * \brief Automatic analogue gain multiplier
  *
- * \var IPAActiveState::agc.autoEnabled
- * \brief Manual/automatic AGC state as set by the AeEnable control
+ * \var IPAActiveState::agc.autoExposureEnabled
+ * \brief Manual/automatic AGC state (exposure) as set by the ExposureTimeMode control
+ *
+ * \var IPAActiveState::agc.autoGainEnabled
+ * \brief Manual/automatic AGC state (gain) as set by the AnalogueGainMode control
  *
  * \var IPAActiveState::agc.constraintMode
  * \brief Constraint mode as set by the AeConstraintMode control
@@ -176,6 +179,9 @@ namespace libcamera::ipa::rkisp1 {
  *
  * \var IPAActiveState::agc.meteringMode
  * \brief Metering mode as set by the AeMeteringMode control
+ *
+ * \var IPAActiveState::agc.minFrameDuration
+ * \brief Minimum frame duration as set by the FrameDurationLimits control
  *
  * \var IPAActiveState::agc.maxFrameDuration
  * \brief Maximum frame duration as set by the FrameDurationLimits control
@@ -279,7 +285,9 @@ namespace libcamera::ipa::rkisp1 {
  * \brief Automatic Gain Control parameters for this frame
  *
  * The exposure and gain are provided by the AGC algorithm, and are to be
- * applied to the sensor in order to take effect for this frame.
+ * applied to the sensor in order to take effect for this frame. Additionally
+ * the vertical blanking period is determined to maintain a consistent frame
+ * rate matched to the FrameDurationLimits as set by the user.
  *
  * \var IPAFrameContext::agc.exposure
  * \brief Exposure time expressed as a number of lines computed by the algorithm
@@ -289,8 +297,14 @@ namespace libcamera::ipa::rkisp1 {
  *
  * The gain should be adapted to the sensor specific gain code before applying.
  *
- * \var IPAFrameContext::agc.autoEnabled
- * \brief Manual/automatic AGC state as set by the AeEnable control
+ * \var IPAFrameContext::agc.vblank
+ * \brief Vertical blanking parameter computed by the algorithm
+ *
+ * \var IPAFrameContext::agc.autoExposureEnabled
+ * \brief Manual/automatic AGC state (exposure) as set by the ExposureTimeMode control
+ *
+ * \var IPAFrameContext::agc.autoGainEnabled
+ * \brief Manual/automatic AGC state (gain) as set by the AnalogueGainMode control
  *
  * \var IPAFrameContext::agc.constraintMode
  * \brief Constraint mode as set by the AeConstraintMode control
@@ -301,11 +315,27 @@ namespace libcamera::ipa::rkisp1 {
  * \var IPAFrameContext::agc.meteringMode
  * \brief Metering mode as set by the AeMeteringMode control
  *
+ * \var IPAFrameContext::agc.minFrameDuration
+ * \brief Minimum frame duration as set by the FrameDurationLimits control
+ *
  * \var IPAFrameContext::agc.maxFrameDuration
  * \brief Maximum frame duration as set by the FrameDurationLimits control
  *
+ * \var IPAFrameContext::agc.frameDuration
+ * \brief The actual FrameDuration used by the algorithm for the frame
+ *
  * \var IPAFrameContext::agc.updateMetering
  * \brief Indicate if new ISP AGC metering parameters need to be applied
+ *
+ * \var IPAFrameContext::agc.autoExposureModeChange
+ * \brief Indicate if autoExposureEnabled has changed from true in the previous
+ * frame to false in the current frame, and no manual exposure value has been
+ * supplied in the current frame.
+ *
+ * \var IPAFrameContext::agc.autoGainModeChange
+ * \brief Indicate if autoGainEnabled has changed from true in the previous
+ * frame to false in the current frame, and no manual gain value has been
+ * supplied in the current frame.
  */
 
 /**

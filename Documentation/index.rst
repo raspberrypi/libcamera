@@ -23,6 +23,8 @@
    SoftwareISP Benchmarking <software-isp-benchmarking>
    Tracing guide <guides/tracing>
 
+   Design document: AE <design/ae>
+
 .. toctree::
    :hidden:
 

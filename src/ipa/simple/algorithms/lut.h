@@ -30,9 +30,15 @@ public:
 		     const uint32_t frame,
 		     IPAFrameContext &frameContext,
 		     DebayerParams *params) override;
+	void process(IPAContext &context,
+		     const uint32_t frame,
+		     IPAFrameContext &frameContext,
+		     const SwIspStats *stats,
+		     ControlList &metadata) override;
 
 private:
 	void updateGammaTable(IPAContext &context);
+	int16_t ccmValue(unsigned int i, float ccm) const;
 };
 
 } /* namespace ipa::soft::algorithms */

@@ -2,7 +2,7 @@
 
 project('libcamera', 'c', 'cpp',
     meson_version : '>= 0.63',
-    version : '0.4.0',
+    version : '0.5.0',
     default_options : [
         'werror=true',
         'warning_level=2',
@@ -110,7 +110,9 @@ common_arguments = [
 ]
 
 c_arguments = []
-cpp_arguments = []
+cpp_arguments = [
+    '-Wnon-virtual-dtor',
+]
 
 cxx_stdlib = 'libstdc++'
 
@@ -204,7 +206,7 @@ liblttng = dependency('lttng-ust', required : get_option('tracing'))
 
 # Pipeline handlers
 #
-pipelines = get_option('pipelines')
+wanted_pipelines = get_option('pipelines')
 
 arch_arm = ['arm', 'aarch64']
 arch_x86 = ['x86', 'x86_64']
@@ -213,6 +215,7 @@ pipelines_support = {
     'ipu3':         arch_x86,
     'mali-c55':     arch_arm,
     'rkisp1':       arch_arm,
+    'rpi/pisp':     arch_arm,
     'rpi/vc4':      arch_arm,
     'simple':       ['any'],
     'uvcvideo':     ['any'],
@@ -220,16 +223,18 @@ pipelines_support = {
     'virtual':      ['test'],
 }
 
-if pipelines.contains('all')
+if wanted_pipelines.contains('all')
     pipelines = pipelines_support.keys()
-elif pipelines.contains('auto')
+elif wanted_pipelines.contains('auto')
     host_cpu = host_machine.cpu_family()
     pipelines = []
     foreach pipeline, archs : pipelines_support
-        if host_cpu in archs or 'any' in archs
+        if pipeline in wanted_pipelines or host_cpu in archs or 'any' in archs
             pipelines += pipeline
         endif
     endforeach
+else
+    pipelines = wanted_pipelines
 endif
 
 # Tests require the vimc pipeline handler, include it automatically when tests

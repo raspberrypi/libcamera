@@ -126,6 +126,13 @@ namespace ipa {
  */
 
 /**
+ * \fn std::map<unsigned int, T> &Interpolator<T>::data() const
+ * \brief Access the internal map
+ *
+ * \return The internal map
+ */
+
+/**
  * \fn const T& Interpolator<T>::getInterpolated()
  * \brief Retrieve an interpolated value for the given key
  * \param[in] key The unsigned integer key of the object to retrieve
@@ -136,8 +143,7 @@ namespace ipa {
  */
 
 /**
- * \fn void Interpolator<T>::interpolate(const T &a, const T &b, T &dest, double
- * lambda)
+ * \fn void Interpolator<T>::interpolate(const T &a, const T &b, T &dest, double lambda)
  * \brief Interpolate between two instances of T
  * \param a The first value to interpolate
  * \param b The second value to interpolate

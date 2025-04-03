@@ -8,6 +8,7 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 
 #include <libcamera/libcamera.h>
 
@@ -16,51 +17,29 @@
 class Capture
 {
 public:
-	void configure(libcamera::StreamRole role);
-
-protected:
 	Capture(std::shared_ptr<libcamera::Camera> camera);
-	virtual ~Capture();
+	~Capture();
+
+	void configure(libcamera::StreamRole role);
+	void run(unsigned int captureLimit, std::optional<unsigned int> queueLimit = {});
+
+private:
+	LIBCAMERA_DISABLE_COPY_AND_MOVE(Capture)
 
 	void start();
 	void stop();
 
-	virtual void requestComplete(libcamera::Request *request) = 0;
-
-	EventLoop *loop_;
+	int queueRequest(libcamera::Request *request);
+	void requestComplete(libcamera::Request *request);
 
 	std::shared_ptr<libcamera::Camera> camera_;
-	std::unique_ptr<libcamera::FrameBufferAllocator> allocator_;
+	libcamera::FrameBufferAllocator allocator_;
 	std::unique_ptr<libcamera::CameraConfiguration> config_;
 	std::vector<std::unique_ptr<libcamera::Request>> requests_;
-};
 
-class CaptureBalanced : public Capture
-{
-public:
-	CaptureBalanced(std::shared_ptr<libcamera::Camera> camera);
-
-	void capture(unsigned int numRequests);
-
-private:
-	int queueRequest(libcamera::Request *request);
-	void requestComplete(libcamera::Request *request) override;
-
-	unsigned int queueCount_;
-	unsigned int captureCount_;
-	unsigned int captureLimit_;
-};
-
-class CaptureUnbalanced : public Capture
-{
-public:
-	CaptureUnbalanced(std::shared_ptr<libcamera::Camera> camera);
-
-	void capture(unsigned int numRequests);
-
-private:
-	void requestComplete(libcamera::Request *request) override;
-
-	unsigned int captureCount_;
-	unsigned int captureLimit_;
+	EventLoop *loop_ = nullptr;
+	unsigned int captureLimit_ = 0;
+	std::optional<unsigned int> queueLimit_;
+	unsigned int captureCount_ = 0;
+	unsigned int queueCount_ = 0;
 };

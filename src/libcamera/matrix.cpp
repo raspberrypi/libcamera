@@ -42,6 +42,16 @@ LOG_DEFINE_CATEGORY(Matrix)
  */
 
 /**
+ * \fn Matrix::Matrix(const Span<const T, Rows * Cols> data)
+ * \brief Construct a matrix from supplied data
+ * \param[in] data Data from which to construct a matrix
+ *
+ * \a data is a one-dimensional Span and will be turned into a matrix in
+ * row-major order. The size of \a data must be equal to the product of the
+ * number of rows and columns of the matrix (Rows x Cols).
+ */
+
+/**
  * \fn Matrix::identity()
  * \brief Construct an identity matrix
  */

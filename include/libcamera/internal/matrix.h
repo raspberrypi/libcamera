@@ -34,6 +34,11 @@ public:
 		std::copy(data.begin(), data.end(), data_.begin());
 	}
 
+	Matrix(const Span<const T, Rows * Cols> data)
+	{
+		std::copy(data.begin(), data.end(), data_.begin());
+	}
+
 	static constexpr Matrix identity()
 	{
 		Matrix ret;

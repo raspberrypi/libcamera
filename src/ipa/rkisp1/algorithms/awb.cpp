@@ -130,7 +130,8 @@ int Awb::configure(IPAContext &context,
 	context.activeState.awb.automatic.gains =
 		awbAlgo_->gainsFromColourTemperature(kDefaultColourTemperature);
 	context.activeState.awb.autoEnabled = true;
-	context.activeState.awb.temperatureK = kDefaultColourTemperature;
+	context.activeState.awb.manual.temperatureK = kDefaultColourTemperature;
+	context.activeState.awb.automatic.temperatureK = kDefaultColourTemperature;
 
 	/*
 	 * Define the measurement window for AWB as a centered rectangle
@@ -187,7 +188,7 @@ void Awb::queueRequest(IPAContext &context,
 		const auto &gains = awbAlgo_->gainsFromColourTemperature(*colourTemperature);
 		awb.manual.gains.r() = gains.r();
 		awb.manual.gains.b() = gains.b();
-		awb.temperatureK = *colourTemperature;
+		awb.manual.temperatureK = *colourTemperature;
 		update = true;
 	}
 
@@ -196,7 +197,7 @@ void Awb::queueRequest(IPAContext &context,
 			<< "Set colour gains to " << awb.manual.gains;
 
 	frameContext.awb.gains = awb.manual.gains;
-	frameContext.awb.temperatureK = awb.temperatureK;
+	frameContext.awb.temperatureK = awb.manual.temperatureK;
 }
 
 /**
@@ -210,8 +211,9 @@ void Awb::prepare(IPAContext &context, const uint32_t frame,
 	 * most up-to-date automatic values we can read.
 	 */
 	if (frameContext.awb.autoEnabled) {
-		frameContext.awb.gains = context.activeState.awb.automatic.gains;
-		frameContext.awb.temperatureK = context.activeState.awb.temperatureK;
+		const auto &awb = context.activeState.awb;
+		frameContext.awb.gains = awb.automatic.gains;
+		frameContext.awb.temperatureK = awb.automatic.temperatureK;
 	}
 
 	auto gainConfig = params->block<BlockType::AwbGain>();
@@ -316,7 +318,7 @@ void Awb::process(IPAContext &context,
 	RkISP1AwbStats awbStats{ rgbMeans };
 	AwbResult awbResult = awbAlgo_->calculateAwb(awbStats, frameContext.lux.lux);
 
-	activeState.awb.temperatureK = awbResult.colourTemperature;
+	activeState.awb.automatic.temperatureK = awbResult.colourTemperature;
 
 	/*
 	 * Clamp the gain values to the hardware, which expresses gains as Q2.8
@@ -337,7 +339,7 @@ void Awb::process(IPAContext &context,
 		<< std::showpoint
 		<< "Means " << rgbMeans << ", gains "
 		<< activeState.awb.automatic.gains << ", temp "
-		<< activeState.awb.temperatureK << "K";
+		<< activeState.awb.automatic.temperatureK << "K";
 }
 
 RGB<double> Awb::calculateRgbMeans(const IPAFrameContext &frameContext, const rkisp1_cif_isp_awb_stat *awb) const

@@ -88,7 +88,7 @@ void Ccm::setParameters(struct rkisp1_cif_isp_ctk_config &config,
 void Ccm::prepare(IPAContext &context, const uint32_t frame,
 		  IPAFrameContext &frameContext, RkISP1Params *params)
 {
-	uint32_t ct = context.activeState.awb.temperatureK;
+	uint32_t ct = frameContext.awb.temperatureK;
 
 	/*
 	 * \todo The colour temperature will likely be noisy, add filtering to

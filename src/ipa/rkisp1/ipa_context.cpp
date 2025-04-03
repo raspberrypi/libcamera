@@ -197,14 +197,14 @@ namespace libcamera::ipa::rkisp1 {
  * \var IPAActiveState::awb::AwbState.gains
  * \brief White balance gains
  *
+ * \var IPAActiveState::awb::AwbState.temperatureK
+ * \brief Color temperature
+ *
  * \var IPAActiveState::awb.manual
  * \brief Manual regulation state (set through requests)
  *
  * \var IPAActiveState::awb.automatic
  * \brief Automatic regulation state (computed by the algorithm)
- *
- * \var IPAActiveState::awb.temperatureK
- * \brief Estimated color temperature
  *
  * \var IPAActiveState::awb.autoEnabled
  * \brief Whether the Auto White Balance algorithm is enabled
@@ -349,7 +349,10 @@ namespace libcamera::ipa::rkisp1 {
  * \brief White balance gains
  *
  * \var IPAFrameContext::awb.temperatureK
- * \brief Estimated color temperature
+ * \brief Color temperature used for processing this frame
+ *
+ * This does not match the color temperature estimated for this frame as the
+ * measurements were taken on a previous frame.
  *
  * \var IPAFrameContext::awb.autoEnabled
  * \brief Whether the Auto White Balance algorithm is enabled

@@ -404,12 +404,12 @@ void LensShadingCorrection::copyTable(rkisp1_cif_isp_lsc_config &config,
 /**
  * \copydoc libcamera::ipa::Algorithm::prepare
  */
-void LensShadingCorrection::prepare(IPAContext &context,
+void LensShadingCorrection::prepare([[maybe_unused]] IPAContext &context,
 				    [[maybe_unused]] const uint32_t frame,
-				    [[maybe_unused]] IPAFrameContext &frameContext,
+				    IPAFrameContext &frameContext,
 				    RkISP1Params *params)
 {
-	uint32_t ct = context.activeState.awb.temperatureK;
+	uint32_t ct = frameContext.awb.temperatureK;
 	if (std::abs(static_cast<int>(ct) - static_cast<int>(lastAppliedCt_)) <
 	    kColourTemperatureChangeThreshhold)
 		return;

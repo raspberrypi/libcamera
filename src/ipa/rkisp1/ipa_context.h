@@ -91,12 +91,12 @@ struct IPAActiveState {
 	struct {
 		struct AwbState {
 			RGB<double> gains;
+			unsigned int temperatureK;
 		};
 
 		AwbState manual;
 		AwbState automatic;
 
-		unsigned int temperatureK;
 		bool autoEnabled;
 	} awb;
 

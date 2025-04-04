@@ -18,6 +18,7 @@ option('cam',
 
 option('documentation',
         type : 'feature',
+        value : 'auto',
         description : 'Generate the project documentation')
 
 option('doc_werror',

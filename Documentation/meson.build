@@ -116,10 +116,8 @@ endif
 # Sphinx
 #
 
-sphinx = find_program('sphinx-build-3', required : false)
-if not sphinx.found()
-    sphinx = find_program('sphinx-build', required : get_option('documentation'))
-endif
+sphinx = find_program('sphinx-build-3', 'sphinx-build',
+                      required : get_option('documentation'))
 
 if sphinx.found()
     docs_sources = [

@@ -83,6 +83,7 @@ for cam: [optional]
         - libdrm-dev: Enables the KMS sink
         - libjpeg-dev: Enables MJPEG on the SDL sink
         - libsdl2-dev: Enables the SDL sink
+        - libtiff-dev: Enables writing DNG
 
 for qcam: [optional]
         libtiff-dev qt6-base-dev qt6-tools-dev-tools

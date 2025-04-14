@@ -122,7 +122,7 @@ void Lut::prepare(IPAContext &context,
 		Matrix<float, 3, 3> gainCcm = { { gains.r(), 0, 0,
 						  0, gains.g(), 0,
 						  0, 0, gains.b() } };
-		auto ccm = gainCcm * context.activeState.ccm.ccm;
+		auto ccm = context.activeState.ccm.ccm * gainCcm;
 		auto &red = params->redCcm;
 		auto &green = params->greenCcm;
 		auto &blue = params->blueCcm;

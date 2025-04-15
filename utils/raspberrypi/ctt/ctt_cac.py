@@ -108,12 +108,29 @@ def shifts_to_yaml(red_shift, blue_shift, image_dimensions, output_grid_size=9):
         ybsgrid[xgridloc][ygridloc].append(blue_shift[3])
 
     # Now calculate the average pixel shift for each square in the grid
+    grid_incomplete = False
     for x in range(output_grid_size - 1):
         for y in range(output_grid_size - 1):
-            xrgrid[x, y] = np.mean(xrsgrid[x][y])
-            yrgrid[x, y] = np.mean(yrsgrid[x][y])
-            xbgrid[x, y] = np.mean(xbsgrid[x][y])
-            ybgrid[x, y] = np.mean(ybsgrid[x][y])
+            if xrsgrid[x][y]:
+                xrgrid[x, y] = np.mean(xrsgrid[x][y])
+            else:
+                grid_incomplete = True
+            if yrsgrid[x][y]:
+                yrgrid[x, y] = np.mean(yrsgrid[x][y])
+            else:
+                grid_incomplete = True
+            if xbsgrid[x][y]:
+                xbgrid[x, y] = np.mean(xbsgrid[x][y])
+            else:
+                grid_incomplete = True
+            if ybsgrid[x][y]:
+                ybgrid[x, y] = np.mean(ybsgrid[x][y])
+            else:
+                grid_incomplete = True
+
+    if grid_incomplete:
+        raise RuntimeError("\nERROR: CAC measurements do not span the image!"
+                           "\nConsider using improved CAC images, or remove them entirely.\n")
 
     # Next, we start to interpolate the central points of the grid that gets passed to the tuning file
     input_grids = np.array([xrgrid, yrgrid, xbgrid, ybgrid])
@@ -219,7 +236,12 @@ def cac(Cam):
     # tuning file
     print("\nCreating output grid")
     Cam.log += '\nCreating output grid'
-    rx, ry, bx, by = shifts_to_yaml(red_shift, blue_shift, image_size)
+    try:
+        rx, ry, bx, by = shifts_to_yaml(red_shift, blue_shift, image_size)
+    except RuntimeError as e:
+        print(str(e))
+        Cam.log += "\nCAC correction failed! CAC will not be enabled."
+        return {}
 
     print("CAC correction complete!")
     Cam.log += '\nCAC correction complete!'

@@ -198,9 +198,12 @@ class Camera:
         """
         Write output to json
         """
-        self.json['rpi.cac']['cac'] = cacs
-        self.log += '\nCAC calibration written to json file'
-        print('Finished CAC calibration')
+        if cacs:
+            self.json['rpi.cac']['cac'] = cacs
+            self.log += '\nCAC calibration written to json file'
+            print('Finished CAC calibration')
+        else:
+            self.log += "\nCAC calibration failed"
 
 
     """

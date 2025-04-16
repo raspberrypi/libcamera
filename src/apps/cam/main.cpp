@@ -345,7 +345,7 @@ std::string CamApp::cameraName(const Camera *camera)
 		 */
 		const auto &model = props.get(properties::Model);
 		if (model)
-			name += "'" + *model + "' ";
+			name.append("'").append(*model).append("' ");
 	}
 
 	name += "(" + camera->id() + ")";

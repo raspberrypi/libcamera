@@ -318,7 +318,7 @@ protected:
 		/*
 		 * String type.
 		 */
-		std::string string{ "libcamera" };
+		std::string_view string{ "libcamera" };
 		value.set(string);
 		if (value.isNone() || !value.isArray() ||
 		    value.type() != ControlTypeString ||
@@ -327,7 +327,7 @@ protected:
 			return TestFail;
 		}
 
-		if (value.get<std::string>() != string) {
+		if (value.get<std::string_view>() != string) {
 			cerr << "Control value mismatch after setting to string" << endl;
 			return TestFail;
 		}

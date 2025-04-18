@@ -15,7 +15,7 @@ SDLTextureNV12::SDLTextureNV12(const SDL_Rect &rect, unsigned int stride)
 {
 }
 
-void SDLTextureNV12::update(const std::vector<libcamera::Span<const uint8_t>> &data)
+void SDLTextureNV12::update(libcamera::Span<const libcamera::Span<const uint8_t>> data)
 {
 	SDL_UpdateNVTexture(ptr_, &rect_, data[0].data(), stride_,
 			    data[1].data(), stride_);
@@ -27,7 +27,7 @@ SDLTextureYUYV::SDLTextureYUYV(const SDL_Rect &rect, unsigned int stride)
 {
 }
 
-void SDLTextureYUYV::update(const std::vector<libcamera::Span<const uint8_t>> &data)
+void SDLTextureYUYV::update(libcamera::Span<const libcamera::Span<const uint8_t>> data)
 {
 	SDL_UpdateTexture(ptr_, &rect_, data[0].data(), stride_);
 }

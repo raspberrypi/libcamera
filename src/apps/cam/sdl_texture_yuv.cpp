@@ -21,13 +21,3 @@ void SDLTextureNV12::update(libcamera::Span<const libcamera::Span<const uint8_t>
 			    data[1].data(), stride_);
 }
 #endif
-
-SDLTextureYUYV::SDLTextureYUYV(const SDL_Rect &rect, unsigned int stride)
-	: SDLTexture(rect, SDL_PIXELFORMAT_YUY2, stride)
-{
-}
-
-void SDLTextureYUYV::update(libcamera::Span<const libcamera::Span<const uint8_t>> data)
-{
-	SDL_UpdateTexture(ptr_, nullptr, data[0].data(), stride_);
-}

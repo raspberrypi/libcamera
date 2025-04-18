@@ -17,10 +17,3 @@ public:
 	void update(libcamera::Span<const libcamera::Span<const uint8_t>> data) override;
 };
 #endif
-
-class SDLTextureYUYV : public SDLTexture
-{
-public:
-	SDLTextureYUYV(const SDL_Rect &rect, unsigned int stride);
-	void update(libcamera::Span<const libcamera::Span<const uint8_t>> data) override;
-};

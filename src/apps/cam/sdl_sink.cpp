@@ -22,6 +22,7 @@
 #include "../common/event_loop.h"
 #include "../common/image.h"
 
+#include "sdl_texture_1plane.h"
 #ifdef HAVE_LIBJPEG
 #include "sdl_texture_mjpg.h"
 #endif
@@ -74,7 +75,7 @@ int SDLSink::configure(const libcamera::CameraConfiguration &config)
 		break;
 #endif
 	case libcamera::formats::YUYV:
-		texture_ = std::make_unique<SDLTextureYUYV>(rect_, cfg.stride);
+		texture_ = std::make_unique<SDLTexture1Plane>(rect_, SDL_PIXELFORMAT_YUY2, cfg.stride);
 		break;
 	default:
 		std::cerr << "Unsupported pixel format "

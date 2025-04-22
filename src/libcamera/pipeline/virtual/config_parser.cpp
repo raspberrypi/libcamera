@@ -31,7 +31,7 @@ ConfigParser::parseConfigFile(File &file, PipelineHandler *pipe)
 
 	std::unique_ptr<YamlObject> cameras = YamlParser::parse(file);
 	if (!cameras) {
-		LOG(Virtual, Error) << "Failed to pass config file.";
+		LOG(Virtual, Error) << "Failed to parse config file.";
 		return configurations;
 	}
 

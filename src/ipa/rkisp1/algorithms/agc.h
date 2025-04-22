@@ -55,6 +55,7 @@ private:
 				  utils::Duration frameDuration);
 
 	Span<const uint8_t> expMeans_;
+	Span<const uint8_t> weights_;
 
 	std::map<int32_t, std::vector<uint8_t>> meteringModes_;
 };

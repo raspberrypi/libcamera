@@ -9,6 +9,7 @@
 
 #include <list>
 #include <memory>
+#include <utility>
 #include <vector>
 
 #include <libcamera/base/bound_method.h>
@@ -39,7 +40,7 @@ public:
 	{
 		T *obj = static_cast<T *>(this);
 		auto *method = new BoundMethodMember<T, R, FuncArgs...>(obj, this, func, type);
-		return method->activate(args..., true);
+		return method->activate(std::forward<Args>(args)..., true);
 	}
 
 	Thread *thread() const { return thread_; }

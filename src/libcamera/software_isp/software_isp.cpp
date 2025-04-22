@@ -56,6 +56,11 @@ LOG_DEFINE_CATEGORY(SoftwareIsp)
  */
 
 /**
+ * \var SoftwareIsp::metadataReady
+ * \brief A signal emitted when the metadata for IPA is ready
+ */
+
+/**
  * \var SoftwareIsp::setSensorControls
  * \brief A signal emitted when the values to write to the sensor controls are
  * ready
@@ -128,11 +133,20 @@ SoftwareIsp::SoftwareIsp(PipelineHandler *pipe, const CameraSensor *sensor,
 	std::string ipaTuningFile =
 		ipa_->configurationFile(sensor->model() + ".yaml", "uncalibrated.yaml");
 
-	int ret = ipa_->init(IPASettings{ ipaTuningFile, sensor->model() },
-			     debayer_->getStatsFD(),
-			     sharedParams_.fd(),
-			     sensor->controls(),
-			     ipaControls);
+	IPACameraSensorInfo sensorInfo{};
+	int ret = sensor->sensorInfo(&sensorInfo);
+	if (ret) {
+		LOG(SoftwareIsp, Error) << "Camera sensor information not available";
+		return;
+	}
+
+	ret = ipa_->init(IPASettings{ ipaTuningFile, sensor->model() },
+			 debayer_->getStatsFD(),
+			 sharedParams_.fd(),
+			 sensorInfo,
+			 sensor->controls(),
+			 ipaControls,
+			 &ccmEnabled_);
 	if (ret) {
 		LOG(SoftwareIsp, Error) << "IPA init failed";
 		debayer_.reset();
@@ -140,6 +154,10 @@ SoftwareIsp::SoftwareIsp(PipelineHandler *pipe, const CameraSensor *sensor,
 	}
 
 	ipa_->setIspParams.connect(this, &SoftwareIsp::saveIspParams);
+	ipa_->metadataReady.connect(this,
+				    [this](uint32_t frame, const ControlList &metadata) {
+					    metadataReady.emit(frame, metadata);
+				    });
 	ipa_->setSensorControls.connect(this, &SoftwareIsp::setSensorCtrls);
 
 	debayer_->moveToThread(&ispWorkerThread_);
@@ -244,7 +262,7 @@ int SoftwareIsp::configure(const StreamConfiguration &inputCfg,
 	if (ret < 0)
 		return ret;
 
-	return debayer_->configure(inputCfg, outputCfgs);
+	return debayer_->configure(inputCfg, outputCfgs, ccmEnabled_);
 }
 
 /**

@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later */
 /*
- * Copyright (C) 2024, Red Hat Inc.
+ * Copyright (C) 2024-2025, Red Hat Inc.
  *
  * Black level handling
  */
@@ -10,6 +10,8 @@
 #include <numeric>
 
 #include <libcamera/base/log.h>
+
+#include "control_ids.h"
 
 namespace libcamera {
 
@@ -49,13 +51,20 @@ void BlackLevel::process(IPAContext &context,
 			 [[maybe_unused]] const uint32_t frame,
 			 IPAFrameContext &frameContext,
 			 const SwIspStats *stats,
-			 [[maybe_unused]] ControlList &metadata)
+			 ControlList &metadata)
 {
+	/* Assign each of the R G G B channels as the same black level. */
+	const int32_t blackLevel = context.activeState.blc.level * 256;
+	const int32_t blackLevels[] = {
+		blackLevel, blackLevel, blackLevel, blackLevel
+	};
+	metadata.set(controls::SensorBlackLevels, blackLevels);
+
 	if (context.configuration.black.level.has_value())
 		return;
 
-	if (frameContext.sensor.exposure == exposure_ &&
-	    frameContext.sensor.gain == gain_) {
+	if (frameContext.sensor.exposure == context.activeState.blc.lastExposure &&
+	    frameContext.sensor.gain == context.activeState.blc.lastGain) {
 		return;
 	}
 
@@ -79,8 +88,8 @@ void BlackLevel::process(IPAContext &context,
 		seen += histogram[i];
 		if (seen >= pixelThreshold) {
 			context.activeState.blc.level = i * histogramRatio;
-			exposure_ = frameContext.sensor.exposure;
-			gain_ = frameContext.sensor.gain;
+			context.activeState.blc.lastExposure = frameContext.sensor.exposure;
+			context.activeState.blc.lastGain = frameContext.sensor.gain;
 			LOG(IPASoftBL, Debug)
 				<< "Auto-set black level: "
 				<< i << "/" << SwIspStats::kYHistogramSize

@@ -85,6 +85,7 @@ public:
 	Signal<FrameBuffer *> inputBufferReady;
 	Signal<FrameBuffer *> outputBufferReady;
 	Signal<uint32_t, uint32_t> ispStatsReady;
+	Signal<uint32_t, const ControlList &> metadataReady;
 	Signal<const ControlList &> setSensorControls;
 
 private:
@@ -99,6 +100,7 @@ private:
 	SharedMemObject<DebayerParams> sharedParams_;
 	DebayerParams debayerParams_;
 	DmaBufAllocator dmaHeap_;
+	bool ccmEnabled_;
 
 	std::unique_ptr<ipa::soft::IPAProxySoft> ipa_;
 	std::deque<FrameBuffer *> queuedInputBuffers_;

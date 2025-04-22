@@ -21,6 +21,7 @@
 #include <libcamera/color_space.h>
 #include <libcamera/control_ids.h>
 #include <libcamera/framebuffer_allocator.h>
+#include <libcamera/property_ids.h>
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
 
@@ -587,7 +588,8 @@ CameraConfiguration::Status CameraConfiguration::validateColorSpaces(ColorSpaceF
  * \param[in] pipe The pipeline handler responsible for the camera device
  */
 Camera::Private::Private(PipelineHandler *pipe)
-	: requestSequence_(0), pipe_(pipe->shared_from_this()),
+	: controlInfo_({}, controls::controls), properties_(properties::properties),
+	  requestSequence_(0), pipe_(pipe->shared_from_this()),
 	  disconnected_(false), state_(CameraAvailable)
 {
 }

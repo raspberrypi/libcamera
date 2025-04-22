@@ -149,11 +149,7 @@ IPAManager::IPAManager()
 			<< "No IPA found in '" IPA_MODULE_DIR "'";
 }
 
-IPAManager::~IPAManager()
-{
-	for (IPAModule *module : modules_)
-		delete module;
-}
+IPAManager::~IPAManager() = default;
 
 /**
  * \brief Identify shared library objects within a directory
@@ -226,15 +222,13 @@ unsigned int IPAManager::addDir(const char *libDir, unsigned int maxDepth)
 
 	unsigned int count = 0;
 	for (const std::string &file : files) {
-		IPAModule *ipaModule = new IPAModule(file);
-		if (!ipaModule->isValid()) {
-			delete ipaModule;
+		auto ipaModule = std::make_unique<IPAModule>(file);
+		if (!ipaModule->isValid())
 			continue;
-		}
 
 		LOG(IPAManager, Debug) << "Loaded IPA module '" << file << "'";
 
-		modules_.push_back(ipaModule);
+		modules_.push_back(std::move(ipaModule));
 		count++;
 	}
 
@@ -250,9 +244,9 @@ unsigned int IPAManager::addDir(const char *libDir, unsigned int maxDepth)
 IPAModule *IPAManager::module(PipelineHandler *pipe, uint32_t minVersion,
 			      uint32_t maxVersion)
 {
-	for (IPAModule *module : modules_) {
+	for (const auto &module : modules_) {
 		if (module->match(pipe, minVersion, maxVersion))
-			return module;
+			return module.get();
 	}
 
 	return nullptr;

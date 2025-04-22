@@ -2,6 +2,7 @@
 
 libipa_test = [
     {'name': 'fixedpoint', 'sources': ['fixedpoint.cpp']},
+    {'name': 'histogram', 'sources': ['histogram.cpp']},
     {'name': 'interpolator', 'sources': ['interpolator.cpp']},
 ]
 
@@ -13,5 +14,6 @@ foreach test : libipa_test
                      include_directories : [test_includes_internal,
                                             '../../../src/ipa/libipa/'])
 
-    test(test['name'], exe, suite : 'ipa')
+    test(test['name'], exe, suite : 'ipa',
+         should_fail : test.get('should_fail', false))
 endforeach

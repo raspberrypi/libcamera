@@ -193,14 +193,10 @@ int Agc::configure(IPAContext &context, const IPACameraSensorInfo &configInfo)
 	context.activeState.agc.minFrameDuration = std::chrono::microseconds(frameDurationLimits.min().get<int64_t>());
 	context.activeState.agc.maxFrameDuration = std::chrono::microseconds(frameDurationLimits.max().get<int64_t>());
 
-	/*
-	 * Define the measurement window for AGC as a centered rectangle
-	 * covering 3/4 of the image width and height.
-	 */
-	context.configuration.agc.measureWindow.h_offs = configInfo.outputSize.width / 8;
-	context.configuration.agc.measureWindow.v_offs = configInfo.outputSize.height / 8;
-	context.configuration.agc.measureWindow.h_size = 3 * configInfo.outputSize.width / 4;
-	context.configuration.agc.measureWindow.v_size = 3 * configInfo.outputSize.height / 4;
+	context.configuration.agc.measureWindow.h_offs = 0;
+	context.configuration.agc.measureWindow.v_offs = 0;
+	context.configuration.agc.measureWindow.h_size = configInfo.outputSize.width;
+	context.configuration.agc.measureWindow.v_size = configInfo.outputSize.height;
 
 	setLimits(context.configuration.sensor.minExposureTime,
 		  context.configuration.sensor.maxExposureTime,
@@ -439,15 +435,20 @@ void Agc::fillMetadata(IPAContext &context, IPAFrameContext &frameContext,
  */
 double Agc::estimateLuminance(double gain) const
 {
+	ASSERT(expMeans_.size() == weights_.size());
 	double ySum = 0.0;
+	double wSum = 0.0;
 
 	/* Sum the averages, saturated to 255. */
-	for (uint8_t expMean : expMeans_)
-		ySum += std::min(expMean * gain, 255.0);
+	for (unsigned i = 0; i < expMeans_.size(); i++) {
+		double w = weights_[i];
+		ySum += std::min(expMeans_[i] * gain, 255.0) * w;
+		wSum += w;
+	}
 
 	/* \todo Weight with the AWB gains */
 
-	return ySum / expMeans_.size() / 255;
+	return ySum / wSum / 255;
 }
 
 /**
@@ -515,6 +516,8 @@ void Agc::process(IPAContext &context, [[maybe_unused]] const uint32_t frame,
 	Histogram hist({ params->hist.hist_bins, context.hw->numHistogramBins },
 		       [](uint32_t x) { return x >> 4; });
 	expMeans_ = { params->ae.exp_mean, context.hw->numAeCells };
+	std::vector<uint8_t> &modeWeights = meteringModes_.at(frameContext.agc.meteringMode);
+	weights_ = { modeWeights.data(), modeWeights.size() };
 
 	/*
 	 * Set the AGC limits using the fixed exposure time and/or gain in

@@ -6,10 +6,12 @@
  */
 
 #include <algorithm>
+#include <bitset>
 #include <cmath>
 #include <fstream>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <vector>
@@ -56,6 +58,9 @@ public:
 	Stream stream_;
 	std::map<PixelFormat, std::vector<SizeRange>> formats_;
 
+	std::optional<v4l2_exposure_auto_type> autoExposureMode_;
+	std::optional<v4l2_exposure_auto_type> manualExposureMode_;
+
 private:
 	bool generateId();
 
@@ -93,8 +98,8 @@ public:
 	bool match(DeviceEnumerator *enumerator) override;
 
 private:
-	int processControl(ControlList *controls, unsigned int id,
-			   const ControlValue &value);
+	int processControl(const UVCCameraData *data, ControlList *controls,
+			   unsigned int id, const ControlValue &value);
 	int processControls(UVCCameraData *data, Request *request);
 
 	bool acquireDevice(Camera *camera) override;
@@ -105,6 +110,26 @@ private:
 		return static_cast<UVCCameraData *>(camera->_d());
 	}
 };
+
+namespace {
+
+std::optional<controls::ExposureTimeModeEnum> v4l2ToExposureMode(int32_t x)
+{
+	using namespace controls;
+
+	switch (x) {
+	case V4L2_EXPOSURE_AUTO:
+	case V4L2_EXPOSURE_APERTURE_PRIORITY:
+		return ExposureTimeModeAuto;
+	case V4L2_EXPOSURE_MANUAL:
+	case V4L2_EXPOSURE_SHUTTER_PRIORITY:
+		return ExposureTimeModeManual;
+	default:
+		return {};
+	}
+}
+
+} /* namespace */
 
 UVCCameraConfiguration::UVCCameraConfiguration(UVCCameraData *data)
 	: CameraConfiguration(), data_(data)
@@ -287,8 +312,8 @@ void PipelineHandlerUVC::stopDevice(Camera *camera)
 	data->video_->releaseBuffers();
 }
 
-int PipelineHandlerUVC::processControl(ControlList *controls, unsigned int id,
-				       const ControlValue &value)
+int PipelineHandlerUVC::processControl(const UVCCameraData *data, ControlList *controls,
+				       unsigned int id, const ControlValue &value)
 {
 	uint32_t cid;
 
@@ -304,6 +329,8 @@ int PipelineHandlerUVC::processControl(ControlList *controls, unsigned int id,
 		cid = V4L2_CID_EXPOSURE_ABSOLUTE;
 	else if (id == controls::AnalogueGain)
 		cid = V4L2_CID_GAIN;
+	else if (id == controls::Gamma)
+		cid = V4L2_CID_GAMMA;
 	else
 		return -EINVAL;
 
@@ -332,10 +359,21 @@ int PipelineHandlerUVC::processControl(ControlList *controls, unsigned int id,
 	}
 
 	case V4L2_CID_EXPOSURE_AUTO: {
-		int32_t ivalue = value.get<bool>()
-			       ? V4L2_EXPOSURE_APERTURE_PRIORITY
-			       : V4L2_EXPOSURE_MANUAL;
-		controls->set(V4L2_CID_EXPOSURE_AUTO, ivalue);
+		std::optional<v4l2_exposure_auto_type> mode;
+
+		switch (value.get<int32_t>()) {
+		case controls::ExposureTimeModeAuto:
+			mode = data->autoExposureMode_;
+			break;
+		case controls::ExposureTimeModeManual:
+			mode = data->manualExposureMode_;
+			break;
+		}
+
+		if (!mode)
+			return -EINVAL;
+
+		controls->set(V4L2_CID_EXPOSURE_AUTO, static_cast<int32_t>(*mode));
 		break;
 	}
 
@@ -358,6 +396,10 @@ int PipelineHandlerUVC::processControl(ControlList *controls, unsigned int id,
 		break;
 	}
 
+	case V4L2_CID_GAMMA:
+		controls->set(cid, static_cast<int32_t>(std::lround(value.get<float>() * 100)));
+		break;
+
 	default: {
 		int32_t ivalue = value.get<int32_t>();
 		controls->set(cid, ivalue);
@@ -373,7 +415,7 @@ int PipelineHandlerUVC::processControls(UVCCameraData *data, Request *request)
 	ControlList controls(data->video_->controls());
 
 	for (const auto &[id, value] : request->controls())
-		processControl(&controls, id, value);
+		processControl(data, &controls, id, value);
 
 	for (const auto &ctrl : controls)
 		LOG(UVC, Debug)
@@ -655,6 +697,9 @@ void UVCCameraData::addControl(uint32_t cid, const ControlInfo &v4l2Info,
 	case V4L2_CID_GAIN:
 		id = &controls::AnalogueGain;
 		break;
+	case V4L2_CID_GAMMA:
+		id = &controls::Gamma;
+		break;
 	default:
 		return;
 	}
@@ -723,25 +768,52 @@ void UVCCameraData::addControl(uint32_t cid, const ControlInfo &v4l2Info,
 		 * ExposureTimeModeManual = { V4L2_EXPOSURE_MANUAL,
 		 *			      V4L2_EXPOSURE_SHUTTER_PRIORITY }
 		 */
-		std::array<int32_t, 2> values{};
 
-		auto it = std::find_if(v4l2Values.begin(), v4l2Values.end(),
-			[&](const ControlValue &val) {
-				return (val.get<int32_t>() == V4L2_EXPOSURE_APERTURE_PRIORITY ||
-					val.get<int32_t>() == V4L2_EXPOSURE_AUTO) ? true : false;
-			});
-		if (it != v4l2Values.end())
-			values.back() = static_cast<int32_t>(controls::ExposureTimeModeAuto);
+		std::bitset<
+			std::max(V4L2_EXPOSURE_AUTO,
+			std::max(V4L2_EXPOSURE_APERTURE_PRIORITY,
+			std::max(V4L2_EXPOSURE_MANUAL,
+				 V4L2_EXPOSURE_SHUTTER_PRIORITY))) + 1
+		> exposureModes;
+		std::optional<controls::ExposureTimeModeEnum> lcDef;
 
-		it = std::find_if(v4l2Values.begin(), v4l2Values.end(),
-			[&](const ControlValue &val) {
-				return (val.get<int32_t>() == V4L2_EXPOSURE_SHUTTER_PRIORITY ||
-					val.get<int32_t>() == V4L2_EXPOSURE_MANUAL) ? true : false;
-			});
-		if (it != v4l2Values.end())
-			values.back() = static_cast<int32_t>(controls::ExposureTimeModeManual);
+		for (const ControlValue &value : v4l2Values) {
+			const auto x = value.get<int32_t>();
 
-		info = ControlInfo{Span<int32_t>{values}, values[0]};
+			if (0 <= x && static_cast<std::size_t>(x) < exposureModes.size()) {
+				exposureModes[x] = true;
+
+				if (x == def)
+					lcDef = v4l2ToExposureMode(x);
+			}
+		}
+
+		if (exposureModes[V4L2_EXPOSURE_AUTO])
+			autoExposureMode_ = V4L2_EXPOSURE_AUTO;
+		else if (exposureModes[V4L2_EXPOSURE_APERTURE_PRIORITY])
+			autoExposureMode_ = V4L2_EXPOSURE_APERTURE_PRIORITY;
+
+		if (exposureModes[V4L2_EXPOSURE_SHUTTER_PRIORITY])
+			manualExposureMode_ = V4L2_EXPOSURE_SHUTTER_PRIORITY;
+		else if (exposureModes[V4L2_EXPOSURE_MANUAL])
+			manualExposureMode_ = V4L2_EXPOSURE_MANUAL;
+
+		std::array<ControlValue, 2> values;
+		std::size_t count = 0;
+
+		if (autoExposureMode_)
+			values[count++] = controls::ExposureTimeModeAuto;
+
+		if (manualExposureMode_)
+			values[count++] = controls::ExposureTimeModeManual;
+
+		if (count == 0)
+			return;
+
+		info = ControlInfo{
+			Span<const ControlValue>{ values.data(), count },
+			!lcDef ? values.front() : *lcDef,
+		};
 		break;
 	}
 	case V4L2_CID_EXPOSURE_ABSOLUTE:
@@ -781,6 +853,15 @@ void UVCCameraData::addControl(uint32_t cid, const ControlInfo &v4l2Info,
 		};
 		break;
 	}
+
+	case V4L2_CID_GAMMA:
+		/* UVC gamma is in units of 1/100 gamma. */
+		info = ControlInfo{
+			{ min / 100.0f },
+			{ max / 100.0f },
+			{ def / 100.0f }
+		};
+		break;
 
 	default:
 		info = v4l2Info;

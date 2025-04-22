@@ -54,8 +54,11 @@ const std::map<PixelFormat, uint32_t> formatToMediaBus = {
 
 } /* namespace */
 
-RkISP1Path::RkISP1Path(const char *name, const Span<const PixelFormat> &formats)
-	: name_(name), running_(false), formats_(formats), link_(nullptr)
+RkISP1Path::RkISP1Path(const char *name, const Span<const PixelFormat> &formats,
+		       const Size &minResolution, const Size &maxResolution)
+	: name_(name), running_(false), formats_(formats),
+	  minResolution_(minResolution), maxResolution_(maxResolution),
+	  link_(nullptr)
 {
 }
 
@@ -517,10 +520,12 @@ void RkISP1Path::stop()
 }
 
 /*
- * \todo Remove the hardcoded formats once all users will have migrated to a
- * recent enough kernel.
+ * \todo Remove the hardcoded resolutions and formats once kernels older than
+ * v6.4 will stop receiving LTS support (scheduled for December 2027 for v6.1).
  */
 namespace {
+constexpr Size RKISP1_RSZ_MP_SRC_MIN{ 32, 16 };
+constexpr Size RKISP1_RSZ_MP_SRC_MAX{ 4416, 3312 };
 constexpr std::array<PixelFormat, 18> RKISP1_RSZ_MP_FORMATS{
 	formats::YUYV,
 	formats::NV16,
@@ -542,6 +547,8 @@ constexpr std::array<PixelFormat, 18> RKISP1_RSZ_MP_FORMATS{
 	formats::SRGGB12,
 };
 
+constexpr Size RKISP1_RSZ_SP_SRC_MIN{ 32, 16 };
+constexpr Size RKISP1_RSZ_SP_SRC_MAX{ 1920, 1920 };
 constexpr std::array<PixelFormat, 8> RKISP1_RSZ_SP_FORMATS{
 	formats::YUYV,
 	formats::NV16,
@@ -555,12 +562,14 @@ constexpr std::array<PixelFormat, 8> RKISP1_RSZ_SP_FORMATS{
 } /* namespace */
 
 RkISP1MainPath::RkISP1MainPath()
-	: RkISP1Path("main", RKISP1_RSZ_MP_FORMATS)
+	: RkISP1Path("main", RKISP1_RSZ_MP_FORMATS,
+		     RKISP1_RSZ_MP_SRC_MIN, RKISP1_RSZ_MP_SRC_MAX)
 {
 }
 
 RkISP1SelfPath::RkISP1SelfPath()
-	: RkISP1Path("self", RKISP1_RSZ_SP_FORMATS)
+	: RkISP1Path("self", RKISP1_RSZ_SP_FORMATS,
+		     RKISP1_RSZ_SP_SRC_MIN, RKISP1_RSZ_SP_SRC_MAX)
 {
 }
 

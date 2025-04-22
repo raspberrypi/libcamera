@@ -541,6 +541,18 @@ AgcMeanLuminance::calculateNewEv(uint32_t constraintModeIndex,
 	std::shared_ptr<ExposureModeHelper> exposureModeHelper =
 		exposureModeHelpers_.at(exposureModeIndex);
 
+	if (effectiveExposureValue == 0s) {
+		LOG(AgcMeanLuminance, Error)
+			<< "Effective exposure value is 0. This is a bug in AGC "
+			   "and must be fixed for proper operation.";
+		/*
+		 * Return an arbitrary exposure time > 0 to ensure regulation
+		 * doesn't get stuck with 0 in case the sensor driver allows a
+		 * min exposure of 0.
+		 */
+		return exposureModeHelper->splitExposure(10ms);
+	}
+
 	double gain = estimateInitialGain();
 	gain = constraintClampGain(constraintModeIndex, yHist, gain);
 

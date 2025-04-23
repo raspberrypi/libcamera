@@ -356,6 +356,9 @@ int MainWindow::startCapture()
 
 	/* Verify roles are supported. */
 	switch (roles.size()) {
+	case 0:
+		roles[0] = StreamRole::Viewfinder;
+		break;
 	case 1:
 		if (roles[0] != StreamRole::Viewfinder) {
 			qWarning() << "Only viewfinder supported for single stream";

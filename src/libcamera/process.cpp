@@ -264,7 +264,7 @@ int Process::start(const std::string &path,
 
 		std::vector<int> v(fds.begin(), fds.end());
 		v.push_back(STDERR_FILENO);
-		closeAllFdsExcept(v);
+		closeAllFdsExcept(std::move(v));
 
 		const auto tryDevNullLowestFd = [](int expected, int oflag) {
 			int fd = open("/dev/null", oflag);
@@ -296,9 +296,8 @@ int Process::start(const std::string &path,
 	}
 }
 
-void Process::closeAllFdsExcept(const std::vector<int> &fds)
+void Process::closeAllFdsExcept(std::vector<int> v)
 {
-	std::vector<int> v(fds);
 	sort(v.begin(), v.end());
 
 	ASSERT(v.empty() || v.front() >= 0);

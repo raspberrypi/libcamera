@@ -45,7 +45,7 @@ public:
 private:
 	LIBCAMERA_DISABLE_COPY_AND_MOVE(Process)
 
-	void closeAllFdsExcept(const std::vector<int> &fds);
+	void closeAllFdsExcept(std::vector<int> v);
 	int isolate();
 	void died(int wstatus);
 

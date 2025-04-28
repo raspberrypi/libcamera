@@ -967,6 +967,17 @@ void IpaBase::applyControls(const ControlList &controls)
 			break;
 		}
 
+		case controls::AE_ENABLE: {
+			/*
+			 * The AeEnable control is now just a wrapper that will already have been
+			 * converted to ExposureTimeMode and AnalogueGainMode equivalents, so there
+			 * would be nothing to do here. Nonetheless, "handle" the control so as to
+			 * avoid warnings from the "default:" clause of the switch statement.
+			 */
+
+			break;
+		}
+
 		case controls::AE_FLICKER_MODE: {
 			RPiController::AgcAlgorithm *agc = dynamic_cast<RPiController::AgcAlgorithm *>(
 				controller_.getAlgorithm("agc"));

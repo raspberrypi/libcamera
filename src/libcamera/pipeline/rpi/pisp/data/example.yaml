@@ -10,7 +10,7 @@
                 #
                 # "num_cfe_config_stats_buffers": 12,
 
-		# Number of jobs to queue ahead to the CFE on startup. A larger
+                # Number of jobs to queue ahead to the CFE on startup. A larger
                 # number will increase latency for 3A changes, but may reduce 
                 # avoidable frame drops.
                 #

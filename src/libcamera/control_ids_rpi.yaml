@@ -61,8 +61,8 @@ controls:
 
   - PispStatsOutput:
       type: uint8_t
-      size: [n]
       direction: out
+      size: [n]
       description: |
         Span of the PiSP Frontend ISP generated statistics for the current
         frame. This is sent in the Request metadata if the StatsOutputEnable is

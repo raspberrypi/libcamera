@@ -127,11 +127,12 @@ def alsc(Cam, Img, do_alsc_colour, plot=False, grid_size=(16, 12), max_gain=8.0)
     channels = [Img.channels[i] for i in Img.order]
     """
     calculate size of single rectangle.
-    -(-(w-1)//32) is a ceiling division. w-1 is to deal robustly with the case
-    where w is a multiple of 32.
+    The divisions here must ensure the final row/column of cells has a non-zero number of
+    pixels.
     """
     w, h = Img.w/2, Img.h/2
-    dx, dy = int(-(-(w-1)//grid_w)), int(-(-(h-1)//grid_h))
+    dx, dy = (w - 1) // (grid_w - 1), (h - 1) // (grid_h - 1)
+
     """
     average the green channels into one
     """

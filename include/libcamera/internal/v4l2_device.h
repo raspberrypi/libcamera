@@ -10,6 +10,7 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <stdint.h>
 #include <vector>
 
 #include <linux/videodev2.h>
@@ -44,6 +45,7 @@ public:
 	const std::string &deviceNode() const { return deviceNode_; }
 	std::string devicePath() const;
 
+	bool supportsFrameStartEvent();
 	int setFrameStartEnabled(bool enable);
 	Signal<uint32_t> frameStart;
 

@@ -57,8 +57,8 @@ LIBCAMERA_RPI_CONFIG_FILE
 
    Example value: ``/usr/local/share/libcamera/pipeline/rpi/vc4/minimal_mem.yaml``
 
-LIBCAMERA_RPI_TUNING_FILE
-   Define a custom JSON tuning file to use in the Raspberry Pi.
+LIBCAMERA_<NAME>_TUNING_FILE
+   Define a custom IPA tuning file to use with the pipeline handler `NAME`.
 
    Example value: ``/usr/local/share/libcamera/ipa/rpi/vc4/custom_sensor.json``
 

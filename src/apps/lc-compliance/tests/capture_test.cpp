@@ -8,26 +8,23 @@
 
 #include "capture.h"
 
-#include <iostream>
+#include <sstream>
+#include <string>
+#include <tuple>
+#include <vector>
 
 #include <gtest/gtest.h>
 
 #include "environment.h"
 
+namespace {
+
 using namespace libcamera;
 
-const std::vector<int> NUMREQUESTS = { 1, 2, 3, 5, 8, 13, 21, 34, 55, 89 };
-const std::vector<StreamRole> ROLES = {
-	StreamRole::Raw,
-	StreamRole::StillCapture,
-	StreamRole::VideoRecording,
-	StreamRole::Viewfinder
-};
-
-class SingleStream : public testing::TestWithParam<std::tuple<StreamRole, int>>
+class SimpleCapture : public testing::TestWithParam<std::tuple<std::vector<StreamRole>, int>>
 {
 public:
-	static std::string nameParameters(const testing::TestParamInfo<SingleStream::ParamType> &info);
+	static std::string nameParameters(const testing::TestParamInfo<SimpleCapture::ParamType> &info);
 
 protected:
 	void SetUp() override;
@@ -40,7 +37,7 @@ protected:
  * We use gtest's SetUp() and TearDown() instead of constructor and destructor
  * in order to be able to assert on them.
  */
-void SingleStream::SetUp()
+void SimpleCapture::SetUp()
 {
 	Environment *env = Environment::get();
 
@@ -49,7 +46,7 @@ void SingleStream::SetUp()
 	ASSERT_EQ(camera_->acquire(), 0);
 }
 
-void SingleStream::TearDown()
+void SimpleCapture::TearDown()
 {
 	if (!camera_)
 		return;
@@ -58,19 +55,17 @@ void SingleStream::TearDown()
 	camera_.reset();
 }
 
-std::string SingleStream::nameParameters(const testing::TestParamInfo<SingleStream::ParamType> &info)
+std::string SimpleCapture::nameParameters(const testing::TestParamInfo<SimpleCapture::ParamType> &info)
 {
-	std::map<StreamRole, std::string> rolesMap = {
-		{ StreamRole::Raw, "Raw" },
-		{ StreamRole::StillCapture, "StillCapture" },
-		{ StreamRole::VideoRecording, "VideoRecording" },
-		{ StreamRole::Viewfinder, "Viewfinder" }
-	};
+	const auto &[roles, numRequests] = info.param;
+	std::ostringstream ss;
 
-	std::string roleName = rolesMap[std::get<0>(info.param)];
-	std::string numRequestsName = std::to_string(std::get<1>(info.param));
+	for (StreamRole r : roles)
+		ss << r << '_';
 
-	return roleName + "_" + numRequestsName;
+	ss << '_' << numRequests;
+
+	return ss.str();
 }
 
 /*
@@ -80,15 +75,15 @@ std::string SingleStream::nameParameters(const testing::TestParamInfo<SingleStre
  * failure is a camera that completes less requests than the number of requests
  * queued.
  */
-TEST_P(SingleStream, Capture)
+TEST_P(SimpleCapture, Capture)
 {
-	auto [role, numRequests] = GetParam();
+	const auto &[roles, numRequests] = GetParam();
 
-	CaptureBalanced capture(camera_);
+	Capture capture(camera_);
 
-	capture.configure(role);
+	capture.configure(roles);
 
-	capture.capture(numRequests);
+	capture.run(numRequests, numRequests);
 }
 
 /*
@@ -98,17 +93,17 @@ TEST_P(SingleStream, Capture)
  * a camera that does not clean up correctly in its error path but is only
  * tested by single-capture applications.
  */
-TEST_P(SingleStream, CaptureStartStop)
+TEST_P(SimpleCapture, CaptureStartStop)
 {
-	auto [role, numRequests] = GetParam();
+	const auto &[roles, numRequests] = GetParam();
 	unsigned int numRepeats = 3;
 
-	CaptureBalanced capture(camera_);
+	Capture capture(camera_);
 
-	capture.configure(role);
+	capture.configure(roles);
 
 	for (unsigned int starts = 0; starts < numRepeats; starts++)
-		capture.capture(numRequests);
+		capture.run(numRequests, numRequests);
 }
 
 /*
@@ -118,19 +113,43 @@ TEST_P(SingleStream, CaptureStartStop)
  * is a camera that does not handle cancelation of buffers coming back from the
  * video device while stopping.
  */
-TEST_P(SingleStream, UnbalancedStop)
+TEST_P(SimpleCapture, UnbalancedStop)
 {
-	auto [role, numRequests] = GetParam();
+	const auto &[roles, numRequests] = GetParam();
 
-	CaptureUnbalanced capture(camera_);
+	Capture capture(camera_);
 
-	capture.configure(role);
+	capture.configure(roles);
 
-	capture.capture(numRequests);
+	capture.run(numRequests);
 }
 
-INSTANTIATE_TEST_SUITE_P(CaptureTests,
-			 SingleStream,
-			 testing::Combine(testing::ValuesIn(ROLES),
+const int NUMREQUESTS[] = { 1, 2, 3, 5, 8, 13, 21, 34, 55, 89 };
+
+const std::vector<StreamRole> SINGLEROLES[] = {
+	{ StreamRole::Raw, },
+	{ StreamRole::StillCapture, },
+	{ StreamRole::VideoRecording, },
+	{ StreamRole::Viewfinder, },
+};
+
+const std::vector<StreamRole> MULTIROLES[] = {
+	{ StreamRole::Raw, StreamRole::StillCapture },
+	{ StreamRole::Raw, StreamRole::VideoRecording },
+	{ StreamRole::StillCapture, StreamRole::VideoRecording },
+	{ StreamRole::VideoRecording, StreamRole::VideoRecording },
+};
+
+INSTANTIATE_TEST_SUITE_P(SingleStream,
+			 SimpleCapture,
+			 testing::Combine(testing::ValuesIn(SINGLEROLES),
 					  testing::ValuesIn(NUMREQUESTS)),
-			 SingleStream::nameParameters);
+			 SimpleCapture::nameParameters);
+
+INSTANTIATE_TEST_SUITE_P(MultiStream,
+			 SimpleCapture,
+			 testing::Combine(testing::ValuesIn(MULTIROLES),
+					  testing::ValuesIn(NUMREQUESTS)),
+			 SimpleCapture::nameParameters);
+
+} /* namespace */

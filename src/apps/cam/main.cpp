@@ -5,6 +5,8 @@
  * cam - The libcamera swiss army knife
  */
 
+#include "main.h"
+
 #include <atomic>
 #include <iomanip>
 #include <iostream>
@@ -19,7 +21,6 @@
 #include "../common/stream_options.h"
 
 #include "camera_session.h"
-#include "main.h"
 
 using namespace libcamera;
 

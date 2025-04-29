@@ -130,7 +130,8 @@ double Histogram::quantile(double q, uint32_t first, uint32_t last) const
 	if (cumulative_[first + 1] == cumulative_[first])
 		frac = 0;
 	else
-		frac = (item - cumulative_[first]) / (cumulative_[first + 1] - cumulative_[first]);
+		frac = (q * total() - cumulative_[first])
+		     / (cumulative_[first + 1] - cumulative_[first]);
 	return first + frac;
 }
 
@@ -148,26 +149,37 @@ double Histogram::quantile(double q, uint32_t first, uint32_t last) const
 double Histogram::interQuantileMean(double lowQuantile, double highQuantile) const
 {
 	ASSERT(highQuantile > lowQuantile);
-	/* Proportion of pixels which lies below lowQuantile */
-	double lowPoint = quantile(lowQuantile);
-	/* Proportion of pixels which lies below highQuantile */
-	double highPoint = quantile(highQuantile, static_cast<uint32_t>(lowPoint));
-	double sumBinFreq = 0, cumulFreq = 0;
 
-	for (double p_next = floor(lowPoint) + 1.0;
-	     p_next <= ceil(highPoint);
-	     lowPoint = p_next, p_next += 1.0) {
-		int bin = floor(lowPoint);
+	/* Proportion of pixels which lies below lowQuantile and highQuantile. */
+	const double lowPoint = quantile(lowQuantile);
+	const double highPoint = quantile(highQuantile, static_cast<uint32_t>(lowPoint));
+
+	double sumBinFreq = 0;
+	double cumulFreq = 0;
+
+	/*
+         * Calculate the mean pixel value between the low and high points by
+         * summing all the pixels between the two points, and dividing the sum
+         * by the number of pixels. Given the discrete nature of the histogram
+         * data, the sum of the pixels is approximated by accumulating the
+         * product of the bin values (calculated as the mid point of the bin) by
+         * the number of pixels they contain, for each bin in the internal.
+         */
+	for (unsigned bin = std::floor(lowPoint); bin < std::ceil(highPoint); bin++) {
+		const double lowBound = std::max<double>(bin, lowPoint);
+		const double highBound = std::min<double>(bin + 1, highPoint);
+
 		double freq = (cumulative_[bin + 1] - cumulative_[bin])
-			* (std::min(p_next, highPoint) - lowPoint);
+			    * (highBound - lowBound);
 
 		/* Accumulate weighted bin */
-		sumBinFreq += bin * freq;
+		sumBinFreq += (highBound + lowBound) / 2 * freq;
+
 		/* Accumulate weights */
 		cumulFreq += freq;
 	}
-	/* add 0.5 to give an average for bin mid-points */
-	return sumBinFreq / cumulFreq + 0.5;
+
+	return sumBinFreq / cumulFreq;
 }
 
 } /* namespace ipa */

@@ -8,10 +8,13 @@
 #pragma once
 
 #include <chrono>
+#include <deque>
 #include <functional>
 #include <list>
 #include <memory>
 #include <mutex>
+
+#include <libcamera/base/class.h>
 
 #include <event2/util.h>
 
@@ -33,18 +36,20 @@ public:
 	int exec();
 	void exit(int code = 0);
 
-	void callLater(const std::function<void()> &func);
+	void callLater(std::function<void()> &&func);
 
 	void addFdEvent(int fd, EventType type,
-			const std::function<void()> &handler);
+			std::function<void()> &&handler);
 
-	using duration = std::chrono::steady_clock::duration;
 	void addTimerEvent(const std::chrono::microseconds period,
-			   const std::function<void()> &handler);
+			   std::function<void()> &&handler);
 
 private:
+	LIBCAMERA_DISABLE_COPY_AND_MOVE(EventLoop)
+
 	struct Event {
-		Event(const std::function<void()> &callback);
+		Event(std::function<void()> &&callback);
+		LIBCAMERA_DISABLE_COPY_AND_MOVE(Event)
 		~Event();
 
 		static void dispatch(int fd, short events, void *arg);
@@ -58,11 +63,9 @@ private:
 	struct event_base *base_;
 	int exitCode_;
 
-	std::list<std::function<void()>> calls_;
+	std::deque<std::function<void()>> calls_;
+	struct event *callsTrigger_ = nullptr;
+
 	std::list<std::unique_ptr<Event>> events_;
 	std::mutex lock_;
-
-	static void dispatchCallback(evutil_socket_t fd, short flags,
-				     void *param);
-	void dispatchCall();
 };

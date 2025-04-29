@@ -98,16 +98,33 @@ IPAProxy::~IPAProxy()
 std::string IPAProxy::configurationFile(const std::string &name,
 					const std::string &fallbackName) const
 {
-	struct stat statbuf;
-	int ret;
-
 	/*
 	 * The IPA module name can be used as-is to build directory names as it
 	 * has been validated when loading the module.
 	 */
-	std::string ipaName = ipam_->info().name;
+	const std::string ipaName = ipam_->info().name;
 
-	/* Check the environment variable first. */
+	/*
+	 * Start with any user override through the module-specific environment
+	 * variable. Use the name of the IPA module up to the first '/' to
+	 * construct the variable name.
+	 */
+	std::string ipaEnvName = ipaName.substr(0, ipaName.find('/'));
+	std::transform(ipaEnvName.begin(), ipaEnvName.end(), ipaEnvName.begin(),
+		       [](unsigned char c) { return std::toupper(c); });
+	ipaEnvName = "LIBCAMERA_" + ipaEnvName + "_TUNING_FILE";
+
+	char const *configFromEnv = utils::secure_getenv(ipaEnvName.c_str());
+	if (configFromEnv && *configFromEnv != '\0')
+		return { configFromEnv };
+
+	struct stat statbuf;
+	int ret;
+
+	/*
+	 * Check the directory pointed to by the IPA config path environment
+	 * variable next.
+	 */
 	const char *confPaths = utils::secure_getenv("LIBCAMERA_IPA_CONFIG_PATH");
 	if (confPaths) {
 		for (const auto &dir : utils::split(confPaths, ":")) {

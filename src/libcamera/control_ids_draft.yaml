@@ -80,36 +80,6 @@ controls:
             High quality aberration correction which might reduce the frame
             rate.
 
-  - AeState:
-      type: int32_t
-      direction: out
-      description: |
-       Control to report the current AE algorithm state. Currently identical to
-       ANDROID_CONTROL_AE_STATE.
-
-        Current state of the AE algorithm.
-      enum:
-        - name: AeStateInactive
-          value: 0
-          description: The AE algorithm is inactive.
-        - name: AeStateSearching
-          value: 1
-          description: The AE algorithm has not converged yet.
-        - name: AeStateConverged
-          value: 2
-          description: The AE algorithm has converged.
-        - name: AeStateLocked
-          value: 3
-          description: The AE algorithm is locked.
-        - name: AeStateFlashRequired
-          value: 4
-          description: The AE algorithm would need a flash for good results
-        - name: AeStatePrecapture
-          value: 5
-          description: |
-            The AE algorithm has started a pre-capture metering session.
-            \sa AePrecaptureTrigger
-
   - AwbState:
       type: int32_t
       direction: out

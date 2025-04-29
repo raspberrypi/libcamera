@@ -8,6 +8,8 @@
 
 #include "gstlibcameraallocator.h"
 
+#include <utility>
+
 #include <libcamera/camera.h>
 #include <libcamera/framebuffer_allocator.h>
 #include <libcamera/stream.h>
@@ -199,22 +201,20 @@ GstLibcameraAllocator *
 gst_libcamera_allocator_new(std::shared_ptr<Camera> camera,
 			    CameraConfiguration *config_)
 {
-	auto *self = GST_LIBCAMERA_ALLOCATOR(g_object_new(GST_TYPE_LIBCAMERA_ALLOCATOR,
-							  nullptr));
+	g_autoptr(GstLibcameraAllocator) self = GST_LIBCAMERA_ALLOCATOR(g_object_new(GST_TYPE_LIBCAMERA_ALLOCATOR,
+										     nullptr));
 	gint ret;
 
 	self->cm_ptr = new std::shared_ptr<CameraManager>(gst_libcamera_get_camera_manager(ret));
-	if (ret) {
-		g_object_unref(self);
+	if (ret)
 		return nullptr;
-	}
 
 	self->fb_allocator = new FrameBufferAllocator(camera);
 	for (StreamConfiguration &streamCfg : *config_) {
 		Stream *stream = streamCfg.stream();
 
 		ret = self->fb_allocator->allocate(stream);
-		if (ret == 0)
+		if (ret <= 0)
 			return nullptr;
 
 		GQueue *pool = g_queue_new();
@@ -228,7 +228,7 @@ gst_libcamera_allocator_new(std::shared_ptr<Camera> camera,
 		g_hash_table_insert(self->pools, stream, pool);
 	}
 
-	return self;
+	return std::exchange(self, nullptr);
 }
 
 bool

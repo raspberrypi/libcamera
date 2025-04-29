@@ -11,6 +11,7 @@
 #include <list>
 #include <memory>
 #include <set>
+#include <stdint.h>
 #include <string>
 
 #include <libcamera/base/class.h>

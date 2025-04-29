@@ -558,9 +558,9 @@ int Vc4CameraData::platformPipelineConfigure(const std::unique_ptr<YamlObject> &
 	}
 
 	std::optional<std::string> target = (*root)["target"].get<std::string>();
-	if (!target || *target != "bcm2835") {
+	if (target != "bcm2835") {
 		LOG(RPI, Error) << "Unexpected target reported: expected \"bcm2835\", got "
-				<< *target;
+				<< (target ? target->c_str() : "(unknown)");
 		return -EINVAL;
 	}
 

@@ -160,6 +160,11 @@ void Pwl::prepend(double x, double y, const double eps)
  */
 
 /**
+ * \fn Pwl::clear()
+ * \brief Clear the piecewise linear function
+ */
+
+/**
  * \fn Pwl::size() const
  * \brief Retrieve the number of points in the piecewise linear function
  * \return The number of points in the piecewise linear function

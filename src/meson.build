@@ -29,8 +29,18 @@ endif
 
 # libyuv, used by the Android adaptation layer and the virtual pipeline handler.
 # Fallback to a subproject if libyuv isn't found, as it's typically not provided
-# by distributions.
-libyuv_dep = dependency('libyuv', required : false)
+# by distributions. Where libyuv is provided by a distribution, it may not
+# always supply a pkg-config implementation, requiring cxx.find_library() to
+# search for it.
+if not get_option('force_fallback_for').contains('libyuv')
+    libyuv_dep = dependency('libyuv', required : false)
+    if not libyuv_dep.found()
+        libyuv_dep = cxx.find_library('yuv', has_headers : 'libyuv.h',
+                                      required : false)
+    endif
+else
+    libyuv_dep = dependency('', required : false)
+endif
 
 if (pipelines.contains('virtual') or get_option('android').allowed()) and \
    not libyuv_dep.found()

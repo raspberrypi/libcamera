@@ -1421,7 +1421,6 @@ int PiSPCameraData::platformConfigure(const RPi::RPiCameraConfiguration *rpiConf
 	const std::vector<RPi::RPiCameraConfiguration::StreamParams> &rawStreams = rpiConfig->rawStreams_;
 	const std::vector<RPi::RPiCameraConfiguration::StreamParams> &outStreams = rpiConfig->outStreams_;
 	int ret;
-
 	V4L2VideoDevice *cfe = cfe_[Cfe::Output0].dev();
 	V4L2DeviceFormat cfeFormat;
 
@@ -1728,12 +1727,10 @@ void PiSPCameraData::cfeBufferDequeue(FrameBuffer *buffer)
 			void *mem = b.mapped->planes()[0].data();
 
 			dmabufSyncStart(buffer->planes()[0].fd);
-
 			if (stream->getFlags() & StreamFlag::Needs16bitEndianSwap)
 				do16BitEndianSwap(mem, width, height, stride);
 			else
 				do14bitUnpack(mem, width, height, stride);
-
 			dmabufSyncEnd(buffer->planes()[0].fd);
 		}
 

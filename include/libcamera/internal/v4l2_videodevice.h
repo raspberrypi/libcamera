@@ -8,7 +8,6 @@
 #pragma once
 
 #include <array>
-#include <atomic>
 #include <memory>
 #include <optional>
 #include <ostream>
@@ -159,7 +158,7 @@ private:
 		std::vector<Plane> planes_;
 	};
 
-	std::atomic<uint64_t> lastUsedCounter_;
+	uint64_t lastUsedCounter_;
 	std::vector<Entry> cache_;
 	/* \todo Expose the miss counter through an instrumentation API. */
 	unsigned int missCounter_;

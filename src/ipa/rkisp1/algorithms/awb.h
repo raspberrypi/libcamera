@@ -9,8 +9,10 @@
 
 #include <optional>
 
+#include "libcamera/internal/vector.h"
+
+#include "libipa/awb.h"
 #include "libipa/interpolator.h"
-#include "libipa/vector.h"
 
 #include "algorithm.h"
 
@@ -38,7 +40,11 @@ public:
 		     ControlList &metadata) override;
 
 private:
-	std::optional<Interpolator<Vector<double, 2>>> colourGainCurve_;
+	RGB<double> calculateRgbMeans(const IPAFrameContext &frameContext,
+				      const rkisp1_cif_isp_awb_stat *awb) const;
+
+	std::unique_ptr<AwbAlgorithm> awbAlgo_;
+
 	bool rgbMode_;
 };
 

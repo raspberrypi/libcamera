@@ -31,7 +31,7 @@ ConfigParser::parseConfigFile(File &file, PipelineHandler *pipe)
 
 	std::unique_ptr<YamlObject> cameras = YamlParser::parse(file);
 	if (!cameras) {
-		LOG(Virtual, Error) << "Failed to pass config file.";
+		LOG(Virtual, Error) << "Failed to parse config file.";
 		return configurations;
 	}
 
@@ -54,7 +54,7 @@ ConfigParser::parseConfigFile(File &file, PipelineHandler *pipe)
 
 		data->config_.id = cameraId;
 		ControlInfoMap::Map controls;
-		/* todo: Check which resolution's frame rate to be reported */
+		/* \todo Check which resolution's frame rate to be reported */
 		controls[&controls::FrameDurationLimits] =
 			ControlInfo(1000000 / data->config_.resolutions[0].frameRates[1],
 				    1000000 / data->config_.resolutions[0].frameRates[0]);

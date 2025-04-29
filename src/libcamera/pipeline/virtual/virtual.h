@@ -37,6 +37,7 @@ public:
 	struct StreamConfig {
 		Stream stream;
 		std::unique_ptr<FrameGenerator> frameGenerator;
+		unsigned int seq = 0;
 	};
 	/* The config file is parsed to the Configuration struct */
 	struct Configuration {

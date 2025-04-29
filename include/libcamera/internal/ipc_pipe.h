@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <stdint.h>
 #include <vector>
 
 #include <libcamera/base/shared_fd.h>

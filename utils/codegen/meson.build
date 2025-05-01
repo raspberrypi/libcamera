@@ -16,4 +16,6 @@ gen_header = files('gen-header.sh')
 gen_ipa_pub_key = files('gen-ipa-pub-key.py')
 gen_tracepoints = files('gen-tp-header.py')
 
+py_mod_controls = files('controls.py')
+
 subdir('ipc')

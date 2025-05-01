@@ -1,21 +1,5 @@
 # SPDX-License-Identifier: CC0-1.0
 
-py3_dep = dependency('python3', required : get_option('pycamera'))
-
-if not py3_dep.found()
-    pycamera_enabled = false
-    subdir_done()
-endif
-
-pybind11_dep = dependency('pybind11', required : get_option('pycamera'))
-
-if not pybind11_dep.found()
-    pycamera_enabled = false
-    subdir_done()
-endif
-
-pycamera_enabled = true
-
 pycamera_sources = files([
     'py_camera_manager.cpp',
     'py_color_space.cpp',

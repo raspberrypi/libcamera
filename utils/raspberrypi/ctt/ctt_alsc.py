@@ -131,7 +131,7 @@ def alsc(Cam, Img, do_alsc_colour, plot=False, grid_size=(16, 12), max_gain=8.0)
     pixels.
     """
     w, h = Img.w/2, Img.h/2
-    dx, dy = (w - 1) // (grid_w - 1), (h - 1) // (grid_h - 1)
+    dx, dy = int((w - 1) // (grid_w - 1)), int((h - 1) // (grid_h - 1))
 
     """
     average the green channels into one

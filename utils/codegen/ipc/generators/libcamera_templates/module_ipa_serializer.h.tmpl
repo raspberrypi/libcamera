@@ -32,12 +32,12 @@ template<>
 class IPADataSerializer<{{struct|name_full}}>
 {
 public:
-{{- serializer.serializer(struct, namespace_str)}}
+{{- serializer.serializer(struct)}}
 {%- if struct|has_fd %}
-{{serializer.deserializer_fd(struct, namespace_str)}}
+{{serializer.deserializer_fd(struct)}}
 {%- else %}
-{{serializer.deserializer_no_fd(struct, namespace_str)}}
-{{serializer.deserializer_fd_simple(struct, namespace_str)}}
+{{serializer.deserializer_no_fd(struct)}}
+{{serializer.deserializer_fd_simple(struct)}}
 {%- endif %}
 };
 {% endfor %}

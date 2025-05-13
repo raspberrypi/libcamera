@@ -1740,8 +1740,8 @@ void PiSPCameraData::cfeBufferDequeue(FrameBuffer *buffer)
 		 */
 		auto [ctrl, delayContext] = delayedCtrls_->get(buffer->metadata().sequence);
 
-		LOG(RPI, Info) << "bayer buffer deque " << buffer->metadata().sequence << " context " << delayContext;
-		LOG(RPI, Info) << "bayer buffer deque gain " << ctrl.get(V4L2_CID_ANALOGUE_GAIN).get<int32_t>() << " exp " << ctrl.get(V4L2_CID_EXPOSURE).get<int32_t>();
+		LOG(RPI, Debug) << "bayer buffer deque " << buffer->metadata().sequence << " context " << delayContext;
+		LOG(RPI, Debug) << "bayer buffer deque gain " << ctrl.get(V4L2_CID_ANALOGUE_GAIN).get<int32_t>() << " exp " << ctrl.get(V4L2_CID_EXPOSURE).get<int32_t>();
 
 		/*
 		 * Add the frame timestamp to the ControlList for the IPA to use
@@ -2313,7 +2313,9 @@ static bool isControlDelayed(unsigned int id)
 	return id == controls::ExposureTime ||
 	       id == controls::AnalogueGain ||
 	       id == controls::FrameDurationLimits ||
-	       id == controls::AeEnable;
+	       id == controls::AeEnable ||
+	       id == controls::ExposureTimeMode ||
+	       id == controls::AnalogueGainMode;
 }
 
 static void jumpQueueBehaviour2(std::deque<Request *> &queue)
@@ -2361,7 +2363,7 @@ void PiSPCameraData::tryRunPipeline()
 	/* Take the first request from the queue and action the IPA. */
 	Request *request = requestQueue_.front();
 
-	LOG(RPI, Info) << "tryrunpipeline context " << request->sequence() << " bayer seq " << job.buffers[&cfe_[Cfe::Output0]]->metadata().sequence << " delay context " << job.delayContext << " gain " << job.sensorControls.get(V4L2_CID_ANALOGUE_GAIN).get<int32_t>() << " exposure " << job.sensorControls.get(V4L2_CID_EXPOSURE).get<int32_t>();
+	LOG(RPI, Debug) << "tryrunpipeline context " << request->sequence() << " bayer seq " << job.buffers[&cfe_[Cfe::Output0]]->metadata().sequence << " delay context " << job.delayContext << " gain " << job.sensorControls.get(V4L2_CID_ANALOGUE_GAIN).get<int32_t>() << " exposure " << job.sensorControls.get(V4L2_CID_EXPOSURE).get<int32_t>();
 	
 	/*
 	 * Record which control list corresponds to this ipaCookie. Because setDelayedControls
@@ -2381,7 +2383,7 @@ void PiSPCameraData::tryRunPipeline()
 	request->metadata().clear();
 	fillRequestMetadata(job.sensorControls, request);
 
-	LOG(RPI, Info) << "tryrunpipeline adding sync entry context " << request->sequence() << " control id " << request->controlListId;
+	LOG(RPI, Debug) << "tryrunpipeline adding sync entry context " << request->sequence() << " control id " << request->controlListId;
 
 	/* Do not pop this request if we're not going to return it to the user. */
 	if (!dropFrameCount_) {
@@ -2400,7 +2402,7 @@ void PiSPCameraData::tryRunPipeline()
 	 */
 	while (!syncTable_.empty() &&
 	       syncTable_.front().ipaCookie != job.delayContext) {
-		LOG(RPI, Info) << "tryrunpipeline popping sync entry context " << syncTable_.front().ipaCookie << " control id " << syncTable_.front().controlListId;
+		LOG(RPI, Debug) << "tryrunpipeline popping sync entry context " << syncTable_.front().ipaCookie << " control id " << syncTable_.front().controlListId;
 		//LOG(RPI, Error) << "tryRunPipeline: discard sync table entry " << syncTable_.front().ipaCookie;
 		syncTable_.pop();
 	}
@@ -2409,7 +2411,7 @@ void PiSPCameraData::tryRunPipeline()
 		LOG(RPI, Warning) << "Unable to find ipa cookie for PFC";
 
 
-	LOG(RPI, Info) << "tryrunpipeline using sync control id " << syncTable_.front().controlListId;
+	LOG(RPI, Debug) << "tryrunpipeline using sync control id " << syncTable_.front().controlListId;
 	request->syncId = syncTable_.front().controlListId;
 
        	/*

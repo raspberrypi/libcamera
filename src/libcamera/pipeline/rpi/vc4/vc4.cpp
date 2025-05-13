@@ -990,7 +990,9 @@ static bool isControlDelayed(unsigned int id)
 	return id == controls::ExposureTime ||
 	       id == controls::AnalogueGain ||
 	       id == controls::FrameDurationLimits ||
-	       id == controls::AeEnable;
+	       id == controls::AeEnable ||
+	       id == controls::ExposureTimeMode ||
+	       id == controls::AnalogueGainMode;
 }
 
 static void jumpQueueBehaviour2(std::deque<Request *> &queue)

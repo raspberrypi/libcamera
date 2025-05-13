@@ -240,7 +240,7 @@ void CamHelper::parseEmbeddedData(Span<const uint8_t> buffer,
 	if (parsedDeviceStatus.sensorTemperature)
 		deviceStatus.sensorTemperature = parsedDeviceStatus.sensorTemperature;
 
-	LOG(IPARPI, Info) << "Metadata updated - " << deviceStatus;
+	LOG(IPARPI, Debug) << "Metadata updated - " << deviceStatus;
 
 	metadata.set("device.status", deviceStatus);
 }

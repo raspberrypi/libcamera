@@ -1739,6 +1739,10 @@ void PiSPCameraData::cfeBufferDequeue(FrameBuffer *buffer)
 		 * DelayedControl and queue them along with the frame buffer.
 		 */
 		auto [ctrl, delayContext] = delayedCtrls_->get(buffer->metadata().sequence);
+
+		LOG(RPI, Info) << "bayer buffer deque " << buffer->metadata().sequence << " context " << delayContext;
+		LOG(RPI, Info) << "bayer buffer deque gain " << ctrl.get(V4L2_CID_ANALOGUE_GAIN).get<int32_t>() << " exp " << ctrl.get(V4L2_CID_EXPOSURE).get<int32_t>();
+
 		/*
 		 * Add the frame timestamp to the ControlList for the IPA to use
 		 * as it does not receive the FrameBuffer object. Also derive a
@@ -2304,6 +2308,48 @@ void PiSPCameraData::prepareBe(uint32_t bufferId, bool stitchSwapBuffers)
 	isp_[Isp::Config].queueBuffer(config.buffer);
 }
 
+static bool isControlDelayed(unsigned int id)
+{
+	return id == controls::ExposureTime ||
+	       id == controls::AnalogueGain ||
+	       id == controls::FrameDurationLimits ||
+	       id == controls::AeEnable;
+}
+
+static void jumpQueueBehaviour2(std::deque<Request *> &queue)
+{
+	auto r = queue.begin();
+	for (; r != queue.end() && (*r)->controls().empty(); r++)
+		;
+	if (r != queue.end() && r != queue.begin()) {
+		queue.front()->controls() = std::move((*r)->controls());
+		uint64_t controlListId = (*r)->controlListId;
+		for (r = r - 1;; r--) {
+			(*r)->controlListId = controlListId;
+			if (r == queue.begin())
+				break;
+		}
+	}
+}
+
+static void androidQueueBehaviour2(std::deque<Request *> &queue, int delay)
+{
+	auto r = queue.begin() + 1;
+	for (; r != queue.end() && delay; r++, delay--) {
+		queue.front()->controls().merge((*r)->controls(), ControlList::MergePolicy::OverwriteExisting);
+		(*r)->controls().clear();
+	}
+	r--;
+	if (r != queue.begin()) {
+		uint64_t controlListId = (*r)->controlListId;
+		for (;; r--) {
+			(*r)->controlListId = controlListId;
+			if (r == queue.begin())
+				break;
+		}
+	}
+}
+
 void PiSPCameraData::tryRunPipeline()
 {
 	/* If any of our request or buffer queues are empty, we cannot proceed. */
@@ -2315,6 +2361,15 @@ void PiSPCameraData::tryRunPipeline()
 	/* Take the first request from the queue and action the IPA. */
 	Request *request = requestQueue_.front();
 
+	LOG(RPI, Info) << "tryrunpipeline context " << request->sequence() << " bayer seq " << job.buffers[&cfe_[Cfe::Output0]]->metadata().sequence << " delay context " << job.delayContext << " gain " << job.sensorControls.get(V4L2_CID_ANALOGUE_GAIN).get<int32_t>() << " exposure " << job.sensorControls.get(V4L2_CID_EXPOSURE).get<int32_t>();
+	
+	/*
+	 * Record which control list corresponds to this ipaCookie. Because setDelayedControls
+	 * now gets called by the IPA from the start of the following frame, we must record
+	 * the previous control list id.
+	 */
+	syncTable_.emplace(SyncTableEntry{ request->sequence(), request->controlListId });
+
 	/* See if a new ScalerCrop value needs to be applied. */
 	applyScalerCrop(request->controls());
 
@@ -2325,6 +2380,58 @@ void PiSPCameraData::tryRunPipeline()
 	 */
 	request->metadata().clear();
 	fillRequestMetadata(job.sensorControls, request);
+
+	LOG(RPI, Info) << "tryrunpipeline adding sync entry context " << request->sequence() << " control id " << request->controlListId;
+
+	/* Do not pop this request if we're not going to return it to the user. */
+	if (!dropFrameCount_) {
+		const int behaviour = 1;
+		if (behaviour == 1)
+			jumpQueueBehaviour2(requestQueue_);
+		else if (behaviour == 2)
+			androidQueueBehaviour2(requestQueue_, maxDelay_ + 2);
+	}
+
+	/*
+	 * We know we that we added an entry for every delayContext, so we can
+	 * find the one for this Bayer frame, and this links us to the correct
+	 * control list. Anything ahead of "our" entry in the queue is old, so
+	 * can be dropped.
+	 */
+	while (!syncTable_.empty() &&
+	       syncTable_.front().ipaCookie != job.delayContext) {
+		LOG(RPI, Info) << "tryrunpipeline popping sync entry context " << syncTable_.front().ipaCookie << " control id " << syncTable_.front().controlListId;
+		//LOG(RPI, Error) << "tryRunPipeline: discard sync table entry " << syncTable_.front().ipaCookie;
+		syncTable_.pop();
+	}
+
+	if (syncTable_.empty())
+		LOG(RPI, Warning) << "Unable to find ipa cookie for PFC";
+
+
+	LOG(RPI, Info) << "tryrunpipeline using sync control id " << syncTable_.front().controlListId;
+	request->syncId = syncTable_.front().controlListId;
+
+       	/*
+	 * Controls that take effect immediately (typically ISP controls) have to be
+	 * delayed so as to synchronise with those controls that do get delayed. So we
+	 * must remove them from the current request, and push them onto a queue so
+	 * that they can be used later.
+	 */
+	ControlList controls = std::move(request->controls());
+	immediateControls_.push({ request->controlListId, request->controls() });
+	for (const auto &ctrl : controls) {
+		if (isControlDelayed(ctrl.first))
+			request->controls().set(ctrl.first, ctrl.second);
+		else
+			immediateControls_.back().controls.set(ctrl.first, ctrl.second);
+	}
+	/* "Immediate" controls that have become due are now merged back into this request. */
+	while (!immediateControls_.empty() &&
+	       immediateControls_.front().controlListId <= request->syncId) {
+		request->controls().merge(immediateControls_.front().controls, ControlList::MergePolicy::OverwriteExisting);
+		immediateControls_.pop();
+	}
 
 	/* Set our state to say the pipeline is active. */
 	state_ = State::Busy;
@@ -2342,7 +2449,7 @@ void PiSPCameraData::tryRunPipeline()
 	params.buffers.bayer = RPi::MaskBayerData | bayerId;
 	params.buffers.stats = RPi::MaskStats | statsId;
 	params.buffers.embedded = 0;
-	params.ipaContext = requestQueue_.front()->sequence();
+	params.ipaContext = request->sequence();
 	params.delayContext = job.delayContext;
 	params.sensorControls = std::move(job.sensorControls);
 	params.requestControls = request->controls();

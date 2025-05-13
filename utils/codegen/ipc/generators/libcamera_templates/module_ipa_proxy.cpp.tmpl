@@ -206,7 +206,7 @@ void {{proxy_name}}::recvMessage(const IPCMessage &data)
 );
 {%- endif %}
 	if (_ret < 0) {
-		LOG(IPAProxy, Error) << "Failed to call {{method.mojom_name}}";
+		LOG(IPAProxy, Error) << "Failed to call {{method.mojom_name}}: " << _ret;
 {%- if method|method_return_value != "void" %}
 		return static_cast<{{method|method_return_value}}>(_ret);
 {%- else %}

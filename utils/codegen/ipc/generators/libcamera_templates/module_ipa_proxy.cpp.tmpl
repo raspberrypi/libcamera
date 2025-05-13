@@ -127,13 +127,13 @@ void {{proxy_name}}::recvMessage(const IPCMessage &data)
 {{proxy_funcs.func_sig(proxy_name, method)}}
 {
 	if (isolate_)
-		{{"return " if method|method_return_value != "void"}}{{method.mojom_name}}IPC(
+		return {{method.mojom_name}}IPC(
 {%- for param in method|method_param_names -%}
 		{{param}}{{- ", " if not loop.last}}
 {%- endfor -%}
 );
 	else
-		{{"return " if method|method_return_value != "void"}}{{method.mojom_name}}Thread(
+		return {{method.mojom_name}}Thread(
 {%- for param in method|method_param_names -%}
 		{{param}}{{- ", " if not loop.last}}
 {%- endfor -%}
@@ -159,16 +159,14 @@ void {{proxy_name}}::recvMessage(const IPCMessage &data)
 	state_ = ProxyRunning;
 	thread_.start();
 
-	{{ "return " if method|method_return_value != "void" -}}
-	proxy_.invokeMethod(&ThreadProxy::start, ConnectionTypeBlocking
+	return proxy_.invokeMethod(&ThreadProxy::start, ConnectionTypeBlocking
 	{{- ", " if method|method_param_names}}
 	{%- for param in method|method_param_names -%}
 		{{param}}{{- ", " if not loop.last}}
 	{%- endfor -%}
 );
 {%- elif not method|is_async %}
-	{{ "return " if method|method_return_value != "void" -}}
-	ipa_->{{method.mojom_name}}(
+	return ipa_->{{method.mojom_name}}(
 	{%- for param in method|method_param_names -%}
 		{{param}}{{- ", " if not loop.last}}
 	{%- endfor -%}

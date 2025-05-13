@@ -2365,13 +2365,6 @@ void PiSPCameraData::tryRunPipeline()
 
 	LOG(RPI, Debug) << "tryrunpipeline context " << request->sequence() << " bayer seq " << job.buffers[&cfe_[Cfe::Output0]]->metadata().sequence << " delay context " << job.delayContext << " gain " << job.sensorControls.get(V4L2_CID_ANALOGUE_GAIN).get<int32_t>() << " exposure " << job.sensorControls.get(V4L2_CID_EXPOSURE).get<int32_t>();
 	
-	/*
-	 * Record which control list corresponds to this ipaCookie. Because setDelayedControls
-	 * now gets called by the IPA from the start of the following frame, we must record
-	 * the previous control list id.
-	 */
-	syncTable_.emplace(SyncTableEntry{ request->sequence(), request->controlListId });
-
 	/* See if a new ScalerCrop value needs to be applied. */
 	applyScalerCrop(request->controls());
 
@@ -2393,6 +2386,13 @@ void PiSPCameraData::tryRunPipeline()
 		else if (behaviour == 2)
 			androidQueueBehaviour2(requestQueue_, maxDelay_ + 2);
 	}
+
+		/*
+	 * Record which control list corresponds to this ipaCookie. Because setDelayedControls
+	 * now gets called by the IPA from the start of the following frame, we must record
+	 * the previous control list id.
+	 */
+	syncTable_.emplace(SyncTableEntry{ request->sequence(), request->controlListId });
 
 	/*
 	 * We know we that we added an entry for every delayContext, so we can

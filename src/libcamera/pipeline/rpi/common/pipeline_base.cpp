@@ -759,7 +759,7 @@ static void androidQueueBehaviour(std::deque<Request *> &queue, int delay)
 	for (; r != queue.rend() && delay; r++, delay--)
 		(*r)->controlListId = queue.back()->controlListId;
 	if (r - 1 != queue.rbegin()) {
-		(*(r - 1))->controls().merge(queue.back()->controls(), true);
+		(*(r - 1))->controls().merge(queue.back()->controls(), ControlList::MergePolicy::OverwriteExisting);
 		queue.back()->controls().clear();
 	}
 }
@@ -864,8 +864,8 @@ int PipelineHandlerBase::registerCamera(std::unique_ptr<RPi::CameraData> &camera
 		{ V4L2_CID_VBLANK, { delays.vblankDelay, true } }
 	};
 	data->delayedCtrls_ = std::make_unique<RPi::DelayedControls>(data->sensor_->device(), params);
-	data->maxDelay_ = std::max({ result.sensorConfig.gainDelay, result.sensorConfig.exposureDelay,
-				     result.sensorConfig.vblankDelay });
+	data->maxDelay_ = std::max({ delays.gainDelay, delays.exposureDelay,
+				     delays.vblankDelay });
 	data->sensorMetadata_ = result.sensorConfig.sensorMetadata;
 
 	/* Register initial controls that the Raspberry Pi IPA can handle. */

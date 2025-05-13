@@ -1013,7 +1013,7 @@ static void androidQueueBehaviour2(std::deque<Request *> &queue, int delay)
 {
 	auto r = queue.begin() + 1;
 	for (; r != queue.end() && delay; r++, delay--) {
-		queue.front()->controls().merge((*r)->controls(), true);
+		queue.front()->controls().merge((*r)->controls(), ControlList::MergePolicy::OverwriteExisting);
 		(*r)->controls().clear();
 	}
 	r--;
@@ -1111,7 +1111,7 @@ void Vc4CameraData::tryRunPipeline()
 	/* "Immediate" controls that have become due are now merged back into this request. */
 	while (!immediateControls_.empty() &&
 	       immediateControls_.front().controlListId <= request->syncId) {
-		request->controls().merge(immediateControls_.front().controls, true);
+		request->controls().merge(immediateControls_.front().controls, ControlList::MergePolicy::OverwriteExisting);
 		immediateControls_.pop();
 	}
 

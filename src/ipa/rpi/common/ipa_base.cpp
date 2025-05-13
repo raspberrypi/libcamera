@@ -1709,15 +1709,9 @@ void IpaBase::applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls, Du
 	int32_t exposureLines = helper_->exposureLines(exposure,
 						       helper_->hblankToLineLength(hblank));
 
-<<<<<<< HEAD
-	LOG(IPARPI, Debug) << "Applying AGC Exposure: " << exposure
-			   << " (Exposure lines: " << exposureLines << ", AGC requested "
-			   << agcStatus->exposureTime << ") Gain: "
-=======
 	LOG(IPARPI, Info) << "Applying AGC Exposure: " << exposure
 			   << " (Shutter lines: " << exposureLines << ", AGC requested "
-			   << agcStatus->shutterTime << ") Gain: "
->>>>>>> 0d9e15966aac (logging for pfc)
+			   << agcStatus->exposureTime << ") Gain: "
 			   << agcStatus->analogueGain << " (Gain Code: "
 			   << gainCode << ")";
 

@@ -317,3 +317,17 @@
 		return ret;
 	}
 {%- endmacro %}
+
+{#
+ # \brief Deserialize a struct
+ #
+ # Generate code for IPADataSerializer specialization, for deserializing \a struct.
+ #}
+{%- macro deserializer(struct) %}
+{%- if struct|has_fd %}
+{{deserializer_fd(struct)}}
+{%- else %}
+{{deserializer_no_fd(struct)}}
+{{deserializer_fd_simple(struct)}}
+{%- endif %}
+{%- endmacro %}

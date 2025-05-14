@@ -660,8 +660,9 @@ int PipelineHandlerBase::start(Camera *camera, const ControlList *controls)
 		data->setSensorControls(result.controls);
 
 	/* Configure the number of dropped frames required on startup. */
-	data->dropFrameCount_ = data->config_.disableStartupFrameDrops
-			      ? 0 : result.dropFrameCount;
+	//data->dropFrameCount_ = data->config_.disableStartupFrameDrops
+	//		      ? 0 : result.dropFrameCount;
+	data->dropFrameCount_ = 0;
 
 	for (auto const stream : data->streams_)
 		stream->resetBuffers();

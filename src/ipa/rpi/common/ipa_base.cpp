@@ -435,7 +435,6 @@ void IpaBase::prepareIsp(const PrepareParams &params)
 	 */
 	AgcStatus agcStatus;
 	bool hdrChange = false;
-	//RPiController::Metadata &delayedMetadata = rpiMetadata_[params.delayContext];
 	RPiController::Metadata &delayedMetadata = rpiMetadata_[params.delayContext % rpiMetadata_.size()];
 	if (!delayedMetadata.get<AgcStatus>("agc.status", agcStatus)) {
 		rpiMetadata.set("agc.delayed_status", agcStatus);
@@ -465,9 +464,8 @@ void IpaBase::prepareIsp(const PrepareParams &params)
 		 * current frame, or any other bits of metadata that were added
 		 * in helper_->Prepare().
 		 */
-		unsigned int lastIpaContext = (ipaContext ? ipaContext : rpiMetadata_.size()) - 1;
-		RPiController::Metadata &lastMetadata = rpiMetadata_[lastIpaContext];
-
+		RPiController::Metadata &lastMetadata =
+			rpiMetadata_[(ipaContext ? ipaContext : rpiMetadata_.size()) - 1];
 		rpiMetadata.mergeCopy(lastMetadata);
 		processPending_ = false;
 	} else {
@@ -537,10 +535,10 @@ void IpaBase::processStats(const ProcessParams &params)
 		struct AgcStatus agcStatus;
 		if (rpiMetadata.get("agc.status", agcStatus) == 0) {
 
-			LOG(IPARPI, Info) << "IPA process stats context " << params.ipaContext;
+			LOG(IPARPI, Info) << "IPA process stats context " << ipaContext;
 
 			ControlList ctrls(sensorCtrls_);
-			applyAGC(&agcStatus, ctrls);
+			applyAGC(&agcStatus, ctrls, offset);
 			setDelayedControls.emit(ctrls, params.ipaContext);
 			setCameraTimeoutValue();
 		}

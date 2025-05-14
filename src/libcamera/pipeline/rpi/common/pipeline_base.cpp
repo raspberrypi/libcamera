@@ -1270,7 +1270,7 @@ void CameraData::metadataReady(const ControlList &metadata)
 	/* Last thing to do is to fill up the request metadata. */
 	requestQueue_.front()->metadata().merge(metadata);
 
-	LOG(RPI, Debug) << "metadata ready context " << requestQueue_.front()->sequence() << " gain " << *metadata.get(libcamera::controls::AnalogueGain) <<  " exposure " << *metadata.get(libcamera::controls::ExposureTime);
+	LOG(RPI, Info) << "metadata ready context " << requestQueue_.front()->sequence() << " gain " << *metadata.get(libcamera::controls::AnalogueGain) <<  " exposure " << *metadata.get(libcamera::controls::ExposureTime);
 
 	/*
 	 * Inform the sensor of the latest colour gains if it has the
@@ -1294,10 +1294,10 @@ void CameraData::metadataReady(const ControlList &metadata)
 
 void CameraData::setDelayedControls(const ControlList &controls, uint32_t delayContext)
 {
-	LOG(RPI, Debug) << "setDelayedControls context " << delayContext;
+	LOG(RPI, Info) << "setDelayedControls context " << delayContext;
 	
 	if (controls.contains(V4L2_CID_ANALOGUE_GAIN))
-		LOG(RPI, Debug) << "setDelayedControls queueing gain " << controls.get(V4L2_CID_ANALOGUE_GAIN).get<int32_t>();
+		LOG(RPI, Info) << "setDelayedControls queueing gain " << controls.get(V4L2_CID_ANALOGUE_GAIN).get<int32_t>();
 
 	if (!delayedCtrls_->push(controls, delayContext))
 		LOG(RPI, Error) << "V4L2 DelayedControl set failed";
@@ -1422,7 +1422,7 @@ void CameraData::cameraTimeout()
 
 void CameraData::frameStarted(uint32_t sequence)
 {
-	LOG(RPI, Debug) << "Frame start " << sequence;
+	LOG(RPI, Info) << "Frame start " << sequence;
 
 	/* Write any controls for the next frame as soon as we can. */
 	delayedCtrls_->applyControls(sequence);

@@ -442,7 +442,7 @@ void IpaBase::prepareIsp(const PrepareParams &params)
 		hdrStatus_ = agcStatus.hdr;
 	}
 
-	LOG(IPARPI, Info) << "IPA prepare context " << params.ipaContext << " delayed context " << params.delayContext;
+	LOG(IPARPI, Debug) << "IPA prepare context " << params.ipaContext << " delayed context " << params.delayContext;
 
 	/*
 	 * This may overwrite the DeviceStatus using values from the sensor
@@ -535,7 +535,7 @@ void IpaBase::processStats(const ProcessParams &params)
 		struct AgcStatus agcStatus;
 		if (rpiMetadata.get("agc.status", agcStatus) == 0) {
 
-			LOG(IPARPI, Info) << "IPA process stats context " << ipaContext;
+			LOG(IPARPI, Debug) << "IPA process stats context " << ipaContext;
 
 			ControlList ctrls(sensorCtrls_);
 			applyAGC(&agcStatus, ctrls, offset);
@@ -1431,7 +1431,7 @@ void IpaBase::fillDeviceStatus(const ControlList &sensorControls, unsigned int i
 	if (af)
 		deviceStatus.lensPosition = af->getLensPosition();
 
-	LOG(IPARPI, Info) << "Metadata - " << deviceStatus;
+	LOG(IPARPI, Debug) << "Metadata - " << deviceStatus;
 
 	rpiMetadata_[ipaContext].set("device.status", deviceStatus);
 }
@@ -1707,7 +1707,7 @@ void IpaBase::applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls, Du
 	int32_t exposureLines = helper_->exposureLines(exposure,
 						       helper_->hblankToLineLength(hblank));
 
-	LOG(IPARPI, Info) << "Applying AGC Exposure: " << exposure
+	LOG(IPARPI, Debug) << "Applying AGC Exposure: " << exposure
 			   << " (Shutter lines: " << exposureLines << ", AGC requested "
 			   << agcStatus->exposureTime << ") Gain: "
 			   << agcStatus->analogueGain << " (Gain Code: "

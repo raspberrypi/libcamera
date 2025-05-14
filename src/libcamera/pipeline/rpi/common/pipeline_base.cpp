@@ -1460,12 +1460,14 @@ void CameraData::handleStreamBuffer(FrameBuffer *buffer, RPi::Stream *stream)
 	 * that we actually have one to action, otherwise we just return
 	 * buffer back to the stream.
 	 */
-	Request *request = requestQueue_.front();
+	Request *request = requestQueue_.empty() ? nullptr : requestQueue_.front();
 	if (!dropFrameCount_ && request && request->findBuffer(stream) == buffer) {
 		/*
 		 * Tag the buffer as completed, returning it to the
 		 * application.
 		 */
+		LOG(RPI, Debug) << "Completing request buffer for stream "
+				<< stream->name();
 		pipe()->completeBuffer(request, buffer);
 	} else {
 		/*

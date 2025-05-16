@@ -18,6 +18,13 @@ else
 QCAM=enabled
 endif
 
+# Only enable rpi pipelines on arm
+ifneq (,$(filter $(DEB_HOST_ARCH), arm64 armhf))
+	PIPELINES=rpi/vc4,rpi/pisp,uvcvideo
+else
+	PIPELINES=uvcvideo
+endif
+
 %:
 	dh $@
 
@@ -27,7 +34,7 @@ override_dh_auto_configure:
 		-Dgstreamer=enabled \
 		-Dlibunwind=disabled \
 		-Dpycamera=enabled \
-		-Dpipelines=rpi/vc4,rpi/pisp,uvcvideo
+		-Dpipelines=${PIPELINES} \
 		-Dqcam=$(QCAM) \
 		-Dtest=true \
 		$(CONFFLAGS) \

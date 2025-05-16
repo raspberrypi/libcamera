@@ -1,3 +1,11 @@
+libcamera (0.5.0+rpt20250429-1+trixie) trixie; urgency=medium
+
+  * New upstream version 0.5.0+rpt20250429
+  * Add PiOS changes
+  * Only enable rpi pipelines on arm
+
+ -- Serge Schneider <serge@raspberrypi.com>  Fri, 16 May 2025 16:23:09 +0100
+
 libcamera (0.5.0-1) experimental; urgency=medium
 
   * New upstream version 0.5.0

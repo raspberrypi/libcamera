@@ -27,6 +27,7 @@ override_dh_auto_configure:
 		-Dgstreamer=enabled \
 		-Dlibunwind=disabled \
 		-Dpycamera=enabled \
+		-Dpipelines=rpi/vc4,rpi/pisp,uvcvideo
 		-Dqcam=$(QCAM) \
 		-Dtest=true \
 		$(CONFFLAGS) \

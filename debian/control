@@ -1,9 +1,5 @@
 Source: libcamera
-Maintainer: Debian Multimedia Maintainers <debian-multimedia@lists.debian.org>
-Uploaders: Emmanuel Arias <emmanuelarias30@gmail.com>,
-           IOhannes m zmölnig (Debian/GNU) <umlaeute@debian.org>,
-           Andrej Shadura <andrewsh@debian.org>,
-           Dylan Aïssi <daissi@debian.org>
+Maintainer: Serge Schneider <serge@raspberrypi.com>
 Section: libs
 Priority: optional
 Build-Depends: debhelper-compat (= 13),
@@ -40,8 +36,8 @@ Build-Depends-Indep: doxygen <!nodoc>,
                      libjs-underscore <!nodoc>,
                      python3-sphinx <!nodoc>,
 Standards-Version: 4.7.2
-Vcs-Browser: https://salsa.debian.org/multimedia-team/libcamera
-Vcs-Git: https://salsa.debian.org/multimedia-team/libcamera.git
+Vcs-Browser: https://github.com/RPi-Distro/libcamera
+Vcs-Git: https://github.com/RPi-Distro/libcamera.git
 Homepage: https://libcamera.org/
 Rules-Requires-Root: no
 
@@ -83,8 +79,8 @@ Depends: ${misc:Depends},
          ${shlibs:Depends}
 Recommends: libcamera-ipa (= ${binary:Version})
 Pre-Depends: ${misc:Pre-Depends}
-Breaks: libcamera0 (<< 0.0.3-1~)
-Replaces: libcamera0 (<< 0.0.3-1~)
+Breaks: libcamera0
+Replaces: libcamera0
 Description: complex camera support library
  libcamera is a complex camera support library which handles low-level
  control of the camera devices, providing a unified higher-level
@@ -95,8 +91,8 @@ Architecture: linux-any
 Multi-Arch: same
 Depends: ${misc:Depends},
          ${shlibs:Depends}
-Breaks: libcamera0 (<< 0.0.3-1~)
-Replaces: libcamera0 (<< 0.0.3-1~)
+Breaks: libcamera0
+Replaces: libcamera0
 Description: complex camera support library (IPA modules)
  libcamera is a complex camera support library which handles low-level
  control of the camera devices, providing a unified higher-level
@@ -124,8 +120,8 @@ Architecture: linux-any
 Multi-Arch: same
 Depends: ${misc:Depends},
          ${shlibs:Depends}
-Breaks: libcamera0 (<< 0.0.3-1~)
-Replaces: libcamera0 (<< 0.0.3-1~)
+Breaks: libcamera0
+Replaces: libcamera0
 Description: complex camera support library (V4L2 module)
  libcamera is a complex camera support library which handles low-level
  control of the camera devices, providing a unified higher-level
@@ -138,8 +134,8 @@ Architecture: linux-any
 Multi-Arch: same
 Depends: ${misc:Depends},
          ${shlibs:Depends}
-Breaks: libcamera0 (<< 0.0.3-1~)
-Replaces: libcamera0 (<< 0.0.3-1~)
+Breaks: libcamera0
+Replaces: libcamera0
 Description: complex camera support library (GStreamer plugin)
  libcamera is a complex camera support library which handles low-level
  control of the camera devices, providing a unified higher-level

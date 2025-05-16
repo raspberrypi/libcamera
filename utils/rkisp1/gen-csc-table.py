@@ -147,6 +147,8 @@ def main(argv):
         description='Generate color space conversion table coefficients with '
         'configurable fixed-point precision.'
     )
+    parser.add_argument('--format', '-f', choices=['dec', 'hex'], default='hex',
+                        help='Number format')
     parser.add_argument('--invert', '-i', action='store_true',
                         help='Invert the color space conversion (YUV -> RGB)')
     parser.add_argument('--precision', '-p', default='Q1.7',
@@ -190,19 +192,29 @@ def main(argv):
         else:
             line = round_array(line)
 
-        # Convert coefficients to the number of bits selected by the precision.
-        # Negative values will be turned into positive integers using 2's
-        # complement.
-        line = [coeff & ((1 << precision.total) - 1) for coeff in line]
+        if args.format == 'hex':
+            # Convert coefficients to the number of bits selected by the precision.
+            # Negative values will be turned into positive integers using 2's
+            # complement.
+            line = [coeff & ((1 << precision.total) - 1) for coeff in line]
+
         rounded_coeffs.append(line)
 
     # Print the result as C code.
     nbits = 1 << (precision.total - 1).bit_length()
     nbytes = nbits // 4
-    print(f'static const u{nbits} {"yuv2rgb" if args.invert else "rgb2yuv"}_{args.encoding}_{quantization.name.lower()}_coeffs[] = {{')
+
+    if args.format == 'hex':
+        coeff_fmt = '0x{0:0' + str(nbytes) + 'x}'
+        sign = 'u'
+    else:
+        coeff_fmt = '{0}'
+        sign = 's'
+
+    print(f'static const {sign}{nbits} {"yuv2rgb" if args.invert else "rgb2yuv"}_{args.encoding}_{quantization.name.lower()}_coeffs[] = {{')
 
     for line in rounded_coeffs:
-        line = [f'0x{coeff:0{nbytes}x}' for coeff in line]
+        line = [coeff_fmt.format(coeff) for coeff in line]
 
         print(f'\t{", ".join(line)},')
 

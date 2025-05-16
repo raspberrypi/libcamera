@@ -484,15 +484,14 @@ int Request::addBuffer(const Stream *stream, FrameBuffer *buffer,
 		return -EEXIST;
 	}
 
-	auto it = bufferMap_.find(stream);
-	if (it != bufferMap_.end()) {
+	auto [it, inserted] = bufferMap_.try_emplace(stream, buffer);
+	if (!inserted) {
 		LOG(Request, Error) << "FrameBuffer already set for stream";
 		return -EEXIST;
 	}
 
 	buffer->_d()->setRequest(this);
 	_d()->pending_.insert(buffer);
-	bufferMap_[stream] = buffer;
 
 	if (fence && fence->isValid())
 		buffer->_d()->setFence(std::move(fence));

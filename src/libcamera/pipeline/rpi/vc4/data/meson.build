@@ -2,6 +2,7 @@
 
 conf_files = files([
     'example.yaml',
+    'rpi_apps.yaml',
 ])
 
 install_data(conf_files,

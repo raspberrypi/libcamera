@@ -21,6 +21,7 @@ libcamera_internal_sources = files([
     'byte_stream_buffer.cpp',
     'camera_controls.cpp',
     'camera_lens.cpp',
+    'clock_recovery.cpp',
     'control_serializer.cpp',
     'control_validator.cpp',
     'converter.cpp',

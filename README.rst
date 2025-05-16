@@ -25,14 +25,46 @@ systems, including traditional Linux distributions, ChromeOS and Android.
 Getting Started
 ---------------
 
-To fetch the sources, build and install:
+Only build ``libcamera`` from scratch if you need custom behaviour or the latest features that have not yet reached ``apt`` repositories.
+
+If you run ``Raspberry Pi OS Lite``, begin by installing the following packages:
+  
+.. code::
+
+  sudo apt install -y python-pip git python3-jinja2
+
+First, install the following ``libcamera`` dependencies:
+.. code::
+
+  sudo apt install -y libboost-dev
+  sudo apt install -y libgnutls28-dev openssl libtiff-dev pybind11-dev
+  sudo apt install -y qtbase5-dev libqt5core5a libqt5widgets
+  sudo apt install -y meson cmake
+  sudo apt install -y python3-yaml python3-ply
+  sudo apt install -y libglib2.0-dev libgstreamer-plugins-base1.0-dev
+
+Now we're ready to build ``libcamera`` itself.
+
+Download a local copy of Raspberry Pi's fork of ``libcamera`` from GitHub, before building and installing freshly-build binary:
 
 .. code::
 
-  git clone https://git.libcamera.org/libcamera/libcamera.git
+  git clone https://github.com/raspberrypi/libcamera.git
   cd libcamera
-  meson setup build
+  meson setup build --buildtype=release -Dpipelines=rpi/vc4,rpi/pisp -Dipas=rpi/vc4,rpi/pisp -Dv4l2=true -Dgstreamer=enabled -Dtest=false -Dlc-compliance=disabled -Dcam=disabled -Dqcam=disabled -Ddocumentation=disabled -Dpycamera=enabled
   ninja -C build install
+
+You can disable the ``gstreamer`` plugin by replacing ``-Dgstreamer=enabled`` with ``-Dgstreamer=disabled`` during the ``meson`` build configuration.
+If you disable ``gstreamer``, there is no need to install the ``libglib2.0-dev`` and ``libgstreamer-plugins-base1.0-dev`` dependencies.
+
+On devices with 1GB of memory or less, the build may exceed available memory. Append the ``-j 1`` flag to ``ninja`` commands to limit the build to a single process.
+This should prevent the build from exceeding available memory on devices like the Raspberry Pi Zero and the Raspberry Pi 3. 
+
+``libcamera`` does not yet have a stable binary interface. Always build ``rpicam-apps`` after you build ``libcamera``.
+
+You can find more informations at `Raspberry Pi libcamera documentation`_ pages.
+
+.. _Raspberry Pi libcamera documentation: https://www.raspberrypi.com/documentation/computers/camera_software.html
 
 Dependencies
 ~~~~~~~~~~~~
@@ -44,7 +76,7 @@ A C++ toolchain: [required]
         Either {g++, clang}
 
 Meson Build system: [required]
-        meson (>= 0.60) ninja-build pkg-config
+        meson (>= 0.63) ninja-build pkg-config
 
 for the libcamera core: [required]
         libyaml-dev python3-yaml python3-ply python3-jinja2
@@ -83,6 +115,7 @@ for cam: [optional]
         - libdrm-dev: Enables the KMS sink
         - libjpeg-dev: Enables MJPEG on the SDL sink
         - libsdl2-dev: Enables the SDL sink
+        - libtiff-dev: Enables writing DNG
 
 for qcam: [optional]
         libtiff-dev qt6-base-dev qt6-tools-dev-tools

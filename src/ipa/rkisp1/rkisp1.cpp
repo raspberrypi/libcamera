@@ -211,8 +211,7 @@ int IPARkISP1::init(const IPASettings &settings, unsigned int hwRevision,
 
 int IPARkISP1::start()
 {
-	setControls(0);
-
+	/* \todo Properly handle startup controls. */
 	return 0;
 }
 
@@ -435,9 +434,9 @@ void IPARkISP1::updateControls(const IPACameraSensorInfo &sensorInfo,
 		frameDurations[i] = frameSize / (sensorInfo.pixelRate / 1000000U);
 	}
 
-	ctrlMap[&controls::FrameDurationLimits] = ControlInfo(frameDurations[0],
-							      frameDurations[1],
-							      frameDurations[2]);
+	/* \todo Move this (and other agc-related controls) to agc */
+	context_.ctrlMap[&controls::FrameDurationLimits] =
+		ControlInfo(frameDurations[0], frameDurations[1], frameDurations[2]);
 
 	ctrlMap.insert(context_.ctrlMap.begin(), context_.ctrlMap.end());
 	*ipaControls = ControlInfoMap(std::move(ctrlMap), controls::controls);
@@ -453,10 +452,16 @@ void IPARkISP1::setControls(unsigned int frame)
 	IPAFrameContext &frameContext = context_.frameContexts.get(frame);
 	uint32_t exposure = frameContext.agc.exposure;
 	uint32_t gain = context_.camHelper->gainCode(frameContext.agc.gain);
+	uint32_t vblank = frameContext.agc.vblank;
+
+	LOG(IPARkISP1, Debug)
+		<< "Set controls for frame " << frame << ": exposure " << exposure
+		<< ", gain " << frameContext.agc.gain << ", vblank " << vblank;
 
 	ControlList ctrls(sensorControls_);
 	ctrls.set(V4L2_CID_EXPOSURE, static_cast<int32_t>(exposure));
 	ctrls.set(V4L2_CID_ANALOGUE_GAIN, static_cast<int32_t>(gain));
+	ctrls.set(V4L2_CID_VBLANK, static_cast<int32_t>(vblank));
 
 	setSensorControls.emit(frame, ctrls);
 }

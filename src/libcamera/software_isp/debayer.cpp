@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later */
 /*
  * Copyright (C) 2023, Linaro Ltd
- * Copyright (C) 2023, 2024 Red Hat Inc.
+ * Copyright (C) 2023-2025 Red Hat Inc.
  *
  * Authors:
  * Hans de Goede <hdegoede@redhat.com>
@@ -24,8 +24,39 @@ namespace libcamera {
  */
 
 /**
- * \typedef DebayerParams::ColorLookupTable
- * \brief Type of the lookup tables for red, green, blue values
+ * \struct DebayerParams::CcmColumn
+ * \brief Type of a single column of a color correction matrix (CCM)
+ *
+ * When multiplying an input pixel, columns in the CCM correspond to the red,
+ * green or blue component of input pixel values, while rows correspond to the
+ * red, green or blue components of the output pixel values. The members of the
+ * CcmColumn structure are named after the colour components of the output pixel
+ * values they correspond to.
+ */
+
+/**
+ * \var DebayerParams::CcmColumn::r
+ * \brief Red (first) component of a CCM column
+ */
+
+/**
+ * \var DebayerParams::CcmColumn::g
+ * \brief Green (second) component of a CCM column
+ */
+
+/**
+ * \var DebayerParams::CcmColumn::b
+ * \brief Blue (third) component of a CCM column
+ */
+
+/**
+ * \typedef DebayerParams::LookupTable
+ * \brief Type of the lookup tables for single lookup values
+ */
+
+/**
+ * \typedef DebayerParams::CcmLookupTable
+ * \brief Type of the CCM lookup tables for red, green, blue values
  */
 
 /**
@@ -44,6 +75,26 @@ namespace libcamera {
  */
 
 /**
+ * \var DebayerParams::redCcm
+ * \brief Lookup table for the CCM red column, mapping input values to output values
+ */
+
+/**
+ * \var DebayerParams::greenCcm
+ * \brief Lookup table for the CCM green column, mapping input values to output values
+ */
+
+/**
+ * \var DebayerParams::blueCcm
+ * \brief Lookup table for the CCM blue column, mapping input values to output values
+ */
+
+/**
+ * \var DebayerParams::gammaLut
+ * \brief Gamma lookup table used with color correction matrix
+ */
+
+/**
  * \class Debayer
  * \brief Base debayering class
  *
@@ -57,10 +108,11 @@ Debayer::~Debayer()
 }
 
 /**
- * \fn int Debayer::configure(const StreamConfiguration &inputCfg, const std::vector<std::reference_wrapper<StreamConfiguration>> &outputCfgs)
+ * \fn int Debayer::configure()
  * \brief Configure the debayer object according to the passed in parameters
  * \param[in] inputCfg The input configuration
  * \param[in] outputCfgs The output configurations
+ * \param[in] ccmEnabled Whether a color correction matrix is applied
  *
  * \return 0 on success, a negative errno on failure
  */

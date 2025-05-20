@@ -125,7 +125,7 @@ struct control_type<Span<T, N>> : public control_type<std::remove_cv_t<T>> {
 };
 
 template<typename T>
-struct control_type<T, std::enable_if_t<std::is_enum_v<T>>> : public control_type<int32_t> {
+struct control_type<T, std::enable_if_t<std::is_enum_v<T> && sizeof(T) == sizeof(int32_t)>> : public control_type<int32_t> {
 };
 
 } /* namespace details */

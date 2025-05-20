@@ -475,16 +475,6 @@ int Request::addBuffer(const Stream *stream, FrameBuffer *buffer,
 		return -EINVAL;
 	}
 
-	auto it = bufferMap_.find(stream);
-	if (it != bufferMap_.end()) {
-		LOG(Request, Error) << "FrameBuffer already set for stream";
-		return -EEXIST;
-	}
-
-	buffer->_d()->setRequest(this);
-	_d()->pending_.insert(buffer);
-	bufferMap_[stream] = buffer;
-
 	/*
 	 * Make sure the fence has been extracted from the buffer
 	 * to avoid waiting on a stale fence.
@@ -493,6 +483,15 @@ int Request::addBuffer(const Stream *stream, FrameBuffer *buffer,
 		LOG(Request, Error) << "Can't add buffer that still references a fence";
 		return -EEXIST;
 	}
+
+	auto [it, inserted] = bufferMap_.try_emplace(stream, buffer);
+	if (!inserted) {
+		LOG(Request, Error) << "FrameBuffer already set for stream";
+		return -EEXIST;
+	}
+
+	buffer->_d()->setRequest(this);
+	_d()->pending_.insert(buffer);
 
 	if (fence && fence->isValid())
 		buffer->_d()->setFence(std::move(fence));

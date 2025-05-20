@@ -12,7 +12,12 @@
 
 #include <libcamera/base/log.h>
 
+#include <libcamera/control_ids.h>
+
+#include "libipa/colours.h"
 #include "simple/ipa_context.h"
+
+#include "control_ids.h"
 
 namespace libcamera {
 
@@ -23,20 +28,38 @@ namespace ipa::soft::algorithms {
 int Awb::configure(IPAContext &context,
 		   [[maybe_unused]] const IPAConfigInfo &configInfo)
 {
-	auto &gains = context.activeState.gains;
-	gains.red = gains.green = gains.blue = 1.0;
+	auto &gains = context.activeState.awb.gains;
+	gains = { { 1.0, 1.0, 1.0 } };
 
 	return 0;
 }
 
+void Awb::prepare(IPAContext &context,
+		  [[maybe_unused]] const uint32_t frame,
+		  IPAFrameContext &frameContext,
+		  [[maybe_unused]] DebayerParams *params)
+{
+	auto &gains = context.activeState.awb.gains;
+	/* Just report, the gains are applied in LUT algorithm. */
+	frameContext.gains.red = gains.r();
+	frameContext.gains.blue = gains.b();
+}
+
 void Awb::process(IPAContext &context,
 		  [[maybe_unused]] const uint32_t frame,
-		  [[maybe_unused]] IPAFrameContext &frameContext,
+		  IPAFrameContext &frameContext,
 		  const SwIspStats *stats,
-		  [[maybe_unused]] ControlList &metadata)
+		  ControlList &metadata)
 {
 	const SwIspStats::Histogram &histogram = stats->yHistogram;
 	const uint8_t blackLevel = context.activeState.blc.level;
+
+	const float maxGain = 1024.0;
+	const float mdGains[] = {
+		static_cast<float>(frameContext.gains.red / maxGain),
+		static_cast<float>(frameContext.gains.blue / maxGain)
+	};
+	metadata.set(controls::ColourGains, mdGains);
 
 	/*
 	 * Black level must be subtracted to get the correct AWB ratios, they
@@ -54,12 +77,20 @@ void Awb::process(IPAContext &context,
 	 * Calculate red and blue gains for AWB.
 	 * Clamp max gain at 4.0, this also avoids 0 division.
 	 */
-	auto &gains = context.activeState.gains;
-	gains.red = sumR <= sumG / 4 ? 4.0 : static_cast<double>(sumG) / sumR;
-	gains.blue = sumB <= sumG / 4 ? 4.0 : static_cast<double>(sumG) / sumB;
-	/* Green gain is fixed to 1.0 */
+	auto &gains = context.activeState.awb.gains;
+	gains = { {
+		sumR <= sumG / 4 ? 4.0f : static_cast<float>(sumG) / sumR,
+		1.0,
+		sumB <= sumG / 4 ? 4.0f : static_cast<float>(sumG) / sumB,
+	} };
 
-	LOG(IPASoftAwb, Debug) << "gain R/B " << gains.red << "/" << gains.blue;
+	RGB<double> rgbGains{ { 1 / gains.r(), 1 / gains.g(), 1 / gains.b() } };
+	context.activeState.awb.temperatureK = estimateCCT(rgbGains);
+	metadata.set(controls::ColourTemperature, context.activeState.awb.temperatureK);
+
+	LOG(IPASoftAwb, Debug)
+		<< "gain R/B: " << gains << "; temperature: "
+		<< context.activeState.awb.temperatureK;
 }
 
 REGISTER_IPA_ALGORITHM(Awb, "Awb")

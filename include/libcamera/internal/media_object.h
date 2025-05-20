@@ -112,7 +112,7 @@ public:
 	unsigned int deviceMinor() const { return minor_; }
 
 	const std::vector<MediaPad *> &pads() const { return pads_; }
-	const std::vector<MediaEntity *> ancillaryEntities() const { return ancillaryEntities_; }
+	const std::vector<MediaEntity *> &ancillaryEntities() const { return ancillaryEntities_; }
 
 	const MediaPad *getPadByIndex(unsigned int index) const;
 	const MediaPad *getPadById(unsigned int id) const;

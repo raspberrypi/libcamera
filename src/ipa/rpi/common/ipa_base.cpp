@@ -57,9 +57,18 @@ constexpr Duration controllerMinFrameDuration = 1.0s / 30.0;
 
 /* List of controls handled by the Raspberry Pi IPA */
 const ControlInfoMap::Map ipaControls{
-	{ &controls::AeEnable, ControlInfo(false, true) },
+	/* \todo Move this to the Camera class */
+	{ &controls::AeEnable, ControlInfo(false, true, true) },
+	{ &controls::ExposureTimeMode,
+	  ControlInfo(static_cast<int32_t>(controls::ExposureTimeModeAuto),
+		      static_cast<int32_t>(controls::ExposureTimeModeManual),
+		      static_cast<int32_t>(controls::ExposureTimeModeAuto)) },
 	{ &controls::ExposureTime,
 	  ControlInfo(1, 66666, static_cast<int32_t>(defaultExposureTime.get<std::micro>())) },
+	{ &controls::AnalogueGainMode,
+	  ControlInfo(static_cast<int32_t>(controls::AnalogueGainModeAuto),
+		      static_cast<int32_t>(controls::AnalogueGainModeManual),
+		      static_cast<int32_t>(controls::AnalogueGainModeAuto)) },
 	{ &controls::AnalogueGain, ControlInfo(1.0f, 16.0f, 1.0f) },
 	{ &controls::AeMeteringMode, ControlInfo(controls::AeMeteringModeValues) },
 	{ &controls::AeConstraintMode, ControlInfo(controls::AeConstraintModeValues) },
@@ -75,7 +84,8 @@ const ControlInfoMap::Map ipaControls{
 	{ &controls::Sharpness, ControlInfo(0.0f, 16.0f, 1.0f) },
 	{ &controls::ScalerCrop, ControlInfo(Rectangle{}, Rectangle(65535, 65535, 65535, 65535), Rectangle{}) },
 	{ &controls::FrameDurationLimits,
-	  ControlInfo(INT64_C(33333), INT64_C(120000), static_cast<int64_t>(defaultMinFrameDuration.get<std::micro>())) },
+	  ControlInfo(INT64_C(33333), INT64_C(120000),
+		      static_cast<int64_t>(defaultMinFrameDuration.get<std::micro>())) },
 	{ &controls::rpi::SyncMode, ControlInfo(controls::rpi::SyncModeValues) },
 	{ &controls::rpi::SyncFrames, ControlInfo(1, 1000000, 100) },
 	{ &controls::draft::NoiseReductionMode, ControlInfo(controls::draft::NoiseReductionModeValues) },
@@ -775,6 +785,42 @@ void IpaBase::applyControls(const ControlList &controls)
 			af->setMode(mode->second);
 	}
 
+	/*
+	 * Because some AE controls are mode-specific, handle the AE-related
+	 * mode changes first.
+	 */
+	const auto analogueGainMode = controls.get(controls::AnalogueGainMode);
+	const auto exposureTimeMode = controls.get(controls::ExposureTimeMode);
+
+	if (analogueGainMode || exposureTimeMode) {
+		RPiController::AgcAlgorithm *agc = dynamic_cast<RPiController::AgcAlgorithm *>(
+			controller_.getAlgorithm("agc"));
+		if (agc) {
+			if (analogueGainMode) {
+				if (*analogueGainMode == controls::AnalogueGainModeManual)
+					agc->disableAutoGain();
+				else
+					agc->enableAutoGain();
+
+				libcameraMetadata_.set(controls::AnalogueGainMode,
+						       *analogueGainMode);
+			}
+
+			if (exposureTimeMode) {
+				if (*exposureTimeMode == controls::ExposureTimeModeManual)
+					agc->disableAutoExposure();
+				else
+					agc->enableAutoExposure();
+
+				libcameraMetadata_.set(controls::ExposureTimeMode,
+						       *exposureTimeMode);
+			}
+		} else {
+			LOG(IPARPI, Warning)
+				<< "Could not set AnalogueGainMode or ExposureTimeMode - no AGC algorithm";
+		}
+	}
+
 	/* Iterate over controls */
 	for (auto const &ctrl : controls) {
 		LOG(IPARPI, Debug) << "Request ctrl: "
@@ -782,23 +828,8 @@ void IpaBase::applyControls(const ControlList &controls)
 				   << " = " << ctrl.second.toString();
 
 		switch (ctrl.first) {
-		case controls::AE_ENABLE: {
-			RPiController::AgcAlgorithm *agc = dynamic_cast<RPiController::AgcAlgorithm *>(
-				controller_.getAlgorithm("agc"));
-			if (!agc) {
-				LOG(IPARPI, Warning)
-					<< "Could not set AE_ENABLE - no AGC algorithm";
-				break;
-			}
-
-			if (ctrl.second.get<bool>() == false)
-				agc->disableAuto();
-			else
-				agc->enableAuto();
-
-			libcameraMetadata_.set(controls::AeEnable, ctrl.second.get<bool>());
-			break;
-		}
+		case controls::EXPOSURE_TIME_MODE:
+			break; /* We already handled this one above */
 
 		case controls::EXPOSURE_TIME: {
 			RPiController::AgcAlgorithm *agc = dynamic_cast<RPiController::AgcAlgorithm *>(
@@ -809,12 +840,22 @@ void IpaBase::applyControls(const ControlList &controls)
 				break;
 			}
 
+			/*
+			 * Ignore manual exposure time when the auto exposure
+			 * algorithm is running.
+			 */
+			if (agc->autoExposureEnabled())
+				break;
+
 			/* The control provides units of microseconds. */
 			agc->setFixedExposureTime(0, ctrl.second.get<int32_t>() * 1.0us);
 
 			libcameraMetadata_.set(controls::ExposureTime, ctrl.second.get<int32_t>());
 			break;
 		}
+
+		case controls::ANALOGUE_GAIN_MODE:
+			break; /* We already handled this one above */
 
 		case controls::ANALOGUE_GAIN: {
 			RPiController::AgcAlgorithm *agc = dynamic_cast<RPiController::AgcAlgorithm *>(
@@ -824,6 +865,13 @@ void IpaBase::applyControls(const ControlList &controls)
 					<< "Could not set ANALOGUE_GAIN - no AGC algorithm";
 				break;
 			}
+
+			/*
+			 * Ignore manual analogue gain value when the auto gain
+			 * algorithm is running.
+			 */
+			if (agc->autoGainEnabled())
+				break;
 
 			agc->setFixedAnalogueGain(0, ctrl.second.get<float>());
 
@@ -880,6 +928,13 @@ void IpaBase::applyControls(const ControlList &controls)
 					<< "Could not set AE_EXPOSURE_MODE - no AGC algorithm";
 				break;
 			}
+
+			/*
+			 * Ignore AE_EXPOSURE_MODE if the shutter or the gain
+			 * are in auto mode.
+			 */
+			if (agc->autoExposureEnabled() || agc->autoGainEnabled())
+				break;
 
 			int32_t idx = ctrl.second.get<int32_t>();
 			if (ExposureModeTable.count(idx)) {
@@ -1406,9 +1461,19 @@ void IpaBase::reportMetadata(unsigned int ipaContext)
 	}
 
 	AgcPrepareStatus *agcPrepareStatus = rpiMetadata.getLocked<AgcPrepareStatus>("agc.prepare_status");
-	if (agcPrepareStatus) {
-		libcameraMetadata_.set(controls::AeLocked, agcPrepareStatus->locked);
+	if (agcPrepareStatus)
 		libcameraMetadata_.set(controls::DigitalGain, agcPrepareStatus->digitalGain);
+
+	RPiController::AgcAlgorithm *agc = dynamic_cast<RPiController::AgcAlgorithm *>(
+		controller_.getAlgorithm("agc"));
+	if (agc) {
+		if (!agc->autoExposureEnabled() && !agc->autoGainEnabled())
+			libcameraMetadata_.set(controls::AeState, controls::AeStateIdle);
+		else if (agcPrepareStatus)
+			libcameraMetadata_.set(controls::AeState,
+					       agcPrepareStatus->locked
+						       ? controls::AeStateConverged
+						       : controls::AeStateSearching);
 	}
 
 	LuxStatus *luxStatus = rpiMetadata.getLocked<LuxStatus>("lux.status");

@@ -120,12 +120,7 @@ void Ccm::process([[maybe_unused]] IPAContext &context,
 		  [[maybe_unused]] const rkisp1_stat_buffer *stats,
 		  ControlList &metadata)
 {
-	float m[9];
-	for (unsigned int i = 0; i < 3; i++) {
-		for (unsigned int j = 0; j < 3; j++)
-			m[i * 3 + j] = frameContext.ccm.ccm[i][j];
-	}
-	metadata.set(controls::ColourCorrectionMatrix, m);
+	metadata.set(controls::ColourCorrectionMatrix, frameContext.ccm.ccm.data());
 }
 
 REGISTER_IPA_ALGORITHM(Ccm, "Ccm")

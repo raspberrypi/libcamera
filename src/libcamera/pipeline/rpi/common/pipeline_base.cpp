@@ -1159,20 +1159,11 @@ int CameraData::loadIPA(ipa::RPi::InitResult *result)
 	if (!ipa_)
 		return -ENOENT;
 
-	/*
-	 * The configuration (tuning file) is made from the sensor name unless
-	 * the environment variable overrides it.
-	 */
-	std::string configurationFile;
-	char const *configFromEnv = utils::secure_getenv("LIBCAMERA_RPI_TUNING_FILE");
-	if (!configFromEnv || *configFromEnv == '\0') {
-		std::string model = sensor_->model();
-		if (isMonoSensor(sensor_))
-			model += "_mono";
-		configurationFile = ipa_->configurationFile(model + ".json");
-	} else {
-		configurationFile = std::string(configFromEnv);
-	}
+	/* The configuration (tuning file) is made from the sensor name. */
+	std::string model = sensor_->model();
+	if (isMonoSensor(sensor_))
+		model += "_mono";
+	std::string configurationFile = ipa_->configurationFile(model + ".json");
 
 	IPASettings settings(configurationFile, sensor_->model());
 	ipa::RPi::InitParams params;

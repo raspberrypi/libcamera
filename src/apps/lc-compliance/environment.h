@@ -23,5 +23,5 @@ private:
 	Environment() = default;
 
 	std::string cameraId_;
-	libcamera::CameraManager *cm_;
+	libcamera::CameraManager *cm_ = nullptr;
 };

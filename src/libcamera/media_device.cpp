@@ -13,6 +13,7 @@
 #include <string>
 #include <string.h>
 #include <sys/ioctl.h>
+#include <tuple>
 #include <unistd.h>
 #include <vector>
 
@@ -164,7 +165,7 @@ void MediaDevice::unlock()
 	if (!fd_.isValid())
 		return;
 
-	lockf(fd_.get(), F_ULOCK, 0);
+	std::ignore = lockf(fd_.get(), F_ULOCK, 0);
 }
 
 /**

@@ -20,7 +20,7 @@ public:
 	~PyCameraManager();
 
 	pybind11::list cameras();
-	std::shared_ptr<Camera> get(const std::string &name) { return cameraManager_->get(name); }
+	std::shared_ptr<Camera> get(std::string_view name) { return cameraManager_->get(name); }
 
 	static const std::string &version() { return CameraManager::version(); }
 

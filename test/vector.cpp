@@ -5,14 +5,14 @@
  * Vector tests
  */
 
-#include "../src/ipa/libipa/vector.h"
+#include "libcamera/internal/vector.h"
 
 #include <cmath>
 #include <iostream>
 
 #include "test.h"
 
-using namespace libcamera::ipa;
+using namespace libcamera;
 
 #define ASSERT_EQ(a, b)							\
 if ((a) != (b)) {							\

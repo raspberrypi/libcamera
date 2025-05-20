@@ -21,7 +21,7 @@ class Histogram;
 class Lux
 {
 public:
-	Lux(unsigned int binSize);
+	Lux();
 
 	int parseTuningData(const YamlObject &tuningData);
 	double estimateLux(utils::Duration exposureTime,
@@ -29,7 +29,6 @@ public:
 			   const Histogram &yHist) const;
 
 private:
-	unsigned int binSize_;
 	utils::Duration referenceExposureTime_;
 	double referenceAnalogueGain_;
 	double referenceDigitalGain_;

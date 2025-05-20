@@ -380,18 +380,9 @@ int RkISP1CameraData::loadIPA(unsigned int hwRevision)
 	ipa_->paramsComputed.connect(this, &RkISP1CameraData::paramsComputed);
 	ipa_->metadataReady.connect(this, &RkISP1CameraData::metadataReady);
 
-	/*
-	 * The API tuning file is made from the sensor name unless the
-	 * environment variable overrides it.
-	 */
-	std::string ipaTuningFile;
-	char const *configFromEnv = utils::secure_getenv("LIBCAMERA_RKISP1_TUNING_FILE");
-	if (!configFromEnv || *configFromEnv == '\0') {
-		ipaTuningFile =
-			ipa_->configurationFile(sensor_->model() + ".yaml", "uncalibrated.yaml");
-	} else {
-		ipaTuningFile = std::string(configFromEnv);
-	}
+	/* The IPA tuning file is made from the sensor name. */
+	std::string ipaTuningFile =
+		ipa_->configurationFile(sensor_->model() + ".yaml", "uncalibrated.yaml");
 
 	IPACameraSensorInfo sensorInfo{};
 	int ret = sensor_->sensorInfo(&sensorInfo);
@@ -1334,6 +1325,7 @@ int PipelineHandlerRkISP1::createCamera(MediaEntity *sensor)
 	std::unordered_map<uint32_t, DelayedControls::ControlParams> params = {
 		{ V4L2_CID_ANALOGUE_GAIN, { delays.gainDelay, false } },
 		{ V4L2_CID_EXPOSURE, { delays.exposureDelay, false } },
+		{ V4L2_CID_VBLANK, { delays.vblankDelay, false } },
 	};
 
 	data->delayedCtrls_ =

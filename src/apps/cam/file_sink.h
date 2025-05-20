@@ -11,6 +11,7 @@
 #include <memory>
 #include <string>
 
+#include <libcamera/controls.h>
 #include <libcamera/stream.h>
 
 #include "frame_sink.h"

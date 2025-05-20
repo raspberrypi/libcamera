@@ -53,6 +53,17 @@ LOG_DEFINE_CATEGORY(Matrix)
  */
 
 /**
+ * \fn Matrix::data()
+ * \brief Access the matrix data as a linear array
+ *
+ * Access the contents of the matrix as a one-dimensional linear array of
+ * values in row-major order. The size of the array is equal to the product of
+ * the number of rows and columns of the matrix (Rows x Cols).
+ *
+ * \return A span referencing the matrix data as a linear array
+ */
+
+/**
  * \fn Span<const T, Cols> Matrix::operator[](size_t i) const
  * \brief Index to a row in the matrix
  * \param[in] i Index of row to retrieve

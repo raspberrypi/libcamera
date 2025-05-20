@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later */
 /*
  * Copyright (C) 2023, Linaro Ltd
- * Copyright (C) 2023, Red Hat Inc.
+ * Copyright (C) 2023-2025 Red Hat Inc.
  *
  * Authors:
  * Hans de Goede <hdegoede@redhat.com>
@@ -31,7 +31,8 @@ public:
 	~DebayerCpu();
 
 	int configure(const StreamConfiguration &inputCfg,
-		      const std::vector<std::reference_wrapper<StreamConfiguration>> &outputCfgs);
+		      const std::vector<std::reference_wrapper<StreamConfiguration>> &outputCfgs,
+		      bool ccmEnabled);
 	Size patternSize(PixelFormat inputFormat);
 	std::vector<PixelFormat> formats(PixelFormat input);
 	std::tuple<unsigned int, unsigned int>
@@ -85,28 +86,28 @@ private:
 	using debayerFn = void (DebayerCpu::*)(uint8_t *dst, const uint8_t *src[]);
 
 	/* 8-bit raw bayer format */
-	template<bool addAlphaByte>
+	template<bool addAlphaByte, bool ccmEnabled>
 	void debayer8_BGBG_BGR888(uint8_t *dst, const uint8_t *src[]);
-	template<bool addAlphaByte>
+	template<bool addAlphaByte, bool ccmEnabled>
 	void debayer8_GRGR_BGR888(uint8_t *dst, const uint8_t *src[]);
 	/* unpacked 10-bit raw bayer format */
-	template<bool addAlphaByte>
+	template<bool addAlphaByte, bool ccmEnabled>
 	void debayer10_BGBG_BGR888(uint8_t *dst, const uint8_t *src[]);
-	template<bool addAlphaByte>
+	template<bool addAlphaByte, bool ccmEnabled>
 	void debayer10_GRGR_BGR888(uint8_t *dst, const uint8_t *src[]);
 	/* unpacked 12-bit raw bayer format */
-	template<bool addAlphaByte>
+	template<bool addAlphaByte, bool ccmEnabled>
 	void debayer12_BGBG_BGR888(uint8_t *dst, const uint8_t *src[]);
-	template<bool addAlphaByte>
+	template<bool addAlphaByte, bool ccmEnabled>
 	void debayer12_GRGR_BGR888(uint8_t *dst, const uint8_t *src[]);
 	/* CSI-2 packed 10-bit raw bayer format (all the 4 orders) */
-	template<bool addAlphaByte>
+	template<bool addAlphaByte, bool ccmEnabled>
 	void debayer10P_BGBG_BGR888(uint8_t *dst, const uint8_t *src[]);
-	template<bool addAlphaByte>
+	template<bool addAlphaByte, bool ccmEnabled>
 	void debayer10P_GRGR_BGR888(uint8_t *dst, const uint8_t *src[]);
-	template<bool addAlphaByte>
+	template<bool addAlphaByte, bool ccmEnabled>
 	void debayer10P_GBGB_BGR888(uint8_t *dst, const uint8_t *src[]);
-	template<bool addAlphaByte>
+	template<bool addAlphaByte, bool ccmEnabled>
 	void debayer10P_RGRG_BGR888(uint8_t *dst, const uint8_t *src[]);
 
 	struct DebayerInputConfig {
@@ -125,7 +126,9 @@ private:
 	int getInputConfig(PixelFormat inputFormat, DebayerInputConfig &config);
 	int getOutputConfig(PixelFormat outputFormat, DebayerOutputConfig &config);
 	int setupStandardBayerOrder(BayerFormat::Order order);
-	int setDebayerFunctions(PixelFormat inputFormat, PixelFormat outputFormat);
+	int setDebayerFunctions(PixelFormat inputFormat,
+				PixelFormat outputFormat,
+				bool ccmEnabled);
 	void setupInputMemcpy(const uint8_t *linePointers[]);
 	void shiftLinePointers(const uint8_t *linePointers[], const uint8_t *src);
 	void memcpyNextLine(const uint8_t *linePointers[]);
@@ -135,9 +138,13 @@ private:
 	/* Max. supported Bayer pattern height is 4, debayering this requires 5 lines */
 	static constexpr unsigned int kMaxLineBuffers = 5;
 
-	DebayerParams::ColorLookupTable red_;
-	DebayerParams::ColorLookupTable green_;
-	DebayerParams::ColorLookupTable blue_;
+	DebayerParams::LookupTable red_;
+	DebayerParams::LookupTable green_;
+	DebayerParams::LookupTable blue_;
+	DebayerParams::CcmLookupTable redCcm_;
+	DebayerParams::CcmLookupTable greenCcm_;
+	DebayerParams::CcmLookupTable blueCcm_;
+	DebayerParams::LookupTable gammaLut_;
 	debayerFn debayer0_;
 	debayerFn debayer1_;
 	debayerFn debayer2_;

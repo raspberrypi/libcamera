@@ -5,6 +5,15 @@ version: 1
 algorithms:
   - BlackLevel:
   - Awb:
+  # Color correction matrices can be defined here. The CCM algorithm
+  # has a significant performance impact, and should only be enabled
+  # if tuned.
+  # - Ccm:
+  #     ccms:
+  #       - ct: 6500
+  #         ccm: [ 1, 0, 0,
+  #                0, 1, 0,
+  #                0, 0, 1]
   - Lut:
   - Agc:
 ...

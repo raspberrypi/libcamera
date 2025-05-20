@@ -24,8 +24,6 @@ namespace libcamera {
 
 LOG_DECLARE_CATEGORY(Vector)
 
-namespace ipa {
-
 #ifndef __DOXYGEN__
 template<typename T, unsigned int Rows,
 	 std::enable_if_t<std::is_arithmetic_v<T>> * = nullptr>
@@ -329,11 +327,9 @@ bool operator!=(const Vector<T, Rows> &lhs, const Vector<T, Rows> &rhs)
 bool vectorValidateYaml(const YamlObject &obj, unsigned int size);
 #endif /* __DOXYGEN__ */
 
-} /* namespace ipa */
-
 #ifndef __DOXYGEN__
 template<typename T, unsigned int Rows>
-std::ostream &operator<<(std::ostream &out, const ipa::Vector<T, Rows> &v)
+std::ostream &operator<<(std::ostream &out, const Vector<T, Rows> &v)
 {
 	out << "Vector { ";
 	for (unsigned int i = 0; i < Rows; i++) {
@@ -346,13 +342,13 @@ std::ostream &operator<<(std::ostream &out, const ipa::Vector<T, Rows> &v)
 }
 
 template<typename T, unsigned int Rows>
-struct YamlObject::Getter<ipa::Vector<T, Rows>> {
-	std::optional<ipa::Vector<T, Rows>> get(const YamlObject &obj) const
+struct YamlObject::Getter<Vector<T, Rows>> {
+	std::optional<Vector<T, Rows>> get(const YamlObject &obj) const
 	{
-		if (!ipa::vectorValidateYaml(obj, Rows))
+		if (!vectorValidateYaml(obj, Rows))
 			return std::nullopt;
 
-		ipa::Vector<T, Rows> vector;
+		Vector<T, Rows> vector;
 
 		unsigned int i = 0;
 		for (const YamlObject &entry : obj.asList()) {

@@ -30,8 +30,12 @@ public:
 	virtual void setMeteringMode(std::string const &meteringModeName) = 0;
 	virtual void setExposureMode(std::string const &exposureModeName) = 0;
 	virtual void setConstraintMode(std::string const &contraintModeName) = 0;
-	virtual void enableAuto() = 0;
-	virtual void disableAuto() = 0;
+	virtual void enableAutoExposure() = 0;
+	virtual void disableAutoExposure() = 0;
+	virtual bool autoExposureEnabled() const = 0;
+	virtual void enableAutoGain() = 0;
+	virtual void disableAutoGain() = 0;
+	virtual bool autoGainEnabled() const = 0;
 	virtual void setActiveChannels(const std::vector<unsigned int> &activeChannels) = 0;
 };
 

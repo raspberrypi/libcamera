@@ -7,13 +7,14 @@
 
 #include "capture.h"
 
+#include <assert.h>
+
 #include <gtest/gtest.h>
 
 using namespace libcamera;
 
 Capture::Capture(std::shared_ptr<Camera> camera)
-	: loop_(nullptr), camera_(camera),
-	  allocator_(std::make_unique<FrameBufferAllocator>(camera))
+	: camera_(std::move(camera)), allocator_(camera_)
 {
 }
 
@@ -22,14 +23,29 @@ Capture::~Capture()
 	stop();
 }
 
-void Capture::configure(StreamRole role)
+void Capture::configure(libcamera::Span<const libcamera::StreamRole> roles)
 {
-	config_ = camera_->generateConfiguration({ role });
+	assert(!roles.empty());
 
-	if (!config_) {
-		std::cout << "Role not supported by camera" << std::endl;
-		GTEST_SKIP();
-	}
+	config_ = camera_->generateConfiguration(roles);
+	if (!config_)
+		GTEST_SKIP() << "Roles not supported by camera";
+
+	ASSERT_EQ(config_->size(), roles.size()) << "Unexpected number of streams in configuration";
+
+	/*
+	 * Set the buffers count to the largest value across all streams.
+	 * \todo: Should all streams from a Camera have the same buffer count ?
+	 */
+	auto largest =
+		std::max_element(config_->begin(), config_->end(),
+				 [](const StreamConfiguration &l, const StreamConfiguration &r)
+				 { return l.bufferCount < r.bufferCount; });
+
+	assert(largest != config_->end());
+
+	for (auto &cfg : *config_)
+		cfg.bufferCount = largest->bufferCount;
 
 	if (config_->validate() != CameraConfiguration::Valid) {
 		config_.reset();
@@ -42,13 +58,98 @@ void Capture::configure(StreamRole role)
 	}
 }
 
+void Capture::run(unsigned int captureLimit, std::optional<unsigned int> queueLimit)
+{
+	assert(!queueLimit || captureLimit <= *queueLimit);
+
+	captureLimit_ = captureLimit;
+	queueLimit_ = queueLimit;
+
+	captureCount_ = queueCount_ = 0;
+
+	EventLoop loop;
+	loop_ = &loop;
+
+	start();
+
+	for (const auto &request : requests_)
+		queueRequest(request.get());
+
+	EXPECT_EQ(loop_->exec(), 0);
+
+	stop();
+
+	EXPECT_LE(captureLimit_, captureCount_);
+	EXPECT_LE(captureCount_, queueCount_);
+	EXPECT_TRUE(!queueLimit_ || queueCount_ <= *queueLimit_);
+}
+
+int Capture::queueRequest(libcamera::Request *request)
+{
+	if (queueLimit_ && queueCount_ >= *queueLimit_)
+		return 0;
+
+	int ret = camera_->queueRequest(request);
+	if (ret < 0)
+		return ret;
+
+	queueCount_ += 1;
+	return 0;
+}
+
+void Capture::requestComplete(Request *request)
+{
+	captureCount_++;
+	if (captureCount_ >= captureLimit_) {
+		loop_->exit(0);
+		return;
+	}
+
+	EXPECT_EQ(request->status(), Request::Status::RequestComplete)
+		<< "Request didn't complete successfully";
+
+	request->reuse(Request::ReuseBuffers);
+	if (queueRequest(request))
+		loop_->exit(-EINVAL);
+}
+
 void Capture::start()
 {
-	Stream *stream = config_->at(0).stream();
-	int count = allocator_->allocate(stream);
+	assert(config_);
+	assert(!config_->empty());
+	assert(!allocator_.allocated());
+	assert(requests_.empty());
 
-	ASSERT_GE(count, 0) << "Failed to allocate buffers";
-	EXPECT_EQ(count, config_->at(0).bufferCount) << "Allocated less buffers than expected";
+	const auto bufferCount = config_->at(0).bufferCount;
+
+	/* No point in testing less requests then the camera depth. */
+	if (queueLimit_ && *queueLimit_ < bufferCount) {
+		GTEST_SKIP() << "Camera needs " << bufferCount
+			     << " requests, can't test only " << *queueLimit_;
+	}
+
+	for (std::size_t i = 0; i < bufferCount; i++) {
+		std::unique_ptr<Request> request = camera_->createRequest();
+		ASSERT_TRUE(request) << "Can't create request";
+		requests_.push_back(std::move(request));
+	}
+
+	for (const auto &cfg : *config_) {
+		Stream *stream = cfg.stream();
+
+		int count = allocator_.allocate(stream);
+		ASSERT_GE(count, 0) << "Failed to allocate buffers";
+
+		const auto &buffers = allocator_.buffers(stream);
+		ASSERT_EQ(buffers.size(), bufferCount) << "Mismatching buffer count";
+
+		for (std::size_t i = 0; i < bufferCount; i++) {
+			ASSERT_EQ(requests_[i]->addBuffer(stream, buffers[i].get()), 0)
+				<< "Failed to add buffer to request";
+		}
+	}
+
+	ASSERT_TRUE(allocator_.allocated());
 
 	camera_->requestCompleted.connect(this, &Capture::requestComplete);
 
@@ -57,140 +158,19 @@ void Capture::start()
 
 void Capture::stop()
 {
-	if (!config_ || !allocator_->allocated())
+	if (!config_ || !allocator_.allocated())
 		return;
 
 	camera_->stop();
 
 	camera_->requestCompleted.disconnect(this);
 
-	Stream *stream = config_->at(0).stream();
 	requests_.clear();
-	allocator_->free(stream);
-}
 
-/* CaptureBalanced */
-
-CaptureBalanced::CaptureBalanced(std::shared_ptr<Camera> camera)
-	: Capture(camera)
-{
-}
-
-void CaptureBalanced::capture(unsigned int numRequests)
-{
-	start();
-
-	Stream *stream = config_->at(0).stream();
-	const std::vector<std::unique_ptr<FrameBuffer>> &buffers = allocator_->buffers(stream);
-
-	/* No point in testing less requests then the camera depth. */
-	if (buffers.size() > numRequests) {
-		std::cout << "Camera needs " + std::to_string(buffers.size())
-			+ " requests, can't test only "
-			+ std::to_string(numRequests) << std::endl;
-		GTEST_SKIP();
+	for (const auto &cfg : *config_) {
+		EXPECT_EQ(allocator_.free(cfg.stream()), 0)
+			<< "Failed to free buffers associated with stream";
 	}
 
-	queueCount_ = 0;
-	captureCount_ = 0;
-	captureLimit_ = numRequests;
-
-	/* Queue the recommended number of requests. */
-	for (const std::unique_ptr<FrameBuffer> &buffer : buffers) {
-		std::unique_ptr<Request> request = camera_->createRequest();
-		ASSERT_TRUE(request) << "Can't create request";
-
-		ASSERT_EQ(request->addBuffer(stream, buffer.get()), 0) << "Can't set buffer for request";
-
-		ASSERT_EQ(queueRequest(request.get()), 0) << "Failed to queue request";
-
-		requests_.push_back(std::move(request));
-	}
-
-	/* Run capture session. */
-	loop_ = new EventLoop();
-	loop_->exec();
-	stop();
-	delete loop_;
-
-	ASSERT_EQ(captureCount_, captureLimit_);
-}
-
-int CaptureBalanced::queueRequest(Request *request)
-{
-	queueCount_++;
-	if (queueCount_ > captureLimit_)
-		return 0;
-
-	return camera_->queueRequest(request);
-}
-
-void CaptureBalanced::requestComplete(Request *request)
-{
-	EXPECT_EQ(request->status(), Request::Status::RequestComplete)
-		<< "Request didn't complete successfully";
-
-	captureCount_++;
-	if (captureCount_ >= captureLimit_) {
-		loop_->exit(0);
-		return;
-	}
-
-	request->reuse(Request::ReuseBuffers);
-	if (queueRequest(request))
-		loop_->exit(-EINVAL);
-}
-
-/* CaptureUnbalanced */
-
-CaptureUnbalanced::CaptureUnbalanced(std::shared_ptr<Camera> camera)
-	: Capture(camera)
-{
-}
-
-void CaptureUnbalanced::capture(unsigned int numRequests)
-{
-	start();
-
-	Stream *stream = config_->at(0).stream();
-	const std::vector<std::unique_ptr<FrameBuffer>> &buffers = allocator_->buffers(stream);
-
-	captureCount_ = 0;
-	captureLimit_ = numRequests;
-
-	/* Queue the recommended number of requests. */
-	for (const std::unique_ptr<FrameBuffer> &buffer : buffers) {
-		std::unique_ptr<Request> request = camera_->createRequest();
-		ASSERT_TRUE(request) << "Can't create request";
-
-		ASSERT_EQ(request->addBuffer(stream, buffer.get()), 0) << "Can't set buffer for request";
-
-		ASSERT_EQ(camera_->queueRequest(request.get()), 0) << "Failed to queue request";
-
-		requests_.push_back(std::move(request));
-	}
-
-	/* Run capture session. */
-	loop_ = new EventLoop();
-	int status = loop_->exec();
-	stop();
-	delete loop_;
-
-	ASSERT_EQ(status, 0);
-}
-
-void CaptureUnbalanced::requestComplete(Request *request)
-{
-	captureCount_++;
-	if (captureCount_ >= captureLimit_) {
-		loop_->exit(0);
-		return;
-	}
-
-	EXPECT_EQ(request->status(), Request::Status::RequestComplete)
-		<< "Request didn't complete successfully";
-
-	request->reuse(Request::ReuseBuffers);
-	if (camera_->queueRequest(request))
-		loop_->exit(-EINVAL);
+	EXPECT_FALSE(allocator_.allocated());
 }

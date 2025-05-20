@@ -76,7 +76,7 @@ A C++ toolchain: [required]
         Either {g++, clang}
 
 Meson Build system: [required]
-        meson (>= 0.60) ninja-build pkg-config
+        meson (>= 0.63) ninja-build pkg-config
 
 for the libcamera core: [required]
         libyaml-dev python3-yaml python3-ply python3-jinja2
@@ -115,6 +115,7 @@ for cam: [optional]
         - libdrm-dev: Enables the KMS sink
         - libjpeg-dev: Enables MJPEG on the SDL sink
         - libsdl2-dev: Enables the SDL sink
+        - libtiff-dev: Enables writing DNG
 
 for qcam: [optional]
         libtiff-dev qt6-base-dev qt6-tools-dev-tools
@@ -124,9 +125,6 @@ for tracing with lttng: [optional]
 
 for android: [optional]
         libexif-dev libjpeg-dev
-
-for Python bindings: [optional]
-        pybind11-dev
 
 for lc-compliance: [optional]
         libevent-dev libgtest-dev

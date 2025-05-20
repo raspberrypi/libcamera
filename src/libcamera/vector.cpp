@@ -5,7 +5,7 @@
  * Vector and related operations
  */
 
-#include "vector.h"
+#include "libcamera/internal/vector.h"
 
 #include <libcamera/base/log.h>
 
@@ -17,8 +17,6 @@
 namespace libcamera {
 
 LOG_DEFINE_CATEGORY(Vector)
-
-namespace ipa {
 
 /**
  * \class Vector
@@ -345,7 +343,5 @@ bool vectorValidateYaml(const YamlObject &obj, unsigned int size)
 	return true;
 }
 #endif /* __DOXYGEN__ */
-
-} /* namespace ipa */
 
 } /* namespace libcamera */

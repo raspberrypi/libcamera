@@ -218,8 +218,7 @@ int AgcMeanLuminance::parseConstraintModes(const YamlObject &tuningData)
 		constraintModes_[controls::ConstraintNormal].insert(
 			constraintModes_[controls::ConstraintNormal].begin(),
 			constraint);
-		availableConstraintModes.push_back(
-			AeConstraintModeNameValueMap.at("ConstraintNormal"));
+		availableConstraintModes.push_back(controls::ConstraintNormal);
 	}
 
 	controls_[&controls::AeConstraintMode] = ControlInfo(availableConstraintModes);
@@ -287,7 +286,7 @@ int AgcMeanLuminance::parseExposureModes(const YamlObject &tuningData)
 	 * possible before touching gain.
 	 */
 	if (availableExposureModes.empty()) {
-		int32_t exposureModeId = AeExposureModeNameValueMap.at("ExposureNormal");
+		int32_t exposureModeId = controls::ExposureNormal;
 		std::vector<std::pair<utils::Duration, double>> stages = { };
 
 		std::shared_ptr<ExposureModeHelper> helper =

@@ -100,7 +100,7 @@ public:
 private:
 	int processControl(const UVCCameraData *data, ControlList *controls,
 			   unsigned int id, const ControlValue &value);
-	int processControls(UVCCameraData *data, Request *request);
+	int processControls(UVCCameraData *data, const ControlList &reqControls);
 
 	bool acquireDevice(Camera *camera) override;
 	void releaseDevice(Camera *camera) override;
@@ -287,7 +287,7 @@ int PipelineHandlerUVC::exportFrameBuffers(Camera *camera, Stream *stream,
 	return data->video_->exportBuffers(count, buffers);
 }
 
-int PipelineHandlerUVC::start(Camera *camera, [[maybe_unused]] const ControlList *controls)
+int PipelineHandlerUVC::start(Camera *camera, const ControlList *controls)
 {
 	UVCCameraData *data = cameraData(camera);
 	unsigned int count = data->stream_.configuration().bufferCount;
@@ -296,13 +296,22 @@ int PipelineHandlerUVC::start(Camera *camera, [[maybe_unused]] const ControlList
 	if (ret < 0)
 		return ret;
 
-	ret = data->video_->streamOn();
-	if (ret < 0) {
-		data->video_->releaseBuffers();
-		return ret;
+	if (controls) {
+		ret = processControls(data, *controls);
+		if (ret < 0)
+			goto err_release_buffers;
 	}
 
+	ret = data->video_->streamOn();
+	if (ret < 0)
+		goto err_release_buffers;
+
 	return 0;
+
+err_release_buffers:
+	data->video_->releaseBuffers();
+
+	return ret;
 }
 
 void PipelineHandlerUVC::stopDevice(Camera *camera)
@@ -412,11 +421,11 @@ int PipelineHandlerUVC::processControl(const UVCCameraData *data, ControlList *c
 	return 0;
 }
 
-int PipelineHandlerUVC::processControls(UVCCameraData *data, Request *request)
+int PipelineHandlerUVC::processControls(UVCCameraData *data, const ControlList &reqControls)
 {
 	ControlList controls(data->video_->controls());
 
-	for (const auto &[id, value] : request->controls())
+	for (const auto &[id, value] : reqControls)
 		processControl(data, &controls, id, value);
 
 	for (const auto &ctrl : controls)
@@ -444,7 +453,7 @@ int PipelineHandlerUVC::queueRequestDevice(Camera *camera, Request *request)
 		return -ENOENT;
 	}
 
-	int ret = processControls(data, request);
+	int ret = processControls(data, request->controls());
 	if (ret < 0)
 		return ret;
 

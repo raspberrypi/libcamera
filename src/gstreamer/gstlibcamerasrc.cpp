@@ -542,45 +542,48 @@ gst_libcamera_create_video_pool(GstLibcameraSrc *self, GstPad *srcpad,
 {
 	GstQuery *query = NULL;
 	const gboolean need_pool = true;
-	gboolean has_video_meta = false;
 	GstBufferPool *video_pool = NULL;
 
+	/*
+	 * Get the peer allocation hints to check if it supports the meta API.
+	 * If so, the stride will be negotiated, and there's no need to create a
+	 * video pool.
+	 */
 	query = gst_query_new_allocation(caps, need_pool);
+
 	if (!gst_pad_peer_query(srcpad, query))
 		GST_DEBUG_OBJECT(self, "Didn't get downstream ALLOCATION hints");
-	else
-		has_video_meta = gst_query_find_allocation_meta(query, GST_VIDEO_META_API_TYPE, NULL);
+	else if (gst_query_find_allocation_meta(query, GST_VIDEO_META_API_TYPE, NULL))
+		return { NULL, 0 };
 
-	if (!has_video_meta) {
-		GstBufferPool *pool = NULL;
+	GST_WARNING_OBJECT(self, "Downstream doesn't support video meta, need to copy frame.");
 
-		if (gst_query_get_n_allocation_pools(query) > 0)
-			gst_query_parse_nth_allocation_pool(query, 0, &pool, NULL, NULL, NULL);
+	/*
+	 * If the allocation query has pools, use the first one. Otherwise,
+	 * create a new pool.
+	 */
+	if (gst_query_get_n_allocation_pools(query) > 0)
+		gst_query_parse_nth_allocation_pool(query, 0, &video_pool, NULL, NULL, NULL);
 
-		if (pool)
-			video_pool = pool;
-		else {
-			GstStructure *config;
-			guint min_buffers = 3;
-			video_pool = gst_video_buffer_pool_new();
+	if (!video_pool) {
+		GstStructure *config;
+		guint min_buffers = 3;
 
-			config = gst_buffer_pool_get_config(video_pool);
-			gst_buffer_pool_config_set_params(config, caps, info->size, min_buffers, 0);
+		video_pool = gst_video_buffer_pool_new();
+		config = gst_buffer_pool_get_config(video_pool);
+		gst_buffer_pool_config_set_params(config, caps, info->size, min_buffers, 0);
 
-			GST_DEBUG_OBJECT(self, "Own pool config is %" GST_PTR_FORMAT, config);
+		GST_DEBUG_OBJECT(self, "Own pool config is %" GST_PTR_FORMAT, config);
 
-			gst_buffer_pool_set_config(GST_BUFFER_POOL_CAST(video_pool), config);
-		}
+		gst_buffer_pool_set_config(GST_BUFFER_POOL_CAST(video_pool), config);
+	}
 
-		GST_WARNING_OBJECT(self, "Downstream doesn't support video meta, need to copy frame.");
-
-		if (!gst_buffer_pool_set_active(video_pool, true)) {
-			gst_caps_unref(caps);
-			GST_ELEMENT_ERROR(self, RESOURCE, SETTINGS,
-					  ("Failed to active buffer pool"),
-					  ("gst_libcamera_src_negotiate() failed."));
-			return { NULL, -EINVAL };
-		}
+	if (!gst_buffer_pool_set_active(video_pool, true)) {
+		gst_caps_unref(caps);
+		GST_ELEMENT_ERROR(self, RESOURCE, SETTINGS,
+				  ("Failed to active buffer pool"),
+				  ("gst_libcamera_src_negotiate() failed."));
+		return { NULL, -EINVAL };
 	}
 
 	gst_query_unref(query);

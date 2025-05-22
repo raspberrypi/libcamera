@@ -229,7 +229,7 @@ bool matrixInvert(Span<const T> dataIn, Span<T> dataOut, unsigned int dim,
 		 * Locate the next pivot. To improve numerical stability, use
 		 * the row with the largest value in the pivot's column.
 		 */
-		unsigned int row;
+		unsigned int row = pivot;
 		T maxValue{ 0 };
 
 		for (unsigned int i = pivot; i < dim; ++i) {

@@ -285,10 +285,19 @@ gst_libcamera_extrapolate_info(GstVideoInfo *info, guint32 stride)
 }
 
 static GstFlowReturn
-gst_libcamera_video_frame_copy(GstBuffer *src, GstBuffer *dest, const GstVideoInfo *dest_info, guint32 stride)
+gst_libcamera_video_frame_copy(GstBuffer *src, GstBuffer *dest,
+			       const GstVideoInfo *dest_info, guint32 stride)
 {
-	GstVideoInfo src_info = *dest_info;
+	/*
+	 * When dropping support for versions earlier than v1.22.0, use
+	 *
+	 * g_auto (GstVideoFrame) src_frame = GST_VIDEO_FRAME_INIT;
+	 * g_auto (GstVideoFrame) dest_frame = GST_VIDEO_FRAME_INIT;
+	 *
+	 * and drop the gst_video_frame_unmap() calls.
+	 */
 	GstVideoFrame src_frame, dest_frame;
+	GstVideoInfo src_info = *dest_info;
 
 	gst_libcamera_extrapolate_info(&src_info, stride);
 	src_info.size = gst_buffer_get_size(src);
@@ -298,7 +307,12 @@ gst_libcamera_video_frame_copy(GstBuffer *src, GstBuffer *dest, const GstVideoIn
 		return GST_FLOW_ERROR;
 	}
 
-	if (!gst_video_frame_map(&dest_frame, const_cast<GstVideoInfo *>(dest_info), dest, GST_MAP_WRITE)) {
+	/*
+	 * When dropping support for versions earlier than 1.20.0, drop the
+	 * const_cast<>().
+	 */
+	if (!gst_video_frame_map(&dest_frame, const_cast<GstVideoInfo *>(dest_info),
+				 dest, GST_MAP_WRITE)) {
 		GST_ERROR("Could not map dest buffer");
 		gst_video_frame_unmap(&src_frame);
 		return GST_FLOW_ERROR;

@@ -30,6 +30,7 @@
 #include <atomic>
 #include <queue>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 #include <libcamera/camera.h>
@@ -540,9 +541,9 @@ static std::tuple<GstBufferPool *, int>
 gst_libcamera_create_video_pool(GstLibcameraSrc *self, GstPad *srcpad,
 				GstCaps *caps, const GstVideoInfo *info)
 {
-	GstQuery *query = NULL;
+	g_autoptr(GstQuery) query = NULL;
+	g_autoptr(GstBufferPool) pool = NULL;
 	const gboolean need_pool = true;
-	GstBufferPool *pool = NULL;
 
 	/*
 	 * Get the peer allocation hints to check if it supports the meta API.
@@ -586,8 +587,7 @@ gst_libcamera_create_video_pool(GstLibcameraSrc *self, GstPad *srcpad,
 		return { NULL, -EINVAL };
 	}
 
-	gst_query_unref(query);
-	return { pool, 0 };
+	return { std::exchange(pool, nullptr), 0 };
 }
 
 /* Must be called with stream_lock held. */

@@ -1563,7 +1563,8 @@ void IpaBase::applyFrameDurations(Duration minFrameDuration, Duration maxFrameDu
 
 	RPiController::AgcAlgorithm *agc = dynamic_cast<RPiController::AgcAlgorithm *>(
 		controller_.getAlgorithm("agc"));
-	agc->setMaxExposureTime(maxExposureTime);
+	if (agc)
+		agc->setMaxExposureTime(maxExposureTime);
 }
 
 void IpaBase::applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls)

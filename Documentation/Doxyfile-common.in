@@ -57,7 +57,8 @@ GENERATE_LATEX         = NO
 MACRO_EXPANSION        = YES
 EXPAND_ONLY_PREDEF     = YES
 
-INCLUDE_PATH           = "@TOP_SRCDIR@/include/libcamera"
+INCLUDE_PATH           = "@TOP_BUILDDIR@/include" \
+                         "@TOP_SRCDIR@/include"
 INCLUDE_FILE_PATTERNS  = *.h
 
 IMAGE_PATH             = "@TOP_SRCDIR@/Documentation/images"

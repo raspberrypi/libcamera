@@ -274,7 +274,7 @@ int Process::start(const std::string &path,
 
 		execv(path.c_str(), (char **)argv);
 
-		exit(EXIT_FAILURE);
+		_exit(EXIT_FAILURE);
 	}
 }
 

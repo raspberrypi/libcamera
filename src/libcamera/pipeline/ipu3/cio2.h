@@ -66,8 +66,6 @@ public:
 private:
 	void freeBuffers();
 
-	void cio2BufferReady(FrameBuffer *buffer);
-
 	std::unique_ptr<CameraSensor> sensor_;
 	std::unique_ptr<V4L2Subdevice> csi2_;
 	std::unique_ptr<V4L2VideoDevice> output_;

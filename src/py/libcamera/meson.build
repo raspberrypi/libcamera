@@ -1,21 +1,5 @@
 # SPDX-License-Identifier: CC0-1.0
 
-py3_dep = dependency('python3', required : get_option('pycamera'))
-
-if not py3_dep.found()
-    pycamera_enabled = false
-    subdir_done()
-endif
-
-pybind11_dep = dependency('pybind11', required : get_option('pycamera'))
-
-if not pybind11_dep.found()
-    pycamera_enabled = false
-    subdir_done()
-endif
-
-pycamera_enabled = true
-
 pycamera_sources = files([
     'py_camera_manager.cpp',
     'py_color_space.cpp',
@@ -36,6 +20,7 @@ pycamera_sources += custom_target('py_gen_controls',
                                   output : ['py_controls_generated.cpp'],
                                   command : [gen_py_controls, '--mode', 'controls', '-o', '@OUTPUT@',
                                              '-t', gen_py_controls_template, '@INPUT@'],
+                                  depend_files : [py_mod_controls],
                                   env : py_build_env)
 
 pycamera_sources += custom_target('py_gen_properties',
@@ -43,6 +28,7 @@ pycamera_sources += custom_target('py_gen_properties',
                                   output : ['py_properties_generated.cpp'],
                                   command : [gen_py_controls, '--mode', 'properties', '-o', '@OUTPUT@',
                                              '-t', gen_py_controls_template, '@INPUT@'],
+                                  depend_files : [py_mod_controls],
                                   env : py_build_env)
 
 # Generate formats

@@ -1675,7 +1675,8 @@ void IpaBase::applyFrameDurations(Duration minFrameDuration, Duration maxFrameDu
 
 	RPiController::AgcAlgorithm *agc = dynamic_cast<RPiController::AgcAlgorithm *>(
 		controller_.getAlgorithm("agc"));
-	agc->setMaxExposureTime(maxExposureTime);
+	if (agc)
+		agc->setMaxExposureTime(maxExposureTime);
 
 	RPiController::SyncAlgorithm *sync = dynamic_cast<RPiController::SyncAlgorithm *>(
 		controller_.getAlgorithm("sync"));

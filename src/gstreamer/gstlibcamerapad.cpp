@@ -18,6 +18,8 @@ struct _GstLibcameraPad {
 	GstPad parent;
 	StreamRole role;
 	GstLibcameraPool *pool;
+	GstBufferPool *video_pool;
+	GstVideoInfo info;
 	GstClockTime latency;
 };
 
@@ -151,6 +153,35 @@ gst_libcamera_pad_set_pool(GstPad *pad, GstLibcameraPool *pool)
 	if (self->pool)
 		g_object_unref(self->pool);
 	self->pool = pool;
+}
+
+GstBufferPool *
+gst_libcamera_pad_get_video_pool(GstPad *pad)
+{
+	auto *self = GST_LIBCAMERA_PAD(pad);
+	return self->video_pool;
+}
+
+void gst_libcamera_pad_set_video_pool(GstPad *pad, GstBufferPool *video_pool)
+{
+	auto *self = GST_LIBCAMERA_PAD(pad);
+
+	if (self->video_pool)
+		g_object_unref(self->video_pool);
+	self->video_pool = video_pool;
+}
+
+GstVideoInfo gst_libcamera_pad_get_video_info(GstPad *pad)
+{
+	auto *self = GST_LIBCAMERA_PAD(pad);
+	return self->info;
+}
+
+void gst_libcamera_pad_set_video_info(GstPad *pad, const GstVideoInfo *info)
+{
+	auto *self = GST_LIBCAMERA_PAD(pad);
+
+	self->info = *info;
 }
 
 Stream *

@@ -4,7 +4,7 @@ ipa_includes = [
     libcamera_includes,
 ]
 
-ipa_install_dir = libcamera_libdir
+ipa_install_dir = libcamera_libdir / 'ipa'
 ipa_data_dir = libcamera_datadir / 'ipa'
 ipa_sysconf_dir = libcamera_sysconfdir / 'ipa'
 

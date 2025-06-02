@@ -42,9 +42,8 @@ KeyValueParser::Options StreamKeyValueParser::parse(const char *arguments)
 
 std::vector<StreamRole> StreamKeyValueParser::roles(const OptionValue &values)
 {
-	/* If no configuration values to examine default to viewfinder. */
 	if (values.empty())
-		return { StreamRole::Viewfinder };
+		return {};
 
 	const std::vector<OptionValue> &streamParameters = values.toArray();
 

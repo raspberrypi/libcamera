@@ -11,6 +11,7 @@
 #include <fcntl.h>
 #include <iomanip>
 #include <iostream>
+#include <optional>
 #include <signal.h>
 #include <sstream>
 #include <string.h>
@@ -22,6 +23,7 @@
 #include "../common/event_loop.h"
 #include "../common/image.h"
 
+#include "sdl_texture_1plane.h"
 #ifdef HAVE_LIBJPEG
 #include "sdl_texture_mjpg.h"
 #endif
@@ -30,6 +32,46 @@
 using namespace libcamera;
 
 using namespace std::chrono_literals;
+
+namespace {
+
+std::optional<SDL_PixelFormatEnum> singlePlaneFormatToSDL(const libcamera::PixelFormat &f)
+{
+	switch (f) {
+	case libcamera::formats::RGB888:
+		return SDL_PIXELFORMAT_BGR24;
+	case libcamera::formats::BGR888:
+		return SDL_PIXELFORMAT_RGB24;
+	case libcamera::formats::RGBA8888:
+		return SDL_PIXELFORMAT_ABGR32;
+	case libcamera::formats::ARGB8888:
+		return SDL_PIXELFORMAT_BGRA32;
+	case libcamera::formats::BGRA8888:
+		return SDL_PIXELFORMAT_ARGB32;
+	case libcamera::formats::ABGR8888:
+		return SDL_PIXELFORMAT_RGBA32;
+#if SDL_VERSION_ATLEAST(2, 29, 1)
+	case libcamera::formats::RGBX8888:
+		return SDL_PIXELFORMAT_XBGR32;
+	case libcamera::formats::XRGB8888:
+		return SDL_PIXELFORMAT_BGRX32;
+	case libcamera::formats::BGRX8888:
+		return SDL_PIXELFORMAT_XRGB32;
+	case libcamera::formats::XBGR8888:
+		return SDL_PIXELFORMAT_RGBX32;
+#endif
+	case libcamera::formats::YUYV:
+		return SDL_PIXELFORMAT_YUY2;
+	case libcamera::formats::UYVY:
+		return SDL_PIXELFORMAT_UYVY;
+	case libcamera::formats::YVYU:
+		return SDL_PIXELFORMAT_YVYU;
+	}
+
+	return {};
+}
+
+} /* namespace */
 
 SDLSink::SDLSink()
 	: window_(nullptr), renderer_(nullptr), rect_({}),
@@ -62,25 +104,20 @@ int SDLSink::configure(const libcamera::CameraConfiguration &config)
 	rect_.w = cfg.size.width;
 	rect_.h = cfg.size.height;
 
-	switch (cfg.pixelFormat) {
+	if (auto sdlFormat = singlePlaneFormatToSDL(cfg.pixelFormat))
+		texture_ = std::make_unique<SDLTexture1Plane>(rect_, *sdlFormat, cfg.stride);
 #ifdef HAVE_LIBJPEG
-	case libcamera::formats::MJPEG:
+	else if (cfg.pixelFormat == libcamera::formats::MJPEG)
 		texture_ = std::make_unique<SDLTextureMJPG>(rect_);
-		break;
 #endif
 #if SDL_VERSION_ATLEAST(2, 0, 16)
-	case libcamera::formats::NV12:
+	else if (cfg.pixelFormat == libcamera::formats::NV12)
 		texture_ = std::make_unique<SDLTextureNV12>(rect_, cfg.stride);
-		break;
 #endif
-	case libcamera::formats::YUYV:
-		texture_ = std::make_unique<SDLTextureYUYV>(rect_, cfg.stride);
-		break;
-	default:
-		std::cerr << "Unsupported pixel format "
-			  << cfg.pixelFormat.toString() << std::endl;
+	else {
+		std::cerr << "Unsupported pixel format " << cfg.pixelFormat << std::endl;
 		return -EINVAL;
-	};
+	}
 
 	return 0;
 }

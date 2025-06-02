@@ -44,6 +44,7 @@ libcamera_internal_sources = files([
     'matrix.cpp',
     'media_device.cpp',
     'media_object.cpp',
+    'media_pipeline.cpp',
     'pipeline_handler.cpp',
     'process.cpp',
     'pub_key.cpp',
@@ -156,6 +157,7 @@ foreach mode, inout_files : controls_mode_files
                                      command : [gen_controls, '-o', '@OUTPUT@',
                                                 '--mode', mode, '-t', template_file,
                                                 '-r', ranges_file, '@INPUT@'],
+                                     depend_files : [py_mod_controls],
                                      env : py_build_env)
 endforeach
 

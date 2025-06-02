@@ -115,8 +115,6 @@ const IPAHwSettings ipaHwSettingsV12{
 
 /* List of controls handled by the RkISP1 IPA */
 const ControlInfoMap::Map rkisp1Controls{
-	{ &controls::AwbEnable, ControlInfo(false, true) },
-	{ &controls::ColourGains, ControlInfo(0.0f, 3.996f, 1.0f) },
 	{ &controls::DebugMetadataEnable, ControlInfo(false, true, false) },
 	{ &controls::Sharpness, ControlInfo(0.0f, 10.0f, 1.0f) },
 	{ &controls::draft::NoiseReductionMode, ControlInfo(controls::draft::NoiseReductionModeValues) },

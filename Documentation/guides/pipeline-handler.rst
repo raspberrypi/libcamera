@@ -213,7 +213,7 @@ implementations for the overridden class members.
           std::vector<std::unique_ptr<FrameBuffer>> *buffers) override;
 
           int start(Camera *camera, const ControlList *controls) override;
-          void stop(Camera *camera) override;
+          void stopDevice(Camera *camera) override;
 
           int queueRequestDevice(Camera *camera, Request *request) override;
 
@@ -247,7 +247,7 @@ implementations for the overridden class members.
           return -1;
    }
 
-   void PipelineHandlerVivid::stop(Camera *camera)
+   void PipelineHandlerVivid::stopDevice(Camera *camera)
    {
    }
 
@@ -521,14 +521,14 @@ handler and camera manager using `registerCamera`_.
 Finally with a successful construction, we return 'true' indicating that the
 PipelineHandler successfully matched and constructed a device.
 
-.. _Camera::create: https://libcamera.org/api-html/classlibcamera_1_1Camera.html#a453740e0d2a2f495048ae307a85a2574
+.. _Camera::create: https://libcamera.org/internal-api-html/classlibcamera_1_1Camera.html#adf5e6c22411f953bfaa1ae21155d6c31
 .. _registerCamera: https://libcamera.org/api-html/classlibcamera_1_1PipelineHandler.html#adf02a7f1bbd87aca73c0e8d8e0e6c98b
 
 .. code-block:: cpp
 
    std::set<Stream *> streams{ &data->stream_ };
-   std::shared_ptr<Camera> camera = Camera::create(this, data->video_->deviceName(), streams);
-   registerCamera(std::move(camera), std::move(data));
+   std::shared_ptr<Camera> camera = Camera::create(std::move(data), data->video_->deviceName(), streams);
+   registerCamera(std::move(camera));
 
    return true;
 
@@ -554,8 +554,7 @@ Our match function should now look like the following:
 
    	/* Create and register the camera. */
    	std::set<Stream *> streams{ &data->stream_ };
-   	const std::string &id = data->video_->deviceName();
-   	std::shared_ptr<Camera> camera = Camera::create(data.release(), id, streams);
+   	std::shared_ptr<Camera> camera = Camera::create(std::move(data), data->video_->deviceName(), streams);
    	registerCamera(std::move(camera));
 
    	return true;
@@ -593,11 +592,11 @@ immutable properties of the ``Camera`` device.
 The libcamera controls and properties are defined in YAML form which is
 processed to automatically generate documentation and interfaces. Controls are
 defined by the src/libcamera/`control_ids_core.yaml`_ file and camera properties
-are defined by src/libcamera/`properties_ids_core.yaml`_.
+are defined by src/libcamera/`property_ids_core.yaml`_.
 
 .. _controls framework: https://libcamera.org/api-html/controls_8h.html
 .. _control_ids_core.yaml: https://libcamera.org/api-html/control__ids_8h.html
-.. _properties_ids_core.yaml: https://libcamera.org/api-html/property__ids_8h.html
+.. _property_ids_core.yaml: https://libcamera.org/api-html/property__ids_8h.html
 
 Pipeline handlers can optionally register the list of controls an application
 can set as well as a list of immutable camera properties. Being both
@@ -800,8 +799,7 @@ derived class, and assign it to a base class pointer.
 
 .. code-block:: cpp
 
-   VividCameraData *data = cameraData(camera);
-   CameraConfiguration *config = new VividCameraConfiguration();
+   auto config = std::make_unique<VividCameraConfiguration>();
 
 A ``CameraConfiguration`` is specific to each pipeline, so you can only create
 it from the pipeline handler code path. Applications can also generate an empty
@@ -829,9 +827,7 @@ To generate a ``StreamConfiguration``, you need a list of pixel formats and
 frame sizes which are supported as outputs of the stream. You can fetch a map of
 the ``V4LPixelFormat`` and ``SizeRange`` supported by the underlying output
 device, but the pipeline handler needs to convert this to a
-``libcamera::PixelFormat`` type to pass to applications. We do this here using
-``std::transform`` to convert the formats and populate a new ``PixelFormat`` map
-as shown below.
+``libcamera::PixelFormat`` type to pass to applications.
 
 Continue adding the following code example to our ``generateConfiguration``
 implementation.
@@ -841,14 +837,12 @@ implementation.
    std::map<V4L2PixelFormat, std::vector<SizeRange>> v4l2Formats =
            data->video_->formats();
    std::map<PixelFormat, std::vector<SizeRange>> deviceFormats;
-   std::transform(v4l2Formats.begin(), v4l2Formats.end(),
-          std::inserter(deviceFormats, deviceFormats.begin()),
-          [&](const decltype(v4l2Formats)::value_type &format) {
-              return decltype(deviceFormats)::value_type{
-                  format.first.toPixelFormat(),
-                  format.second
-              };
-          });
+
+   for (auto &[v4l2PixelFormat, sizes] : v4l2Formats) {
+           PixelFormat pixelFormat = v4l2PixelFormat.toPixelFormat();
+           if (pixelFormat.isValid())
+                   deviceFormats.try_emplace(pixelFormat, std::move(sizes));
+   }
 
 The `StreamFormats`_ class holds information about the pixel formats and frame
 sizes that a stream can support. The class groups size information by the pixel
@@ -938,9 +932,9 @@ Add the following function implementation to your file:
 
            StreamConfiguration &cfg = config_[0];
 
-           const std::vector<libcamera::PixelFormat> formats = cfg.formats().pixelformats();
+           const std::vector<libcamera::PixelFormat> &formats = cfg.formats().pixelformats();
            if (std::find(formats.begin(), formats.end(), cfg.pixelFormat) == formats.end()) {
-                  cfg.pixelFormat = cfg.formats().pixelformats()[0];
+                  cfg.pixelFormat = formats[0];
                   LOG(VIVID, Debug) << "Adjusting format to " << cfg.pixelFormat.toString();
                   status = Adjusted;
            }
@@ -1158,7 +1152,7 @@ available to the devices which have to be started and ready to produce
 images. At the end of a capture session the ``Camera`` device needs to be
 stopped, to gracefully clean up any allocated memory and stop the hardware
 devices. Pipeline handlers implement two functions for these purposes, the
-``start()`` and ``stop()`` functions.
+``start()`` and ``stopDevice()`` functions.
 
 The memory initialization phase that happens at ``start()`` time serves to
 configure video devices to be able to use memory buffers exported as dma-buf
@@ -1261,8 +1255,8 @@ algorithms, or other devices you should also stop them.
 .. _releaseBuffers: https://libcamera.org/api-html/classlibcamera_1_1V4L2VideoDevice.html#a191619c152f764e03bc461611f3fcd35
 
 Of course we also need to handle the corresponding actions to stop streaming on
-a device, Add the following to the ``stop`` function, to stop the stream with
-the `streamOff`_ function and release all buffers.
+a device, Add the following to the ``stopDevice()`` function, to stop the
+stream with the `streamOff`_ function and release all buffers.
 
 .. _streamOff: https://libcamera.org/api-html/classlibcamera_1_1V4L2VideoDevice.html#a61998710615bdf7aa25a046c8565ed66
 

@@ -494,8 +494,11 @@ void gst_libcamera_configure_stream_from_caps(StreamConfiguration &stream_cfg,
 
 	/* Configure colorimetry */
 	if (gst_structure_has_field(s, "colorimetry")) {
-		const gchar *colorimetry_str = gst_structure_get_string(s, "colorimetry");
+		const gchar *colorimetry_str;
 		GstVideoColorimetry colorimetry;
+
+		gst_structure_fixate_field(s, "colorimetry");
+		colorimetry_str = gst_structure_get_string(s, "colorimetry");
 
 		if (!gst_video_colorimetry_from_string(&colorimetry, colorimetry_str))
 			g_critical("Invalid colorimetry %s", colorimetry_str);
@@ -593,6 +596,43 @@ gst_task_resume(GstTask *task)
 	GST_TASK_STATE(task) = GST_TASK_STARTED;
 	GST_TASK_SIGNAL(task);
 	return TRUE;
+}
+#endif
+
+#if !GST_CHECK_VERSION(1, 22, 0)
+/*
+ * Copyright (C) <1999> Erik Walthinsen <omega@cse.ogi.edu>
+ * Library       <2002> Ronald Bultje <rbultje@ronald.bitfreak.net>
+ * Copyright (C) <2007> David A. Schleef <ds@schleef.org>
+ */
+/*
+ * This function has been imported directly from the gstreamer project to
+ * support backwards compatibility and should be removed when the older version
+ * is no longer supported.
+ */
+gint gst_video_format_info_extrapolate_stride(const GstVideoFormatInfo *finfo, gint plane, gint stride)
+{
+	gint estride;
+	gint comp[GST_VIDEO_MAX_COMPONENTS];
+	gint i;
+
+	/* There is nothing to extrapolate on first plane. */
+	if (plane == 0)
+		return stride;
+
+	gst_video_format_info_component(finfo, plane, comp);
+
+	/*
+	 * For now, all planar formats have a single component on first plane, but
+	 * if there was a planar format with more, we'd have to make a ratio of the
+	 * number of component on the first plane against the number of component on
+	 * the current plane.
+	 */
+	estride = 0;
+	for (i = 0; i < GST_VIDEO_MAX_COMPONENTS && comp[i] >= 0; i++)
+		estride += GST_VIDEO_FORMAT_INFO_SCALE_WIDTH(finfo, comp[i], stride);
+
+	return estride;
 }
 #endif
 

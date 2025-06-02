@@ -68,10 +68,9 @@ int Agc::parseMeteringModes(IPAContext &context, const YamlObject &tuningData)
 	if (meteringModes_.empty()) {
 		LOG(RkISP1Agc, Warning)
 			<< "No metering modes read from tuning file; defaulting to matrix";
-		int32_t meteringModeId = controls::AeMeteringModeNameValueMap.at("MeteringMatrix");
 		std::vector<uint8_t> weights(context.hw->numHistogramWeights, 1);
 
-		meteringModes_[meteringModeId] = weights;
+		meteringModes_[controls::MeteringMatrix] = weights;
 	}
 
 	std::vector<ControlValue> meteringModes;

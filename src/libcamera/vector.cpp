@@ -45,6 +45,14 @@ LOG_DEFINE_CATEGORY(Vector)
  */
 
 /**
+ * \fn Vector::Vector(const Span<const T, Rows> data)
+ * \brief Construct vector from supplied data
+ * \param data Data from which to construct a vector
+ *
+ * The size of \a data must be equal to the dimension size Rows of the vector.
+ */
+
+/**
  * \fn T Vector::operator[](size_t i) const
  * \brief Index to an element in the vector
  * \param i Index of element to retrieve
@@ -300,9 +308,10 @@ LOG_DEFINE_CATEGORY(Vector)
  */
 
 /**
- * \fn Vector<T, Rows> operator*(const Matrix<T, Rows, Cols> &m, const Vector<T, Cols> &v)
+ * \fn operator*(const Matrix<T, Rows, Cols> &m, const Vector<U, Cols> &v)
  * \brief Multiply a matrix by a vector
- * \tparam T Numerical type of the contents of the matrix and vector
+ * \tparam T Numerical type of the contents of the matrix
+ * \tparam U Numerical type of the contents of the vector
  * \tparam Rows The number of rows in the matrix
  * \tparam Cols The number of columns in the matrix (= rows in the vector)
  * \param m The matrix

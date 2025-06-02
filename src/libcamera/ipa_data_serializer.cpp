@@ -196,7 +196,6 @@ IPADataSerializer<type>::serialize(const type &data,			\
 				  [[maybe_unused]] ControlSerializer *cs) \
 {									\
 	std::vector<uint8_t> dataVec;					\
-	dataVec.reserve(sizeof(type));					\
 	appendPOD<type>(dataVec, data);					\
 									\
 	return { dataVec, {} };						\

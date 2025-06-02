@@ -63,6 +63,7 @@ struct IPAActiveState {
 	struct {
 		/* 0..2 range, 1.0 = normal */
 		std::optional<double> contrast;
+		std::optional<float> saturation;
 	} knobs;
 };
 
@@ -75,11 +76,14 @@ struct IPAFrameContext : public FrameContext {
 		int32_t exposure;
 		double gain;
 	} sensor;
+
 	struct {
 		double red;
 		double blue;
 	} gains;
+
 	std::optional<double> contrast;
+	std::optional<float> saturation;
 };
 
 struct IPAContext {

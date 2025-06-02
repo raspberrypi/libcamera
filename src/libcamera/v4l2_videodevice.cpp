@@ -1326,7 +1326,8 @@ int V4L2VideoDevice::requestBuffers(unsigned int count,
 
 	if (rb.count < count) {
 		LOG(V4L2, Error)
-			<< "Not enough buffers provided by V4L2VideoDevice";
+			<< "Not enough buffers provided by V4L2VideoDevice. Wanted "
+			<< count << ", got " << rb.count;
 		requestBuffers(0, memoryType);
 		return -ENOMEM;
 	}

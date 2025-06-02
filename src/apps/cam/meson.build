@@ -34,6 +34,7 @@ if libsdl2.found()
     cam_sources += files([
         'sdl_sink.cpp',
         'sdl_texture.cpp',
+        'sdl_texture_1plane.cpp',
         'sdl_texture_yuv.cpp',
     ])
 

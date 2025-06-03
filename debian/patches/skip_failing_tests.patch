@@ -50,8 +50,8 @@ Forwarded: not-needed
 +#    {'name': 'file', 'sources': ['file.cpp']},
      {'name': 'flags', 'sources': ['flags.cpp']},
      {'name': 'hotplug-cameras', 'sources': ['hotplug-cameras.cpp']},
-     {'name': 'message', 'sources': ['message.cpp']},
-@@ -65,13 +65,13 @@
+     {'name': 'matrix', 'sources': ['matrix.cpp']},
+@@ -66,13 +66,13 @@
      {'name': 'object-delete', 'sources': ['object-delete.cpp']},
      {'name': 'object-invoke', 'sources': ['object-invoke.cpp']},
      {'name': 'pixel-format', 'sources': ['pixel-format.cpp']},

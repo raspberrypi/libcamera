@@ -1,11 +1,11 @@
-libcamera (0.5.1-1) UNRELEASED; urgency=medium
+libcamera (0.5.1-1) experimental; urgency=medium
 
   * New upstream version 0.5.1
   * Refresh patches
   * Install IPA modules in usr/lib/*/libcamera/ipa
   * Adjust VCS field in d/control for experimental
 
- -- Dylan Aïssi <daissi@debian.org>  Tue, 03 Jun 2025 17:58:28 +0200
+ -- Dylan Aïssi <daissi@debian.org>  Tue, 03 Jun 2025 21:16:11 +0200
 
 libcamera (0.5.0-1) experimental; urgency=medium
 

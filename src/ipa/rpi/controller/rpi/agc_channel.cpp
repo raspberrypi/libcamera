@@ -717,7 +717,7 @@ static double computeInitialY(StatisticsPtr &stats, AwbStatus const &awb,
 
 	/* Factor in the AWB correction if needed. */
 	if (stats->agcStatsPos == Statistics::AgcStatsPos::PreWb)
-		sum *= RGB<double>{ { awb.gainR, awb.gainR, awb.gainB } };
+		sum *= RGB<double>{ { awb.gainR, awb.gainG, awb.gainB } };
 
 	double ySum = ipa::rec601LuminanceFromRGB(sum);
 

@@ -62,11 +62,32 @@ CameraSession::CameraSession(CameraManager *cm,
 		return;
 	}
 
-	std::vector<StreamRole> roles = StreamKeyValueParser::roles(options_[OptStream]);
+	std::vector<StreamRole> roles =
+		StreamKeyValueParser::roles(options_[OptStream]);
+	std::vector<std::vector<StreamRole>> tryRoles;
+	if (!roles.empty()) {
+		/*
+		 * If the roles are explicitly specified then there's no need
+		 * to try other roles
+		 */
+		tryRoles.push_back(roles);
+	} else {
+		tryRoles.push_back({ StreamRole::Viewfinder });
+		tryRoles.push_back({ StreamRole::Raw });
+	}
 
-	std::unique_ptr<CameraConfiguration> config =
-		camera_->generateConfiguration(roles);
-	if (!config || config->size() != roles.size()) {
+	std::unique_ptr<CameraConfiguration> config;
+	bool valid = false;
+	for (std::vector<StreamRole> &rolesIt : tryRoles) {
+		config = camera_->generateConfiguration(rolesIt);
+		if (config && config->size() == rolesIt.size()) {
+			roles = rolesIt;
+			valid = true;
+			break;
+		}
+	}
+
+	if (!valid) {
 		std::cerr << "Failed to get default stream configuration"
 			  << std::endl;
 		return;

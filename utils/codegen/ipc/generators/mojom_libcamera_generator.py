@@ -166,7 +166,7 @@ def MethodParamOutputs(method):
     return method.response_parameters[1:]
 
 def MethodParamsHaveFd(parameters):
-    return len([x for x in parameters if HasFd(x)]) > 0
+    return any(x for x in parameters if HasFd(x))
 
 def MethodInputHasFd(method):
     return MethodParamsHaveFd(method.parameters)
@@ -465,9 +465,9 @@ class Generator(generator.Generator):
             'cmd_event_enum_name': '_%sEventCmd' % self.module_name,
             'consts': self.module.constants,
             'enums': self.module.enums,
-            'has_array': len([x for x in self.module.kinds.keys() if x[0] == 'a']) > 0,
-            'has_map': len([x for x in self.module.kinds.keys() if x[0] == 'm']) > 0,
-            'has_string': len([x for x in self.module.kinds.keys() if x[0] == 's']) > 0,
+            'has_array': any(x for x in self.module.kinds.keys() if x[0] == 'a'),
+            'has_map': any(x for x in self.module.kinds.keys() if x[0] == 'm'),
+            'has_string': any(x for x in self.module.kinds.keys() if x[0] == 's'),
             'has_namespace': self.module.mojom_namespace != '',
             'interface_event': GetEventInterface(self.module.interfaces),
             'interface_main': GetMainInterface(self.module.interfaces),
@@ -485,9 +485,9 @@ class Generator(generator.Generator):
         return {
             'consts': self.module.constants,
             'enums_gen_header': [x for x in self.module.enums if x.attributes is None or 'skipHeader' not in x.attributes],
-            'has_array': len([x for x in self.module.kinds.keys() if x[0] == 'a']) > 0,
-            'has_map': len([x for x in self.module.kinds.keys() if x[0] == 'm']) > 0,
-            'has_string': len([x for x in self.module.kinds.keys() if x[0] == 's']) > 0,
+            'has_array': any(x for x in self.module.kinds.keys() if x[0] == 'a'),
+            'has_map': any(x for x in self.module.kinds.keys() if x[0] == 'm'),
+            'has_string': any(x for x in self.module.kinds.keys() if x[0] == 's'),
             'structs_gen_header': [x for x in self.module.structs if x.attributes is None or 'skipHeader' not in x.attributes],
             'structs_gen_serializer': [x for x in self.module.structs if x.attributes is None or 'skipSerdes' not in x.attributes],
         }

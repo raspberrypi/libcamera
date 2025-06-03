@@ -90,6 +90,7 @@ foreach mode, entry : controls_map
                                      command : [gen_controls, '-o', '@OUTPUT@',
                                                 '--mode', mode, '-t', template_file,
                                                 '-r', ranges_file, '@INPUT@'],
+                                     depend_files : [py_mod_controls],
                                      env : py_build_env,
                                      install : true,
                                      install_dir : libcamera_headers_install_dir)

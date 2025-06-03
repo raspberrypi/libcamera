@@ -15,6 +15,7 @@ lc_compliance_sources = files([
     'environment.cpp',
     'helpers/capture.cpp',
     'main.cpp',
+    'test_base.cpp',
     'tests/capture_test.cpp',
 ])
 

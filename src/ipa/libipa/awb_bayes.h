@@ -27,7 +27,7 @@ public:
 
 	int init(const YamlObject &tuningData) override;
 	AwbResult calculateAwb(const AwbStats &stats, unsigned int lux) override;
-	RGB<double> gainsFromColourTemperature(double temperatureK) override;
+	std::optional<RGB<double>> gainsFromColourTemperature(double temperatureK) override;
 	void handleControls(const ControlList &controls) override;
 
 private:

@@ -259,7 +259,21 @@ int Process::start(const std::string &path,
 		if (isolate())
 			_exit(EXIT_FAILURE);
 
-		closeAllFdsExcept(fds);
+		std::vector<int> v(fds);
+		v.push_back(STDERR_FILENO);
+		closeAllFdsExcept(v);
+
+		const auto tryDevNullLowestFd = [](int expected, int oflag) {
+			int fd = open("/dev/null", oflag);
+			if (fd < 0)
+				_exit(EXIT_FAILURE);
+			if (fd != expected)
+				close(fd);
+		};
+
+		tryDevNullLowestFd(STDIN_FILENO, O_RDONLY);
+		tryDevNullLowestFd(STDOUT_FILENO, O_WRONLY);
+		tryDevNullLowestFd(STDERR_FILENO, O_WRONLY);
 
 		const char *file = utils::secure_getenv("LIBCAMERA_LOG_FILE");
 		if (file && strcmp(file, "syslog"))
@@ -274,7 +288,7 @@ int Process::start(const std::string &path,
 
 		execv(path.c_str(), (char **)argv);
 
-		exit(EXIT_FAILURE);
+		_exit(EXIT_FAILURE);
 	}
 }
 

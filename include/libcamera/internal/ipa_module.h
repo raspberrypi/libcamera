@@ -29,7 +29,7 @@ public:
 	bool isValid() const;
 
 	const struct IPAModuleInfo &info() const;
-	const std::vector<uint8_t> signature() const;
+	const std::vector<uint8_t> &signature() const;
 	const std::string &path() const;
 
 	bool load();

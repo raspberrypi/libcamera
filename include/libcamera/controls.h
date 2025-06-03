@@ -120,7 +120,7 @@ struct control_type<Point> {
 };
 
 template<typename T, std::size_t N>
-struct control_type<Span<T, N>> : public control_type<std::remove_cv_t<T>> {
+struct control_type<Span<T, N>, std::enable_if_t<control_type<std::remove_cv_t<T>>::size == 0>> : public control_type<std::remove_cv_t<T>> {
 	static constexpr std::size_t size = N;
 };
 

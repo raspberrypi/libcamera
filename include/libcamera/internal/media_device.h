@@ -55,6 +55,8 @@ public:
 
 	Signal<> disconnected;
 
+	std::vector<MediaEntity *> locateEntities(unsigned int function);
+
 protected:
 	std::string logPrefix() const override;
 

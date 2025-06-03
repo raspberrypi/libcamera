@@ -7,8 +7,6 @@
 
 #pragma once
 
-#include <optional>
-
 #include "libcamera/internal/vector.h"
 
 #include "libipa/awb.h"

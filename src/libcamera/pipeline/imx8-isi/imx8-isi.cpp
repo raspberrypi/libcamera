@@ -366,7 +366,6 @@ ISICameraConfiguration::validateRaw(std::set<Stream *> &availableStreams,
 	 * Make sure the requested RAW format is supported by the
 	 * pipeline, otherwise adjust it.
 	 */
-	std::vector<unsigned int> mbusCodes = data_->sensor_->mbusCodes();
 	StreamConfiguration &rawConfig = config_[0];
 	PixelFormat rawFormat = rawConfig.pixelFormat;
 

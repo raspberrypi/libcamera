@@ -309,7 +309,6 @@ public:
 	serialize(const Flags<E> &data, [[maybe_unused]] ControlSerializer *cs = nullptr)
 	{
 		std::vector<uint8_t> dataVec;
-		dataVec.reserve(sizeof(Flags<E>));
 		appendPOD<uint32_t>(dataVec, static_cast<typename Flags<E>::Type>(data));
 
 		return { dataVec, {} };

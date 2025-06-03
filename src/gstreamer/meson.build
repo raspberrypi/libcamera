@@ -33,6 +33,7 @@ libcamera_gst_sources += custom_target('gstlibcamera-controls.cpp',
                                        output : 'gstlibcamera-controls.cpp',
                                        command : [gen_gst_controls, '-o', '@OUTPUT@',
                                                   '-t', gen_gst_controls_template, '@INPUT@'],
+                                       depend_files : [py_mod_controls],
                                        env : py_build_env)
 
 libcamera_gst_cpp_args = [

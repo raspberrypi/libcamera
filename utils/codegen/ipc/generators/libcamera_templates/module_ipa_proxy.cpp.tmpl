@@ -127,13 +127,13 @@ void {{proxy_name}}::recvMessage(const IPCMessage &data)
 {{proxy_funcs.func_sig(proxy_name, method)}}
 {
 	if (isolate_)
-		{{"return " if method|method_return_value != "void"}}{{method.mojom_name}}IPC(
+		return {{method.mojom_name}}IPC(
 {%- for param in method|method_param_names -%}
 		{{param}}{{- ", " if not loop.last}}
 {%- endfor -%}
 );
 	else
-		{{"return " if method|method_return_value != "void"}}{{method.mojom_name}}Thread(
+		return {{method.mojom_name}}Thread(
 {%- for param in method|method_param_names -%}
 		{{param}}{{- ", " if not loop.last}}
 {%- endfor -%}
@@ -159,16 +159,14 @@ void {{proxy_name}}::recvMessage(const IPCMessage &data)
 	state_ = ProxyRunning;
 	thread_.start();
 
-	{{ "return " if method|method_return_value != "void" -}}
-	proxy_.invokeMethod(&ThreadProxy::start, ConnectionTypeBlocking
+	return proxy_.invokeMethod(&ThreadProxy::start, ConnectionTypeBlocking
 	{{- ", " if method|method_param_names}}
 	{%- for param in method|method_param_names -%}
 		{{param}}{{- ", " if not loop.last}}
 	{%- endfor -%}
 );
 {%- elif not method|is_async %}
-	{{ "return " if method|method_return_value != "void" -}}
-	ipa_->{{method.mojom_name}}(
+	return ipa_->{{method.mojom_name}}(
 	{%- for param in method|method_param_names -%}
 		{{param}}{{- ", " if not loop.last}}
 	{%- endfor -%}
@@ -206,7 +204,7 @@ void {{proxy_name}}::recvMessage(const IPCMessage &data)
 );
 {%- endif %}
 	if (_ret < 0) {
-		LOG(IPAProxy, Error) << "Failed to call {{method.mojom_name}}";
+		LOG(IPAProxy, Error) << "Failed to call {{method.mojom_name}}: " << _ret;
 {%- if method|method_return_value != "void" %}
 		return static_cast<{{method|method_return_value}}>(_ret);
 {%- else %}
@@ -239,10 +237,7 @@ void {{proxy_name}}::{{method.mojom_name}}IPC(
 	[[maybe_unused]] size_t dataSize,
 	[[maybe_unused]] const std::vector<SharedFD> &fds)
 {
-{%- for param in method.parameters %}
-	{{param|name}} {{param.mojom_name}};
-{%- endfor %}
-{{proxy_funcs.deserialize_call(method.parameters, 'data', 'fds', false, false, true, 'dataSize')}}
+{{proxy_funcs.deserialize_call(method.parameters, 'data', 'fds', false, true, true, 'dataSize')}}
 	{{method.mojom_name}}.emit({{method.parameters|params_comma_sep}});
 }
 {% endfor %}

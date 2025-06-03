@@ -36,6 +36,11 @@ static inline void gst_clear_event(GstEvent **event_ptr)
 #if !GST_CHECK_VERSION(1, 17, 1)
 gboolean gst_task_resume(GstTask *task);
 #endif
+
+#if !GST_CHECK_VERSION(1, 22, 0)
+gint gst_video_format_info_extrapolate_stride(const GstVideoFormatInfo *finfo, gint plane, gint stride);
+#endif
+
 std::shared_ptr<libcamera::CameraManager> gst_libcamera_get_camera_manager(int &ret);
 
 /**

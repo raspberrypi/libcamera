@@ -580,7 +580,6 @@ gst_libcamera_create_video_pool(GstLibcameraSrc *self, GstPad *srcpad,
 	}
 
 	if (!gst_buffer_pool_set_active(pool, true)) {
-		gst_caps_unref(caps);
 		GST_ELEMENT_ERROR(self, RESOURCE, SETTINGS,
 				  ("Failed to active buffer pool"),
 				  ("gst_libcamera_src_negotiate() failed."));

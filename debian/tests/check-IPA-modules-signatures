@@ -1,7 +1,7 @@
 #!/bin/sh -e
 # autopkgtest check: Verify signatures of installed IPA modules.
 
-for IPA_MOD in /usr/lib/*/libcamera/ipa_*.so
+for IPA_MOD in /usr/lib/*/libcamera/ipa/ipa_*.so
 do
   echo "Verifying signature of ${IPA_MOD}"
   ipa_verify "${IPA_MOD}"

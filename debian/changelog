@@ -2,6 +2,7 @@ libcamera (0.5.1-1) UNRELEASED; urgency=medium
 
   * New upstream version 0.5.1
   * Refresh patches
+  * Install IPA modules in usr/lib/*/libcamera/ipa
 
  -- Dylan Aïssi <daissi@debian.org>  Tue, 03 Jun 2025 17:58:28 +0200
 

@@ -41,7 +41,7 @@ Build-Depends-Indep: doxygen <!nodoc>,
                      python3-sphinx <!nodoc>,
 Standards-Version: 4.7.2
 Vcs-Browser: https://salsa.debian.org/multimedia-team/libcamera
-Vcs-Git: https://salsa.debian.org/multimedia-team/libcamera.git
+Vcs-Git: https://salsa.debian.org/multimedia-team/libcamera.git -b debian/experimental
 Homepage: https://libcamera.org/
 Rules-Requires-Root: no
 

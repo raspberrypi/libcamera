@@ -368,10 +368,10 @@ int GstLibcameraSrcState::processRequest()
 
 		if (video_pool) {
 			/* Only set video pool when a copy is needed. */
-			GstBuffer *copy = NULL;
+			GstBuffer *copy = nullptr;
 			const GstVideoInfo info = gst_libcamera_pad_get_video_info(srcpad);
 
-			ret = gst_buffer_pool_acquire_buffer(video_pool, &copy, NULL);
+			ret = gst_buffer_pool_acquire_buffer(video_pool, &copy, nullptr);
 			if (ret != GST_FLOW_OK) {
 				gst_buffer_unref(buffer);
 				GST_ELEMENT_ERROR(src_, RESOURCE, SETTINGS,
@@ -541,8 +541,8 @@ static std::tuple<GstBufferPool *, int>
 gst_libcamera_create_video_pool(GstLibcameraSrc *self, GstPad *srcpad,
 				GstCaps *caps, const GstVideoInfo *info)
 {
-	g_autoptr(GstQuery) query = NULL;
-	g_autoptr(GstBufferPool) pool = NULL;
+	g_autoptr(GstQuery) query = nullptr;
+	g_autoptr(GstBufferPool) pool = nullptr;
 	const gboolean need_pool = true;
 
 	/*
@@ -554,8 +554,8 @@ gst_libcamera_create_video_pool(GstLibcameraSrc *self, GstPad *srcpad,
 
 	if (!gst_pad_peer_query(srcpad, query))
 		GST_DEBUG_OBJECT(self, "Didn't get downstream ALLOCATION hints");
-	else if (gst_query_find_allocation_meta(query, GST_VIDEO_META_API_TYPE, NULL))
-		return { NULL, 0 };
+	else if (gst_query_find_allocation_meta(query, GST_VIDEO_META_API_TYPE, nullptr))
+		return { nullptr, 0 };
 
 	GST_WARNING_OBJECT(self, "Downstream doesn't support video meta, need to copy frame.");
 
@@ -564,7 +564,8 @@ gst_libcamera_create_video_pool(GstLibcameraSrc *self, GstPad *srcpad,
 	 * create a new pool.
 	 */
 	if (gst_query_get_n_allocation_pools(query) > 0)
-		gst_query_parse_nth_allocation_pool(query, 0, &pool, NULL, NULL, NULL);
+		gst_query_parse_nth_allocation_pool(query, 0, &pool, nullptr,
+						    nullptr, nullptr);
 
 	if (!pool) {
 		GstStructure *config;
@@ -583,7 +584,7 @@ gst_libcamera_create_video_pool(GstLibcameraSrc *self, GstPad *srcpad,
 		GST_ELEMENT_ERROR(self, RESOURCE, SETTINGS,
 				  ("Failed to active buffer pool"),
 				  ("gst_libcamera_src_negotiate() failed."));
-		return { NULL, -EINVAL };
+		return { nullptr, -EINVAL };
 	}
 
 	return { std::exchange(pool, nullptr), 0 };
@@ -660,7 +661,7 @@ gst_libcamera_src_negotiate(GstLibcameraSrc *self)
 	for (gsize i = 0; i < state->srcpads_.size(); i++) {
 		GstPad *srcpad = state->srcpads_[i];
 		const StreamConfiguration &stream_cfg = state->config_->at(i);
-		GstBufferPool *video_pool = NULL;
+		GstBufferPool *video_pool = nullptr;
 		GstVideoInfo info;
 
 		g_autoptr(GstCaps) caps = gst_libcamera_stream_configuration_to_caps(stream_cfg, transfer[i]);
@@ -1065,7 +1066,7 @@ gst_libcamera_src_request_new_pad(GstElement *element, GstPadTemplate *templ,
 				  const gchar *name, [[maybe_unused]] const GstCaps *caps)
 {
 	GstLibcameraSrc *self = GST_LIBCAMERA_SRC(element);
-	g_autoptr(GstPad) pad = NULL;
+	g_autoptr(GstPad) pad = nullptr;
 
 	GST_DEBUG_OBJECT(self, "new request pad created");
 
@@ -1079,7 +1080,7 @@ gst_libcamera_src_request_new_pad(GstElement *element, GstPadTemplate *templ,
 		GST_ELEMENT_ERROR(element, STREAM, FAILED,
 				  ("Internal data stream error."),
 				  ("Could not add pad to element"));
-		return NULL;
+		return nullptr;
 	}
 
 	gst_child_proxy_child_added(GST_CHILD_PROXY(self), G_OBJECT(pad), GST_OBJECT_NAME(pad));

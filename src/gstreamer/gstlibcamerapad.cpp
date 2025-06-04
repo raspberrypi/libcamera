@@ -102,7 +102,7 @@ gst_libcamera_stream_role_get_type()
 			"libcamera::Viewfinder",
 			"view-finder",
 		},
-		{ 0, NULL, NULL }
+		{ 0, nullptr, nullptr }
 	};
 
 	if (!type)

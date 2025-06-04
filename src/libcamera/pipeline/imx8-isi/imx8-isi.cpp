@@ -761,30 +761,28 @@ PipelineHandlerISI::generateConfiguration(Camera *camera,
 		 */
 		StreamConfiguration cfg;
 
-                switch (role) {
-                case StreamRole::StillCapture:
-                case StreamRole::Viewfinder:
-                case StreamRole::VideoRecording: {
-                        Size size = role == StreamRole::StillCapture
-                                  ? data->sensor_->resolution()
-                                  : PipelineHandlerISI::kPreviewSize;
-                        cfg = generateYUVConfiguration(camera, size);
-                        if (cfg.pixelFormat.isValid())
-                                break;
+		switch (role) {
+		case StreamRole::StillCapture:
+		case StreamRole::Viewfinder:
+		case StreamRole::VideoRecording: {
+			Size size = role == StreamRole::StillCapture
+				  ? data->sensor_->resolution()
+				  : PipelineHandlerISI::kPreviewSize;
+			cfg = generateYUVConfiguration(camera, size);
+			if (cfg.pixelFormat.isValid())
+				break;
 
+			/*
+			 * Fallback to use a Bayer format if that's what the
+			 * sensor supports.
+			 */
+			[[fallthrough]];
+		}
 
-                        /*
-                         * Fallback to use a Bayer format if that's what the
-                         * sensor supports.
-                         */
-                        [[fallthrough]];
-
-		 }
-
-                case StreamRole::Raw: {
-                        cfg = generateRawConfiguration(camera);
-                        break;
-                }
+		case StreamRole::Raw: {
+			cfg = generateRawConfiguration(camera);
+			break;
+		}
 
 		default:
 			LOG(ISI, Error) << "Requested stream role not supported: " << role;

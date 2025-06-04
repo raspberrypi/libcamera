@@ -1087,7 +1087,7 @@ gst_libcamera_src_request_new_pad(GstElement *element, GstPadTemplate *templ,
 
 	gst_child_proxy_child_added(GST_CHILD_PROXY(self), G_OBJECT(pad), GST_OBJECT_NAME(pad));
 
-	return reinterpret_cast<GstPad *>(g_steal_pointer(&pad));
+	return std::exchange(pad, nullptr);
 }
 
 static void

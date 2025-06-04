@@ -542,7 +542,7 @@ gst_libcamera_create_video_pool(GstLibcameraSrc *self, GstPad *srcpad,
 {
 	GstQuery *query = NULL;
 	const gboolean need_pool = true;
-	GstBufferPool *video_pool = NULL;
+	GstBufferPool *pool = NULL;
 
 	/*
 	 * Get the peer allocation hints to check if it supports the meta API.
@@ -563,22 +563,22 @@ gst_libcamera_create_video_pool(GstLibcameraSrc *self, GstPad *srcpad,
 	 * create a new pool.
 	 */
 	if (gst_query_get_n_allocation_pools(query) > 0)
-		gst_query_parse_nth_allocation_pool(query, 0, &video_pool, NULL, NULL, NULL);
+		gst_query_parse_nth_allocation_pool(query, 0, &pool, NULL, NULL, NULL);
 
-	if (!video_pool) {
+	if (!pool) {
 		GstStructure *config;
 		guint min_buffers = 3;
 
-		video_pool = gst_video_buffer_pool_new();
-		config = gst_buffer_pool_get_config(video_pool);
+		pool = gst_video_buffer_pool_new();
+		config = gst_buffer_pool_get_config(pool);
 		gst_buffer_pool_config_set_params(config, caps, info->size, min_buffers, 0);
 
 		GST_DEBUG_OBJECT(self, "Own pool config is %" GST_PTR_FORMAT, config);
 
-		gst_buffer_pool_set_config(GST_BUFFER_POOL_CAST(video_pool), config);
+		gst_buffer_pool_set_config(GST_BUFFER_POOL_CAST(pool), config);
 	}
 
-	if (!gst_buffer_pool_set_active(video_pool, true)) {
+	if (!gst_buffer_pool_set_active(pool, true)) {
 		gst_caps_unref(caps);
 		GST_ELEMENT_ERROR(self, RESOURCE, SETTINGS,
 				  ("Failed to active buffer pool"),
@@ -587,7 +587,7 @@ gst_libcamera_create_video_pool(GstLibcameraSrc *self, GstPad *srcpad,
 	}
 
 	gst_query_unref(query);
-	return { video_pool, 0 };
+	return { pool, 0 };
 }
 
 /* Must be called with stream_lock held. */

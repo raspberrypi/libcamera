@@ -1003,7 +1003,7 @@ bool PipelineHandlerISI::match(DeviceEnumerator *enumerator)
 
 		ret = capture->open();
 		if (ret)
-			return ret;
+			return false;
 
 		pipes_.push_back({ std::move(isi), std::move(capture) });
 	}

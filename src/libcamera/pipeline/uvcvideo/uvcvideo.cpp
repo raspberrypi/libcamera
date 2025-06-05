@@ -331,6 +331,8 @@ int PipelineHandlerUVC::processControl(const UVCCameraData *data, ControlList *c
 		cid = V4L2_CID_GAIN;
 	else if (id == controls::Gamma)
 		cid = V4L2_CID_GAMMA;
+	else if (id == controls::AeEnable)
+		return 0; /* Handled in `Camera::queueRequest()`. */
 	else
 		return -EINVAL;
 

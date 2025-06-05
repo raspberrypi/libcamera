@@ -72,6 +72,10 @@ gst_libcamera_pad_query(GstPad *pad, GstObject *parent, GstQuery *query)
 	if (query->type != GST_QUERY_LATENCY)
 		return gst_pad_query_default(pad, parent, query);
 
+	GLibLocker lock(GST_OBJECT(self));
+	if (self->latency == GST_CLOCK_TIME_NONE)
+		return FALSE;
+
 	/* TRUE here means live, we assumes that max latency is the same as min
 	 * as we have no idea that duration of frames. */
 	gst_query_set_latency(query, TRUE, self->latency, self->latency);
@@ -81,6 +85,7 @@ gst_libcamera_pad_query(GstPad *pad, GstObject *parent, GstQuery *query)
 static void
 gst_libcamera_pad_init(GstLibcameraPad *self)
 {
+	self->latency = GST_CLOCK_TIME_NONE;
 	GST_PAD_QUERYFUNC(self) = gst_libcamera_pad_query;
 }
 

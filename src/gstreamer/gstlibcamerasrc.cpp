@@ -881,8 +881,10 @@ gst_libcamera_src_task_leave([[maybe_unused]] GstTask *task,
 
 	{
 		GLibRecLocker locker(&self->stream_lock);
-		for (GstPad *srcpad : state->srcpads_)
+		for (GstPad *srcpad : state->srcpads_) {
+			gst_libcamera_pad_set_latency(srcpad, GST_CLOCK_TIME_NONE);
 			gst_libcamera_pad_set_pool(srcpad, nullptr);
+		}
 	}
 
 	g_clear_object(&self->allocator);

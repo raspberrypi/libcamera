@@ -75,7 +75,7 @@ private:
 			ThreadData *targetData);
 
 	std::thread thread_;
-	ThreadData *data_;
+	std::unique_ptr<ThreadData> data_;
 };
 
 } /* namespace libcamera */

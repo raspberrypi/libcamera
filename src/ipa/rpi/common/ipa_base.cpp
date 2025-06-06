@@ -327,7 +327,7 @@ void IpaBase::start(const ControlList &controls, StartResult *result)
 	unsigned int agcConvergenceFrames = 0, awbConvergenceFrames = 0;
 	frameCount_ = 0;
 	if (firstStart_) {
-		dropFrameCount_ = helper_->hideFramesStartup();
+		invalidCount_ = helper_->hideFramesStartup();
 		mistrustCount_ = helper_->mistrustFramesStartup();
 
 		/*
@@ -353,14 +353,14 @@ void IpaBase::start(const ControlList &controls, StartResult *result)
 				awbConvergenceFrames += mistrustCount_;
 		}
 	} else {
-		dropFrameCount_ = helper_->hideFramesModeSwitch();
+		invalidCount_ = helper_->hideFramesModeSwitch();
 		mistrustCount_ = helper_->mistrustFramesModeSwitch();
 	}
 
 	result->startupFrameCount = std::max({ agcConvergenceFrames, awbConvergenceFrames });
-	result->invalidFrameCount = dropFrameCount_;
+	result->invalidFrameCount = invalidCount_;
 
-	dropFrameCount_ = std::max({ dropFrameCount_, agcConvergenceFrames, awbConvergenceFrames });
+	invalidCount_ = std::max({ invalidCount_, agcConvergenceFrames, awbConvergenceFrames });
 
 	LOG(IPARPI, Debug) << "Startup frames: " << result->startupFrameCount
 			   << " Invalid frames: " << result->invalidFrameCount;
@@ -443,7 +443,7 @@ void IpaBase::prepareIsp(const PrepareParams &params)
 
 	/* Allow a 10% margin on the comparison below. */
 	Duration delta = (frameTimestamp - lastRunTimestamp_) * 1.0ns;
-	if (lastRunTimestamp_ && frameCount_ > dropFrameCount_ &&
+	if (lastRunTimestamp_ && frameCount_ > invalidCount_ &&
 	    delta < controllerMinFrameDuration * 0.9 && !hdrChange) {
 		/*
 		 * Ensure we merge the previous frame's metadata with the current

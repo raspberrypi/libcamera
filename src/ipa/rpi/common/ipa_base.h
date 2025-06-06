@@ -115,8 +115,8 @@ private:
 	/* How many frames we should avoid running control algos on. */
 	unsigned int mistrustCount_;
 
-	/* Number of frames that need to be dropped on startup. */
-	unsigned int dropFrameCount_;
+	/* Number of frames that need to be marked as dropped on startup. */
+	unsigned int invalidCount_;
 
 	/* Frame timestamp for the last run of the controller. */
 	uint64_t lastRunTimestamp_;

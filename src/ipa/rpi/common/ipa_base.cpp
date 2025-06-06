@@ -324,6 +324,7 @@ void IpaBase::start(const ControlList &controls, StartResult *result)
 	 * "mistrusted", which depends on whether this is a startup from cold,
 	 * or merely a mode switch in a running system.
 	 */
+	unsigned int agcConvergenceFrames = 0, awbConvergenceFrames = 0;
 	frameCount_ = 0;
 	if (firstStart_) {
 		dropFrameCount_ = helper_->hideFramesStartup();
@@ -336,7 +337,6 @@ void IpaBase::start(const ControlList &controls, StartResult *result)
 		 * (mistrustCount_) that they won't see. But if zero (i.e.
 		 * no convergence necessary), no frames need to be dropped.
 		 */
-		unsigned int agcConvergenceFrames = 0;
 		RPiController::AgcAlgorithm *agc = dynamic_cast<RPiController::AgcAlgorithm *>(
 			controller_.getAlgorithm("agc"));
 		if (agc) {
@@ -345,7 +345,6 @@ void IpaBase::start(const ControlList &controls, StartResult *result)
 				agcConvergenceFrames += mistrustCount_;
 		}
 
-		unsigned int awbConvergenceFrames = 0;
 		RPiController::AwbAlgorithm *awb = dynamic_cast<RPiController::AwbAlgorithm *>(
 			controller_.getAlgorithm("awb"));
 		if (awb) {
@@ -353,15 +352,18 @@ void IpaBase::start(const ControlList &controls, StartResult *result)
 			if (awbConvergenceFrames)
 				awbConvergenceFrames += mistrustCount_;
 		}
-
-		dropFrameCount_ = std::max({ dropFrameCount_, agcConvergenceFrames, awbConvergenceFrames });
-		LOG(IPARPI, Debug) << "Drop " << dropFrameCount_ << " frames on startup";
 	} else {
 		dropFrameCount_ = helper_->hideFramesModeSwitch();
 		mistrustCount_ = helper_->mistrustFramesModeSwitch();
 	}
 
-	result->dropFrameCount = dropFrameCount_;
+	result->startupFrameCount = std::max({ agcConvergenceFrames, awbConvergenceFrames });
+	result->invalidFrameCount = dropFrameCount_;
+
+	dropFrameCount_ = std::max({ dropFrameCount_, agcConvergenceFrames, awbConvergenceFrames });
+
+	LOG(IPARPI, Debug) << "Startup frames: " << result->startupFrameCount
+			   << " Invalid frames: " << result->invalidFrameCount;
 
 	firstStart_ = false;
 	lastRunTimestamp_ = 0;

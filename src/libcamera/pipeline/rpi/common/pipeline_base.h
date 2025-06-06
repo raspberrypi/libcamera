@@ -48,7 +48,7 @@ class CameraData : public Camera::Private
 public:
 	CameraData(PipelineHandler *pipe)
 		: Camera::Private(pipe), state_(State::Stopped),
-		  dropFrameCount_(0), buffersAllocated_(false),
+		  startupFrameCount_(0), invalidFrameCount_(0), buffersAllocated_(false),
 		  ispOutputCount_(0), ispOutputTotal_(0)
 	{
 	}
@@ -151,7 +151,8 @@ public:
 	/* Mapping of CropParams keyed by the output stream order in CameraConfiguration */
 	std::map<unsigned int, CropParams> cropParams_;
 
-	unsigned int dropFrameCount_;
+	unsigned int startupFrameCount_;
+	unsigned int invalidFrameCount_;
 
 	/*
 	 * If set, this stores the value that represets a gain of one for

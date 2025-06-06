@@ -165,11 +165,6 @@ public:
 
 	struct Config {
 		/*
-		 * Override any request from the IPA to drop a number of startup
-		 * frames.
-		 */
-		bool disableStartupFrameDrops;
-		/*
 		 * Override the camera timeout value calculated by the IPA based
 		 * on frame durations.
 		 */

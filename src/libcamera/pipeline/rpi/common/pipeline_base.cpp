@@ -1078,7 +1078,6 @@ void CameraData::enumerateVideoDevices(MediaLink *link, const std::string &front
 int CameraData::loadPipelineConfiguration()
 {
 	config_ = {
-		.disableStartupFrameDrops = false,
 		.cameraTimeoutValue = 0,
 	};
 
@@ -1115,8 +1114,10 @@ int CameraData::loadPipelineConfiguration()
 
 	const YamlObject &phConfig = (*root)["pipeline_handler"];
 
-	config_.disableStartupFrameDrops =
-		phConfig["disable_startup_frame_drops"].get<bool>(config_.disableStartupFrameDrops);
+	if (phConfig.contains("disable_startup_frame_drops"))
+		LOG(RPI, Warning)
+			<< "The disable_startup_frame_drops key is now deprecated, "
+			<< "startup frames are now identified by the FrameMetadata::Status::FrameStartup flag";
 
 	config_.cameraTimeoutValue =
 		phConfig["camera_timeout_value_ms"].get<unsigned int>(config_.cameraTimeoutValue);

@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 log_test = [
-    {'name': 'log_api', 'sources': ['log_api.cpp'], 'should_fail': true},
+    {'name': 'log_api', 'sources': ['log_api.cpp']},
     {'name': 'log_process', 'sources': ['log_process.cpp']},
 ]
 

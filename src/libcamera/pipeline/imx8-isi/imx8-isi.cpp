@@ -820,7 +820,7 @@ int PipelineHandlerISI::configure(Camera *camera, CameraConfiguration *c)
 	 * routing table instead of resetting it.
 	 */
 	V4L2Subdevice::Routing routing = {};
-	unsigned int xbarFirstSource = crossbar_->entity()->pads().size() / 2 + 1;
+	unsigned int xbarFirstSource = crossbar_->entity()->pads().size() - pipes_.size();
 
 	for (const auto &[idx, config] : utils::enumerate(*c)) {
 		uint32_t sourcePad = xbarFirstSource + idx;

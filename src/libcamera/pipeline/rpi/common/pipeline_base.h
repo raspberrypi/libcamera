@@ -48,8 +48,7 @@ class CameraData : public Camera::Private
 public:
 	CameraData(PipelineHandler *pipe)
 		: Camera::Private(pipe), state_(State::Stopped),
-		  startupFrameCount_(0), invalidFrameCount_(0), buffersAllocated_(false),
-		  ispOutputCount_(0), ispOutputTotal_(0)
+		  startupFrameCount_(0), invalidFrameCount_(0), buffersAllocated_(false)
 	{
 	}
 
@@ -178,9 +177,6 @@ protected:
 				 Request *request);
 
 	virtual void tryRunPipeline() = 0;
-
-	unsigned int ispOutputCount_;
-	unsigned int ispOutputTotal_;
 
 private:
 	void checkRequestCompleted();

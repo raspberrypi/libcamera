@@ -597,8 +597,6 @@ int Vc4CameraData::platformConfigure(const RPi::RPiCameraConfiguration *rpiConfi
 		stream->setFlags(StreamFlag::External);
 	}
 
-	ispOutputTotal_ = outStreams.size();
-
 	/*
 	 * If ISP::Output0 stream has not been configured by the application,
 	 * we must allow the hardware to generate an output so that the data
@@ -624,8 +622,6 @@ int Vc4CameraData::platformConfigure(const RPi::RPiCameraConfiguration *rpiConfi
 				<< ret;
 			return -EINVAL;
 		}
-
-		ispOutputTotal_++;
 
 		LOG(RPI, Debug) << "Defaulting ISP Output0 format to "
 				<< format;
@@ -662,8 +658,6 @@ int Vc4CameraData::platformConfigure(const RPi::RPiCameraConfiguration *rpiConfi
 					<< ret;
 			return -EINVAL;
 		}
-
-		ispOutputTotal_++;
 	}
 
 	/* ISP statistics output format. */
@@ -675,8 +669,6 @@ int Vc4CameraData::platformConfigure(const RPi::RPiCameraConfiguration *rpiConfi
 				<< format;
 		return ret;
 	}
-
-	ispOutputTotal_++;
 
 	/*
 	 * Configure the Unicam embedded data output format only if the sensor
@@ -843,12 +835,6 @@ void Vc4CameraData::ispOutputDequeue(FrameBuffer *buffer)
 		handleStreamBuffer(buffer, stream);
 	}
 
-	/*
-	 * Increment the number of ISP outputs generated.
-	 * This is needed to track dropped frames.
-	 */
-	ispOutputCount_++;
-
 	handleState();
 }
 
@@ -880,7 +866,6 @@ void Vc4CameraData::prepareIspComplete(const ipa::RPi::BufferIds &buffers,
 			<< ", timestamp: " << buffer->metadata().timestamp;
 
 	isp_[Isp::Input].queueBuffer(buffer);
-	ispOutputCount_ = 0;
 
 	if (sensorMetadata_ && embeddedId) {
 		buffer = unicam_[Unicam::Embedded].getBuffers().at(embeddedId & RPi::MaskID).buffer;

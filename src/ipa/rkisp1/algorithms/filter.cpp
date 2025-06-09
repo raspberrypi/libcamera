@@ -40,6 +40,17 @@ static constexpr uint32_t kFiltLumWeightDefault = 0x00022040;
 static constexpr uint32_t kFiltModeDefault = 0x000004f2;
 
 /**
+ * \copydoc libcamera::ipa::Algorithm::init
+ */
+int Filter::init(IPAContext &context,
+		 [[maybe_unused]] const YamlObject &tuningData)
+{
+	auto &cmap = context.ctrlMap;
+	cmap[&controls::Sharpness] = ControlInfo(0.0f, 10.0f, 1.0f);
+
+	return 0;
+}
+/**
  * \copydoc libcamera::ipa::Algorithm::queueRequest
  */
 void Filter::queueRequest(IPAContext &context,

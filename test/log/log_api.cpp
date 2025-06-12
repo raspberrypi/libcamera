@@ -26,6 +26,11 @@ using namespace std;
 using namespace libcamera;
 
 LOG_DEFINE_CATEGORY(LogAPITest)
+LOG_DEFINE_CATEGORY(Cat0)
+LOG_DEFINE_CATEGORY(Cat1)
+LOG_DEFINE_CATEGORY(Cat2)
+LOG_DEFINE_CATEGORY(Cat3)
+LOG_DEFINE_CATEGORY(Cat4)
 
 class LogAPITest : public Test
 {
@@ -72,6 +77,34 @@ protected:
 		}
 
 		return TestPass;
+	}
+
+	int testEnvLevels()
+	{
+		setenv("LIBCAMERA_LOG_LEVELS",
+		       "Cat0:0,Cat0:9999,Cat1:INFO,Cat1:INVALID,Cat2:2,Cat2:-1,"
+		       "Cat3:ERROR,Cat3:{[]},Cat4:4,Cat4:rubbish",
+		       true);
+		logSetTarget(libcamera::LoggingTargetNone);
+
+		const std::pair<const LogCategory &, libcamera::LogSeverity> expected[] = {
+			{ _LOG_CATEGORY(Cat0)(), libcamera::LogDebug },
+			{ _LOG_CATEGORY(Cat1)(), libcamera::LogInfo },
+			{ _LOG_CATEGORY(Cat2)(), libcamera::LogWarning },
+			{ _LOG_CATEGORY(Cat3)(), libcamera::LogError },
+			{ _LOG_CATEGORY(Cat4)(), libcamera::LogFatal },
+		};
+		bool ok = true;
+
+		for (const auto &[c, s] : expected) {
+			if (c.severity() != s) {
+				ok = false;
+				cerr << "Severity of " << c.name() << " (" << c.severity() << ") "
+				     << "does not equal " << s << endl;
+			}
+		}
+
+		return ok ? TestPass : TestFail;
 	}
 
 	int testFile()
@@ -135,7 +168,11 @@ protected:
 
 	int run() override
 	{
-		int ret = testFile();
+		int ret = testEnvLevels();
+		if (ret != TestPass)
+			return TestFail;
+
+		ret = testFile();
 		if (ret != TestPass)
 			return TestFail;
 

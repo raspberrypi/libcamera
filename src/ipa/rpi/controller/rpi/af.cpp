@@ -328,9 +328,8 @@ bool Af::getPhase(PdafRegions const &regions, double &phase, double &conf)
 			if (c >= cfg_.confThresh) {
 				if (c > cfg_.confClip)
 					c = cfg_.confClip;
-				c -= (cfg_.confThresh >> 2);
+				c -= (cfg_.confThresh >> 1);
 				sumWc += w * c;
-				c -= (cfg_.confThresh >> 2);
 				sumWcp += (int64_t)(w * c) * (int64_t)data.phase;
 			}
 		}

@@ -210,6 +210,10 @@ double Pwl::eval(double x, int *span, bool updateSpan) const
 					: points_.size() / 2 - 1);
 	if (span && updateSpan)
 		*span = index;
+
+	if (points_.size() == 1)
+		return points_[0].y();
+
 	return points_[index].y() +
 	       (x - points_[index].x()) * (points_[index + 1].y() - points_[index].y()) /
 		       (points_[index + 1].x() - points_[index].x());

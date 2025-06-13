@@ -4,7 +4,7 @@ libipa_test = [
     {'name': 'fixedpoint', 'sources': ['fixedpoint.cpp']},
     {'name': 'histogram', 'sources': ['histogram.cpp']},
     {'name': 'interpolator', 'sources': ['interpolator.cpp']},
-    {'name': 'pwl', 'sources': ['pwl.cpp']},
+    {'name': 'pwl', 'sources': ['pwl.cpp'], 'should_fail': true },
 ]
 
 foreach test : libipa_test

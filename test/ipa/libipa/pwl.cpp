@@ -43,6 +43,13 @@ protected:
 
 		ASSERT_EQ(pwl.size(), 2);
 
+		/* Test degenerate PWL. */
+		pwl.clear();
+		pwl.append(1, 1);
+		ASSERT_EQ(pwl.eval(0), 1);
+		ASSERT_EQ(pwl.eval(1), 1);
+		ASSERT_EQ(pwl.eval(2), 1);
+
 		return TestPass;
 	}
 };

@@ -35,14 +35,13 @@ namespace ipa {
  *
  * https://en.wikipedia.org/wiki/Piecewise_linear_function
  *
- * A consequence of the Pwl class being defined by knots instead of linear
- * functions is that the values of the piecewise linear function past the ends
- * of the function are constants as opposed to linear functions. In a
- * mathematical piecewise linear function that is defined by multiple linear
- * functions, the ends of the function are also linear functions and hence grow
- * to infinity (or negative infinity). However, since this Pwl class is defined
- * by knots, the y-value of the leftmost and rightmost knots will hold for all
- * x values to negative infinity and positive infinity, respectively.
+ * Outside the domain of the piecewise linear function the closest segment is
+ * extrapolated linearly. If one wants to ensure that the returned values stay
+ * within the range of the pwl, the input can be clamped:
+ *
+ * \code{.cpp}
+ * pwl.eval(pwl.domain().clip(x))
+ * \endcode
  */
 
 /**

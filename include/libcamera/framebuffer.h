@@ -26,6 +26,7 @@ struct FrameMetadata {
 		FrameSuccess,
 		FrameError,
 		FrameCancelled,
+		FrameStartup,
 	};
 
 	struct Plane {

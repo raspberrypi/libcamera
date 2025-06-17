@@ -60,23 +60,24 @@ const ControlInfoMap::Map ipaControls{
 	/* \todo Move this to the Camera class */
 	{ &controls::AeEnable, ControlInfo(false, true, true) },
 	{ &controls::ExposureTimeMode,
-	  ControlInfo(static_cast<int32_t>(controls::ExposureTimeModeAuto),
-		      static_cast<int32_t>(controls::ExposureTimeModeManual),
-		      static_cast<int32_t>(controls::ExposureTimeModeAuto)) },
+	  ControlInfo({ { ControlValue(controls::ExposureTimeModeAuto),
+			  ControlValue(controls::ExposureTimeModeManual) } },
+		      ControlValue(controls::ExposureTimeModeAuto)) },
 	{ &controls::ExposureTime,
 	  ControlInfo(1, 66666, static_cast<int32_t>(defaultExposureTime.get<std::micro>())) },
 	{ &controls::AnalogueGainMode,
-	  ControlInfo(static_cast<int32_t>(controls::AnalogueGainModeAuto),
-		      static_cast<int32_t>(controls::AnalogueGainModeManual),
-		      static_cast<int32_t>(controls::AnalogueGainModeAuto)) },
+	  ControlInfo({ { ControlValue(controls::AnalogueGainModeAuto),
+			  ControlValue(controls::AnalogueGainModeManual) } },
+		      ControlValue(controls::AnalogueGainModeAuto)) },
 	{ &controls::AnalogueGain, ControlInfo(1.0f, 16.0f, 1.0f) },
 	{ &controls::AeMeteringMode, ControlInfo(controls::AeMeteringModeValues) },
 	{ &controls::AeConstraintMode, ControlInfo(controls::AeConstraintModeValues) },
 	{ &controls::AeExposureMode, ControlInfo(controls::AeExposureModeValues) },
 	{ &controls::ExposureValue, ControlInfo(-8.0f, 8.0f, 0.0f) },
-	{ &controls::AeFlickerMode, ControlInfo(static_cast<int>(controls::FlickerOff),
-						static_cast<int>(controls::FlickerManual),
-						static_cast<int>(controls::FlickerOff)) },
+	{ &controls::AeFlickerMode,
+	  ControlInfo({ { ControlValue(controls::FlickerOff),
+			  ControlValue(controls::FlickerManual) } },
+		      ControlValue(controls::FlickerOff)) },
 	{ &controls::AeFlickerPeriod, ControlInfo(100, 1000000) },
 	{ &controls::Brightness, ControlInfo(-1.0f, 1.0f, 0.0f) },
 	{ &controls::Contrast, ControlInfo(0.0f, 32.0f, 1.0f) },
@@ -329,9 +330,10 @@ void IpaBase::start(const ControlList &controls, StartResult *result)
 	 * "mistrusted", which depends on whether this is a startup from cold,
 	 * or merely a mode switch in a running system.
 	 */
+	unsigned int agcConvergenceFrames = 0, awbConvergenceFrames = 0;
 	frameCount_ = 0;
 	if (firstStart_) {
-		dropFrameCount_ = helper_->hideFramesStartup();
+		invalidCount_ = helper_->hideFramesStartup();
 		mistrustCount_ = helper_->mistrustFramesStartup();
 
 		/*
@@ -341,7 +343,6 @@ void IpaBase::start(const ControlList &controls, StartResult *result)
 		 * (mistrustCount_) that they won't see. But if zero (i.e.
 		 * no convergence necessary), no frames need to be dropped.
 		 */
-		unsigned int agcConvergenceFrames = 0;
 		RPiController::AgcAlgorithm *agc = dynamic_cast<RPiController::AgcAlgorithm *>(
 			controller_.getAlgorithm("agc"));
 		if (agc) {
@@ -350,7 +351,6 @@ void IpaBase::start(const ControlList &controls, StartResult *result)
 				agcConvergenceFrames += mistrustCount_;
 		}
 
-		unsigned int awbConvergenceFrames = 0;
 		RPiController::AwbAlgorithm *awb = dynamic_cast<RPiController::AwbAlgorithm *>(
 			controller_.getAlgorithm("awb"));
 		if (awb) {
@@ -358,15 +358,18 @@ void IpaBase::start(const ControlList &controls, StartResult *result)
 			if (awbConvergenceFrames)
 				awbConvergenceFrames += mistrustCount_;
 		}
-
-		dropFrameCount_ = std::max({ dropFrameCount_, agcConvergenceFrames, awbConvergenceFrames });
-		LOG(IPARPI, Debug) << "Drop " << dropFrameCount_ << " frames on startup";
 	} else {
-		dropFrameCount_ = helper_->hideFramesModeSwitch();
+		invalidCount_ = helper_->hideFramesModeSwitch();
 		mistrustCount_ = helper_->mistrustFramesModeSwitch();
 	}
 
-	result->dropFrameCount = dropFrameCount_;
+	result->startupFrameCount = std::max({ agcConvergenceFrames, awbConvergenceFrames });
+	result->invalidFrameCount = invalidCount_;
+
+	invalidCount_ = std::max({ invalidCount_, agcConvergenceFrames, awbConvergenceFrames });
+
+	LOG(IPARPI, Debug) << "Startup frames: " << result->startupFrameCount
+			   << " Invalid frames: " << result->invalidFrameCount;
 
 	firstStart_ = false;
 	lastRunTimestamp_ = 0;
@@ -447,7 +450,7 @@ void IpaBase::prepareIsp(const PrepareParams &params)
 
 	/* Allow a 10% margin on the comparison below. */
 	Duration delta = (frameTimestamp - lastRunTimestamp_) * 1.0ns;
-	if (lastRunTimestamp_ && frameCount_ > dropFrameCount_ &&
+	if (lastRunTimestamp_ && frameCount_ > invalidCount_ &&
 	    delta < controllerMinFrameDuration * 0.9 && !hdrChange) {
 		/*
 		 * Ensure we merge the previous frame's metadata with the current

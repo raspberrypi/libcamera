@@ -49,8 +49,7 @@ class CameraData : public Camera::Private
 public:
 	CameraData(PipelineHandler *pipe)
 		: Camera::Private(pipe), state_(State::Stopped),
-		  dropFrameCount_(0), buffersAllocated_(false),
-		  ispOutputCount_(0), ispOutputTotal_(0)
+		  startupFrameCount_(0), invalidFrameCount_(0), buffersAllocated_(false)
 	{
 	}
 
@@ -152,7 +151,8 @@ public:
 	/* Mapping of CropParams keyed by the output stream order in CameraConfiguration */
 	std::map<unsigned int, CropParams> cropParams_;
 
-	unsigned int dropFrameCount_;
+	unsigned int startupFrameCount_;
+	unsigned int invalidFrameCount_;
 
 	/*
 	 * If set, this stores the value that represets a gain of one for
@@ -164,11 +164,6 @@ public:
 	bool buffersAllocated_;
 
 	struct Config {
-		/*
-		 * Override any request from the IPA to drop a number of startup
-		 * frames.
-		 */
-		bool disableStartupFrameDrops;
 		/*
 		 * Override the camera timeout value calculated by the IPA based
 		 * on frame durations.
@@ -185,9 +180,6 @@ protected:
 				 Request *request);
 
 	virtual void tryRunPipeline() = 0;
-
-	unsigned int ispOutputCount_;
-	unsigned int ispOutputTotal_;
 
 private:
 	void checkRequestCompleted();

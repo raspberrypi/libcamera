@@ -239,18 +239,11 @@ int PipelineHandlerVc4::prepareBuffers(Camera *camera)
 		/*
 		 * If the application provides a guarantees that Unicam
 		 * image buffers will always be provided for the RAW stream
-		 * in a Request, we need:
-		 * - at least 1 internal Unicam buffer to handle startup frame drops,
-		 * - no internal Unicam buffers if there are no startup frame drops.
+		 * in a Request, we need no internal Unicam buffers.
 		 */
 		if (data->config_.rawMandatoryStream) {
-			if (data->dropFrameCount_) {
-				minUnicamBuffers = 2;
-				minTotalUnicamBuffers = 2;
-			} else {
-				minUnicamBuffers = 0;
-				minTotalUnicamBuffers = 0;
-			}
+			minUnicamBuffers = 0;
+			minTotalUnicamBuffers = 0;
 		}
 	}
 
@@ -266,7 +259,7 @@ int PipelineHandlerVc4::prepareBuffers(Camera *camera)
 		 * stream in a Request, we don't need any internal buffers
 		 * allocated.
 		 */
-		if (!data->dropFrameCount_ && data->config_.output0MandatoryStream)
+		if (data->config_.output0MandatoryStream)
 			minIspBuffers = 0;
 	}
 
@@ -649,8 +642,6 @@ int Vc4CameraData::platformConfigure(const RPi::RPiCameraConfiguration *rpiConfi
 		stream->setFlags(StreamFlag::External);
 	}
 
-	ispOutputTotal_ = outStreams.size();
-
 	/*
 	 * If ISP::Output0 stream has not been configured by the application,
 	 * we must allow the hardware to generate an output so that the data
@@ -676,8 +667,6 @@ int Vc4CameraData::platformConfigure(const RPi::RPiCameraConfiguration *rpiConfi
 				<< ret;
 			return -EINVAL;
 		}
-
-		ispOutputTotal_++;
 
 		LOG(RPI, Debug) << "Defaulting ISP Output0 format to "
 				<< format;
@@ -714,8 +703,6 @@ int Vc4CameraData::platformConfigure(const RPi::RPiCameraConfiguration *rpiConfi
 					<< ret;
 			return -EINVAL;
 		}
-
-		ispOutputTotal_++;
 	}
 
 	/* ISP statistics output format. */
@@ -727,8 +714,6 @@ int Vc4CameraData::platformConfigure(const RPi::RPiCameraConfiguration *rpiConfi
 				<< format;
 		return ret;
 	}
-
-	ispOutputTotal_++;
 
 	/*
 	 * Configure the Unicam embedded data output format only if the sensor
@@ -901,12 +886,6 @@ void Vc4CameraData::ispOutputDequeue(FrameBuffer *buffer)
 		handleStreamBuffer(buffer, stream);
 	}
 
-	/*
-	 * Increment the number of ISP outputs generated.
-	 * This is needed to track dropped frames.
-	 */
-	ispOutputCount_++;
-
 	handleState();
 }
 
@@ -938,7 +917,6 @@ void Vc4CameraData::prepareIspComplete(const ipa::RPi::BufferIds &buffers,
 			<< ", timestamp: " << buffer->metadata().timestamp;
 
 	isp_[Isp::Input].queueBuffer(buffer);
-	ispOutputCount_ = 0;
 
 	if (sensorMetadata_ && embeddedId) {
 		buffer = unicam_[Unicam::Embedded].getBuffers().at(embeddedId & RPi::MaskID).buffer;

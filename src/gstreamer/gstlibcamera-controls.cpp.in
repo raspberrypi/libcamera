@@ -68,7 +68,7 @@ static const GEnumValue {{ ctrl.name|snake_case }}_types[] = {
 		"{{ enum.gst_name }}"
 	},
 {%- endfor %}
-	{0, NULL, NULL}
+	{0, nullptr, nullptr}
 };
 
 #define TYPE_{{ ctrl.name|snake_case|upper }} \

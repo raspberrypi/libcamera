@@ -761,30 +761,28 @@ PipelineHandlerISI::generateConfiguration(Camera *camera,
 		 */
 		StreamConfiguration cfg;
 
-                switch (role) {
-                case StreamRole::StillCapture:
-                case StreamRole::Viewfinder:
-                case StreamRole::VideoRecording: {
-                        Size size = role == StreamRole::StillCapture
-                                  ? data->sensor_->resolution()
-                                  : PipelineHandlerISI::kPreviewSize;
-                        cfg = generateYUVConfiguration(camera, size);
-                        if (cfg.pixelFormat.isValid())
-                                break;
+		switch (role) {
+		case StreamRole::StillCapture:
+		case StreamRole::Viewfinder:
+		case StreamRole::VideoRecording: {
+			Size size = role == StreamRole::StillCapture
+				  ? data->sensor_->resolution()
+				  : PipelineHandlerISI::kPreviewSize;
+			cfg = generateYUVConfiguration(camera, size);
+			if (cfg.pixelFormat.isValid())
+				break;
 
+			/*
+			 * Fallback to use a Bayer format if that's what the
+			 * sensor supports.
+			 */
+			[[fallthrough]];
+		}
 
-                        /*
-                         * Fallback to use a Bayer format if that's what the
-                         * sensor supports.
-                         */
-                        [[fallthrough]];
-
-		 }
-
-                case StreamRole::Raw: {
-                        cfg = generateRawConfiguration(camera);
-                        break;
-                }
+		case StreamRole::Raw: {
+			cfg = generateRawConfiguration(camera);
+			break;
+		}
 
 		default:
 			LOG(ISI, Error) << "Requested stream role not supported: " << role;
@@ -822,7 +820,7 @@ int PipelineHandlerISI::configure(Camera *camera, CameraConfiguration *c)
 	 * routing table instead of resetting it.
 	 */
 	V4L2Subdevice::Routing routing = {};
-	unsigned int xbarFirstSource = crossbar_->entity()->pads().size() / 2 + 1;
+	unsigned int xbarFirstSource = crossbar_->entity()->pads().size() - pipes_.size();
 
 	for (const auto &[idx, config] : utils::enumerate(*c)) {
 		uint32_t sourcePad = xbarFirstSource + idx;
@@ -1005,7 +1003,7 @@ bool PipelineHandlerISI::match(DeviceEnumerator *enumerator)
 
 		ret = capture->open();
 		if (ret)
-			return ret;
+			return false;
 
 		pipes_.push_back({ std::move(isi), std::move(capture) });
 	}

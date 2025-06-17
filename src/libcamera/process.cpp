@@ -241,7 +241,12 @@ int Process::start(const std::string &path,
 	int ret;
 
 	if (running_)
-		return 0;
+		return -EBUSY;
+
+	for (int fd : fds) {
+		if (fd < 0)
+			return -EINVAL;
+	}
 
 	int childPid = fork();
 	if (childPid == -1) {
@@ -279,14 +284,15 @@ int Process::start(const std::string &path,
 		if (file && strcmp(file, "syslog"))
 			unsetenv("LIBCAMERA_LOG_FILE");
 
-		const char **argv = new const char *[args.size() + 2];
-		unsigned int len = args.size();
+		const size_t len = args.size();
+		auto argv = std::make_unique<const char *[]>(len + 2);
+
 		argv[0] = path.c_str();
-		for (unsigned int i = 0; i < len; i++)
+		for (size_t i = 0; i < len; i++)
 			argv[i + 1] = args[i].c_str();
 		argv[len + 1] = nullptr;
 
-		execv(path.c_str(), (char **)argv);
+		execv(path.c_str(), const_cast<char **>(argv.get()));
 
 		_exit(EXIT_FAILURE);
 	}
@@ -296,6 +302,8 @@ void Process::closeAllFdsExcept(const std::vector<int> &fds)
 {
 	std::vector<int> v(fds);
 	sort(v.begin(), v.end());
+
+	ASSERT(v.empty() || v.front() >= 0);
 
 	DIR *dir = opendir("/proc/self/fd");
 	if (!dir)

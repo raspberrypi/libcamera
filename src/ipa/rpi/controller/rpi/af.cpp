@@ -46,6 +46,8 @@ Af::SpeedDependentParams::SpeedDependentParams()
 	: stepCoarse(1.0),
 	  stepFine(0.25),
 	  contrastRatio(0.75),
+	  retriggerRatio(0.75),
+	  retriggerDelay(10),
 	  pdafGain(-0.02),
 	  pdafSquelch(0.125),
 	  maxSlew(2.0),
@@ -60,6 +62,7 @@ Af::CfgParams::CfgParams()
 	  confThresh(16),
 	  confClip(512),
 	  skipFrames(5),
+	  checkForIR(false),
 	  map()
 {
 }
@@ -87,6 +90,8 @@ void Af::SpeedDependentParams::read(const libcamera::YamlObject &params)
 	readNumber<double>(stepCoarse, params, "step_coarse");
 	readNumber<double>(stepFine, params, "step_fine");
 	readNumber<double>(contrastRatio, params, "contrast_ratio");
+	readNumber<double>(retriggerRatio, params, "retrigger_ratio");
+	readNumber<uint32_t>(retriggerDelay, params, "retrigger_delay");
 	readNumber<double>(pdafGain, params, "pdaf_gain");
 	readNumber<double>(pdafSquelch, params, "pdaf_squelch");
 	readNumber<double>(maxSlew, params, "max_slew");
@@ -137,6 +142,7 @@ int Af::CfgParams::read(const libcamera::YamlObject &params)
 	readNumber<uint32_t>(confThresh, params, "conf_thresh");
 	readNumber<uint32_t>(confClip, params, "conf_clip");
 	readNumber<uint32_t>(skipFrames, params, "skip_frames");
+	readNumber<bool>(checkForIR, params, "check_for_ir");
 
 	if (params.contains("map"))
 		map = params["map"].get<ipa::Pwl>(ipa::Pwl{});
@@ -176,29 +182,37 @@ Af::Af(Controller *controller)
 	  useWindows_(false),
 	  phaseWeights_(),
 	  contrastWeights_(),
+	  awbWeights_(),
 	  scanState_(ScanState::Idle),
 	  initted_(false),
+	  irFlag_(false),
 	  ftarget_(-1.0),
 	  fsmooth_(-1.0),
 	  prevContrast_(0.0),
+	  oldSceneContrast_(0.0),
+	  prevAverage_{ 0.0, 0.0, 0.0 },
+	  oldSceneAverage_{ 0.0, 0.0, 0.0 },
 	  prevPhase_(0.0),
 	  skipCount_(0),
 	  stepCount_(0),
 	  dropCount_(0),
 	  sameSignCount_(0),
+	  sceneChangeCount_(0),
 	  scanMaxContrast_(0.0),
 	  scanMinContrast_(1.0e9),
 	  scanData_(),
 	  reportState_(AfState::Idle)
 {
 	/*
-	 * Reserve space for data, to reduce memory fragmentation. It's too early
-	 * to query the size of the PDAF (from camera) and Contrast (from ISP)
-	 * statistics, but these are plausible upper bounds.
+	 * Reserve space for data structures, to reduce memory fragmentation.
+	 * It's too early to query the size of the PDAF sensor data, so guess.
 	 */
+	windows_.reserve(1);
 	phaseWeights_.w.reserve(16 * 12);
 	contrastWeights_.w.reserve(getHardwareConfig().focusRegions.width *
 				   getHardwareConfig().focusRegions.height);
+	contrastWeights_.w.reserve(getHardwareConfig().awbRegions.width *
+				   getHardwareConfig().awbRegions.height);
 	scanData_.reserve(32);
 }
 
@@ -309,6 +323,7 @@ void Af::invalidateWeights()
 {
 	phaseWeights_.sum = 0;
 	contrastWeights_.sum = 0;
+	awbWeights_.sum = 0;
 }
 
 bool Af::getPhase(PdafRegions const &regions, double &phase, double &conf)
@@ -363,6 +378,54 @@ double Af::getContrast(const FocusRegions &focusStats)
 		sumWc += contrastWeights_.w[i] * focusStats.get(i).val;
 
 	return (contrastWeights_.sum > 0) ? ((double)sumWc / (double)contrastWeights_.sum) : 0.0;
+}
+
+/*
+ * Get the average R, G, B values in AF window[s] (from AWB statistics).
+ * Optionally, check if all of {R,G,B} are within 4:5 of each other
+ * across more than 50% of the counted area and within the AF window:
+ * for an RGB sensor this strongly suggests that IR lighting is in use.
+ */
+
+bool Af::getAverageAndTestIr(const RgbyRegions &awbStats, double rgb[3])
+{
+	libcamera::Size size = awbStats.size();
+	if (size.height != awbWeights_.rows ||
+	    size.width != awbWeights_.cols || awbWeights_.sum == 0) {
+		LOG(RPiAf, Debug) << "Recompute RGB weights " << size.width << 'x' << size.height;
+		computeWeights(&awbWeights_, size.height, size.width);
+	}
+
+	uint64_t sr = 0, sg = 0, sb = 0, sw = 1;
+	uint64_t greyCount = 0, allCount = 0;
+	for (unsigned i = 0; i < awbStats.numRegions(); ++i) {
+		uint64_t r = awbStats.get(i).val.rSum;
+		uint64_t g = awbStats.get(i).val.gSum;
+		uint64_t b = awbStats.get(i).val.bSum;
+		uint64_t w = awbWeights_.w[i];
+		if (w) {
+			sw += w;
+			sr += w * r;
+			sg += w * g;
+			sb += w * b;
+		}
+		if (cfg_.checkForIR) {
+			if (4 * r < 5 * b && 4 * b < 5 * r &&
+			    4 * r < 5 * g && 4 * g < 5 * r &&
+			    4 * b < 5 * g && 4 * g < 5 * b)
+				greyCount += awbStats.get(i).counted;
+			allCount += awbStats.get(i).counted;
+		}
+	}
+
+	rgb[0] = sr / (double)sw;
+	rgb[1] = sg / (double)sw;
+	rgb[2] = sb / (double)sw;
+
+	return (cfg_.checkForIR && 2 * greyCount > allCount &&
+		4 * sr < 5 * sb && 4 * sb < 5 * sr &&
+		4 * sr < 5 * sg && 4 * sg < 5 * sr &&
+		4 * sb < 5 * sg && 4 * sg < 5 * sb);
 }
 
 void Af::doPDAF(double phase, double conf)
@@ -473,6 +536,8 @@ void Af::doScan(double contrast, double phase, double conf)
 	if (scanData_.empty() || contrast > scanMaxContrast_) {
 		scanMaxContrast_ = contrast;
 		scanMaxIndex_ = scanData_.size();
+		if (scanState_ != ScanState::Fine)
+			std::copy(prevAverage_, prevAverage_ + 3, oldSceneAverage_);
 	}
 	if (contrast < scanMinContrast_)
 		scanMinContrast_ = contrast;
@@ -523,27 +588,63 @@ void Af::doAF(double contrast, double phase, double conf)
 		sameSignCount_++;
 	prevPhase_ = phase;
 
+	if (mode_ == AfModeManual)
+		return; /* nothing to do */
+
 	if (scanState_ == ScanState::Pdaf) {
 		/*
 		 * Use PDAF closed-loop control whenever available, in both CAF
 		 * mode and (for a limited number of iterations) when triggered.
-		 * If PDAF fails (due to poor contrast, noise or large defocus),
-		 * fall back to a CDAF-based scan. To avoid "nuisance" scans,
-		 * scan only after a number of frames with low PDAF confidence.
+		 * If PDAF fails (due to poor contrast, noise or large defocus)
+		 * for at least dropoutFrames, fall back to a CDAF-based scan
+		 * immediately (in triggered-auto) or on scene change (in CAF).
 		 */
-		if (conf > (dropCount_ ? 1.0 : 0.25) * cfg_.confEpsilon) {
+		if (conf >= cfg_.confEpsilon) {
 			if (mode_ == AfModeAuto || sameSignCount_ >= 3)
 				doPDAF(phase, conf);
 			if (stepCount_ > 0)
 				stepCount_--;
 			else if (mode_ != AfModeContinuous)
 				scanState_ = ScanState::Idle;
+			oldSceneContrast_ = contrast;
+			std::copy(prevAverage_, prevAverage_ + 3, oldSceneAverage_);
+			sceneChangeCount_ = 0;
 			dropCount_ = 0;
-		} else if (++dropCount_ == cfg_.speeds[speed_].dropoutFrames)
+			return;
+		} else {
+			dropCount_++;
+			if (dropCount_ < cfg_.speeds[speed_].dropoutFrames)
+				return;
+			if (mode_ != AfModeContinuous) {
+				startProgrammedScan();
+				return;
+			}
+			/* else fall through to waiting for a scene change */
+		}
+	}
+	if (scanState_ < ScanState::Coarse && mode_ == AfModeContinuous) {
+		/*
+		 * In CAF mode, not in a scan, and PDAF is unavailable.
+		 * Wait for a scene change, followed by stability.
+		 */
+		if (contrast + 1.0 < cfg_.speeds[speed_].retriggerRatio * oldSceneContrast_ ||
+		    oldSceneContrast_ + 1.0 < cfg_.speeds[speed_].retriggerRatio * contrast ||
+		    prevAverage_[0] + 1.0 < cfg_.speeds[speed_].retriggerRatio * oldSceneAverage_[0] ||
+		    oldSceneAverage_[0] + 1.0 < cfg_.speeds[speed_].retriggerRatio * prevAverage_[0] ||
+		    prevAverage_[1] + 1.0 < cfg_.speeds[speed_].retriggerRatio * oldSceneAverage_[1] ||
+		    oldSceneAverage_[1] + 1.0 < cfg_.speeds[speed_].retriggerRatio * prevAverage_[1] ||
+		    prevAverage_[2] + 1.0 < cfg_.speeds[speed_].retriggerRatio * oldSceneAverage_[2] ||
+		    oldSceneAverage_[2] + 1.0 < cfg_.speeds[speed_].retriggerRatio * prevAverage_[2]) {
+			oldSceneContrast_ = contrast;
+			std::copy(prevAverage_, prevAverage_ + 3, oldSceneAverage_);
+			sceneChangeCount_ = 1;
+		} else if (sceneChangeCount_)
+			sceneChangeCount_++;
+		if (sceneChangeCount_ >= cfg_.speeds[speed_].retriggerDelay)
 			startProgrammedScan();
 	} else if (scanState_ >= ScanState::Coarse && fsmooth_ == ftarget_) {
 		/*
-		 * Scanning sequence. This means PDAF has become unavailable.
+		 * CDAF-based scanning sequence.
 		 * Allow a delay between steps for CDAF FoM statistics to be
 		 * updated, and a "settling time" at the end of the sequence.
 		 * [A coarse or fine scan can be abandoned if two PDAF samples
@@ -562,11 +663,14 @@ void Af::doAF(double contrast, double phase, double conf)
 				scanState_ = ScanState::Pdaf;
 			else
 				scanState_ = ScanState::Idle;
+			dropCount_ = 0;
+			sceneChangeCount_ = 0;
+			oldSceneContrast_ = std::max(scanMaxContrast_, prevContrast_);
 			scanData_.clear();
 		} else if (conf >= cfg_.confThresh && earlyTerminationByPhase(phase)) {
+			std::copy(prevAverage_, prevAverage_ + 3, oldSceneAverage_);
 			scanState_ = ScanState::Settle;
-			stepCount_ = (mode_ == AfModeContinuous) ? 0
-								 : cfg_.speeds[speed_].stepFrames;
+			stepCount_ = (mode_ == AfModeContinuous) ? 0 : cfg_.speeds[speed_].stepFrames;
 		} else
 			doScan(contrast, phase, conf);
 	}
@@ -596,7 +700,8 @@ void Af::updateLensPosition()
 void Af::startAF()
 {
 	/* Use PDAF if the tuning file allows it; else CDAF. */
-	if (cfg_.speeds[speed_].dropoutFrames > 0 &&
+	if (cfg_.speeds[speed_].pdafGain != 0.0 &&
+	    cfg_.speeds[speed_].dropoutFrames > 0 &&
 	    (mode_ == AfModeContinuous || cfg_.speeds[speed_].pdafFrames > 0)) {
 		if (!initted_) {
 			ftarget_ = cfg_.ranges[range_].focusDefault;
@@ -606,6 +711,8 @@ void Af::startAF()
 		scanState_ = ScanState::Pdaf;
 		scanData_.clear();
 		dropCount_ = 0;
+		oldSceneContrast_ = 0.0;
+		sceneChangeCount_ = 0;
 		reportState_ = AfState::Scanning;
 	} else
 		startProgrammedScan();
@@ -656,7 +763,7 @@ void Af::prepare(Metadata *imageMetadata)
 		uint32_t oldSt = stepCount_;
 		if (imageMetadata->get("pdaf.regions", regions) == 0)
 			getPhase(regions, phase, conf);
-		doAF(prevContrast_, phase, conf);
+		doAF(prevContrast_, phase, irFlag_ ? 0 : conf);
 		updateLensPosition();
 		LOG(RPiAf, Debug) << std::fixed << std::setprecision(2)
 				  << static_cast<unsigned int>(reportState_)
@@ -666,7 +773,8 @@ void Af::prepare(Metadata *imageMetadata)
 				  << " ft" << oldFt << "->" << ftarget_
 				  << " fs" << oldFs << "->" << fsmooth_
 				  << " cont=" << (int)prevContrast_
-				  << " phase=" << (int)phase << " conf=" << (int)conf;
+				  << " phase=" << (int)phase << " conf=" << (int)conf
+				  << (irFlag_ ? " IR" : "");
 	}
 
 	/* Report status and produce new lens setting */
@@ -690,6 +798,7 @@ void Af::process(StatisticsPtr &stats, [[maybe_unused]] Metadata *imageMetadata)
 {
 	(void)imageMetadata;
 	prevContrast_ = getContrast(stats->focusRegions);
+	irFlag_ = getAverageAndTestIr(stats->awbRegions, prevAverage_);
 }
 
 /* Controls */

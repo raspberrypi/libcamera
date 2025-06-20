@@ -54,7 +54,9 @@ public:
 	void setWindows(libcamera::Span<libcamera::Rectangle const> const &wins) override;
 	void setMode(AfMode mode) override;
 	AfMode getMode() const override;
-	bool setLensPosition(double dioptres, int32_t *hwpos) override;
+	double getDefaultLensPosition() const override;
+	void getLensLimits(double &min, double &max) const override;
+	bool setLensPosition(double dioptres, int32_t *hwpos, bool force) override;
 	std::optional<double> getLensPosition() const override;
 	void triggerScan() override;
 	void cancelScan() override;

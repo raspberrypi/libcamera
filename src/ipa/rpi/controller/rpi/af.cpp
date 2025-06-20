@@ -715,11 +715,23 @@ void Af::setWindows(libcamera::Span<libcamera::Rectangle const> const &wins)
 		invalidateWeights();
 }
 
-bool Af::setLensPosition(double dioptres, int *hwpos)
+double Af::getDefaultLensPosition() const
+{
+	return cfg_.ranges[AfRangeNormal].focusDefault;
+}
+
+void Af::getLensLimits(double &min, double &max) const
+{
+	/* Limits for manual focus are set by map, not by ranges */
+	min = cfg_.map.domain().start;
+	max = cfg_.map.domain().end;
+}
+
+bool Af::setLensPosition(double dioptres, int *hwpos, bool force)
 {
 	bool changed = false;
 
-	if (mode_ == AfModeManual) {
+	if (mode_ == AfModeManual || force) {
 		LOG(RPiAf, Debug) << "setLensPosition: " << dioptres;
 		ftarget_ = cfg_.map.domain().clamp(dioptres);
 		changed = !(initted_ && fsmooth_ == ftarget_);

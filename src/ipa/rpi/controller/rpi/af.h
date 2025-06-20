@@ -158,7 +158,9 @@ private:
 	bool initted_;
 	double ftarget_, fsmooth_;
 	double prevContrast_;
+	double prevPhase_;
 	unsigned skipCount_, stepCount_, dropCount_;
+	unsigned sameSignCount_;
 	unsigned scanMaxIndex_;
 	double scanMaxContrast_, scanMinContrast_;
 	std::vector<ScanRecord> scanData_;

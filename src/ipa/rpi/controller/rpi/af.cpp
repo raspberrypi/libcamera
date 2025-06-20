@@ -181,9 +181,11 @@ Af::Af(Controller *controller)
 	  ftarget_(-1.0),
 	  fsmooth_(-1.0),
 	  prevContrast_(0.0),
+	  prevPhase_(0.0),
 	  skipCount_(0),
 	  stepCount_(0),
 	  dropCount_(0),
+	  sameSignCount_(0),
 	  scanMaxContrast_(0.0),
 	  scanMinContrast_(1.0e9),
 	  scanData_(),
@@ -513,6 +515,13 @@ void Af::doAF(double contrast, double phase, double conf)
 		return;
 	}
 
+	/* Count frames for which PDAF phase has had same sign */
+	if (phase * prevPhase_ <= 0.0)
+		sameSignCount_ = 0;
+	else
+		sameSignCount_++;
+	prevPhase_ = phase;
+
 	if (scanState_ == ScanState::Pdaf) {
 		/*
 		 * Use PDAF closed-loop control whenever available, in both CAF
@@ -522,7 +531,8 @@ void Af::doAF(double contrast, double phase, double conf)
 		 * scan only after a number of frames with low PDAF confidence.
 		 */
 		if (conf > (dropCount_ ? 1.0 : 0.25) * cfg_.confEpsilon) {
-			doPDAF(phase, conf);
+			if (mode_ == AfModeAuto || sameSignCount_ >= 3)
+				doPDAF(phase, conf);
 			if (stepCount_ > 0)
 				stepCount_--;
 			else if (mode_ != AfModeContinuous)

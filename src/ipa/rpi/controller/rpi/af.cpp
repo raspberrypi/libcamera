@@ -436,15 +436,28 @@ double Af::findPeak(unsigned i) const
 {
 	double f = scanData_[i].focus;
 
-	if (i > 0 && i + 1 < scanData_.size()) {
-		double dropLo = scanData_[i].contrast - scanData_[i - 1].contrast;
-		double dropHi = scanData_[i].contrast - scanData_[i + 1].contrast;
-		if (0.0 <= dropLo && dropLo < dropHi) {
-			double param = 0.3125 * (1.0 - dropLo / dropHi) * (1.6 - dropLo / dropHi);
-			f += param * (scanData_[i - 1].focus - f);
-		} else if (0.0 <= dropHi && dropHi < dropLo) {
-			double param = 0.3125 * (1.0 - dropHi / dropLo) * (1.6 - dropHi / dropLo);
-			f += param * (scanData_[i + 1].focus - f);
+	if (scanData_.size() >= 3) {
+		/*
+		 * Given the sample with the highest contrast score and its two
+		 * neighbours either side (or same side if at the end of a scan),
+		 * solve for the best lens position by fitting a parabola.
+		 * Adapted from awb.cpp: interpolateQaudaratic()
+		 */
+
+		if (i == 0)
+			i++;
+		else if (i + 1 >= scanData_.size())
+			i--;
+
+		double abx = scanData_[i - 1].focus - scanData_[i].focus;
+		double aby = scanData_[i - 1].contrast - scanData_[i].contrast;
+		double cbx = scanData_[i + 1].focus - scanData_[i].focus;
+		double cby = scanData_[i + 1].contrast - scanData_[i].contrast;
+		double denom = 2.0 * (aby * cbx - cby * abx);
+		if (std::abs(denom) >= (1.0 / 64.0) && denom * abx > 0.0) {
+			f = (aby * cbx * cbx - cby * abx * abx) / denom;
+			f = std::clamp(f, std::min(abx, cbx), std::max(abx, cbx));
+			f += scanData_[i].focus;
 		}
 	}
 

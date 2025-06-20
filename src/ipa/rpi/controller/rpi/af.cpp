@@ -411,7 +411,7 @@ void Af::doPDAF(double phase, double conf)
 bool Af::earlyTerminationByPhase(double phase)
 {
 	if (scanData_.size() > 0 &&
-	    scanData_[scanData_.size() - 1].conf >= cfg_.confEpsilon) {
+	    scanData_[scanData_.size() - 1].conf >= cfg_.confThresh) {
 		double oldFocus = scanData_[scanData_.size() - 1].focus;
 		double oldPhase = scanData_[scanData_.size() - 1].phase;
 
@@ -420,11 +420,12 @@ bool Af::earlyTerminationByPhase(double phase)
 		 * Interpolate/extrapolate the lens position for zero phase.
 		 * Check that the extrapolation is well-conditioned.
 		 */
-		if ((ftarget_ - oldFocus) * (phase - oldPhase) > 0.0) {
+		if ((ftarget_ - oldFocus) * (phase - oldPhase) * cfg_.speeds[speed_].pdafGain < 0.0) {
 			double param = phase / (phase - oldPhase);
-			if (-3.0 <= param && param <= 3.5) {
-				ftarget_ += param * (oldFocus - ftarget_);
+			if ((-2.5 <= param || mode_ == AfModeContinuous) && param <= 3.0) {
 				LOG(RPiAf, Debug) << "ETBP: param=" << param;
+				param = std::max(param, -2.5);
+				ftarget_ += param * (oldFocus - ftarget_);
 				return true;
 			}
 		}
@@ -562,7 +563,7 @@ void Af::doAF(double contrast, double phase, double conf)
 			else
 				scanState_ = ScanState::Idle;
 			scanData_.clear();
-		} else if (conf >= cfg_.confEpsilon && earlyTerminationByPhase(phase)) {
+		} else if (conf >= cfg_.confThresh && earlyTerminationByPhase(phase)) {
 			scanState_ = ScanState::Settle;
 			stepCount_ = (mode_ == AfModeContinuous) ? 0
 								 : cfg_.speeds[speed_].stepFrames;

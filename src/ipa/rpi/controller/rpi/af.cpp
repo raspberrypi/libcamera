@@ -200,6 +200,7 @@ Af::Af(Controller *controller)
 	  sceneChangeCount_(0),
 	  scanMaxContrast_(0.0),
 	  scanMinContrast_(1.0e9),
+	  scanStep_(0.0),
 	  scanData_(),
 	  reportState_(AfState::Idle)
 {
@@ -251,13 +252,14 @@ void Af::switchMode(CameraMode const &cameraMode, [[maybe_unused]] Metadata *met
 			  << statsRegion_.height;
 	invalidateWeights();
 
-	if (scanState_ >= ScanState::Coarse && scanState_ < ScanState::Settle) {
+	if (scanState_ >= ScanState::Coarse1 && scanState_ < ScanState::Settle) {
 		/*
 		 * If a scan was in progress, re-start it, as CDAF statistics
 		 * may have changed. Though if the application is just about
 		 * to take a still picture, this will not help...
 		 */
 		startProgrammedScan();
+		updateLensPosition();
 	}
 	skipCount_ = cfg_.skipFrames;
 }
@@ -543,31 +545,42 @@ void Af::doScan(double contrast, double phase, double conf)
 		scanMinContrast_ = contrast;
 	scanData_.emplace_back(ScanRecord{ ftarget_, contrast, phase, conf });
 
-	if (scanState_ == ScanState::Coarse) {
-		if (ftarget_ >= cfg_.ranges[range_].focusMax ||
-		    contrast < cfg_.speeds[speed_].contrastRatio * scanMaxContrast_) {
-			/*
-			 * Finished course scan, or termination based on contrast.
-			 * Jump to just after max contrast and start fine scan.
-			 */
-			ftarget_ = std::min(ftarget_, findPeak(scanMaxIndex_) +
-					2.0 * cfg_.speeds[speed_].stepFine);
-			scanState_ = ScanState::Fine;
-			scanData_.clear();
-		} else
-			ftarget_ += cfg_.speeds[speed_].stepCoarse;
-	} else { /* ScanState::Fine */
-		if (ftarget_ <= cfg_.ranges[range_].focusMin || scanData_.size() >= 5 ||
-		    contrast < cfg_.speeds[speed_].contrastRatio * scanMaxContrast_) {
-			/*
-			 * Finished fine scan, or termination based on contrast.
-			 * Use quadratic peak-finding to find best contrast position.
-			 */
-			ftarget_ = findPeak(scanMaxIndex_);
+	if ((scanStep_ >= 0.0 && ftarget_ >= cfg_.ranges[range_].focusMax) ||
+	    (scanStep_ <= 0.0 && ftarget_ <= cfg_.ranges[range_].focusMin) ||
+	    (scanState_ == ScanState::Fine && scanData_.size() >= 3) ||
+	    contrast < cfg_.speeds[speed_].contrastRatio * scanMaxContrast_) {
+		double pk = findPeak(scanMaxIndex_);
+		/*
+		 * Finished a scan, by hitting a limit or due to constrast dropping off.
+		 * If this is a first coarse scan and we didn't bracket the peak, reverse!
+		 * If this is a fine scan, or no fine step was defined, we've finished.
+		 * Otherwise, start fine scan in opposite direction.
+		 */
+		if (scanState_ == ScanState::Coarse1 &&
+		    scanData_[0].contrast >= cfg_.speeds[speed_].contrastRatio * scanMaxContrast_) {
+			scanStep_ = -scanStep_;
+			scanState_ = ScanState::Coarse2;
+		} else if (scanState_ == ScanState::Fine || cfg_.speeds[speed_].stepFine <= 0.0) {
+			ftarget_ = pk;
 			scanState_ = ScanState::Settle;
-		} else
-			ftarget_ -= cfg_.speeds[speed_].stepFine;
-	}
+		} else if (scanState_ == ScanState::Coarse1 &&
+			   scanData_[0].contrast >= cfg_.speeds[speed_].contrastRatio * scanMaxContrast_) {
+			scanStep_ = -scanStep_;
+			scanState_ = ScanState::Coarse2;
+		} else if (scanStep_ >= 0.0) {
+			ftarget_ = std::min(pk + cfg_.speeds[speed_].stepFine,
+					    cfg_.ranges[range_].focusMax);
+			scanStep_ = -cfg_.speeds[speed_].stepFine;
+			scanState_ = ScanState::Fine;
+		} else {
+			ftarget_ = std::max(pk - cfg_.speeds[speed_].stepFine,
+					    cfg_.ranges[range_].focusMin);
+			scanStep_ = cfg_.speeds[speed_].stepFine;
+			scanState_ = ScanState::Fine;
+		}
+		scanData_.clear();
+	} else
+		ftarget_ += scanStep_;
 
 	stepCount_ = (ftarget_ == fsmooth_) ? 0 : cfg_.speeds[speed_].stepFrames;
 }
@@ -622,7 +635,7 @@ void Af::doAF(double contrast, double phase, double conf)
 			/* else fall through to waiting for a scene change */
 		}
 	}
-	if (scanState_ < ScanState::Coarse && mode_ == AfModeContinuous) {
+	if (scanState_ < ScanState::Coarse1 && mode_ == AfModeContinuous) {
 		/*
 		 * In CAF mode, not in a scan, and PDAF is unavailable.
 		 * Wait for a scene change, followed by stability.
@@ -642,7 +655,7 @@ void Af::doAF(double contrast, double phase, double conf)
 			sceneChangeCount_++;
 		if (sceneChangeCount_ >= cfg_.speeds[speed_].retriggerDelay)
 			startProgrammedScan();
-	} else if (scanState_ >= ScanState::Coarse && fsmooth_ == ftarget_) {
+	} else if (scanState_ >= ScanState::Coarse1 && fsmooth_ == ftarget_) {
 		/*
 		 * CDAF-based scanning sequence.
 		 * Allow a delay between steps for CDAF FoM statistics to be
@@ -714,15 +727,27 @@ void Af::startAF()
 		oldSceneContrast_ = 0.0;
 		sceneChangeCount_ = 0;
 		reportState_ = AfState::Scanning;
-	} else
+	} else {
 		startProgrammedScan();
+		updateLensPosition();
+	}
 }
 
 void Af::startProgrammedScan()
 {
-	ftarget_ = cfg_.ranges[range_].focusMin;
-	updateLensPosition();
-	scanState_ = ScanState::Coarse;
+	if (!initted_ || mode_ != AfModeContinuous ||
+	    fsmooth_ <= cfg_.ranges[range_].focusMin + 2.0 * cfg_.speeds[speed_].stepCoarse) {
+		ftarget_ = cfg_.ranges[range_].focusMin;
+		scanStep_ = cfg_.speeds[speed_].stepCoarse;
+		scanState_ = ScanState::Coarse2;
+	} else if (fsmooth_ >= cfg_.ranges[range_].focusMax - 2.0 * cfg_.speeds[speed_].stepCoarse) {
+		ftarget_ = cfg_.ranges[range_].focusMax;
+		scanStep_ = -cfg_.speeds[speed_].stepCoarse;
+		scanState_ = ScanState::Coarse2;
+	} else {
+		scanStep_ = -cfg_.speeds[speed_].stepCoarse;
+		scanState_ = ScanState::Coarse1;
+	}
 	scanMaxContrast_ = 0.0;
 	scanMinContrast_ = 1.0e9;
 	scanMaxIndex_ = 0;
@@ -785,7 +810,9 @@ void Af::prepare(Metadata *imageMetadata)
 	else
 		status.pauseState = AfPauseState::Running;
 
-	if (mode_ == AfModeAuto && scanState_ != ScanState::Idle)
+	if (scanState_ == ScanState::Idle)
+		status.state = AfState::Idle;
+	else if (mode_ == AfModeAuto)
 		status.state = AfState::Scanning;
 	else
 		status.state = reportState_;
@@ -907,7 +934,7 @@ void Af::setMode(AfAlgorithm::AfMode mode)
 		pauseFlag_ = false;
 		if (mode == AfModeContinuous)
 			scanState_ = ScanState::Trigger;
-		else if (mode != AfModeAuto || scanState_ < ScanState::Coarse)
+		else if (mode != AfModeAuto || scanState_ < ScanState::Coarse1)
 			goIdle();
 	}
 }
@@ -923,11 +950,11 @@ void Af::pause(AfAlgorithm::AfPause pause)
 	if (mode_ == AfModeContinuous) {
 		if (pause == AfPauseResume && pauseFlag_) {
 			pauseFlag_ = false;
-			if (scanState_ < ScanState::Coarse)
+			if (scanState_ < ScanState::Coarse1)
 				scanState_ = ScanState::Trigger;
 		} else if (pause != AfPauseResume && !pauseFlag_) {
 			pauseFlag_ = true;
-			if (pause == AfPauseImmediate || scanState_ < ScanState::Coarse)
+			if (pause == AfPauseImmediate || scanState_ < ScanState::Coarse1)
 				goIdle();
 		}
 	}

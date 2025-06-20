@@ -75,7 +75,8 @@ private:
 		Idle = 0,
 		Trigger,
 		Pdaf,
-		Coarse,
+		Coarse1,
+		Coarse2,
 		Fine,
 		Settle
 	};
@@ -90,8 +91,8 @@ private:
 	};
 
 	struct SpeedDependentParams {
-		double stepCoarse;		/* used for scans */
-		double stepFine;		/* used for scans */
+		double stepCoarse;		/* in dioptres; used for scans */
+		double stepFine;		/* in dioptres; used for scans */
 		double contrastRatio;		/* used for scan termination and reporting */
 		double retriggerRatio;          /* contrast and RGB ratio for re-triggering */
 		uint32_t retriggerDelay;        /* frames of stability before re-triggering */
@@ -177,7 +178,7 @@ private:
 	unsigned sameSignCount_;
 	unsigned sceneChangeCount_;
 	unsigned scanMaxIndex_;
-	double scanMaxContrast_, scanMinContrast_;
+	double scanMaxContrast_, scanMinContrast_, scanStep_;
 	std::vector<ScanRecord> scanData_;
 	AfState reportState_;
 };

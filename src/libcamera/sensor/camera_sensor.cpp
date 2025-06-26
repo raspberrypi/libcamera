@@ -302,8 +302,9 @@ int CameraSensor::setEmbeddedDataEnabled(bool enable)
  * camera sensor, likely at configure() time.
  *
  * If the requested \a orientation cannot be obtained, the \a orientation
- * parameter is adjusted to report the current image orientation and
- * Transform::Identity is returned.
+ * parameter is adjusted to report the native image orientation (i.e. resulting
+ * from the physical mounting rotation of the camera sensor, without any
+ * transformation) and Transform::Identity is returned.
  *
  * If the requested \a orientation can be obtained, the function computes a
  * Transform and does not adjust \a orientation.

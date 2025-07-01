@@ -488,7 +488,7 @@ std::size_t CameraConfiguration::size() const
  *
  * \return A CameraConfiguration::Status value that describes the validation
  * status.
- * \retval CameraConfigutation::Adjusted The configuration has been adjusted
+ * \retval CameraConfiguration::Adjusted The configuration has been adjusted
  * and is now valid. The color space of some or all of the streams may have
  * been changed. The caller shall check the color spaces carefully.
  * \retval CameraConfiguration::Valid The configuration was already valid and

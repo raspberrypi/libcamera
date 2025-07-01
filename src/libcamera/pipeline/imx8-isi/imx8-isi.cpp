@@ -40,14 +40,13 @@ class PipelineHandlerISI;
 class ISICameraData : public Camera::Private
 {
 public:
-	ISICameraData(PipelineHandler *ph)
+	/* Maximum amount of streams (i.e. pipes) per camera. */
+	static constexpr unsigned int kNumStreams = 3;
+
+	ISICameraData(PipelineHandler *ph, unsigned int numStreams)
 		: Camera::Private(ph)
 	{
-		/*
-		 * \todo Assume 2 channels only for now, as that's the number of
-		 * available channels on i.MX8MP.
-		 */
-		streams_.resize(2);
+		streams_.resize(std::min(kNumStreams, numStreams));
 	}
 
 	PipelineHandlerISI *pipe();
@@ -1050,8 +1049,12 @@ bool PipelineHandlerISI::match(DeviceEnumerator *enumerator)
 		}
 
 		/* Create the camera data. */
+		/*
+		 * \todo compute available pipes per camera instead of using
+		 * pipes_.size() for multi cameras case.
+		 */
 		std::unique_ptr<ISICameraData> data =
-			std::make_unique<ISICameraData>(this);
+			std::make_unique<ISICameraData>(this, pipes_.size());
 
 		data->sensor_ = CameraSensorFactoryBase::create(sensor);
 		data->csis_ = std::make_unique<V4L2Subdevice>(csi);

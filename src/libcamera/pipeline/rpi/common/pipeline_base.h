@@ -68,7 +68,7 @@ public:
 	void freeBuffers();
 	virtual void platformFreeBuffers() = 0;
 
-	void enumerateVideoDevices(MediaLink *link, const std::string &frontend);
+	bool enumerateVideoDevices(MediaLink *link, const std::string &frontend);
 
 	int loadPipelineConfiguration();
 	int loadIPA(ipa::RPi::InitResult *result);

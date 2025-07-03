@@ -806,7 +806,8 @@ int PipelineHandlerBase::registerCamera(std::unique_ptr<RPi::CameraData> &camera
 	 * chain. There may be a cascade of devices in this chain!
 	 */
 	MediaLink *link = sensorEntity->getPadByIndex(0)->links()[0];
-	data->enumerateVideoDevices(link, frontendName);
+	if (!data->enumerateVideoDevices(link, frontendName))
+		return -EINVAL;
 
 	ipa::RPi::InitResult result;
 	if (data->loadIPA(&result)) {
@@ -1018,16 +1019,20 @@ void CameraData::freeBuffers()
  *          | Sensor2 |   | Sensor3 |
  *          +---------+   +---------+
  */
-void CameraData::enumerateVideoDevices(MediaLink *link, const std::string &frontend)
+bool CameraData::enumerateVideoDevices(MediaLink *link, const std::string &frontend)
 {
 	const MediaPad *sinkPad = link->sink();
 	const MediaEntity *entity = sinkPad->entity();
 	bool frontendFound = false;
 
+	/* Once we reach the Frontend entity, we are done. */
+	if (link->sink()->entity()->name() == frontend)
+		return true;
+
 	/* We only deal with Video Mux and Bridge devices in cascade. */
 	if (entity->function() != MEDIA_ENT_F_VID_MUX &&
 	    entity->function() != MEDIA_ENT_F_VID_IF_BRIDGE)
-		return;
+		return false;
 
 	/* Find the source pad for this Video Mux or Bridge device. */
 	const MediaPad *sourcePad = nullptr;
@@ -1039,7 +1044,7 @@ void CameraData::enumerateVideoDevices(MediaLink *link, const std::string &front
 			 * and this branch in the cascade.
 			 */
 			if (sourcePad)
-				return;
+				return false;
 
 			sourcePad = pad;
 		}
@@ -1056,12 +1061,9 @@ void CameraData::enumerateVideoDevices(MediaLink *link, const std::string &front
 	 * other Video Mux and Bridge devices.
 	 */
 	for (MediaLink *l : sourcePad->links()) {
-		enumerateVideoDevices(l, frontend);
-		/* Once we reach the Frontend entity, we are done. */
-		if (l->sink()->entity()->name() == frontend) {
-			frontendFound = true;
+		frontendFound = enumerateVideoDevices(l, frontend);
+		if (frontendFound)
 			break;
-		}
 	}
 
 	/* This identifies the end of our entity enumeration recursion. */
@@ -1076,6 +1078,8 @@ void CameraData::enumerateVideoDevices(MediaLink *link, const std::string &front
 			bridgeDevices_.clear();
 		}
 	}
+
+	return frontendFound;
 }
 
 int CameraData::loadPipelineConfiguration()

@@ -881,8 +881,10 @@ gst_libcamera_src_task_leave([[maybe_unused]] GstTask *task,
 
 	{
 		GLibRecLocker locker(&self->stream_lock);
-		for (GstPad *srcpad : state->srcpads_)
+		for (GstPad *srcpad : state->srcpads_) {
+			gst_libcamera_pad_set_latency(srcpad, GST_CLOCK_TIME_NONE);
 			gst_libcamera_pad_set_pool(srcpad, nullptr);
+		}
 	}
 
 	g_clear_object(&self->allocator);
@@ -1085,7 +1087,7 @@ gst_libcamera_src_request_new_pad(GstElement *element, GstPadTemplate *templ,
 
 	gst_child_proxy_child_added(GST_CHILD_PROXY(self), G_OBJECT(pad), GST_OBJECT_NAME(pad));
 
-	return reinterpret_cast<GstPad *>(g_steal_pointer(&pad));
+	return std::exchange(pad, nullptr);
 }
 
 static void

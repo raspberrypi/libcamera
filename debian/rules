@@ -62,8 +62,8 @@ override_dh_strip:
 	dh_strip -a
 	MESON_INSTALL_DESTDIR_PREFIX=. ./src/ipa/ipa-sign-install.sh \
 		./obj-${DEB_HOST_GNU_TYPE}/src/ipa-priv-key.pem \
-		debian/libcamera-ipa/usr/lib/${DEB_HOST_MULTIARCH}/libcamera/ipa_*.so
-	for IPA_MOD in debian/libcamera-ipa/usr/lib/*/libcamera/ipa_*.so; \
+		debian/libcamera-ipa/usr/lib/${DEB_HOST_MULTIARCH}/libcamera/ipa/ipa_*.so
+	for IPA_MOD in debian/libcamera-ipa/usr/lib/*/libcamera/ipa/ipa_*.so; \
 	do \
 	  echo "Verifying signature of $${IPA_MOD}"; \
 	  ./obj-${DEB_HOST_GNU_TYPE}/src/apps/ipa-verify/ipa_verify $${IPA_MOD}; \

@@ -44,6 +44,11 @@ public:
 
 	int parseTuningData(const YamlObject &tuningData);
 
+	void setExposureCompensation(double gain)
+	{
+		exposureCompensation_ = gain;
+	}
+
 	void setLimits(utils::Duration minExposureTime, utils::Duration maxExposureTime,
 		       double minGain, double maxGain);
 
@@ -84,6 +89,7 @@ private:
 				   double gain);
 	utils::Duration filterExposure(utils::Duration exposureValue);
 
+	double exposureCompensation_;
 	uint64_t frameCount_;
 	utils::Duration filteredExposure_;
 	double relativeLuminanceTarget_;

@@ -44,6 +44,15 @@ static constexpr uint32_t kNumStartupFrames = 10;
  */
 static constexpr double kDefaultRelativeLuminanceTarget = 0.16;
 
+/*
+ * Maximum relative luminance target
+ *
+ * This value limits the relative luminance target after applying the exposure
+ * compensation. Targeting a value above this limit results in saturation
+ * and the inability to regulate properly.
+ */
+static constexpr double kMaxRelativeLuminanceTarget = 0.95;
+
 /**
  * \struct AgcMeanLuminance::AgcConstraint
  * \brief The boundaries and target for an AeConstraintMode constraint
@@ -134,7 +143,8 @@ static constexpr double kDefaultRelativeLuminanceTarget = 0.16;
  */
 
 AgcMeanLuminance::AgcMeanLuminance()
-	: frameCount_(0), filteredExposure_(0s), relativeLuminanceTarget_(0)
+	: exposureCompensation_(1.0), frameCount_(0), filteredExposure_(0s),
+	  relativeLuminanceTarget_(0)
 {
 }
 
@@ -369,6 +379,15 @@ int AgcMeanLuminance::parseTuningData(const YamlObject &tuningData)
 }
 
 /**
+ * \fn AgcMeanLuminance::setExposureCompensation()
+ * \brief Set the exposure compensation value
+ * \param[in] gain The exposure compensation gain
+ *
+ * This function sets the exposure compensation value to be used in the
+ * AGC calculations. It is expressed as gain instead of EV.
+ */
+
+/**
  * \brief Set the ExposureModeHelper limits for this class
  * \param[in] minExposureTime Minimum exposure time to allow
  * \param[in] maxExposureTime Maximum ewposure time to allow
@@ -424,7 +443,8 @@ void AgcMeanLuminance::setLimits(utils::Duration minExposureTime,
  */
 double AgcMeanLuminance::estimateInitialGain() const
 {
-	double yTarget = relativeLuminanceTarget_;
+	double yTarget = std::min(relativeLuminanceTarget_ * exposureCompensation_,
+				  kMaxRelativeLuminanceTarget);
 	double yGain = 1.0;
 
 	/*

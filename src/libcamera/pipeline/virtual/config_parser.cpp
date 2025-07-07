@@ -233,17 +233,21 @@ int ConfigParser::parseFrameGenerator(const YamlObject &cameraConfigData, Virtua
 
 int ConfigParser::parseLocation(const YamlObject &cameraConfigData, VirtualCameraData *data)
 {
-	std::string location = cameraConfigData["location"].get<std::string>("CameraLocationFront");
-
 	/* Default value is properties::CameraLocationFront */
-	auto it = properties::LocationNameValueMap.find(location);
-	if (it == properties::LocationNameValueMap.end()) {
-		LOG(Virtual, Error)
-			<< "location: " << location << " is not supported";
-		return -EINVAL;
+	int32_t location = properties::CameraLocationFront;
+
+	if (auto l = cameraConfigData["location"].get<std::string>()) {
+		auto it = properties::LocationNameValueMap.find(*l);
+		if (it == properties::LocationNameValueMap.end()) {
+			LOG(Virtual, Error)
+				<< "location: " << *l << " is not supported";
+			return -EINVAL;
+		}
+
+		location = it->second;
 	}
 
-	data->properties_.set(properties::Location, it->second);
+	data->properties_.set(properties::Location, location);
 
 	return 0;
 }

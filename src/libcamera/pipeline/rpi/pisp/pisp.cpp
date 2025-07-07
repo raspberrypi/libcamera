@@ -1826,12 +1826,6 @@ void PiSPCameraData::beOutputDequeue(FrameBuffer *buffer)
 		dmabufSyncEnd(buffer->planes()[0].fd);
 
 	handleStreamBuffer(buffer, stream);
-
-	/*
-	 * Increment the number of ISP outputs generated.
-	 * This is needed to track dropped frames.
-	 */
-	ispOutputCount_++;
 	handleState();
 }
 
@@ -1877,7 +1871,6 @@ void PiSPCameraData::prepareIspComplete(const ipa::RPi::BufferIds &buffers, bool
 		 * If there is no need to run the Backend, just signal that the
 		 * input buffer is completed and all Backend outputs are ready.
 		 */
-		ispOutputCount_ = ispOutputTotal_;
 		buffer = cfe_[Cfe::Output0].getBuffers().at(bayerId).buffer;
 		handleStreamBuffer(buffer, &cfe_[Cfe::Output0]);
 	} else
@@ -2006,7 +1999,6 @@ int PiSPCameraData::configureBe(const std::optional<ColorSpace> &yuvColorSpace)
 	global.bayer_enables |= PISP_BE_BAYER_ENABLE_INPUT;
 	global.bayer_order = toPiSPBayerOrder(cfeFormat.fourcc);
 
-	ispOutputTotal_ = 1; /* Config buffer */
 	if (PISP_IMAGE_FORMAT_COMPRESSED(inputFormat.format)) {
 		pisp_decompress_config decompress;
 		decompress.offset = DefaultCompressionOffset;
@@ -2037,7 +2029,6 @@ int PiSPCameraData::configureBe(const std::optional<ColorSpace> &yuvColorSpace)
 		setupOutputClipping(ispFormat0, outputFormat0);
 
 		be_->SetOutputFormat(0, outputFormat0);
-		ispOutputTotal_++;
 	}
 
 	if (global.rgb_enables & PISP_BE_RGB_ENABLE_OUTPUT1) {
@@ -2061,7 +2052,6 @@ int PiSPCameraData::configureBe(const std::optional<ColorSpace> &yuvColorSpace)
 		setupOutputClipping(ispFormat1, outputFormat1);
 
 		be_->SetOutputFormat(1, outputFormat1);
-		ispOutputTotal_++;
 	}
 
 	/* Setup the TDN I/O blocks in case TDN gets turned on later. */
@@ -2251,8 +2241,6 @@ void PiSPCameraData::prepareCfe()
 
 void PiSPCameraData::prepareBe(uint32_t bufferId, bool stitchSwapBuffers)
 {
-	ispOutputCount_ = 0;
-
 	FrameBuffer *buffer = cfe_[Cfe::Output0].getBuffers().at(bufferId).buffer;
 
 	LOG(RPI, Debug) << "Input re-queue to ISP, buffer id " << bufferId

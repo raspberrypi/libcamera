@@ -118,7 +118,7 @@ for cam: [optional]
         - libtiff-dev: Enables writing DNG
 
 for qcam: [optional]
-        libtiff-dev qt6-base-dev qt6-tools-dev-tools
+        libtiff-dev qt6-base-dev
 
 for tracing with lttng: [optional]
         liblttng-ust-dev python3-jinja2 lttng-tools

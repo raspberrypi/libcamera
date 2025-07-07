@@ -114,7 +114,7 @@ namespace ipa {
  * does not take any statistics into account. It is used to compute the colour
  * gains when the user manually specifies a colour temperature.
  *
- * \return The colour gains
+ * \return The colour gains or std::nullopt if the conversion is not possible
  */
 
 /**

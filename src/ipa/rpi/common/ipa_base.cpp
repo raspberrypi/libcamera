@@ -60,23 +60,24 @@ const ControlInfoMap::Map ipaControls{
 	/* \todo Move this to the Camera class */
 	{ &controls::AeEnable, ControlInfo(false, true, true) },
 	{ &controls::ExposureTimeMode,
-	  ControlInfo(static_cast<int32_t>(controls::ExposureTimeModeAuto),
-		      static_cast<int32_t>(controls::ExposureTimeModeManual),
-		      static_cast<int32_t>(controls::ExposureTimeModeAuto)) },
+	  ControlInfo({ { ControlValue(controls::ExposureTimeModeAuto),
+			  ControlValue(controls::ExposureTimeModeManual) } },
+		      ControlValue(controls::ExposureTimeModeAuto)) },
 	{ &controls::ExposureTime,
 	  ControlInfo(1, 66666, static_cast<int32_t>(defaultExposureTime.get<std::micro>())) },
 	{ &controls::AnalogueGainMode,
-	  ControlInfo(static_cast<int32_t>(controls::AnalogueGainModeAuto),
-		      static_cast<int32_t>(controls::AnalogueGainModeManual),
-		      static_cast<int32_t>(controls::AnalogueGainModeAuto)) },
+	  ControlInfo({ { ControlValue(controls::AnalogueGainModeAuto),
+			  ControlValue(controls::AnalogueGainModeManual) } },
+		      ControlValue(controls::AnalogueGainModeAuto)) },
 	{ &controls::AnalogueGain, ControlInfo(1.0f, 16.0f, 1.0f) },
 	{ &controls::AeMeteringMode, ControlInfo(controls::AeMeteringModeValues) },
 	{ &controls::AeConstraintMode, ControlInfo(controls::AeConstraintModeValues) },
 	{ &controls::AeExposureMode, ControlInfo(controls::AeExposureModeValues) },
 	{ &controls::ExposureValue, ControlInfo(-8.0f, 8.0f, 0.0f) },
-	{ &controls::AeFlickerMode, ControlInfo(static_cast<int>(controls::FlickerOff),
-						static_cast<int>(controls::FlickerManual),
-						static_cast<int>(controls::FlickerOff)) },
+	{ &controls::AeFlickerMode,
+	  ControlInfo({ { ControlValue(controls::FlickerOff),
+			  ControlValue(controls::FlickerManual) } },
+		      ControlValue(controls::FlickerOff)) },
 	{ &controls::AeFlickerPeriod, ControlInfo(100, 1000000) },
 	{ &controls::Brightness, ControlInfo(-1.0f, 1.0f, 0.0f) },
 	{ &controls::Contrast, ControlInfo(0.0f, 32.0f, 1.0f) },
@@ -237,25 +238,6 @@ int32_t IpaBase::configure(const IPACameraSensorInfo &sensorInfo, const ConfigPa
 		agcStatus.analogueGain = defaultAnalogueGain;
 		applyAGC(&agcStatus, ctrls);
 
-		/*
-		 * Set the lens to the default (typically hyperfocal) position
-		 * on first start.
-		 */
-		if (lensPresent_) {
-			RPiController::AfAlgorithm *af =
-				dynamic_cast<RPiController::AfAlgorithm *>(controller_.getAlgorithm("af"));
-
-			if (af) {
-				float defaultPos =
-					ipaAfControls.at(&controls::LensPosition).def().get<float>();
-				ControlList lensCtrl(lensCtrls_);
-				int32_t hwpos;
-
-				af->setLensPosition(defaultPos, &hwpos);
-				lensCtrl.set(V4L2_CID_FOCUS_ABSOLUTE, hwpos);
-				result->lensControls = std::move(lensCtrl);
-			}
-		}
 	}
 
 	result->sensorControls = std::move(ctrls);
@@ -285,8 +267,20 @@ int32_t IpaBase::configure(const IPACameraSensorInfo &sensorInfo, const ConfigPa
 		ctrlMap.merge(ControlInfoMap::Map(ipaColourControls));
 
 	/* Declare Autofocus controls, only if we have a controllable lens */
-	if (lensPresent_)
+	if (lensPresent_) {
 		ctrlMap.merge(ControlInfoMap::Map(ipaAfControls));
+		RPiController::AfAlgorithm *af =
+			dynamic_cast<RPiController::AfAlgorithm *>(controller_.getAlgorithm("af"));
+		if (af) {
+			double min, max, dflt;
+			af->getLensLimits(min, max);
+			dflt = af->getDefaultLensPosition();
+			ctrlMap[&controls::LensPosition] =
+				ControlInfo(static_cast<float>(min),
+					    static_cast<float>(max),
+					    static_cast<float>(dflt));
+		}
+	}
 
 	result->controlInfo = ControlInfoMap(std::move(ctrlMap), controls::controls);
 
@@ -325,13 +319,34 @@ void IpaBase::start(const ControlList &controls, StartResult *result)
 	hdrStatus_ = agcStatus.hdr;
 
 	/*
+	 * AF: If no lens position was specified, drive lens to a default position.
+	 * This had to be deferred (not initialised by a constructor) until here
+	 * to ensure that exactly ONE starting position is sent to the lens driver.
+	 * It should be the static API default, not dependent on AF range or mode.
+	 */
+	if (firstStart_ && lensPresent_) {
+		RPiController::AfAlgorithm *af = dynamic_cast<RPiController::AfAlgorithm *>(
+			controller_.getAlgorithm("af"));
+		if (af && !af->getLensPosition()) {
+			int32_t hwpos;
+			double pos = af->getDefaultLensPosition();
+			if (af->setLensPosition(pos, &hwpos, true)) {
+				ControlList lensCtrls(lensCtrls_);
+				lensCtrls.set(V4L2_CID_FOCUS_ABSOLUTE, hwpos);
+				setLensControls.emit(lensCtrls);
+			}
+		}
+	}
+
+	/*
 	 * Initialise frame counts, and decide how many frames must be hidden or
 	 * "mistrusted", which depends on whether this is a startup from cold,
 	 * or merely a mode switch in a running system.
 	 */
+	unsigned int agcConvergenceFrames = 0, awbConvergenceFrames = 0;
 	frameCount_ = 0;
 	if (firstStart_) {
-		dropFrameCount_ = helper_->hideFramesStartup();
+		invalidCount_ = helper_->hideFramesStartup();
 		mistrustCount_ = helper_->mistrustFramesStartup();
 
 		/*
@@ -341,7 +356,6 @@ void IpaBase::start(const ControlList &controls, StartResult *result)
 		 * (mistrustCount_) that they won't see. But if zero (i.e.
 		 * no convergence necessary), no frames need to be dropped.
 		 */
-		unsigned int agcConvergenceFrames = 0;
 		RPiController::AgcAlgorithm *agc = dynamic_cast<RPiController::AgcAlgorithm *>(
 			controller_.getAlgorithm("agc"));
 		if (agc) {
@@ -350,7 +364,6 @@ void IpaBase::start(const ControlList &controls, StartResult *result)
 				agcConvergenceFrames += mistrustCount_;
 		}
 
-		unsigned int awbConvergenceFrames = 0;
 		RPiController::AwbAlgorithm *awb = dynamic_cast<RPiController::AwbAlgorithm *>(
 			controller_.getAlgorithm("awb"));
 		if (awb) {
@@ -358,15 +371,18 @@ void IpaBase::start(const ControlList &controls, StartResult *result)
 			if (awbConvergenceFrames)
 				awbConvergenceFrames += mistrustCount_;
 		}
-
-		dropFrameCount_ = std::max({ dropFrameCount_, agcConvergenceFrames, awbConvergenceFrames });
-		LOG(IPARPI, Debug) << "Drop " << dropFrameCount_ << " frames on startup";
 	} else {
-		dropFrameCount_ = helper_->hideFramesModeSwitch();
+		invalidCount_ = helper_->hideFramesModeSwitch();
 		mistrustCount_ = helper_->mistrustFramesModeSwitch();
 	}
 
-	result->dropFrameCount = dropFrameCount_;
+	result->startupFrameCount = std::max({ agcConvergenceFrames, awbConvergenceFrames });
+	result->invalidFrameCount = invalidCount_;
+
+	invalidCount_ = std::max({ invalidCount_, agcConvergenceFrames, awbConvergenceFrames });
+
+	LOG(IPARPI, Debug) << "Startup frames: " << result->startupFrameCount
+			   << " Invalid frames: " << result->invalidFrameCount;
 
 	firstStart_ = false;
 	lastRunTimestamp_ = 0;
@@ -447,7 +463,7 @@ void IpaBase::prepareIsp(const PrepareParams &params)
 
 	/* Allow a 10% margin on the comparison below. */
 	Duration delta = (frameTimestamp - lastRunTimestamp_) * 1.0ns;
-	if (lastRunTimestamp_ && frameCount_ > dropFrameCount_ &&
+	if (lastRunTimestamp_ && frameCount_ > invalidCount_ &&
 	    delta < controllerMinFrameDuration * 0.9 && !hdrChange) {
 		/*
 		 * Ensure we merge the previous frame's metadata with the current
@@ -964,6 +980,17 @@ void IpaBase::applyControls(const ControlList &controls)
 			agc->setEv(0, ev);
 			libcameraMetadata_.set(controls::ExposureValue,
 					       ctrl.second.get<float>());
+			break;
+		}
+
+		case controls::AE_ENABLE: {
+			/*
+			 * The AeEnable control is now just a wrapper that will already have been
+			 * converted to ExposureTimeMode and AnalogueGainMode equivalents, so there
+			 * would be nothing to do here. Nonetheless, "handle" the control so as to
+			 * avoid warnings from the "default:" clause of the switch statement.
+			 */
+
 			break;
 		}
 
@@ -1664,7 +1691,8 @@ void IpaBase::applyFrameDurations(Duration minFrameDuration, Duration maxFrameDu
 
 	RPiController::AgcAlgorithm *agc = dynamic_cast<RPiController::AgcAlgorithm *>(
 		controller_.getAlgorithm("agc"));
-	agc->setMaxExposureTime(maxExposureTime);
+	if (agc)
+		agc->setMaxExposureTime(maxExposureTime);
 
 	RPiController::SyncAlgorithm *sync = dynamic_cast<RPiController::SyncAlgorithm *>(
 		controller_.getAlgorithm("sync"));

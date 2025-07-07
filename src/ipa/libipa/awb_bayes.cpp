@@ -270,7 +270,7 @@ void AwbBayes::handleControls(const ControlList &controls)
 	}
 }
 
-RGB<double> AwbBayes::gainsFromColourTemperature(double colourTemperature)
+std::optional<RGB<double>> AwbBayes::gainsFromColourTemperature(double colourTemperature)
 {
 	/*
 	 * \todo In the RaspberryPi code, the ct curve was interpolated in
@@ -278,7 +278,7 @@ RGB<double> AwbBayes::gainsFromColourTemperature(double colourTemperature)
 	 * intuitive, as the gains are in linear space. But I can't prove it.
 	 */
 	const auto &gains = colourGainCurve_.getInterpolated(colourTemperature);
-	return { { gains[0], 1.0, gains[1] } };
+	return RGB<double>{ { gains[0], 1.0, gains[1] } };
 }
 
 AwbResult AwbBayes::calculateAwb(const AwbStats &stats, unsigned int lux)

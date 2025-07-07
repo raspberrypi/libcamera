@@ -76,7 +76,7 @@ int SDLTextureMJPG::decompress(Span<const uint8_t> data)
 	return 0;
 }
 
-void SDLTextureMJPG::update(const std::vector<libcamera::Span<const uint8_t>> &data)
+void SDLTextureMJPG::update(libcamera::Span<const libcamera::Span<const uint8_t>> data)
 {
 	decompress(data[0]);
 	SDL_UpdateTexture(ptr_, nullptr, rgb_.get(), stride_);

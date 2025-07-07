@@ -8,6 +8,7 @@
 
 #include <algorithm>
 #include <sstream>
+#include <type_traits>
 #include <vector>
 
 #include <libcamera/base/log.h>
@@ -20,17 +21,19 @@ namespace libcamera {
 LOG_DECLARE_CATEGORY(Matrix)
 
 #ifndef __DOXYGEN__
-template<typename T, unsigned int Rows, unsigned int Cols,
-	 std::enable_if_t<std::is_arithmetic_v<T>> * = nullptr>
-#else
-template<typename T, unsigned int Rows, unsigned int Cols>
+template<typename T>
+bool matrixInvert(Span<const T> dataIn, Span<T> dataOut, unsigned int dim,
+		  Span<T> scratchBuffer, Span<unsigned int> swapBuffer);
 #endif /* __DOXYGEN__ */
+
+template<typename T, unsigned int Rows, unsigned int Cols>
 class Matrix
 {
+	static_assert(std::is_arithmetic_v<T>, "Matrix type must be arithmetic");
+
 public:
-	Matrix()
+	constexpr Matrix()
 	{
-		data_.fill(static_cast<T>(0));
 	}
 
 	Matrix(const std::array<T, Rows * Cols> &data)
@@ -38,7 +41,12 @@ public:
 		std::copy(data.begin(), data.end(), data_.begin());
 	}
 
-	static Matrix identity()
+	Matrix(const Span<const T, Rows * Cols> data)
+	{
+		std::copy(data.begin(), data.end(), data_.begin());
+	}
+
+	static constexpr Matrix identity()
 	{
 		Matrix ret;
 		for (size_t i = 0; i < std::min(Rows, Cols); i++)
@@ -66,14 +74,14 @@ public:
 		return out.str();
 	}
 
-	Span<const T, Rows * Cols> data() const { return data_; }
+	constexpr Span<const T, Rows * Cols> data() const { return data_; }
 
-	Span<const T, Cols> operator[](size_t i) const
+	constexpr Span<const T, Cols> operator[](size_t i) const
 	{
 		return Span<const T, Cols>{ &data_.data()[i * Cols], Cols };
 	}
 
-	Span<T, Cols> operator[](size_t i)
+	constexpr Span<T, Cols> operator[](size_t i)
 	{
 		return Span<T, Cols>{ &data_.data()[i * Cols], Cols };
 	}
@@ -90,8 +98,30 @@ public:
 		return *this;
 	}
 
+	Matrix<T, Rows, Cols> inverse(bool *ok = nullptr) const
+	{
+		static_assert(Rows == Cols, "Matrix must be square");
+
+		Matrix<T, Rows, Cols> inverse;
+		std::array<T, Rows * Cols * 2> scratchBuffer;
+		std::array<unsigned int, Rows> swapBuffer;
+		bool res = matrixInvert(Span<const T>(data_),
+					Span<T>(inverse.data_),
+					Rows,
+					Span<T>(scratchBuffer),
+					Span<unsigned int>(swapBuffer));
+		if (ok)
+			*ok = res;
+		return inverse;
+	}
+
 private:
-	std::array<T, Rows * Cols> data_;
+	/*
+	 * \todo The initializer is only necessary for the constructor to be
+	 * constexpr in C++17. Remove the initializer as soon as we are on
+	 * C++20.
+	 */
+	std::array<T, Rows * Cols> data_ = {};
 };
 
 #ifndef __DOXYGEN__
@@ -123,21 +153,16 @@ Matrix<U, Rows, Cols> operator*(const Matrix<U, Rows, Cols> &m, T d)
 	return d * m;
 }
 
-#ifndef __DOXYGEN__
-template<typename T,
-	 unsigned int R1, unsigned int C1,
-	 unsigned int R2, unsigned int C2,
-	 std::enable_if_t<C1 == R2> * = nullptr>
-#else
-template<typename T, unsigned int R1, unsigned int C1, unsigned int R2, unsigned in C2>
-#endif /* __DOXYGEN__ */
-Matrix<T, R1, C2> operator*(const Matrix<T, R1, C1> &m1, const Matrix<T, R2, C2> &m2)
+template<typename T1, unsigned int R1, unsigned int C1, typename T2, unsigned int R2, unsigned int C2>
+constexpr Matrix<std::common_type_t<T1, T2>, R1, C2> operator*(const Matrix<T1, R1, C1> &m1,
+							       const Matrix<T2, R2, C2> &m2)
 {
-	Matrix<T, R1, C2> result;
+	static_assert(C1 == R2, "Matrix dimensions must match for multiplication");
+	Matrix<std::common_type_t<T1, T2>, R1, C2> result;
 
 	for (unsigned int i = 0; i < R1; i++) {
 		for (unsigned int j = 0; j < C2; j++) {
-			T sum = 0;
+			std::common_type_t<T1, T2> sum = 0;
 
 			for (unsigned int k = 0; k < C1; k++)
 				sum += m1[i][k] * m2[k][j];
@@ -150,7 +175,7 @@ Matrix<T, R1, C2> operator*(const Matrix<T, R1, C1> &m1, const Matrix<T, R2, C2>
 }
 
 template<typename T, unsigned int Rows, unsigned int Cols>
-Matrix<T, Rows, Cols> operator+(const Matrix<T, Rows, Cols> &m1, const Matrix<T, Rows, Cols> &m2)
+constexpr Matrix<T, Rows, Cols> operator+(const Matrix<T, Rows, Cols> &m1, const Matrix<T, Rows, Cols> &m2)
 {
 	Matrix<T, Rows, Cols> result;
 

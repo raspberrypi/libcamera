@@ -618,7 +618,7 @@ accordingly. In this example, the application file has been named
 
    simple_cam = executable('simple-cam',
        'simple-cam.cpp',
-       dependencies: dependency('libcamera', required : true))
+       dependencies: dependency('libcamera'))
 
 The ``dependencies`` line instructs meson to ask ``pkgconfig`` (or ``cmake``) to
 locate the ``libcamera`` library,  which the test application will be

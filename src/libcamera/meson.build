@@ -44,6 +44,7 @@ libcamera_internal_sources = files([
     'matrix.cpp',
     'media_device.cpp',
     'media_object.cpp',
+    'media_pipeline.cpp',
     'pipeline_handler.cpp',
     'process.cpp',
     'pub_key.cpp',
@@ -83,7 +84,10 @@ if not cc.has_function('dlopen')
     libdl = cc.find_library('dl')
 endif
 libudev = dependency('libudev', required : get_option('udev'))
-libyaml = dependency('yaml-0.1', required : false)
+libyaml = dependency('yaml-0.1', default_options : [
+    'default_library=static',
+    'werror=false',
+])
 
 # Use one of gnutls or libcrypto (provided by OpenSSL), trying gnutls first.
 libcrypto = dependency('gnutls', required : false)
@@ -119,17 +123,6 @@ if libudev.found()
     ])
 endif
 
-# Fallback to a subproject if libyaml isn't found, as it's not packaged in AOSP.
-if not libyaml.found()
-    cmake = import('cmake')
-
-    libyaml_vars = cmake.subproject_options()
-    libyaml_vars.add_cmake_defines({'CMAKE_POSITION_INDEPENDENT_CODE': 'ON'})
-    libyaml_vars.append_compile_args('c', '-Wno-unused-value')
-    libyaml_wrap = cmake.subproject('libyaml', options : libyaml_vars)
-    libyaml = libyaml_wrap.dependency('yaml')
-endif
-
 control_sources = []
 
 controls_mode_files = {
@@ -156,6 +149,7 @@ foreach mode, inout_files : controls_mode_files
                                      command : [gen_controls, '-o', '@OUTPUT@',
                                                 '--mode', mode, '-t', template_file,
                                                 '-r', ranges_file, '@INPUT@'],
+                                     depend_files : [py_mod_controls],
                                      env : py_build_env)
 endforeach
 

@@ -43,7 +43,6 @@ struct AwbConfig {
 	uint16_t startupFrames;
 	unsigned int convergenceFrames; /* approx number of frames to converge */
 	double speed; /* IIR filter speed applied to algorithm results */
-	bool fast; /* "fast" mode uses a 16x16 rather than 32x32 grid */
 	libcamera::ipa::Pwl ctR; /* function maps CT to r (= R/G) */
 	libcamera::ipa::Pwl ctB; /* function maps CT to b (= B/G) */
 	libcamera::ipa::Pwl ctRInverse; /* inverse of ctR */

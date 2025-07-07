@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <optional>
+
 #include "libcamera/internal/matrix.h"
 
 #include <libipa/interpolator.h>
@@ -24,6 +26,12 @@ public:
 	~Ccm() = default;
 
 	int init(IPAContext &context, const YamlObject &tuningData) override;
+	int configure(IPAContext &context,
+		      const IPAConfigInfo &configInfo) override;
+	void queueRequest(typename Module::Context &context,
+			  const uint32_t frame,
+			  typename Module::FrameContext &frameContext,
+			  const ControlList &controls) override;
 	void prepare(IPAContext &context,
 		     const uint32_t frame,
 		     IPAFrameContext &frameContext,
@@ -34,7 +42,10 @@ public:
 		     ControlList &metadata) override;
 
 private:
+	void applySaturation(Matrix<float, 3, 3> &ccm, float saturation);
+
 	unsigned int lastCt_;
+	std::optional<float> lastSaturation_;
 	Interpolator<Matrix<float, 3, 3>> ccm_;
 };
 

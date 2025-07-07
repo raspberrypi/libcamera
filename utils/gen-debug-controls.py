@@ -96,6 +96,7 @@ def main(argv):
             controls_map[k] = v
 
     obsolete_names = list(controls_map.keys())
+    found_by_name = {}
 
     for m in matches:
         if not m.type:
@@ -110,6 +111,12 @@ def main(argv):
                 'description': f'Debug control {m.name} found in {p}'}
         if m.size is not None:
             desc['size'] = m.size
+
+        c = found_by_name.setdefault(m.name, m)
+        if c.type != m.type or c.size != m.size:
+            logger.error(
+                f"Found multiple entries for control '{m.name}' with differing type or size")
+            return 1
 
         if m.name in controls_map:
             # Can't use == for modified check because of the special yaml dicts.
@@ -127,7 +134,9 @@ def main(argv):
                 controls_map[m.name].clear()
                 controls_map[m.name].update(desc)
 
-            obsolete_names.remove(m.name)
+            # Don't try to remove more than once in case control was found multiple files.
+            if m.name in obsolete_names:
+                obsolete_names.remove(m.name)
         else:
             logger.info(f"Add control '{m.name}'")
             insert_before = len(controls)

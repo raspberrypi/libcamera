@@ -42,7 +42,7 @@ Forwarded: not-needed
  foreach test : process_tests
 --- a/test/meson.build
 +++ b/test/meson.build
-@@ -57,7 +57,7 @@
+@@ -57,7 +57,7 @@ internal_tests = [
      {'name': 'event', 'sources': ['event.cpp']},
      {'name': 'event-dispatcher', 'sources': ['event-dispatcher.cpp']},
      {'name': 'event-thread', 'sources': ['event-thread.cpp']},
@@ -50,8 +50,8 @@ Forwarded: not-needed
 +#    {'name': 'file', 'sources': ['file.cpp']},
      {'name': 'flags', 'sources': ['flags.cpp']},
      {'name': 'hotplug-cameras', 'sources': ['hotplug-cameras.cpp']},
-     {'name': 'message', 'sources': ['message.cpp']},
-@@ -65,13 +65,13 @@
+     {'name': 'matrix', 'sources': ['matrix.cpp']},
+@@ -66,13 +66,13 @@ internal_tests = [
      {'name': 'object-delete', 'sources': ['object-delete.cpp']},
      {'name': 'object-invoke', 'sources': ['object-invoke.cpp']},
      {'name': 'pixel-format', 'sources': ['pixel-format.cpp']},
@@ -69,7 +69,7 @@ Forwarded: not-needed
      {'name': 'yaml-parser', 'sources': ['yaml-parser.cpp']},
 --- a/test/gstreamer/meson.build
 +++ b/test/gstreamer/meson.build
-@@ -5,10 +5,10 @@
+@@ -5,10 +5,10 @@ if not gst_enabled
  endif
  
  gstreamer_tests = [

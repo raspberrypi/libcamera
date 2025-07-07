@@ -107,7 +107,7 @@ def main(argv):
         p = m.file.relative_to(root_dir)
         desc = {'type': m.type,
                 'direction': 'out',
-                'description': f'Debug control {m.name} found in {p}:{m.line}'}
+                'description': f'Debug control {m.name} found in {p}'}
         if m.size is not None:
             desc['size'] = m.size
 

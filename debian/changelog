@@ -1,3 +1,11 @@
+libcamera (0.5.1+rpt20250707-1) trixie; urgency=medium
+
+  * New upstream version 0.5.1+rpt20250707
+  * Update ipa install source
+  * Refresh patches
+
+ -- Serge Schneider <serge@raspberrypi.com>  Mon, 07 Jul 2025 15:04:25 +0100
+
 libcamera (0.5.0+rpt20250429-1+trixie) trixie; urgency=medium
 
   * New upstream version 0.5.0+rpt20250429

@@ -450,8 +450,6 @@ int Device::openCard()
 	}
 
 	for (struct dirent *res; (res = readdir(folder));) {
-		uint64_t cap;
-
 		if (strncmp(res->d_name, "card", 4))
 			continue;
 
@@ -465,15 +463,22 @@ int Device::openCard()
 		}
 
 		/*
-		 * Skip devices that don't support the modeset API, to avoid
-		 * selecting a DRM device corresponding to a GPU. There is no
-		 * modeset capability, but the kernel returns an error for most
-		 * caps if mode setting isn't support by the driver. The
-		 * DRM_CAP_DUMB_BUFFER capability is one of those, other would
-		 * do as well. The capability value itself isn't relevant.
+		 * Skip non-display devices. While this could in theory be done
+		 * by checking for support of the mode setting API, some
+		 * out-of-tree render-only GPU drivers (namely powervr)
+		 * incorrectly set the DRIVER_MODESET driver feature. Check for
+		 * the presence of at least one CRTC, encoder and connector
+		 * instead.
 		 */
-		ret = drmGetCap(fd_, DRM_CAP_DUMB_BUFFER, &cap);
-		if (ret < 0) {
+		std::unique_ptr<drmModeRes, decltype(&drmModeFreeResources)> resources{
+			drmModeGetResources(fd_),
+			&drmModeFreeResources
+		};
+		if (!resources ||
+		    resources->count_connectors <= 0 ||
+		    resources->count_crtcs <= 0 ||
+		    resources->count_encoders <= 0) {
+			resources.reset();
 			drmClose(fd_);
 			fd_ = -1;
 			continue;

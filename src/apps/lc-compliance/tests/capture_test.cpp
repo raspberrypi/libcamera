@@ -15,13 +15,13 @@
 
 #include <gtest/gtest.h>
 
-#include "environment.h"
+#include "test_base.h"
 
 namespace {
 
 using namespace libcamera;
 
-class SimpleCapture : public testing::TestWithParam<std::tuple<std::vector<StreamRole>, int>>
+class SimpleCapture : public testing::TestWithParam<std::tuple<std::vector<StreamRole>, int>>, public CameraHolder
 {
 public:
 	static std::string nameParameters(const testing::TestParamInfo<SimpleCapture::ParamType> &info);
@@ -29,8 +29,6 @@ public:
 protected:
 	void SetUp() override;
 	void TearDown() override;
-
-	std::shared_ptr<Camera> camera_;
 };
 
 /*
@@ -39,20 +37,12 @@ protected:
  */
 void SimpleCapture::SetUp()
 {
-	Environment *env = Environment::get();
-
-	camera_ = env->cm()->get(env->cameraId());
-
-	ASSERT_EQ(camera_->acquire(), 0);
+	acquireCamera();
 }
 
 void SimpleCapture::TearDown()
 {
-	if (!camera_)
-		return;
-
-	camera_->release();
-	camera_.reset();
+	releaseCamera();
 }
 
 std::string SimpleCapture::nameParameters(const testing::TestParamInfo<SimpleCapture::ParamType> &info)

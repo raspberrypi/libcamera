@@ -28,7 +28,7 @@
  #
  # \todo Avoid intermediate vectors
  #}
-{%- macro serializer_field(field, namespace, loop) %}
+{%- macro serializer_field(field, loop) %}
 {%- if field|is_pod or field|is_enum %}
 		std::vector<uint8_t> {{field.mojom_name}};
 		std::tie({{field.mojom_name}}, std::ignore) =
@@ -94,7 +94,7 @@
  # Generate code to deserialize \a field into object ret.
  # This code is meant to be used by the IPADataSerializer specialization.
  #}
-{%- macro deserializer_field(field, namespace, loop) %}
+{%- macro deserializer_field(field, loop) %}
 {% if field|is_pod or field|is_enum %}
 	{%- set field_size = (field|bit_width|int / 8)|int %}
 		{{- check_data_size(field_size, 'dataSize', field.mojom_name, 'data')}}
@@ -182,7 +182,7 @@
  # Generate code for IPADataSerializer specialization, for serializing
  # \a struct.
  #}
-{%- macro serializer(struct, namespace) %}
+{%- macro serializer(struct) %}
 	static std::tuple<std::vector<uint8_t>, std::vector<SharedFD>>
 	serialize(const {{struct|name_full}} &data,
 {%- if struct|needs_control_serializer %}
@@ -196,7 +196,7 @@
 		std::vector<SharedFD> retFds;
 {%- endif %}
 {%- for field in struct.fields %}
-{{serializer_field(field, namespace, loop)}}
+{{serializer_field(field, loop)}}
 {%- endfor %}
 {% if struct|has_fd %}
 		return {retData, retFds};
@@ -213,7 +213,7 @@
  # Generate code for IPADataSerializer specialization, for deserializing
  # \a struct, in the case that \a struct has file descriptors.
  #}
-{%- macro deserializer_fd(struct, namespace) %}
+{%- macro deserializer_fd(struct) %}
 	static {{struct|name_full}}
 	deserialize(std::vector<uint8_t> &data,
 		    std::vector<SharedFD> &fds,
@@ -245,7 +245,7 @@
 		size_t dataSize = std::distance(dataBegin, dataEnd);
 		[[maybe_unused]] size_t fdsSize = std::distance(fdsBegin, fdsEnd);
 {%- for field in struct.fields -%}
-{{deserializer_field(field, namespace, loop)}}
+{{deserializer_field(field, loop)}}
 {%- endfor %}
 		return ret;
 	}
@@ -258,7 +258,7 @@
  # \a struct, in the case that \a struct has no file descriptors but requires
  # deserializers with file descriptors.
  #}
-{%- macro deserializer_fd_simple(struct, namespace) %}
+{%- macro deserializer_fd_simple(struct) %}
 	static {{struct|name_full}}
 	deserialize(std::vector<uint8_t> &data,
 		    [[maybe_unused]] std::vector<SharedFD> &fds,
@@ -285,7 +285,7 @@
  # Generate code for IPADataSerializer specialization, for deserializing
  # \a struct, in the case that \a struct does not have file descriptors.
  #}
-{%- macro deserializer_no_fd(struct, namespace) %}
+{%- macro deserializer_no_fd(struct) %}
 	static {{struct|name_full}}
 	deserialize(std::vector<uint8_t> &data,
 {%- if struct|needs_control_serializer %}
@@ -312,8 +312,22 @@
 
 		size_t dataSize = std::distance(dataBegin, dataEnd);
 {%- for field in struct.fields -%}
-{{deserializer_field(field, namespace, loop)}}
+{{deserializer_field(field, loop)}}
 {%- endfor %}
 		return ret;
 	}
+{%- endmacro %}
+
+{#
+ # \brief Deserialize a struct
+ #
+ # Generate code for IPADataSerializer specialization, for deserializing \a struct.
+ #}
+{%- macro deserializer(struct) %}
+{%- if struct|has_fd %}
+{{deserializer_fd(struct)}}
+{%- else %}
+{{deserializer_no_fd(struct)}}
+{{deserializer_fd_simple(struct)}}
+{%- endif %}
 {%- endmacro %}

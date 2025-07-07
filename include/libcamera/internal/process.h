@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 
+#include <libcamera/base/class.h>
 #include <libcamera/base/signal.h>
 #include <libcamera/base/unique_fd.h>
 
@@ -42,6 +43,8 @@ public:
 	Signal<enum ExitStatus, int> finished;
 
 private:
+	LIBCAMERA_DISABLE_COPY_AND_MOVE(Process)
+
 	void closeAllFdsExcept(const std::vector<int> &fds);
 	int isolate();
 	void died(int wstatus);

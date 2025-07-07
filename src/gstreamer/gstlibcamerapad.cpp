@@ -18,6 +18,8 @@ struct _GstLibcameraPad {
 	GstPad parent;
 	StreamRole role;
 	GstLibcameraPool *pool;
+	GstBufferPool *video_pool;
+	GstVideoInfo info;
 	GstClockTime latency;
 };
 
@@ -70,6 +72,10 @@ gst_libcamera_pad_query(GstPad *pad, GstObject *parent, GstQuery *query)
 	if (query->type != GST_QUERY_LATENCY)
 		return gst_pad_query_default(pad, parent, query);
 
+	GLibLocker lock(GST_OBJECT(self));
+	if (self->latency == GST_CLOCK_TIME_NONE)
+		return FALSE;
+
 	/* TRUE here means live, we assumes that max latency is the same as min
 	 * as we have no idea that duration of frames. */
 	gst_query_set_latency(query, TRUE, self->latency, self->latency);
@@ -79,6 +85,7 @@ gst_libcamera_pad_query(GstPad *pad, GstObject *parent, GstQuery *query)
 static void
 gst_libcamera_pad_init(GstLibcameraPad *self)
 {
+	self->latency = GST_CLOCK_TIME_NONE;
 	GST_PAD_QUERYFUNC(self) = gst_libcamera_pad_query;
 }
 
@@ -100,7 +107,7 @@ gst_libcamera_stream_role_get_type()
 			"libcamera::Viewfinder",
 			"view-finder",
 		},
-		{ 0, NULL, NULL }
+		{ 0, nullptr, nullptr }
 	};
 
 	if (!type)
@@ -151,6 +158,35 @@ gst_libcamera_pad_set_pool(GstPad *pad, GstLibcameraPool *pool)
 	if (self->pool)
 		g_object_unref(self->pool);
 	self->pool = pool;
+}
+
+GstBufferPool *
+gst_libcamera_pad_get_video_pool(GstPad *pad)
+{
+	auto *self = GST_LIBCAMERA_PAD(pad);
+	return self->video_pool;
+}
+
+void gst_libcamera_pad_set_video_pool(GstPad *pad, GstBufferPool *video_pool)
+{
+	auto *self = GST_LIBCAMERA_PAD(pad);
+
+	if (self->video_pool)
+		g_object_unref(self->video_pool);
+	self->video_pool = video_pool;
+}
+
+GstVideoInfo gst_libcamera_pad_get_video_info(GstPad *pad)
+{
+	auto *self = GST_LIBCAMERA_PAD(pad);
+	return self->info;
+}
+
+void gst_libcamera_pad_set_video_info(GstPad *pad, const GstVideoInfo *info)
+{
+	auto *self = GST_LIBCAMERA_PAD(pad);
+
+	self->info = *info;
 }
 
 Stream *

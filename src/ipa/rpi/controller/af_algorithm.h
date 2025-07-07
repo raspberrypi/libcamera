@@ -33,6 +33,10 @@ public:
 	 *
 	 * getMode() is provided mainly for validating controls.
 	 * getLensPosition() is provided for populating DeviceStatus.
+	 *
+	 * getDefaultlensPosition() and getLensLimits() were added for
+	 * populating ControlInfoMap. They return the static API limits
+	 * which should be independent of the current range or mode.
 	 */
 
 	enum AfRange { AfRangeNormal = 0,
@@ -66,7 +70,9 @@ public:
 	}
 	virtual void setMode(AfMode mode) = 0;
 	virtual AfMode getMode() const = 0;
-	virtual bool setLensPosition(double dioptres, int32_t *hwpos) = 0;
+	virtual double getDefaultLensPosition() const = 0;
+	virtual void getLensLimits(double &min, double &max) const = 0;
+	virtual bool setLensPosition(double dioptres, int32_t *hwpos, bool force = false) = 0;
 	virtual std::optional<double> getLensPosition() const = 0;
 	virtual void triggerScan() = 0;
 	virtual void cancelScan() = 0;

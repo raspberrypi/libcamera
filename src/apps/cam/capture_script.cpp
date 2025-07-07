@@ -578,10 +578,6 @@ ControlValue CaptureScript::parseArrayControl(const ControlId *id,
 		value = Span<const float>(values.data(), values.size());
 		break;
 	}
-	case ControlTypeString: {
-		value = Span<const std::string>(repr.data(), repr.size());
-		break;
-	}
 	default:
 		std::cerr << "Unsupported control type" << std::endl;
 		break;

@@ -1274,7 +1274,8 @@ controls:
       description: |
         This timestamp corresponds to the same moment in time as the
         SensorTimestamp, but is represented as a wall clock time as measured by
-        the CLOCK_REALTIME clock.
+        the CLOCK_REALTIME clock. Like SensorTimestamp, the timestamp value is
+        expressed in nanoseconds.
 
         Being a wall clock measurement, it can be used to synchronise timing
         across different devices.

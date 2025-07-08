@@ -1760,7 +1760,7 @@ void PiSPCameraData::cfeBufferDequeue(FrameBuffer *buffer)
 		 */
 		wallClockRecovery_.addSample();
 		uint64_t sensorTimestamp = buffer->metadata().timestamp;
-		uint64_t wallClockTimestamp = wallClockRecovery_.getOutput(sensorTimestamp / 1000);
+		uint64_t wallClockTimestamp = wallClockRecovery_.getOutput(sensorTimestamp);
 
 		ctrl.set(controls::SensorTimestamp, sensorTimestamp);
 		ctrl.set(controls::FrameWallClock, wallClockTimestamp);

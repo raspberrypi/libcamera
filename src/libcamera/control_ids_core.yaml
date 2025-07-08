@@ -212,7 +212,7 @@ controls:
       description: |
         Exposure time for the frame applied in the sensor device.
 
-        This value is specified in micro-seconds.
+        This value is specified in microseconds.
 
         This control will only take effect if ExposureTimeMode is Manual. If
         this control is set when ExposureTimeMode is Auto, the value will be

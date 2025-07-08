@@ -810,10 +810,10 @@ void Af::prepare(Metadata *imageMetadata)
 	else
 		status.pauseState = AfPauseState::Running;
 
-	if (scanState_ == ScanState::Idle)
-		status.state = AfState::Idle;
-	else if (mode_ == AfModeAuto)
+	if (mode_ == AfModeAuto && scanState_ != ScanState::Idle)
 		status.state = AfState::Scanning;
+	else if (mode_ == AfModeManual)
+		status.state = AfState::Idle;
 	else
 		status.state = reportState_;
 	status.lensSetting = initted_ ? std::optional<int>(cfg_.map.eval(fsmooth_))
@@ -954,8 +954,10 @@ void Af::pause(AfAlgorithm::AfPause pause)
 				scanState_ = ScanState::Trigger;
 		} else if (pause != AfPauseResume && !pauseFlag_) {
 			pauseFlag_ = true;
-			if (pause == AfPauseImmediate || scanState_ < ScanState::Coarse1)
-				goIdle();
+			if (pause == AfPauseImmediate || scanState_ < ScanState::Coarse1) {
+				scanState_ = ScanState::Idle;
+				scanData_.clear();
+			}
 		}
 	}
 }

@@ -1487,10 +1487,10 @@ void CameraData::checkRequestCompleted()
 
 void CameraData::fillRequestMetadata(const ControlList &bufferControls, Request *request)
 {
-	request->metadata().set(controls::SensorTimestamp,
-				bufferControls.get(controls::SensorTimestamp).value_or(0));
-	request->metadata().set(controls::FrameWallClock,
-				bufferControls.get(controls::FrameWallClock).value_or(0));
+	if (auto x = bufferControls.get(controls::SensorTimestamp))
+		request->metadata().set(controls::SensorTimestamp, *x);
+	if (auto x = bufferControls.get(controls::FrameWallClock))
+		request->metadata().set(controls::FrameWallClock, *x);
 
 	if (cropParams_.size()) {
 		std::vector<Rectangle> crops;

@@ -13,17 +13,11 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
-#pragma GCC diagnostic push
-#if defined __SANITIZE_ADDRESS__ && defined __OPTIMIZE__
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
-#endif
-#include <regex>
-#pragma GCC diagnostic pop
-
 #include <linux/media-bus-format.h>
 #include <linux/v4l2-subdev.h>
 
 #include <libcamera/base/log.h>
+#include <libcamera/base/regex.h>
 #include <libcamera/base/utils.h>
 
 #include <libcamera/geometry.h>

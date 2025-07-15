@@ -103,6 +103,7 @@ if doxygen.found() and dot.found()
                   input : [
                       doxyfile,
                       doxyfile_common,
+                      doxygen_public_input,
                       doxygen_internal_input,
                   ],
                   output : 'internal-api-html',

@@ -34,6 +34,8 @@
 #include "controller/denoise_algorithm.h"
 #include "controller/denoise_status.h"
 #include "controller/dpc_status.h"
+#include "controller/decompand_algorithm.h"
+#include "controller/decompand_status.h"
 #include "controller/geq_status.h"
 #include "controller/hdr_status.h"
 #include "controller/lux_status.h"
@@ -234,6 +236,7 @@ private:
 	void applyLensShading(const AlscStatus *alscStatus,
 			      pisp_be_global_config &global);
 	void applyDPC(const DpcStatus *dpcStatus, pisp_be_global_config &global);
+	void applyDecompand(const DecompandStatus *decompandStatus);
 	void applySdn(const SdnStatus *sdnStatus, pisp_be_global_config &global);
 	void applyTdn(const TdnStatus *tdnStatus, const DeviceStatus *deviceStatus,
 		      pisp_be_global_config &global);
@@ -668,6 +671,22 @@ void IpaPiSP::applyDPC(const DpcStatus *dpcStatus, pisp_be_global_config &global
 	be_->SetDpc(dpc);
 }
 
+void IpaPiSP::applyDecompand(const DecompandStatus *decompandStatus)
+{
+	if (!decompandStatus || !decompandStatus->pad)
+		return;
+
+	pisp_fe_decompand_config config = {};
+	config.pad = decompandStatus->pad;
+
+	ASSERT(decompandStatus->lut != nullptr);
+	std::copy(decompandStatus->lut,
+	          decompandStatus->lut + PISP_FE_DECOMPAND_LUT_SIZE,
+	          config.lut);
+
+	fe_->SetDecompand(config);
+}
+
 void IpaPiSP::applySdn(const SdnStatus *sdnStatus, pisp_be_global_config &global)
 {
 	pisp_be_sdn_config sdn = {};
@@ -935,6 +954,23 @@ void IpaPiSP::setDefaultConfig()
 	rgby.gain_b = clampField(gainB * .114, 14, 10);
 	fe_->SetRGBY(rgby);
 	feGlobal.enables |= PISP_FE_ENABLE_RGBY;
+
+	RPiController::DecompandAlgorithm *decompand = dynamic_cast<RPiController::DecompandAlgorithm *>(
+		controller_.getAlgorithm("decompand"));
+	if (decompand) {
+		uint16_t decompandLUT[65];
+		uint16_t pad;
+		DecompandStatus decompandStatus;
+
+		decompand->initialValues(decompandLUT, pad);
+		for (size_t i = 0; i < sizeof(decompandLUT) / sizeof(decompandLUT[0]); ++i)
+		{
+			decompandStatus.lut[i] = decompandLUT[i];
+		}
+		decompandStatus.pad = pad;
+		applyDecompand(&decompandStatus);
+		feGlobal.enables |= PISP_FE_ENABLE_DECOMPAND;
+	}
 
 	/* Also get sensible front end black level defaults, for the same reason. */
 	RPiController::BlackLevelAlgorithm *blackLevel = dynamic_cast<RPiController::BlackLevelAlgorithm *>(

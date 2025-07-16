@@ -8,7 +8,7 @@ class DecompandAlgorithm : public Algorithm
 {
 public:
 	DecompandAlgorithm(Controller *controller) : Algorithm(controller) {}
-  virtual void initialValues(uint16_t lut[], uint16_t &pad)
+  virtual void initialValues(uint16_t lut[])
   {
     static const uint16_t defaultLut[] = {
       3072, 3072, 3072, 3072, 3136, 3200, 3264, 3328,
@@ -24,8 +24,6 @@ public:
 
     for (size_t i = 0; i < sizeof(defaultLut) / sizeof(defaultLut[0]); ++i)
       lut[i] = defaultLut[i];
-
-    pad = 1;
   }
 };
 } /* namespace RPiController */

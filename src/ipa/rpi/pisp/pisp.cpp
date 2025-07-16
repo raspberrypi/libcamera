@@ -673,11 +673,7 @@ void IpaPiSP::applyDPC(const DpcStatus *dpcStatus, pisp_be_global_config &global
 
 void IpaPiSP::applyDecompand(const DecompandStatus *decompandStatus)
 {
-	if (!decompandStatus || !decompandStatus->pad)
-		return;
-
 	pisp_fe_decompand_config config = {};
-	config.pad = decompandStatus->pad;
 
 	ASSERT(decompandStatus->lut != nullptr);
 	std::copy(decompandStatus->lut,
@@ -959,15 +955,13 @@ void IpaPiSP::setDefaultConfig()
 		controller_.getAlgorithm("decompand"));
 	if (decompand) {
 		uint16_t decompandLUT[65];
-		uint16_t pad;
 		DecompandStatus decompandStatus;
 
-		decompand->initialValues(decompandLUT, pad);
+		decompand->initialValues(decompandLUT);
 		for (size_t i = 0; i < sizeof(decompandLUT) / sizeof(decompandLUT[0]); ++i)
 		{
 			decompandStatus.lut[i] = decompandLUT[i];
 		}
-		decompandStatus.pad = pad;
 		applyDecompand(&decompandStatus);
 		feGlobal.enables |= PISP_FE_ENABLE_DECOMPAND;
 	}

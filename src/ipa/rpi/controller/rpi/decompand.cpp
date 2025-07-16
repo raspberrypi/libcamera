@@ -36,18 +36,16 @@ int Decompand::read(const libcamera::YamlObject &params)
 		}
 		decompandLUT_[i] = value.value();
 	}
-	decompandpad_ = params["pad"].get<uint16_t>(0);
 
 	return 0;
 }
 
-void Decompand::initialValues(uint16_t LUT[], uint16_t &pad)
+void Decompand::initialValues(uint16_t LUT[])
 {
   for (size_t i = 0; i < sizeof(decompandLUT_) / sizeof(decompandLUT_[0]); ++i)
 	{
     LUT[i] = decompandLUT_[i];
 	}
-	pad = decompandpad_;
 }
 
 void Decompand::prepare(Metadata *imageMetadata)
@@ -57,7 +55,6 @@ void Decompand::prepare(Metadata *imageMetadata)
 	{
     status.lut[i] = decompandLUT_[i];
 	}
-	status.pad = decompandpad_;
 
 	imageMetadata->set("decompand.status", status);
 }

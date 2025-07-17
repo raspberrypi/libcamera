@@ -346,7 +346,8 @@ void IPAMaliC55::fillParams(unsigned int request,
 		ASSERT(params->total_size <= MALI_C55_PARAMS_MAX_SIZE);
 	}
 
-	paramsComputed.emit(request);
+	size_t bytesused = offsetof(struct mali_c55_params_buffer, data) + params->total_size;
+	paramsComputed.emit(request, bytesused);
 }
 
 void IPAMaliC55::processStats(unsigned int request, unsigned int bufferId,

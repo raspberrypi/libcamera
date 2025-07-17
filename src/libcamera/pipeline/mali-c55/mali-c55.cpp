@@ -618,7 +618,7 @@ public:
 	void imageBufferReady(FrameBuffer *buffer);
 	void paramsBufferReady(FrameBuffer *buffer);
 	void statsBufferReady(FrameBuffer *buffer);
-	void paramsComputed(unsigned int requestId);
+	void paramsComputed(unsigned int requestId, uint32_t bytesused);
 	void statsProcessed(unsigned int requestId, const ControlList &metadata);
 
 	bool match(DeviceEnumerator *enumerator) override;
@@ -1494,7 +1494,7 @@ void PipelineHandlerMaliC55::statsBufferReady(FrameBuffer *buffer)
 				 sensorControls);
 }
 
-void PipelineHandlerMaliC55::paramsComputed(unsigned int requestId)
+void PipelineHandlerMaliC55::paramsComputed(unsigned int requestId, uint32_t bytesused)
 {
 	MaliC55FrameInfo &frameInfo = frameInfoMap_[requestId];
 	Request *request = frameInfo.request;
@@ -1505,8 +1505,7 @@ void PipelineHandlerMaliC55::paramsComputed(unsigned int requestId)
 	 * video devices.
 	 */
 
-	frameInfo.paramBuffer->_d()->metadata().planes()[0].bytesused =
-		sizeof(struct mali_c55_params_buffer);
+	frameInfo.paramBuffer->_d()->metadata().planes()[0].bytesused = bytesused;
 	params_->queueBuffer(frameInfo.paramBuffer);
 	stats_->queueBuffer(frameInfo.statBuffer);
 

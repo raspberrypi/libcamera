@@ -28,7 +28,7 @@ interface IPAMaliC55Interface {
 };
 
 interface IPAMaliC55EventInterface {
-	paramsComputed(uint32 request);
+	paramsComputed(uint32 request, uint32 bytesused);
 	statsProcessed(uint32 request, libcamera.ControlList metadata);
 	setSensorControls(libcamera.ControlList sensorControls);
 };

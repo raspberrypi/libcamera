@@ -629,6 +629,15 @@ Camera::Private::~Private()
  */
 
 /**
+ * \var Camera::Private::waitingRequests_
+ * \brief The queue of waiting requests
+ *
+ * This queue tracks all requests that can not yet be queued to the device.
+ * Either because they are not yet prepared or because the maximum number of
+ * queued requests was reached.
+ */
+
+/**
  * \var Camera::Private::controlInfo_
  * \brief The set of controls supported by the camera
  *

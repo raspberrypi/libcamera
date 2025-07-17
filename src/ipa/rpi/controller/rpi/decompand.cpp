@@ -1,8 +1,8 @@
+#include "decompand.h"
+
 #include <libcamera/base/log.h>
 
 #include "../decompand_status.h"
-
-#include "decompand.h"
 
 using namespace RPiController;
 using namespace libcamera;
@@ -42,18 +42,17 @@ int Decompand::read(const libcamera::YamlObject &params)
 
 void Decompand::initialValues(uint16_t LUT[])
 {
-  for (size_t i = 0; i < sizeof(decompandLUT_) / sizeof(decompandLUT_[0]); ++i)
-	{
-    LUT[i] = decompandLUT_[i];
+	for (size_t i = 0; i < sizeof(decompandLUT_) / sizeof(decompandLUT_[0]); ++i) {
+		LUT[i] = decompandLUT_[i];
 	}
 }
 
 void Decompand::prepare(Metadata *imageMetadata)
 {
 	struct DecompandStatus status;
-	for (size_t i = 0; i < sizeof(decompandLUT_) / sizeof(decompandLUT_[0]); ++i)
-	{
-    status.lut[i] = decompandLUT_[i];
+
+	for (size_t i = 0; i < sizeof(decompandLUT_) / sizeof(decompandLUT_[0]); ++i) {
+		status.lut[i] = decompandLUT_[i];
 	}
 
 	imageMetadata->set("decompand.status", status);

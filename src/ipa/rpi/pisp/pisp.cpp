@@ -31,11 +31,11 @@
 #include "controller/cac_status.h"
 #include "controller/ccm_status.h"
 #include "controller/contrast_status.h"
+#include "controller/decompand_algorithm.h"
+#include "controller/decompand_status.h"
 #include "controller/denoise_algorithm.h"
 #include "controller/denoise_status.h"
 #include "controller/dpc_status.h"
-#include "controller/decompand_algorithm.h"
-#include "controller/decompand_status.h"
 #include "controller/geq_status.h"
 #include "controller/hdr_status.h"
 #include "controller/lux_status.h"
@@ -677,8 +677,8 @@ void IpaPiSP::applyDecompand(const DecompandStatus *decompandStatus)
 
 	ASSERT(decompandStatus->lut != nullptr);
 	std::copy(decompandStatus->lut,
-	          decompandStatus->lut + PISP_FE_DECOMPAND_LUT_SIZE,
-	          config.lut);
+		  decompandStatus->lut + PISP_FE_DECOMPAND_LUT_SIZE,
+		  config.lut);
 
 	fe_->SetDecompand(config);
 }
@@ -958,8 +958,7 @@ void IpaPiSP::setDefaultConfig()
 		DecompandStatus decompandStatus;
 
 		decompand->initialValues(decompandLUT);
-		for (size_t i = 0; i < sizeof(decompandLUT) / sizeof(decompandLUT[0]); ++i)
-		{
+		for (size_t i = 0; i < sizeof(decompandLUT) / sizeof(decompandLUT[0]); ++i) {
 			decompandStatus.lut[i] = decompandLUT[i];
 		}
 		applyDecompand(&decompandStatus);

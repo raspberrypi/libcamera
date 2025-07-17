@@ -62,13 +62,17 @@ LOG_DEFINE_CATEGORY(Pipeline)
 /**
  * \brief Construct a PipelineHandler instance
  * \param[in] manager The camera manager
+ * \param[in] maxQueuedRequestsDevice The maximum number of requests queued to
+ * the device
  *
  * In order to honour the std::enable_shared_from_this<> contract,
  * PipelineHandler instances shall never be constructed manually, but always
  * through the PipelineHandlerFactoryBase::create() function.
  */
-PipelineHandler::PipelineHandler(CameraManager *manager)
-	: manager_(manager), useCount_(0)
+PipelineHandler::PipelineHandler(CameraManager *manager,
+				 unsigned int maxQueuedRequestsDevice)
+	: manager_(manager), maxQueuedRequestsDevice_(maxQueuedRequestsDevice),
+	  useCount_(0)
 {
 }
 
@@ -360,20 +364,28 @@ void PipelineHandler::unlockMediaDevices()
  */
 void PipelineHandler::stop(Camera *camera)
 {
+	/*
+	 * Take all waiting requests so that they are not requeued in response
+	 * to completeRequest() being called inside stopDevice(). Cancel them
+	 * after the device to keep them in order.
+	 */
+	Camera::Private *data = camera->_d();
+	std::queue<Request *> waitingRequests;
+	waitingRequests.swap(data->waitingRequests_);
+
 	/* Stop the pipeline handler and let the queued requests complete. */
 	stopDevice(camera);
 
-	Camera::Private *data = camera->_d();
-
 	/* Cancel and signal as complete all waiting requests. */
-	while (!data->waitingRequests_.empty()) {
-		Request *request = data->waitingRequests_.front();
-		data->waitingRequests_.pop();
+	while (!waitingRequests.empty()) {
+		Request *request = waitingRequests.front();
+		waitingRequests.pop();
 		cancelRequest(request);
 	}
 
 	/* Make sure no requests are pending. */
 	ASSERT(data->queuedRequests_.empty());
+	ASSERT(data->waitingRequests_.empty());
 
 	data->requestSequence_ = 0;
 }
@@ -430,9 +442,9 @@ void PipelineHandler::registerRequest(Request *request)
  * requests which have to be prepared to make sure they are ready for being
  * queued to the pipeline handler.
  *
- * The queue of waiting requests is iterated and all prepared requests are
- * passed to the pipeline handler in the same order they have been queued by
- * calling this function.
+ * The queue of waiting requests is iterated and up to \a
+ * maxQueuedRequestsDevice_ prepared requests are passed to the pipeline handler
+ * in the same order they have been queued by calling this function.
  *
  * If a Request fails during the preparation phase or if the pipeline handler
  * fails in queuing the request to the hardware the request is cancelled.
@@ -487,12 +499,19 @@ void PipelineHandler::doQueueRequests(Camera *camera)
 {
 	Camera::Private *data = camera->_d();
 	while (!data->waitingRequests_.empty()) {
+		if (data->queuedRequests_.size() == maxQueuedRequestsDevice_)
+			break;
+
 		Request *request = data->waitingRequests_.front();
 		if (!request->_d()->prepared_)
 			break;
 
-		doQueueRequest(request);
+		/*
+		 * Pop the request first, in case doQueueRequests() is called
+		 * recursively from within doQueueRequest()
+		 */
 		data->waitingRequests_.pop();
+		doQueueRequest(request);
 	}
 }
 
@@ -568,6 +587,9 @@ void PipelineHandler::completeRequest(Request *request)
 		data->queuedRequests_.pop_front();
 		camera->requestComplete(req);
 	}
+
+	/* Allow any waiting requests to be queued to the pipeline. */
+	doQueueRequests(camera);
 }
 
 /**
@@ -766,6 +788,20 @@ void PipelineHandler::disconnect()
  * The camera manager pointer is stored in the pipeline handler for the
  * convenience of pipeline handler implementations. It remains valid and
  * constant for the whole lifetime of the pipeline handler.
+ */
+
+/**
+ * \var PipelineHandler::maxQueuedRequestsDevice_
+ * \brief The maximum number of requests the pipeline handler shall queue to the
+ * device
+ *
+ * maxQueuedRequestsDevice_ limits the number of request that the
+ * pipeline handler shall queue to the underlying hardware, in order to
+ * saturate the pipeline with requests. The application may choose to queue
+ * as many requests as it desires, however only maxQueuedRequestsDevice_
+ * requests will be queued to the hardware at a given point in time. The
+ * remaining requests will be kept waiting in the internal waiting
+ * queue, to be queued at a later stage.
  */
 
 /**

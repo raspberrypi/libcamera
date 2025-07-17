@@ -165,6 +165,8 @@ namespace {
  */
 static constexpr unsigned int kRkISP1MaxQueuedRequests = 4;
 
+static constexpr unsigned int kRkISP1MinBufferCount = 4;
+
 } /* namespace */
 
 class PipelineHandlerRkISP1 : public PipelineHandler
@@ -608,6 +610,12 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 				return false;
 		}
 
+		if (tryCfg.bufferCount < kRkISP1MinBufferCount) {
+			if (expectedStatus == Valid)
+				return false;
+			tryCfg.bufferCount = kRkISP1MinBufferCount;
+		}
+
 		cfg = tryCfg;
 		cfg.setStream(stream);
 		return true;
@@ -797,6 +805,7 @@ PipelineHandlerRkISP1::generateConfiguration(Camera *camera,
 			return nullptr;
 
 		cfg.colorSpace = colorSpace;
+		cfg.bufferCount = kRkISP1MinBufferCount;
 		config->addConfiguration(cfg);
 	}
 
@@ -1130,14 +1139,14 @@ int PipelineHandlerRkISP1::start(Camera *camera, [[maybe_unused]] const ControlL
 	}
 
 	if (data->mainPath_->isEnabled()) {
-		ret = mainPath_.start();
+		ret = mainPath_.start(data->mainPathStream_.configuration().bufferCount);
 		if (ret)
 			return ret;
 		actions += [&]() { mainPath_.stop(); };
 	}
 
 	if (hasSelfPath_ && data->selfPath_->isEnabled()) {
-		ret = selfPath_.start();
+		ret = selfPath_.start(data->selfPathStream_.configuration().bufferCount);
 		if (ret)
 			return ret;
 	}

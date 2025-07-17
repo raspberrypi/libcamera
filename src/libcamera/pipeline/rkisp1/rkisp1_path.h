@@ -58,7 +58,7 @@ public:
 		return video_->exportBuffers(bufferCount, buffers);
 	}
 
-	int start();
+	int start(unsigned int bufferCount);
 	void stop();
 
 	int queueBuffer(FrameBuffer *buffer) { return video_->queueBuffer(buffer); }
@@ -68,8 +68,6 @@ public:
 private:
 	void populateFormats();
 	Size filterSensorResolution(const CameraSensor *sensor);
-
-	static constexpr unsigned int RKISP1_BUFFER_COUNT = 4;
 
 	const char *name_;
 	bool running_;

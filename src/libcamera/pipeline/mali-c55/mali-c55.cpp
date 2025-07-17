@@ -1709,7 +1709,7 @@ bool PipelineHandlerMaliC55::match(DeviceEnumerator *enumerator)
 	 *
 	 * MEDIA_ENT_F_CAM_SENSOR - The test pattern generator
 	 * MEDIA_ENT_F_VID_IF_BRIDGE - A CSI-2 receiver
-	 * MEDIA_ENT_F_IO_V4L - An input device
+	 * MEDIA_ENT_F_PROC_VIDEO_PIXEL_FORMATTER - An input device
 	 *
 	 * The last one will be unsupported for now. The TPG is relatively easy,
 	 * we just register a Camera for it. If we have a CSI-2 receiver we need
@@ -1735,7 +1735,7 @@ bool PipelineHandlerMaliC55::match(DeviceEnumerator *enumerator)
 				return registered;
 
 			break;
-		case MEDIA_ENT_F_IO_V4L:
+		case MEDIA_ENT_F_PROC_VIDEO_PIXEL_FORMATTER:
 			LOG(MaliC55, Warning) << "Memory input not yet supported";
 			break;
 		default:

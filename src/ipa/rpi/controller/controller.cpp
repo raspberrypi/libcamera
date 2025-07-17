@@ -21,61 +21,70 @@ using namespace std::literals::chrono_literals;
 
 LOG_DEFINE_CATEGORY(RPiController)
 
-static const std::map<std::string, Controller::HardwareConfig> HardwareConfigMap = {
-	{
-		"bcm2835",
-		{
-			/*
-			 * There are only ever 15 AGC regions computed by the firmware
-			 * due to zoning, but the HW defines AGC_REGIONS == 16!
-			 */
-			.agcRegions = { 15 , 1 },
-			.agcZoneWeights = { 15 , 1 },
-			.awbRegions = { 16, 12 },
-			.cacRegions = { 0, 0 },
-			.focusRegions = { 4, 3 },
-			.numHistogramBins = 128,
-			.numGammaPoints = 33,
-			.pipelineWidth = 13,
-			.statsInline = false,
-			.minPixelProcessingTime = 0s,
-			.dataBufferStrided = true,
-		}
-	},
-	{
-		"pisp",
-		{
-			.agcRegions = { 0, 0 },
-			.agcZoneWeights = { 15, 15 },
-			.awbRegions = { 32, 32 },
-			.cacRegions = { 8, 8 },
-			.focusRegions = { 8, 8 },
-			.numHistogramBins = 1024,
-			.numGammaPoints = 64,
-			.pipelineWidth = 16,
-			.statsInline = true,
+namespace {
 
-			/*
-			 * The constraint below is on the rate of pixels going
-			 * from CSI2 peripheral to ISP-FE (400Mpix/s, plus tiny
-			 * overheads per scanline, for which 380Mpix/s is a
-			 * conservative bound).
-			 *
-			 * There is a 64kbit data FIFO before the bottleneck,
-			 * which means that in all reasonable cases the
-			 * constraint applies at a timescale >= 1 scanline, so
-			 * adding horizontal blanking can prevent loss.
-			 *
-			 * If the backlog were to grow beyond 64kbit during a
-			 * single scanline, there could still be loss. This
-			 * could happen using 4 lanes at 1.5Gbps at 10bpp with
-			 * frames wider than ~16,000 pixels.
-			 */
-			.minPixelProcessingTime = 1.0us / 380,
-			.dataBufferStrided = false,
-		}
-	},
-};
+const std::map<std::string, Controller::HardwareConfig> &hardwareConfigMap() {
+
+	static const std::map<std::string, Controller::HardwareConfig> map = {
+		{
+			"bcm2835",
+			{
+				/*
+				* There are only ever 15 AGC regions computed by the firmware
+				* due to zoning, but the HW defines AGC_REGIONS == 16!
+				*/
+				.agcRegions = { 15 , 1 },
+				.agcZoneWeights = { 15 , 1 },
+				.awbRegions = { 16, 12 },
+				.cacRegions = { 0, 0 },
+				.focusRegions = { 4, 3 },
+				.numHistogramBins = 128,
+				.numGammaPoints = 33,
+				.pipelineWidth = 13,
+				.statsInline = false,
+				.minPixelProcessingTime = 0s,
+				.dataBufferStrided = true,
+			}
+		},
+		{
+			"pisp",
+			{
+				.agcRegions = { 0, 0 },
+				.agcZoneWeights = { 15, 15 },
+				.awbRegions = { 32, 32 },
+				.cacRegions = { 8, 8 },
+				.focusRegions = { 8, 8 },
+				.numHistogramBins = 1024,
+				.numGammaPoints = 64,
+				.pipelineWidth = 16,
+				.statsInline = true,
+
+				/*
+				* The constraint below is on the rate of pixels going
+				* from CSI2 peripheral to ISP-FE (400Mpix/s, plus tiny
+				* overheads per scanline, for which 380Mpix/s is a
+				* conservative bound).
+				*
+				* There is a 64kbit data FIFO before the bottleneck,
+				* which means that in all reasonable cases the
+				* constraint applies at a timescale >= 1 scanline, so
+				* adding horizontal blanking can prevent loss.
+				*
+				* If the backlog were to grow beyond 64kbit during a
+				* single scanline, there could still be loss. This
+				* could happen using 4 lanes at 1.5Gbps at 10bpp with
+				* frames wider than ~16,000 pixels.
+				*/
+				.minPixelProcessingTime = 1.0us / 380,
+				.dataBufferStrided = false,
+			}
+		},
+	};
+
+	return map;
+}
+
+} /* namespace */
 
 Controller::Controller()
 	: switchModeCalled_(false)
@@ -211,12 +220,12 @@ const std::string &Controller::getTarget() const
 
 const Controller::HardwareConfig &Controller::getHardwareConfig() const
 {
-	auto cfg = HardwareConfigMap.find(getTarget());
+	auto cfg = hardwareConfigMap().find(getTarget());
 
 	/*
 	 * This really should not happen, the IPA ought to validate the target
 	 * on initialisation.
 	 */
-	ASSERT(cfg != HardwareConfigMap.end());
+	ASSERT(cfg != hardwareConfigMap().end());
 	return cfg->second;
 }

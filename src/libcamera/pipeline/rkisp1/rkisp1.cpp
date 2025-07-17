@@ -155,6 +155,18 @@ private:
 	Transform combinedTransform_;
 };
 
+namespace {
+
+/*
+ * Maximum number of requests that shall be queued into the pipeline to keep
+ * the regulation fast.
+ * \todo This needs revisiting as soon as buffers got decoupled from requests
+ * and/or a fast path for controls was implemented.
+ */
+static constexpr unsigned int kRkISP1MaxQueuedRequests = 4;
+
+} /* namespace */
+
 class PipelineHandlerRkISP1 : public PipelineHandler
 {
 public:
@@ -684,7 +696,8 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
  */
 
 PipelineHandlerRkISP1::PipelineHandlerRkISP1(CameraManager *manager)
-	: PipelineHandler(manager), hasSelfPath_(true), useDewarper_(false)
+	: PipelineHandler(manager, kRkISP1MaxQueuedRequests),
+	  hasSelfPath_(true), useDewarper_(false)
 {
 }
 

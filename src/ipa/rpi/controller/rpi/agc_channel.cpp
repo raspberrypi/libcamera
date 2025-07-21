@@ -275,7 +275,7 @@ AgcChannel::AgcChannel()
 	: meteringMode_(nullptr), exposureMode_(nullptr), constraintMode_(nullptr),
 	  frameCount_(0), lockCount_(0),
 	  lastTargetExposure_(0s), ev_(1.0), flickerPeriod_(0s),
-	  maxExposureTime_(0s), fixedExposureTime_(0s), fixedAnalogueGain_(0.0)
+	  maxExposureTime_(0s), fixedExposureTime_(0s), fixedGain_(0.0)
 {
 	/* Set AWB default values in case early frames have no updates in metadata. */
 	awb_.gainR = 1.0;
@@ -339,17 +339,17 @@ bool AgcChannel::autoExposureEnabled() const
 
 void AgcChannel::disableAutoGain()
 {
-	fixedAnalogueGain_ = status_.analogueGain;
+	fixedGain_ = status_.analogueGain;
 }
 
 void AgcChannel::enableAutoGain()
 {
-	fixedAnalogueGain_ = 0;
+	fixedGain_ = 0;
 }
 
 bool AgcChannel::autoGainEnabled() const
 {
-	return fixedAnalogueGain_ == 0;
+	return fixedGain_ == 0;
 }
 
 unsigned int AgcChannel::getConvergenceFrames() const
@@ -358,7 +358,7 @@ unsigned int AgcChannel::getConvergenceFrames() const
 	 * If exposure time and gain have been explicitly set, there is no
 	 * convergence to happen, so no need to drop any frames - return zero.
 	 */
-	if (fixedExposureTime_ && fixedAnalogueGain_)
+	if (fixedExposureTime_ && fixedGain_)
 		return 0;
 	else
 		return config_.convergenceFrames;
@@ -398,11 +398,9 @@ void AgcChannel::setFixedExposureTime(Duration fixedExposureTime)
 	status_.exposureTime = limitExposureTime(fixedExposureTime_);
 }
 
-void AgcChannel::setFixedAnalogueGain(double fixedAnalogueGain)
+void AgcChannel::setFixedGain(double fixedGain)
 {
-	fixedAnalogueGain_ = fixedAnalogueGain;
-	/* Set this in case someone calls disableAuto() straight after. */
-	status_.analogueGain = limitGain(fixedAnalogueGain);
+	fixedGain_ = fixedGain;
 }
 
 void AgcChannel::setMeteringMode(std::string const &meteringModeName)
@@ -436,9 +434,9 @@ void AgcChannel::switchMode(CameraMode const &cameraMode,
 	mode_ = cameraMode;
 
 	Duration fixedExposureTime = limitExposureTime(fixedExposureTime_);
-	if (fixedExposureTime && fixedAnalogueGain_) {
+	if (fixedExposureTime && fixedGain_) {
 		/* This is the equivalent of computeTargetExposure and applyDigitalGain. */
-		target_.totalExposureNoDG = fixedExposureTime_ * fixedAnalogueGain_;
+		target_.totalExposureNoDG = fixedExposureTime_ * fixedGain_;
 		target_.totalExposure = target_.totalExposureNoDG;
 
 		/* Equivalent of filterExposure. This resets any "history". */
@@ -446,7 +444,7 @@ void AgcChannel::switchMode(CameraMode const &cameraMode,
 
 		/* Equivalent of divideUpExposure. */
 		filtered_.exposureTime = fixedExposureTime;
-		filtered_.analogueGain = fixedAnalogueGain_;
+		filtered_.analogueGain = fixedGain_;
 	} else if (status_.totalExposureValue) {
 		/*
 		 * On a mode switch, various things could happen:
@@ -476,7 +474,7 @@ void AgcChannel::switchMode(CameraMode const &cameraMode,
 
 		/* Equivalent of divideUpExposure. */
 		filtered_.exposureTime = fixedExposureTime ? fixedExposureTime : config_.defaultExposureTime;
-		filtered_.analogueGain = fixedAnalogueGain_ ? fixedAnalogueGain_ : config_.defaultAnalogueGain;
+		filtered_.analogueGain = fixedGain_ ? fixedGain_ : config_.defaultAnalogueGain;
 	}
 
 	writeAndFinish(metadata, false);
@@ -608,11 +606,11 @@ void AgcChannel::housekeepConfig()
 	/* First fetch all the up-to-date settings, so no one else has to do it. */
 	status_.ev = ev_;
 	status_.fixedExposureTime = limitExposureTime(fixedExposureTime_);
-	status_.fixedAnalogueGain = fixedAnalogueGain_;
+	status_.fixedGain = fixedGain_;
 	status_.flickerPeriod = flickerPeriod_;
 	LOG(RPiAgc, Debug) << "ev " << status_.ev << " fixedExposureTime "
-			   << status_.fixedExposureTime << " fixedAnalogueGain "
-			   << status_.fixedAnalogueGain;
+			   << status_.fixedExposureTime << " fixedGain "
+			   << status_.fixedGain;
 	/*
 	 * Make sure the "mode" pointers point to the up-to-date things, if
 	 * they've changed.
@@ -799,9 +797,9 @@ void AgcChannel::computeGain(StatisticsPtr &statistics, Metadata *imageMetadata,
 
 void AgcChannel::computeTargetExposure(double gain)
 {
-	if (status_.fixedExposureTime && status_.fixedAnalogueGain) {
+	if (status_.fixedExposureTime && status_.fixedGain) {
 		target_.totalExposure =
-			status_.fixedExposureTime * status_.fixedAnalogueGain;
+			status_.fixedExposureTime * status_.fixedGain;
 	} else {
 		/*
 		 * The statistics reflect the image without digital gain, so the final
@@ -815,8 +813,8 @@ void AgcChannel::computeTargetExposure(double gain)
 		maxExposureTime = limitExposureTime(maxExposureTime);
 		Duration maxTotalExposure =
 			maxExposureTime *
-			(status_.fixedAnalogueGain != 0.0
-				 ? status_.fixedAnalogueGain
+			(status_.fixedGain != 0.0
+				 ? status_.fixedGain
 				 : exposureMode_->gain.back());
 		target_.totalExposure = std::min(target_.totalExposure, maxTotalExposure);
 	}
@@ -896,7 +894,7 @@ void AgcChannel::filterExposure()
 	 * region, because we want to reflect any user exposure/gain updates,
 	 * however small.
 	 */
-	if ((status_.fixedExposureTime && status_.fixedAnalogueGain) ||
+	if ((status_.fixedExposureTime && status_.fixedGain) ||
 	    frameCount_ <= config_.startupFrames) {
 		speed = 1.0;
 		stableRegion = 0.0;
@@ -930,63 +928,64 @@ void AgcChannel::divideUpExposure()
 	 */
 	Duration exposureValue = filtered_.totalExposureNoDG;
 	Duration exposureTime;
-	double analogueGain;
+	double gain;
 	exposureTime = status_.fixedExposureTime ? status_.fixedExposureTime
 						 : exposureMode_->exposureTime[0];
 	exposureTime = limitExposureTime(exposureTime);
-	analogueGain = status_.fixedAnalogueGain != 0.0 ? status_.fixedAnalogueGain
-							: exposureMode_->gain[0];
-	analogueGain = limitGain(analogueGain);
-	if (exposureTime * analogueGain < exposureValue) {
+	gain = status_.fixedGain != 0.0 ? status_.fixedGain
+		: exposureMode_->gain[0];
+	gain = limitGain(gain);
+	if (exposureTime * gain < exposureValue) {
 		for (unsigned int stage = 1;
 		     stage < exposureMode_->gain.size(); stage++) {
 			if (!status_.fixedExposureTime) {
 				Duration stageExposureTime =
 					limitExposureTime(exposureMode_->exposureTime[stage]);
-				if (stageExposureTime * analogueGain >= exposureValue) {
-					exposureTime = exposureValue / analogueGain;
+				if (stageExposureTime * gain >= exposureValue) {
+					exposureTime = exposureValue / gain;
 					break;
 				}
 				exposureTime = stageExposureTime;
 			}
-			if (status_.fixedAnalogueGain == 0.0) {
+			if (status_.fixedGain == 0.0) {
 				if (exposureMode_->gain[stage] * exposureTime >= exposureValue) {
-					analogueGain = exposureValue / exposureTime;
+					gain = exposureValue / exposureTime;
 					break;
 				}
-				analogueGain = exposureMode_->gain[stage];
-				analogueGain = limitGain(analogueGain);
+				gain = exposureMode_->gain[stage];
+				gain = limitGain(gain);
 			}
 		}
 	}
 	LOG(RPiAgc, Debug)
 		<< "Divided up exposure time and gain are " << exposureTime
-		<< " and " << analogueGain;
+		<< " and " << gain;
 	/*
 	 * Finally adjust exposure time for flicker avoidance (require both
 	 * exposure time and gain not to be fixed).
 	 */
-	if (!status_.fixedExposureTime && !status_.fixedAnalogueGain &&
+	if (!status_.fixedExposureTime && !status_.fixedGain &&
 	    status_.flickerPeriod) {
 		int flickerPeriods = exposureTime / status_.flickerPeriod;
 		if (flickerPeriods) {
 			Duration newExposureTime = flickerPeriods * status_.flickerPeriod;
-			analogueGain *= exposureTime / newExposureTime;
+			gain *= exposureTime / newExposureTime;
 			/*
 			 * We should still not allow the ag to go over the
 			 * largest value in the exposure mode. Note that this
 			 * may force more of the total exposure into the digital
 			 * gain as a side-effect.
 			 */
-			analogueGain = std::min(analogueGain, exposureMode_->gain.back());
-			analogueGain = limitGain(analogueGain);
+			gain = std::min(gain, exposureMode_->gain.back());
+			gain = limitGain(gain);
 			exposureTime = newExposureTime;
 		}
 		LOG(RPiAgc, Debug) << "After flicker avoidance, exposure time "
-				   << exposureTime << " gain " << analogueGain;
+				   << exposureTime << " gain " << gain;
 	}
 	filtered_.exposureTime = exposureTime;
-	filtered_.analogueGain = analogueGain;
+	/* We ask for all the gain as analogue gain; prepare() will be told what we got. */
+	filtered_.analogueGain = gain;
 }
 
 void AgcChannel::writeAndFinish(Metadata *imageMetadata, bool desaturate)

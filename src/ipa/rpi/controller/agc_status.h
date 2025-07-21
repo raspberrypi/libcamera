@@ -44,6 +44,5 @@ struct AgcStatus {
 };
 
 struct AgcPrepareStatus {
-	double digitalGain;
 	int locked;
 };

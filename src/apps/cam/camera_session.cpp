@@ -236,7 +236,17 @@ void CameraSession::listProperties() const
 		const ControlId *id = properties::properties.at(key);
 
 		std::cout << "Property: " << id->name() << " = "
-			  << value.toString() << std::endl;
+			  << value.toString();
+
+		if (!id->enumerators().empty()) {
+			int32_t val = value.get<int32_t>();
+			const auto &iter = id->enumerators().find(val);
+
+			if (iter != id->enumerators().end())
+				std::cout << " (" << iter->second << ")";
+		}
+
+		std::cout << std::endl;
 	}
 }
 

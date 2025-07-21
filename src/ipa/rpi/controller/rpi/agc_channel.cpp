@@ -260,6 +260,8 @@ int AgcConfig::read(const libcamera::YamlObject &params)
 
 	desaturate = params["desaturate"].get<int>(1);
 
+	maxDigitalGain = params["max_digital_gain"].get<double>(4.0);
+
 	return 0;
 }
 
@@ -508,7 +510,8 @@ void AgcChannel::prepare(Metadata *imageMetadata)
 				 * Never ask for a gain < 1.0, and also impose
 				 * some upper limit. Make it customisable?
 				 */
-				prepareStatus.digitalGain = std::max(1.0, std::min(digitalGain, 4.0));
+				prepareStatus.digitalGain = std::max(1.0, std::min(digitalGain,
+										   config_.maxDigitalGain));
 				LOG(RPiAgc, Debug) << "Actual exposure " << actualExposure;
 				LOG(RPiAgc, Debug) << "Use digitalGain " << prepareStatus.digitalGain;
 				LOG(RPiAgc, Debug) << "Effective exposure "

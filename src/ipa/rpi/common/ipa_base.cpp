@@ -501,10 +501,9 @@ void IpaBase::prepareIsp(const PrepareParams &params)
 void IpaBase::processStats(const ProcessParams &params)
 {
 	unsigned int ipaContext = params.ipaContext % rpiMetadata_.size();
+	RPiController::Metadata &rpiMetadata = rpiMetadata_[ipaContext];
 
 	if (processPending_ && frameCount_ >= mistrustCount_) {
-		RPiController::Metadata &rpiMetadata = rpiMetadata_[ipaContext];
-
 		auto it = buffers_.find(params.buffers.stats);
 		if (it == buffers_.end()) {
 			LOG(IPARPI, Error) << "Could not find stats buffer!";
@@ -518,14 +517,14 @@ void IpaBase::processStats(const ProcessParams &params)
 
 		helper_->process(statistics, rpiMetadata);
 		controller_.process(statistics, &rpiMetadata);
+	}
 
-		struct AgcStatus agcStatus;
-		if (rpiMetadata.get("agc.status", agcStatus) == 0) {
-			ControlList ctrls(sensorCtrls_);
-			applyAGC(&agcStatus, ctrls);
-			setDelayedControls.emit(ctrls, ipaContext);
-			setCameraTimeoutValue();
-		}
+	struct AgcStatus agcStatus;
+	if (rpiMetadata.get("agc.status", agcStatus) == 0) {
+		ControlList ctrls(sensorCtrls_);
+		applyAGC(&agcStatus, ctrls);
+		setDelayedControls.emit(ctrls, ipaContext);
+		setCameraTimeoutValue();
 	}
 
 	/*

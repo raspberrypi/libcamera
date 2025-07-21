@@ -521,10 +521,24 @@ void IpaPiSP::applyWBG(const AwbStatus *awbStatus, const AgcPrepareStatus *agcPr
 	pisp_wbg_config wbg;
 	pisp_fe_rgby_config rgby = {};
 	double dg = agcPrepareStatus ? agcPrepareStatus->digitalGain : 1.0;
+	double minColourGain = std::min({ awbStatus->gainR, awbStatus->gainG, awbStatus->gainB, 1.0 });
+	/* The 0.1 here doesn't mean much, but just stops arithmetic errors and extreme behaviour. */
+	double extraGain = 1.0 / std::max({ minColourGain, 0.1 });
 
-	wbg.gain_r = clampField(dg * awbStatus->gainR, 14, 10);
-	wbg.gain_g = clampField(dg * awbStatus->gainG, 14, 10);
-	wbg.gain_b = clampField(dg * awbStatus->gainB, 14, 10);
+	/*
+	 * Apply an extra gain of 1 / minColourGain so as not to apply < 1 gains to any
+	 * channels (which would cause saturated pixels to go cyan or magenta).
+	 * Doing this doesn't really apply more gain than necessary, because one of the
+	 * channels is always getting the minimum gain possible. For this reason we also
+	 * don't change the values that we report externally.
+	 */
+	double gainR = awbStatus->gainR * extraGain;
+	double gainG = awbStatus->gainG * extraGain;
+	double gainB = awbStatus->gainB * extraGain;
+
+	wbg.gain_r = clampField(dg * gainR, 14, 10);
+	wbg.gain_g = clampField(dg * gainG, 14, 10);
+	wbg.gain_b = clampField(dg * gainB, 14, 10);
 
 	/*
 	 * The YCbCr conversion block should contain the appropriate YCbCr
@@ -535,9 +549,9 @@ void IpaPiSP::applyWBG(const AwbStatus *awbStatus, const AgcPrepareStatus *agcPr
 	be_->GetYcbcr(csc);
 
 	/* The CSC coefficients already have the << 10 scaling applied. */
-	rgby.gain_r = clampField(csc.coeffs[0] * awbStatus->gainR, 14);
-	rgby.gain_g = clampField(csc.coeffs[1] * awbStatus->gainG, 14);
-	rgby.gain_b = clampField(csc.coeffs[2] * awbStatus->gainB, 14);
+	rgby.gain_r = clampField(csc.coeffs[0] * gainR, 14);
+	rgby.gain_g = clampField(csc.coeffs[1] * gainG, 14);
+	rgby.gain_b = clampField(csc.coeffs[2] * gainB, 14);
 
 	LOG(IPARPI, Debug) << "Applying WB R: " << awbStatus->gainR << " B: "
 			   << awbStatus->gainB;

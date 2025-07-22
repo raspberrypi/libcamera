@@ -34,29 +34,32 @@ namespace {{ns}} {
 {% endfor %}
 {%- endif %}
 
+class {{proxy_name}}Threaded;
+class {{proxy_name}}Isolated;
+
 class {{proxy_name}} : public IPAProxy, public {{interface_name}}, public Object
 {
 public:
-	{{proxy_name}}(IPAModule *ipam, bool isolate, const GlobalConfiguration &configuration);
-	~{{proxy_name}}();
+	using Threaded = {{proxy_name}}Threaded;
+	using Isolated = {{proxy_name}}Isolated;
+
+protected:
+	using IPAProxy::IPAProxy;
+};
+
+class {{proxy_name}}Threaded : public {{proxy_name}}
+{
+public:
+	{{proxy_name}}Threaded(IPAModule *ipam, const GlobalConfiguration &configuration);
+	~{{proxy_name}}Threaded();
 
 {% for method in interface_main.methods %}
-{{proxy_funcs.func_sig(proxy_name, method, "", false, true)|indent(8, true)}};
+{{proxy_funcs.func_sig(proxy_name + "Threaded", method, "", false, true)|indent(8, true)}};
 {% endfor %}
 
 private:
-	void recvMessage(const IPCMessage &data);
-
-{% for method in interface_main.methods %}
-{{proxy_funcs.func_sig(proxy_name, method, "Thread", false)|indent(8, true)}};
-{{proxy_funcs.func_sig(proxy_name, method, "IPC", false)|indent(8, true)}};
-{% endfor %}
 {% for method in interface_event.methods %}
-{{proxy_funcs.func_sig(proxy_name, method, "Thread", false)|indent(8, true)}};
-	void {{method.mojom_name}}IPC(
-		std::vector<uint8_t>::const_iterator data,
-		size_t dataSize,
-		const std::vector<SharedFD> &fds);
+{{proxy_funcs.func_sig(proxy_name + "Threaded", method, "Handler", false)|indent(8, true)}};
 {% endfor %}
 
 	/* Helper class to invoke async functions in another thread. */
@@ -79,12 +82,12 @@ private:
 		}
 {% for method in interface_main.methods %}
 {%- if method|is_async %}
-		{{proxy_funcs.func_sig(proxy_name, method, "", false)|indent(16)}}
+		{{proxy_funcs.func_sig(proxy_name + "Threaded", method, "", false)|indent(16)}}
 		{
 			ipa_->{{method.mojom_name}}({{method.parameters|params_comma_sep}});
 		}
 {%- elif method.mojom_name == "start" %}
-		{{proxy_funcs.func_sig(proxy_name, method, "", false)|indent(16)}}
+		{{proxy_funcs.func_sig(proxy_name + "Threaded", method, "", false)|indent(16)}}
 		{
 {%- if method|method_return_value != "void" %}
 			return ipa_->{{method.mojom_name}}({{method.parameters|params_comma_sep}});
@@ -104,8 +107,27 @@ private:
 	Thread thread_;
 	ThreadProxy proxy_;
 	std::unique_ptr<{{interface_name}}> ipa_;
+};
 
-	const bool isolate_;
+class {{proxy_name}}Isolated : public {{proxy_name}}
+{
+public:
+	{{proxy_name}}Isolated(IPAModule *ipam, const GlobalConfiguration &configuration);
+	~{{proxy_name}}Isolated();
+
+{% for method in interface_main.methods %}
+{{proxy_funcs.func_sig(proxy_name + "Isolated", method, "", false, true)|indent(8, true)}};
+{% endfor %}
+
+private:
+	void recvMessage(const IPCMessage &data);
+
+{% for method in interface_event.methods %}
+	void {{method.mojom_name}}Handler(
+		std::vector<uint8_t>::const_iterator data,
+		size_t dataSize,
+		const std::vector<SharedFD> &fds);
+{% endfor %}
 
 	std::unique_ptr<IPCPipeUnixSocket> ipc_;
 

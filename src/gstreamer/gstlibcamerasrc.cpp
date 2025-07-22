@@ -730,7 +730,8 @@ gst_libcamera_src_task_run(gpointer user_data)
 		if (gst_pad_check_reconfigure(srcpad)) {
 			/* Check if the caps even need changing. */
 			g_autoptr(GstCaps) caps = gst_pad_get_current_caps(srcpad);
-			if (!gst_pad_peer_query_accept_caps(srcpad, caps)) {
+			g_autoptr(GstCaps) peercaps = gst_pad_peer_query_caps(srcpad, caps);
+			if (gst_caps_is_empty(peercaps)) {
 				reconfigure = true;
 				break;
 			}

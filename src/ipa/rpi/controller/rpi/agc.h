@@ -35,8 +35,8 @@ public:
 	void setMaxExposureTime(libcamera::utils::Duration maxExposureTime) override;
 	void setFixedExposureTime(unsigned int channelIndex,
 				  libcamera::utils::Duration fixedExposureTime) override;
-	void setFixedAnalogueGain(unsigned int channelIndex,
-				  double fixedAnalogueGain) override;
+	void setFixedGain(unsigned int channelIndex,
+			  double fixedGain) override;
 	void setMeteringMode(std::string const &meteringModeName) override;
 	void setExposureMode(std::string const &exposureModeName) override;
 	void setConstraintMode(std::string const &contraintModeName) override;

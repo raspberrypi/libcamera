@@ -217,6 +217,10 @@ void CameraManager::Private::addCamera(std::shared_ptr<Camera> camera)
 		cameras_.push_back(camera);
 	}
 
+	LOG(Camera, Info)
+		<< "Adding camera '" << camera->id() << "' for pipeline handler "
+		<< camera->_d()->pipe()->name();
+
 	/* Report the addition to the public signal */
 	CameraManager *const o = LIBCAMERA_O_PTR();
 	o->cameraAdded.emit(camera);

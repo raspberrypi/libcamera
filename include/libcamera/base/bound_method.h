@@ -38,11 +38,6 @@ public:
 	{
 	}
 
-	R returnValue()
-	{
-		return ret_;
-	}
-
 	std::tuple<typename std::remove_reference_t<Args>...> args_;
 	R ret_;
 };
@@ -53,10 +48,6 @@ class BoundMethodPack<void, Args...> : public BoundMethodPackBase
 public:
 	BoundMethodPack(const Args &... args)
 		: args_(args...)
-	{
-	}
-
-	void returnValue()
 	{
 	}
 
@@ -140,8 +131,10 @@ public:
 			return func_(args...);
 
 		auto pack = std::make_shared<PackType>(args...);
-		bool sync = BoundMethodBase::activatePack(pack, deleteMethod);
-		return sync ? pack->returnValue() : R();
+		[[maybe_unused]] bool sync = BoundMethodBase::activatePack(pack, deleteMethod);
+
+		if constexpr (!std::is_void_v<R>)
+			return sync ? std::move(pack->ret_) : R();
 	}
 
 	R invoke(Args... args) override
@@ -175,8 +168,10 @@ public:
 		}
 
 		auto pack = std::make_shared<PackType>(args...);
-		bool sync = BoundMethodBase::activatePack(pack, deleteMethod);
-		return sync ? pack->returnValue() : R();
+		[[maybe_unused]] bool sync = BoundMethodBase::activatePack(pack, deleteMethod);
+
+		if constexpr (!std::is_void_v<R>)
+			return sync ? std::move(pack->ret_) : R();
 	}
 
 	R invoke(Args... args) override

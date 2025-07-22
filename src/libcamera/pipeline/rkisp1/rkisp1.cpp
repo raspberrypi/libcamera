@@ -155,6 +155,24 @@ private:
 	Transform combinedTransform_;
 };
 
+namespace {
+
+/*
+ * Maximum number of requests that shall be queued into the pipeline to keep
+ * the regulation fast.
+ * \todo This needs revisiting as soon as buffers got decoupled from requests
+ * and/or a fast path for controls was implemented.
+ */
+static constexpr unsigned int kRkISP1MaxQueuedRequests = 4;
+
+/*
+ * This many internal buffers (or rather parameter and statistics buffer
+ * pairs) ensures that the pipeline runs smoothly, without frame drops.
+ */
+static constexpr unsigned int kRkISP1MinBufferCount = 4;
+
+} /* namespace */
+
 class PipelineHandlerRkISP1 : public PipelineHandler
 {
 public:
@@ -596,6 +614,12 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 				return false;
 		}
 
+		if (tryCfg.bufferCount < kRkISP1MinBufferCount) {
+			if (expectedStatus == Valid)
+				return false;
+			tryCfg.bufferCount = kRkISP1MinBufferCount;
+		}
+
 		cfg = tryCfg;
 		cfg.setStream(stream);
 		return true;
@@ -684,7 +708,8 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
  */
 
 PipelineHandlerRkISP1::PipelineHandlerRkISP1(CameraManager *manager)
-	: PipelineHandler(manager), hasSelfPath_(true), useDewarper_(false)
+	: PipelineHandler(manager, kRkISP1MaxQueuedRequests),
+	  hasSelfPath_(true), useDewarper_(false)
 {
 }
 
@@ -784,6 +809,7 @@ PipelineHandlerRkISP1::generateConfiguration(Camera *camera,
 			return nullptr;
 
 		cfg.colorSpace = colorSpace;
+		cfg.bufferCount = kRkISP1MinBufferCount;
 		config->addConfiguration(cfg);
 	}
 
@@ -983,24 +1009,19 @@ int PipelineHandlerRkISP1::allocateBuffers(Camera *camera)
 	unsigned int ipaBufferId = 1;
 	int ret;
 
-	unsigned int maxCount = std::max({
-		data->mainPathStream_.configuration().bufferCount,
-		data->selfPathStream_.configuration().bufferCount,
-	});
-
 	if (!isRaw_) {
-		ret = param_->allocateBuffers(maxCount, &paramBuffers_);
+		ret = param_->allocateBuffers(kRkISP1MinBufferCount, &paramBuffers_);
 		if (ret < 0)
 			goto error;
 
-		ret = stat_->allocateBuffers(maxCount, &statBuffers_);
+		ret = stat_->allocateBuffers(kRkISP1MinBufferCount, &statBuffers_);
 		if (ret < 0)
 			goto error;
 	}
 
 	/* If the dewarper is being used, allocate internal buffers for ISP. */
 	if (useDewarper_) {
-		ret = mainPath_.exportBuffers(maxCount, &mainPathBuffers_);
+		ret = mainPath_.exportBuffers(kRkISP1MinBufferCount, &mainPathBuffers_);
 		if (ret < 0)
 			goto error;
 
@@ -1117,14 +1138,14 @@ int PipelineHandlerRkISP1::start(Camera *camera, [[maybe_unused]] const ControlL
 	}
 
 	if (data->mainPath_->isEnabled()) {
-		ret = mainPath_.start();
+		ret = mainPath_.start(data->mainPathStream_.configuration().bufferCount);
 		if (ret)
 			return ret;
 		actions += [&]() { mainPath_.stop(); };
 	}
 
 	if (hasSelfPath_ && data->selfPath_->isEnabled()) {
-		ret = selfPath_.start();
+		ret = selfPath_.start(data->selfPathStream_.configuration().bufferCount);
 		if (ret)
 			return ret;
 	}

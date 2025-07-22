@@ -1746,7 +1746,7 @@ void PiSPCameraData::cfeBufferDequeue(FrameBuffer *buffer)
 		 */
 		wallClockRecovery_.addSample();
 		uint64_t sensorTimestamp = buffer->metadata().timestamp;
-		uint64_t wallClockTimestamp = wallClockRecovery_.getOutput(sensorTimestamp / 1000);
+		uint64_t wallClockTimestamp = wallClockRecovery_.getOutput(sensorTimestamp);
 
 		ctrl.set(controls::SensorTimestamp, sensorTimestamp);
 		ctrl.set(controls::FrameWallClock, wallClockTimestamp);
@@ -2302,16 +2302,11 @@ void PiSPCameraData::tryRunPipeline()
 
 	/* Take the first request from the queue and action the IPA. */
 	Request *request = requestQueue_.front();
+	ASSERT(request->metadata().empty());
 
 	/* See if a new ScalerCrop value needs to be applied. */
 	applyScalerCrop(request->controls());
 
-	/*
-	 * Clear the request metadata and fill it with some initial non-IPA
-	 * related controls. We clear it first because the request metadata
-	 * may have been populated if we have dropped the previous frame.
-	 */
-	request->metadata().clear();
 	fillRequestMetadata(job.sensorControls, request);
 
 	/* Set our state to say the pipeline is active. */

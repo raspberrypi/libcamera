@@ -30,6 +30,7 @@ struct AgcStatus {
 	libcamera::utils::Duration targetExposureValue; /* (unfiltered) target total exposure AGC is aiming for */
 	libcamera::utils::Duration exposureTime;
 	double analogueGain;
+	double digitalGain;
 	std::string exposureMode;
 	std::string constraintMode;
 	std::string meteringMode;
@@ -37,12 +38,11 @@ struct AgcStatus {
 	libcamera::utils::Duration flickerPeriod;
 	int floatingRegionEnable;
 	libcamera::utils::Duration fixedExposureTime;
-	double fixedAnalogueGain;
+	double fixedGain;
 	unsigned int channel;
 	HdrStatus hdr;
 };
 
 struct AgcPrepareStatus {
-	double digitalGain;
 	int locked;
 };

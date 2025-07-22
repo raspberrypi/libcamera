@@ -20,7 +20,7 @@ static const struct {
 	/* Compressed */
 	{ GST_VIDEO_FORMAT_ENCODED, formats::MJPEG },
 
-	/* Bayer formats, gstreamer only supports 8-bit */
+	/* Bayer formats */
 	{ GST_VIDEO_FORMAT_ENCODED, formats::SBGGR8 },
 	{ GST_VIDEO_FORMAT_ENCODED, formats::SGBRG8 },
 	{ GST_VIDEO_FORMAT_ENCODED, formats::SGRBG8 },
@@ -317,20 +317,15 @@ bare_structure_from_format(const PixelFormat &format)
 		return gst_structure_new("video/x-raw", "format", G_TYPE_STRING,
 					 gst_video_format_to_string(gst_format), nullptr);
 
-	switch (format) {
-	case formats::MJPEG:
+	if (format == formats::MJPEG)
 		return gst_structure_new_empty("image/jpeg");
 
-	case formats::SBGGR8:
-	case formats::SGBRG8:
-	case formats::SGRBG8:
-	case formats::SRGGB8:
-		return gst_structure_new("video/x-bayer", "format", G_TYPE_STRING,
-					 bayer_format_to_string(format), nullptr);
+	const gchar *s = bayer_format_to_string(format);
+	if (s)
+		return gst_structure_new("video/x-bayer", "format",
+					 G_TYPE_STRING, s, nullptr);
 
-	default:
-		return nullptr;
-	}
+	return nullptr;
 }
 
 GstCaps *

@@ -1207,7 +1207,9 @@ CameraConfiguration::Status SimpleCameraConfiguration::validate()
 
 		PixelFormat pixelFormat = *it;
 		if (cfg.pixelFormat != pixelFormat) {
-			LOG(SimplePipeline, Debug) << "Adjusting pixel format";
+			LOG(SimplePipeline, Debug)
+				<< "Adjusting pixel format from "
+				<< cfg.pixelFormat << " to " << pixelFormat;
 			cfg.pixelFormat = pixelFormat;
 			status = Adjusted;
 		}

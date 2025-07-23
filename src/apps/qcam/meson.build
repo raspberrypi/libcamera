@@ -42,6 +42,13 @@ qt6_cpp_args = [
     '-Wno-extra-semi',
 ]
 
+# gcc 12 and 13 output a false positive variable shadowing warning with Qt
+# 6.9.0 and newer. Silence it.
+if qt6_dep.version().version_compare('>=6.9.0') and \
+   cxx.version().version_compare('>=12') and cxx.version().version_compare('<14')
+    qt6_cpp_args += ['-Wno-shadow']
+endif
+
 resources = qt6.preprocess(moc_headers : qcam_moc_headers,
                            qresources : qcam_resources,
                            dependencies : qt6_dep)

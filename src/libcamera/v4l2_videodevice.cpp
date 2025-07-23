@@ -446,7 +446,8 @@ const std::string V4L2DeviceFormat::toString() const
  */
 std::ostream &operator<<(std::ostream &out, const V4L2DeviceFormat &f)
 {
-	out << f.size << "-" << f.fourcc;
+	out << f.size << "-" << f.fourcc << "/"
+	    << ColorSpace::toString(f.colorSpace);
 	return out;
 }
 

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021, Collabora Ltd.
  *
- * test_base.cpp - Base definitions for tests
+ * Base definitions for tests
  */
 
 #include "test_base.h"

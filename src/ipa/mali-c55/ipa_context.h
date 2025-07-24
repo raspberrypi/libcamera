@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2024, Ideas On Board
  *
- * ipa_context.h - Mali-C55 IPA Context
+ * Mali-C55 IPA Context
  */
 
 #pragma once

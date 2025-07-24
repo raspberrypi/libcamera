@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2022, Raspberry Pi Ltd
  *
- * tonemap.hpp - Tonemap control algorithm
+ * Tonemap control algorithm
  */
 #pragma once
 

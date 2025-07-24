@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2024, Ideas On Board Oy
  *
- * lsc.cpp - Mali-C55 Lens shading correction algorithm
+ * Mali-C55 Lens shading correction algorithm
  */
 
 #include "lsc.h"

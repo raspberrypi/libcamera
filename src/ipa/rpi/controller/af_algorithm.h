@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2022, Raspberry Pi Ltd
  *
- * af_algorithm.hpp - auto focus algorithm interface
+ * Auto focus algorithm interface
  */
 #pragma once
 

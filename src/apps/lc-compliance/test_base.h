@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2021, Collabora Ltd.
  *
- * test_base.h - Base definitions for tests
+ * Base definitions for tests
  */
 
 #ifndef __LC_COMPLIANCE_TEST_BASE_H__

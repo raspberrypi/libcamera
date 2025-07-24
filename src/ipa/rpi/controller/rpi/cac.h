@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2023, Raspberry Pi Ltd
  *
- * cac.hpp - CAC control algorithm
+ * CAC control algorithm
  */
 #pragma once
 

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2024, Raspberry Pi Ltd
  *
- * cam_helper_Imx283.cpp - camera information for Imx283 sensor
+ * camera information for Imx283 sensor
  */
 
 #include <assert.h>

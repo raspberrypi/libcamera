@@ -4,9 +4,7 @@
  *
  * Base definitions for tests
  */
-
-#ifndef __LC_COMPLIANCE_TEST_BASE_H__
-#define __LC_COMPLIANCE_TEST_BASE_H__
+#pragma once
 
 #include <libcamera/libcamera.h>
 
@@ -20,5 +18,3 @@ protected:
 
 	std::shared_ptr<libcamera::Camera> camera_;
 };
-
-#endif /* __LC_COMPLIANCE_TEST_BASE_H__ */

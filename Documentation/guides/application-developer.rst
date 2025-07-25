@@ -54,7 +54,7 @@ the `Linux Media Controller`_ and `Video for Linux`_ (V4L2) APIs, meaning that
 an application doesn't need to handle device or driver specific details.
 
 .. _CameraManager: https://libcamera.org/api-html/classlibcamera_1_1CameraManager.html
-.. _Linux Media Controller: https://www.kernel.org/doc/html/latest/media/uapi/mediactl/media-controller-intro.html
+.. _Linux Media Controller: https://www.kernel.org/doc/html/latest/userspace-api/media/mediactl/media-controller.html
 .. _Video for Linux: https://www.linuxtv.org/docs.php
 
 Before the ``int main()`` function, create a global shared pointer

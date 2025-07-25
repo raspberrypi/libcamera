@@ -13,7 +13,7 @@
 
 using namespace libcamera;
 
-static struct {
+static const struct {
 	GstVideoFormat gst_format;
 	PixelFormat format;
 } format_map[] = {

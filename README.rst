@@ -67,7 +67,8 @@ for device hotplug enumeration: [optional]
         libudev-dev
 
 for documentation: [optional]
-        python3-sphinx doxygen graphviz texlive-latex-extra
+        doxygen graphviz python3-sphinx python3-sphinxcontrib.doxylink (>= 1.6.1)
+        texlive-latex-extra
 
 for gstreamer: [optional]
         libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev

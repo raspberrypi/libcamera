@@ -37,7 +37,8 @@ author = 'The libcamera documentation authors'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.graphviz'
+    'sphinx.ext.graphviz',
+    'sphinxcontrib.doxylink',
 ]
 
 graphviz_output_format = 'svg'
@@ -71,6 +72,16 @@ exclude_patterns = [
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = None
 
+doxylink = {
+    'doxy-pub': (
+        'Documentation/api-html/tagfile.xml',
+        '../api-html/',
+    ),
+    'doxy-int': (
+        'Documentation/internal-api-html/tagfile.xml',
+        '../internal-api-html/',
+    ),
+}
 
 # -- Options for HTML output -------------------------------------------------
 

@@ -81,16 +81,16 @@ if doxygen.found() and dot.found()
                                  '@INPUT@',
                              ])
 
-    custom_target('doxygen-public',
-                  input : [
-                      doxyfile,
-                      doxyfile_common,
-                  ],
-                  output : 'api-html',
-                  command : [doxygen, doxyfile],
-                  install : true,
-                  install_dir : doc_install_dir,
-                  install_tag : 'doc')
+    doxygen_public = custom_target('doxygen-public',
+                                   input : [
+                                       doxyfile,
+                                       doxyfile_common,
+                                   ],
+                                   output : 'api-html',
+                                   command : [doxygen, doxyfile],
+                                   install : true,
+                                   install_dir : doc_install_dir,
+                                   install_tag : 'doc')
 
     # This is the internal documentation, which hard-codes a list of directories
     # to parse in its doxyfile.
@@ -99,18 +99,18 @@ if doxygen.found() and dot.found()
                               output : 'Doxyfile-internal',
                               configuration : cdata)
 
-    custom_target('doxygen-internal',
-                  input : [
-                      doxyfile,
-                      doxyfile_common,
-                      doxygen_public_input,
-                      doxygen_internal_input,
-                  ],
-                  output : 'internal-api-html',
-                  command : [doxygen, doxyfile],
-                  install : true,
-                  install_dir : doc_install_dir,
-                  install_tag : 'doc-internal')
+    doxygen_internal = custom_target('doxygen-internal',
+                                     input : [
+                                         doxyfile,
+                                         doxyfile_common,
+                                         doxygen_public_input,
+                                         doxygen_internal_input,
+                                     ],
+                                     output : 'internal-api-html',
+                                     command : [doxygen, doxyfile],
+                                     install : true,
+                                     install_dir : doc_install_dir,
+                                     install_tag : 'doc-internal')
 endif
 
 #
@@ -121,6 +121,27 @@ sphinx = find_program('sphinx-build-3', 'sphinx-build',
                       required : get_option('documentation'))
 
 if sphinx.found()
+    # Many distributions do not provide a recent-enough version of the doxylink
+    # module. This results in a build error with a cryptic message. Check the
+    # version manually and print clear error messages.
+    py_mod = import('python')
+    py3 = py_mod.find_installation('python3')
+
+    mod = 'sphinxcontrib.doxylink'
+    min_version = '>=1.6.1'
+    version = run_command(py3, '-c',
+                          'import @0@ ; print(@0@.__version__)'.format(mod),
+                          check : false).stdout().strip()
+
+    if version == ''
+        error('@0@ module not found'.format(mod))
+    endif
+
+    if not version.version_compare(min_version)
+        error('@0@ module v@1@ is too old, @2@ is needed'
+              .format(mod, version, min_version))
+    endif
+
     docs_sources = [
         'camera-sensor-model.rst',
         'code-of-conduct.rst',
@@ -154,6 +175,10 @@ if sphinx.found()
                   input : docs_sources,
                   output : 'html',
                   build_by_default : true,
+                  depends : [
+                      doxygen_public,
+                      doxygen_internal,
+                  ],
                   install : true,
                   install_dir : doc_install_dir,
                   install_tag : 'doc')

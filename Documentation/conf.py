@@ -21,8 +21,8 @@
 # -- Project information -----------------------------------------------------
 
 project = 'libcamera'
-copyright = '2018-2019, The libcamera documentation authors'
-author = u'Kieran Bingham, Jacopo Mondi, Laurent Pinchart, Niklas Söderlund'
+copyright = '2018-2025, The libcamera documentation authors'
+author = 'The libcamera documentation authors'
 
 # Version information is provided by the build environment, through the
 # sphinx command line.

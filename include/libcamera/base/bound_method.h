@@ -39,7 +39,7 @@ public:
 	{
 	}
 
-	std::tuple<typename std::remove_reference_t<Args>...> args_;
+	std::tuple<std::remove_cv_t<std::remove_reference_t<Args>>...> args_;
 	R ret_;
 };
 
@@ -53,7 +53,7 @@ public:
 	{
 	}
 
-	std::tuple<typename std::remove_reference_t<Args>...> args_;
+	std::tuple<std::remove_cv_t<std::remove_reference_t<Args>>...> args_;
 };
 
 class BoundMethodBase

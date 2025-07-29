@@ -579,6 +579,53 @@ void gst_libcamera_framerate_to_caps(GstCaps *caps, const GstStructure *element_
 	gst_structure_set(s, "framerate", GST_TYPE_FRACTION, fps_caps_n, fps_caps_d, nullptr);
 }
 
+void gst_libcamera_gvalue_set_point(GValue *value, const Point &point)
+{
+	GValue x = G_VALUE_INIT;
+	g_value_init(&x, G_TYPE_INT);
+	g_value_set_int(&x, point.x);
+	gst_value_array_append_and_take_value(value, &x);
+
+	GValue y = G_VALUE_INIT;
+	g_value_init(&y, G_TYPE_INT);
+	g_value_set_int(&y, point.y);
+	gst_value_array_append_and_take_value(value, &y);
+}
+
+void gst_libcamera_gvalue_set_size(GValue *value, const Size &size)
+{
+	GValue width = G_VALUE_INIT;
+	g_value_init(&width, G_TYPE_INT);
+	g_value_set_int(&width, size.width);
+	gst_value_array_append_and_take_value(value, &width);
+
+	GValue height = G_VALUE_INIT;
+	g_value_init(&height, G_TYPE_INT);
+	g_value_set_int(&height, size.height);
+	gst_value_array_append_and_take_value(value, &height);
+}
+
+void gst_libcamera_gvalue_set_rectangle(GValue *value, const Rectangle &rect)
+{
+	gst_libcamera_gvalue_set_point(value, rect.topLeft());
+	gst_libcamera_gvalue_set_size(value, rect.size());
+}
+
+Rectangle gst_libcamera_gvalue_get_rectangle(const GValue *value)
+{
+	const GValue *r;
+	r = gst_value_array_get_value(value, 0);
+	int x = g_value_get_int(r);
+	r = gst_value_array_get_value(value, 1);
+	int y = g_value_get_int(r);
+	r = gst_value_array_get_value(value, 2);
+	int w = g_value_get_int(r);
+	r = gst_value_array_get_value(value, 3);
+	int h = g_value_get_int(r);
+
+	return Rectangle(x, y, w, h);
+}
+
 #if !GST_CHECK_VERSION(1, 17, 1)
 gboolean
 gst_task_resume(GstTask *task)

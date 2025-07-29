@@ -17,21 +17,21 @@
 
 using namespace libcamera;
 
-static void value_set_rectangle(GValue *value, const Rectangle &rect)
+static void value_set_point(GValue *value, const Point &point)
 {
-	Point top_left = rect.topLeft();
-	Size size = rect.size();
-
 	GValue x = G_VALUE_INIT;
 	g_value_init(&x, G_TYPE_INT);
-	g_value_set_int(&x, top_left.x);
+	g_value_set_int(&x, point.x);
 	gst_value_array_append_and_take_value(value, &x);
 
 	GValue y = G_VALUE_INIT;
 	g_value_init(&y, G_TYPE_INT);
-	g_value_set_int(&y, top_left.y);
+	g_value_set_int(&y, point.y);
 	gst_value_array_append_and_take_value(value, &y);
+}
 
+static void value_set_size(GValue *value, const Size &size)
+{
 	GValue width = G_VALUE_INIT;
 	g_value_init(&width, G_TYPE_INT);
 	g_value_set_int(&width, size.width);
@@ -41,6 +41,12 @@ static void value_set_rectangle(GValue *value, const Rectangle &rect)
 	g_value_init(&height, G_TYPE_INT);
 	g_value_set_int(&height, size.height);
 	gst_value_array_append_and_take_value(value, &height);
+}
+
+static void value_set_rectangle(GValue *value, const Rectangle &rect)
+{
+	value_set_point(value, rect.topLeft());
+	value_set_size(value, rect.size());
 }
 
 static Rectangle value_get_rectangle(const GValue *value)

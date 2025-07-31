@@ -85,7 +85,7 @@ protected:
 			if (index != i || value != i + 1) {
 				cerr << "utils::enumerate(<vector>) test failed: i=" << i
 				     << ", index=" << index << ", value=" << value
-				     << std::endl;
+				     << endl;
 				return TestFail;
 			}
 
@@ -106,7 +106,7 @@ protected:
 			if (index != i || value != i) {
 				cerr << "utils::enumerate(<span>) test failed: i=" << i
 				     << ", index=" << index << ", value=" << value
-				     << std::endl;
+				     << endl;
 				return TestFail;
 			}
 
@@ -120,7 +120,7 @@ protected:
 			if (index != i || value != i * 2) {
 				cerr << "utils::enumerate(<array>) test failed: i=" << i
 				     << ", index=" << index << ", value=" << value
-				     << std::endl;
+				     << endl;
 				return TestFail;
 			}
 
@@ -138,32 +138,34 @@ protected:
 
 		exposure = 25ms + 25ms;
 		if (exposure.get<std::micro>() != 50000.0) {
-			cerr << "utils::Duration failed to return microsecond count";
+			cerr << "utils::Duration failed "
+			     << "to return microsecond count" << endl;
 			return TestFail;
 		}
 
 		exposure = 1.0s / 4;
 		if (exposure != 250ms) {
-			cerr << "utils::Duration failed scalar divide test";
+			cerr << "utils::Duration failed "
+			     << "scalar divide test" << endl;
 			return TestFail;
 		}
 
 		exposure = 5000.5us;
 		if (!exposure) {
-			cerr << "utils::Duration failed boolean test";
+			cerr << "utils::Duration failed boolean test" << endl;
 			return TestFail;
 		}
 
 		os << exposure;
 		if (os.str() != "5000.50us") {
-			cerr << "utils::Duration operator << failed";
+			cerr << "utils::Duration operator << failed" << endl;
 			return TestFail;
 		}
 
 		exposure = 100ms;
 		ratio = exposure / 25ms;
 		if (ratio != 4.0) {
-			cerr << "utils::Duration failed ratio test";
+			cerr << "utils::Duration failed ratio test" << endl;
 			return TestFail;
 		}
 
@@ -219,7 +221,7 @@ protected:
 		std::string s = os.str();
 		if (s != ref) {
 			cerr << "utils::hex() test failed, expected '" << ref
-			     << "', got '" << s << "'";
+			     << "', got '" << s << "'" << endl;
 			return TestFail;
 		}
 

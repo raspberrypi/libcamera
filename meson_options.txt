@@ -91,3 +91,8 @@ option('v4l2',
         value : 'auto',
         description : 'Compile the V4L2 compatibility layer',
         deprecated : {'true': 'enabled', 'false': 'disabled'})
+
+option('rpi_nn_awb',
+        type : 'feature',
+        value : 'disabled',
+        description : 'Enable Raspberry Pi neural network AWB')

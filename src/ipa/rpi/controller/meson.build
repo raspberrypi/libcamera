@@ -32,6 +32,22 @@ rpi_ipa_controller_deps = [
     libcamera_private,
 ]
 
+if not get_option('rpi_nn_awb').disabled()
+    tflite_dep = dependency('tensorflow-lite', required : false)
+    if not tflite_dep.found()
+        # This may not have a pkg-config file, so try and find it directly
+        cc = meson.get_compiler('cpp')
+        tflite_dep = cc.find_library('tensorflow-lite', required : get_option('rpi_nn_awb'))
+    endif
+
+    if tflite_dep.found()
+        rpi_ipa_controller_sources += files([
+            'rpi/awb_nn.cpp',
+        ])
+        rpi_ipa_controller_deps += tflite_dep
+    endif
+endif
+
 rpi_ipa_controller_lib = static_library('rpi_ipa_controller', rpi_ipa_controller_sources,
                                         include_directories : libipa_includes,
                                         dependencies : rpi_ipa_controller_deps)

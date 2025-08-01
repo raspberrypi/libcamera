@@ -27,5 +27,12 @@ conf_files = files([
     'uncalibrated.json',
 ])
 
+model_files = files([
+    'awb_model.tflite'
+])
+
 install_data(conf_files,
+             install_dir : ipa_data_dir / 'rpi' / 'pisp')
+
+install_data(model_files,
              install_dir : ipa_data_dir / 'rpi' / 'pisp')

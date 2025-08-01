@@ -1,42 +1,46 @@
 /* SPDX-License-Identifier: BSD-2-Clause */
 /*
- * Copyright (C) 2019, Raspberry Pi Ltd
+ * Copyright (C) 2025, Raspberry Pi Ltd
  *
  * AWB control algorithm
  */
 #pragma once
 
-#include <mutex>
 #include <condition_variable>
+#include <mutex>
 #include <thread>
-
-#include <libcamera/geometry.h>
 
 #include "../awb_algorithm.h"
 #include "../awb_status.h"
-#include "../statistics.h"
-
 #include "libipa/pwl.h"
 
 namespace RPiController {
 
-/* Control algorithm to perform AWB calculations. */
-
 struct AwbMode {
-	int read(const libcamera::YamlObject &params);
+	int read(const libcamera::YamlObject &params)
+	{
+		auto value = params["lo"].get<double>();
+		if (!value)
+			return -EINVAL;
+		ctLo = *value;
+
+		value = params["hi"].get<double>();
+		if (!value)
+			return -EINVAL;
+		ctHi = *value;
+
+		return 0;
+	}
 	double ctLo; /* low CT value for search */
 	double ctHi; /* high CT value for search */
 };
 
-struct AwbPrior {
-	int read(const libcamera::YamlObject &params);
-	double lux; /* lux level */
-	libcamera::ipa::Pwl prior; /* maps CT to prior log likelihood for this lux level */
-};
-
 struct AwbConfig {
-	AwbConfig() : defaultMode(nullptr) {}
+	AwbConfig()
+		: defaultMode(nullptr) {}
 	int read(const libcamera::YamlObject &params);
+	bool hasCtCurve() const;
+
 	/* Only repeat the AWB calculation every "this many" frames */
 	uint16_t framePeriod;
 	/* number of initial frames for which speed taken as 1.0 (maximum) */
@@ -47,27 +51,13 @@ struct AwbConfig {
 	libcamera::ipa::Pwl ctB; /* function maps CT to b (= B/G) */
 	libcamera::ipa::Pwl ctRInverse; /* inverse of ctR */
 	libcamera::ipa::Pwl ctBInverse; /* inverse of ctB */
-	/* table of illuminant priors at different lux levels */
-	std::vector<AwbPrior> priors;
+
 	/* AWB "modes" (determines the search range) */
 	std::map<std::string, AwbMode> modes;
 	AwbMode *defaultMode; /* mode used if no mode selected */
-	/*
-	 * minimum proportion of pixels counted within AWB region for it to be
-	 * "useful"
-	 */
-	double minPixels;
-	/* minimum G value of those pixels, to be regarded a "useful" */
-	uint16_t minG;
-	/*
-	 * number of AWB regions that must be "useful" in order to do the AWB
-	 * calculation
-	 */
-	uint32_t minRegions;
+
 	/* clamp on colour error term (so as not to penalise non-grey excessively) */
 	double deltaLimit;
-	/* step size control in coarse search */
-	double coarseStep;
 	/* how far to wander off CT curve towards "more purple" */
 	double transversePos;
 	/* how far to wander off CT curve towards "more green" */
@@ -82,14 +72,8 @@ struct AwbConfig {
 	 * sensor's B/G)
 	 */
 	double sensitivityB;
-	/* The whitepoint (which we normally "aim" for) can be moved. */
-	double whitepointR;
-	double whitepointB;
-	bool bayes; /* use Bayesian algorithm */
-	/* proportion of counted samples to add for the search bias */
-	double biasProportion;
-	/* CT target for the search bias */
-	double biasCT;
+
+	bool greyWorld; /* don't use the ct curve when in grey world mode */
 };
 
 class Awb : public AwbAlgorithm
@@ -97,9 +81,7 @@ class Awb : public AwbAlgorithm
 public:
 	Awb(Controller *controller = NULL);
 	~Awb();
-	char const *name() const override;
-	void initialise() override;
-	int read(const libcamera::YamlObject &params) override;
+	virtual void initialise() override;
 	unsigned int getConvergenceFrames() const override;
 	void initialValues(double &gainR, double &gainB) override;
 	void setMode(std::string const &name) override;
@@ -110,6 +92,11 @@ public:
 	void switchMode(CameraMode const &cameraMode, Metadata *metadata) override;
 	void prepare(Metadata *imageMetadata) override;
 	void process(StatisticsPtr &stats, Metadata *imageMetadata) override;
+
+	static double interpolateQuadatric(libcamera::ipa::Pwl::Point const &a,
+					   libcamera::ipa::Pwl::Point const &b,
+					   libcamera::ipa::Pwl::Point const &c);
+
 	struct RGB {
 		RGB(double r = 0, double g = 0, double b = 0)
 			: R(r), G(g), B(b)
@@ -123,10 +110,30 @@ public:
 		}
 	};
 
-private:
-	bool isAutoEnabled() const;
+protected:
 	/* configuration is read-only, and available to both threads */
 	AwbConfig config_;
+	/*
+	 * The following are for the asynchronous thread to use, though the main
+	 * thread can set/reset them if the async thread is known to be idle:
+	 */
+	std::vector<RGB> zones_;
+	StatisticsPtr statistics_;
+	double lux_;
+	AwbMode *mode_;
+	AwbStatus asyncResults_;
+
+	virtual void doAwb() = 0;
+	virtual void prepareStats();
+	double computeDelta2Sum(double gainR, double gainB, double whitepointR, double whitepointB);
+	void awbGrey();
+	static void generateStats(std::vector<Awb::RGB> &zones,
+				  StatisticsPtr &stats, double minPixels,
+				  double minG, Metadata &globalMetadata,
+				  double biasProportion, double biasCtR, double biasCtB);
+
+private:
+	bool isAutoEnabled() const;
 	std::thread asyncThread_;
 	void asyncFunc(); /* asynchronous thread function */
 	std::mutex mutex_;
@@ -142,9 +149,9 @@ private:
 	bool asyncAbort_;
 
 	/*
-	 * The following are only for the synchronous thread to use:
-	 * for sync thread to note its has asked async thread to run
-	 */
+	* The following are only for the synchronous thread to use:
+	* for sync thread to note its has asked async thread to run
+	*/
 	bool asyncStarted_;
 	/* counts up to framePeriod before restarting the async thread */
 	int framePhase_;
@@ -152,6 +159,7 @@ private:
 	AwbStatus syncResults_;
 	AwbStatus prevSyncResults_;
 	std::string modeName_;
+
 	/*
 	 * The following are for the asynchronous thread to use, though the main
 	 * thread can set/reset them if the async thread is known to be idle:
@@ -159,20 +167,6 @@ private:
 	void restartAsync(StatisticsPtr &stats, double lux);
 	/* copy out the results from the async thread so that it can be restarted */
 	void fetchAsyncResults();
-	StatisticsPtr statistics_;
-	AwbMode *mode_;
-	double lux_;
-	AwbStatus asyncResults_;
-	void doAwb();
-	void awbBayes();
-	void awbGrey();
-	void prepareStats();
-	double computeDelta2Sum(double gainR, double gainB);
-	libcamera::ipa::Pwl interpolatePrior();
-	double coarseSearch(libcamera::ipa::Pwl const &prior);
-	void fineSearch(double &t, double &r, double &b, libcamera::ipa::Pwl const &prior);
-	std::vector<RGB> zones_;
-	std::vector<libcamera::ipa::Pwl::Point> points_;
 	/* manual r setting */
 	double manualR_;
 	/* manual b setting */
@@ -196,4 +190,4 @@ static inline Awb::RGB operator*(Awb::RGB const &rgb, double d)
 	return d * rgb;
 }
 
-} /* namespace RPiController */
+} // namespace RPiController

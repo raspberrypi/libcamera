@@ -16,6 +16,8 @@
 
 {% if has_map %}#include <map>{% endif %}
 {% if has_string %}#include <string>{% endif %}
+#include <type_traits>
+#include <utility>
 {% if has_array %}#include <vector>{% endif %}
 
 #include <libcamera/controls.h>

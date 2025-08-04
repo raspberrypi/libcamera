@@ -8,7 +8,6 @@
 
 #include <vector>
 
-#include "libcamera/internal/matrix.h"
 #include <libipa/pwl.h>
 
 #include "../ccm_algorithm.h"
@@ -33,13 +32,17 @@ public:
 	Ccm(Controller *controller = NULL);
 	char const *name() const override;
 	int read(const libcamera::YamlObject &params) override;
+	void enableAuto() override;
 	void setSaturation(double saturation) override;
+	void setCcm(Matrix3x3 const &matrix) override;
 	void initialise() override;
 	void prepare(Metadata *imageMetadata) override;
 
 private:
 	CcmConfig config_;
+	bool enableAuto_;
 	double saturation_;
+	Matrix3x3 manualCcm_;
 };
 
 } /* namespace RPiController */

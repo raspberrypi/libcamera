@@ -94,6 +94,7 @@ const ControlInfoMap::Map ipaColourControls{
 	{ &controls::AwbEnable, ControlInfo(false, true) },
 	{ &controls::AwbMode, ControlInfo(controls::AwbModeValues) },
 	{ &controls::ColourGains, ControlInfo(0.0f, 32.0f) },
+	{ &controls::ColourCorrectionMatrix, ControlInfo(0.0f, 8.0f) },
 	{ &controls::ColourTemperature, ControlInfo(100, 100000) },
 	{ &controls::Saturation, ControlInfo(0.0f, 32.0f, 1.0f) },
 };
@@ -126,7 +127,7 @@ namespace ipa::RPi {
 IpaBase::IpaBase()
 	: controller_(), frameLengths_(FrameLengthsQueueSize, 0s), statsMetadataOutput_(false),
 	  stitchSwapBuffers_(false), frameCount_(0), mistrustCount_(0), lastRunTimestamp_(0),
-	  firstStart_(true), flickerState_({ 0, 0s })
+	  firstStart_(true), flickerState_({ 0, 0s }), awbEnabled_(true)
 {
 }
 
@@ -821,6 +822,102 @@ void IpaBase::applyControls(const ControlList &controls)
 		}
 	}
 
+	/*
+	 * We must also handle any AWB on/off changes first, so that the CCM algorithm
+	 * knows its state correctly.
+	 */
+	const auto awbEnable = controls.get(controls::AwbEnable);
+	if (awbEnable)
+		do {
+			/* Silently ignore this control for a mono sensor. */
+			if (monoSensor_)
+				break;
+
+			RPiController::AwbAlgorithm *awb = dynamic_cast<RPiController::AwbAlgorithm *>(
+				controller_.getAlgorithm("awb"));
+			if (!awb) {
+				LOG(IPARPI, Warning)
+					<< "Could not set AWB_ENABLE - no AWB algorithm";
+				break;
+			}
+
+			awbEnabled_ = *awbEnable;
+
+			if (!awbEnabled_)
+				awb->disableAuto();
+			else {
+				awb->enableAuto();
+
+				/* The CCM algorithm must go back to auto as well. */
+				RPiController::CcmAlgorithm *ccm = dynamic_cast<RPiController::CcmAlgorithm *>(
+					controller_.getAlgorithm("ccm"));
+				if (ccm)
+					ccm->enableAuto();
+			}
+
+			libcameraMetadata_.set(controls::AwbEnable, awbEnabled_);
+		} while (false);
+
+	const auto colourGains = controls.get(controls::ColourGains);
+	if (colourGains)
+		do {
+			/* Silently ignore this control for a mono sensor. */
+			if (monoSensor_)
+				break;
+
+			auto gains = *colourGains;
+			RPiController::AwbAlgorithm *awb = dynamic_cast<RPiController::AwbAlgorithm *>(
+				controller_.getAlgorithm("awb"));
+			if (!awb) {
+				LOG(IPARPI, Warning)
+					<< "Could not set COLOUR_GAINS - no AWB algorithm";
+				break;
+			}
+
+			awb->setManualGains(gains[0], gains[1]);
+			if (gains[0] != 0.0f && gains[1] != 0.0f) {
+				/* A gain of 0.0f will switch back to auto mode. */
+				libcameraMetadata_.set(controls::ColourGains,
+						       { gains[0], gains[1] });
+
+				awbEnabled_ = false; /* doing this puts AWB into manual mode */
+			} else {
+				awbEnabled_ = true; /* doing this puts AWB into auto mode */
+
+				/* The CCM algorithm must go back to auto as well. */
+				RPiController::CcmAlgorithm *ccm = dynamic_cast<RPiController::CcmAlgorithm *>(
+					controller_.getAlgorithm("ccm"));
+				if (ccm)
+					ccm->enableAuto();
+			}
+
+			/* This metadata will get reported back automatically. */
+			break;
+		} while (false);
+
+	const auto colourTemperature = controls.get(controls::ColourTemperature);
+	if (colourTemperature)
+		do {
+			/* Silently ignore this control for a mono sensor. */
+			if (monoSensor_)
+				break;
+
+			auto temperatureK = *colourTemperature;
+			RPiController::AwbAlgorithm *awb = dynamic_cast<RPiController::AwbAlgorithm *>(
+				controller_.getAlgorithm("awb"));
+			if (!awb) {
+				LOG(IPARPI, Warning)
+					<< "Could not set COLOUR_TEMPERATURE - no AWB algorithm";
+				break;
+			}
+
+			awb->setColourTemperature(temperatureK);
+			awbEnabled_ = false; /* doing this puts AWB into manual mode */
+
+			/* This metadata will get reported back automatically. */
+			break;
+		} while (false);
+
 	/* Iterate over controls */
 	for (auto const &ctrl : controls) {
 		LOG(IPARPI, Debug) << "Request ctrl: "
@@ -1037,25 +1134,7 @@ void IpaBase::applyControls(const ControlList &controls)
 		}
 
 		case controls::AWB_ENABLE: {
-			/* Silently ignore this control for a mono sensor. */
-			if (monoSensor_)
-				break;
-
-			RPiController::AwbAlgorithm *awb = dynamic_cast<RPiController::AwbAlgorithm *>(
-				controller_.getAlgorithm("awb"));
-			if (!awb) {
-				LOG(IPARPI, Warning)
-					<< "Could not set AWB_ENABLE - no AWB algorithm";
-				break;
-			}
-
-			if (ctrl.second.get<bool>() == false)
-				awb->disableAuto();
-			else
-				awb->enableAuto();
-
-			libcameraMetadata_.set(controls::AwbEnable,
-					       ctrl.second.get<bool>());
+			/* We handled this one above. */
 			break;
 		}
 
@@ -1080,47 +1159,60 @@ void IpaBase::applyControls(const ControlList &controls)
 				LOG(IPARPI, Error) << "AWB mode " << idx
 						   << " not recognised";
 			}
+
 			break;
 		}
 
 		case controls::COLOUR_GAINS: {
-			/* Silently ignore this control for a mono sensor. */
-			if (monoSensor_)
-				break;
-
-			auto gains = ctrl.second.get<Span<const float>>();
-			RPiController::AwbAlgorithm *awb = dynamic_cast<RPiController::AwbAlgorithm *>(
-				controller_.getAlgorithm("awb"));
-			if (!awb) {
-				LOG(IPARPI, Warning)
-					<< "Could not set COLOUR_GAINS - no AWB algorithm";
-				break;
-			}
-
-			awb->setManualGains(gains[0], gains[1]);
-			if (gains[0] != 0.0f && gains[1] != 0.0f)
-				/* A gain of 0.0f will switch back to auto mode. */
-				libcameraMetadata_.set(controls::ColourGains,
-						       { gains[0], gains[1] });
+			/* We handled this one above. */
 			break;
 		}
 
 		case controls::COLOUR_TEMPERATURE: {
-			/* Silently ignore this control for a mono sensor. */
+			/* We handled this one above. */
+			break;
+		}
+
+		case controls::COLOUR_CORRECTION_MATRIX: {
 			if (monoSensor_)
 				break;
 
-			auto temperatureK = ctrl.second.get<int32_t>();
-			RPiController::AwbAlgorithm *awb = dynamic_cast<RPiController::AwbAlgorithm *>(
-				controller_.getAlgorithm("awb"));
-			if (!awb) {
+			auto floats = ctrl.second.get<Span<const float>>();
+			RPiController::CcmAlgorithm *ccm = dynamic_cast<RPiController::CcmAlgorithm *>(
+				controller_.getAlgorithm("ccm"));
+			if (!ccm) {
 				LOG(IPARPI, Warning)
-					<< "Could not set COLOUR_TEMPERATURE - no AWB algorithm";
+					<< "Could not set COLOUR_CORRECTION_MATRIX - no CCM algorithm";
 				break;
 			}
 
-			awb->setColourTemperature(temperatureK);
-			/* This metadata will get reported back automatically. */
+			RPiController::AwbAlgorithm *awb = dynamic_cast<RPiController::AwbAlgorithm *>(
+				controller_.getAlgorithm("awb"));
+			if (awb && awbEnabled_) {
+				LOG(IPARPI, Warning)
+					<< "Could not set COLOUR_CORRECTION_MATRIX - AWB is active";
+				break;
+			}
+
+			/* We are guaranteed this control contains 9 values. Nevertheless: */
+			assert(floats.size() == 9);
+
+			Matrix<double, 3, 3> matrix;
+			for (std::size_t i = 0; i < 3; ++i)
+				for (std::size_t j = 0; j < 3; ++j)
+					matrix[i][j] = static_cast<double>(floats[i * 3 + j]);
+
+			ccm->setCcm(matrix);
+
+			/*
+			 * But if AWB is running, go back to auto mode. The CCM gets remembered,
+			 * which avoids the race between setting the CCM and disabling AWB in
+			 * the same set of controls.
+			 */
+			if (awbEnabled_)
+				ccm->enableAuto();
+
+			/* This metadata will be reported back automatically. */
 			break;
 		}
 

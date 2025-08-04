@@ -140,6 +140,8 @@ private:
 		int32_t mode;
 		utils::Duration manualPeriod;
 	} flickerState_;
+
+	bool awbEnabled_;
 };
 
 } /* namespace ipa::RPi */

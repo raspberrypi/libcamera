@@ -26,13 +26,7 @@ struct {{struct.mojom_name}}
 {
 public:
 #ifndef __DOXYGEN__
-	{{struct.mojom_name}}() {%- if struct|has_default_fields %}
-		:{% endif %}
-{%- for field in struct.fields|with_default_values -%}
-{{" " if loop.first}}{{field.mojom_name}}({{field|default_value}}){{", " if not loop.last}}
-{%- endfor %}
-	{
-	}
+	{{struct.mojom_name}}() = default;
 
 	{{struct.mojom_name}}(
 {%- for field in struct.fields -%}
@@ -48,9 +42,7 @@ public:
 #endif
 
 {% for field in struct.fields %}
-	{{field|name}} {{field.mojom_name}};
+	{{field|name}} {{field.mojom_name}}{% if field|default_value %}{ {{field|default_value}} }{% endif %};
 {%- endfor %}
 };
 {%- endmacro -%}
-
-

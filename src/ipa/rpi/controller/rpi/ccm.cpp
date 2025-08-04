@@ -32,7 +32,10 @@ LOG_DEFINE_CATEGORY(RPiCcm)
 using Matrix3x3 = Matrix<double, 3, 3>;
 
 Ccm::Ccm(Controller *controller)
-	: CcmAlgorithm(controller), saturation_(1.0) {}
+	: CcmAlgorithm(controller), enableAuto_(true), saturation_(1.0),
+	  manualCcm_({ 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0 })
+{
+}
 
 char const *Ccm::name() const
 {
@@ -78,9 +81,20 @@ int Ccm::read(const libcamera::YamlObject &params)
 	return 0;
 }
 
+void Ccm::enableAuto()
+{
+	enableAuto_ = true;
+}
+
 void Ccm::setSaturation(double saturation)
 {
 	saturation_ = saturation;
+}
+
+void Ccm::setCcm(Matrix3x3 const &matrix)
+{
+	enableAuto_ = false;
+	manualCcm_ = matrix;
 }
 
 void Ccm::initialise()
@@ -151,7 +165,13 @@ void Ccm::prepare(Metadata *imageMetadata)
 		LOG(RPiCcm, Warning) << "no colour temperature found";
 	if (!luxOk)
 		LOG(RPiCcm, Warning) << "no lux value found";
-	Matrix3x3 ccm = calculateCcm(config_.ccms, awb.temperatureK);
+
+	Matrix3x3 ccm;
+	if (enableAuto_)
+		ccm = calculateCcm(config_.ccms, awb.temperatureK);
+	else
+		ccm = manualCcm_;
+
 	double saturation = saturation_;
 	struct CcmStatus ccmStatus;
 	ccmStatus.saturation = saturation;

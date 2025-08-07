@@ -2,6 +2,7 @@ libcamera (0.5.2-1) UNRELEASED; urgency=medium
 
   * New upstream version 0.5.2
   * Add python3-sphinxcontrib.doxylink in Build-Depends-Indep
+  * Refresh debian/copyright
 
  -- Dylan Aïssi <daissi@debian.org>  Thu, 07 Aug 2025 16:37:55 +0200
 

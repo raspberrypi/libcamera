@@ -5,22 +5,22 @@ Source: https://libcamera.org/
 
 Files: *
 Copyright:
- 2018—2024 Libcamera contributors
+ 2018—2025 Libcamera contributors
  2019      Giulio Benetti
  2018—2019 Jacopo Mondi
- 2018—2024 Kieran Bingham
- 2018—2024 Laurent Pinchart
+ 2018—2025 Kieran Bingham
+ 2018—2025 Laurent Pinchart
  2019      Mickael Guene
  2018—2019 Niklas Söderlund
  2019—2024 Paul Elder
  2018—2024 Google Inc.
- 2021—2024 Ideas on Board Oy
+ 2021—2025 Ideas on Board Oy
 License: GPL-2+
 
 Files:
  */*/meson.build
 Copyright:
- 2018—2024 Libcamera contributors
+ 2018—2025 Libcamera contributors
 License: CC0-1.0
 
 Files:
@@ -30,7 +30,7 @@ Files:
  src/apps/common/dng_writer.*
  include/libcamera/*
 Copyright:
- 2018—2024 Libcamera contributors
+ 2018—2025 Libcamera contributors
  2019      Giulio Benetti
  2018—2019 Jacopo Mondi
  2018—2019 Kieran Bingham
@@ -39,10 +39,10 @@ Copyright:
  2018—2019 Niklas Söderlund
  2019      Paul Elder
  2018—2022 Google Inc.
- 2019—2023 Raspberry Pi Ltd.
- 2021—2024 Ideas on Board Oy
+ 2019—2025 Raspberry Pi Ltd.
+ 2021—2025 Ideas on Board Oy
  2023 Linaro Ltd
- 2023—2024 Red Hat Inc.
+ 2023—2025 Red Hat Inc.
 License: LGPL-2.1+
 
 Files:
@@ -91,7 +91,7 @@ Copyright:
 License: Expat
 
 Files: include/linux/bcm2835-isp.h
-Copyright: 2019—2022 Raspberry Pi Ltd
+Copyright: 2019—2025 Raspberry Pi Ltd
 License: GPL-2+ with Linux-syscall-note exception or BSD-3-Clause
 
 Files:
@@ -105,7 +105,7 @@ Files:
  src/libcamera/pipeline/rpi/*
  utils/raspberrypi/ctt/*
 Copyright:
- 2019—2024 Raspberry Pi Ltd
+ 2019—2025 Raspberry Pi Ltd
 License: BSD-2-Clause
 
 Files: include/linux/rkisp1-config.h
@@ -113,7 +113,7 @@ Copyright: 2017, Rockchip Electronics Co., Ltd.
 License: GPL-2+
 
 Files: Documentation/*
-Copyright: 2020—2024 Libcamera contributors
+Copyright: 2020—2025 Libcamera contributors
 License: CC-BY-SA-4.0
 
 Files: Documentation/theme/static/search.png
@@ -130,7 +130,7 @@ Copyright:
  2019 Emmanuel Arias <emmanuelarias30@gmail.com>
  2019—2022 Andrej Shadura <andrewsh@debian.org>
  2020 IOhannes m zmölnig <umlaeute@debian.org>
- 2022-2024 Collabora Ltd.
+ 2022-2025 Collabora Ltd.
 License: GPL-2+
 
 License: GPL-2+

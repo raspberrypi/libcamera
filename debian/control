@@ -39,6 +39,7 @@ Build-Depends-Indep: doxygen <!nodoc>,
                      libjs-sphinxdoc <!nodoc>,
                      libjs-underscore <!nodoc>,
                      python3-sphinx <!nodoc>,
+                     python3-sphinxcontrib.doxylink <!nodoc>
 Standards-Version: 4.7.2
 Vcs-Browser: https://salsa.debian.org/multimedia-team/libcamera
 Vcs-Git: https://salsa.debian.org/multimedia-team/libcamera.git -b debian/experimental

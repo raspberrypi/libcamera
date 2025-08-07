@@ -48,16 +48,9 @@ protected:
 		if (request->status() != Request::RequestComplete)
 			return;
 
-		const Request::BufferMap &buffers = request->buffers();
-
 		completeRequestsCount_++;
 
-		/* Create a new request. */
-		const Stream *stream = buffers.begin()->first;
-		FrameBuffer *buffer = buffers.begin()->second;
-
-		request->reuse();
-		request->addBuffer(stream, buffer);
+		request->reuse(Request::ReuseBuffers);
 		camera_->queueRequest(request);
 
 		dispatcher_->interrupt();

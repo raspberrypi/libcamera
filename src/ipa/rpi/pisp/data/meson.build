@@ -24,6 +24,8 @@ conf_files = files([
     'ov9281_mono.json',
     'se327m12.json',
     'uncalibrated.json',
+    'vd56g3.json',
+    'vd56g3_mono.json',
 ])
 
 install_data(conf_files,

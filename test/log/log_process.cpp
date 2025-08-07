@@ -137,8 +137,6 @@ private:
 		exitCode_ = exitCode;
 	}
 
-	ProcessManager processManager_;
-
 	Process proc_;
 	Process::ExitStatus exitStatus_ = Process::NotExited;
 	string logPath_;

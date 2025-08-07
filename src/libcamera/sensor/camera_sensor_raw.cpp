@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2024, Ideas on Board Oy.
  *
- * camera_sensor_raw.cpp - A raw camera sensor using the V4L2 streams API
+ * A raw camera sensor using the V4L2 streams API
  */
 
 #include <algorithm>

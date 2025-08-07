@@ -456,6 +456,27 @@ const CameraSensorProperties *CameraSensorProperties::get(const std::string &sen
 			},
 			.sensorDelays = { },
 		} },
+		{ "vd56g3", {
+			.unitCellSize = { 2610, 2610 },
+			.testPatternModes = {
+				{ controls::draft::TestPatternModeOff, 0 },
+				{ controls::draft::TestPatternModeSolidColor, 1 },
+				{ controls::draft::TestPatternModePn9, 6 },
+				/*
+				 * No corresponding test pattern mode for:
+				 * 2: "Vertical Color Bars"
+				 * 3: "Horizontal Gray Scale"
+				 * 4: "Vertical Gray Scale"
+				 * 5: "Diagonal Gray Scale"
+				 */
+			},
+			.sensorDelays = {
+				.exposureDelay = 2,
+				.gainDelay = 2,
+				.vblankDelay = 2,
+				.hblankDelay = 2
+			},
+		} },
 	};
 
 	const auto it = sensorProps.find(sensor);

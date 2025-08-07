@@ -26,7 +26,7 @@ public:
 	virtual void setFixedExposureTime(unsigned int channel,
 					  libcamera::utils::Duration fixedExposureTime) = 0;
 	virtual void setMaxExposureTime(libcamera::utils::Duration maxExposureTime) = 0;
-	virtual void setFixedAnalogueGain(unsigned int channel, double fixedAnalogueGain) = 0;
+	virtual void setFixedGain(unsigned int channel, double fixedGain) = 0;
 	virtual void setMeteringMode(std::string const &meteringModeName) = 0;
 	virtual void setExposureMode(std::string const &exposureModeName) = 0;
 	virtual void setConstraintMode(std::string const &contraintModeName) = 0;

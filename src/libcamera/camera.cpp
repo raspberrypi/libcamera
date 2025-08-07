@@ -488,7 +488,7 @@ std::size_t CameraConfiguration::size() const
  *
  * \return A CameraConfiguration::Status value that describes the validation
  * status.
- * \retval CameraConfigutation::Adjusted The configuration has been adjusted
+ * \retval CameraConfiguration::Adjusted The configuration has been adjusted
  * and is now valid. The color space of some or all of the streams may have
  * been changed. The caller shall check the color spaces carefully.
  * \retval CameraConfiguration::Valid The configuration was already valid and
@@ -626,6 +626,15 @@ Camera::Private::~Private()
  *
  * \sa PipelineHandler::queueRequest(), PipelineHandler::stop(),
  * PipelineHandler::completeRequest()
+ */
+
+/**
+ * \var Camera::Private::waitingRequests_
+ * \brief The queue of waiting requests
+ *
+ * This queue tracks all requests that can not yet be queued to the device.
+ * Either because they are not yet prepared or because the maximum number of
+ * queued requests was reached.
  */
 
 /**
@@ -1122,7 +1131,8 @@ std::unique_ptr<CameraConfiguration> Camera::generateConfiguration(Span<const St
 		return nullptr;
 
 	std::unique_ptr<CameraConfiguration> config =
-		d->pipe_->generateConfiguration(this, roles);
+		d->pipe_->invokeMethod(&PipelineHandler::generateConfiguration,
+				       ConnectionTypeBlocking, this, roles);
 	if (!config) {
 		LOG(Camera, Debug)
 			<< "Pipeline handler failed to generate configuration";
@@ -1267,6 +1277,33 @@ std::unique_ptr<Request> Camera::createRequest(uint64_t cookie)
 }
 
 /**
+ * \brief Patch a control list that contains the AeEnable control
+ * \param[inout] controls The control list to be patched
+ *
+ * The control list is patched in place, turning the AeEnable control into
+ * the equivalent ExposureTimeMode/AnalogueGainMode controls.
+ */
+void Camera::patchControlList(ControlList &controls)
+{
+	const auto &aeEnable = controls.get(controls::AeEnable);
+	if (aeEnable) {
+		if (_d()->controlInfo_.count(controls::AnalogueGainMode.id()) &&
+		    !controls.contains(controls::AnalogueGainMode.id())) {
+			controls.set(controls::AnalogueGainMode,
+				     *aeEnable ? controls::AnalogueGainModeAuto
+					       : controls::AnalogueGainModeManual);
+		}
+
+		if (_d()->controlInfo_.count(controls::ExposureTimeMode.id()) &&
+		    !controls.contains(controls::ExposureTimeMode.id())) {
+			controls.set(controls::ExposureTimeMode,
+				     *aeEnable ? controls::ExposureTimeModeAuto
+					       : controls::ExposureTimeModeManual);
+		}
+	}
+}
+
+/**
  * \brief Queue a request to the camera
  * \param[in] request The request to queue to the camera
  *
@@ -1329,23 +1366,7 @@ int Camera::queueRequest(Request *request)
 	}
 
 	/* Pre-process AeEnable. */
-	ControlList &controls = request->controls();
-	const auto &aeEnable = controls.get(controls::AeEnable);
-	if (aeEnable) {
-		if (_d()->controlInfo_.count(controls::AnalogueGainMode.id()) &&
-		    !controls.contains(controls::AnalogueGainMode.id())) {
-			controls.set(controls::AnalogueGainMode,
-				     *aeEnable ? controls::AnalogueGainModeAuto
-					       : controls::AnalogueGainModeManual);
-		}
-
-		if (_d()->controlInfo_.count(controls::ExposureTimeMode.id()) &&
-		    !controls.contains(controls::ExposureTimeMode.id())) {
-			controls.set(controls::ExposureTimeMode,
-				     *aeEnable ? controls::ExposureTimeModeAuto
-					       : controls::ExposureTimeModeManual);
-		}
-	}
+	patchControlList(request->controls());
 
 	d->pipe_->invokeMethod(&PipelineHandler::queueRequest,
 			       ConnectionTypeQueued, request);
@@ -1383,8 +1404,16 @@ int Camera::start(const ControlList *controls)
 
 	ASSERT(d->requestSequence_ == 0);
 
-	ret = d->pipe_->invokeMethod(&PipelineHandler::start,
-				     ConnectionTypeBlocking, this, controls);
+	if (controls) {
+		ControlList copy(*controls);
+		patchControlList(copy);
+		ret = d->pipe_->invokeMethod(&PipelineHandler::start,
+					     ConnectionTypeBlocking, this, &copy);
+	} else {
+		ret = d->pipe_->invokeMethod(&PipelineHandler::start,
+					     ConnectionTypeBlocking, this, nullptr);
+	}
+
 	if (ret)
 		return ret;
 

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2024, Ideas On Board
  *
- * lux.h - RkISP1 Lux control
+ * RkISP1 Lux control
  */
 
 #pragma once

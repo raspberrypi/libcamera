@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2024, Ideas On Board Oy
  *
- * awb.cpp - Mali C55 grey world auto white balance algorithm
+ * Mali C55 grey world auto white balance algorithm
  */
 
 #include "awb.h"

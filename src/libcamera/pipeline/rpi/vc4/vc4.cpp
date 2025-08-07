@@ -597,8 +597,6 @@ int Vc4CameraData::platformConfigure(const RPi::RPiCameraConfiguration *rpiConfi
 		stream->setFlags(StreamFlag::External);
 	}
 
-	ispOutputTotal_ = outStreams.size();
-
 	/*
 	 * If ISP::Output0 stream has not been configured by the application,
 	 * we must allow the hardware to generate an output so that the data
@@ -624,8 +622,6 @@ int Vc4CameraData::platformConfigure(const RPi::RPiCameraConfiguration *rpiConfi
 				<< ret;
 			return -EINVAL;
 		}
-
-		ispOutputTotal_++;
 
 		LOG(RPI, Debug) << "Defaulting ISP Output0 format to "
 				<< format;
@@ -662,8 +658,6 @@ int Vc4CameraData::platformConfigure(const RPi::RPiCameraConfiguration *rpiConfi
 					<< ret;
 			return -EINVAL;
 		}
-
-		ispOutputTotal_++;
 	}
 
 	/* ISP statistics output format. */
@@ -675,8 +669,6 @@ int Vc4CameraData::platformConfigure(const RPi::RPiCameraConfiguration *rpiConfi
 				<< format;
 		return ret;
 	}
-
-	ispOutputTotal_++;
 
 	/*
 	 * Configure the Unicam embedded data output format only if the sensor
@@ -781,9 +773,15 @@ void Vc4CameraData::unicamBufferDequeue(FrameBuffer *buffer)
 		auto [ctrl, delayContext] = delayedCtrls_->get(buffer->metadata().sequence);
 		/*
 		 * Add the frame timestamp to the ControlList for the IPA to use
-		 * as it does not receive the FrameBuffer object.
+		 * as it does not receive the FrameBuffer object. Also derive a
+		 * corresponding wallclock value.
 		 */
-		ctrl.set(controls::SensorTimestamp, buffer->metadata().timestamp);
+		wallClockRecovery_.addSample();
+		uint64_t sensorTimestamp = buffer->metadata().timestamp;
+		uint64_t wallClockTimestamp = wallClockRecovery_.getOutput(sensorTimestamp);
+
+		ctrl.set(controls::SensorTimestamp, sensorTimestamp);
+		ctrl.set(controls::FrameWallClock, wallClockTimestamp);
 		bayerQueue_.push({ buffer, std::move(ctrl), delayContext });
 	} else {
 		embeddedQueue_.push(buffer);
@@ -843,12 +841,6 @@ void Vc4CameraData::ispOutputDequeue(FrameBuffer *buffer)
 		handleStreamBuffer(buffer, stream);
 	}
 
-	/*
-	 * Increment the number of ISP outputs generated.
-	 * This is needed to track dropped frames.
-	 */
-	ispOutputCount_++;
-
 	handleState();
 }
 
@@ -880,7 +872,6 @@ void Vc4CameraData::prepareIspComplete(const ipa::RPi::BufferIds &buffers,
 			<< ", timestamp: " << buffer->metadata().timestamp;
 
 	isp_[Isp::Input].queueBuffer(buffer);
-	ispOutputCount_ = 0;
 
 	if (sensorMetadata_ && embeddedId) {
 		buffer = unicam_[Unicam::Embedded].getBuffers().at(embeddedId & RPi::MaskID).buffer;
@@ -936,16 +927,11 @@ void Vc4CameraData::tryRunPipeline()
 
 	/* Take the first request from the queue and action the IPA. */
 	Request *request = requestQueue_.front();
+	ASSERT(request->metadata().empty());
 
 	/* See if a new ScalerCrop value needs to be applied. */
 	applyScalerCrop(request->controls());
 
-	/*
-	 * Clear the request metadata and fill it with some initial non-IPA
-	 * related controls. We clear it first because the request metadata
-	 * may have been populated if we have dropped the previous frame.
-	 */
-	request->metadata().clear();
 	fillRequestMetadata(bayerFrame.controls, request);
 
 	/* Set our state to say the pipeline is active. */

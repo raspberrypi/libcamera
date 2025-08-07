@@ -2,6 +2,6 @@
 
 /googletest-release*
 /libpisp
-/libyaml
 /libyuv
 /packagecache
+/yaml-0.2.5

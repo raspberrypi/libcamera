@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2024, Nicolas Dufresne
  *
- * gstreamer_memory_lifetime_test.cpp - GStreamer memory lifetime test
+ * GStreamer memory lifetime test
  */
 
 #include <iostream>

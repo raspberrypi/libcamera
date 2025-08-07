@@ -73,6 +73,9 @@ protected:
 	/* Remember the HDR status after a mode switch. */
 	HdrStatus hdrStatus_;
 
+	/* Remember the AGC status after a mode switch. */
+	AgcStatus agcStatus_;
+
 	/* Whether the stitch block (if available) needs to swap buffers. */
 	bool stitchSwapBuffers_;
 
@@ -86,6 +89,7 @@ private:
 
 	virtual void platformPrepareIsp(const PrepareParams &params,
 					RPiController::Metadata &rpiMetadata) = 0;
+	virtual void platformPrepareAgc(RPiController::Metadata &rpiMetadata) = 0;
 	virtual RPiController::StatisticsPtr platformProcessStats(Span<uint8_t> mem) = 0;
 
 	void setMode(const IPACameraSensorInfo &sensorInfo);
@@ -97,7 +101,7 @@ private:
 	void fillDeviceStatus(const ControlList &sensorControls, unsigned int ipaContext);
 	void reportMetadata(unsigned int ipaContext);
 	void applyFrameDurations(utils::Duration minFrameDuration, utils::Duration maxFrameDuration);
-	void applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls);
+	void applyAGC(struct AgcStatus *agcStatus, ControlList &ctrls);
 
 	std::map<unsigned int, MappedFrameBuffer> buffers_;
 
@@ -115,8 +119,8 @@ private:
 	/* How many frames we should avoid running control algos on. */
 	unsigned int mistrustCount_;
 
-	/* Number of frames that need to be dropped on startup. */
-	unsigned int dropFrameCount_;
+	/* Number of frames that need to be marked as dropped on startup. */
+	unsigned int invalidCount_;
 
 	/* Frame timestamp for the last run of the controller. */
 	uint64_t lastRunTimestamp_;

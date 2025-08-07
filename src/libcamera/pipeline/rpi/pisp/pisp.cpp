@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2023, Raspberry Pi Ltd
  *
- * pisp.cpp - Pipeline handler for PiSP based Raspberry Pi devices
+ * Pipeline handler for PiSP based Raspberry Pi devices
  */
 
 #include <algorithm>
@@ -1755,9 +1755,15 @@ void PiSPCameraData::cfeBufferDequeue(FrameBuffer *buffer)
 		auto [ctrl, delayContext] = delayedCtrls_->get(buffer->metadata().sequence);
 		/*
 		 * Add the frame timestamp to the ControlList for the IPA to use
-		 * as it does not receive the FrameBuffer object.
+		 * as it does not receive the FrameBuffer object. Also derive a
+		 * corresponding wallclock value.
 		 */
-		ctrl.set(controls::SensorTimestamp, buffer->metadata().timestamp);
+		wallClockRecovery_.addSample();
+		uint64_t sensorTimestamp = buffer->metadata().timestamp;
+		uint64_t wallClockTimestamp = wallClockRecovery_.getOutput(sensorTimestamp);
+
+		ctrl.set(controls::SensorTimestamp, sensorTimestamp);
+		ctrl.set(controls::FrameWallClock, wallClockTimestamp);
 		job.sensorControls = std::move(ctrl);
 		job.delayContext = delayContext;
 	} else if (stream == &cfe_[Cfe::Config]) {
@@ -1834,12 +1840,6 @@ void PiSPCameraData::beOutputDequeue(FrameBuffer *buffer)
 		dmabufSyncEnd(buffer->planes()[0].fd);
 
 	handleStreamBuffer(buffer, stream);
-
-	/*
-	 * Increment the number of ISP outputs generated.
-	 * This is needed to track dropped frames.
-	 */
-	ispOutputCount_++;
 	handleState();
 }
 
@@ -1885,7 +1885,6 @@ void PiSPCameraData::prepareIspComplete(const ipa::RPi::BufferIds &buffers, bool
 		 * If there is no need to run the Backend, just signal that the
 		 * input buffer is completed and all Backend outputs are ready.
 		 */
-		ispOutputCount_ = ispOutputTotal_;
 		buffer = cfe_[Cfe::Output0].getBuffers().at(bayerId).buffer;
 		handleStreamBuffer(buffer, &cfe_[Cfe::Output0]);
 	} else
@@ -1994,7 +1993,6 @@ int PiSPCameraData::configureBe(const std::optional<ColorSpace> &yuvColorSpace)
 	global.bayer_enables |= PISP_BE_BAYER_ENABLE_INPUT;
 	global.bayer_order = toPiSPBayerOrder(cfeFormat.fourcc);
 
-	ispOutputTotal_ = 1; /* Config buffer */
 	if (PISP_IMAGE_FORMAT_COMPRESSED(inputFormat.format)) {
 		pisp_decompress_config decompress;
 		decompress.offset = DefaultCompressionOffset;
@@ -2025,7 +2023,6 @@ int PiSPCameraData::configureBe(const std::optional<ColorSpace> &yuvColorSpace)
 		setupOutputClipping(ispFormat0, outputFormat0);
 
 		be_->SetOutputFormat(0, outputFormat0);
-		ispOutputTotal_++;
 	}
 
 	if (global.rgb_enables & PISP_BE_RGB_ENABLE_OUTPUT1) {
@@ -2049,7 +2046,6 @@ int PiSPCameraData::configureBe(const std::optional<ColorSpace> &yuvColorSpace)
 		setupOutputClipping(ispFormat1, outputFormat1);
 
 		be_->SetOutputFormat(1, outputFormat1);
-		ispOutputTotal_++;
 	}
 
 	/* Setup the TDN I/O blocks in case TDN gets turned on later. */
@@ -2256,8 +2252,6 @@ void PiSPCameraData::prepareCfe()
 
 void PiSPCameraData::prepareBe(uint32_t bufferId, bool stitchSwapBuffers)
 {
-	ispOutputCount_ = 0;
-
 	FrameBuffer *buffer = cfe_[Cfe::Output0].getBuffers().at(bufferId).buffer;
 
 	LOG(RPI, Debug) << "Input re-queue to ISP, buffer id " << bufferId
@@ -2319,16 +2313,11 @@ void PiSPCameraData::tryRunPipeline()
 
 	/* Take the first request from the queue and action the IPA. */
 	Request *request = requestQueue_.front();
+	ASSERT(request->metadata().empty());
 
 	/* See if a new ScalerCrop value needs to be applied. */
 	applyScalerCrop(request->controls());
 
-	/*
-	 * Clear the request metadata and fill it with some initial non-IPA
-	 * related controls. We clear it first because the request metadata
-	 * may have been populated if we have dropped the previous frame.
-	 */
-	request->metadata().clear();
 	fillRequestMetadata(job.sensorControls, request);
 
 	/* Set our state to say the pipeline is active. */

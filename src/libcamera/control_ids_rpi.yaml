@@ -71,4 +71,116 @@ controls:
 
         \sa StatsOutputEnable
 
+  - SyncMode:
+      type: int32_t
+      direction: in
+      description: |
+        Enable or disable camera synchronisation ("sync") mode.
+
+        When sync mode is enabled, a camera will synchronise frames temporally
+        with other cameras, either attached to the same device or a different
+        one. There should be one "server" device, which broadcasts timing
+        information to one or more "clients". Communication is one-way, from
+        server to clients only, and it is only clients that adjust their frame
+        timings to match the server.
+
+        Sync mode requires all cameras to be running at (as far as possible) the
+        same fixed framerate. Clients may continue to make adjustments to keep
+        their cameras synchronised with the server for the duration of the
+        session, though any updates after the initial ones should remain small.
+
+        \sa SyncReady
+        \sa SyncTimer
+        \sa SyncFrames
+
+      enum:
+        - name: SyncModeOff
+          value: 0
+          description: Disable sync mode.
+        - name: SyncModeServer
+          value: 1
+          description: |
+            Enable sync mode, act as server. The server broadcasts timing
+            messages to any clients that are listening, so that the clients can
+            synchronise their camera frames with the server's.
+        - name: SyncModeClient
+          value: 2
+          description: |
+            Enable sync mode, act as client. A client listens for any server
+            messages, and arranges for its camera frames to synchronise as
+            closely as possible with the server's. Many clients can listen out
+            for the same server. Clients can also be started ahead of any
+            servers, causing them merely to wait for the server to start.
+
+  - SyncReady:
+      type: bool
+      direction: out
+      description: |
+        When using the camera synchronisation algorithm, the server broadcasts
+        timing information to the clients. This also includes the time (some
+        number of frames in the future, called the "ready time") at which the
+        server will signal its controlling application, using this control, to
+        start using the image frames.
+
+        The client receives the "ready time" from the server, and will signal
+        its application to start using the frames at this same moment.
+
+        While this control value is false, applications (on both client and
+        server) should continue to wait, and not use the frames.
+
+        Once this value becomes true, it means that this is the first frame
+        where the server and its clients have agreed that they will both be
+        synchronised and that applications should begin consuming frames.
+        Thereafter, this control will continue to signal the value true for
+        the rest of the session.
+
+        \sa SyncMode
+        \sa SyncTimer
+        \sa SyncFrames
+
+  - SyncTimer:
+      type: int64_t
+      direction: out
+      description: |
+        This reports the amount of time, in microseconds, until the "ready
+        time", at which the server and client will signal their controlling
+        applications that the frames are now synchronised and should be
+        used. The value may be refined slightly over time, becoming more precise
+        as the "ready time" approaches.
+
+        Servers always report this value, whereas clients will omit this control
+        until they have received a message from the server that enables them to
+        calculate it.
+
+        Normally the value will start positive (the "ready time" is in the
+        future), and decrease towards zero, before becoming negative (the "ready
+        time" has elapsed). So there should be just one frame where the timer
+        value is, or is very close to, zero - the one for which the SyncReady
+        control becomes true. At this moment, the value indicates how closely
+        synchronised the client believes it is with the server.
+
+        But note that if frames are being dropped, then the "near zero" valued
+        frame, or indeed any other, could be skipped. In these cases the timer
+        value allows an application to deduce that this has happened.
+
+        \sa SyncMode
+        \sa SyncReady
+        \sa SyncFrames
+
+  - SyncFrames:
+      type: int32_t
+      direction: in
+      description: |
+        The number of frames the server should wait, after enabling
+        SyncModeServer, before signalling (via the SyncReady control) that
+        frames should be used. This therefore determines the "ready time" for
+        all synchronised cameras.
+
+        This control value should be set only for the device that is to act as
+        the server, before or at the same moment at which SyncModeServer is
+        enabled.
+
+        \sa SyncMode
+        \sa SyncReady
+        \sa SyncTimer
 ...

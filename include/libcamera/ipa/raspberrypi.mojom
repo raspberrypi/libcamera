@@ -52,7 +52,8 @@ struct ConfigResult {
 
 struct StartResult {
 	libcamera.ControlList controls;
-	int32 dropFrameCount;
+	int32 startupFrameCount;
+	int32 invalidFrameCount;
 };
 
 struct PrepareParams {

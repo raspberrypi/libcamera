@@ -212,7 +212,7 @@ controls:
       description: |
         Exposure time for the frame applied in the sensor device.
 
-        This value is specified in micro-seconds.
+        This value is specified in microseconds.
 
         This control will only take effect if ExposureTimeMode is Manual. If
         this control is set when ExposureTimeMode is Auto, the value will be
@@ -1267,5 +1267,21 @@ controls:
       direction: inout
       description: |
         Enable or disable the debug metadata.
+
+  - FrameWallClock:
+      type: int64_t
+      direction: out
+      description: |
+        This timestamp corresponds to the same moment in time as the
+        SensorTimestamp, but is represented as a wall clock time as measured by
+        the CLOCK_REALTIME clock. Like SensorTimestamp, the timestamp value is
+        expressed in nanoseconds.
+
+        Being a wall clock measurement, it can be used to synchronise timing
+        across different devices.
+
+        \sa SensorTimestamp
+
+        The FrameWallClock control can only be returned in metadata.
 
 ...

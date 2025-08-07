@@ -637,23 +637,27 @@
                         "step_coarse": 2.0,
                         "step_fine": 0.5,
                         "contrast_ratio": 0.75,
+                        "retrigger_ratio": 0.8,
+                        "retrigger_delay": 10,
                         "pdaf_gain": -0.03,
                         "pdaf_squelch": 0.2,
-                        "max_slew": 4.0,
+                        "max_slew": 3.0,
                         "pdaf_frames": 20,
                         "dropout_frames": 6,
-                        "step_frames": 4
+                        "step_frames": 5
                     },
                     "fast":
                     {
-                        "step_coarse": 2.0,
-                        "step_fine": 0.5,
+                        "step_coarse": 2.5,
+                        "step_fine": 0.0,
                         "contrast_ratio": 0.75,
+                        "retrigger_ratio": 0.8,
+                        "retrigger_delay": 8,
                         "pdaf_gain": -0.05,
                         "pdaf_squelch": 0.2,
-                        "max_slew": 5.0,
+                        "max_slew": 4.0,
                         "pdaf_frames": 16,
-                        "dropout_frames": 6,
+                        "dropout_frames": 4,
                         "step_frames": 4
                     }
                 },
@@ -661,6 +665,7 @@
                 "conf_thresh": 12,
                 "conf_clip": 512,
                 "skip_frames": 5,
+                "check_for_ir": false,
                 "map": [ 0.0, 420, 35.0, 920 ]
             }
         },

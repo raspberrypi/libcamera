@@ -29,11 +29,6 @@
                 #
                 # "min_total_unicam_buffers": 4,
 
-                # Override any request from the IPA to drop a number of startup
-                # frames.
-                #
-                # "disable_startup_frame_drops": false,
-
                 # Custom timeout value (in ms) for camera to use. This overrides
                 # the value computed by the pipeline handler based on frame
                 # durations.

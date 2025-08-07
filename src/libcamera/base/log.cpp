@@ -690,8 +690,9 @@ LogSeverity Logger::parseLogLevel(std::string_view level)
 	unsigned int severity = LogInvalid;
 
 	if (std::isdigit(level[0])) {
-		auto [end, ec] = std::from_chars(level.data(), level.data() + level.size(), severity);
-		if (ec != std::errc() || *end != '\0' || severity > LogFatal)
+		const char *levelEnd = level.data() + level.size();
+		auto [end, ec] = std::from_chars(level.data(), levelEnd, severity);
+		if (ec != std::errc() || end != levelEnd || severity > LogFatal)
 			severity = LogInvalid;
 	} else {
 		for (unsigned int i = 0; i < std::size(names); ++i) {
@@ -951,12 +952,10 @@ Loggable::~Loggable()
  *
  * \return A log message
  */
-LogMessage Loggable::_log(const LogCategory *category, LogSeverity severity,
+LogMessage Loggable::_log(const LogCategory &category, LogSeverity severity,
 			  const char *fileName, unsigned int line) const
 {
-	return LogMessage(fileName, line,
-			  category ? *category : LogCategory::defaultCategory(),
-			  severity, logPrefix());
+	return LogMessage(fileName, line, category, severity, logPrefix());
 }
 
 /**
@@ -971,12 +970,10 @@ LogMessage Loggable::_log(const LogCategory *category, LogSeverity severity,
  *
  * \return A log message
  */
-LogMessage _log(const LogCategory *category, LogSeverity severity,
+LogMessage _log(const LogCategory &category, LogSeverity severity,
 		const char *fileName, unsigned int line)
 {
-	return LogMessage(fileName, line,
-			  category ? *category : LogCategory::defaultCategory(),
-			  severity);
+	return LogMessage(fileName, line, category, severity);
 }
 
 /**

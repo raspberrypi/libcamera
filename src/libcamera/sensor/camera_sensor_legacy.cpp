@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * camera_sensor_legacy.cpp - A V4L2-backed camera sensor
+ * A V4L2-backed camera sensor
  */
 
 #include <algorithm>

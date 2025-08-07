@@ -601,8 +601,10 @@ ControlList ControlSerializer::deserialize<ControlList>(ByteStreamBuffer &buffer
 
 		case IPA_CONTROL_ID_MAP_V4L2:
 		default:
-			LOG(Serializer, Fatal)
-				<< "A list of V4L2 controls requires an ControlInfoMap";
+			if (hdr->entries > 0)
+				LOG(Serializer, Fatal)
+					<< "A list of V4L2 controls requires a ControlInfoMap";
+
 			return {};
 		}
 	}

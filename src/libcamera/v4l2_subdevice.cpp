@@ -949,6 +949,8 @@ std::ostream &operator<<(std::ostream &out, const V4L2SubdeviceFormat &f)
 	else
 		out << it->second.name;
 
+	out << "/" << ColorSpace::toString(f.colorSpace);
+
 	return out;
 }
 

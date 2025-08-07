@@ -58,23 +58,24 @@ const ControlInfoMap::Map ipaControls{
 	/* \todo Move this to the Camera class */
 	{ &controls::AeEnable, ControlInfo(false, true, true) },
 	{ &controls::ExposureTimeMode,
-	  ControlInfo(static_cast<int32_t>(controls::ExposureTimeModeAuto),
-		      static_cast<int32_t>(controls::ExposureTimeModeManual),
-		      static_cast<int32_t>(controls::ExposureTimeModeAuto)) },
+	  ControlInfo({ { ControlValue(controls::ExposureTimeModeAuto),
+			  ControlValue(controls::ExposureTimeModeManual) } },
+		      ControlValue(controls::ExposureTimeModeAuto)) },
 	{ &controls::ExposureTime,
 	  ControlInfo(1, 66666, static_cast<int32_t>(defaultExposureTime.get<std::micro>())) },
 	{ &controls::AnalogueGainMode,
-	  ControlInfo(static_cast<int32_t>(controls::AnalogueGainModeAuto),
-		      static_cast<int32_t>(controls::AnalogueGainModeManual),
-		      static_cast<int32_t>(controls::AnalogueGainModeAuto)) },
+	  ControlInfo({ { ControlValue(controls::AnalogueGainModeAuto),
+			  ControlValue(controls::AnalogueGainModeManual) } },
+		      ControlValue(controls::AnalogueGainModeAuto)) },
 	{ &controls::AnalogueGain, ControlInfo(1.0f, 16.0f, 1.0f) },
 	{ &controls::AeMeteringMode, ControlInfo(controls::AeMeteringModeValues) },
 	{ &controls::AeConstraintMode, ControlInfo(controls::AeConstraintModeValues) },
 	{ &controls::AeExposureMode, ControlInfo(controls::AeExposureModeValues) },
 	{ &controls::ExposureValue, ControlInfo(-8.0f, 8.0f, 0.0f) },
-	{ &controls::AeFlickerMode, ControlInfo(static_cast<int>(controls::FlickerOff),
-						static_cast<int>(controls::FlickerManual),
-						static_cast<int>(controls::FlickerOff)) },
+	{ &controls::AeFlickerMode,
+	  ControlInfo({ { ControlValue(controls::FlickerOff),
+			  ControlValue(controls::FlickerManual) } },
+		      ControlValue(controls::FlickerOff)) },
 	{ &controls::AeFlickerPeriod, ControlInfo(100, 1000000) },
 	{ &controls::Brightness, ControlInfo(-1.0f, 1.0f, 0.0f) },
 	{ &controls::Contrast, ControlInfo(0.0f, 32.0f, 1.0f) },
@@ -232,25 +233,6 @@ int32_t IpaBase::configure(const IPACameraSensorInfo &sensorInfo, const ConfigPa
 		agcStatus.analogueGain = defaultAnalogueGain;
 		applyAGC(&agcStatus, ctrls);
 
-		/*
-		 * Set the lens to the default (typically hyperfocal) position
-		 * on first start.
-		 */
-		if (lensPresent_) {
-			RPiController::AfAlgorithm *af =
-				dynamic_cast<RPiController::AfAlgorithm *>(controller_.getAlgorithm("af"));
-
-			if (af) {
-				float defaultPos =
-					ipaAfControls.at(&controls::LensPosition).def().get<float>();
-				ControlList lensCtrl(lensCtrls_);
-				int32_t hwpos;
-
-				af->setLensPosition(defaultPos, &hwpos);
-				lensCtrl.set(V4L2_CID_FOCUS_ABSOLUTE, hwpos);
-				result->lensControls = std::move(lensCtrl);
-			}
-		}
 	}
 
 	result->sensorControls = std::move(ctrls);
@@ -280,8 +262,20 @@ int32_t IpaBase::configure(const IPACameraSensorInfo &sensorInfo, const ConfigPa
 		ctrlMap.merge(ControlInfoMap::Map(ipaColourControls));
 
 	/* Declare Autofocus controls, only if we have a controllable lens */
-	if (lensPresent_)
+	if (lensPresent_) {
 		ctrlMap.merge(ControlInfoMap::Map(ipaAfControls));
+		RPiController::AfAlgorithm *af =
+			dynamic_cast<RPiController::AfAlgorithm *>(controller_.getAlgorithm("af"));
+		if (af) {
+			double min, max, dflt;
+			af->getLensLimits(min, max);
+			dflt = af->getDefaultLensPosition();
+			ctrlMap[&controls::LensPosition] =
+				ControlInfo(static_cast<float>(min),
+					    static_cast<float>(max),
+					    static_cast<float>(dflt));
+		}
+	}
 
 	result->controlInfo = ControlInfoMap(std::move(ctrlMap), controls::controls);
 
@@ -304,29 +298,53 @@ void IpaBase::start(const ControlList &controls, StartResult *result)
 	frameLengths_.clear();
 	frameLengths_.resize(FrameLengthsQueueSize, 0s);
 
-	/* SwitchMode may supply updated exposure/gain values to use. */
-	AgcStatus agcStatus;
-	agcStatus.exposureTime = 0.0s;
-	agcStatus.analogueGain = 0.0;
+	/*
+	 * SwitchMode may supply updated exposure/gain values to use.
+	 * agcStatus_ will store these values for us to use until delayed_status values
+	 * start to appear.
+	 */
+	agcStatus_.exposureTime = 0.0s;
+	agcStatus_.analogueGain = 0.0;
 
-	metadata.get("agc.status", agcStatus);
-	if (agcStatus.exposureTime && agcStatus.analogueGain) {
+	metadata.get("agc.status", agcStatus_);
+	if (agcStatus_.exposureTime && agcStatus_.analogueGain) {
 		ControlList ctrls(sensorCtrls_);
-		applyAGC(&agcStatus, ctrls);
+		applyAGC(&agcStatus_, ctrls);
 		result->controls = std::move(ctrls);
 		setCameraTimeoutValue();
 	}
 	/* Make a note of this as it tells us the HDR status of the first few frames. */
-	hdrStatus_ = agcStatus.hdr;
+	hdrStatus_ = agcStatus_.hdr;
+
+	/*
+	 * AF: If no lens position was specified, drive lens to a default position.
+	 * This had to be deferred (not initialised by a constructor) until here
+	 * to ensure that exactly ONE starting position is sent to the lens driver.
+	 * It should be the static API default, not dependent on AF range or mode.
+	 */
+	if (firstStart_ && lensPresent_) {
+		RPiController::AfAlgorithm *af = dynamic_cast<RPiController::AfAlgorithm *>(
+			controller_.getAlgorithm("af"));
+		if (af && !af->getLensPosition()) {
+			int32_t hwpos;
+			double pos = af->getDefaultLensPosition();
+			if (af->setLensPosition(pos, &hwpos, true)) {
+				ControlList lensCtrls(lensCtrls_);
+				lensCtrls.set(V4L2_CID_FOCUS_ABSOLUTE, hwpos);
+				setLensControls.emit(lensCtrls);
+			}
+		}
+	}
 
 	/*
 	 * Initialise frame counts, and decide how many frames must be hidden or
 	 * "mistrusted", which depends on whether this is a startup from cold,
 	 * or merely a mode switch in a running system.
 	 */
+	unsigned int agcConvergenceFrames = 0, awbConvergenceFrames = 0;
 	frameCount_ = 0;
 	if (firstStart_) {
-		dropFrameCount_ = helper_->hideFramesStartup();
+		invalidCount_ = helper_->hideFramesStartup();
 		mistrustCount_ = helper_->mistrustFramesStartup();
 
 		/*
@@ -336,7 +354,6 @@ void IpaBase::start(const ControlList &controls, StartResult *result)
 		 * (mistrustCount_) that they won't see. But if zero (i.e.
 		 * no convergence necessary), no frames need to be dropped.
 		 */
-		unsigned int agcConvergenceFrames = 0;
 		RPiController::AgcAlgorithm *agc = dynamic_cast<RPiController::AgcAlgorithm *>(
 			controller_.getAlgorithm("agc"));
 		if (agc) {
@@ -345,7 +362,6 @@ void IpaBase::start(const ControlList &controls, StartResult *result)
 				agcConvergenceFrames += mistrustCount_;
 		}
 
-		unsigned int awbConvergenceFrames = 0;
 		RPiController::AwbAlgorithm *awb = dynamic_cast<RPiController::AwbAlgorithm *>(
 			controller_.getAlgorithm("awb"));
 		if (awb) {
@@ -353,15 +369,18 @@ void IpaBase::start(const ControlList &controls, StartResult *result)
 			if (awbConvergenceFrames)
 				awbConvergenceFrames += mistrustCount_;
 		}
-
-		dropFrameCount_ = std::max({ dropFrameCount_, agcConvergenceFrames, awbConvergenceFrames });
-		LOG(IPARPI, Debug) << "Drop " << dropFrameCount_ << " frames on startup";
 	} else {
-		dropFrameCount_ = helper_->hideFramesModeSwitch();
+		invalidCount_ = helper_->hideFramesModeSwitch();
 		mistrustCount_ = helper_->mistrustFramesModeSwitch();
 	}
 
-	result->dropFrameCount = dropFrameCount_;
+	result->startupFrameCount = std::max({ agcConvergenceFrames, awbConvergenceFrames });
+	result->invalidFrameCount = invalidCount_;
+
+	invalidCount_ = std::max({ invalidCount_, agcConvergenceFrames, awbConvergenceFrames });
+
+	LOG(IPARPI, Debug) << "Startup frames: " << result->startupFrameCount
+			   << " Invalid frames: " << result->invalidFrameCount;
 
 	firstStart_ = false;
 	lastRunTimestamp_ = 0;
@@ -441,7 +460,7 @@ void IpaBase::prepareIsp(const PrepareParams &params)
 
 	/* Allow a 10% margin on the comparison below. */
 	Duration delta = (frameTimestamp - lastRunTimestamp_) * 1.0ns;
-	if (lastRunTimestamp_ && frameCount_ > dropFrameCount_ &&
+	if (lastRunTimestamp_ && frameCount_ > invalidCount_ &&
 	    delta < controllerMinFrameDuration * 0.9 && !hdrChange) {
 		/*
 		 * Ensure we merge the previous frame's metadata with the current
@@ -470,7 +489,9 @@ void IpaBase::prepareIsp(const PrepareParams &params)
 		controller_.prepare(&rpiMetadata);
 		/* Actually prepare the ISP parameters for the frame. */
 		platformPrepareIsp(params, rpiMetadata);
-	}
+		platformPrepareAgc(rpiMetadata);
+	} else
+		platformPrepareAgc(rpiMetadata);
 
 	frameCount_++;
 
@@ -485,10 +506,9 @@ void IpaBase::prepareIsp(const PrepareParams &params)
 void IpaBase::processStats(const ProcessParams &params)
 {
 	unsigned int ipaContext = params.ipaContext % rpiMetadata_.size();
+	RPiController::Metadata &rpiMetadata = rpiMetadata_[ipaContext];
 
 	if (processPending_ && frameCount_ >= mistrustCount_) {
-		RPiController::Metadata &rpiMetadata = rpiMetadata_[ipaContext];
-
 		auto it = buffers_.find(params.buffers.stats);
 		if (it == buffers_.end()) {
 			LOG(IPARPI, Error) << "Could not find stats buffer!";
@@ -502,14 +522,15 @@ void IpaBase::processStats(const ProcessParams &params)
 
 		helper_->process(statistics, rpiMetadata);
 		controller_.process(statistics, &rpiMetadata);
+	}
 
-		struct AgcStatus agcStatus;
-		if (rpiMetadata.get("agc.status", agcStatus) == 0) {
-			ControlList ctrls(sensorCtrls_);
-			applyAGC(&agcStatus, ctrls);
-			setDelayedControls.emit(ctrls, ipaContext);
-			setCameraTimeoutValue();
-		}
+	struct AgcStatus agcStatus;
+	if (rpiMetadata.get("agc.status", agcStatus) == 0) {
+		ControlList ctrls(sensorCtrls_);
+		applyAGC(&agcStatus, ctrls);
+		rpiMetadata.set("agc.status", agcStatus);
+		setDelayedControls.emit(ctrls, ipaContext);
+		setCameraTimeoutValue();
 	}
 
 	/*
@@ -852,7 +873,7 @@ void IpaBase::applyControls(const ControlList &controls)
 			if (agc->autoGainEnabled())
 				break;
 
-			agc->setFixedAnalogueGain(0, ctrl.second.get<float>());
+			agc->setFixedGain(0, ctrl.second.get<float>());
 
 			libcameraMetadata_.set(controls::AnalogueGain,
 					       ctrl.second.get<float>());
@@ -1405,9 +1426,6 @@ void IpaBase::reportMetadata(unsigned int ipaContext)
 	}
 
 	AgcPrepareStatus *agcPrepareStatus = rpiMetadata.getLocked<AgcPrepareStatus>("agc.prepare_status");
-	if (agcPrepareStatus)
-		libcameraMetadata_.set(controls::DigitalGain, agcPrepareStatus->digitalGain);
-
 	RPiController::AgcAlgorithm *agc = dynamic_cast<RPiController::AgcAlgorithm *>(
 		controller_.getAlgorithm("agc"));
 	if (agc) {
@@ -1419,6 +1437,13 @@ void IpaBase::reportMetadata(unsigned int ipaContext)
 						       ? controls::AeStateConverged
 						       : controls::AeStateSearching);
 	}
+
+	const AgcStatus *agcStatus = rpiMetadata.getLocked<AgcStatus>("agc.delayed_status");
+	if (agcStatus)
+		libcameraMetadata_.set(controls::DigitalGain, agcStatus->digitalGain);
+	else
+		libcameraMetadata_.set(controls::DigitalGain, agcStatus_.digitalGain);
+	/* The HDR metadata reporting will use this agcStatus too. */
 
 	LuxStatus *luxStatus = rpiMetadata.getLocked<LuxStatus>("lux.status");
 	if (luxStatus)
@@ -1509,7 +1534,6 @@ void IpaBase::reportMetadata(unsigned int ipaContext)
 	 * delayed_status to be available, we use the HDR status that came out of the
 	 * switchMode call.
 	 */
-	const AgcStatus *agcStatus = rpiMetadata.getLocked<AgcStatus>("agc.delayed_status");
 	const HdrStatus &hdrStatus = agcStatus ? agcStatus->hdr : hdrStatus_;
 	if (!hdrStatus.mode.empty() && hdrStatus.mode != "Off") {
 		int32_t hdrMode = controls::HdrModeOff;
@@ -1567,7 +1591,7 @@ void IpaBase::applyFrameDurations(Duration minFrameDuration, Duration maxFrameDu
 		agc->setMaxExposureTime(maxExposureTime);
 }
 
-void IpaBase::applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls)
+void IpaBase::applyAGC(struct AgcStatus *agcStatus, ControlList &ctrls)
 {
 	const int32_t minGainCode = helper_->gainCode(mode_.minAnalogueGain);
 	const int32_t maxGainCode = helper_->gainCode(mode_.maxAnalogueGain);
@@ -1595,6 +1619,19 @@ void IpaBase::applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls)
 	ctrls.set(V4L2_CID_VBLANK, static_cast<int32_t>(vblank));
 	ctrls.set(V4L2_CID_EXPOSURE, exposureLines);
 	ctrls.set(V4L2_CID_ANALOGUE_GAIN, gainCode);
+
+	/*
+	 * We must update the digital gain to make up for any quantisation that happens, and
+	 * communicate that back into the metadata so that it will appear as the "delayed" status.
+	 * (Note that "exposure" is already the "actual" exposure.)
+	 */
+	double actualGain = helper_->gain(gainCode);
+	double ratio = agcStatus->analogueGain / actualGain;
+	ratio *= agcStatus->exposureTime / exposure;
+	double newDigitalGain = agcStatus->digitalGain * ratio;
+	agcStatus->digitalGain = newDigitalGain;
+	agcStatus->analogueGain = actualGain;
+	agcStatus->exposureTime = exposure;
 
 	/*
 	 * At present, there is no way of knowing if a control is read-only.

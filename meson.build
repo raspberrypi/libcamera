@@ -2,7 +2,7 @@
 
 project('libcamera', 'c', 'cpp',
     meson_version : '>= 0.63',
-    version : '0.5.1',
+    version : '0.5.2',
     default_options : [
         'werror=true',
         'warning_level=2',

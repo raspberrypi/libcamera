@@ -23,7 +23,8 @@ struct DenoiseConfig {
 	double sdnDeviationNoTdn;
 	double sdnStrengthNoTdn;
 	double sdnTdnBackoff;
-	double cdnDeviation;
+	double cdnDeviationNoTdn;
+	double cdnDeviationWithTdn;
 	double cdnStrength;
 	double tdnDeviation;
 	double tdnThreshold;
@@ -54,6 +55,7 @@ private:
 	double currentSdnDeviation_;
 	double currentSdnStrength_;
 	double currentSdnDeviation2_;
+	double currentCdnDeviation_;
 };
 
 } // namespace RPiController

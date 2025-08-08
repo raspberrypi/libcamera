@@ -97,9 +97,9 @@ private:
 		[[maybe_unused]] auto *args = static_cast<PackType *>(pack);
 
 		if constexpr (!std::is_void_v<R>)
-			args->ret_ = invoke(std::get<I>(args->args_)...);
+			args->ret_ = invoke(std::forward<Args>(std::get<I>(args->args_))...);
 		else
-			invoke(std::get<I>(args->args_)...);
+			invoke(std::forward<Args>(std::get<I>(args->args_))...);
 	}
 
 public:

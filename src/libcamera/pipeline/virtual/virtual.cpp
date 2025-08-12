@@ -315,7 +315,8 @@ int PipelineHandlerVirtual::queueRequestDevice([[maybe_unused]] Camera *camera,
 				fmd.sequence = streamConfig.seq++;
 				fmd.timestamp = timestamp;
 
-				for (const auto [i, p] : utils::enumerate(buffer->planes()))
+				Span<const FrameBuffer::Plane> planes = buffer->planes();
+				for (const auto [i, p] : utils::enumerate(planes))
 					fmd.planes()[i].bytesused = p.length;
 
 				found = true;

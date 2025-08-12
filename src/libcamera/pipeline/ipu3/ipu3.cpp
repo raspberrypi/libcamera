@@ -680,8 +680,12 @@ int PipelineHandlerIPU3::allocateBuffers(Camera *camera)
 
 	auto pushBuffers = [&](const std::vector<std::unique_ptr<FrameBuffer>> &buffers) {
 		for (const std::unique_ptr<FrameBuffer> &buffer : buffers) {
+			Span<const FrameBuffer::Plane> planes = buffer->planes();
+
 			buffer->setCookie(ipaBufferId++);
-			ipaBuffers_.emplace_back(buffer->cookie(), buffer->planes());
+			ipaBuffers_.emplace_back(buffer->cookie(),
+						 std::vector<FrameBuffer::Plane>{ planes.begin(),
+										  planes.end() });
 		}
 	};
 

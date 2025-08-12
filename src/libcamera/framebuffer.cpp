@@ -130,9 +130,9 @@ LOG_DEFINE_CATEGORY(Buffer)
  * \param[in] planes The frame memory planes
  * \param[in] cookie Cookie
  */
-FrameBuffer::Private::Private(const std::vector<Plane> &planes, uint64_t cookie)
-	: planes_(planes), cookie_(cookie), request_(nullptr),
-	  isContiguous_(true)
+FrameBuffer::Private::Private(Span<const Plane> planes, uint64_t cookie)
+	: planes_(planes.begin(), planes.end()), cookie_(cookie),
+	  request_(nullptr), isContiguous_(true)
 {
 	metadata_.planes_.resize(planes_.size());
 }
@@ -315,7 +315,7 @@ ino_t fileDescriptorInode(const SharedFD &fd)
  * \param[in] planes The frame memory planes
  * \param[in] cookie Cookie
  */
-FrameBuffer::FrameBuffer(const std::vector<Plane> &planes, unsigned int cookie)
+FrameBuffer::FrameBuffer(Span<const Plane> planes, unsigned int cookie)
 	: FrameBuffer(std::make_unique<Private>(planes, cookie))
 {
 }
@@ -365,7 +365,7 @@ FrameBuffer::FrameBuffer(std::unique_ptr<Private> d)
  * \brief Retrieve the static plane descriptors
  * \return Array of plane descriptors
  */
-const std::vector<FrameBuffer::Plane> &FrameBuffer::planes() const
+Span<const FrameBuffer::Plane> FrameBuffer::planes() const
 {
 	return _d()->planes_;
 }

@@ -1137,8 +1137,12 @@ int PipelineHandlerMaliC55::allocateBuffers(Camera *camera)
 			       std::queue<FrameBuffer *> &queue,
 			       std::vector<IPABuffer> &ipaBuffers) {
 		for (const std::unique_ptr<FrameBuffer> &buffer : buffers) {
+			Span<const FrameBuffer::Plane> planes = buffer->planes();
+
 			buffer->setCookie(ipaBufferId++);
-			ipaBuffers.emplace_back(buffer->cookie(), buffer->planes());
+			ipaBuffers.emplace_back(buffer->cookie(),
+						std::vector<FrameBuffer::Plane>{ planes.begin(),
+										 planes.end() });
 			queue.push(buffer.get());
 		}
 	};

@@ -1031,9 +1031,12 @@ int PipelineHandlerRkISP1::allocateBuffers(Camera *camera)
 	auto pushBuffers = [&](const std::vector<std::unique_ptr<FrameBuffer>> &buffers,
 			       std::queue<FrameBuffer *> &queue) {
 		for (const std::unique_ptr<FrameBuffer> &buffer : buffers) {
+			Span<const FrameBuffer::Plane> planes = buffer->planes();
+
 			buffer->setCookie(ipaBufferId++);
 			data->ipaBuffers_.emplace_back(buffer->cookie(),
-						       buffer->planes());
+						       std::vector<FrameBuffer::Plane>{ planes.begin(),
+											planes.end() });
 			queue.push(buffer.get());
 		}
 	};

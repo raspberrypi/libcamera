@@ -288,7 +288,7 @@ V4L2BufferCache::Entry::Entry(bool free, uint64_t lastUsed, const FrameBuffer &b
 
 bool V4L2BufferCache::Entry::operator==(const FrameBuffer &buffer) const
 {
-	const std::vector<FrameBuffer::Plane> &planes = buffer.planes();
+	Span<const FrameBuffer::Plane> planes = buffer.planes();
 
 	if (planes_.size() != planes.size())
 		return false;
@@ -1676,7 +1676,7 @@ int V4L2VideoDevice::queueBuffer(FrameBuffer *buffer)
 	buf.field = V4L2_FIELD_NONE;
 
 	bool multiPlanar = V4L2_TYPE_IS_MULTIPLANAR(buf.type);
-	const std::vector<FrameBuffer::Plane> &planes = buffer->planes();
+	Span<const FrameBuffer::Plane> planes = buffer->planes();
 	const unsigned int numV4l2Planes = format_.planesCount;
 
 	/*
@@ -1909,7 +1909,7 @@ FrameBuffer *V4L2VideoDevice::dequeueBuffer()
 	}
 	metadata.sequence -= firstFrame_.value();
 
-	const std::vector<FrameBuffer::Plane> &framebufferPlanes = buffer->planes();
+	Span<const FrameBuffer::Plane> framebufferPlanes = buffer->planes();
 	unsigned int numV4l2Planes = multiPlanar ? buf.length : 1;
 
 	if (numV4l2Planes != framebufferPlanes.size()) {

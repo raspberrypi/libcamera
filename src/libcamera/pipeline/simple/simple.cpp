@@ -1423,8 +1423,20 @@ int SimplePipelineHandler::configure(Camera *camera, CameraConfiguration *c)
 	if (ret < 0)
 		return ret;
 
-	/* Configure the video node. */
-	V4L2PixelFormat videoFormat = video->toV4L2PixelFormat(pipeConfig->captureFormat);
+	/* Configure the video node, taking into account any Bayer pattern change. */
+	V4L2PixelFormat videoFormat;
+	if (format.code == pipeConfig->code) {
+		videoFormat = video->toV4L2PixelFormat(pipeConfig->captureFormat);
+	} else {
+		/*
+		 * Bayer pattern has changed because of the transform that was applied on
+		 * the sensor. Get the V4L2PixelFormat corresponding to the configured Bayer
+		 * pattern.
+		 */
+		BayerFormat cfgBayer = BayerFormat::fromPixelFormat(pipeConfig->captureFormat);
+		cfgBayer.order = data->sensor_->bayerOrder(config->combinedTransform());
+		videoFormat = cfgBayer.toV4L2PixelFormat();
+	}
 
 	V4L2DeviceFormat captureFormat;
 	captureFormat.fourcc = videoFormat;
@@ -1466,7 +1478,7 @@ int SimplePipelineHandler::configure(Camera *camera, CameraConfiguration *c)
 		return 0;
 
 	StreamConfiguration inputCfg;
-	inputCfg.pixelFormat = pipeConfig->captureFormat;
+	inputCfg.pixelFormat = videoFormat.toPixelFormat();
 	inputCfg.size = pipeConfig->captureSize;
 	inputCfg.stride = captureFormat.planes[0].bpl;
 	inputCfg.bufferCount = kNumInternalBuffers;

@@ -358,6 +358,7 @@ void SoftwareIsp::stop()
 {
 	ispWorkerThread_.exit();
 	ispWorkerThread_.wait();
+	ispWorkerThread_.removeMessages(debayer_.get());
 
 	Thread::current()->dispatchMessages(Message::Type::InvokeMessage, this);
 

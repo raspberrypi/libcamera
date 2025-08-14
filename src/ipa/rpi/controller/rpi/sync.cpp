@@ -163,8 +163,8 @@ void Sync::process([[maybe_unused]] StatisticsPtr &stats, Metadata *imageMetadat
 
 	imageMetadata->get("sync.params", local);
 
-	/* The wallclock has already been de-jittered for us. */
-	uint64_t wallClockFrameTimestamp = local.wallClock;
+	/* The wallclock has already been de-jittered for us. Convert from ns into us. */
+	uint64_t wallClockFrameTimestamp = local.wallClock / 1000;
 
 	/*
 	 * This is the headline frame duration in microseconds as programmed into the sensor. Strictly,

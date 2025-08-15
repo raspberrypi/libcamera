@@ -19,11 +19,7 @@
 namespace libcamera {
 
 class FrameBuffer;
-class IPAProxy;
-class PipelineHandler;
 class Request;
-class V4L2VideoDevice;
-struct IPABuffer;
 
 class IPU3Frames
 {

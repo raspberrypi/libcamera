@@ -1909,9 +1909,10 @@ FrameBuffer *V4L2VideoDevice::dequeueBuffer()
 	}
 	metadata.sequence -= firstFrame_.value();
 
+	const std::vector<FrameBuffer::Plane> &framebufferPlanes = buffer->planes();
 	unsigned int numV4l2Planes = multiPlanar ? buf.length : 1;
 
-	if (numV4l2Planes != buffer->planes().size()) {
+	if (numV4l2Planes != framebufferPlanes.size()) {
 		/*
 		 * If we have a multi-planar buffer with a V4L2
 		 * single-planar format, split the V4L2 buffer across
@@ -1921,7 +1922,7 @@ FrameBuffer *V4L2VideoDevice::dequeueBuffer()
 		if (numV4l2Planes != 1) {
 			LOG(V4L2, Error)
 				<< "Invalid number of planes (" << numV4l2Planes
-				<< " != " << buffer->planes().size() << ")";
+				<< " != " << framebufferPlanes.size() << ")";
 
 			metadata.status = FrameMetadata::FrameError;
 			return buffer;
@@ -1938,12 +1939,12 @@ FrameBuffer *V4L2VideoDevice::dequeueBuffer()
 				       : buf.bytesused;
 		unsigned int remaining = bytesused;
 
-		for (auto [i, plane] : utils::enumerate(buffer->planes())) {
+		for (auto [i, plane] : utils::enumerate(framebufferPlanes)) {
 			if (!remaining) {
 				LOG(V4L2, Error)
 					<< "Dequeued buffer (" << bytesused
 					<< " bytes) too small for plane lengths "
-					<< utils::join(buffer->planes(), "/",
+					<< utils::join(framebufferPlanes, "/",
 						       [](const FrameBuffer::Plane &p) {
 							       return p.length;
 						       });

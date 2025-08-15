@@ -1002,21 +1002,27 @@ int PipelineHandlerRkISP1::allocateBuffers(Camera *camera)
 	unsigned int ipaBufferId = 1;
 	int ret;
 
+	auto errorCleanup = utils::scope_exit{ [&]() {
+		paramBuffers_.clear();
+		statBuffers_.clear();
+		mainPathBuffers_.clear();
+	} };
+
 	if (!isRaw_) {
 		ret = param_->allocateBuffers(kRkISP1MinBufferCount, &paramBuffers_);
 		if (ret < 0)
-			goto error;
+			return ret;
 
 		ret = stat_->allocateBuffers(kRkISP1MinBufferCount, &statBuffers_);
 		if (ret < 0)
-			goto error;
+			return ret;
 	}
 
 	/* If the dewarper is being used, allocate internal buffers for ISP. */
 	if (useDewarper_) {
 		ret = mainPath_.exportBuffers(kRkISP1MinBufferCount, &mainPathBuffers_);
 		if (ret < 0)
-			goto error;
+			return ret;
 
 		for (std::unique_ptr<FrameBuffer> &buffer : mainPathBuffers_)
 			availableMainPathBuffers_.push(buffer.get());
@@ -1038,14 +1044,8 @@ int PipelineHandlerRkISP1::allocateBuffers(Camera *camera)
 
 	data->ipa_->mapBuffers(data->ipaBuffers_);
 
+	errorCleanup.release();
 	return 0;
-
-error:
-	paramBuffers_.clear();
-	statBuffers_.clear();
-	mainPathBuffers_.clear();
-
-	return ret;
 }
 
 int PipelineHandlerRkISP1::freeBuffers(Camera *camera)

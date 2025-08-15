@@ -1728,7 +1728,6 @@ const std::string &V4L2Subdevice::model()
 	std::regex i2cRegex{ " [0-9]+-[0-9a-f]{4}" };
 	std::smatch match;
 
-	std::string model;
 	if (std::regex_search(entityName, match, i2cRegex))
 		model_ = entityName.substr(0, entityName.find(' '));
 	else

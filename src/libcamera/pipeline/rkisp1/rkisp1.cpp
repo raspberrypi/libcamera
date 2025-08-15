@@ -1028,19 +1028,18 @@ int PipelineHandlerRkISP1::allocateBuffers(Camera *camera)
 			availableMainPathBuffers_.push(buffer.get());
 	}
 
-	for (std::unique_ptr<FrameBuffer> &buffer : paramBuffers_) {
-		buffer->setCookie(ipaBufferId++);
-		data->ipaBuffers_.emplace_back(buffer->cookie(),
-					       buffer->planes());
-		availableParamBuffers_.push(buffer.get());
-	}
+	auto pushBuffers = [&](const std::vector<std::unique_ptr<FrameBuffer>> &buffers,
+			       std::queue<FrameBuffer *> &queue) {
+		for (const std::unique_ptr<FrameBuffer> &buffer : buffers) {
+			buffer->setCookie(ipaBufferId++);
+			data->ipaBuffers_.emplace_back(buffer->cookie(),
+						       buffer->planes());
+			queue.push(buffer.get());
+		}
+	};
 
-	for (std::unique_ptr<FrameBuffer> &buffer : statBuffers_) {
-		buffer->setCookie(ipaBufferId++);
-		data->ipaBuffers_.emplace_back(buffer->cookie(),
-					       buffer->planes());
-		availableStatBuffers_.push(buffer.get());
-	}
+	pushBuffers(paramBuffers_, availableParamBuffers_);
+	pushBuffers(statBuffers_, availableStatBuffers_);
 
 	data->ipa_->mapBuffers(data->ipaBuffers_);
 

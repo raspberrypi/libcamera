@@ -1133,27 +1133,29 @@ int PipelineHandlerMaliC55::allocateBuffers(Camera *camera)
 		data->dsStream_.configuration().bufferCount,
 	});
 
+	auto pushBuffers = [&](const std::vector<std::unique_ptr<FrameBuffer>> &buffers,
+			       std::queue<FrameBuffer *> &queue,
+			       std::vector<IPABuffer> &ipaBuffers) {
+		for (const std::unique_ptr<FrameBuffer> &buffer : buffers) {
+			buffer->setCookie(ipaBufferId++);
+			ipaBuffers.emplace_back(buffer->cookie(), buffer->planes());
+			queue.push(buffer.get());
+		}
+	};
+
 	ret = stats_->allocateBuffers(bufferCount, &statsBuffers_);
 	if (ret < 0)
 		return ret;
 
-	for (std::unique_ptr<FrameBuffer> &buffer : statsBuffers_) {
-		buffer->setCookie(ipaBufferId++);
-		data->ipaStatBuffers_.emplace_back(buffer->cookie(),
-						   buffer->planes());
-		availableStatsBuffers_.push(buffer.get());
-	}
+	pushBuffers(statsBuffers_, availableStatsBuffers_,
+		    data->ipaStatBuffers_);
 
 	ret = params_->allocateBuffers(bufferCount, &paramsBuffers_);
 	if (ret < 0)
 		return ret;
 
-	for (std::unique_ptr<FrameBuffer> &buffer : paramsBuffers_) {
-		buffer->setCookie(ipaBufferId++);
-		data->ipaParamBuffers_.emplace_back(buffer->cookie(),
-						    buffer->planes());
-		availableParamsBuffers_.push(buffer.get());
-	}
+	pushBuffers(paramsBuffers_, availableParamsBuffers_,
+		    data->ipaParamBuffers_);
 
 	if (data->ipa_) {
 		data->ipa_->mapBuffers(data->ipaStatBuffers_, true);

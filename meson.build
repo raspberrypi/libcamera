@@ -283,9 +283,14 @@ run_command('ln', '-fsT', meson.project_source_root(), meson.project_build_root(
 
 configure_file(output : 'config.h', configuration : config_h)
 
-# Check for python installation and modules.
-py_mod = import('python')
-py_mod.find_installation('python3', modules : py_modules)
+# Check for python modules.
+foreach module : py_modules
+    result = run_command('python3', '-c' , 'import @0@'.format(module),
+                         capture : false, check : false)
+    if result.returncode() != 0
+        error('Python module \'@0@\' not found'.format(module))
+    endif
+endforeach
 
 ## Summarise Configurations
 summary({

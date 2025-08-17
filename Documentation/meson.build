@@ -124,12 +124,9 @@ if sphinx.found()
     # Many distributions do not provide a recent-enough version of the doxylink
     # module. This results in a build error with a cryptic message. Check the
     # version manually and print clear error messages.
-    py_mod = import('python')
-    py3 = py_mod.find_installation('python3')
-
     mod = 'sphinxcontrib.doxylink'
     min_version = '>=1.6.1'
-    version = run_command(py3, '-c',
+    version = run_command('python3', '-c',
                           'import @0@ ; print(@0@.__version__)'.format(mod),
                           check : false).stdout().strip()
 

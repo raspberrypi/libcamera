@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 project('libcamera', 'c', 'cpp',
-    meson_version : '>= 0.63',
+    meson_version : '>= 1.0.1',
     version : '0.5.2',
     default_options : [
         'werror=true',

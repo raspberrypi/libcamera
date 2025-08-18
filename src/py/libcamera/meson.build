@@ -47,7 +47,7 @@ pycamera_sources += custom_target('py_gen_formats',
 
 pycamera_deps = [
     libcamera_private,
-    py3_dep,
+    py3.dependency(),
     pybind11_dep,
 ]
 
@@ -62,7 +62,7 @@ if meson.is_cross_build()
     # module. There's work in progress to fix this, based on PEP 739
     # (https://github.com/mesonbuild/meson/pull/14657). While waiting for this
     # to become available, work around the issue by using shared_module().
-    destdir = get_option('libdir') / ('python' + py3_dep.version()) / 'site-packages' / 'libcamera'
+    destdir = get_option('libdir') / ('python' + py3.language_version()) / 'site-packages' / 'libcamera'
 
     pycamera = shared_module('_libcamera',
                              pycamera_sources,

@@ -62,7 +62,7 @@ if meson.is_cross_build()
     # module. There's work in progress to fix this, based on PEP 739
     # (https://github.com/mesonbuild/meson/pull/14657). While waiting for this
     # to become available, work around the issue by using shared_module().
-    destdir = get_option('libdir') / ('python' + py3.language_version()) / 'site-packages' / 'libcamera'
+    destdir = py3.get_install_dir(subdir : 'libcamera', pure : false)
 
     pycamera = shared_module('_libcamera',
                              pycamera_sources,
@@ -72,9 +72,6 @@ if meson.is_cross_build()
                              name_prefix : '',
                              dependencies : pycamera_deps,
                              cpp_args : pycamera_args)
-    install_data(['__init__.py'],
-                 install_dir : destdir,
-                 install_tag : 'python-runtime')
 else
     pycamera = py3.extension_module('_libcamera',
                                     pycamera_sources,
@@ -82,10 +79,11 @@ else
                                     subdir : 'libcamera',
                                     dependencies : pycamera_deps,
                                     cpp_args : pycamera_args)
-    py3.install_sources(['__init__.py'],
-                        subdir : 'libcamera',
-                        pure : false)
 endif
+
+py3.install_sources(['__init__.py'],
+                    subdir : 'libcamera',
+                    pure : false)
 
 # Create symlinks from the build dir to the source dir so that we can use the
 # Python module directly from the build dir.

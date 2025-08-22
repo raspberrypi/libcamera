@@ -28,7 +28,7 @@
             "rpi.noise":
             {
                 "reference_constant": 0,
-                "reference_slope": 2.809
+                "reference_slope": 3.9
             }
         },
         {
@@ -43,20 +43,20 @@
             {
                 "sdn":
                 {
-                    "deviation": 1.6,
-                    "strength": 0.5,
+                    "deviation": 0.6,
+                    "strength": 0.95,
                     "deviation2": 3.2,
                     "deviation_no_tdn": 3.2,
-                    "strength_no_tdn": 0.75
+                    "strength_no_tdn": 0.95
                 },
                 "cdn":
                 {
-                    "deviation": 200,
+                    "deviation": 100,
                     "strength": 0.3
                 },
                 "tdn":
                 {
-                    "deviation": 0.8,
+                    "deviation": 1.0,
                     "threshold": 0.05
                 }
             }
@@ -537,8 +537,8 @@
         {
             "rpi.sharpen":
             {
-                "threshold": 0.25,
-                "limit": 1.0,
+                "threshold": 0.75,
+                "limit": 0.5,
                 "strength": 1.0
             }
         }

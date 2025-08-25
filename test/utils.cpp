@@ -167,6 +167,12 @@ protected:
 			return TestFail;
 		}
 
+		exposure = 100ms;
+		if ((-exposure).get<std::milli>() != -100) {
+			cerr << "utils::Duration failed negation" << endl;
+			return TestFail;
+		}
+
 		return TestPass;
 	}
 

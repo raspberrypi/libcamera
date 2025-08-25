@@ -394,6 +394,11 @@ public:
 		return c.count();
 	}
 
+	constexpr Duration operator-() const
+	{
+		return BaseDuration::operator-();
+	}
+
 	explicit constexpr operator bool() const
 	{
 		return *this != BaseDuration::zero();

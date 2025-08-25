@@ -118,10 +118,10 @@ void ClockRecovery::addSample()
 	clock_gettime(CLOCK_BOOTTIME, &bootTime1);
 	clock_gettime(CLOCK_REALTIME, &wallTime);
 	clock_gettime(CLOCK_BOOTTIME, &bootTime2);
-	uint64_t boot1 = bootTime1.tv_sec * 1000000ULL + bootTime1.tv_nsec / 1000;
-	uint64_t boot2 = bootTime2.tv_sec * 1000000ULL + bootTime2.tv_nsec / 1000;
+	uint64_t boot1 = bootTime1.tv_sec * 1000000000ULL + bootTime1.tv_nsec;
+	uint64_t boot2 = bootTime2.tv_sec * 1000000000ULL + bootTime2.tv_nsec;
 	uint64_t boot = (boot1 + boot2) / 2;
-	uint64_t wall = wallTime.tv_sec * 1000000ULL + wallTime.tv_nsec / 1000;
+	uint64_t wall = wallTime.tv_sec * 1000000000ULL + wallTime.tv_nsec;
 
 	addSample(boot, wall);
 }

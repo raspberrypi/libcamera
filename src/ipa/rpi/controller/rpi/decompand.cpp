@@ -12,7 +12,7 @@ LOG_DEFINE_CATEGORY(RPiDecompand)
 #define NAME "rpi.decompand"
 
 Decompand::Decompand(Controller *controller)
-	: DecompandAlgorithm(controller)
+	: Algorithm(controller)
 {
 }
 
@@ -34,25 +34,18 @@ int Decompand::read(const libcamera::YamlObject &params)
 			LOG(RPiDecompand, Error) << "Invalid LUT value at index " << i;
 			return -EINVAL;
 		}
-		decompandLUT_[i] = value.value();
+		config_.decompandLUT_[i] = value.value();
 	}
 
 	return 0;
-}
-
-void Decompand::initialValues(uint16_t LUT[])
-{
-	for (size_t i = 0; i < sizeof(decompandLUT_) / sizeof(decompandLUT_[0]); ++i) {
-		LUT[i] = decompandLUT_[i];
-	}
 }
 
 void Decompand::prepare(Metadata *imageMetadata)
 {
 	struct DecompandStatus status;
 
-	for (size_t i = 0; i < sizeof(decompandLUT_) / sizeof(decompandLUT_[0]); ++i) {
-		status.lut[i] = decompandLUT_[i];
+	for (size_t i = 0; i < sizeof(config_.decompandLUT_) / sizeof(config_.decompandLUT_[0]); ++i) {
+		status.lut[i] = config_.decompandLUT_[i];
 	}
 
 	imageMetadata->set("decompand.status", status);

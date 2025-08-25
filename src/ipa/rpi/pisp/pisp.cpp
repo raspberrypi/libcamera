@@ -31,7 +31,6 @@
 #include "controller/cac_status.h"
 #include "controller/ccm_status.h"
 #include "controller/contrast_status.h"
-#include "controller/decompand_algorithm.h"
 #include "controller/decompand_status.h"
 #include "controller/denoise_algorithm.h"
 #include "controller/denoise_status.h"
@@ -384,6 +383,10 @@ void IpaPiSP::platformPrepareIsp([[maybe_unused]] const PrepareParams &params,
 	AlscStatus *alscStatus = rpiMetadata.getLocked<AlscStatus>("alsc.status");
 	if (alscStatus)
 		applyLensShading(alscStatus, global);
+
+	DecompandStatus *decompandStatus = rpiMetadata.getLocked<DecompandStatus>("decompand.status");
+	if (decompandStatus)
+		applyDecompand(decompandStatus);
 
 	DpcStatus *dpcStatus = rpiMetadata.getLocked<DpcStatus>("dpc.status");
 	if (dpcStatus)
@@ -950,20 +953,6 @@ void IpaPiSP::setDefaultConfig()
 	rgby.gain_b = clampField(gainB * .114, 14, 10);
 	fe_->SetRGBY(rgby);
 	feGlobal.enables |= PISP_FE_ENABLE_RGBY;
-
-	RPiController::DecompandAlgorithm *decompand = dynamic_cast<RPiController::DecompandAlgorithm *>(
-		controller_.getAlgorithm("decompand"));
-	if (decompand) {
-		uint16_t decompandLUT[65];
-		DecompandStatus decompandStatus;
-
-		decompand->initialValues(decompandLUT);
-		for (size_t i = 0; i < sizeof(decompandLUT) / sizeof(decompandLUT[0]); ++i) {
-			decompandStatus.lut[i] = decompandLUT[i];
-		}
-		applyDecompand(&decompandStatus);
-		feGlobal.enables |= PISP_FE_ENABLE_DECOMPAND;
-	}
 
 	/* Also get sensible front end black level defaults, for the same reason. */
 	RPiController::BlackLevelAlgorithm *blackLevel = dynamic_cast<RPiController::BlackLevelAlgorithm *>(

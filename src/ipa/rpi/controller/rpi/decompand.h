@@ -1,21 +1,25 @@
 #pragma once
 
-#include "../decompand_algorithm.h"
 #include "../decompand_status.h"
+
+#include "algorithm.h"
 
 namespace RPiController {
 
-class Decompand : public DecompandAlgorithm
+struct DecompandConfig {
+	uint16_t decompandLUT_[65];
+};
+
+class Decompand : public Algorithm
 {
 public:
 	Decompand(Controller *controller);
 	char const *name() const override;
 	int read(const libcamera::YamlObject &params) override;
-	void initialValues(uint16_t LUT[]) override;
 	void prepare(Metadata *imageMetadata) override;
 
 private:
-	uint16_t decompandLUT_[65];
+	DecompandConfig config_;
 };
 
 } /* namespace RPiController */

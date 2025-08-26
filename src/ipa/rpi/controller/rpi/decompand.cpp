@@ -24,6 +24,7 @@ char const *Decompand::name() const
 
 int Decompand::read(const libcamera::YamlObject &params)
 {
+	config_.bitdepth = params["bitdepth"].get<uint32_t>(0);
 	config_.decompandCurve = params["decompand_curve"].get<ipa::Pwl>(ipa::Pwl{});
 	return config_.decompandCurve.empty() ? -EINVAL : 0;
 }
@@ -32,12 +33,20 @@ void Decompand::initialise()
 {
 }
 
+void Decompand::switchMode([[maybe_unused]] CameraMode const &cameraMode,
+			   [[maybe_unused]] Metadata *metadata)
+{
+	mode_ = cameraMode;
+}
+
 void Decompand::prepare(Metadata *imageMetadata)
 {
 	DecompandStatus decompandStatus;
 
-	decompandStatus.decompandCurve = config_.decompandCurve;
-	imageMetadata->set("decompand.status", decompandStatus);
+	if (config_.bitdepth == 0 || mode_.bitdepth == config_.bitdepth) {
+		decompandStatus.decompandCurve = config_.decompandCurve;
+		imageMetadata->set("decompand.status", decompandStatus);
+	}
 }
 
 /* Register algorithm with the system. */

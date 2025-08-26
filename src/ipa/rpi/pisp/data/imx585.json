@@ -11,6 +11,7 @@
         {
             "rpi.decompand":
             {
+                "bitdepth": 12,
                 "decompand_curve":
                 [
                     0, 0,

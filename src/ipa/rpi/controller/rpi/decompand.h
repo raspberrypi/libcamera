@@ -8,6 +8,7 @@
 namespace RPiController {
 
 struct DecompandConfig {
+	uint32_t bitdepth;
 	libcamera::ipa::Pwl decompandCurve;
 };
 
@@ -18,9 +19,11 @@ public:
 	char const *name() const override;
 	int read(const libcamera::YamlObject &params) override;
 	void initialise() override;
+	void switchMode(CameraMode const &cameraMode, Metadata *metadata) override;
 	void prepare(Metadata *imageMetadata) override;
 
 private:
+	CameraMode mode_;
 	DecompandConfig config_;
 };
 

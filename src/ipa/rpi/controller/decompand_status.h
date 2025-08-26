@@ -1,7 +1,7 @@
 #pragma once
 
-#include <stdint.h>
+#include "libipa/pwl.h"
 
 struct DecompandStatus {
-	uint16_t lut[65];
+	libcamera::ipa::Pwl decompandCurve;
 };

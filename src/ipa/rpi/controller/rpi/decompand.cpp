@@ -3,6 +3,7 @@
 #include <libcamera/base/log.h>
 
 #include "../decompand_status.h"
+#include "../histogram.h"
 
 using namespace RPiController;
 using namespace libcamera;
@@ -23,38 +24,26 @@ char const *Decompand::name() const
 
 int Decompand::read(const libcamera::YamlObject &params)
 {
-	if (!params.contains("lut") || !params["lut"].isList() || params["lut"].size() != 65) {
-		LOG(RPiDecompand, Error) << "Expected LUT with 65 elements";
-		return -EINVAL;
-	}
+	config_.decompandCurve = params["decompand_curve"].get<ipa::Pwl>(ipa::Pwl{});
+	return config_.decompandCurve.empty() ? -EINVAL : 0;
+}
 
-	for (unsigned int i = 0; i < 65; ++i) {
-		std::optional<uint16_t> value = params["lut"][i].get<uint16_t>();
-		if (!value.has_value()) {
-			LOG(RPiDecompand, Error) << "Invalid LUT value at index " << i;
-			return -EINVAL;
-		}
-		config_.decompandLUT_[i] = value.value();
-	}
-
-	return 0;
+void Decompand::initialise()
+{
 }
 
 void Decompand::prepare(Metadata *imageMetadata)
 {
-	struct DecompandStatus status;
+	DecompandStatus decompandStatus;
 
-	for (size_t i = 0; i < sizeof(config_.decompandLUT_) / sizeof(config_.decompandLUT_[0]); ++i) {
-		status.lut[i] = config_.decompandLUT_[i];
-	}
-
-	imageMetadata->set("decompand.status", status);
+	decompandStatus.decompandCurve = config_.decompandCurve;
+	imageMetadata->set("decompand.status", decompandStatus);
 }
 
 /* Register algorithm with the system. */
 static Algorithm *create(Controller *controller)
 {
-	return new Decompand(controller);
+	return (Algorithm *)new Decompand(controller);
 }
 
 static RegisterAlgorithm reg(NAME, &create);

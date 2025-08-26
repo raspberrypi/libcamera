@@ -113,6 +113,27 @@ int generateLut(const ipa::Pwl &pwl, uint32_t *lut, std::size_t lutSize,
 	return 0;
 }
 
+int generateDecompandLut(const ipa::Pwl &pwl, uint16_t *lut, std::size_t lutSize = 65)
+{
+	if (pwl.empty())
+		return -EINVAL;
+
+	constexpr int step = 1024;
+	for (std::size_t i = 0; i < lutSize; ++i) {
+		int x = i * step;
+		if (x > 65535)
+			x = 65535;
+
+		int y = pwl.eval(x);
+		if (y < 0)
+			return -1;
+
+		lut[i] = static_cast<uint16_t>(std::min(y, 65535));
+	}
+
+	return 0;
+}
+
 void packLscLut(uint32_t packed[NumLscVertexes][NumLscVertexes],
 		double const rgb[3][NumLscVertexes][NumLscVertexes])
 {
@@ -352,6 +373,11 @@ void IpaPiSP::platformPrepareIsp([[maybe_unused]] const PrepareParams &params,
 		if (noiseStatus)
 			applyFocusStats(noiseStatus);
 
+		DecompandStatus *decompandStatus =
+			rpiMetadata.getLocked<DecompandStatus>("decompand.status");
+		if (decompandStatus)
+			applyDecompand(decompandStatus);
+
 		BlackLevelStatus *blackLevelStatus =
 			rpiMetadata.getLocked<BlackLevelStatus>("black_level.status");
 		if (blackLevelStatus)
@@ -383,10 +409,6 @@ void IpaPiSP::platformPrepareIsp([[maybe_unused]] const PrepareParams &params,
 	AlscStatus *alscStatus = rpiMetadata.getLocked<AlscStatus>("alsc.status");
 	if (alscStatus)
 		applyLensShading(alscStatus, global);
-
-	DecompandStatus *decompandStatus = rpiMetadata.getLocked<DecompandStatus>("decompand.status");
-	if (decompandStatus)
-		applyDecompand(decompandStatus);
 
 	DpcStatus *dpcStatus = rpiMetadata.getLocked<DpcStatus>("dpc.status");
 	if (dpcStatus)
@@ -676,14 +698,16 @@ void IpaPiSP::applyDPC(const DpcStatus *dpcStatus, pisp_be_global_config &global
 
 void IpaPiSP::applyDecompand(const DecompandStatus *decompandStatus)
 {
-	pisp_fe_decompand_config config = {};
+	pisp_fe_global_config feGlobal;
+	pisp_fe_decompand_config decompand = {};
 
-	ASSERT(decompandStatus->lut != nullptr);
-	std::copy(decompandStatus->lut,
-		  decompandStatus->lut + PISP_FE_DECOMPAND_LUT_SIZE,
-		  config.lut);
+	fe_->GetGlobal(feGlobal);
 
-	fe_->SetDecompand(config);
+	if (!generateDecompandLut(decompandStatus->decompandCurve, decompand.lut, PISP_FE_DECOMPAND_LUT_SIZE)) {
+		fe_->SetDecompand(decompand);
+		feGlobal.enables |= PISP_FE_ENABLE_DECOMPAND;
+		fe_->SetGlobal(feGlobal);
+	}
 }
 
 void IpaPiSP::applySdn(const SdnStatus *sdnStatus, pisp_be_global_config &global)

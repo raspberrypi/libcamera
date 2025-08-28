@@ -43,13 +43,9 @@ int Awb::configure([[maybe_unused]] IPAContext &context,
 	return 0;
 }
 
-size_t Awb::fillGainsParamBlock(mali_c55_params_block block, IPAContext &context,
+void Awb::fillGainsParamBlock(MaliC55Params *params, IPAContext &context,
 				IPAFrameContext &frameContext)
 {
-	block.header->type = MALI_C55_PARAM_BLOCK_AWB_GAINS;
-	block.header->flags = 0;
-	block.header->size = sizeof(struct mali_c55_params_awb_gains);
-
 	double rGain = context.activeState.awb.rGain;
 	double bGain = context.activeState.awb.bGain;
 
@@ -63,34 +59,32 @@ size_t Awb::fillGainsParamBlock(mali_c55_params_block block, IPAContext &context
 	 * This holds true regardless of the bayer order of the input data, as
 	 * the mapping is done internally in the ISP.
 	 */
-	block.awb_gains->gain00 = floatingToFixedPoint<4, 8, uint16_t, double>(rGain);
-	block.awb_gains->gain01 = floatingToFixedPoint<4, 8, uint16_t, double>(1.0);
-	block.awb_gains->gain10 = floatingToFixedPoint<4, 8, uint16_t, double>(1.0);
-	block.awb_gains->gain11 = floatingToFixedPoint<4, 8, uint16_t, double>(bGain);
+	auto block = params->block<MaliC55Blocks::AwbGains>();
+
+	block->gain00 = floatingToFixedPoint<4, 8, uint16_t, double>(rGain);
+	block->gain01 = floatingToFixedPoint<4, 8, uint16_t, double>(1.0);
+	block->gain10 = floatingToFixedPoint<4, 8, uint16_t, double>(1.0);
+	block->gain11 = floatingToFixedPoint<4, 8, uint16_t, double>(bGain);
 
 	frameContext.awb.rGain = rGain;
 	frameContext.awb.bGain = bGain;
-
-	return sizeof(struct mali_c55_params_awb_gains);
 }
 
-size_t Awb::fillConfigParamBlock(mali_c55_params_block block)
+void Awb::fillConfigParamBlock(MaliC55Params *params)
 {
-	block.header->type = MALI_C55_PARAM_BLOCK_AWB_CONFIG;
-	block.header->flags = 0;
-	block.header->size = sizeof(struct mali_c55_params_awb_config);
+	auto block = params->block<MaliC55Blocks::AwbConfig>();
 
 	/* Tap the stats after the purple fringe block */
-	block.awb_config->tap_point = MALI_C55_AWB_STATS_TAP_PF;
+	block->tap_point = MALI_C55_AWB_STATS_TAP_PF;
 
 	/* Get R/G and B/G ratios as statistics */
-	block.awb_config->stats_mode = MALI_C55_AWB_MODE_RGBG;
+	block->stats_mode = MALI_C55_AWB_MODE_RGBG;
 
 	/* Default white level */
-	block.awb_config->white_level = 1023;
+	block->white_level = 1023;
 
 	/* Default black level */
-	block.awb_config->black_level = 0;
+	block->black_level = 0;
 
 	/*
 	 * By default pixels are included who's colour ratios are bounded in a
@@ -104,40 +98,34 @@ size_t Awb::fillConfigParamBlock(mali_c55_params_block block)
 	 *
 	 * \todo should these perhaps be tunable?
 	 */
-	block.awb_config->cr_max = 511;
-	block.awb_config->cr_min = 64;
-	block.awb_config->cb_max = 511;
-	block.awb_config->cb_min = 64;
+	block->cr_max = 511;
+	block->cr_min = 64;
+	block->cb_max = 511;
+	block->cb_min = 64;
 
 	/* We use the full 15x15 zoning scheme */
-	block.awb_config->nodes_used_horiz = 15;
-	block.awb_config->nodes_used_vert = 15;
+	block->nodes_used_horiz = 15;
+	block->nodes_used_vert = 15;
 
 	/*
 	 * We set the trimming boundaries equivalent to the main boundaries. In
 	 * other words; no trimming.
 	 */
-	block.awb_config->cr_high = 511;
-	block.awb_config->cr_low = 64;
-	block.awb_config->cb_high = 511;
-	block.awb_config->cb_low = 64;
-
-	return sizeof(struct mali_c55_params_awb_config);
+	block->cr_high = 511;
+	block->cr_low = 64;
+	block->cb_high = 511;
+	block->cb_low = 64;
 }
 
 void Awb::prepare(IPAContext &context, const uint32_t frame,
-		  IPAFrameContext &frameContext, v4l2_isp_params_buffer *params)
+		  IPAFrameContext &frameContext, MaliC55Params *params)
 {
-	mali_c55_params_block block;
-	block.data = &params->data[params->data_size];
-
-	params->data_size += fillGainsParamBlock(block, context, frameContext);
+	fillGainsParamBlock(params, context, frameContext);
 
 	if (frame > 0)
 		return;
 
-	block.data = &params->data[params->data_size];
-	params->data_size += fillConfigParamBlock(block);
+	fillConfigParamBlock(params);
 }
 
 void Awb::process(IPAContext &context, const uint32_t frame,

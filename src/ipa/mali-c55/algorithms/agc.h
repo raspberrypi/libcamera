@@ -57,7 +57,7 @@ public:
 			  const ControlList &controls) override;
 	void prepare(IPAContext &context, const uint32_t frame,
 		     IPAFrameContext &frameContext,
-		     v4l2_isp_params_buffer *params) override;
+		     MaliC55Params *params) override;
 	void process(IPAContext &context, const uint32_t frame,
 		     IPAFrameContext &frameContext,
 		     const mali_c55_stats_buffer *stats,
@@ -65,13 +65,11 @@ public:
 
 private:
 	double estimateLuminance(const double gain) const override;
-	size_t fillGainParamBlock(IPAContext &context,
-				  IPAFrameContext &frameContext,
-				  mali_c55_params_block block);
-	size_t fillParamsBuffer(mali_c55_params_block block,
-				enum mali_c55_param_block_type type);
-	size_t fillWeightsArrayBuffer(mali_c55_params_block block,
-				      enum mali_c55_param_block_type type);
+	void fillGainParamBlock(IPAContext &context,
+				IPAFrameContext &frameContext,
+				MaliC55Params *params);
+	void fillParamsBuffer(MaliC55Params *params, enum MaliC55Blocks type);
+	void fillWeightsArrayBuffer(MaliC55Params *params, enum MaliC55Blocks type);
 
 	AgcStatistics statistics_;
 };

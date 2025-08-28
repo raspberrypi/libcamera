@@ -30,6 +30,7 @@
 #include "libipa/camera_sensor_helper.h"
 
 #include "ipa_context.h"
+#include "params.h"
 
 namespace libcamera {
 
@@ -333,24 +334,13 @@ void IPAMaliC55::queueRequest(const uint32_t request, const ControlList &control
 void IPAMaliC55::fillParams(unsigned int request,
 			    [[maybe_unused]] uint32_t bufferId)
 {
-	struct v4l2_isp_params_buffer *params;
 	IPAFrameContext &frameContext = context_.frameContexts.get(request);
+	MaliC55Params params(buffers_.at(bufferId).planes()[0]);
 
-	params = reinterpret_cast<v4l2_isp_params_buffer *>(
-		buffers_.at(bufferId).planes()[0].data());
-	memset(params, 0,
-	       buffers_.at(bufferId).planes()[0].size());
+	for (auto const &algo : algorithms())
+		algo->prepare(context_, request, frameContext, &params);
 
-	params->version = V4L2_ISP_PARAMS_VERSION_V1;
-
-	for (auto const &algo : algorithms()) {
-		algo->prepare(context_, request, frameContext, params);
-
-		ASSERT(params->data_size <= MALI_C55_PARAMS_MAX_SIZE);
-	}
-
-	size_t bytesused = offsetof(struct v4l2_isp_params_buffer, data) + params->data_size;
-	paramsComputed.emit(request, bytesused);
+	paramsComputed.emit(request, params.bytesused());
 }
 
 void IPAMaliC55::processStats(unsigned int request, unsigned int bufferId,

@@ -253,7 +253,7 @@ size_t Agc::fillGainParamBlock(IPAContext &context, IPAFrameContext &frameContex
 		gain = activeState.agc.manual.ispGain;
 
 	block.header->type = MALI_C55_PARAM_BLOCK_DIGITAL_GAIN;
-	block.header->flags = MALI_C55_PARAM_BLOCK_FL_NONE;
+	block.header->flags = 0;
 	block.header->size = sizeof(struct mali_c55_params_digital_gain);
 
 	block.digital_gain->gain = floatingToFixedPoint<5, 8, uint16_t, double>(gain);
@@ -266,7 +266,7 @@ size_t Agc::fillParamsBuffer(mali_c55_params_block block,
 			     enum mali_c55_param_block_type type)
 {
 	block.header->type = type;
-	block.header->flags = MALI_C55_PARAM_BLOCK_FL_NONE;
+	block.header->flags = 0;
 	block.header->size = sizeof(struct mali_c55_params_aexp_hist);
 
 	/* Collect every 3rd pixel horizontally */
@@ -292,7 +292,7 @@ size_t Agc::fillWeightsArrayBuffer(mali_c55_params_block block,
 				   enum mali_c55_param_block_type type)
 {
 	block.header->type = type;
-	block.header->flags = MALI_C55_PARAM_BLOCK_FL_NONE;
+	block.header->flags = 0;
 	block.header->size = sizeof(struct mali_c55_params_aexp_weights);
 
 	/* We use every zone - a 15x15 grid */
@@ -314,30 +314,30 @@ size_t Agc::fillWeightsArrayBuffer(mali_c55_params_block block,
 }
 
 void Agc::prepare(IPAContext &context, const uint32_t frame,
-		  IPAFrameContext &frameContext, mali_c55_params_buffer *params)
+		  IPAFrameContext &frameContext, v4l2_isp_params_buffer *params)
 {
 	mali_c55_params_block block;
 
-	block.data = &params->data[params->total_size];
-	params->total_size += fillGainParamBlock(context, frameContext, block);
+	block.data = &params->data[params->data_size];
+	params->data_size += fillGainParamBlock(context, frameContext, block);
 
 	if (frame > 0)
 		return;
 
-	block.data = &params->data[params->total_size];
-	params->total_size += fillParamsBuffer(block,
+	block.data = &params->data[params->data_size];
+	params->data_size += fillParamsBuffer(block,
 					       MALI_C55_PARAM_BLOCK_AEXP_HIST);
 
-	block.data = &params->data[params->total_size];
-	params->total_size += fillWeightsArrayBuffer(block,
+	block.data = &params->data[params->data_size];
+	params->data_size += fillWeightsArrayBuffer(block,
 						     MALI_C55_PARAM_BLOCK_AEXP_HIST_WEIGHTS);
 
-	block.data = &params->data[params->total_size];
-	params->total_size += fillParamsBuffer(block,
+	block.data = &params->data[params->data_size];
+	params->data_size += fillParamsBuffer(block,
 					       MALI_C55_PARAM_BLOCK_AEXP_IHIST);
 
-	block.data = &params->data[params->total_size];
-	params->total_size += fillWeightsArrayBuffer(block,
+	block.data = &params->data[params->data_size];
+	params->data_size += fillWeightsArrayBuffer(block,
 						     MALI_C55_PARAM_BLOCK_AEXP_IHIST_WEIGHTS);
 }
 

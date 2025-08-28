@@ -47,7 +47,7 @@ size_t Awb::fillGainsParamBlock(mali_c55_params_block block, IPAContext &context
 				IPAFrameContext &frameContext)
 {
 	block.header->type = MALI_C55_PARAM_BLOCK_AWB_GAINS;
-	block.header->flags = MALI_C55_PARAM_BLOCK_FL_NONE;
+	block.header->flags = 0;
 	block.header->size = sizeof(struct mali_c55_params_awb_gains);
 
 	double rGain = context.activeState.awb.rGain;
@@ -77,7 +77,7 @@ size_t Awb::fillGainsParamBlock(mali_c55_params_block block, IPAContext &context
 size_t Awb::fillConfigParamBlock(mali_c55_params_block block)
 {
 	block.header->type = MALI_C55_PARAM_BLOCK_AWB_CONFIG;
-	block.header->flags = MALI_C55_PARAM_BLOCK_FL_NONE;
+	block.header->flags = 0;
 	block.header->size = sizeof(struct mali_c55_params_awb_config);
 
 	/* Tap the stats after the purple fringe block */
@@ -126,18 +126,18 @@ size_t Awb::fillConfigParamBlock(mali_c55_params_block block)
 }
 
 void Awb::prepare(IPAContext &context, const uint32_t frame,
-		  IPAFrameContext &frameContext, mali_c55_params_buffer *params)
+		  IPAFrameContext &frameContext, v4l2_isp_params_buffer *params)
 {
 	mali_c55_params_block block;
-	block.data = &params->data[params->total_size];
+	block.data = &params->data[params->data_size];
 
-	params->total_size += fillGainsParamBlock(block, context, frameContext);
+	params->data_size += fillGainsParamBlock(block, context, frameContext);
 
 	if (frame > 0)
 		return;
 
-	block.data = &params->data[params->total_size];
-	params->total_size += fillConfigParamBlock(block);
+	block.data = &params->data[params->data_size];
+	params->data_size += fillConfigParamBlock(block);
 }
 
 void Awb::process(IPAContext &context, const uint32_t frame,

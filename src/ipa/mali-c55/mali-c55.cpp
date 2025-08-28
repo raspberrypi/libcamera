@@ -333,22 +333,23 @@ void IPAMaliC55::queueRequest(const uint32_t request, const ControlList &control
 void IPAMaliC55::fillParams(unsigned int request,
 			    [[maybe_unused]] uint32_t bufferId)
 {
-	struct mali_c55_params_buffer *params;
+	struct v4l2_isp_params_buffer *params;
 	IPAFrameContext &frameContext = context_.frameContexts.get(request);
 
-	params = reinterpret_cast<mali_c55_params_buffer *>(
+	params = reinterpret_cast<v4l2_isp_params_buffer *>(
 		buffers_.at(bufferId).planes()[0].data());
-	memset(params, 0, sizeof(mali_c55_params_buffer));
+	memset(params, 0,
+	       buffers_.at(bufferId).planes()[0].size());
 
-	params->version = MALI_C55_PARAM_BUFFER_V1;
+	params->version = V4L2_ISP_PARAMS_VERSION_V1;
 
 	for (auto const &algo : algorithms()) {
 		algo->prepare(context_, request, frameContext, params);
 
-		ASSERT(params->total_size <= MALI_C55_PARAMS_MAX_SIZE);
+		ASSERT(params->data_size <= MALI_C55_PARAMS_MAX_SIZE);
 	}
 
-	size_t bytesused = offsetof(struct mali_c55_params_buffer, data) + params->total_size;
+	size_t bytesused = offsetof(struct v4l2_isp_params_buffer, data) + params->data_size;
 	paramsComputed.emit(request, bytesused);
 }
 

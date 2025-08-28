@@ -85,10 +85,10 @@ int BlackLevelCorrection::configure(IPAContext &context,
 void BlackLevelCorrection::prepare([[maybe_unused]] IPAContext &context,
 				   const uint32_t frame,
 				   [[maybe_unused]] IPAFrameContext &frameContext,
-				   mali_c55_params_buffer *params)
+				   v4l2_isp_params_buffer *params)
 {
 	mali_c55_params_block block;
-	block.data = &params->data[params->total_size];
+	block.data = &params->data[params->data_size];
 
 	if (frame > 0)
 		return;
@@ -97,7 +97,7 @@ void BlackLevelCorrection::prepare([[maybe_unused]] IPAContext &context,
 		return;
 
 	block.header->type = MALI_C55_PARAM_BLOCK_SENSOR_OFFS;
-	block.header->flags = MALI_C55_PARAM_BLOCK_FL_NONE;
+	block.header->flags = 0;
 	block.header->size = sizeof(mali_c55_params_sensor_off_preshading);
 
 	block.sensor_offs->chan00 = offset00;
@@ -105,7 +105,7 @@ void BlackLevelCorrection::prepare([[maybe_unused]] IPAContext &context,
 	block.sensor_offs->chan10 = offset10;
 	block.sensor_offs->chan11 = offset11;
 
-	params->total_size += block.header->size;
+	params->data_size += block.header->size;
 }
 
 void BlackLevelCorrection::process([[maybe_unused]] IPAContext &context,

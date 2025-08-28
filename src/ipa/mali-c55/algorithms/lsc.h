@@ -23,7 +23,7 @@ public:
 	int init(IPAContext &context, const YamlObject &tuningData) override;
 	void prepare(IPAContext &context, const uint32_t frame,
 		     IPAFrameContext &frameContext,
-		     mali_c55_params_buffer *params) override;
+		     v4l2_isp_params_buffer *params) override;
 private:
 	static constexpr unsigned int kRedOffset = 0;
 	static constexpr unsigned int kGreenOffset = 1024;

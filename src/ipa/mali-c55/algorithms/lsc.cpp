@@ -111,7 +111,7 @@ int Lsc::init([[maybe_unused]] IPAContext &context, const YamlObject &tuningData
 size_t Lsc::fillConfigParamsBlock(mali_c55_params_block block) const
 {
 	block.header->type = MALI_C55_PARAM_MESH_SHADING_CONFIG;
-	block.header->flags = MALI_C55_PARAM_BLOCK_FL_NONE;
+	block.header->flags = 0;
 	block.header->size = sizeof(struct mali_c55_params_mesh_shading_config);
 
 	block.shading_config->mesh_show = false;
@@ -131,7 +131,7 @@ size_t Lsc::fillSelectionParamsBlock(mali_c55_params_block block, uint8_t bank,
 				     uint8_t alpha) const
 {
 	block.header->type = MALI_C55_PARAM_MESH_SHADING_SELECTION;
-	block.header->flags = MALI_C55_PARAM_BLOCK_FL_NONE;
+	block.header->flags = 0;
 	block.header->size = sizeof(struct mali_c55_params_mesh_shading_selection);
 
 	block.shading_selection->mesh_alpha_bank_r = bank;
@@ -170,7 +170,7 @@ std::tuple<uint8_t, uint8_t> Lsc::findBankAndAlpha(uint32_t ct) const
 
 void Lsc::prepare(IPAContext &context, [[maybe_unused]] const uint32_t frame,
 		  [[maybe_unused]] IPAFrameContext &frameContext,
-		  mali_c55_params_buffer *params)
+		  v4l2_isp_params_buffer *params)
 {
 	/*
 	 * For each frame we assess the colour temperature of the **last** frame
@@ -194,9 +194,9 @@ void Lsc::prepare(IPAContext &context, [[maybe_unused]] const uint32_t frame,
 	}
 
 	mali_c55_params_block block;
-	block.data = &params->data[params->total_size];
+	block.data = &params->data[params->data_size];
 
-	params->total_size += fillSelectionParamsBlock(block, bank, alpha);
+	params->data_size += fillSelectionParamsBlock(block, bank, alpha);
 
 	if (frame > 0)
 		return;
@@ -205,8 +205,8 @@ void Lsc::prepare(IPAContext &context, [[maybe_unused]] const uint32_t frame,
 	 * If this is the first frame, we need to load the parsed coefficient
 	 * tables from tuning data to the ISP.
 	 */
-	block.data = &params->data[params->total_size];
-	params->total_size += fillConfigParamsBlock(block);
+	block.data = &params->data[params->data_size];
+	params->data_size += fillConfigParamsBlock(block);
 }
 
 REGISTER_IPA_ALGORITHM(Lsc, "Lsc")

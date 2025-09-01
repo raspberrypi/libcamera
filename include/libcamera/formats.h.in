@@ -35,7 +35,9 @@ constexpr uint64_t __mod(unsigned int vendor, unsigned int mod)
 
 } /* namespace */
 
-${formats}
+{% for f in formats -%}
+constexpr PixelFormat {{f.name}}(__fourcc({{f.fourcc}}), __mod({{f.mod}}));
+{% endfor %}
 
 } /* namespace formats */
 

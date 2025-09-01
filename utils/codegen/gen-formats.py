@@ -7,6 +7,7 @@
 # Generate formats definitions from YAML
 
 import argparse
+import jinja2
 import re
 import string
 import sys
@@ -52,9 +53,7 @@ class DRMFourCC(object):
         return self.vendors[vendor], value
 
 
-def generate_h(formats, drm_fourcc):
-    template = string.Template('constexpr PixelFormat ${name}{ __fourcc(${fourcc}), __mod(${mod}) };')
-
+def generate_formats(formats, drm_fourcc):
     fmts = []
 
     for format in formats:
@@ -73,17 +72,9 @@ def generate_h(formats, drm_fourcc):
         if mod:
             data['mod'] = '%u, %u' % drm_fourcc.mod(mod)
 
-        fmts.append(template.substitute(data))
+        fmts.append(data)
 
-    return {'formats': '\n'.join(fmts)}
-
-
-def fill_template(template, data):
-
-    template = open(template, 'rb').read()
-    template = template.decode('utf-8')
-    template = string.Template(template)
-    return template.substitute(data)
+    return fmts
 
 
 def main(argv):
@@ -104,15 +95,18 @@ def main(argv):
     formats = yaml.safe_load(data)['formats']
     drm_fourcc = DRMFourCC(args.drm_fourcc)
 
-    data = generate_h(formats, drm_fourcc)
-    data = fill_template(args.template, data)
+    env = jinja2.Environment()
+    template = env.from_string(open(args.template, 'r', encoding='utf-8').read())
+    string = template.render({
+        'formats': generate_formats(formats, drm_fourcc),
+    })
 
     if args.output:
         output = open(args.output, 'wb')
-        output.write(data.encode('utf-8'))
+        output.write(string.encode('utf-8'))
         output.close()
     else:
-        sys.stdout.write(data)
+        sys.stdout.write(string)
 
     return 0
 

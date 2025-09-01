@@ -5,9 +5,9 @@
  * Process test
  */
 
+#include <array>
 #include <iostream>
 #include <unistd.h>
-#include <vector>
 
 #include <libcamera/base/event_dispatcher.h>
 #include <libcamera/base/thread.h>
@@ -48,8 +48,7 @@ protected:
 		Timer timeout;
 
 		int exitCode = 42;
-		vector<std::string> args;
-		args.push_back(to_string(exitCode));
+		std::array args{ to_string(exitCode) };
 		proc_.finished.connect(this, &ProcessTest::procFinished);
 
 		/* Test that kill() on an unstarted process is safe. */
@@ -86,8 +85,6 @@ private:
 		exitStatus_ = exitStatus;
 		exitCode_ = exitCode;
 	}
-
-	ProcessManager processManager_;
 
 	Process proc_;
 	enum Process::ExitStatus exitStatus_;

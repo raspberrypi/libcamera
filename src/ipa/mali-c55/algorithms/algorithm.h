@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2024, Ideas On Board
  *
- * algorithm.h - Mali-C55 control algorithm interface
+ * Mali-C55 control algorithm interface
  */
 
 #pragma once

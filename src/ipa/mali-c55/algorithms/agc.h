@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2023, Ideas on Board Oy
  *
- * agc.h - Mali C55 AGC/AEC mean-based control algorithm
+ * Mali C55 AGC/AEC mean-based control algorithm
  */
 
 #pragma once

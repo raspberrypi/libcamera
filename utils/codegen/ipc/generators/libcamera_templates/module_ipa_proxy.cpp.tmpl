@@ -61,15 +61,16 @@ namespace {{ns}} {
 			return;
 		}
 
-		ipc_ = std::make_unique<IPCPipeUnixSocket>(ipam->path().c_str(),
-							   proxyWorkerPath.c_str());
-		if (!ipc_->isConnected()) {
+		auto ipc = std::make_unique<IPCPipeUnixSocket>(ipam->path().c_str(),
+							       proxyWorkerPath.c_str());
+		if (!ipc->isConnected()) {
 			LOG(IPAProxy, Error) << "Failed to create IPCPipe";
 			return;
 		}
 
-		ipc_->recv.connect(this, &{{proxy_name}}::recvMessage);
+		ipc->recv.connect(this, &{{proxy_name}}::recvMessage);
 
+		ipc_ = std::move(ipc);
 		valid_ = true;
 		return;
 	}
@@ -96,7 +97,7 @@ namespace {{ns}} {
 
 {{proxy_name}}::~{{proxy_name}}()
 {
-	if (isolate_) {
+	if (ipc_) {
 		IPCMessage::Header header =
 			{ static_cast<uint32_t>({{cmd_enum_name}}::Exit), seq_++ };
 		IPCMessage msg(header);

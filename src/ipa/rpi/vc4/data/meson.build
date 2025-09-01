@@ -8,8 +8,10 @@ conf_files = files([
     'imx296.json',
     'imx296_mono.json',
     'imx327.json',
+    'imx335.json',
     'imx378.json',
     'imx415.json',
+    'imx415_b0569.json',
     'imx462.json',
     'imx477.json',
     'imx477_noir.json',
@@ -27,6 +29,8 @@ conf_files = files([
     'ov9281_mono.json',
     'se327m12.json',
     'uncalibrated.json',
+    'vd56g3.json',
+    'vd56g3_mono.json',
 ])
 
 install_data(conf_files,

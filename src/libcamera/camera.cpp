@@ -1131,7 +1131,8 @@ std::unique_ptr<CameraConfiguration> Camera::generateConfiguration(Span<const St
 		return nullptr;
 
 	std::unique_ptr<CameraConfiguration> config =
-		d->pipe_->generateConfiguration(this, roles);
+		d->pipe_->invokeMethod(&PipelineHandler::generateConfiguration,
+				       ConnectionTypeBlocking, this, roles);
 	if (!config) {
 		LOG(Camera, Debug)
 			<< "Pipeline handler failed to generate configuration";

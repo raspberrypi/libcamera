@@ -90,7 +90,7 @@ The optional `category <Log categories_>`__ is a string matching the categories
 defined by each file in the source base using the logging infrastructure. It
 can include a wildcard ('*') character at the end to match multiple categories.
 
-For more information refer to the `API documentation <https://libcamera.org/api-html/log_8h.html#details>`__.
+For more information refer to the :doxy-int:`API documentation <log.h>`.
 
 Examples:
 

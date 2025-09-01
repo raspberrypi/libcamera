@@ -68,9 +68,7 @@ Camera Manager
   Each application's instance of the Camera Manager ensures that only a single
   application can take control of a camera device at once.
 
-  Read the `Camera Manager API`_ documentation for more details.
-
-.. _Camera Manager API: https://libcamera.org/api-html/classlibcamera_1_1CameraManager.html
+  Read the :doxy-pub:`CameraManager` API documentation for more details.
 
 Camera Device
   The Camera class represents a single item of camera hardware that is capable
@@ -85,9 +83,7 @@ Camera Device
   object that all other API operations interact with from configuration to
   capture.
 
-  Read the `Camera API`_ documentation for more details.
-
-.. _Camera API: https://libcamera.org/api-html/classlibcamera_1_1Camera.html
+  Read the :doxy-pub:`Camera` API documentation for more details.
 
 Pipeline Handler
   The Pipeline Handler manages the complex pipelines exposed by the kernel
@@ -107,10 +103,9 @@ Pipeline Handler
   they detect and support on the running system, and are responsible for
   managing the interactions with a camera device.
 
-  More details can be found in the `PipelineHandler API`_ documentation, and the
+  More details can be found in the :doxy-int:`PipelineHandler` API
+  documentation, and the
   :doc:`Pipeline Handler Writers Guide <guides/pipeline-handler>`.
-
-.. _PipelineHandler API: https://libcamera.org/api-html/classlibcamera_1_1PipelineHandler.html
 
 Image Processing Algorithms
   Together with the hardware image processing and hardware statistics

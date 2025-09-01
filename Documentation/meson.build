@@ -81,16 +81,16 @@ if doxygen.found() and dot.found()
                                  '@INPUT@',
                              ])
 
-    custom_target('doxygen-public',
-                  input : [
-                      doxyfile,
-                      doxyfile_common,
-                  ],
-                  output : 'api-html',
-                  command : [doxygen, doxyfile],
-                  install : true,
-                  install_dir : doc_install_dir,
-                  install_tag : 'doc')
+    doxygen_public = custom_target('doxygen-public',
+                                   input : [
+                                       doxyfile,
+                                       doxyfile_common,
+                                   ],
+                                   output : 'api-html',
+                                   command : [doxygen, doxyfile],
+                                   install : true,
+                                   install_dir : doc_install_dir,
+                                   install_tag : 'doc')
 
     # This is the internal documentation, which hard-codes a list of directories
     # to parse in its doxyfile.
@@ -99,18 +99,18 @@ if doxygen.found() and dot.found()
                               output : 'Doxyfile-internal',
                               configuration : cdata)
 
-    custom_target('doxygen-internal',
-                  input : [
-                      doxyfile,
-                      doxyfile_common,
-                      doxygen_public_input,
-                      doxygen_internal_input,
-                  ],
-                  output : 'internal-api-html',
-                  command : [doxygen, doxyfile],
-                  install : true,
-                  install_dir : doc_install_dir,
-                  install_tag : 'doc-internal')
+    doxygen_internal = custom_target('doxygen-internal',
+                                     input : [
+                                         doxyfile,
+                                         doxyfile_common,
+                                         doxygen_public_input,
+                                         doxygen_internal_input,
+                                     ],
+                                     output : 'internal-api-html',
+                                     command : [doxygen, doxyfile],
+                                     install : true,
+                                     install_dir : doc_install_dir,
+                                     install_tag : 'doc-internal')
 endif
 
 #
@@ -121,11 +121,39 @@ sphinx = find_program('sphinx-build-3', 'sphinx-build',
                       required : get_option('documentation'))
 
 if sphinx.found()
+    # Many distributions do not provide a recent-enough version of the doxylink
+    # module. This results in a build error with a cryptic message. Check the
+    # version manually and print clear error messages.
+    mod = 'sphinxcontrib.doxylink'
+    min_version = '>=1.6.1'
+    version = run_command('python3', '-c',
+                          'import @0@ ; print(@0@.__version__)'.format(mod),
+                          check : false).stdout().strip()
+
+    if version == ''
+        error('@0@ module not found'.format(mod))
+    endif
+
+    if not version.version_compare(min_version)
+        error('@0@ module v@1@ is too old, @2@ is needed'
+              .format(mod, version, min_version))
+    endif
+
+    sphinx_conf = configure_file(input : 'conf.py.in',
+                                 output : 'conf.py',
+                                 configuration : {
+                                    'THEME_DIR': meson.current_source_dir(),
+                                    'TOP_BUILDDIR': meson.project_build_root(),
+                                 })
+
+    fs = import('fs')
+    sphinx_conf_dir = fs.parent(sphinx_conf)
+
     docs_sources = [
         'camera-sensor-model.rst',
         'code-of-conduct.rst',
         'coding-style.rst',
-        'conf.py',
+        sphinx_conf,
         'contributing.rst',
         'design/ae.rst',
         'documentation-contents.rst',
@@ -150,16 +178,23 @@ if sphinx.found()
 
     custom_target('documentation',
                   command : [sphinx, '-D', release, '-q', '-W', '-b', 'html',
+                             '-c', sphinx_conf_dir,
                              meson.current_source_dir(), '@OUTPUT@'],
                   input : docs_sources,
                   output : 'html',
                   build_by_default : true,
+                  depends : [
+                      doxygen_public,
+                      doxygen_internal,
+                  ],
                   install : true,
                   install_dir : doc_install_dir,
                   install_tag : 'doc')
 
     custom_target('documentation-linkcheck',
-                  command : [sphinx, '-W', '-b', 'linkcheck', meson.current_source_dir(), '@OUTPUT@'],
+                  command : [sphinx, '-W', '-b', 'linkcheck',
+                             '-c', sphinx_conf_dir,
+                             meson.current_source_dir(), '@OUTPUT@'],
                   build_always_stale : true,
                   input : docs_sources,
                   output : 'linkcheck')

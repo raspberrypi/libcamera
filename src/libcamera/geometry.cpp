@@ -53,7 +53,7 @@ namespace libcamera {
  * \brief Assemble and return a string describing the point
  * \return A string describing the point
  */
-const std::string Point::toString() const
+std::string Point::toString() const
 {
 	std::stringstream ss;
 	ss << *this;
@@ -133,7 +133,7 @@ std::ostream &operator<<(std::ostream &out, const Point &p)
  * \brief Assemble and return a string describing the size
  * \return A string describing the size
  */
-const std::string Size::toString() const
+std::string Size::toString() const
 {
 	std::stringstream ss;
 	ss << *this;
@@ -676,7 +676,7 @@ std::ostream &operator<<(std::ostream &out, const SizeRange &sr)
  * \brief Assemble and return a string describing the rectangle
  * \return A string describing the Rectangle
  */
-const std::string Rectangle::toString() const
+std::string Rectangle::toString() const
 {
 	std::stringstream ss;
 	ss << *this;

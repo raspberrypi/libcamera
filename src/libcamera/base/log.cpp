@@ -952,12 +952,10 @@ Loggable::~Loggable()
  *
  * \return A log message
  */
-LogMessage Loggable::_log(const LogCategory *category, LogSeverity severity,
+LogMessage Loggable::_log(const LogCategory &category, LogSeverity severity,
 			  const char *fileName, unsigned int line) const
 {
-	return LogMessage(fileName, line,
-			  category ? *category : LogCategory::defaultCategory(),
-			  severity, logPrefix());
+	return LogMessage(fileName, line, category, severity, logPrefix());
 }
 
 /**
@@ -972,12 +970,10 @@ LogMessage Loggable::_log(const LogCategory *category, LogSeverity severity,
  *
  * \return A log message
  */
-LogMessage _log(const LogCategory *category, LogSeverity severity,
+LogMessage _log(const LogCategory &category, LogSeverity severity,
 		const char *fileName, unsigned int line)
 {
-	return LogMessage(fileName, line,
-			  category ? *category : LogCategory::defaultCategory(),
-			  severity);
+	return LogMessage(fileName, line, category, severity);
 }
 
 /**

@@ -75,7 +75,7 @@ public:
 	const LogCategory &category() const { return category_; }
 	const std::string &fileInfo() const { return fileInfo_; }
 	const std::string &prefix() const { return prefix_; }
-	const std::string msg() const { return msgStream_.str(); }
+	std::string msg() const { return msgStream_.str(); }
 
 private:
 	LIBCAMERA_DISABLE_COPY_AND_MOVE(LogMessage)
@@ -96,12 +96,12 @@ public:
 protected:
 	virtual std::string logPrefix() const = 0;
 
-	LogMessage _log(const LogCategory *category, LogSeverity severity,
+	LogMessage _log(const LogCategory &category, LogSeverity severity,
 			const char *fileName = __builtin_FILE(),
 			unsigned int line = __builtin_LINE()) const;
 };
 
-LogMessage _log(const LogCategory *category, LogSeverity severity,
+LogMessage _log(const LogCategory &category, LogSeverity severity,
 		const char *fileName = __builtin_FILE(),
 		unsigned int line = __builtin_LINE());
 
@@ -109,9 +109,9 @@ LogMessage _log(const LogCategory *category, LogSeverity severity,
 #define _LOG_CATEGORY(name) logCategory##name
 
 #define _LOG1(severity) \
-	_log(nullptr, Log##severity).stream()
+	_log(LogCategory::defaultCategory(), Log##severity).stream()
 #define _LOG2(category, severity) \
-	_log(&_LOG_CATEGORY(category)(), Log##severity).stream()
+	_log(_LOG_CATEGORY(category)(), Log##severity).stream()
 
 /*
  * Expand the LOG() macro to _LOG1() or _LOG2() based on the number of

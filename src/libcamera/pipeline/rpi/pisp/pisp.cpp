@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2023, Raspberry Pi Ltd
  *
- * pisp.cpp - Pipeline handler for PiSP based Raspberry Pi devices
+ * Pipeline handler for PiSP based Raspberry Pi devices
  */
 
 #include <algorithm>

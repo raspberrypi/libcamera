@@ -2,8 +2,9 @@
 /*
  * Copyright (C) 2023, Raspberry Pi Ltd
  *
- * pisp.cpp - Raspberry Pi PiSP IPA
+ * Raspberry Pi PiSP IPA
  */
+
 #include <algorithm>
 #include <cmath>
 #include <mutex>

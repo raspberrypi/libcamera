@@ -93,11 +93,9 @@ bool Semaphore::tryAcquire(unsigned int n)
  */
 void Semaphore::release(unsigned int n)
 {
-	{
-		MutexLocker locker(mutex_);
-		available_ += n;
-	}
+	MutexLocker locker(mutex_);
 
+	available_ += n;
 	cv_.notify_all();
 }
 

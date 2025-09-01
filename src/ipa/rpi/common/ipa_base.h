@@ -144,6 +144,7 @@ private:
 	} flickerState_;
 
 	bool cnnEnableInputTensor_;
+	bool awbEnabled_;
 };
 
 } /* namespace ipa::RPi */

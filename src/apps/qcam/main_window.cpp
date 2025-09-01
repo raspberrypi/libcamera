@@ -333,6 +333,9 @@ int MainWindow::openCamera()
 
 void MainWindow::toggleCapture(bool start)
 {
+	if (!camera_)
+		return;
+
 	if (start) {
 		startCapture();
 		startStopAction_->setIcon(iconStop_);

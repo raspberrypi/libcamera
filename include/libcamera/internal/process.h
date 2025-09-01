@@ -7,12 +7,11 @@
 
 #pragma once
 
-#include <signal.h>
 #include <string>
-#include <vector>
 
 #include <libcamera/base/class.h>
 #include <libcamera/base/signal.h>
+#include <libcamera/base/span.h>
 #include <libcamera/base/unique_fd.h>
 
 namespace libcamera {
@@ -32,8 +31,8 @@ public:
 	~Process();
 
 	int start(const std::string &path,
-		  const std::vector<std::string> &args = std::vector<std::string>(),
-		  const std::vector<int> &fds = std::vector<int>());
+		  Span<const std::string> args = {},
+		  Span<const int> fds = {});
 
 	ExitStatus exitStatus() const { return exitStatus_; }
 	int exitCode() const { return exitCode_; }
@@ -45,43 +44,14 @@ public:
 private:
 	LIBCAMERA_DISABLE_COPY_AND_MOVE(Process)
 
-	void closeAllFdsExcept(const std::vector<int> &fds);
-	int isolate();
-	void died(int wstatus);
+	void onPidfdNotify();
 
 	pid_t pid_;
-	bool running_;
 	enum ExitStatus exitStatus_;
 	int exitCode_;
 
-	friend class ProcessManager;
-};
-
-class ProcessManager
-{
-public:
-	ProcessManager();
-	~ProcessManager();
-
-	void registerProcess(Process *proc);
-
-	static ProcessManager *instance();
-
-	int writePipe() const;
-
-	const struct sigaction &oldsa() const;
-
-private:
-	static ProcessManager *self_;
-
-	void sighandler();
-
-	std::list<Process *> processes_;
-
-	struct sigaction oldsa_;
-
-	EventNotifier *sigEvent_;
-	UniqueFD pipe_[2];
+	UniqueFD pidfd_;
+	std::unique_ptr<EventNotifier> pidfdNotify_;
 };
 
 } /* namespace libcamera */

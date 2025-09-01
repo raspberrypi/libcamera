@@ -37,7 +37,18 @@ int DenoiseConfig::read(const libcamera::YamlObject &params)
 	cdnEnable = params.contains("cdn");
 	if (cdnEnable) {
 		auto &cdnParams = params["cdn"];
-		cdnDeviation = cdnParams["deviation"].get<double>(120);
+		/*
+		 * For backwards compatibility with existing tuning files, interpret "deviation"
+		 * as giving the "no TDN" deviation, where present. But "deviation_no_tdn" takes
+		 * precedence when that's available.
+		 */
+		cdnDeviationNoTdn = cdnParams["deviation"].get<double>(150);
+		cdnDeviationNoTdn = cdnParams["deviation_no_tdn"].get<double>(cdnDeviationNoTdn);
+		/*
+		 * A third the value of the no TDN deviation is about right for with-TDN, if
+		 * the user hasn't specified otherwise.
+		 */
+		cdnDeviationWithTdn = cdnParams["deviation_with_tdn"].get<double>(cdnDeviationNoTdn / 3);
 		cdnStrength = cdnParams["strength"].get<double>(0.2);
 	}
 
@@ -48,13 +59,14 @@ int DenoiseConfig::read(const libcamera::YamlObject &params)
 		tdnThreshold = tdnParams["threshold"].get<double>(0.75);
 	} else if (sdnEnable) {
 		/*
-		 * If SDN is enabled but TDN isn't, overwrite all the SDN settings
+		 * If SDN is enabled but TDN isn't, overwrite all the SDN/CDN settings
 		 * with the "no TDN" versions. This makes it easier to enable or
 		 * disable TDN in the tuning file without editing all the other
 		 * parameters.
 		 */
 		sdnDeviation = sdnDeviation2 = sdnDeviationNoTdn;
 		sdnStrength = sdnStrengthNoTdn;
+		cdnDeviationWithTdn = cdnDeviationNoTdn;
 	}
 
 	return 0;
@@ -107,6 +119,7 @@ void Denoise::switchMode([[maybe_unused]] CameraMode const &cameraMode,
 	currentSdnDeviation_ = currentConfig_->sdnDeviationNoTdn;
 	currentSdnStrength_ = currentConfig_->sdnStrengthNoTdn;
 	currentSdnDeviation2_ = currentConfig_->sdnDeviationNoTdn;
+	currentCdnDeviation_ = currentConfig_->cdnDeviationNoTdn;
 }
 
 void Denoise::prepare(Metadata *imageMetadata)
@@ -159,8 +172,12 @@ void Denoise::prepare(Metadata *imageMetadata)
 
 	if (currentConfig_->cdnEnable && mode_ != DenoiseMode::ColourOff) {
 		struct CdnStatus cdn;
-		cdn.threshold = currentConfig_->cdnDeviation * noiseStatus.noiseSlope + noiseStatus.noiseConstant;
+		cdn.threshold = currentCdnDeviation_ * noiseStatus.noiseSlope + noiseStatus.noiseConstant;
 		cdn.strength = currentConfig_->cdnStrength;
+		/* For the next frame, we back off the CDN deviation as TDN ramps up. */
+		double f = currentConfig_->sdnTdnBackoff;
+		currentCdnDeviation_ = f * currentCdnDeviation_ + (1 - f) * currentConfig_->cdnDeviationWithTdn;
+
 		imageMetadata->set("cdn.status", cdn);
 		LOG(RPiDenoise, Debug)
 			<< "programmed cdn threshold " << cdn.threshold

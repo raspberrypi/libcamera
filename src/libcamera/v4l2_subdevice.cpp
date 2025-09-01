@@ -923,7 +923,7 @@ const MediaBusFormatInfo &MediaBusFormatInfo::info(uint32_t code)
  * \brief Assemble and return a string describing the format
  * \return A string describing the V4L2SubdeviceFormat
  */
-const std::string V4L2SubdeviceFormat::toString() const
+std::string V4L2SubdeviceFormat::toString() const
 {
 	std::stringstream ss;
 	ss << *this;

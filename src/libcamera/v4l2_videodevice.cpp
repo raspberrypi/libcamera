@@ -429,7 +429,7 @@ bool V4L2BufferCache::Entry::operator==(const FrameBuffer &buffer) const
  * \brief Assemble and return a string describing the format
  * \return A string describing the V4L2DeviceFormat
  */
-const std::string V4L2DeviceFormat::toString() const
+std::string V4L2DeviceFormat::toString() const
 {
 	std::stringstream ss;
 	ss << *this;
@@ -446,7 +446,8 @@ const std::string V4L2DeviceFormat::toString() const
  */
 std::ostream &operator<<(std::ostream &out, const V4L2DeviceFormat &f)
 {
-	out << f.size << "-" << f.fourcc;
+	out << f.size << "-" << f.fourcc << "/"
+	    << ColorSpace::toString(f.colorSpace);
 	return out;
 }
 
@@ -1675,6 +1676,171 @@ int V4L2VideoDevice::queueBuffer(FrameBuffer *buffer)
 }
 
 /**
+ * \brief Queue a buffer to the video device if possible
+ * \param[in] buffer The buffer to be queued
+ *
+ * For capture video devices the \a buffer will be filled with data by the
+ * device. For output video devices the \a buffer shall contain valid data and
+ * will be processed by the device. Once the device has finished processing the
+ * buffer, it will be available for dequeue.
+ *
+ * The best available V4L2 buffer is picked for \a buffer using the V4L2 buffer
+ * cache.
+ *
+ * Note that queueToDevice() will fail if the device is in the process of being
+ * stopped from a streaming state through streamOff().
+ *
+ * \return 0 on success or a negative error code otherwise
+ */
+int V4L2VideoDevice::queueToDevice(FrameBuffer *buffer)
+{
+	struct v4l2_plane v4l2Planes[VIDEO_MAX_PLANES] = {};
+	struct v4l2_buffer buf = {};
+	int ret;
+
+	/*
+	 * Pipeline handlers should not requeue buffers after releasing the
+	 * buffers on the device. Any occurence of this error should be fixed
+	 * in the pipeline handler directly.
+	 */
+	if (!cache_) {
+		LOG(V4L2, Fatal) << "No BufferCache available to queue.";
+		return -ENOENT;
+	}
+
+	ret = cache_->get(*buffer);
+	if (ret < 0)
+		return ret;
+
+	auto guard = utils::scope_exit{ [&]() { cache_->put(buf.index); } };
+
+	buf.index = ret;
+	buf.type = bufferType_;
+	buf.memory = memoryType_;
+	buf.field = V4L2_FIELD_NONE;
+
+	bool multiPlanar = V4L2_TYPE_IS_MULTIPLANAR(buf.type);
+	const std::vector<FrameBuffer::Plane> &planes = buffer->planes();
+	const unsigned int numV4l2Planes = format_.planesCount;
+
+	/*
+	 * Ensure that the frame buffer has enough planes, and that they're
+	 * contiguous if the V4L2 format requires them to be.
+	 */
+	if (planes.size() < numV4l2Planes) {
+		LOG(V4L2, Error) << "Frame buffer has too few planes";
+		return -EINVAL;
+	}
+
+	if (planes.size() != numV4l2Planes && !buffer->_d()->isContiguous()) {
+		LOG(V4L2, Error) << "Device format requires contiguous buffer";
+		return -EINVAL;
+	}
+
+	if (buf.memory == V4L2_MEMORY_DMABUF) {
+		if (multiPlanar) {
+			for (unsigned int p = 0; p < numV4l2Planes; ++p)
+				v4l2Planes[p].m.fd = planes[p].fd.get();
+		} else {
+			buf.m.fd = planes[0].fd.get();
+		}
+	}
+
+	if (multiPlanar) {
+		buf.length = numV4l2Planes;
+		buf.m.planes = v4l2Planes;
+	}
+
+	if (V4L2_TYPE_IS_OUTPUT(buf.type)) {
+		const FrameMetadata &metadata = buffer->metadata();
+
+		for (const auto &plane : metadata.planes()) {
+			if (!plane.bytesused)
+				LOG(V4L2, Warning) << "byteused == 0 is deprecated";
+		}
+
+		if (numV4l2Planes != planes.size()) {
+			/*
+			 * If we have a multi-planar buffer with a V4L2
+			 * single-planar format, coalesce all planes. The length
+			 * and number of bytes used may only differ in the last
+			 * plane as any other situation can't be represented.
+			 */
+			unsigned int bytesused = 0;
+			unsigned int length = 0;
+
+			for (auto [i, plane] : utils::enumerate(planes)) {
+				bytesused += metadata.planes()[i].bytesused;
+				length += plane.length;
+
+				if (i != planes.size() - 1 && bytesused != length) {
+					LOG(V4L2, Error)
+						<< "Holes in multi-planar buffer not supported";
+					return -EINVAL;
+				}
+			}
+
+			if (multiPlanar) {
+				v4l2Planes[0].bytesused = bytesused;
+				v4l2Planes[0].length = length;
+			} else {
+				buf.bytesused = bytesused;
+				buf.length = length;
+			}
+		} else if (multiPlanar) {
+			/*
+			 * If we use the multi-planar API, fill in the planes.
+			 * The number of planes in the frame buffer and in the
+			 * V4L2 buffer is guaranteed to be equal at this point.
+			 */
+			for (auto [i, plane] : utils::enumerate(planes)) {
+				v4l2Planes[i].bytesused = metadata.planes()[i].bytesused;
+				v4l2Planes[i].length = plane.length;
+			}
+		} else {
+			/*
+			 * Single-planar API with a single plane in the buffer
+			 * is trivial to handle.
+			 */
+			buf.bytesused = metadata.planes()[0].bytesused;
+			buf.length = planes[0].length;
+		}
+
+		/*
+		 * Timestamps are to be supplied if the device is a mem-to-mem
+		 * device. The drivers will have V4L2_BUF_FLAG_TIMESTAMP_COPY
+		 * set hence these timestamps will be copied from the output
+		 * buffers to capture buffers. If the device is not mem-to-mem,
+		 * there is no harm in setting the timestamps as they will be
+		 * ignored (and over-written).
+		 */
+		buf.timestamp.tv_sec = metadata.timestamp / 1000000000;
+		buf.timestamp.tv_usec = (metadata.timestamp / 1000) % 1000000;
+	}
+
+	LOG(V4L2, Debug) << "Queueing buffer " << buf.index;
+
+	ret = ioctl(VIDIOC_QBUF, &buf);
+	if (ret < 0) {
+		LOG(V4L2, Error)
+			<< "Failed to queue buffer " << buf.index << ": "
+			<< strerror(-ret);
+		return ret;
+	}
+
+	if (queuedBuffers_.empty()) {
+		fdBufferNotifier_->setEnabled(true);
+		if (watchdogDuration_)
+			watchdog_.start(std::chrono::duration_cast<std::chrono::milliseconds>(watchdogDuration_));
+	}
+
+	queuedBuffers_[buf.index] = buffer;
+
+	guard.release();
+	return 0;
+}
+
+/**
  * \brief Slot to handle completed buffer events from the V4L2 video device
  *
  * When this slot is called, a Buffer has become available from the device, and
@@ -1806,9 +1972,10 @@ FrameBuffer *V4L2VideoDevice::dequeueBuffer()
 	}
 	metadata.sequence -= firstFrame_.value();
 
+	const std::vector<FrameBuffer::Plane> &framebufferPlanes = buffer->planes();
 	unsigned int numV4l2Planes = multiPlanar ? buf.length : 1;
 
-	if (numV4l2Planes != buffer->planes().size()) {
+	if (numV4l2Planes != framebufferPlanes.size()) {
 		/*
 		 * If we have a multi-planar buffer with a V4L2
 		 * single-planar format, split the V4L2 buffer across
@@ -1818,7 +1985,7 @@ FrameBuffer *V4L2VideoDevice::dequeueBuffer()
 		if (numV4l2Planes != 1) {
 			LOG(V4L2, Error)
 				<< "Invalid number of planes (" << numV4l2Planes
-				<< " != " << buffer->planes().size() << ")";
+				<< " != " << framebufferPlanes.size() << ")";
 
 			metadata.status = FrameMetadata::FrameError;
 			return buffer;
@@ -1835,12 +2002,12 @@ FrameBuffer *V4L2VideoDevice::dequeueBuffer()
 				       : buf.bytesused;
 		unsigned int remaining = bytesused;
 
-		for (auto [i, plane] : utils::enumerate(buffer->planes())) {
+		for (auto [i, plane] : utils::enumerate(framebufferPlanes)) {
 			if (!remaining) {
 				LOG(V4L2, Error)
 					<< "Dequeued buffer (" << bytesused
 					<< " bytes) too small for plane lengths "
-					<< utils::join(buffer->planes(), "/",
+					<< utils::join(framebufferPlanes, "/",
 						       [](const FrameBuffer::Plane &p) {
 							       return p.length;
 						       });
@@ -1866,176 +2033,6 @@ FrameBuffer *V4L2VideoDevice::dequeueBuffer()
 	}
 
 	return buffer;
-}
-
-/**
- * \brief Queue a buffer to the video device if possible
- * \param[in] buffer The buffer to be queued
- *
- * For capture video devices the \a buffer will be filled with data by the
- * device. For output video devices the \a buffer shall contain valid data and
- * will be processed by the device. Once the device has finished processing the
- * buffer, it will be available for dequeue.
- *
- * The best available V4L2 buffer is picked for \a buffer using the V4L2 buffer
- * cache.
- *
- * Note that queueToDevice() will fail if the device is in the process of being
- * stopped from a streaming state through streamOff().
- *
- * \return 0 on success or a negative error code otherwise
- */
-int V4L2VideoDevice::queueToDevice(FrameBuffer *buffer)
-{
-	struct v4l2_plane v4l2Planes[VIDEO_MAX_PLANES] = {};
-	struct v4l2_buffer buf = {};
-	int ret;
-
-	/*
-	 * Pipeline handlers should not requeue buffers after releasing the
-	 * buffers on the device. Any occurence of this error should be fixed
-	 * in the pipeline handler directly.
-	 */
-	if (!cache_) {
-		LOG(V4L2, Fatal) << "No BufferCache available to queue.";
-		return -ENOENT;
-	}
-
-	ret = cache_->get(*buffer);
-	if (ret < 0)
-		return ret;
-
-	buf.index = ret;
-	buf.type = bufferType_;
-	buf.memory = memoryType_;
-	buf.field = V4L2_FIELD_NONE;
-
-	bool multiPlanar = V4L2_TYPE_IS_MULTIPLANAR(buf.type);
-	const std::vector<FrameBuffer::Plane> &planes = buffer->planes();
-	const unsigned int numV4l2Planes = format_.planesCount;
-
-	/*
-	 * Ensure that the frame buffer has enough planes, and that they're
-	 * contiguous if the V4L2 format requires them to be.
-	 */
-	if (planes.size() < numV4l2Planes) {
-		LOG(V4L2, Error) << "Frame buffer has too few planes";
-		cache_->put(buf.index);
-
-		return -EINVAL;
-	}
-
-	if (planes.size() != numV4l2Planes && !buffer->_d()->isContiguous()) {
-		LOG(V4L2, Error) << "Device format requires contiguous buffer";
-		cache_->put(buf.index);
-
-		return -EINVAL;
-	}
-
-	if (buf.memory == V4L2_MEMORY_DMABUF) {
-		if (multiPlanar) {
-			for (unsigned int p = 0; p < numV4l2Planes; ++p)
-				v4l2Planes[p].m.fd = planes[p].fd.get();
-		} else {
-			buf.m.fd = planes[0].fd.get();
-		}
-	}
-
-	if (multiPlanar) {
-		buf.length = numV4l2Planes;
-		buf.m.planes = v4l2Planes;
-	}
-
-	if (V4L2_TYPE_IS_OUTPUT(buf.type)) {
-		const FrameMetadata &metadata = buffer->metadata();
-
-		for (const auto &plane : metadata.planes()) {
-			if (!plane.bytesused)
-				LOG(V4L2, Warning) << "byteused == 0 is deprecated";
-		}
-
-		if (numV4l2Planes != planes.size()) {
-			/*
-			 * If we have a multi-planar buffer with a V4L2
-			 * single-planar format, coalesce all planes. The length
-			 * and number of bytes used may only differ in the last
-			 * plane as any other situation can't be represented.
-			 */
-			unsigned int bytesused = 0;
-			unsigned int length = 0;
-
-			for (auto [i, plane] : utils::enumerate(planes)) {
-				bytesused += metadata.planes()[i].bytesused;
-				length += plane.length;
-
-				if (i != planes.size() - 1 && bytesused != length) {
-					LOG(V4L2, Error)
-						<< "Holes in multi-planar buffer not supported";
-					cache_->put(buf.index);
-
-					return -EINVAL;
-				}
-			}
-
-			if (multiPlanar) {
-				v4l2Planes[0].bytesused = bytesused;
-				v4l2Planes[0].length = length;
-			} else {
-				buf.bytesused = bytesused;
-				buf.length = length;
-			}
-		} else if (multiPlanar) {
-			/*
-			 * If we use the multi-planar API, fill in the planes.
-			 * The number of planes in the frame buffer and in the
-			 * V4L2 buffer is guaranteed to be equal at this point.
-			 */
-			for (auto [i, plane] : utils::enumerate(planes)) {
-				v4l2Planes[i].bytesused = metadata.planes()[i].bytesused;
-				v4l2Planes[i].length = plane.length;
-			}
-		} else {
-			/*
-			 * Single-planar API with a single plane in the buffer
-			 * is trivial to handle.
-			 */
-			buf.bytesused = metadata.planes()[0].bytesused;
-			buf.length = planes[0].length;
-		}
-
-		/*
-		 * Timestamps are to be supplied if the device is a mem-to-mem
-		 * device. The drivers will have V4L2_BUF_FLAG_TIMESTAMP_COPY
-		 * set hence these timestamps will be copied from the output
-		 * buffers to capture buffers. If the device is not mem-to-mem,
-		 * there is no harm in setting the timestamps as they will be
-		 * ignored (and over-written).
-		 */
-		buf.timestamp.tv_sec = metadata.timestamp / 1000000000;
-		buf.timestamp.tv_usec = (metadata.timestamp / 1000) % 1000000;
-	}
-
-	LOG(V4L2, Debug) << "Queueing buffer " << buf.index;
-
-	ret = ioctl(VIDIOC_QBUF, &buf);
-	if (ret < 0) {
-		LOG(V4L2, Error)
-			<< "Failed to queue buffer " << buf.index << ": "
-			<< strerror(-ret);
-		cache_->put(buf.index);
-
-		return ret;
-	}
-
-	if (queuedBuffers_.empty()) {
-		fdBufferNotifier_->setEnabled(true);
-		if (watchdogDuration_)
-			watchdog_.start(std::chrono::duration_cast<std::chrono::milliseconds>(watchdogDuration_));
-	}
-
-	queuedBuffers_[buf.index] = buffer;
-
-	return 0;
 }
 
 /**

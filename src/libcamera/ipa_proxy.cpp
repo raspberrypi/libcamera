@@ -25,6 +25,78 @@ namespace libcamera {
 
 LOG_DEFINE_CATEGORY(IPAProxy)
 
+namespace {
+
+std::string ipaConfigurationFile(const std::string &ipaName, const std::string &name)
+{
+	/*
+	 * Start with any user override through the module-specific environment
+	 * variable. Use the name of the IPA module up to the first '/' to
+	 * construct the variable name.
+	 */
+	std::string ipaEnvName = ipaName.substr(0, ipaName.find('/'));
+	std::transform(ipaEnvName.begin(), ipaEnvName.end(), ipaEnvName.begin(),
+		       [](unsigned char c) { return std::toupper(c); });
+	ipaEnvName = "LIBCAMERA_" + ipaEnvName + "_TUNING_FILE";
+
+	char const *configFromEnv = utils::secure_getenv(ipaEnvName.c_str());
+	if (configFromEnv && *configFromEnv != '\0')
+		return { configFromEnv };
+
+	struct stat statbuf;
+	int ret;
+
+	/*
+	 * Check the directory pointed to by the IPA config path environment
+	 * variable next.
+	 */
+	const char *confPaths = utils::secure_getenv("LIBCAMERA_IPA_CONFIG_PATH");
+	if (confPaths) {
+		for (const auto &dir : utils::split(confPaths, ":")) {
+			if (dir.empty())
+				continue;
+
+			std::string confPath = dir + "/" + ipaName + "/" + name;
+			ret = stat(confPath.c_str(), &statbuf);
+			if (ret == 0 && (statbuf.st_mode & S_IFMT) == S_IFREG)
+				return confPath;
+		}
+	}
+
+	std::string root = utils::libcameraSourcePath();
+	if (!root.empty()) {
+		/*
+		 * When libcamera is used before it is installed, load
+		 * configuration files from the source directory. The
+		 * configuration files are then located in the 'data'
+		 * subdirectory of the corresponding IPA module.
+		 */
+		std::string ipaConfDir = root + "src/ipa/" + ipaName + "/data";
+
+		LOG(IPAProxy, Info)
+			<< "libcamera is not installed. Loading IPA configuration from '"
+			<< ipaConfDir << "'";
+
+		std::string confPath = ipaConfDir + "/" + name;
+		ret = stat(confPath.c_str(), &statbuf);
+		if (ret == 0 && (statbuf.st_mode & S_IFMT) == S_IFREG)
+			return confPath;
+
+	} else {
+		/* Else look in the system locations. */
+		for (const auto &dir : utils::split(IPA_CONFIG_DIR, ":")) {
+			std::string confPath = dir + "/" + ipaName + "/" + name;
+			ret = stat(confPath.c_str(), &statbuf);
+			if (ret == 0 && (statbuf.st_mode & S_IFMT) == S_IFREG)
+				return confPath;
+		}
+	}
+
+	return {};
+}
+
+} /* namespace */
+
 /**
  * \class IPAProxy
  * \brief IPA Proxy
@@ -103,68 +175,10 @@ std::string IPAProxy::configurationFile(const std::string &name,
 	 * has been validated when loading the module.
 	 */
 	const std::string ipaName = ipam_->info().name;
-
-	/*
-	 * Start with any user override through the module-specific environment
-	 * variable. Use the name of the IPA module up to the first '/' to
-	 * construct the variable name.
-	 */
-	std::string ipaEnvName = ipaName.substr(0, ipaName.find('/'));
-	std::transform(ipaEnvName.begin(), ipaEnvName.end(), ipaEnvName.begin(),
-		       [](unsigned char c) { return std::toupper(c); });
-	ipaEnvName = "LIBCAMERA_" + ipaEnvName + "_TUNING_FILE";
-
-	char const *configFromEnv = utils::secure_getenv(ipaEnvName.c_str());
-	if (configFromEnv && *configFromEnv != '\0')
-		return { configFromEnv };
-
-	struct stat statbuf;
-	int ret;
-
-	/*
-	 * Check the directory pointed to by the IPA config path environment
-	 * variable next.
-	 */
-	const char *confPaths = utils::secure_getenv("LIBCAMERA_IPA_CONFIG_PATH");
-	if (confPaths) {
-		for (const auto &dir : utils::split(confPaths, ":")) {
-			if (dir.empty())
-				continue;
-
-			std::string confPath = dir + "/" + ipaName + "/" + name;
-			ret = stat(confPath.c_str(), &statbuf);
-			if (ret == 0 && (statbuf.st_mode & S_IFMT) == S_IFREG)
-				return confPath;
-		}
-	}
-
-	std::string root = utils::libcameraSourcePath();
-	if (!root.empty()) {
-		/*
-		 * When libcamera is used before it is installed, load
-		 * configuration files from the source directory. The
-		 * configuration files are then located in the 'data'
-		 * subdirectory of the corresponding IPA module.
-		 */
-		std::string ipaConfDir = root + "src/ipa/" + ipaName + "/data";
-
-		LOG(IPAProxy, Info)
-			<< "libcamera is not installed. Loading IPA configuration from '"
-			<< ipaConfDir << "'";
-
-		std::string confPath = ipaConfDir + "/" + name;
-		ret = stat(confPath.c_str(), &statbuf);
-		if (ret == 0 && (statbuf.st_mode & S_IFMT) == S_IFREG)
-			return confPath;
-
-	} else {
-		/* Else look in the system locations. */
-		for (const auto &dir : utils::split(IPA_CONFIG_DIR, ":")) {
-			std::string confPath = dir + "/" + ipaName + "/" + name;
-			ret = stat(confPath.c_str(), &statbuf);
-			if (ret == 0 && (statbuf.st_mode & S_IFMT) == S_IFREG)
-				return confPath;
-		}
+	std::string confPath = ipaConfigurationFile(ipaName, name);
+	if (!confPath.empty()) {
+		LOG(IPAProxy, Info) << "Using tuning file " << confPath;
+		return confPath;
 	}
 
 	if (fallbackName.empty()) {
@@ -174,11 +188,12 @@ std::string IPAProxy::configurationFile(const std::string &name,
 		return std::string();
 	}
 
+	confPath = ipaConfigurationFile(ipaName, fallbackName);
 	LOG(IPAProxy, Warning)
 		<< "Configuration file '" << name
 		<< "' not found for IPA module '" << ipaName
-		<< "', falling back to '" << fallbackName << "'";
-	return configurationFile(fallbackName);
+		<< "', falling back to '" << confPath << "'";
+	return confPath;
 }
 
 /**

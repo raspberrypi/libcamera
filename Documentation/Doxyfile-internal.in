@@ -3,6 +3,8 @@
 @INCLUDE_PATH          = @TOP_BUILDDIR@/Documentation
 @INCLUDE               = Doxyfile-common
 
+GENERATE_TAGFILE       = @TOP_BUILDDIR@/Documentation/internal-api-html/tagfile.xml
+
 HIDE_UNDOC_CLASSES     = NO
 HIDE_UNDOC_MEMBERS     = NO
 HTML_OUTPUT            = internal-api-html

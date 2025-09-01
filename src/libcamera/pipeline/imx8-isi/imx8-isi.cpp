@@ -1039,7 +1039,7 @@ bool PipelineHandlerISI::match(DeviceEnumerator *enumerator)
 	for (MediaPad *pad : crossbar_->entity()->pads()) {
 		unsigned int sink = numSinks;
 
-		if (!(pad->flags() & MEDIA_PAD_FL_SINK) || pad->links().empty())
+		if (!(pad->flags() & MEDIA_PAD_FL_SINK))
 			continue;
 
 		/*
@@ -1047,6 +1047,9 @@ bool PipelineHandlerISI::match(DeviceEnumerator *enumerator)
 		 * routing and format for this camera.
 		 */
 		numSinks++;
+
+		if (pad->links().empty())
+			continue;
 
 		MediaEntity *csi = pad->links()[0]->source()->entity();
 		if (csi->pads().size() != 2) {
@@ -1082,6 +1085,7 @@ bool PipelineHandlerISI::match(DeviceEnumerator *enumerator)
 		LOG(ISI, Debug)
 			<< "cam" << numCameras
 			<< " streams " << data->streams_.size()
+			<< " sink " << data->xbarSink_
 			<< " offset " << data->xbarSourceOffset_;
 
 		ret = data->init();

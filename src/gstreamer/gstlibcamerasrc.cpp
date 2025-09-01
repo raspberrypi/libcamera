@@ -617,8 +617,13 @@ gst_libcamera_src_negotiate(GstLibcameraSrc *self)
 	}
 
 	/* Validate the configuration. */
-	if (state->config_->validate() == CameraConfiguration::Invalid)
+	CameraConfiguration::Status status = state->config_->validate();
+	if (status == CameraConfiguration::Invalid)
 		return false;
+	else if (status == CameraConfiguration::Adjusted)
+		GST_ELEMENT_INFO(self, RESOURCE, SETTINGS,
+				 ("Configuration was adjusted"),
+				 ("CameraConfiguration::validate() returned CameraConfiguration::Adjusted"));
 
 	int ret = state->cam_->configure(state->config_.get());
 	if (ret) {
@@ -642,6 +647,10 @@ gst_libcamera_src_negotiate(GstLibcameraSrc *self)
 
 		g_autoptr(GstCaps) caps = gst_libcamera_stream_configuration_to_caps(stream_cfg, transfer[i]);
 		gst_libcamera_framerate_to_caps(caps, element_caps);
+
+		if (status == CameraConfiguration::Adjusted &&
+		    !gst_pad_peer_query_accept_caps(srcpad, caps))
+			return false;
 
 		if (!gst_pad_push_event(srcpad, gst_event_new_caps(caps)))
 			return false;
@@ -730,7 +739,8 @@ gst_libcamera_src_task_run(gpointer user_data)
 		if (gst_pad_check_reconfigure(srcpad)) {
 			/* Check if the caps even need changing. */
 			g_autoptr(GstCaps) caps = gst_pad_get_current_caps(srcpad);
-			if (!gst_pad_peer_query_accept_caps(srcpad, caps)) {
+			g_autoptr(GstCaps) peercaps = gst_pad_peer_query_caps(srcpad, caps);
+			if (gst_caps_is_empty(peercaps)) {
 				reconfigure = true;
 				break;
 			}

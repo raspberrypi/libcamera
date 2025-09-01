@@ -101,8 +101,8 @@ public:
 	int loadIPA();
 
 	/* Deflect these functionalities to either TPG or CameraSensor. */
-	const std::vector<Size> sizes(unsigned int mbusCode) const;
-	const Size resolution() const;
+	std::vector<Size> sizes(unsigned int mbusCode) const;
+	Size resolution() const;
 
 	int pixfmtToMbusCode(const PixelFormat &pixFmt) const;
 	const PixelFormat &bestRawFormat() const;
@@ -195,7 +195,7 @@ void MaliC55CameraData::setSensorControls(const ControlList &sensorControls)
 	delayedCtrls_->push(sensorControls);
 }
 
-const std::vector<Size> MaliC55CameraData::sizes(unsigned int mbusCode) const
+std::vector<Size> MaliC55CameraData::sizes(unsigned int mbusCode) const
 {
 	if (sensor_)
 		return sensor_->sizes(mbusCode);
@@ -218,7 +218,7 @@ const std::vector<Size> MaliC55CameraData::sizes(unsigned int mbusCode) const
 	return sizes;
 }
 
-const Size MaliC55CameraData::resolution() const
+Size MaliC55CameraData::resolution() const
 {
 	if (sensor_)
 		return sensor_->resolution();

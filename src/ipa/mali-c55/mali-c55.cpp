@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2023, Ideas on Board Oy
  *
- * mali-c55.cpp - Mali-C55 ISP image processing algorithms
+ * Mali-C55 ISP image processing algorithms
  */
 
 #include <map>

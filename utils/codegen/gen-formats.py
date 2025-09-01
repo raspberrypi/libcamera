@@ -59,13 +59,12 @@ def generate_formats(formats, drm_fourcc):
     for format in formats:
         name, format = format.popitem()
         fourcc = drm_fourcc.fourcc(format['fourcc'])
-        if format.get('big-endian'):
-            fourcc += '| DRM_FORMAT_BIG_ENDIAN'
 
         data = {
             'name': name,
             'fourcc': fourcc,
             'mod': '0, 0',
+            'big_endian': format.get('big_endian'),
         }
 
         mod = format.get('mod')

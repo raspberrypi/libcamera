@@ -33,10 +33,12 @@ constexpr uint64_t __mod(unsigned int vendor, unsigned int mod)
 	       (static_cast<uint64_t>(mod) << 0);
 }
 
+constexpr uint32_t kDrmFormatBigEndian = uint32_t(1) << 31; /* DRM_FORMAT_BIG_ENDIAN */
+
 } /* namespace */
 
 {% for f in formats -%}
-constexpr PixelFormat {{f.name}}(__fourcc({{f.fourcc}}), __mod({{f.mod}}));
+constexpr PixelFormat {{f.name}}(__fourcc({{f.fourcc}}){{ ' | kDrmFormatBigEndian' if f.big_endian }}, __mod({{f.mod}}));
 {% endfor %}
 
 } /* namespace formats */

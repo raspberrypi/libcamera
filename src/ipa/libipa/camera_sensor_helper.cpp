@@ -745,6 +745,18 @@ public:
 };
 REGISTER_CAMERA_SENSOR_HELPER("ov13858", CameraSensorHelperOv13858)
 
+class CameraSensorHelperVd56g3 : public CameraSensorHelper
+{
+public:
+	CameraSensorHelperVd56g3()
+	{
+		/* From datasheet: 0x40 at 10bits. */
+		blackLevel_ = 4096;
+		gain_ = AnalogueGainLinear{ 0, 32, -1, 32 };
+	}
+};
+REGISTER_CAMERA_SENSOR_HELPER("vd56g3", CameraSensorHelperVd56g3)
+
 #endif /* __DOXYGEN__ */
 
 } /* namespace ipa */

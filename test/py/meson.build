@@ -15,9 +15,6 @@ endif
 
 py_env = environment()
 
-pymod = import('python')
-py3 = pymod.find_installation('python3')
-
 pypathdir = meson.project_build_root() / 'src' / 'py'
 py_env.append('PYTHONPATH', pypathdir)
 

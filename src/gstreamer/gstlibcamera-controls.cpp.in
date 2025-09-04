@@ -14,49 +14,9 @@
 #include <libcamera/geometry.h>
 
 #include "gstlibcamera-controls.h"
+#include "gstlibcamera-utils.h"
 
 using namespace libcamera;
-
-static void value_set_rectangle(GValue *value, const Rectangle &rect)
-{
-	Point top_left = rect.topLeft();
-	Size size = rect.size();
-
-	GValue x = G_VALUE_INIT;
-	g_value_init(&x, G_TYPE_INT);
-	g_value_set_int(&x, top_left.x);
-	gst_value_array_append_and_take_value(value, &x);
-
-	GValue y = G_VALUE_INIT;
-	g_value_init(&y, G_TYPE_INT);
-	g_value_set_int(&y, top_left.y);
-	gst_value_array_append_and_take_value(value, &y);
-
-	GValue width = G_VALUE_INIT;
-	g_value_init(&width, G_TYPE_INT);
-	g_value_set_int(&width, size.width);
-	gst_value_array_append_and_take_value(value, &width);
-
-	GValue height = G_VALUE_INIT;
-	g_value_init(&height, G_TYPE_INT);
-	g_value_set_int(&height, size.height);
-	gst_value_array_append_and_take_value(value, &height);
-}
-
-static Rectangle value_get_rectangle(const GValue *value)
-{
-	const GValue *r;
-	r = gst_value_array_get_value(value, 0);
-	int x = g_value_get_int(r);
-	r = gst_value_array_get_value(value, 1);
-	int y = g_value_get_int(r);
-	r = gst_value_array_get_value(value, 2);
-	int w = g_value_get_int(r);
-	r = gst_value_array_get_value(value, 3);
-	int h = g_value_get_int(r);
-
-	return Rectangle(x, y, w, h);
-}
 
 {% for vendor, ctrls in controls %}
 {%- for ctrl in ctrls if ctrl.is_enum %}
@@ -173,7 +133,7 @@ bool GstCameraControls::getProperty(guint propId, GValue *value,
 			GValue element = G_VALUE_INIT;
 {%- if ctrl.is_rectangle %}
 			g_value_init(&element, GST_TYPE_PARAM_ARRAY_LIST);
-			value_set_rectangle(&element, control[i]);
+			gst_libcamera_gvalue_set_rectangle(&element, control[i]);
 {%- else %}
 			g_value_init(&element, G_TYPE_{{ ctrl.gtype|upper }});
 			g_value_set_{{ ctrl.gtype }}(&element, control[i]);
@@ -182,7 +142,7 @@ bool GstCameraControls::getProperty(guint propId, GValue *value,
 		}
 {%- else %}
 {%- if ctrl.is_rectangle %}
-		value_set_rectangle(value, control);
+		gst_libcamera_gvalue_set_rectangle(value, control);
 {%- else %}
 		g_value_set_{{ ctrl.gtype }}(value, control);
 {%- endif %}
@@ -246,7 +206,7 @@ bool GstCameraControls::setProperty(guint propId, const GValue *value,
 					  i);
 				return true;
 			}
-			values[i] = value_get_rectangle(element);
+			values[i] = gst_libcamera_gvalue_get_rectangle(element);
 {%- else %}
 			values[i] = g_value_get_{{ ctrl.gtype }}(element);
 {%- endif %}
@@ -265,7 +225,7 @@ bool GstCameraControls::setProperty(guint propId, const GValue *value,
 				  "array of size 4");
 			return true;
 		}
-		Rectangle val = value_get_rectangle(value);
+		Rectangle val = gst_libcamera_gvalue_get_rectangle(value);
 {%- else %}
 		auto val = g_value_get_{{ ctrl.gtype }}(value);
 {%- endif %}

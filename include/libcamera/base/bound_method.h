@@ -33,14 +33,10 @@ template<typename R, typename... Args>
 class BoundMethodPack : public BoundMethodPackBase
 {
 public:
-	BoundMethodPack(const Args &... args)
-		: args_(args...)
+	template<typename... Ts>
+	BoundMethodPack(Ts &&...args)
+		: args_(std::forward<Ts>(args)...)
 	{
-	}
-
-	R returnValue()
-	{
-		return ret_;
 	}
 
 	std::tuple<typename std::remove_reference_t<Args>...> args_;
@@ -51,12 +47,9 @@ template<typename... Args>
 class BoundMethodPack<void, Args...> : public BoundMethodPackBase
 {
 public:
-	BoundMethodPack(const Args &... args)
-		: args_(args...)
-	{
-	}
-
-	void returnValue()
+	template<typename... Ts>
+	BoundMethodPack(Ts &&...args)
+		: args_(std::forward<Ts>(args)...)
 	{
 	}
 
@@ -130,23 +123,25 @@ public:
 
 	BoundMethodFunctor(T *obj, Object *object, Func func,
 			   ConnectionType type = ConnectionTypeAuto)
-		: BoundMethodArgs<R, Args...>(obj, object, type), func_(func)
+		: BoundMethodArgs<R, Args...>(obj, object, type), func_(std::move(func))
 	{
 	}
 
 	R activate(Args... args, bool deleteMethod = false) override
 	{
 		if (!this->object_)
-			return func_(args...);
+			return func_(std::forward<Args>(args)...);
 
-		auto pack = std::make_shared<PackType>(args...);
-		bool sync = BoundMethodBase::activatePack(pack, deleteMethod);
-		return sync ? pack->returnValue() : R();
+		auto pack = std::make_shared<PackType>(std::forward<Args>(args)...);
+		[[maybe_unused]] bool sync = BoundMethodBase::activatePack(pack, deleteMethod);
+
+		if constexpr (!std::is_void_v<R>)
+			return sync ? std::move(pack->ret_) : R();
 	}
 
 	R invoke(Args... args) override
 	{
-		return func_(args...);
+		return func_(std::forward<Args>(args)...);
 	}
 
 private:
@@ -171,18 +166,20 @@ public:
 	{
 		if (!this->object_) {
 			T *obj = static_cast<T *>(this->obj_);
-			return (obj->*func_)(args...);
+			return (obj->*func_)(std::forward<Args>(args)...);
 		}
 
-		auto pack = std::make_shared<PackType>(args...);
-		bool sync = BoundMethodBase::activatePack(pack, deleteMethod);
-		return sync ? pack->returnValue() : R();
+		auto pack = std::make_shared<PackType>(std::forward<Args>(args)...);
+		[[maybe_unused]] bool sync = BoundMethodBase::activatePack(pack, deleteMethod);
+
+		if constexpr (!std::is_void_v<R>)
+			return sync ? std::move(pack->ret_) : R();
 	}
 
 	R invoke(Args... args) override
 	{
 		T *obj = static_cast<T *>(this->obj_);
-		return (obj->*func_)(args...);
+		return (obj->*func_)(std::forward<Args>(args)...);
 	}
 
 private:
@@ -203,7 +200,7 @@ public:
 
 	R activate(Args... args, [[maybe_unused]] bool deleteMethod = false) override
 	{
-		return (*func_)(args...);
+		return (*func_)(std::forward<Args>(args)...);
 	}
 
 	R invoke(Args...) override

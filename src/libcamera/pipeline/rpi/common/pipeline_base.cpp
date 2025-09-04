@@ -882,10 +882,10 @@ void PipelineHandlerBase::mapBuffers(Camera *camera, const BufferMap &buffers, u
 	 * This will allow us to identify buffers passed between the pipeline
 	 * handler and the IPA.
 	 */
-	for (auto const &it : buffers) {
-		bufferIds.push_back(IPABuffer(mask | it.first,
-					      it.second.buffer->planes()));
-		data->bufferIds_.insert(mask | it.first);
+	for (auto const &[id, buffer] : buffers) {
+		bufferIds.push_back(IPABuffer(mask | id,
+					      buffer.buffer->planes()));
+		data->bufferIds_.insert(mask | id);
 	}
 
 	data->ipa_->mapBuffers(bufferIds);
@@ -1487,10 +1487,10 @@ void CameraData::checkRequestCompleted()
 
 void CameraData::fillRequestMetadata(const ControlList &bufferControls, Request *request)
 {
-	request->metadata().set(controls::SensorTimestamp,
-				bufferControls.get(controls::SensorTimestamp).value_or(0));
-	request->metadata().set(controls::FrameWallClock,
-				bufferControls.get(controls::FrameWallClock).value_or(0));
+	if (auto x = bufferControls.get(controls::SensorTimestamp))
+		request->metadata().set(controls::SensorTimestamp, *x);
+	if (auto x = bufferControls.get(controls::FrameWallClock))
+		request->metadata().set(controls::FrameWallClock, *x);
 
 	if (cropParams_.size()) {
 		std::vector<Rectangle> crops;

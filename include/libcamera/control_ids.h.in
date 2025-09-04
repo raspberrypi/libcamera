@@ -49,6 +49,7 @@ extern const std::array<const ControlValue, {{ctrl.enum_values_count}}> {{ctrl.n
 extern const std::map<std::string, {{ctrl.type}}> {{ctrl.name}}NameValueMap;
 {% endif -%}
 extern const Control<{{ctrl.type}}> {{ctrl.name}};
+#define LIBCAMERA_HAS_{{vendor|upper}}_VENDOR_{{mode|upper}}_{{ctrl.name|snake_case|upper}}
 {% endfor -%}
 
 {% if vendor != 'libcamera' %}

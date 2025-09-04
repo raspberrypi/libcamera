@@ -10,6 +10,7 @@
 #include <atomic>
 #include <list>
 #include <memory>
+#include <queue>
 #include <set>
 #include <stdint.h>
 #include <string>
@@ -36,6 +37,7 @@ public:
 	const PipelineHandler *pipe() const { return pipe_.get(); }
 
 	std::list<Request *> queuedRequests_;
+	std::queue<Request *> waitingRequests_;
 	ControlInfoMap controlInfo_;
 	ControlList properties_;
 

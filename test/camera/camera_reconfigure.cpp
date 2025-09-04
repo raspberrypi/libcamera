@@ -46,14 +46,8 @@ private:
 		if (request->status() != Request::RequestComplete)
 			return;
 
-		const Request::BufferMap &buffers = request->buffers();
-
-		const Stream *stream = buffers.begin()->first;
-		FrameBuffer *buffer = buffers.begin()->second;
-
 		/* Reuse the request and re-queue it with the same buffers. */
-		request->reuse();
-		request->addBuffer(stream, buffer);
+		request->reuse(Request::ReuseBuffers);
 		camera_->queueRequest(request);
 	}
 

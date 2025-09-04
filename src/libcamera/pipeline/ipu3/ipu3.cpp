@@ -105,7 +105,7 @@ public:
 	Status validate() override;
 
 	const StreamConfiguration &cio2Format() const { return cio2Configuration_; }
-	const ImgUDevice::PipeConfig imguConfig() const { return pipeConfig_; }
+	const ImgUDevice::PipeConfig &imguConfig() const { return pipeConfig_; }
 
 	/* Cache the combinedTransform_ that will be applied to the sensor */
 	Transform combinedTransform_;

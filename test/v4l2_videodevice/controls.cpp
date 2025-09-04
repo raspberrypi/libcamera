@@ -60,11 +60,15 @@ protected:
 		const ControlInfo &u8 = infoMap.find(VIVID_CID_U8_4D_ARRAY)->second;
 
 		/* Test getting controls. */
-		ControlList ctrls = capture_->getControls({ V4L2_CID_BRIGHTNESS,
-							    V4L2_CID_CONTRAST,
-							    V4L2_CID_SATURATION,
-							    VIVID_CID_INTEGER64,
-							    VIVID_CID_U8_4D_ARRAY });
+		static constexpr uint32_t cids[] = {
+			V4L2_CID_BRIGHTNESS,
+			V4L2_CID_CONTRAST,
+			V4L2_CID_SATURATION,
+			VIVID_CID_INTEGER64,
+			VIVID_CID_U8_4D_ARRAY,
+		};
+
+		ControlList ctrls = capture_->getControls(cids);
 		if (ctrls.empty()) {
 			cerr << "Failed to get controls" << endl;
 			return TestFail;

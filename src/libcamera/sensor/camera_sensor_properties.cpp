@@ -242,7 +242,12 @@ const CameraSensorProperties *CameraSensorProperties::get(const std::string &sen
 		{ "imx462", {
 			.unitCellSize = { 2900, 2900 },
 			.testPatternModes = {},
-			.sensorDelays = { },
+			.sensorDelays = {
+				.exposureDelay = 2,
+				.gainDelay = 2,
+				.vblankDelay = 2,
+				.hblankDelay = 2
+			},
 		} },
 		{ "imx477", {
 			.unitCellSize = { 1550, 1550 },
@@ -465,6 +470,27 @@ const CameraSensorProperties *CameraSensorProperties::get(const std::string &sen
 				{ controls::draft::TestPatternModeColorBars, 1 },
 			},
 			.sensorDelays = { },
+		} },
+		{ "vd56g3", {
+			.unitCellSize = { 2610, 2610 },
+			.testPatternModes = {
+				{ controls::draft::TestPatternModeOff, 0 },
+				{ controls::draft::TestPatternModeSolidColor, 1 },
+				{ controls::draft::TestPatternModePn9, 6 },
+				/*
+				 * No corresponding test pattern mode for:
+				 * 2: "Vertical Color Bars"
+				 * 3: "Horizontal Gray Scale"
+				 * 4: "Vertical Gray Scale"
+				 * 5: "Diagonal Gray Scale"
+				 */
+			},
+			.sensorDelays = {
+				.exposureDelay = 2,
+				.gainDelay = 2,
+				.vblankDelay = 2,
+				.hblankDelay = 2
+			},
 		} },
 	};
 

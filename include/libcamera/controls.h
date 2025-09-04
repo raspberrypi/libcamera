@@ -10,7 +10,6 @@
 #include <assert.h>
 #include <map>
 #include <optional>
-#include <set>
 #include <stdint.h>
 #include <string>
 #include <unordered_map>
@@ -334,8 +333,6 @@ public:
 			     const ControlValue &def = {});
 	explicit ControlInfo(Span<const ControlValue> values,
 			     const ControlValue &def = {});
-	explicit ControlInfo(std::set<bool> values, bool def);
-	explicit ControlInfo(bool value);
 
 	const ControlValue &min() const { return min_; }
 	const ControlValue &max() const { return max_; }

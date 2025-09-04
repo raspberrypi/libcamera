@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2019, Google Inc.
  *
- * camera_sensor_legacy.cpp - A V4L2-backed camera sensor
+ * A V4L2-backed camera sensor
  */
 
 #include <algorithm>
@@ -73,7 +73,7 @@ public:
 	std::vector<Size> sizes(unsigned int mbusCode) const override;
 	Size resolution() const override;
 
-	V4L2SubdeviceFormat getFormat(const std::vector<unsigned int> &mbusCodes,
+	V4L2SubdeviceFormat getFormat(Span<const unsigned int> mbusCodes,
 				      const Size &size,
 				      const Size maxSize) const override;
 	int setFormat(V4L2SubdeviceFormat *format,
@@ -90,7 +90,7 @@ public:
 	BayerFormat::Order bayerOrder(Transform t) const override;
 
 	const ControlInfoMap &controls() const override;
-	ControlList getControls(const std::vector<uint32_t> &ids) override;
+	ControlList getControls(Span<const uint32_t> ids) override;
 	int setControls(ControlList *ctrls) override;
 
 	const std::vector<controls::draft::TestPatternModeEnum> &
@@ -699,7 +699,7 @@ Size CameraSensorLegacy::resolution() const
 }
 
 V4L2SubdeviceFormat
-CameraSensorLegacy::getFormat(const std::vector<unsigned int> &mbusCodes,
+CameraSensorLegacy::getFormat(Span<const unsigned int> mbusCodes,
 			      const Size &size, Size maxSize) const
 {
 	unsigned int desiredArea = size.width * size.height;
@@ -907,9 +907,13 @@ int CameraSensorLegacy::sensorInfo(IPACameraSensorInfo *info) const
 	 * duration through V4L2 controls. Support for the V4L2_CID_PIXEL_RATE,
 	 * V4L2_CID_HBLANK and V4L2_CID_VBLANK controls is mandatory.
 	 */
-	ControlList ctrls = subdev_->getControls({ V4L2_CID_PIXEL_RATE,
-						   V4L2_CID_HBLANK,
-						   V4L2_CID_VBLANK });
+	static constexpr uint32_t cids[] = {
+		V4L2_CID_PIXEL_RATE,
+		V4L2_CID_HBLANK,
+		V4L2_CID_VBLANK,
+	};
+
+	ControlList ctrls = subdev_->getControls(cids);
 	if (ctrls.empty()) {
 		LOG(CameraSensor, Error)
 			<< "Failed to retrieve camera info controls";
@@ -983,7 +987,7 @@ const ControlInfoMap &CameraSensorLegacy::controls() const
 	return subdev_->controls();
 }
 
-ControlList CameraSensorLegacy::getControls(const std::vector<uint32_t> &ids)
+ControlList CameraSensorLegacy::getControls(Span<const uint32_t> ids)
 {
 	return subdev_->getControls(ids);
 }

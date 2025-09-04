@@ -175,7 +175,7 @@ void SwStatsCpu::statsBGGR8Line0(const uint8_t *src[])
 		std::swap(src0, src1);
 
 	/* x += 4 sample every other 2x2 block */
-	for (int x = 0; x < (int)window_.width; x += 4) {
+	for (unsigned int x = 0; x < window_.width; x += 4) {
 		b = src0[x];
 		g = src0[x + 1];
 		g2 = src1[x];
@@ -200,7 +200,7 @@ void SwStatsCpu::statsBGGR10Line0(const uint8_t *src[])
 		std::swap(src0, src1);
 
 	/* x += 4 sample every other 2x2 block */
-	for (int x = 0; x < (int)window_.width; x += 4) {
+	for (unsigned int x = 0; x < window_.width; x += 4) {
 		b = src0[x];
 		g = src0[x + 1];
 		g2 = src1[x];
@@ -226,7 +226,7 @@ void SwStatsCpu::statsBGGR12Line0(const uint8_t *src[])
 		std::swap(src0, src1);
 
 	/* x += 4 sample every other 2x2 block */
-	for (int x = 0; x < (int)window_.width; x += 4) {
+	for (unsigned int x = 0; x < window_.width; x += 4) {
 		b = src0[x];
 		g = src0[x + 1];
 		g2 = src1[x];
@@ -245,7 +245,7 @@ void SwStatsCpu::statsBGGR10PLine0(const uint8_t *src[])
 {
 	const uint8_t *src0 = src[1] + window_.x * 5 / 4;
 	const uint8_t *src1 = src[2] + window_.x * 5 / 4;
-	const int widthInBytes = window_.width * 5 / 4;
+	const unsigned int widthInBytes = window_.width * 5 / 4;
 
 	if (swapLines_)
 		std::swap(src0, src1);
@@ -253,7 +253,7 @@ void SwStatsCpu::statsBGGR10PLine0(const uint8_t *src[])
 	SWSTATS_START_LINE_STATS(uint8_t)
 
 	/* x += 5 sample every other 2x2 block */
-	for (int x = 0; x < widthInBytes; x += 5) {
+	for (unsigned int x = 0; x < widthInBytes; x += 5) {
 		/* BGGR */
 		b = src0[x];
 		g = src0[x + 1];
@@ -271,7 +271,7 @@ void SwStatsCpu::statsGBRG10PLine0(const uint8_t *src[])
 {
 	const uint8_t *src0 = src[1] + window_.x * 5 / 4;
 	const uint8_t *src1 = src[2] + window_.x * 5 / 4;
-	const int widthInBytes = window_.width * 5 / 4;
+	const unsigned int widthInBytes = window_.width * 5 / 4;
 
 	if (swapLines_)
 		std::swap(src0, src1);
@@ -279,7 +279,7 @@ void SwStatsCpu::statsGBRG10PLine0(const uint8_t *src[])
 	SWSTATS_START_LINE_STATS(uint8_t)
 
 	/* x += 5 sample every other 2x2 block */
-	for (int x = 0; x < widthInBytes; x += 5) {
+	for (unsigned int x = 0; x < widthInBytes; x += 5) {
 		/* GBRG */
 		g = src0[x];
 		b = src0[x + 1];

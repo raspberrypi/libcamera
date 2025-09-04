@@ -14,6 +14,7 @@ rpi_ipa_controller_sources = files([
     'rpi/cac.cpp',
     'rpi/ccm.cpp',
     'rpi/contrast.cpp',
+    'rpi/decompand.cpp',
     'rpi/denoise.cpp',
     'rpi/dpc.cpp',
     'rpi/geq.cpp',

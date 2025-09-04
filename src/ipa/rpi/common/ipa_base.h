@@ -73,6 +73,9 @@ protected:
 	/* Remember the HDR status after a mode switch. */
 	HdrStatus hdrStatus_;
 
+	/* Remember the AGC status after a mode switch. */
+	AgcStatus agcStatus_;
+
 	/* Whether the stitch block (if available) needs to swap buffers. */
 	bool stitchSwapBuffers_;
 
@@ -86,6 +89,7 @@ private:
 
 	virtual void platformPrepareIsp(const PrepareParams &params,
 					RPiController::Metadata &rpiMetadata) = 0;
+	virtual void platformPrepareAgc(RPiController::Metadata &rpiMetadata) = 0;
 	virtual RPiController::StatisticsPtr platformProcessStats(Span<uint8_t> mem) = 0;
 
 	void setMode(const IPACameraSensorInfo &sensorInfo);
@@ -95,11 +99,9 @@ private:
 	void applyControls(const ControlList &controls);
 	virtual void handleControls(const ControlList &controls) = 0;
 	void fillDeviceStatus(const ControlList &sensorControls, unsigned int ipaContext);
-	void fillSyncParams(const PrepareParams &params, unsigned int ipaContext);
 	void reportMetadata(unsigned int ipaContext);
 	void applyFrameDurations(utils::Duration minFrameDuration, utils::Duration maxFrameDuration);
-	void applyAGC(const struct AgcStatus *agcStatus, ControlList &ctrls,
-		      utils::Duration frameDurationOffset = utils::Duration(0));
+	void applyAGC(struct AgcStatus *agcStatus, ControlList &ctrls);
 
 	std::map<unsigned int, MappedFrameBuffer> buffers_;
 
@@ -138,8 +140,6 @@ private:
 		int32_t mode;
 		utils::Duration manualPeriod;
 	} flickerState_;
-
-	bool cnnEnableInputTensor_;
 };
 
 } /* namespace ipa::RPi */

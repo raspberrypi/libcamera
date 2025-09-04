@@ -446,7 +446,8 @@ const std::string V4L2DeviceFormat::toString() const
  */
 std::ostream &operator<<(std::ostream &out, const V4L2DeviceFormat &f)
 {
-	out << f.size << "-" << f.fourcc;
+	out << f.size << "-" << f.fourcc << "/"
+	    << ColorSpace::toString(f.colorSpace);
 	return out;
 }
 
@@ -1905,6 +1906,8 @@ int V4L2VideoDevice::queueToDevice(FrameBuffer *buffer)
 	if (ret < 0)
 		return ret;
 
+	auto guard = utils::scope_exit{ [&]() { cache_->put(buf.index); } };
+
 	buf.index = ret;
 	buf.type = bufferType_;
 	buf.memory = memoryType_;
@@ -2027,6 +2030,7 @@ int V4L2VideoDevice::queueToDevice(FrameBuffer *buffer)
 
 	queuedBuffers_[buf.index] = buffer;
 
+	guard.release();
 	return 0;
 }
 
@@ -2094,10 +2098,9 @@ int V4L2VideoDevice::streamOff()
 	/* Send back all queued buffers. */
 	for (auto it : queuedBuffers_) {
 		FrameBuffer *buffer = it.second;
-		FrameMetadata &metadata = buffer->_d()->metadata();
 
 		cache_->put(it.first);
-		metadata.status = FrameMetadata::FrameCancelled;
+		buffer->_d()->cancel();
 		bufferReady.emit(buffer);
 	}
 

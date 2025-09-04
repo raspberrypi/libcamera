@@ -2,7 +2,7 @@
 
 project('libcamera', 'c', 'cpp',
     meson_version : '>= 0.63',
-    version : '0.5.1',
+    version : '0.5.2',
     default_options : [
         'werror=true',
         'warning_level=2',
@@ -73,6 +73,10 @@ meson.add_dist_script('utils/run-dist.sh')
 cc = meson.get_compiler('c')
 cxx = meson.get_compiler('cpp')
 config_h = configuration_data()
+
+if cc.has_header_symbol('unistd.h', 'close_range', prefix : '#define _GNU_SOURCE')
+    config_h.set('HAVE_CLOSE_RANGE', 1)
+endif
 
 if cc.has_header_symbol('fcntl.h', 'F_ADD_SEALS', prefix : '#define _GNU_SOURCE')
     config_h.set('HAVE_FILE_SEALS', 1)
@@ -261,7 +265,7 @@ subdir('Documentation')
 subdir('test')
 
 if not meson.is_cross_build()
-    kernel_version_req = '>= 5.0.0'
+    kernel_version_req = '>= 5.4.0'
     kernel_version = run_command('uname', '-r', check : true).stdout().strip()
     if not kernel_version.version_compare(kernel_version_req)
         warning('The current running kernel version @0@ is too old to run libcamera.'

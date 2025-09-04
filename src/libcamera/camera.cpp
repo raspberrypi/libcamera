@@ -488,7 +488,7 @@ std::size_t CameraConfiguration::size() const
  *
  * \return A CameraConfiguration::Status value that describes the validation
  * status.
- * \retval CameraConfigutation::Adjusted The configuration has been adjusted
+ * \retval CameraConfiguration::Adjusted The configuration has been adjusted
  * and is now valid. The color space of some or all of the streams may have
  * been changed. The caller shall check the color spaces carefully.
  * \retval CameraConfiguration::Valid The configuration was already valid and
@@ -626,6 +626,15 @@ Camera::Private::~Private()
  *
  * \sa PipelineHandler::queueRequest(), PipelineHandler::stop(),
  * PipelineHandler::completeRequest()
+ */
+
+/**
+ * \var Camera::Private::waitingRequests_
+ * \brief The queue of waiting requests
+ *
+ * This queue tracks all requests that can not yet be queued to the device.
+ * Either because they are not yet prepared or because the maximum number of
+ * queued requests was reached.
  */
 
 /**
@@ -1122,7 +1131,8 @@ std::unique_ptr<CameraConfiguration> Camera::generateConfiguration(Span<const St
 		return nullptr;
 
 	std::unique_ptr<CameraConfiguration> config =
-		d->pipe_->generateConfiguration(this, roles);
+		d->pipe_->invokeMethod(&PipelineHandler::generateConfiguration,
+				       ConnectionTypeBlocking, this, roles);
 	if (!config) {
 		LOG(Camera, Debug)
 			<< "Pipeline handler failed to generate configuration";
@@ -1399,10 +1409,10 @@ int Camera::start(const ControlList *controls)
 		patchControlList(copy);
 		ret = d->pipe_->invokeMethod(&PipelineHandler::start,
 					     ConnectionTypeBlocking, this, &copy);
-	}
-	else
+	} else {
 		ret = d->pipe_->invokeMethod(&PipelineHandler::start,
 					     ConnectionTypeBlocking, this, nullptr);
+	}
 
 	if (ret)
 		return ret;

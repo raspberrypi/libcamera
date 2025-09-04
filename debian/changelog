@@ -1,24 +1,26 @@
-libcamera (0.5.1+rpt20250722-1+trixie) trixie; urgency=medium
+libcamera (0.5.2-2) unstable; urgency=medium
 
-  * New upstream version 0.5.1+rpt20250722
+  * Adjust VCS fields in d/control and d/gbp.conf for unstable.
+  * Upload to unstable.
 
- -- Serge Schneider <serge@raspberrypi.com>  Tue, 22 Jul 2025 13:00:54 +0100
+ -- Dylan Aïssi <daissi@debian.org>  Sun, 17 Aug 2025 22:47:35 +0200
 
-libcamera (0.5.1+rpt20250707-1) trixie; urgency=medium
+libcamera (0.5.2-1) experimental; urgency=medium
 
-  * New upstream version 0.5.1+rpt20250707
-  * Update ipa install source
+  * New upstream version 0.5.2
+  * Add python3-sphinxcontrib.doxylink in Build-Depends-Indep
+  * Refresh debian/copyright
+
+ -- Dylan Aïssi <daissi@debian.org>  Thu, 07 Aug 2025 17:16:21 +0200
+
+libcamera (0.5.1-1) experimental; urgency=medium
+
+  * New upstream version 0.5.1
   * Refresh patches
+  * Install IPA modules in usr/lib/*/libcamera/ipa
+  * Adjust VCS field in d/control for experimental
 
- -- Serge Schneider <serge@raspberrypi.com>  Mon, 07 Jul 2025 15:04:25 +0100
-
-libcamera (0.5.0+rpt20250429-1+trixie) trixie; urgency=medium
-
-  * New upstream version 0.5.0+rpt20250429
-  * Add PiOS changes
-  * Only enable rpi pipelines on arm
-
- -- Serge Schneider <serge@raspberrypi.com>  Fri, 16 May 2025 16:23:09 +0100
+ -- Dylan Aïssi <daissi@debian.org>  Tue, 03 Jun 2025 21:16:11 +0200
 
 libcamera (0.5.0-1) experimental; urgency=medium
 

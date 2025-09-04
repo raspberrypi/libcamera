@@ -28,10 +28,6 @@ IPCPipeUnixSocket::IPCPipeUnixSocket(const char *ipaModulePath,
 				     const char *ipaProxyWorkerPath)
 	: IPCPipe()
 {
-	std::vector<int> fds;
-	std::vector<std::string> args;
-	args.push_back(ipaModulePath);
-
 	socket_ = std::make_unique<IPCUnixSocket>();
 	UniqueFD fd = socket_->create();
 	if (!fd.isValid()) {
@@ -39,8 +35,9 @@ IPCPipeUnixSocket::IPCPipeUnixSocket(const char *ipaModulePath,
 		return;
 	}
 	socket_->readyRead.connect(this, &IPCPipeUnixSocket::readyRead);
-	args.push_back(std::to_string(fd.get()));
-	fds.push_back(fd.get());
+
+	std::array args{ std::string(ipaModulePath), std::to_string(fd.get()) };
+	std::array fds{ fd.get() };
 
 	proc_ = std::make_unique<Process>();
 	int ret = proc_->start(ipaProxyWorkerPath, args, fds);

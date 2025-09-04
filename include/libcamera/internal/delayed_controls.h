@@ -10,13 +10,15 @@
 #include <stdint.h>
 #include <unordered_map>
 
+#include <libcamera/base/object.h>
+
 #include <libcamera/controls.h>
 
 namespace libcamera {
 
 class V4L2Device;
 
-class DelayedControls
+class DelayedControls : public Object
 {
 public:
 	struct ControlParams {

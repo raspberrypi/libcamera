@@ -1,4 +1,3 @@
-usr/lib/*/libcamera/ipa/ipa_*.so
-usr/lib/*/libcamera/ipa/ipa_*.so.sign
+usr/lib/*/libcamera/ipa
 usr/libexec/*/libcamera/*_ipa_proxy
 usr/share/libcamera

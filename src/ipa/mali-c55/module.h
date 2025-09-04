@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2024, Ideas On Board
  *
- * module.h - Mali-C55 IPA Module
+ * Mali-C55 IPA Module
  */
 
 #pragma once

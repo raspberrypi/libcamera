@@ -209,8 +209,6 @@ protected:
 	}
 
 private:
-	ProcessManager processManager_;
-
 	unique_ptr<IPCPipeUnixSocket> ipc_;
 };
 

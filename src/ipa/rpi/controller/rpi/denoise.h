@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2022, Raspberry Pi Ltd
  *
- * denoise.hpp - Denoise (spatial, colour, temporal) control algorithm
+ * Denoise (spatial, colour, temporal) control algorithm
  */
 #pragma once
 

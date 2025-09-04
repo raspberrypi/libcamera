@@ -157,6 +157,7 @@ int Agc::init(IPAContext &context, const YamlObject &tuningData)
 			    ControlValue(controls::AnalogueGainModeAuto));
 	/* \todo Move this to the Camera class */
 	context.ctrlMap[&controls::AeEnable] = ControlInfo(false, true, true);
+	context.ctrlMap[&controls::ExposureValue] = ControlInfo(-8.0f, 8.0f, 0.0f);
 	context.ctrlMap.merge(controls());
 
 	return 0;
@@ -179,6 +180,7 @@ int Agc::configure(IPAContext &context, const IPACameraSensorInfo &configInfo)
 	context.activeState.agc.manual.exposure = context.activeState.agc.automatic.exposure;
 	context.activeState.agc.autoExposureEnabled = !context.configuration.raw;
 	context.activeState.agc.autoGainEnabled = !context.configuration.raw;
+	context.activeState.agc.exposureValue = 0.0;
 
 	context.activeState.agc.constraintMode =
 		static_cast<controls::AeConstraintModeEnum>(constraintModes().begin()->first);
@@ -301,6 +303,11 @@ void Agc::queueRequest(IPAContext &context,
 			static_cast<controls::AeConstraintModeEnum>(*constraintMode);
 	frameContext.agc.constraintMode = agc.constraintMode;
 
+	const auto &exposureValue = controls.get(controls::ExposureValue);
+	if (exposureValue)
+		agc.exposureValue = *exposureValue;
+	frameContext.agc.exposureValue = agc.exposureValue;
+
 	const auto &frameDurationLimits = controls.get(controls::FrameDurationLimits);
 	if (frameDurationLimits) {
 		/* Limit the control value to the limits in ControlInfo */
@@ -407,6 +414,7 @@ void Agc::fillMetadata(IPAContext &context, IPAFrameContext &frameContext,
 	metadata.set(controls::AeMeteringMode, frameContext.agc.meteringMode);
 	metadata.set(controls::AeExposureMode, frameContext.agc.exposureMode);
 	metadata.set(controls::AeConstraintMode, frameContext.agc.constraintMode);
+	metadata.set(controls::ExposureValue, frameContext.agc.exposureValue);
 }
 
 /**
@@ -555,6 +563,8 @@ void Agc::process(IPAContext &context, [[maybe_unused]] const uint32_t frame,
 	utils::Duration exposureTime = lineDuration * frameContext.sensor.exposure;
 	double analogueGain = frameContext.sensor.gain;
 	utils::Duration effectiveExposureValue = exposureTime * analogueGain;
+
+	setExposureCompensation(pow(2.0, frameContext.agc.exposureValue));
 
 	utils::Duration newExposureTime;
 	double aGain, dGain;

@@ -74,11 +74,11 @@ pygments_style = None
 
 doxylink = {
     'doxy-pub': (
-        'Documentation/api-html/tagfile.xml',
+        '@TOP_BUILDDIR@/Documentation/api-html/tagfile.xml',
         '../api-html/',
     ),
     'doxy-int': (
-        'Documentation/internal-api-html/tagfile.xml',
+        '@TOP_BUILDDIR@/Documentation/internal-api-html/tagfile.xml',
         '../internal-api-html/',
     ),
 }
@@ -89,7 +89,7 @@ doxylink = {
 # a list of builtin themes.
 #
 html_theme = 'theme'
-html_theme_path = ['.']
+html_theme_path = ['@THEME_DIR@']
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the

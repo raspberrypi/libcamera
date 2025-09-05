@@ -76,13 +76,7 @@ subdir('proxy')
 subdir('sensor')
 subdir('software_isp')
 
-null_dep = dependency('', required : false)
-
-# TODO: Use dependency('dl') when updating to meson 0.62.0 or newer.
-libdl = null_dep
-if not cc.has_function('dlopen')
-    libdl = cc.find_library('dl')
-endif
+libdl = dependency('dl')
 libudev = dependency('libudev', required : get_option('udev'))
 libyaml = dependency('yaml-0.1', default_options : [
     'default_library=static',

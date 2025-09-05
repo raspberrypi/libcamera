@@ -56,7 +56,7 @@ public:
 
 	~Matrix() = default;
 
-	const std::string toString() const
+	std::string toString() const
 	{
 		std::stringstream out;
 

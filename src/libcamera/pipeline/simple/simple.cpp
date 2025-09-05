@@ -252,6 +252,7 @@ static const SimplePipelineInfo supportedDevices[] = {
 	{ "dcmipp", {}, false },
 	{ "imx7-csi", { { "pxp", 1 } }, false },
 	{ "intel-ipu6", {}, true },
+	{ "intel-ipu7", {}, true },
 	{ "j721e-csi2rx", {}, true },
 	{ "mtk-seninf", { { "mtk-mdp", 3 } }, false },
 	{ "mxc-isi", {}, false },
@@ -1207,7 +1208,9 @@ CameraConfiguration::Status SimpleCameraConfiguration::validate()
 
 		PixelFormat pixelFormat = *it;
 		if (cfg.pixelFormat != pixelFormat) {
-			LOG(SimplePipeline, Debug) << "Adjusting pixel format";
+			LOG(SimplePipeline, Debug)
+				<< "Adjusting pixel format from "
+				<< cfg.pixelFormat << " to " << pixelFormat;
 			cfg.pixelFormat = pixelFormat;
 			status = Adjusted;
 		}

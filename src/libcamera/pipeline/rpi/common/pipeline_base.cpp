@@ -882,10 +882,10 @@ void PipelineHandlerBase::mapBuffers(Camera *camera, const BufferMap &buffers, u
 	 * This will allow us to identify buffers passed between the pipeline
 	 * handler and the IPA.
 	 */
-	for (auto const &it : buffers) {
-		bufferIds.push_back(IPABuffer(mask | it.first,
-					      it.second.buffer->planes()));
-		data->bufferIds_.insert(mask | it.first);
+	for (auto const &[id, buffer] : buffers) {
+		bufferIds.push_back(IPABuffer(mask | id,
+					      buffer.buffer->planes()));
+		data->bufferIds_.insert(mask | id);
 	}
 
 	data->ipa_->mapBuffers(bufferIds);

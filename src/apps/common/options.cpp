@@ -887,7 +887,7 @@ OptionsParser::Options OptionsParser::parse(int argc, char **argv)
 
 	shortOptions[ids++] = ':';
 
-	for (const auto [opt, option] : optionsMap_) {
+	for (const auto &[opt, option] : optionsMap_) {
 		if (option->hasShortOption()) {
 			shortOptions[ids++] = opt;
 			if (option->argument != ArgumentNone)

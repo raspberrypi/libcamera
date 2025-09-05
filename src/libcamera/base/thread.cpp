@@ -512,12 +512,12 @@ pid_t Thread::currentId()
  * This function retrieves the internal event dispatcher for the thread. The
  * returned event dispatcher is valid until the thread is destroyed.
  *
- * \context This function is \threadsafe.
- *
  * \return Pointer to the event dispatcher
  */
 EventDispatcher *Thread::eventDispatcher()
 {
+	ASSERT(data_ == ThreadData::current());
+
 	if (!data_->dispatcher_.load(std::memory_order_relaxed))
 		data_->dispatcher_.store(new EventDispatcherPoll(),
 					 std::memory_order_release);

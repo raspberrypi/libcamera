@@ -85,7 +85,7 @@ public:
 
 private:
 	PipelineHandlerRkISP1 *pipe_;
-	std::map<unsigned int, RkISP1FrameInfo *> frameInfo_;
+	std::map<unsigned int, RkISP1FrameInfo> frameInfo_;
 };
 
 class RkISP1CameraData : public Camera::Private
@@ -289,49 +289,46 @@ RkISP1FrameInfo *RkISP1Frames::create(const RkISP1CameraData *data, Request *req
 		mainPathBuffer = request->findBuffer(&data->mainPathStream_);
 	selfPathBuffer = request->findBuffer(&data->selfPathStream_);
 
-	RkISP1FrameInfo *info = new RkISP1FrameInfo;
+	auto [it, inserted] = frameInfo_.try_emplace(frame);
+	ASSERT(inserted);
 
-	info->frame = frame;
-	info->request = request;
-	info->paramBuffer = paramBuffer;
-	info->mainPathBuffer = mainPathBuffer;
-	info->selfPathBuffer = selfPathBuffer;
-	info->statBuffer = statBuffer;
-	info->paramDequeued = false;
-	info->metadataProcessed = false;
+	auto &info = it->second;
 
-	frameInfo_[frame] = info;
+	info.frame = frame;
+	info.request = request;
+	info.paramBuffer = paramBuffer;
+	info.mainPathBuffer = mainPathBuffer;
+	info.selfPathBuffer = selfPathBuffer;
+	info.statBuffer = statBuffer;
+	info.paramDequeued = false;
+	info.metadataProcessed = false;
 
-	return info;
+	return &info;
 }
 
 int RkISP1Frames::destroy(unsigned int frame)
 {
-	RkISP1FrameInfo *info = find(frame);
-	if (!info)
+	auto it = frameInfo_.find(frame);
+	if (it == frameInfo_.end())
 		return -ENOENT;
 
-	pipe_->availableParamBuffers_.push(info->paramBuffer);
-	pipe_->availableStatBuffers_.push(info->statBuffer);
-	pipe_->availableMainPathBuffers_.push(info->mainPathBuffer);
+	auto &info = it->second;
 
-	frameInfo_.erase(info->frame);
+	pipe_->availableParamBuffers_.push(info.paramBuffer);
+	pipe_->availableStatBuffers_.push(info.statBuffer);
+	pipe_->availableMainPathBuffers_.push(info.mainPathBuffer);
 
-	delete info;
+	frameInfo_.erase(it);
 
 	return 0;
 }
 
 void RkISP1Frames::clear()
 {
-	for (const auto &entry : frameInfo_) {
-		RkISP1FrameInfo *info = entry.second;
-
-		pipe_->availableParamBuffers_.push(info->paramBuffer);
-		pipe_->availableStatBuffers_.push(info->statBuffer);
-		pipe_->availableMainPathBuffers_.push(info->mainPathBuffer);
-
-		delete info;
+	for (const auto &[frame, info] : frameInfo_) {
+		pipe_->availableParamBuffers_.push(info.paramBuffer);
+		pipe_->availableStatBuffers_.push(info.statBuffer);
+		pipe_->availableMainPathBuffers_.push(info.mainPathBuffer);
 	}
 
 	frameInfo_.clear();
@@ -342,7 +339,7 @@ RkISP1FrameInfo *RkISP1Frames::find(unsigned int frame)
 	auto itInfo = frameInfo_.find(frame);
 
 	if (itInfo != frameInfo_.end())
-		return itInfo->second;
+		return &itInfo->second;
 
 	LOG(RkISP1, Fatal) << "Can't locate info from frame";
 
@@ -351,14 +348,12 @@ RkISP1FrameInfo *RkISP1Frames::find(unsigned int frame)
 
 RkISP1FrameInfo *RkISP1Frames::find(FrameBuffer *buffer)
 {
-	for (auto &itInfo : frameInfo_) {
-		RkISP1FrameInfo *info = itInfo.second;
-
-		if (info->paramBuffer == buffer ||
-		    info->statBuffer == buffer ||
-		    info->mainPathBuffer == buffer ||
-		    info->selfPathBuffer == buffer)
-			return info;
+	for (auto &[frame, info] : frameInfo_) {
+		if (info.paramBuffer == buffer ||
+		    info.statBuffer == buffer ||
+		    info.mainPathBuffer == buffer ||
+		    info.selfPathBuffer == buffer)
+			return &info;
 	}
 
 	LOG(RkISP1, Fatal) << "Can't locate info from buffer";
@@ -368,11 +363,9 @@ RkISP1FrameInfo *RkISP1Frames::find(FrameBuffer *buffer)
 
 RkISP1FrameInfo *RkISP1Frames::find(Request *request)
 {
-	for (auto &itInfo : frameInfo_) {
-		RkISP1FrameInfo *info = itInfo.second;
-
-		if (info->request == request)
-			return info;
+	for (auto &[frame, info] : frameInfo_) {
+		if (info.request == request)
+			return &info;
 	}
 
 	LOG(RkISP1, Fatal) << "Can't locate info from request";
@@ -1009,21 +1002,27 @@ int PipelineHandlerRkISP1::allocateBuffers(Camera *camera)
 	unsigned int ipaBufferId = 1;
 	int ret;
 
+	auto errorCleanup = utils::scope_exit{ [&]() {
+		paramBuffers_.clear();
+		statBuffers_.clear();
+		mainPathBuffers_.clear();
+	} };
+
 	if (!isRaw_) {
 		ret = param_->allocateBuffers(kRkISP1MinBufferCount, &paramBuffers_);
 		if (ret < 0)
-			goto error;
+			return ret;
 
 		ret = stat_->allocateBuffers(kRkISP1MinBufferCount, &statBuffers_);
 		if (ret < 0)
-			goto error;
+			return ret;
 	}
 
 	/* If the dewarper is being used, allocate internal buffers for ISP. */
 	if (useDewarper_) {
 		ret = mainPath_.exportBuffers(kRkISP1MinBufferCount, &mainPathBuffers_);
 		if (ret < 0)
-			goto error;
+			return ret;
 
 		for (std::unique_ptr<FrameBuffer> &buffer : mainPathBuffers_)
 			availableMainPathBuffers_.push(buffer.get());
@@ -1045,14 +1044,8 @@ int PipelineHandlerRkISP1::allocateBuffers(Camera *camera)
 
 	data->ipa_->mapBuffers(data->ipaBuffers_);
 
+	errorCleanup.release();
 	return 0;
-
-error:
-	paramBuffers_.clear();
-	statBuffers_.clear();
-	mainPathBuffers_.clear();
-
-	return ret;
 }
 
 int PipelineHandlerRkISP1::freeBuffers(Camera *camera)

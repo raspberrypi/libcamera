@@ -124,12 +124,9 @@ if sphinx.found()
     # Many distributions do not provide a recent-enough version of the doxylink
     # module. This results in a build error with a cryptic message. Check the
     # version manually and print clear error messages.
-    py_mod = import('python')
-    py3 = py_mod.find_installation('python3')
-
     mod = 'sphinxcontrib.doxylink'
     min_version = '>=1.6.1'
-    version = run_command(py3, '-c',
+    version = run_command('python3', '-c',
                           'import @0@ ; print(@0@.__version__)'.format(mod),
                           check : false).stdout().strip()
 
@@ -142,11 +139,21 @@ if sphinx.found()
               .format(mod, version, min_version))
     endif
 
+    sphinx_conf = configure_file(input : 'conf.py.in',
+                                 output : 'conf.py',
+                                 configuration : {
+                                    'THEME_DIR': meson.current_source_dir(),
+                                    'TOP_BUILDDIR': meson.project_build_root(),
+                                 })
+
+    fs = import('fs')
+    sphinx_conf_dir = fs.parent(sphinx_conf)
+
     docs_sources = [
         'camera-sensor-model.rst',
         'code-of-conduct.rst',
         'coding-style.rst',
-        'conf.py',
+        sphinx_conf,
         'contributing.rst',
         'design/ae.rst',
         'documentation-contents.rst',
@@ -171,6 +178,7 @@ if sphinx.found()
 
     custom_target('documentation',
                   command : [sphinx, '-D', release, '-q', '-W', '-b', 'html',
+                             '-c', sphinx_conf_dir,
                              meson.current_source_dir(), '@OUTPUT@'],
                   input : docs_sources,
                   output : 'html',
@@ -184,7 +192,9 @@ if sphinx.found()
                   install_tag : 'doc')
 
     custom_target('documentation-linkcheck',
-                  command : [sphinx, '-W', '-b', 'linkcheck', meson.current_source_dir(), '@OUTPUT@'],
+                  command : [sphinx, '-W', '-b', 'linkcheck',
+                             '-c', sphinx_conf_dir,
+                             meson.current_source_dir(), '@OUTPUT@'],
                   build_always_stale : true,
                   input : docs_sources,
                   output : 'linkcheck')

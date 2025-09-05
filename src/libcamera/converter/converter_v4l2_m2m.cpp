@@ -10,6 +10,7 @@
 
 #include <algorithm>
 #include <limits.h>
+#include <set>
 
 #include <libcamera/base/log.h>
 #include <libcamera/base/signal.h>

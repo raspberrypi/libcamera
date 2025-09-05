@@ -436,7 +436,8 @@ class Camera:
         write to json
         """
         self.json['rpi.noise']['reference_constant'] = int(noise_out[1])
-        self.json['rpi.noise']['reference_slope'] = round(noise_out[0], 3)
+        # Results are better with about 40% higher deviation.
+        self.json['rpi.noise']['reference_slope'] = round(1.4 * noise_out[0], 3)
         self.log += '\nNOISE calibrations written to json'
         print('Finished NOISE calibrations')
 

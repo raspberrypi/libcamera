@@ -174,7 +174,7 @@ void V4L2Device::close()
  * \return The control values in a ControlList on success, or an empty list on
  * error
  */
-ControlList V4L2Device::getControls(const std::vector<uint32_t> &ids)
+ControlList V4L2Device::getControls(Span<const uint32_t> ids)
 {
 	if (ids.empty())
 		return {};

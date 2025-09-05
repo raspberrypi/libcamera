@@ -659,10 +659,8 @@ std::unique_ptr<FrameBuffer> Device::createFrameBuffer(
 	uint32_t offsets[4] = {};
 	int ret;
 
-	const std::vector<libcamera::FrameBuffer::Plane> &planes = buffer.planes();
-
 	unsigned int i = 0;
-	for (const libcamera::FrameBuffer::Plane &plane : planes) {
+	for (const libcamera::FrameBuffer::Plane &plane : buffer.planes()) {
 		int fd = plane.fd.get();
 		uint32_t handle;
 

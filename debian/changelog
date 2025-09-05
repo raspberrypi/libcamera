@@ -4,8 +4,9 @@ libcamera (0.5.2+rpt20250903-1) trixie; urgency=medium
   * Only enable rpi pipelines on arm
   * d/c: Move libcamera-ipa to Depends
   * d/salsa-cy.yml: Use internal salsa-ci instance
+  * d/python3-libcamera.install: fix python module source location
 
- -- Serge Schneider <serge@raspberrypi.com>  Fri, 05 Sep 2025 14:23:29 +0100
+ -- Serge Schneider <serge@raspberrypi.com>  Fri, 05 Sep 2025 14:50:41 +0100
 
 libcamera (0.5.2-2) unstable; urgency=medium
 

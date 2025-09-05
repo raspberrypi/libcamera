@@ -13,12 +13,12 @@ option('android_platform',
 
 option('cam',
         type : 'feature',
-        value : 'auto',
+        value : 'disabled',
         description : 'Compile the cam test application')
 
 option('documentation',
         type : 'feature',
-        value : 'auto',
+        value : 'disabled',
         description : 'Generate the project documentation')
 
 option('doc_werror',
@@ -35,11 +35,12 @@ option('ipas',
         type : 'array',
         choices : ['ipu3', 'mali-c55', 'rkisp1', 'rpi/pisp', 'rpi/vc4', 'simple',
                    'vimc'],
+        value: ['rpi/pisp', 'rpi/vc4'],
         description : 'Select which IPA modules to build')
 
 option('lc-compliance',
         type : 'feature',
-        value : 'auto',
+        value : 'disabled',
         description : 'Compile the lc-compliance test application')
 
 option('pipelines',
@@ -59,6 +60,7 @@ option('pipelines',
             'vimc',
             'virtual'
         ],
+        value: ['rpi/pisp', 'rpi/vc4'],
         description : 'Select which pipeline handlers to build. If this is set to "auto", all the pipelines applicable to the target architecture will be built. If this is set to "all", all the pipelines will be built. If both are selected then "all" will take precedence.')
 
 option('pycamera',
@@ -68,7 +70,7 @@ option('pycamera',
 
 option('qcam',
         type : 'feature',
-        value : 'auto',
+        value : 'disabled',
         description : 'Compile the qcam test application')
 
 option('test',
@@ -88,6 +90,6 @@ option('udev',
 
 option('v4l2',
         type : 'feature',
-        value : 'auto',
+        value : 'enabled',
         description : 'Compile the V4L2 compatibility layer',
         deprecated : {'true': 'enabled', 'false': 'disabled'})

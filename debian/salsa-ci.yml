@@ -1,6 +1,6 @@
 ---
 include:
-  - https://salsa.debian.org/salsa-ci-team/pipeline/raw/master/recipes/debian.yml
+  - $CI_SERVER_URL/apt/salsa-ci/raw/pios/recipes/pios.yml
 
 variables:
   SALSA_CI_DISABLE_BUILD_PACKAGE_ARM64: 0

@@ -77,8 +77,8 @@ Package: libcamera0.5
 Architecture: linux-any
 Multi-Arch: same
 Depends: ${misc:Depends},
-         ${shlibs:Depends}
-Recommends: libcamera-ipa (= ${binary:Version})
+         ${shlibs:Depends},
+         libcamera-ipa (= ${binary:Version})
 Pre-Depends: ${misc:Pre-Depends}
 Breaks: libcamera0
 Replaces: libcamera0

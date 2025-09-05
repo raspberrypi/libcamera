@@ -1,3 +1,12 @@
+libcamera (0.5.2+rpt20250903-1) trixie; urgency=medium
+
+  * New upstream version 0.5.2+rpt20250903
+  * Only enable rpi pipelines on arm
+  * d/c: Move libcamera-ipa to Depends
+  * d/salsa-cy.yml: Use internal salsa-ci instance
+
+ -- Serge Schneider <serge@raspberrypi.com>  Fri, 05 Sep 2025 14:23:29 +0100
+
 libcamera (0.5.2-2) unstable; urgency=medium
 
   * Adjust VCS fields in d/control and d/gbp.conf for unstable.

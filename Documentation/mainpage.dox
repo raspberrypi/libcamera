@@ -1,5 +1,9 @@
 /**
-\mainpage libcamera API reference
+\if internal
+\mainpage libcamera internal API reference
+\else
+\mainpage libcamera public API reference
+\endif
 
 Welcome to the API reference for <a href="https://libcamera.org/">libcamera</a>,
 a complex camera support library for Linux, Android and ChromeOS. These pages

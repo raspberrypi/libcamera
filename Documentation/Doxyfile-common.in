@@ -54,6 +54,9 @@ EXCLUDE_SYMBOLS        = libcamera::BoundMethodArgs \
 
 IMAGE_PATH             = "@TOP_SRCDIR@/Documentation/images"
 
+HTML_EXTRA_STYLESHEET  = "@TOP_SRCDIR@/Documentation/doxygen-awesome-css/doxygen-awesome.css" \
+                         "@TOP_SRCDIR@/Documentation/doxygen-awesome-css/doxygen-awesome-sidebar-only.css"
+
 GENERATE_LATEX         = NO
 
 MACRO_EXPANSION        = YES

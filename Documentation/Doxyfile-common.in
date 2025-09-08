@@ -29,6 +29,8 @@ FILE_PATTERNS          = *.c \
 
 RECURSIVE              = YES
 
+EXCLUDE_SYMLINKS       = YES
+
 EXCLUDE_PATTERNS       = @TOP_BUILDDIR@/include/libcamera/ipa/*_serializer.h \
                          @TOP_BUILDDIR@/include/libcamera/ipa/*_proxy.h \
                          @TOP_BUILDDIR@/include/libcamera/ipa/ipu3_*.h \
@@ -50,7 +52,7 @@ EXCLUDE_SYMBOLS        = libcamera::BoundMethodArgs \
                          *::details \
                          std::*
 
-EXCLUDE_SYMLINKS       = YES
+IMAGE_PATH             = "@TOP_SRCDIR@/Documentation/images"
 
 GENERATE_LATEX         = NO
 
@@ -60,8 +62,6 @@ EXPAND_ONLY_PREDEF     = YES
 INCLUDE_PATH           = "@TOP_BUILDDIR@/include" \
                          "@TOP_SRCDIR@/include"
 INCLUDE_FILE_PATTERNS  = *.h
-
-IMAGE_PATH             = "@TOP_SRCDIR@/Documentation/images"
 
 PREDEFINED             = __DOXYGEN__ \
                          __cplusplus \

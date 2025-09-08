@@ -3,11 +3,8 @@
 @INCLUDE_PATH          = @TOP_BUILDDIR@/Documentation
 @INCLUDE               = Doxyfile-common
 
-GENERATE_TAGFILE       = @TOP_BUILDDIR@/Documentation/internal-api-html/tagfile.xml
-
-HIDE_UNDOC_CLASSES     = NO
 HIDE_UNDOC_MEMBERS     = NO
-HTML_OUTPUT            = internal-api-html
+HIDE_UNDOC_CLASSES     = NO
 INTERNAL_DOCS          = YES
 ENABLED_SECTIONS       = internal
 
@@ -33,3 +30,7 @@ EXCLUDE                = @TOP_SRCDIR@/include/libcamera/base/span.h \
                          @TOP_BUILDDIR@/include/libcamera/internal/tracepoints.h \
                          @TOP_BUILDDIR@/include/libcamera/ipa/soft_ipa_interface.h \
                          @TOP_BUILDDIR@/src/libcamera/proxy/
+
+HTML_OUTPUT            = internal-api-html
+
+GENERATE_TAGFILE       = @TOP_BUILDDIR@/Documentation/internal-api-html/tagfile.xml

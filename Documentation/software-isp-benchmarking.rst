@@ -1,7 +1,5 @@
 .. SPDX-License-Identifier: CC-BY-SA-4.0
 
-.. include:: documentation-contents.rst
-
 .. _software-isp-benchmarking:
 
 Software ISP benchmarking

@@ -142,7 +142,7 @@ if sphinx.found()
     sphinx_conf = configure_file(input : 'conf.py.in',
                                  output : 'conf.py',
                                  configuration : {
-                                    'THEME_DIR': meson.current_source_dir(),
+                                    'CURRENT_SRCDIR': meson.current_source_dir(),
                                     'TOP_BUILDDIR': meson.project_build_root(),
                                  })
 

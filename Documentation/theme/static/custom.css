@@ -1,0 +1,5 @@
+/* SPDX-License-Identifier: CC-BY-SA-4.0 */
+/* Hide the documentation nav. It is only used on the website. */
+.documentation-nav {
+	display: none;
+}

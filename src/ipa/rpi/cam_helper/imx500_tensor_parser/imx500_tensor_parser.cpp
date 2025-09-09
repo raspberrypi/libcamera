@@ -623,6 +623,7 @@ int parseInputTensorBody(IMX500InputTensorInfo &inputTensorInfo, const uint8_t *
 	inputTensorInfo.widthStride = inputApParams.widthStride;
 	inputTensorInfo.heightStride = inputApParams.heightStride;
 	inputTensorInfo.networkName = inputApParams.networkName;
+	inputTensorInfo.frameCount = dnnHeader.frameCount;
 
 	return 0;
 }
@@ -693,6 +694,7 @@ int RPiController::imx500ParseOutputTensor(IMX500OutputTensorInfo &outputTensorI
 		LOG(IMX500, Error) << "Failed to populate OutputTensorInfo!";
 		return ret;
 	}
+	outputTensorInfo.frameCount = dnnHeader.frameCount;
 
 	ret = parseOutputTensorBody(outputTensorInfo, src + TensorStride, outputApParams, dnnHeader);
 	if (ret) {

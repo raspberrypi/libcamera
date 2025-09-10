@@ -64,9 +64,9 @@ if doxygen.found() and dot.found()
                                    configuration : cdata)
 
     # The set of public input files stored in the doxygen_public_input array
-    # needs to be set in Doxyfile public. We can't pass them through cdata
-    # cdata, as some of the array members are custom_tgt instances, which
-    # configuration_data.set() doesn't support. Using a separate script invoked
+    # needs to be set in Doxyfile-public. We can't pass them through cdata, as
+    # some of the array members are custom_tgt instances, which
+    # configuration_data.set() doesn't support. Use a separate script invoked
     # through custom_target(), which supports custom_tgt instances as inputs.
 
     doxyfile = custom_target('doxyfile-public',

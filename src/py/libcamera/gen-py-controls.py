@@ -60,11 +60,13 @@ def main(argv):
     parser = argparse.ArgumentParser()
     parser.add_argument('--mode', '-m', type=str, required=True,
                         help='Mode is either "controls" or "properties"')
-    parser.add_argument('--output', '-o', metavar='file', type=str,
+    parser.add_argument('--output', '-o', metavar='file', default=sys.stdout,
+                        type=argparse.FileType('w', encoding='utf-8'),
                         help='Output file name. Defaults to standard output if not specified.')
-    parser.add_argument('--template', '-t', type=str, required=True,
+    parser.add_argument('--template', '-t', required=True,
+                        type=argparse.FileType('r', encoding='utf-8'),
                         help='Template file name.')
-    parser.add_argument('input', type=str, nargs='+',
+    parser.add_argument('input', type=argparse.FileType('rb'), nargs='+',
                         help='Input file name.')
     args = parser.parse_args(argv[1:])
 
@@ -76,7 +78,7 @@ def main(argv):
     vendors = []
 
     for input in args.input:
-        data = yaml.safe_load(open(input, 'rb').read())
+        data = yaml.safe_load(input)
 
         vendor = data['vendor']
         if vendor != 'libcamera':
@@ -94,15 +96,10 @@ def main(argv):
     }
 
     env = jinja2.Environment()
-    template = env.from_string(open(args.template, 'r', encoding='utf-8').read())
+    template = env.from_string(args.template.read())
     string = template.render(data)
 
-    if args.output:
-        output = open(args.output, 'w', encoding='utf-8')
-        output.write(string)
-        output.close()
-    else:
-        sys.stdout.write(string)
+    args.output.write(string)
 
     return 0
 

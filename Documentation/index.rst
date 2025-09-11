@@ -11,7 +11,7 @@
    Application Writer's Guide <guides/application-developer>
    Python Bindings <python-bindings>
    Environment variables <environment_variables>
-   Public API <api-html/index>
+   Public API <public-api/index>
 
 .. toctree::
    :maxdepth: 1
@@ -26,7 +26,7 @@
    SoftwareISP Benchmarking <software-isp-benchmarking>
    Tracing guide <guides/tracing>
    Design document: AE <design/ae>
-   Internal API <internal-api-html/index>
+   Internal API <internal-api/index>
 
 .. toctree::
    :maxdepth: 1

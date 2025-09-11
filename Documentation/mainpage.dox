@@ -20,7 +20,7 @@ your platform the [pipeline handler writer's guide](../guides/pipeline-handler.h
 and the [ipa module writer's guide](../guides/ipa.html) should be helpful.
 
 The full libcamera API is documented here. If you wish to see only the public
-part of the API you can use [these pages](../api-html/index.html) instead.
+part of the API you can use [these pages](../public-api/index.html) instead.
 
 \else
 
@@ -31,7 +31,7 @@ gives an overview on how to achieve that.
 Only the public part of the libcamera API is documented here; if you are a
 developer seeking to add support for your hardware to the library or make other
 improvements, you should switch to the internal API
-[reference pages](../internal-api-html/index.html) instead.
+[reference pages](../internal-api/index.html) instead.
 
 \endif
 */

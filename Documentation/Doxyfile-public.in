@@ -16,8 +16,8 @@ EXCLUDE                = @TOP_SRCDIR@/include/libcamera/base/class.h \
                          @TOP_SRCDIR@/src/libcamera/base/class.cpp \
                          @TOP_SRCDIR@/src/libcamera/base/object.cpp
 
-HTML_OUTPUT            = api-html
+HTML_OUTPUT            = public-api
 
 PREDEFINED            += __DOXYGEN_PUBLIC__
 
-GENERATE_TAGFILE       = @TOP_BUILDDIR@/Documentation/api-html/tagfile.xml
+GENERATE_TAGFILE       = @TOP_BUILDDIR@/Documentation/public-api/tagfile.xml

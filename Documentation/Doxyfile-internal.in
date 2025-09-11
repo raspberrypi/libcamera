@@ -31,6 +31,6 @@ EXCLUDE                = @TOP_SRCDIR@/include/libcamera/base/span.h \
                          @TOP_BUILDDIR@/include/libcamera/ipa/soft_ipa_interface.h \
                          @TOP_BUILDDIR@/src/libcamera/proxy/
 
-HTML_OUTPUT            = internal-api-html
+HTML_OUTPUT            = internal-api
 
-GENERATE_TAGFILE       = @TOP_BUILDDIR@/Documentation/internal-api-html/tagfile.xml
+GENERATE_TAGFILE       = @TOP_BUILDDIR@/Documentation/internal-api/tagfile.xml

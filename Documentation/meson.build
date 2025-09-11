@@ -86,7 +86,7 @@ if doxygen.found() and dot.found()
                                        doxyfile,
                                        doxyfile_common,
                                    ],
-                                   output : 'api-html',
+                                   output : 'public-api',
                                    command : [doxygen, doxyfile],
                                    install : true,
                                    install_dir : doc_install_dir,
@@ -106,7 +106,7 @@ if doxygen.found() and dot.found()
                                          doxygen_public_input,
                                          doxygen_internal_input,
                                      ],
-                                     output : 'internal-api-html',
+                                     output : 'internal-api',
                                      command : [doxygen, doxyfile],
                                      install : true,
                                      install_dir : doc_install_dir,
@@ -150,7 +150,6 @@ if sphinx.found()
     sphinx_conf_dir = fs.parent(sphinx_conf)
 
     docs_sources = [
-        'api-html/index.rst',
         'camera-sensor-model.rst',
         'code-of-conduct.rst',
         'coding-style.rst',
@@ -164,11 +163,12 @@ if sphinx.found()
         'guides/pipeline-handler.rst',
         'guides/tracing.rst',
         'index.rst',
-        'internal-api-html/index.rst',
+        'internal-api/index.rst',
         'introduction.rst',
         'lens_driver_requirements.rst',
         'libcamera_architecture.rst',
         'mali-c55.dot',
+        'public-api/index.rst',
         'python-bindings.rst',
         'sensor_driver_requirements.rst',
         'software-isp-benchmarking.rst',
@@ -193,7 +193,7 @@ if sphinx.found()
                   install_tag : 'doc')
 
     meson.add_install_script('install-doxygen.sh', doc_install_dir,
-                             'api-html', 'internal-api-html')
+                             'public-api', 'internal-api')
 
     custom_target('documentation-linkcheck',
                   command : [sphinx, '-W', '-b', 'linkcheck',

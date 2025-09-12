@@ -15,6 +15,7 @@
 
 #include "libcamera/internal/camera.h"
 #include "libcamera/internal/device_enumerator.h"
+#include "libcamera/internal/global_configuration.h"
 #include "libcamera/internal/ipa_manager.h"
 #include "libcamera/internal/pipeline_handler.h"
 
@@ -257,6 +258,13 @@ void CameraManager::Private::removeCamera(std::shared_ptr<Camera> camera)
 	CameraManager *const o = LIBCAMERA_O_PTR();
 	o->cameraRemoved.emit(camera);
 }
+
+/**
+ * \fn const GlobalConfiguration &CameraManager::Private::configuration() const
+ * \brief Get global configuration bound to the camera manager
+ *
+ * \return Reference to the configuration
+ */
 
 /**
  * \fn CameraManager::Private::ipaManager() const

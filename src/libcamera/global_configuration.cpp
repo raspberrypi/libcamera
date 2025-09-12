@@ -72,6 +72,15 @@ bool GlobalConfiguration::loadFile(const std::filesystem::path &fileName)
 		return true;
 	}
 
+	const std::optional<int> version = (*configuration)["version"].get<int>();
+	if (version != 1) {
+		LOG(Configuration, Error)
+			<< "Failed to load configuration file due to unsupported version "
+			<< (version ? std::to_string(version.value()) : "\"unspecified\"")
+			<< ", expected version 1";
+		return true;
+	}
+
 	yamlConfiguration_ = std::move(configuration);
 	return true;
 }

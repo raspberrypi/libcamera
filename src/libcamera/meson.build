@@ -31,6 +31,7 @@ libcamera_internal_sources = files([
     'device_enumerator_sysfs.cpp',
     'dma_buf_allocator.cpp',
     'formats.cpp',
+    'global_configuration.cpp',
     'ipa_controls.cpp',
     'ipa_data_serializer.cpp',
     'ipa_interface.cpp',

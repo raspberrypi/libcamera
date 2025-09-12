@@ -661,7 +661,7 @@ CameraConfiguration::Status MaliC55CameraConfiguration::validate()
 				std::abs(static_cast<int>(minSensorSize.height) -
 					 static_cast<int>(size.height));
 		if (dist < distance) {
-			dist = distance;
+			distance = dist;
 			bestSize = size;
 		}
 	}

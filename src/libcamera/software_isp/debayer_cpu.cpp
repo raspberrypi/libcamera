@@ -58,6 +58,13 @@ DebayerCpu::DebayerCpu(std::unique_ptr<SwStatsCpu> stats, const GlobalConfigurat
 	enableInputMemcpy_ =
 		configuration.option<bool>({ "software_isp", "copy_input_buffer" }).value_or(true);
 
+	skipBeforeMeasure_ = configuration.option<unsigned int>(
+						  { "software_isp", "measure", "skip" })
+				     .value_or(skipBeforeMeasure_);
+	framesToMeasure_ = configuration.option<unsigned int>(
+						{ "software_isp", "measure", "number" })
+				   .value_or(framesToMeasure_);
+
 	/* Initialize color lookup tables */
 	for (unsigned int i = 0; i < DebayerParams::kRGBLookupSize; i++) {
 		red_[i] = green_[i] = blue_[i] = i;
@@ -560,7 +567,7 @@ int DebayerCpu::configure(const StreamConfiguration &inputCfg,
 			lineBuffers_[i].resize(lineBufferLength_);
 	}
 
-	measuredFrames_ = 0;
+	encounteredFrames_ = 0;
 	frameProcessTime_ = 0;
 
 	return 0;
@@ -766,7 +773,10 @@ void DebayerCpu::process(uint32_t frame, FrameBuffer *input, FrameBuffer *output
 {
 	timespec frameStartTime;
 
-	if (measuredFrames_ < DebayerCpu::kLastFrameToMeasure) {
+	bool measure = framesToMeasure_ > 0 &&
+		       encounteredFrames_ < skipBeforeMeasure_ + framesToMeasure_ &&
+		       ++encounteredFrames_ > skipBeforeMeasure_;
+	if (measure) {
 		frameStartTime = {};
 		clock_gettime(CLOCK_MONOTONIC_RAW, &frameStartTime);
 	}
@@ -823,18 +833,15 @@ void DebayerCpu::process(uint32_t frame, FrameBuffer *input, FrameBuffer *output
 	dmaSyncers.clear();
 
 	/* Measure before emitting signals */
-	if (measuredFrames_ < DebayerCpu::kLastFrameToMeasure &&
-	    ++measuredFrames_ > DebayerCpu::kFramesToSkip) {
+	if (measure) {
 		timespec frameEndTime = {};
 		clock_gettime(CLOCK_MONOTONIC_RAW, &frameEndTime);
 		frameProcessTime_ += timeDiff(frameEndTime, frameStartTime);
-		if (measuredFrames_ == DebayerCpu::kLastFrameToMeasure) {
-			const unsigned int measuredFrames = DebayerCpu::kLastFrameToMeasure -
-							    DebayerCpu::kFramesToSkip;
+		if (encounteredFrames_ == skipBeforeMeasure_ + framesToMeasure_) {
 			LOG(Debayer, Info)
-				<< "Processed " << measuredFrames
+				<< "Processed " << framesToMeasure_
 				<< " frames in " << frameProcessTime_ / 1000 << "us, "
-				<< frameProcessTime_ / (1000 * measuredFrames)
+				<< frameProcessTime_ / (1000 * framesToMeasure_)
 				<< " us/frame";
 		}
 	}

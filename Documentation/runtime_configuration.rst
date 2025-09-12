@@ -48,6 +48,9 @@ file structure:
             software_isp: # true/false
     software_isp:
       copy_input_buffer: # true/false
+      measure:
+        skip: # non-negative integer, frames to skip initially
+        number: # non-negative integer, frames to measure
 
 Configuration file example
 --------------------------
@@ -78,6 +81,9 @@ Configuration file example
              software_isp: true
      software_isp:
        copy_input_buffer: false
+       measure:
+         skip: 50
+         number: 30
 
 List of variables and configuration options
 -------------------------------------------
@@ -148,6 +154,18 @@ software_isp.copy_input_buffer
    overhead.
 
    Example value: ``false``
+
+software_isp.measure.skip, software_isp.measure.number
+   Define per-frame time measurement parameters in software ISP. `skip`
+   defines how many initial frames are skipped before starting the
+   measurement; `number` defines how many frames then participate in the
+   measurement.
+
+   Set `software_isp.measure.number` to 0 to disable the measurement.
+
+   Example `skip` value: ``50``
+
+   Example `number` value: ``30``
 
 Further details
 ---------------

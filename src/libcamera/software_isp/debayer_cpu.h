@@ -161,11 +161,10 @@ private:
 	unsigned int xShift_; /* Offset of 0/1 applied to window_.x */
 	bool enableInputMemcpy_;
 	bool swapRedBlueGains_;
-	unsigned int measuredFrames_;
+	unsigned int encounteredFrames_;
 	int64_t frameProcessTime_;
-	/* Skip 30 frames for things to stabilize then measure 30 frames */
-	static constexpr unsigned int kFramesToSkip = 30;
-	static constexpr unsigned int kLastFrameToMeasure = 60;
+	unsigned int skipBeforeMeasure_ = 30;
+	unsigned int framesToMeasure_ = 30;
 };
 
 } /* namespace libcamera */

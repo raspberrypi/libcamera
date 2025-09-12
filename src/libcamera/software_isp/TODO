@@ -71,31 +71,6 @@ per-frame buffers like we do for hardware ISPs.
 
 ---
 
-7. Performance measurement configuration
-
-> void DebayerCpu::process(FrameBuffer *input, FrameBuffer *output, DebayerParams params)
-> /* Measure before emitting signals */
-> if (measuredFrames_ < DebayerCpu::kLastFrameToMeasure &&
->     ++measuredFrames_ > DebayerCpu::kFramesToSkip) {
-> 	timespec frameEndTime = {};
-> 	clock_gettime(CLOCK_MONOTONIC_RAW, &frameEndTime);
-> 	frameProcessTime_ += timeDiff(frameEndTime, frameStartTime);
-> 	if (measuredFrames_ == DebayerCpu::kLastFrameToMeasure) {
-> 		const unsigned int measuredFrames = DebayerCpu::kLastFrameToMeasure -
-> 						    DebayerCpu::kFramesToSkip;
-> 		LOG(Debayer, Info)
-> 			<< "Processed " << measuredFrames
-> 			<< " frames in " << frameProcessTime_ / 1000 << "us, "
-> 			<< frameProcessTime_ / (1000 * measuredFrames)
-> 			<< " us/frame";
-> 	}
-> }
-
-I wonder if there would be a way to control at runtime when/how to
-perform those measurements. Maybe that's a bit overkill.
-
----
-
 8. DebayerCpu cleanups
 
 > >> class DebayerCpu : public Debayer, public Object

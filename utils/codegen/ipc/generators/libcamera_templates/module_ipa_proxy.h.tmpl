@@ -37,7 +37,7 @@ namespace {{ns}} {
 class {{proxy_name}} : public IPAProxy, public {{interface_name}}, public Object
 {
 public:
-	{{proxy_name}}(IPAModule *ipam, bool isolate);
+	{{proxy_name}}(IPAModule *ipam, bool isolate, const GlobalConfiguration &configuration);
 	~{{proxy_name}}();
 
 {% for method in interface_main.methods %}

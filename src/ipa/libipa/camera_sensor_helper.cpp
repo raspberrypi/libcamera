@@ -497,6 +497,16 @@ public:
 };
 REGISTER_CAMERA_SENSOR_HELPER("gc08a3", CameraSensorHelperGc08a3)
 
+class CameraSensorHelperHm1246 : public CameraSensorHelper
+{
+public:
+	CameraSensorHelperHm1246()
+	{
+		gain_ = AnalogueGainLinear{ 1, 16, 0, 16 };
+	}
+};
+REGISTER_CAMERA_SENSOR_HELPER("hm1246", CameraSensorHelperHm1246)
+
 class CameraSensorHelperImx214 : public CameraSensorHelper
 {
 public:

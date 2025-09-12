@@ -8,9 +8,9 @@
 
    Introduction <self>
    Feature Requirements <feature_requirements>
+   Runtime configuration <runtime_configuration>
    Application Writer's Guide <guides/application-developer>
    Python Bindings <python-bindings>
-   Environment variables <environment_variables>
    Public API <public-api/index>
 
 .. toctree::

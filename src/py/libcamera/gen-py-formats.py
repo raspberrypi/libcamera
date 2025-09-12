@@ -37,7 +37,7 @@ def main(argv):
                         help='Template file name.')
     args = parser.parse_args(argv[1:])
 
-    with open(args.input, encoding='utf-8') as f:
+    with open(args.input, 'rb') as f:
         formats = yaml.safe_load(f)['formats']
 
     data = generate(formats)

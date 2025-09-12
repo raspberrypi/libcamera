@@ -18,6 +18,7 @@
 #include <libcamera/base/object.h>
 
 #include "libcamera/internal/bayer_format.h"
+#include "libcamera/internal/global_configuration.h"
 
 #include "debayer.h"
 #include "swstats_cpu.h"
@@ -27,7 +28,7 @@ namespace libcamera {
 class DebayerCpu : public Debayer, public Object
 {
 public:
-	DebayerCpu(std::unique_ptr<SwStatsCpu> stats);
+	DebayerCpu(std::unique_ptr<SwStatsCpu> stats, const GlobalConfiguration &configuration);
 	~DebayerCpu();
 
 	int configure(const StreamConfiguration &inputCfg,

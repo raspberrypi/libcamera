@@ -46,6 +46,8 @@ file structure:
         supported_devices:
           - driver: # driver name, e.g. `mxc-isi`
             software_isp: # true/false
+    software_isp:
+      copy_input_buffer: # true/false
 
 Configuration file example
 --------------------------
@@ -74,6 +76,8 @@ Configuration file example
          supported_devices:
            - driver: mxc-isi
              software_isp: true
+     software_isp:
+       copy_input_buffer: false
 
 List of variables and configuration options
 -------------------------------------------
@@ -135,6 +139,15 @@ pipelines.simple.supported_devices.driver, pipelines.simple.supported_devices.so
    Example `driver` value: ``mxc-isi``
 
    Example `software_isp` value: ``true``
+
+software_isp.copy_input_buffer
+   Define whether input buffers should be copied into standard (cached)
+   memory in software ISP. This is done by default to prevent very slow
+   processing on platforms with non-cached buffers. It can be set to
+   false on platforms with cached buffers to avoid an unnecessary
+   overhead.
+
+   Example value: ``false``
 
 Further details
 ---------------

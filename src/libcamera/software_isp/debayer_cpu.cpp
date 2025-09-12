@@ -24,6 +24,7 @@
 #include "libcamera/internal/bayer_format.h"
 #include "libcamera/internal/dma_buf_allocator.h"
 #include "libcamera/internal/framebuffer.h"
+#include "libcamera/internal/global_configuration.h"
 #include "libcamera/internal/mapped_framebuffer.h"
 
 namespace libcamera {
@@ -38,8 +39,9 @@ namespace libcamera {
 /**
  * \brief Constructs a DebayerCpu object
  * \param[in] stats Pointer to the stats object to use
+ * \param[in] configuration The global configuration
  */
-DebayerCpu::DebayerCpu(std::unique_ptr<SwStatsCpu> stats)
+DebayerCpu::DebayerCpu(std::unique_ptr<SwStatsCpu> stats, const GlobalConfiguration &configuration)
 	: stats_(std::move(stats))
 {
 	/*
@@ -49,8 +51,12 @@ DebayerCpu::DebayerCpu(std::unique_ptr<SwStatsCpu> stats)
 	 * enable_input_memcpy_ makes this behavior configurable.  At the moment, we
 	 * always set it to true as the safer choice but this should be changed in
 	 * future.
+	 *
+	 * \todo Make memcpy automatic based on runtime detection of platform
+	 * capabilities.
 	 */
-	enableInputMemcpy_ = true;
+	enableInputMemcpy_ =
+		configuration.option<bool>({ "software_isp", "copy_input_buffer" }).value_or(true);
 
 	/* Initialize color lookup tables */
 	for (unsigned int i = 0; i < DebayerParams::kRGBLookupSize; i++) {

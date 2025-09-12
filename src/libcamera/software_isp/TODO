@@ -71,17 +71,6 @@ per-frame buffers like we do for hardware ISPs.
 
 ---
 
-6. Input buffer copying configuration
-
-> DebayerCpu::DebayerCpu(std::unique_ptr<SwStatsCpu> stats)
-> 	: stats_(std::move(stats)), gammaCorrection_(1.0)
-> {
-> 	enableInputMemcpy_ = true;
-
-Set this appropriately and/or make it configurable.
-
----
-
 7. Performance measurement configuration
 
 > void DebayerCpu::process(FrameBuffer *input, FrameBuffer *output, DebayerParams params)

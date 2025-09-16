@@ -121,14 +121,12 @@ int generateDecompandLut(const ipa::Pwl &pwl, uint16_t *lut, std::size_t lutSize
 	constexpr int step = 1024;
 	for (std::size_t i = 0; i < lutSize; ++i) {
 		int x = i * step;
-		if (x > 65535)
-			x = 65535;
 
 		int y = pwl.eval(x);
 		if (y < 0)
 			return -1;
 
-		lut[i] = static_cast<uint16_t>(std::min(y, 65535));
+		lut[i] = y;
 	}
 
 	return 0;

@@ -150,6 +150,7 @@ if sphinx.found()
     sphinx_conf_dir = fs.parent(sphinx_conf)
 
     docs_sources = [
+        'api-html/index.rst',
         'camera-sensor-model.rst',
         'code-of-conduct.rst',
         'coding-style.rst',
@@ -164,6 +165,7 @@ if sphinx.found()
         'guides/pipeline-handler.rst',
         'guides/tracing.rst',
         'index.rst',
+        'internal-api-html/index.rst',
         'introduction.rst',
         'lens_driver_requirements.rst',
         'libcamera_architecture.rst',

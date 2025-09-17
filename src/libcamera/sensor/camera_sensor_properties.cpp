@@ -461,6 +461,23 @@ const CameraSensorProperties *CameraSensorProperties::get(const std::string &sen
 			},
 			.sensorDelays = { },
 		} },
+		{ "vd55g1", {
+			.unitCellSize = { 2160, 2160 },
+			.testPatternModes = {
+				{ controls::draft::TestPatternModeOff, 0 },
+				{ controls::draft::TestPatternModePn9, 2},
+				/*
+				 * No corresponding test pattern mode for:
+				 * 1: "Diagonal Gray Scale"
+				 */
+			},
+			.sensorDelays = {
+				.exposureDelay = 2,
+				.gainDelay = 2,
+				.vblankDelay = 2,
+				.hblankDelay = 2
+			},
+		} },
 		{ "vd56g3", {
 			.unitCellSize = { 2610, 2610 },
 			.testPatternModes = {

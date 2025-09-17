@@ -75,11 +75,11 @@ pygments_style = None
 doxylink = {
     'doxy-pub': (
         '@TOP_BUILDDIR@/Documentation/api-html/tagfile.xml',
-        '../api-html/',
+        'api-html/',
     ),
     'doxy-int': (
         '@TOP_BUILDDIR@/Documentation/internal-api-html/tagfile.xml',
-        '../internal-api-html/',
+        'internal-api-html/',
     ),
 }
 

@@ -193,6 +193,9 @@ if sphinx.found()
                   install_dir : doc_install_dir,
                   install_tag : 'doc')
 
+    meson.add_install_script('install-doxygen.sh', doc_install_dir,
+                             'api-html', 'internal-api-html')
+
     custom_target('documentation-linkcheck',
                   command : [sphinx, '-W', '-b', 'linkcheck',
                              '-c', sphinx_conf_dir,

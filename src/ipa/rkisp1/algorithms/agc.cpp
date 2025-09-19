@@ -567,15 +567,16 @@ void Agc::process(IPAContext &context, [[maybe_unused]] const uint32_t frame,
 	setExposureCompensation(pow(2.0, frameContext.agc.exposureValue));
 
 	utils::Duration newExposureTime;
-	double aGain, dGain;
-	std::tie(newExposureTime, aGain, dGain) =
+	double aGain, qGain, dGain;
+	std::tie(newExposureTime, aGain, qGain, dGain) =
 		calculateNewEv(frameContext.agc.constraintMode,
 			       frameContext.agc.exposureMode,
 			       hist, effectiveExposureValue);
 
 	LOG(RkISP1Agc, Debug)
-		<< "Divided up exposure time, analogue gain and digital gain are "
-		<< newExposureTime << ", " << aGain << " and " << dGain;
+		<< "Divided up exposure time, analogue gain, quantization gain"
+		<< " and digital gain are " << newExposureTime << ", " << aGain
+		<< ", " << qGain << " and " << dGain;
 
 	IPAActiveState &activeState = context.activeState;
 	/* Update the estimated exposure and gain. */

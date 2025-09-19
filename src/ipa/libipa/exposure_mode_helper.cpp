@@ -178,14 +178,24 @@ double ExposureModeHelper::clampGain(double gain, double *quantizationGain) cons
  * required exposure, the helper falls-back to simply maximising the exposure
  * time first, followed by analogue gain, followed by digital gain.
  *
- * \return Tuple of exposure time, analogue gain, and digital gain
+ * During the calculations the gain missed due to quantization is recorded and
+ * returned as quantization gain. The quantization gain is not included in the
+ * digital gain. So to exactly apply the given exposure, both quantization gain
+ * and digital gain must be applied.
+ *
+ * \return Tuple of exposure time, analogue gain, quantization gain and digital
+ * gain
  */
-std::tuple<utils::Duration, double, double>
+std::tuple<utils::Duration, double, double, double>
 ExposureModeHelper::splitExposure(utils::Duration exposure) const
 {
 	ASSERT(maxExposureTime_);
 	ASSERT(maxGain_);
 
+	utils::Duration exposureTime;
+	double gain;
+	double quantGain;
+	double quantGain2;
 	bool gainFixed = minGain_ == maxGain_;
 	bool exposureTimeFixed = minExposureTime_ == maxExposureTime_;
 
@@ -193,16 +203,21 @@ ExposureModeHelper::splitExposure(utils::Duration exposure) const
 	 * There's no point entering the loop if we cannot change either gain
 	 * nor exposure time anyway.
 	 */
-	if (exposureTimeFixed && gainFixed)
-		return { minExposureTime_, minGain_, exposure / (minExposureTime_ * minGain_) };
+	if (exposureTimeFixed && gainFixed) {
+		exposureTime = clampExposureTime(minExposureTime_, &quantGain);
+		gain = clampGain(minGain_, &quantGain2);
+		quantGain *= quantGain2;
 
-	utils::Duration exposureTime;
+		return { exposureTime, gain, quantGain,
+			 exposure / (exposureTime * gain * quantGain) };
+	}
+
 	double stageGain = clampGain(1.0);
 	double lastStageGain = stageGain;
-	double gain;
 
 	for (unsigned int stage = 0; stage < gains_.size(); stage++) {
-		utils::Duration stageExposureTime = clampExposureTime(exposureTimes_[stage]);
+		utils::Duration stageExposureTime = clampExposureTime(exposureTimes_[stage],
+								      &quantGain);
 		stageGain = clampGain(gains_[stage]);
 
 		/*
@@ -215,18 +230,22 @@ ExposureModeHelper::splitExposure(utils::Duration exposure) const
 
 		/* Clamp the gain to lastStageGain and regulate exposureTime. */
 		if (stageExposureTime * lastStageGain >= exposure) {
-			exposureTime = clampExposureTime(exposure / lastStageGain);
-			gain = clampGain(exposure / exposureTime);
+			exposureTime = clampExposureTime(exposure / lastStageGain, &quantGain);
+			gain = clampGain(exposure / exposureTime, &quantGain2);
+			quantGain *= quantGain2;
 
-			return { exposureTime, gain, exposure / (exposureTime * gain) };
+			return { exposureTime, gain, quantGain,
+				 exposure / (exposureTime * gain * quantGain) };
 		}
 
 		/* Clamp the exposureTime to stageExposureTime and regulate gain. */
 		if (stageExposureTime * stageGain >= exposure) {
 			exposureTime = stageExposureTime;
-			gain = clampGain(exposure / exposureTime);
+			gain = clampGain(exposure / exposureTime, &quantGain2);
+			quantGain *= quantGain2;
 
-			return { exposureTime, gain, exposure / (exposureTime * gain) };
+			return { exposureTime, gain, quantGain,
+				 exposure / (exposureTime * gain * quantGain) };
 		}
 
 		lastStageGain = stageGain;
@@ -239,10 +258,12 @@ ExposureModeHelper::splitExposure(utils::Duration exposure) const
 	 * stages to use then the default stageGain of 1.0 is used so that
 	 * exposure time is maxed before gain is touched at all.
 	 */
-	exposureTime = clampExposureTime(exposure / stageGain);
-	gain = clampGain(exposure / exposureTime);
+	exposureTime = clampExposureTime(exposure / stageGain, &quantGain);
+	gain = clampGain(exposure / exposureTime, &quantGain2);
+	quantGain *= quantGain2;
 
-	return { exposureTime, gain, exposure / (exposureTime * gain) };
+	return { exposureTime, gain, quantGain,
+		 exposure / (exposureTime * gain * quantGain) };
 }
 
 /**

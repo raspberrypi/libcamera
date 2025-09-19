@@ -208,6 +208,8 @@ int Agc::configure(IPAContext &context, const IPACameraSensorInfo &configInfo)
 		  context.configuration.sensor.minAnalogueGain,
 		  context.configuration.sensor.maxAnalogueGain, {});
 
+	context.activeState.agc.automatic.yTarget = effectiveYTarget();
+
 	resetFrameCount();
 
 	return 0;
@@ -374,6 +376,8 @@ void Agc::prepare(IPAContext &context, const uint32_t frame,
 		frameContext.compress.enable = true;
 		frameContext.compress.gain = frameContext.agc.quantizationGain;
 	}
+
+	frameContext.agc.yTarget = context.activeState.agc.automatic.yTarget;
 
 	if (frame > 0 && !frameContext.agc.updateMetering)
 		return;
@@ -627,6 +631,7 @@ void Agc::process(IPAContext &context, [[maybe_unused]] const uint32_t frame,
 	activeState.agc.automatic.exposure = newExposureTime / lineDuration;
 	activeState.agc.automatic.gain = aGain;
 	activeState.agc.automatic.quantizationGain = qGain;
+	activeState.agc.automatic.yTarget = effectiveYTarget();
 	/*
 	 * Expand the target frame duration so that we do not run faster than
 	 * the minimum frame duration when we have short exposures.

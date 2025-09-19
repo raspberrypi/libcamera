@@ -7,6 +7,7 @@
 
 #include "agc_mean_luminance.h"
 
+#include <algorithm>
 #include <cmath>
 
 #include <libcamera/base/log.h>
@@ -408,16 +409,20 @@ int AgcMeanLuminance::parseTuningData(const YamlObject &tuningData)
  * \param[in] maxExposureTime Maximum ewposure time to allow
  * \param[in] minGain Minimum gain to allow
  * \param[in] maxGain Maximum gain to allow
+ * \param[in] constraints Additional constraints to apply
  *
  * This function calls \ref ExposureModeHelper::setLimits() for each
  * ExposureModeHelper that has been created for this class.
  */
 void AgcMeanLuminance::setLimits(utils::Duration minExposureTime,
 				 utils::Duration maxExposureTime,
-				 double minGain, double maxGain)
+				 double minGain, double maxGain,
+				 std::vector<AgcMeanLuminance::AgcConstraint> constraints)
 {
 	for (auto &[id, helper] : exposureModeHelpers_)
 		helper->setLimits(minExposureTime, maxExposureTime, minGain, maxGain);
+
+	additionalConstraints_ = std::move(constraints);
 }
 
 /**
@@ -495,8 +500,7 @@ double AgcMeanLuminance::constraintClampGain(uint32_t constraintModeIndex,
 					     const Histogram &hist,
 					     double gain)
 {
-	std::vector<AgcConstraint> &constraints = constraintModes_[constraintModeIndex];
-	for (const AgcConstraint &constraint : constraints) {
+	auto applyConstraint = [&gain, &hist](const AgcConstraint &constraint) {
 		double newGain = constraint.yTarget * hist.bins() /
 				 hist.interQuantileMean(constraint.qLo, constraint.qHi);
 
@@ -515,7 +519,12 @@ double AgcMeanLuminance::constraintClampGain(uint32_t constraintModeIndex,
 				<< newGain;
 			gain = newGain;
 		}
-	}
+	};
+
+	std::vector<AgcConstraint> &constraints = constraintModes_[constraintModeIndex];
+	std::for_each(constraints.begin(), constraints.end(), applyConstraint);
+
+	std::for_each(additionalConstraints_.begin(), additionalConstraints_.end(), applyConstraint);
 
 	return gain;
 }

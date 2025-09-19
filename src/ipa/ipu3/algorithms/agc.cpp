@@ -117,7 +117,7 @@ int Agc::configure(IPAContext &context,
 
 	/* \todo Run this again when FrameDurationLimits is passed in */
 	setLimits(minExposureTime_, maxExposureTime_, minAnalogueGain_,
-		  maxAnalogueGain_);
+		  maxAnalogueGain_, {});
 	resetFrameCount();
 
 	return 0;

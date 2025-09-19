@@ -206,7 +206,7 @@ int Agc::configure(IPAContext &context, const IPACameraSensorInfo &configInfo)
 	setLimits(context.configuration.sensor.minExposureTime,
 		  context.configuration.sensor.maxExposureTime,
 		  context.configuration.sensor.minAnalogueGain,
-		  context.configuration.sensor.maxAnalogueGain);
+		  context.configuration.sensor.maxAnalogueGain, {});
 
 	resetFrameCount();
 
@@ -590,7 +590,7 @@ void Agc::process(IPAContext &context, [[maybe_unused]] const uint32_t frame,
 		maxAnalogueGain = frameContext.agc.gain;
 	}
 
-	setLimits(minExposureTime, maxExposureTime, minAnalogueGain, maxAnalogueGain);
+	setLimits(minExposureTime, maxExposureTime, minAnalogueGain, maxAnalogueGain, {});
 
 	/*
 	 * The Agc algorithm needs to know the effective exposure value that was

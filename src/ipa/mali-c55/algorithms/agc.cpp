@@ -173,7 +173,8 @@ int Agc::configure(IPAContext &context,
 	setLimits(context.configuration.agc.minShutterSpeed,
 		  context.configuration.agc.maxShutterSpeed,
 		  context.configuration.agc.minAnalogueGain,
-		  context.configuration.agc.maxAnalogueGain);
+		  context.configuration.agc.maxAnalogueGain,
+		  {});
 
 	resetFrameCount();
 

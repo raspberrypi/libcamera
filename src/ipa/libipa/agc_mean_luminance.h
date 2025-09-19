@@ -51,7 +51,7 @@ public:
 	}
 
 	void setLimits(utils::Duration minExposureTime, utils::Duration maxExposureTime,
-		       double minGain, double maxGain);
+		       double minGain, double maxGain, std::vector<AgcConstraint> constraints);
 
 	std::map<int32_t, std::vector<AgcConstraint>> constraintModes()
 	{
@@ -97,6 +97,7 @@ private:
 	utils::Duration filteredExposure_;
 	double relativeLuminanceTarget_;
 
+	std::vector<AgcConstraint> additionalConstraints_;
 	std::map<int32_t, std::vector<AgcConstraint>> constraintModes_;
 	std::map<int32_t, std::shared_ptr<ExposureModeHelper>> exposureModeHelpers_;
 	ControlInfoMap::Map controls_;

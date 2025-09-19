@@ -81,6 +81,7 @@ struct IPAActiveState {
 		struct {
 			uint32_t exposure;
 			double gain;
+			double quantizationGain;
 		} automatic;
 
 		bool autoExposureEnabled;
@@ -135,6 +136,7 @@ struct IPAFrameContext : public FrameContext {
 		uint32_t exposure;
 		double gain;
 		double exposureValue;
+		double quantizationGain;
 		uint32_t vblank;
 		bool autoExposureEnabled;
 		bool autoGainEnabled;

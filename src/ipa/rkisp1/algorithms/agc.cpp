@@ -594,7 +594,12 @@ void Agc::process(IPAContext &context, [[maybe_unused]] const uint32_t frame,
 		maxAnalogueGain = frameContext.agc.gain;
 	}
 
-	setLimits(minExposureTime, maxExposureTime, minAnalogueGain, maxAnalogueGain, {});
+	std::vector<AgcMeanLuminance::AgcConstraint> additionalConstraints;
+	if (context.activeState.wdr.mode != controls::WdrOff)
+		additionalConstraints.push_back(context.activeState.wdr.constraint);
+
+	setLimits(minExposureTime, maxExposureTime, minAnalogueGain, maxAnalogueGain,
+		  std::move(additionalConstraints));
 
 	/*
 	 * The Agc algorithm needs to know the effective exposure value that was

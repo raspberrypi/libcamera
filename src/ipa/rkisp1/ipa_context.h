@@ -26,6 +26,7 @@
 
 #include <libipa/camera_sensor_helper.h>
 #include <libipa/fc_queue.h>
+#include "libipa/agc_mean_luminance.h"
 
 namespace libcamera {
 
@@ -131,6 +132,13 @@ struct IPAActiveState {
 	struct {
 		double gamma;
 	} goc;
+
+	struct {
+		controls::WdrModeEnum mode;
+		AgcMeanLuminance::AgcConstraint constraint;
+		double gain;
+		double strength;
+	} wdr;
 };
 
 struct IPAFrameContext : public FrameContext {
@@ -200,6 +208,12 @@ struct IPAFrameContext : public FrameContext {
 	struct {
 		double lux;
 	} lux;
+
+	struct {
+		controls::WdrModeEnum mode;
+		double strength;
+		double gain;
+	} wdr;
 };
 
 struct IPAContext {

@@ -1283,5 +1283,67 @@ controls:
         \sa SensorTimestamp
 
         The FrameWallClock control can only be returned in metadata.
+  - WdrMode:
+      type: int32_t
+      direction: inout
+      description: |
+        Set the WDR mode.
+
+        The WDR mode is used to select the algorithm used for global tone
+        mapping. It will automatically reduce the exposure time of the sensor
+        so that there are only a small number of saturated pixels in the image.
+        The algorithm then compensates for the loss of brightness by applying a
+        global tone mapping curve to the image.
+      enum:
+        - name: WdrOff
+          value: 0
+          description: Wdr is disabled.
+        - name: WdrLinear
+          value: 1
+          description:
+            Apply a linear global tone mapping curve.
+
+            A curve with two linear sections is applied. This produces good
+            results at the expense of a slightly artificial look.
+        - name: WdrPower
+          value: 2
+          description: |
+            Apply a power global tone mapping curve.
+
+            This curve has high gain values on the dark areas of an image and
+            high compression values on the bright area. It therefore tends to
+            produce noticeable noise artifacts.
+        - name: WdrExponential
+          value: 3
+          description: |
+            Apply an exponential global tone mapping curve.
+
+            This curve has lower gain values in dark areas compared to the power
+            curve but produces a more natural look compared to the linear curve.
+            It is therefore the best choice for most scenes.
+        - name: WdrHistogramEqualization
+          value: 4
+          description: |
+            Apply histogram equalization.
+
+            This curve preserves most of the information of the image at the
+            expense of a very artificial look. It is therefore best suited for
+            technical analysis.
+  - WdrStrength:
+      type: float
+      direction: in
+      description: |
+        Specify the strength of the wdr algorithm. The exact meaning of this
+        value is specific to the algorithm in use. Usually a value of 0 means no
+        global tone mapping is applied. A values of 1 is the default value and
+        the correct value for most scenes. A value above 1 increases the global
+        tone mapping effect and can lead to unrealistic image effects.
+  - WdrMaxBrightPixels:
+      type: float
+      direction: in
+      description: |
+        Percentage of allowed (nearly) saturated pixels. The WDR algorithm
+        reduces the WdrExposureValue until the amount of pixels that are close
+        to saturation is lower than this value.
 
 ...

@@ -488,18 +488,18 @@ double AgcMeanLuminance::constraintClampGain(uint32_t constraintModeIndex,
 
 		if (constraint.bound == AgcConstraint::Bound::Lower &&
 		    newGain > gain) {
-			gain = newGain;
 			LOG(AgcMeanLuminance, Debug)
 				<< "Apply lower bound: " << gain << " to "
 				<< newGain;
+			gain = newGain;
 		}
 
 		if (constraint.bound == AgcConstraint::Bound::Upper &&
 		    newGain < gain) {
-			gain = newGain;
 			LOG(AgcMeanLuminance, Debug)
 				<< "Apply upper bound: " << gain << " to "
 				<< newGain;
+			gain = newGain;
 		}
 	}
 

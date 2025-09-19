@@ -198,10 +198,10 @@ ExposureModeHelper::splitExposure(utils::Duration exposure) const
 
 	utils::Duration exposureTime;
 	double stageGain = 1.0;
+	double lastStageGain = 1.0;
 	double gain;
 
 	for (unsigned int stage = 0; stage < gains_.size(); stage++) {
-		double lastStageGain = stage == 0 ? 1.0 : clampGain(gains_[stage - 1]);
 		utils::Duration stageExposureTime = clampExposureTime(exposureTimes_[stage]);
 		stageGain = clampGain(gains_[stage]);
 
@@ -228,6 +228,8 @@ ExposureModeHelper::splitExposure(utils::Duration exposure) const
 
 			return { exposureTime, gain, exposure / (exposureTime * gain) };
 		}
+
+		lastStageGain = stageGain;
 	}
 
 	/*

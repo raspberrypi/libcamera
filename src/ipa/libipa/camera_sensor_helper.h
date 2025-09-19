@@ -29,6 +29,7 @@ public:
 	std::optional<int16_t> blackLevel() const { return blackLevel_; }
 	virtual uint32_t gainCode(double gain) const;
 	virtual double gain(uint32_t gainCode) const;
+	double quantizeGain(double gain, double *quantizationGain) const;
 
 protected:
 	struct AnalogueGainLinear {

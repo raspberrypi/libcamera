@@ -132,6 +132,29 @@ double CameraSensorHelper::gain(uint32_t gainCode) const
 }
 
 /**
+ * \brief Quantize the given gain value
+ * \param[in] _gain The real gain
+ * \param[out] quantizationGain The gain that is lost due to quantization
+ *
+ * This function returns the actual gain that is applied when the sensor's gain
+ * is set to gainCode(_gain).
+ *
+ * It shall be guaranteed that gainCode(_gain) == gainCode(quantizeGain(_gain)).
+ *
+ * If \a quantizationGain is provided it is populated with the gain that must be
+ * applied on top to correct for the losses due to quantization.
+ *
+ * \return The quantized real gain
+ */
+double CameraSensorHelper::quantizeGain(double _gain, double *quantizationGain) const
+{
+	double g = gain(gainCode(_gain));
+	if (quantizationGain)
+		*quantizationGain = _gain / g;
+	return g;
+}
+
+/**
  * \struct CameraSensorHelper::AnalogueGainLinear
  * \brief Analogue gain constants for the linear gain model
  *

@@ -51,7 +51,7 @@ int Compress::configure(IPAContext &context,
 			[[maybe_unused]] const IPACameraSensorInfo &configInfo)
 {
 	if (context.configuration.paramFormat != V4L2_META_FMT_RK_ISP1_EXT_PARAMS ||
-	    !context.hw->compand) {
+	    !context.hw.compand) {
 		LOG(RkISP1Compress, Warning)
 			<< "Compression is not supported by the hardware or kernel.";
 		return 0;

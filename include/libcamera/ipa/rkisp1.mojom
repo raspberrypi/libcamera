@@ -16,7 +16,7 @@ struct IPAConfigInfo {
 
 interface IPARkISP1Interface {
 	init(libcamera.IPASettings settings,
-	     uint32 hwRevision,
+	     uint32 hwRevision, uint32 supportedBlocks,
 	     libcamera.IPACameraSensorInfo sensorInfo,
 	     libcamera.ControlInfoMap sensorControls)
 		=> (int32 ret, libcamera.ControlInfoMap ipaControls);

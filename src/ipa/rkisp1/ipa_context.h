@@ -36,6 +36,7 @@ struct IPAHwSettings {
 	unsigned int numHistogramBins;
 	unsigned int numHistogramWeights;
 	unsigned int numGammaOutSamples;
+	uint32_t supportedBlocks;
 	bool compand;
 };
 
@@ -201,11 +202,11 @@ struct IPAFrameContext : public FrameContext {
 
 struct IPAContext {
 	IPAContext(unsigned int frameContextSize)
-		: hw(nullptr), frameContexts(frameContextSize)
+		: frameContexts(frameContextSize)
 	{
 	}
 
-	const IPAHwSettings *hw;
+	IPAHwSettings hw;
 	IPACameraSensorInfo sensorInfo;
 	IPASessionConfiguration configuration;
 	IPAActiveState activeState;

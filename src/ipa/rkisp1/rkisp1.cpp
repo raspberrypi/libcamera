@@ -52,6 +52,7 @@ public:
 	IPARkISP1();
 
 	int init(const IPASettings &settings, unsigned int hwRevision,
+		 uint32_t supportedBlocks,
 		 const IPACameraSensorInfo &sensorInfo,
 		 const ControlInfoMap &sensorControls,
 		 ControlInfoMap *ipaControls) override;
@@ -94,6 +95,7 @@ const IPAHwSettings ipaHwSettingsV10{
 	RKISP1_CIF_ISP_HIST_BIN_N_MAX_V10,
 	RKISP1_CIF_ISP_HISTOGRAM_WEIGHT_GRIDS_SIZE_V10,
 	RKISP1_CIF_ISP_GAMMA_OUT_MAX_SAMPLES_V10,
+	0,
 	false,
 };
 
@@ -102,6 +104,7 @@ const IPAHwSettings ipaHwSettingsIMX8MP{
 	RKISP1_CIF_ISP_HIST_BIN_N_MAX_V10,
 	RKISP1_CIF_ISP_HISTOGRAM_WEIGHT_GRIDS_SIZE_V10,
 	RKISP1_CIF_ISP_GAMMA_OUT_MAX_SAMPLES_V10,
+	0,
 	true,
 };
 
@@ -110,6 +113,7 @@ const IPAHwSettings ipaHwSettingsV12{
 	RKISP1_CIF_ISP_HIST_BIN_N_MAX_V12,
 	RKISP1_CIF_ISP_HISTOGRAM_WEIGHT_GRIDS_SIZE_V12,
 	RKISP1_CIF_ISP_GAMMA_OUT_MAX_SAMPLES_V12,
+	0,
 	false,
 };
 
@@ -132,6 +136,7 @@ std::string IPARkISP1::logPrefix() const
 }
 
 int IPARkISP1::init(const IPASettings &settings, unsigned int hwRevision,
+		    uint32_t supportedBlocks,
 		    const IPACameraSensorInfo &sensorInfo,
 		    const ControlInfoMap &sensorControls,
 		    ControlInfoMap *ipaControls)
@@ -139,13 +144,13 @@ int IPARkISP1::init(const IPASettings &settings, unsigned int hwRevision,
 	/* \todo Add support for other revisions */
 	switch (hwRevision) {
 	case RKISP1_V10:
-		context_.hw = &ipaHwSettingsV10;
+		context_.hw = ipaHwSettingsV10;
 		break;
 	case RKISP1_V_IMX8MP:
-		context_.hw = &ipaHwSettingsIMX8MP;
+		context_.hw = ipaHwSettingsIMX8MP;
 		break;
 	case RKISP1_V12:
-		context_.hw = &ipaHwSettingsV12;
+		context_.hw = ipaHwSettingsV12;
 		break;
 	default:
 		LOG(IPARkISP1, Error)
@@ -153,6 +158,7 @@ int IPARkISP1::init(const IPASettings &settings, unsigned int hwRevision,
 			<< " is currently not supported";
 		return -ENODEV;
 	}
+	context_.hw.supportedBlocks = supportedBlocks;
 
 	LOG(IPARkISP1, Debug) << "Hardware revision is " << hwRevision;
 

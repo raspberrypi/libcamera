@@ -56,7 +56,7 @@ int Agc::parseMeteringModes(IPAContext &context, const YamlObject &tuningData)
 
 		std::vector<uint8_t> weights =
 			value.getList<uint8_t>().value_or(std::vector<uint8_t>{});
-		if (weights.size() != context.hw->numHistogramWeights) {
+		if (weights.size() != context.hw.numHistogramWeights) {
 			LOG(RkISP1Agc, Warning)
 				<< "Failed to read metering mode'" << key << "'";
 			continue;
@@ -68,7 +68,7 @@ int Agc::parseMeteringModes(IPAContext &context, const YamlObject &tuningData)
 	if (meteringModes_.empty()) {
 		LOG(RkISP1Agc, Warning)
 			<< "No metering modes read from tuning file; defaulting to matrix";
-		std::vector<uint8_t> weights(context.hw->numHistogramWeights, 1);
+		std::vector<uint8_t> weights(context.hw.numHistogramWeights, 1);
 
 		meteringModes_[controls::MeteringMatrix] = weights;
 	}
@@ -418,7 +418,7 @@ void Agc::prepare(IPAContext &context, const uint32_t frame,
 
 	Span<uint8_t> weights{
 		hstConfig->hist_weight,
-		context.hw->numHistogramWeights
+		context.hw.numHistogramWeights
 	};
 	std::vector<uint8_t> &modeWeights = meteringModes_.at(frameContext.agc.meteringMode);
 	std::copy(modeWeights.begin(), modeWeights.end(), weights.begin());
@@ -556,9 +556,9 @@ void Agc::process(IPAContext &context, [[maybe_unused]] const uint32_t frame,
 	const rkisp1_cif_isp_stat *params = &stats->params;
 
 	/* The lower 4 bits are fractional and meant to be discarded. */
-	Histogram hist({ params->hist.hist_bins, context.hw->numHistogramBins },
+	Histogram hist({ params->hist.hist_bins, context.hw.numHistogramBins },
 		       [](uint32_t x) { return x >> 4; });
-	expMeans_ = { params->ae.exp_mean, context.hw->numAeCells };
+	expMeans_ = { params->ae.exp_mean, context.hw.numAeCells };
 	std::vector<uint8_t> &modeWeights = meteringModes_.at(frameContext.agc.meteringMode);
 	weights_ = { modeWeights.data(), modeWeights.size() };
 

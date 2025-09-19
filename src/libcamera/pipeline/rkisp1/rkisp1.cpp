@@ -100,7 +100,7 @@ public:
 
 	PipelineHandlerRkISP1 *pipe();
 	const PipelineHandlerRkISP1 *pipe() const;
-	int loadIPA(unsigned int hwRevision);
+	int loadIPA(unsigned int hwRevision, uint32_t supportedBlocks);
 
 	Stream mainPathStream_;
 	Stream selfPathStream_;
@@ -383,7 +383,7 @@ const PipelineHandlerRkISP1 *RkISP1CameraData::pipe() const
 	return static_cast<const PipelineHandlerRkISP1 *>(Camera::Private::pipe());
 }
 
-int RkISP1CameraData::loadIPA(unsigned int hwRevision)
+int RkISP1CameraData::loadIPA(unsigned int hwRevision, uint32_t supportedBlocks)
 {
 	ipa_ = IPAManager::createIPA<ipa::rkisp1::IPAProxyRkISP1>(pipe(), 1, 1);
 	if (!ipa_)
@@ -405,7 +405,8 @@ int RkISP1CameraData::loadIPA(unsigned int hwRevision)
 	}
 
 	ret = ipa_->init({ ipaTuningFile, sensor_->model() }, hwRevision,
-			 sensorInfo, sensor_->controls(), &ipaControls_);
+			 supportedBlocks, sensorInfo, sensor_->controls(),
+			 &ipaControls_);
 	if (ret < 0) {
 		LOG(RkISP1, Error) << "IPA initialization failure";
 		return ret;
@@ -1313,6 +1314,12 @@ int PipelineHandlerRkISP1::updateControls(RkISP1CameraData *data)
 	return 0;
 }
 
+/*
+ * By default we assume all the blocks that were included in the first
+ * extensible parameters series are available. That is the lower 20bits.
+ */
+const uint32_t kDefaultExtParamsBlocks = 0xfffff;
+
 int PipelineHandlerRkISP1::createCamera(MediaEntity *sensor)
 {
 	int ret;
@@ -1350,7 +1357,21 @@ int PipelineHandlerRkISP1::createCamera(MediaEntity *sensor)
 	isp_->frameStart.connect(data->delayedCtrls_.get(),
 				 &DelayedControls::applyControls);
 
-	ret = data->loadIPA(media_->hwRevision());
+	uint32_t supportedBlocks = kDefaultExtParamsBlocks;
+
+	auto &controls = param_->controls();
+	if (controls.find(RKISP1_CID_SUPPORTED_PARAMS_BLOCKS) != controls.end()) {
+		auto list = param_->getControls({ { RKISP1_CID_SUPPORTED_PARAMS_BLOCKS } });
+		if (!list.empty())
+			supportedBlocks = static_cast<uint32_t>(
+				list.get(RKISP1_CID_SUPPORTED_PARAMS_BLOCKS)
+					.get<int32_t>());
+	} else {
+		LOG(RkISP1, Error)
+			<< "Failed to query supported params blocks. Falling back to defaults.";
+	}
+
+	ret = data->loadIPA(media_->hwRevision(), supportedBlocks);
 	if (ret)
 		return ret;
 

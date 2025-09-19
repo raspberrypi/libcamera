@@ -61,7 +61,7 @@ void Lux::process(IPAContext &context,
 
 	/* \todo Deduplicate the histogram calculation from AGC */
 	const rkisp1_cif_isp_stat *params = &stats->params;
-	Histogram yHist({ params->hist.hist_bins, context.hw->numHistogramBins },
+	Histogram yHist({ params->hist.hist_bins, context.hw.numHistogramBins },
 			[](uint32_t x) { return x >> 4; });
 
 	double lux = lux_.estimateLux(exposureTime, gain, 1.0, yHist);

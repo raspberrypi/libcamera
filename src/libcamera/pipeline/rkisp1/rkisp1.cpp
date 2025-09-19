@@ -422,7 +422,14 @@ void RkISP1CameraData::paramsComputed(unsigned int frame, unsigned int bytesused
 		return;
 
 	info->paramBuffer->_d()->metadata().planes()[0].bytesused = bytesused;
-	pipe->param_->queueBuffer(info->paramBuffer);
+
+	int ret = pipe->param_->queueBuffer(info->paramBuffer);
+	if (ret < 0) {
+		LOG(RkISP1, Error) << "Failed to queue parameter buffer: "
+				   << strerror(-ret);
+		return;
+	}
+
 	pipe->stat_->queueBuffer(info->statBuffer);
 
 	if (info->mainPathBuffer)

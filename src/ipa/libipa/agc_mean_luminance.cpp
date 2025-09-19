@@ -312,6 +312,21 @@ int AgcMeanLuminance::parseExposureModes(const YamlObject &tuningData)
 }
 
 /**
+ * \brief Configure the exposure mode helpers
+ * \param[in] lineDuration The sensor line length
+ * \param[in] sensorHelper The sensor helper
+ *
+ * This function configures the exposure mode helpers so they can correctly
+ * take quantization effects into account.
+ */
+void AgcMeanLuminance::configure(utils::Duration lineDuration,
+				 const CameraSensorHelper *sensorHelper)
+{
+	for (auto &[id, helper] : exposureModeHelpers_)
+		helper->configure(lineDuration, sensorHelper);
+}
+
+/**
  * \brief Parse tuning data for AeConstraintMode and AeExposureMode controls
  * \param[in] tuningData the YamlObject representing the tuning data
  *

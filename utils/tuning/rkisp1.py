@@ -27,6 +27,7 @@ awb = AWBRkISP1(debug=[lt.Debug.Plot])
 blc = StaticModule('BlackLevelCorrection')
 ccm = CCMRkISP1(debug=[lt.Debug.Plot])
 color_processing = StaticModule('ColorProcessing')
+compress = StaticModule('Compress')
 filter = StaticModule('Filter')
 gamma_out = StaticModule('GammaOutCorrection', {'gamma': 2.2})
 lsc = LSCRkISP1(debug=[lt.Debug.Plot],
@@ -49,13 +50,14 @@ lsc = LSCRkISP1(debug=[lt.Debug.Plot],
 lux = LuxRkISP1(debug=[lt.Debug.Plot])
 
 tuner = lt.Tuner('RkISP1')
-tuner.add([agc, awb, blc, ccm, color_processing, filter, gamma_out, lsc, lux])
+tuner.add([agc, awb, blc, ccm, color_processing, filter, gamma_out, lsc, lux, compress])
 tuner.set_input_parser(YamlParser())
 tuner.set_output_formatter(YamlOutput())
 
 # Bayesian AWB uses the lux value, so insert the lux algorithm before AWB.
+# Compress is parameterized by others, so add it at the end.
 tuner.set_output_order([agc, lux, awb, blc, ccm, color_processing,
-                        filter, gamma_out, lsc])
+                        filter, gamma_out, lsc, compress])
 
 if __name__ == '__main__':
     sys.exit(tuner.run(sys.argv))

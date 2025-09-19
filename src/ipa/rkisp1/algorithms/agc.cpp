@@ -397,7 +397,24 @@ void Agc::prepare(IPAContext &context, const uint32_t frame,
 	hstConfig.setEnabled(true);
 
 	hstConfig->meas_window = context.configuration.agc.measureWindow;
-	hstConfig->mode = RKISP1_CIF_ISP_HISTOGRAM_MODE_Y_HISTOGRAM;
+	/*
+	 * The Y mode of the histogram gets captured at the ISP output, before
+	 * the output formatter.  This has the side effect that the first and
+	 * the last bins are empty in case of limited YUV range.  Another side
+	 * effect is that gamma and GWDR processing is included in the histogram
+	 * which makes algorithm development very difficult. In RGB mode the
+	 * histogram is taken after xtalk (CCM) and is therefore independent of
+	 * gamma and WDR. The limited range issue also does not apply. In the
+	 * ISP reference it is however stated that "it is not possible to
+	 * calculate a luminance or grayscale histogram from an RGB histogram
+	 * since the position information is lost during its generation".
+	 *
+	 * During testing the RGB histogram provided good data and better
+	 * algorithmic stability at a possible (but not measured) inaccuracy.
+	 *
+	 * \todo For a proper fix support for HIST64 is needed.
+	 */
+	hstConfig->mode = RKISP1_CIF_ISP_HISTOGRAM_MODE_RGB_COMBINED;
 
 	Span<uint8_t> weights{
 		hstConfig->hist_weight,

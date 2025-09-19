@@ -458,8 +458,7 @@ void AgcMeanLuminance::setLimits(utils::Duration minExposureTime,
  */
 double AgcMeanLuminance::estimateInitialGain() const
 {
-	double yTarget = std::min(relativeLuminanceTarget_ * exposureCompensation_,
-				  kMaxRelativeLuminanceTarget);
+	double yTarget = effectiveYTarget();
 	double yGain = 1.0;
 
 	/*
@@ -519,6 +518,19 @@ double AgcMeanLuminance::constraintClampGain(uint32_t constraintModeIndex,
 	}
 
 	return gain;
+}
+
+/**
+ * \brief Get the currently effective y target
+ *
+ * This function returns the current y target including exposure compensation.
+ *
+ * \return The y target value
+ */
+double AgcMeanLuminance::effectiveYTarget() const
+{
+	return std::min(relativeLuminanceTarget_ * exposureCompensation_,
+			kMaxRelativeLuminanceTarget);
 }
 
 /**

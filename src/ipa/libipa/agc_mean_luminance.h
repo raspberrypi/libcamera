@@ -72,6 +72,8 @@ public:
 	calculateNewEv(uint32_t constraintModeIndex, uint32_t exposureModeIndex,
 		       const Histogram &yHist, utils::Duration effectiveExposureValue);
 
+	double effectiveYTarget() const;
+
 	void resetFrameCount()
 	{
 		frameCount_ = 0;

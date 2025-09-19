@@ -50,6 +50,10 @@ struct IPASessionConfiguration {
 	} awb;
 
 	struct {
+		bool supported;
+	} compress;
+
+	struct {
 		bool enabled;
 	} lsc;
 
@@ -157,6 +161,11 @@ struct IPAFrameContext : public FrameContext {
 		uint8_t saturation;
 		bool update;
 	} cproc;
+
+	struct {
+		bool enable;
+		double gain;
+	} compress;
 
 	struct {
 		bool denoise;

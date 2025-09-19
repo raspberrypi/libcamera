@@ -14,6 +14,8 @@
 #include <libcamera/base/span.h>
 #include <libcamera/base/utils.h>
 
+#include "camera_sensor_helper.h"
+
 namespace libcamera {
 
 namespace ipa {
@@ -24,6 +26,7 @@ public:
 	ExposureModeHelper(const Span<std::pair<utils::Duration, double>> stages);
 	~ExposureModeHelper() = default;
 
+	void configure(utils::Duration lineLength, const CameraSensorHelper *sensorHelper);
 	void setLimits(utils::Duration minExposureTime, utils::Duration maxExposureTime,
 		       double minGain, double maxGain);
 
@@ -36,16 +39,19 @@ public:
 	double maxGain() const { return maxGain_; }
 
 private:
-	utils::Duration clampExposureTime(utils::Duration exposureTime) const;
-	double clampGain(double gain) const;
+	utils::Duration clampExposureTime(utils::Duration exposureTime,
+					  double *quantizationGain = nullptr) const;
+	double clampGain(double gain, double *quantizationGain = nullptr) const;
 
 	std::vector<utils::Duration> exposureTimes_;
 	std::vector<double> gains_;
 
+	utils::Duration lineDuration_;
 	utils::Duration minExposureTime_;
 	utils::Duration maxExposureTime_;
 	double minGain_;
 	double maxGain_;
+	const CameraSensorHelper *sensorHelper_;
 };
 
 } /* namespace ipa */

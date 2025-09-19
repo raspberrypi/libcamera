@@ -70,16 +70,35 @@ namespace ipa {
  * the runtime limits set through setLimits() instead.
  */
 ExposureModeHelper::ExposureModeHelper(const Span<std::pair<utils::Duration, double>> stages)
+	: lineDuration_(1us), minExposureTime_(0us), maxExposureTime_(0us),
+	  minGain_(0), maxGain_(0), sensorHelper_(nullptr)
 {
-	minExposureTime_ = 0us;
-	maxExposureTime_ = 0us;
-	minGain_ = 0;
-	maxGain_ = 0;
-
 	for (const auto &[s, g] : stages) {
 		exposureTimes_.push_back(s);
 		gains_.push_back(g);
 	}
+}
+
+/**
+ * \brief Configure sensor details
+ * \param[in] lineDuration The current line length of the sensor
+ * \param[in] sensorHelper The sensor helper
+ *
+ * This function sets the line length and sensor helper. These are used in
+ * splitExposure() to take the quantization of the exposure and gain into
+ * account.
+ *
+ * When this has not been called, it is assumed that exposure is in micro second
+ * granularity and gain has no quantization at all.
+ *
+ * ExposureModeHelper keeps a pointer to the CameraSensorHelper, so the caller
+ * has to ensure that sensorHelper is valid until the next call to configure().
+ */
+void ExposureModeHelper::configure(utils::Duration lineDuration,
+				   const CameraSensorHelper *sensorHelper)
+{
+	lineDuration_ = lineDuration;
+	sensorHelper_ = sensorHelper;
 }
 
 /**
@@ -108,14 +127,26 @@ void ExposureModeHelper::setLimits(utils::Duration minExposureTime,
 	maxGain_ = maxGain;
 }
 
-utils::Duration ExposureModeHelper::clampExposureTime(utils::Duration exposureTime) const
+utils::Duration ExposureModeHelper::clampExposureTime(utils::Duration exposureTime,
+						      double *quantizationGain) const
 {
-	return std::clamp(exposureTime, minExposureTime_, maxExposureTime_);
+	utils::Duration clamped;
+	utils::Duration exp;
+
+	clamped = std::clamp(exposureTime, minExposureTime_, maxExposureTime_);
+	exp = static_cast<long>(clamped / lineDuration_) * lineDuration_;
+	if (quantizationGain)
+		*quantizationGain = clamped / exp;
+
+	return exp;
 }
 
-double ExposureModeHelper::clampGain(double gain) const
+double ExposureModeHelper::clampGain(double gain, double *quantizationGain) const
 {
-	return std::clamp(gain, minGain_, maxGain_);
+	double clamped = std::clamp(gain, minGain_, maxGain_);
+	if (!sensorHelper_)
+		return clamped;
+	return sensorHelper_->quantizeGain(clamped, quantizationGain);
 }
 
 /**

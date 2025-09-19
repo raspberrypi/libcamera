@@ -41,7 +41,7 @@ LOG_DEFINE_CATEGORY(Camera)
 CameraManager::Private::Private()
 	: Thread("CameraManager"), initialized_(false)
 {
-	ipaManager_ = std::make_unique<IPAManager>(this->configuration());
+	ipaManager_ = std::make_unique<IPAManager>(configuration());
 }
 
 int CameraManager::Private::start()

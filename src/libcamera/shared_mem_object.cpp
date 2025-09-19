@@ -80,8 +80,8 @@ SharedMem::SharedMem(const std::string &name, std::size_t size)
  */
 SharedMem::SharedMem(SharedMem &&rhs)
 {
-	this->fd_ = std::move(rhs.fd_);
-	this->mem_ = rhs.mem_;
+	fd_ = std::move(rhs.fd_);
+	mem_ = rhs.mem_;
 	rhs.mem_ = {};
 }
 
@@ -109,8 +109,8 @@ SharedMem::~SharedMem()
  */
 SharedMem &SharedMem::operator=(SharedMem &&rhs)
 {
-	this->fd_ = std::move(rhs.fd_);
-	this->mem_ = rhs.mem_;
+	fd_ = std::move(rhs.fd_);
+	mem_ = rhs.mem_;
 	rhs.mem_ = {};
 	return *this;
 }

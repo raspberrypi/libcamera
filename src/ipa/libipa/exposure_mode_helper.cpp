@@ -197,8 +197,8 @@ ExposureModeHelper::splitExposure(utils::Duration exposure) const
 		return { minExposureTime_, minGain_, exposure / (minExposureTime_ * minGain_) };
 
 	utils::Duration exposureTime;
-	double stageGain = 1.0;
-	double lastStageGain = 1.0;
+	double stageGain = clampGain(1.0);
+	double lastStageGain = stageGain;
 	double gain;
 
 	for (unsigned int stage = 0; stage < gains_.size(); stage++) {
@@ -215,7 +215,7 @@ ExposureModeHelper::splitExposure(utils::Duration exposure) const
 
 		/* Clamp the gain to lastStageGain and regulate exposureTime. */
 		if (stageExposureTime * lastStageGain >= exposure) {
-			exposureTime = clampExposureTime(exposure / clampGain(lastStageGain));
+			exposureTime = clampExposureTime(exposure / lastStageGain);
 			gain = clampGain(exposure / exposureTime);
 
 			return { exposureTime, gain, exposure / (exposureTime * gain) };
@@ -223,7 +223,7 @@ ExposureModeHelper::splitExposure(utils::Duration exposure) const
 
 		/* Clamp the exposureTime to stageExposureTime and regulate gain. */
 		if (stageExposureTime * stageGain >= exposure) {
-			exposureTime = clampExposureTime(stageExposureTime);
+			exposureTime = stageExposureTime;
 			gain = clampGain(exposure / exposureTime);
 
 			return { exposureTime, gain, exposure / (exposureTime * gain) };
@@ -239,7 +239,7 @@ ExposureModeHelper::splitExposure(utils::Duration exposure) const
 	 * stages to use then the default stageGain of 1.0 is used so that
 	 * exposure time is maxed before gain is touched at all.
 	 */
-	exposureTime = clampExposureTime(exposure / clampGain(stageGain));
+	exposureTime = clampExposureTime(exposure / stageGain);
 	gain = clampGain(exposure / exposureTime);
 
 	return { exposureTime, gain, exposure / (exposureTime * gain) };

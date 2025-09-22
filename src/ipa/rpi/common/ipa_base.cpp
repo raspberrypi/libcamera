@@ -1026,13 +1026,6 @@ void IpaBase::applyControls(const ControlList &controls)
 				break;
 			}
 
-			/*
-			 * Ignore AE_EXPOSURE_MODE if the shutter or the gain
-			 * are in auto mode.
-			 */
-			if (agc->autoExposureEnabled() || agc->autoGainEnabled())
-				break;
-
 			int32_t idx = ctrl.second.get<int32_t>();
 			if (ExposureModeTable.count(idx)) {
 				agc->setExposureMode(ExposureModeTable.at(idx));

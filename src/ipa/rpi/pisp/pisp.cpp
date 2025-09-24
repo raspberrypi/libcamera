@@ -126,7 +126,7 @@ int generateDecompandLut(const ipa::Pwl &pwl, uint16_t *lut, std::size_t lutSize
 		if (y < 0)
 			return -1;
 
-		lut[i] = y;
+		lut[i] = static_cast<uint16_t>(std::min(y, 65535));
 	}
 
 	return 0;

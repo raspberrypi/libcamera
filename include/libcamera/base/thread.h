@@ -50,6 +50,7 @@ public:
 
 	void dispatchMessages(Message::Type type = Message::Type::None,
 			      Object *receiver = nullptr);
+	void removeMessages(Object *receiver);
 
 protected:
 	int exec();
@@ -64,7 +65,6 @@ private:
 	void setThreadAffinityInternal();
 
 	void postMessage(std::unique_ptr<Message> msg, Object *receiver);
-	void removeMessages(Object *receiver);
 
 	friend class Object;
 	friend class ThreadData;

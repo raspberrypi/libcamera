@@ -145,6 +145,12 @@ void Agc::process(IPAContext &context,
 	unsigned int denom = 0;
 	unsigned int num = 0;
 
+	if (yHistValsPerBin == 0) {
+		LOG(IPASoftExposure, Debug)
+			<< "Not adjusting exposure due to insufficient histogram data";
+		return;
+	}
+
 	for (unsigned int i = 0; i < histogramSize; i++) {
 		unsigned int idx = (i - (i / yHistValsPerBinMod)) / yHistValsPerBin;
 		exposureBins[idx] += histogram[blackLevelHistIdx + i];

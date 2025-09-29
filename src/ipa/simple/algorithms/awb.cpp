@@ -71,7 +71,7 @@ void Awb::process(IPAContext &context,
 	 * rather than from the sensor range.
 	 */
 	const uint64_t nPixels = std::accumulate(
-		histogram.begin(), histogram.end(), 0);
+		histogram.begin(), histogram.end(), uint64_t(0));
 	const uint64_t offset = blackLevel * nPixels;
 	const uint64_t minValid = 1;
 	const uint64_t sumR = stats->sumR_ > offset / 4 ? stats->sumR_ - offset / 4 : minValid;

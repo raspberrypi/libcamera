@@ -438,7 +438,7 @@ void SwStatsCpu::setWindow(const Rectangle &window)
 	window_.y &= ~(patternSize_.height - 1);
 
 	/* width_ - xShift_ to make sure the window fits */
-	window_.width -= xShift_;
+	window_.width = (window_.width > xShift_ ? window_.width - xShift_ : 0);
 	window_.width &= ~(patternSize_.width - 1);
 	window_.height &= ~(patternSize_.height - 1);
 }

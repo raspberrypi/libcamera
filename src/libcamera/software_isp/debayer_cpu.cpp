@@ -661,7 +661,7 @@ void DebayerCpu::memcpyNextLine(const uint8_t *linePointers[])
 
 void DebayerCpu::process2(uint32_t frame, const uint8_t *src, uint8_t *dst)
 {
-	unsigned int yEnd = window_.y + window_.height;
+	unsigned int yEnd = window_.height;
 	/* Holds [0] previous- [1] current- [2] next-line */
 	const uint8_t *linePointers[3];
 
@@ -676,13 +676,16 @@ void DebayerCpu::process2(uint32_t frame, const uint8_t *src, uint8_t *dst)
 		/* window_.y == 0, use the next line as prev line */
 		linePointers[1] = src + inputConfig_.stride;
 		linePointers[2] = src;
-		/* Last 2 lines also need special handling */
+		/*
+		 * Last 2 lines also need special handling.
+		 * (And configure() ensures that yEnd >= 2.)
+		 */
 		yEnd -= 2;
 	}
 
 	setupInputMemcpy(linePointers);
 
-	for (unsigned int y = window_.y; y < yEnd; y += 2) {
+	for (unsigned int y = 0; y < yEnd; y += 2) {
 		shiftLinePointers(linePointers, src);
 		memcpyNextLine(linePointers);
 		stats_->processLine0(frame, y, linePointers);
@@ -716,7 +719,6 @@ void DebayerCpu::process2(uint32_t frame, const uint8_t *src, uint8_t *dst)
 
 void DebayerCpu::process4(uint32_t frame, const uint8_t *src, uint8_t *dst)
 {
-	const unsigned int yEnd = window_.y + window_.height;
 	/*
 	 * This holds pointers to [0] 2-lines-up [1] 1-line-up [2] current-line
 	 * [3] 1-line-down [4] 2-lines-down.
@@ -734,7 +736,7 @@ void DebayerCpu::process4(uint32_t frame, const uint8_t *src, uint8_t *dst)
 
 	setupInputMemcpy(linePointers);
 
-	for (unsigned int y = window_.y; y < yEnd; y += 4) {
+	for (unsigned int y = 0; y < window_.height; y += 4) {
 		shiftLinePointers(linePointers, src);
 		memcpyNextLine(linePointers);
 		stats_->processLine0(frame, y, linePointers);

@@ -43,7 +43,7 @@ int BlackLevel::configure(IPAContext &context,
 	if (definedLevel_.has_value())
 		context.configuration.black.level = definedLevel_;
 	context.activeState.blc.level =
-		context.configuration.black.level.value_or(255);
+		context.configuration.black.level.value_or(16);
 	return 0;
 }
 

@@ -7,6 +7,7 @@
 
 #include "awb.h"
 
+#include <algorithm>
 #include <numeric>
 #include <stdint.h>
 
@@ -72,9 +73,10 @@ void Awb::process(IPAContext &context,
 	const uint64_t nPixels = std::accumulate(
 		histogram.begin(), histogram.end(), 0);
 	const uint64_t offset = blackLevel * nPixels;
-	const uint64_t sumR = stats->sumR_ - offset / 4;
-	const uint64_t sumG = stats->sumG_ - offset / 2;
-	const uint64_t sumB = stats->sumB_ - offset / 4;
+	const uint64_t minValid = 1;
+	const uint64_t sumR = stats->sumR_ > offset / 4 ? stats->sumR_ - offset / 4 : minValid;
+	const uint64_t sumG = stats->sumG_ > offset / 2 ? stats->sumG_ - offset / 2 : minValid;
+	const uint64_t sumB = stats->sumB_ > offset / 4 ? stats->sumB_ - offset / 4 : minValid;
 
 	/*
 	 * Calculate red and blue gains for AWB.

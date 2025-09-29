@@ -554,7 +554,11 @@ int DebayerCpu::configure(const StreamConfiguration &inputCfg,
 	window_.width = outputCfg.size.width;
 	window_.height = outputCfg.size.height;
 
-	/* Don't pass x,y since process() already adjusts src before passing it */
+	/*
+	 * Set the stats window to the whole processed window. Its coordinates are
+	 * relative to the debayered area since debayering passes only the part of
+	 * data to be processed to the stats; see SwStatsCpu::setWindow.
+	 */
 	stats_->setWindow(Rectangle(window_.size()));
 
 	/* pad with patternSize.Width on both left and right side */

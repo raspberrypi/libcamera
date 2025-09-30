@@ -246,7 +246,9 @@ int IPASoftSimple::configure(const IPAConfigInfo &configInfo)
 		 * other) we limit the range of the gain values used.
 		 */
 		context_.configuration.agc.againMax = againMax;
-		if (!againMin) {
+		if (againMin) {
+			context_.configuration.agc.againMin = againMin;
+		} else {
 			LOG(IPASoft, Warning)
 				<< "Minimum gain is zero, that can't be linear";
 			context_.configuration.agc.againMin =

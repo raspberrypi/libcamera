@@ -62,8 +62,9 @@ namespace libcamera {
  */
 
 /**
- * \fn void SwStatsCpu::processLine0(unsigned int y, const uint8_t *src[])
+ * \fn void SwStatsCpu::processLine0(uint32_t frame, unsigned int y, const uint8_t *src[])
  * \brief Process line 0
+ * \param[in] frame The frame number
  * \param[in] y The y coordinate.
  * \param[in] src The input data.
  *
@@ -74,8 +75,9 @@ namespace libcamera {
  */
 
 /**
- * \fn void SwStatsCpu::processLine2(unsigned int y, const uint8_t *src[])
+ * \fn void SwStatsCpu::processLine2(uint32_t frame, unsigned int y, const uint8_t *src[])
  * \brief Process line 2 and 3
+ * \param[in] frame The frame number
  * \param[in] y The y coordinate.
  * \param[in] src The input data.
  *
@@ -87,6 +89,11 @@ namespace libcamera {
 /**
  * \var Signal<> SwStatsCpu::statsReady
  * \brief Signals that the statistics are ready
+ */
+
+/**
+ * \var SwStatsCpu::kStatPerNumFrames
+ * \brief Run stats once every kStatPerNumFrames frames
  */
 
 /**
@@ -295,11 +302,15 @@ void SwStatsCpu::statsGBRG10PLine0(const uint8_t *src[])
 
 /**
  * \brief Reset state to start statistics gathering for a new frame
+ * \param[in] frame The frame number
  *
  * This may only be called after a successful setWindow() call.
  */
-void SwStatsCpu::startFrame(void)
+void SwStatsCpu::startFrame(uint32_t frame)
 {
+	if (frame % kStatPerNumFrames)
+		return;
+
 	if (window_.width == 0)
 		LOG(SwStatsCpu, Error) << "Calling startFrame() without setWindow()";
 
@@ -318,7 +329,7 @@ void SwStatsCpu::startFrame(void)
  */
 void SwStatsCpu::finishFrame(uint32_t frame, uint32_t bufferId)
 {
-	stats_.valid = true;
+	stats_.valid = frame % kStatPerNumFrames == 0;
 	*sharedStats_ = stats_;
 	statsReady.emit(frame, bufferId);
 }

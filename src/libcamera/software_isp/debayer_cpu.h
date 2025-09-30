@@ -133,8 +133,8 @@ private:
 	void setupInputMemcpy(const uint8_t *linePointers[]);
 	void shiftLinePointers(const uint8_t *linePointers[], const uint8_t *src);
 	void memcpyNextLine(const uint8_t *linePointers[]);
-	void process2(const uint8_t *src, uint8_t *dst);
-	void process4(const uint8_t *src, uint8_t *dst);
+	void process2(uint32_t frame, const uint8_t *src, uint8_t *dst);
+	void process4(uint32_t frame, const uint8_t *src, uint8_t *dst);
 
 	/* Max. supported Bayer pattern height is 4, debayering this requires 5 lines */
 	static constexpr unsigned int kMaxLineBuffers = 5;

@@ -51,19 +51,18 @@ void Agc::updateExposure(IPAContext &context, IPAFrameContext &frameContext, dou
 	static constexpr uint8_t kExpNumeratorUp = kExpDenominator + 1;
 	static constexpr uint8_t kExpNumeratorDown = kExpDenominator - 1;
 
-	double next;
 	int32_t &exposure = frameContext.sensor.exposure;
 	double &again = frameContext.sensor.gain;
 
 	if (exposureMSV < kExposureOptimal - kExposureSatisfactory) {
 		if (exposure < context.configuration.agc.exposureMax) {
-			next = exposure * kExpNumeratorUp / kExpDenominator;
+			int32_t next = exposure * kExpNumeratorUp / kExpDenominator;
 			if (next - exposure < 1)
 				exposure += 1;
 			else
 				exposure = next;
 		} else {
-			next = again * kExpNumeratorUp / kExpDenominator;
+			double next = again * kExpNumeratorUp / kExpDenominator;
 			if (next - again < context.configuration.agc.againMinStep)
 				again += context.configuration.agc.againMinStep;
 			else
@@ -73,13 +72,13 @@ void Agc::updateExposure(IPAContext &context, IPAFrameContext &frameContext, dou
 
 	if (exposureMSV > kExposureOptimal + kExposureSatisfactory) {
 		if (again > context.configuration.agc.again10) {
-			next = again * kExpNumeratorDown / kExpDenominator;
+			double next = again * kExpNumeratorDown / kExpDenominator;
 			if (again - next < context.configuration.agc.againMinStep)
 				again -= context.configuration.agc.againMinStep;
 			else
 				again = next;
 		} else {
-			next = exposure * kExpNumeratorDown / kExpDenominator;
+			int32_t next = exposure * kExpNumeratorDown / kExpDenominator;
 			if (exposure - next < 1)
 				exposure -= 1;
 			else

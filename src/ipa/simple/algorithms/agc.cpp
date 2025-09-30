@@ -56,12 +56,13 @@ void Agc::updateExposure(IPAContext &context, IPAFrameContext &frameContext, dou
 	double &again = frameContext.sensor.gain;
 
 	if (exposureMSV < kExposureOptimal - kExposureSatisfactory) {
-		next = exposure * kExpNumeratorUp / kExpDenominator;
-		if (next - exposure < 1)
-			exposure += 1;
-		else
-			exposure = next;
-		if (exposure >= context.configuration.agc.exposureMax) {
+		if (exposure < context.configuration.agc.exposureMax) {
+			next = exposure * kExpNumeratorUp / kExpDenominator;
+			if (next - exposure < 1)
+				exposure += 1;
+			else
+				exposure = next;
+		} else {
 			next = again * kExpNumeratorUp / kExpDenominator;
 			if (next - again < context.configuration.agc.againMinStep)
 				again += context.configuration.agc.againMinStep;

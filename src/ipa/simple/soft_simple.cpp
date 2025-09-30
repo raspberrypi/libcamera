@@ -216,10 +216,12 @@ int IPASoftSimple::configure(const IPAConfigInfo &configInfo)
 
 	int32_t againMin = gainInfo.min().get<int32_t>();
 	int32_t againMax = gainInfo.max().get<int32_t>();
+	int32_t againDef = gainInfo.def().get<int32_t>();
 
 	if (camHelper_) {
 		context_.configuration.agc.againMin = camHelper_->gain(againMin);
 		context_.configuration.agc.againMax = camHelper_->gain(againMax);
+		context_.configuration.agc.again10 = camHelper_->gain(1.0);
 		context_.configuration.agc.againMinStep =
 			(context_.configuration.agc.againMax -
 			 context_.configuration.agc.againMin) /
@@ -246,6 +248,7 @@ int IPASoftSimple::configure(const IPAConfigInfo &configInfo)
 		 * other) we limit the range of the gain values used.
 		 */
 		context_.configuration.agc.againMax = againMax;
+		context_.configuration.agc.again10 = againDef;
 		if (againMin) {
 			context_.configuration.agc.againMin = againMin;
 		} else {

@@ -71,8 +71,7 @@ void Agc::updateExposure(IPAContext &context, IPAFrameContext &frameContext, dou
 	}
 
 	if (exposureMSV > kExposureOptimal + kExposureSatisfactory) {
-		if (exposure == context.configuration.agc.exposureMax &&
-		    again > context.configuration.agc.againMin) {
+		if (again > context.configuration.agc.again10) {
 			next = again * kExpNumeratorDown / kExpDenominator;
 			if (again - next < context.configuration.agc.againMinStep)
 				again -= context.configuration.agc.againMinStep;

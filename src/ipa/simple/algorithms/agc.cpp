@@ -91,13 +91,16 @@ void Agc::updateExposure(IPAContext &context, IPAFrameContext &frameContext, dou
 	again = std::clamp(again, context.configuration.agc.againMin,
 			   context.configuration.agc.againMax);
 
+	context.activeState.agc.exposure = exposure;
+	context.activeState.agc.again = again;
+
 	LOG(IPASoftExposure, Debug)
 		<< "exposureMSV " << exposureMSV
 		<< " exp " << exposure << " again " << again;
 }
 
 void Agc::process(IPAContext &context,
-		  [[maybe_unused]] const uint32_t frame,
+		  const uint32_t frame,
 		  IPAFrameContext &frameContext,
 		  const SwIspStats *stats,
 		  ControlList &metadata)
@@ -106,6 +109,25 @@ void Agc::process(IPAContext &context,
 		context.configuration.agc.lineDuration * frameContext.sensor.exposure;
 	metadata.set(controls::ExposureTime, exposureTime.get<std::micro>());
 	metadata.set(controls::AnalogueGain, frameContext.sensor.gain);
+
+	if (frame == 0) {
+		/*
+		 * Init active-state from sensor values in case updateExposure()
+		 * does not run for the first frame.
+		 */
+		context.activeState.agc.exposure = frameContext.sensor.exposure;
+		context.activeState.agc.again = frameContext.sensor.gain;
+	}
+
+	if (!stats->valid) {
+		/*
+		 * Use the new exposure and gain values calculated the last time
+		 * there were valid stats.
+		 */
+		frameContext.sensor.exposure = context.activeState.agc.exposure;
+		frameContext.sensor.gain = context.activeState.agc.again;
+		return;
+	}
 
 	/*
 	 * Calculate Mean Sample Value (MSV) according to formula from:

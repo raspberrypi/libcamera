@@ -60,6 +60,9 @@ void BlackLevel::process(IPAContext &context,
 	};
 	metadata.set(controls::SensorBlackLevels, blackLevels);
 
+	if (!stats->valid)
+		return;
+
 	if (context.configuration.black.level.has_value())
 		return;
 

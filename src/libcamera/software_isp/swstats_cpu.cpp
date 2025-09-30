@@ -318,6 +318,7 @@ void SwStatsCpu::startFrame(void)
  */
 void SwStatsCpu::finishFrame(uint32_t frame, uint32_t bufferId)
 {
+	stats_.valid = true;
 	*sharedStats_ = stats_;
 	statsReady.emit(frame, bufferId);
 }

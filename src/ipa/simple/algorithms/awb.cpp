@@ -61,6 +61,9 @@ void Awb::process(IPAContext &context,
 	};
 	metadata.set(controls::ColourGains, mdGains);
 
+	if (!stats->valid)
+		return;
+
 	/*
 	 * Black level must be subtracted to get the correct AWB ratios, they
 	 * would be off if they were computed from the whole brightness range

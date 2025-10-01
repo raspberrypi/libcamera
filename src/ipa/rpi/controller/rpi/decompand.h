@@ -20,6 +20,7 @@ public:
 	int read(const libcamera::YamlObject &params) override;
 	void initialise() override;
 	void switchMode(CameraMode const &cameraMode, Metadata *metadata) override;
+	void initialValues(libcamera::ipa::Pwl &decompandCurve) override;
 	void prepare(Metadata *imageMetadata) override;
 
 private:

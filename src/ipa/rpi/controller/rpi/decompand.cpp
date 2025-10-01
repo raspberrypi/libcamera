@@ -13,7 +13,7 @@ LOG_DEFINE_CATEGORY(RPiDecompand)
 #define NAME "rpi.decompand"
 
 Decompand::Decompand(Controller *controller)
-	: Algorithm(controller)
+	: DecompandAlgorithm(controller)
 {
 }
 

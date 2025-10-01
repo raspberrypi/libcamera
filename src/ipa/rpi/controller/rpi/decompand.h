@@ -2,9 +2,8 @@
 
 #include <libipa/pwl.h>
 
+#include "../decompand_algorithm.h"
 #include "../decompand_status.h"
-
-#include "algorithm.h"
 
 namespace RPiController {
 
@@ -13,7 +12,7 @@ struct DecompandConfig {
 	libcamera::ipa::Pwl decompandCurve;
 };
 
-class Decompand : public Algorithm
+class Decompand : public DecompandAlgorithm
 {
 public:
 	Decompand(Controller *controller = NULL);

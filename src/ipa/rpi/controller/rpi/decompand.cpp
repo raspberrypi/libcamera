@@ -39,6 +39,14 @@ void Decompand::switchMode([[maybe_unused]] CameraMode const &cameraMode,
 	mode_ = cameraMode;
 }
 
+void Decompand::initialValues(libcamera::ipa::Pwl &decompandCurve)
+{
+	if (config_.bitdepth == 0 || mode_.bitdepth == config_.bitdepth) {
+		decompandCurve = config_.decompandCurve;
+	} else
+		decompandCurve = {};
+}
+
 void Decompand::prepare(Metadata *imageMetadata)
 {
 	DecompandStatus decompandStatus;

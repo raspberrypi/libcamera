@@ -256,7 +256,7 @@ private:
 	void applyLensShading(const AlscStatus *alscStatus,
 			      pisp_be_global_config &global);
 	void applyDPC(const DpcStatus *dpcStatus, pisp_be_global_config &global);
-	void applyDecompand(const DecompandStatus *decompandStatus);
+	void applyDecompand(const DecompandStatus *decompandStatus, pisp_fe_global_config &feGlobal);
 	void applySdn(const SdnStatus *sdnStatus, pisp_be_global_config &global);
 	void applyTdn(const TdnStatus *tdnStatus, const DeviceStatus *deviceStatus,
 		      pisp_be_global_config &global);
@@ -368,6 +368,9 @@ void IpaPiSP::platformPrepareIsp([[maybe_unused]] const PrepareParams &params,
 	{
 		/* All Frontend config goes first, we do not want to hold the FE lock for long! */
 		std::scoped_lock<FrontEnd> lf(*fe_);
+		pisp_fe_global_config feGlobal;
+
+		fe_->GetGlobal(feGlobal);
 
 		if (noiseStatus)
 			applyFocusStats(noiseStatus);
@@ -375,13 +378,14 @@ void IpaPiSP::platformPrepareIsp([[maybe_unused]] const PrepareParams &params,
 		DecompandStatus *decompandStatus =
 			rpiMetadata.getLocked<DecompandStatus>("decompand.status");
 		if (decompandStatus)
-			applyDecompand(decompandStatus);
+			applyDecompand(decompandStatus, feGlobal);
 
 		BlackLevelStatus *blackLevelStatus =
 			rpiMetadata.getLocked<BlackLevelStatus>("black_level.status");
 		if (blackLevelStatus)
 			applyBlackLevel(blackLevelStatus, global);
 
+		fe_->SetGlobal(feGlobal);
 	}
 
 	CacStatus *cacStatus = rpiMetadata.getLocked<CacStatus>("cac.status");
@@ -728,18 +732,15 @@ void IpaPiSP::applyDPC(const DpcStatus *dpcStatus, pisp_be_global_config &global
 	be_->SetDpc(dpc);
 }
 
-void IpaPiSP::applyDecompand(const DecompandStatus *decompandStatus)
+void IpaPiSP::applyDecompand(const DecompandStatus *decompandStatus, pisp_fe_global_config &feGlobal)
 {
-	pisp_fe_global_config feGlobal;
 	pisp_fe_decompand_config decompand = {};
-
-	fe_->GetGlobal(feGlobal);
 
 	if (!generateDecompandLut(decompandStatus->decompandCurve, decompand.lut, PISP_FE_DECOMPAND_LUT_SIZE)) {
 		fe_->SetDecompand(decompand);
 		feGlobal.enables |= PISP_FE_ENABLE_DECOMPAND;
-		fe_->SetGlobal(feGlobal);
-	}
+	} else
+		feGlobal.enables &= ~PISP_FE_ENABLE_DECOMPAND;
 }
 
 void IpaPiSP::applySdn(const SdnStatus *sdnStatus, pisp_be_global_config &global)

@@ -19,6 +19,8 @@ public:
 		: Algorithm(controller)
 	{
 	}
+	/* A decompand algorithm must provide the following: */
+	virtual void initialValues(libcamera::ipa::Pwl &decompandCurve) = 0;
 };
 
 } /* namespace RPiController */

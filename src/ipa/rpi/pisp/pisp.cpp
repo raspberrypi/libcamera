@@ -32,6 +32,7 @@
 #include "controller/cac_status.h"
 #include "controller/ccm_status.h"
 #include "controller/contrast_status.h"
+#include "controller/decompand_algorithm.h"
 #include "controller/decompand_status.h"
 #include "controller/denoise_algorithm.h"
 #include "controller/denoise_status.h"
@@ -334,6 +335,20 @@ int32_t IpaPiSP::platformStart([[maybe_unused]] const ControlList &controls,
 
 	/* Cause the stitch block to be reset correctly. */
 	lastStitchHdrStatus_ = HdrStatus();
+
+	/* Setup a default decompand curve on startup if needed. */
+	RPiController::DecompandAlgorithm *decompand = dynamic_cast<RPiController::DecompandAlgorithm *>(
+		controller_.getAlgorithm("decompand"));
+	if (decompand) {
+		std::scoped_lock<FrontEnd> l(*fe_);
+		pisp_fe_global_config feGlobal;
+		DecompandStatus decompandStatus;
+
+		fe_->GetGlobal(feGlobal);
+		decompand->initialValues(decompandStatus.decompandCurve);
+		applyDecompand(&decompandStatus, feGlobal);
+		fe_->SetGlobal(feGlobal);
+	}
 
 	return 0;
 }

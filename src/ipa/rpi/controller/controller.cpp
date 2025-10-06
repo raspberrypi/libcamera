@@ -145,6 +145,12 @@ int Controller::read(char const *filename)
 
 int Controller::createAlgorithm(const std::string &name, const YamlObject &params)
 {
+	if (name.find("disable") == 0) {
+		LOG(RPiController, Debug)
+			<< "Algorithm \"" << name << "\" is disabled";
+		return 0;
+	}
+
 	auto it = getAlgorithms().find(name);
 	if (it == getAlgorithms().end()) {
 		LOG(RPiController, Warning)

@@ -53,6 +53,7 @@ headers="
 	linux/media-bus-format.h
 	linux/media.h
 	linux/rkisp1-config.h
+	linux/stddef.h
 	linux/udmabuf.h
 	linux/v4l2-common.h
 	linux/v4l2-controls.h

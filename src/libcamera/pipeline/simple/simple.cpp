@@ -417,6 +417,7 @@ protected:
 	int queueRequestDevice(Camera *camera, Request *request) override;
 
 private:
+	static constexpr unsigned int kMaxQueuedRequestsDevice = 4;
 	static constexpr unsigned int kNumInternalBuffers = 3;
 
 	struct EntityData {
@@ -1273,7 +1274,8 @@ CameraConfiguration::Status SimpleCameraConfiguration::validate()
  */
 
 SimplePipelineHandler::SimplePipelineHandler(CameraManager *manager)
-	: PipelineHandler(manager), converter_(nullptr)
+	: PipelineHandler(manager, kMaxQueuedRequestsDevice),
+	  converter_(nullptr)
 {
 }
 

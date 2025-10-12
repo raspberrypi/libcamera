@@ -378,6 +378,9 @@ public:
 	const Transform &combinedTransform() const { return combinedTransform_; }
 
 private:
+	static constexpr unsigned int kNumBuffersDefault = 4;
+	static constexpr unsigned int kNumBuffersMax = 32;
+
 	/*
 	 * The SimpleCameraData instance is guaranteed to be valid as long as
 	 * the corresponding Camera instance is valid. In order to borrow a
@@ -1240,7 +1243,7 @@ CameraConfiguration::Status SimpleCameraConfiguration::validate()
 		    cfg.size != pipeConfig_->captureSize)
 			needConversion_ = true;
 
-		/* Set the stride, frameSize and bufferCount. */
+		/* Set the stride and frameSize. */
 		if (needConversion_) {
 			std::tie(cfg.stride, cfg.frameSize) =
 				data_->converter_
@@ -1263,7 +1266,18 @@ CameraConfiguration::Status SimpleCameraConfiguration::validate()
 			cfg.frameSize = format.planes[0].size;
 		}
 
-		cfg.bufferCount = 4;
+		const auto bufferCount = cfg.bufferCount;
+		if (bufferCount <= 0)
+			cfg.bufferCount = kNumBuffersDefault;
+		else if (bufferCount > kNumBuffersMax)
+			cfg.bufferCount = kNumBuffersMax;
+
+		if (cfg.bufferCount != bufferCount) {
+			LOG(SimplePipeline, Debug)
+				<< "Adjusting bufferCount from " << bufferCount
+				<< " to " << cfg.bufferCount;
+			status = Adjusted;
+		}
 	}
 
 	return status;

@@ -418,7 +418,7 @@ protected:
 
 private:
 	static constexpr unsigned int kMaxQueuedRequestsDevice = 4;
-	static constexpr unsigned int kNumInternalBuffers = 3;
+	static constexpr unsigned int kNumInternalBuffers = 4;
 
 	struct EntityData {
 		std::unique_ptr<V4L2VideoDevice> video;

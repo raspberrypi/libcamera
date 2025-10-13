@@ -35,10 +35,12 @@ namespace libcamera {
 #define DEBAYER_EGL_MIN_SIMPLE_RGB_GAIN_TEXTURE_UNITS 4
 #define DEBAYER_OPENGL_COORDS 4
 
+class CameraManager;
+
 class DebayerEGL : public Debayer
 {
 public:
-	DebayerEGL(std::unique_ptr<SwStatsCpu> stats, const GlobalConfiguration &configuration);
+	DebayerEGL(std::unique_ptr<SwStatsCpu> stats, const CameraManager &cm);
 	~DebayerEGL();
 
 	int configure(const StreamConfiguration &inputCfg,

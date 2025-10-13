@@ -16,13 +16,13 @@
 #include <libcamera/ipa/ipa_interface.h>
 #include <libcamera/ipa/ipa_module_info.h>
 
-#include "libcamera/internal/camera_manager.h"
 #include "libcamera/internal/pub_key.h"
 
 namespace libcamera {
 
 LOG_DECLARE_CATEGORY(IPAManager)
 
+class CameraManager;
 class GlobalConfiguration;
 class IPAModule;
 class PipelineHandler;
@@ -30,7 +30,7 @@ class PipelineHandler;
 class IPAManager
 {
 public:
-	IPAManager(const GlobalConfiguration &configuration);
+	IPAManager(const CameraManager &cm);
 	~IPAManager();
 
 	template<typename T>
@@ -43,9 +43,9 @@ public:
 
 		auto proxy = [&]() -> std::unique_ptr<T> {
 			if (isSignatureValid(m))
-				return std::make_unique<typename T::Threaded>(m, configuration_);
+				return std::make_unique<typename T::Threaded>(m, cm_);
 			else
-				return std::make_unique<typename T::Isolated>(m, configuration_);
+				return std::make_unique<typename T::Isolated>(m, cm_);
 		}();
 
 		if (!proxy->isValid()) {
@@ -73,7 +73,7 @@ private:
 
 	bool isSignatureValid(IPAModule *ipa) const;
 
-	const GlobalConfiguration &configuration_;
+	const CameraManager &cm_;
 	std::vector<std::unique_ptr<IPAModule>> modules_;
 
 #if HAVE_IPA_PUBKEY

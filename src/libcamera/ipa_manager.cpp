@@ -100,13 +100,16 @@ LOG_DEFINE_CATEGORY(IPAManager)
 
 /**
  * \brief Construct an IPAManager instance
+ * \param[in] cm The camera manager
  *
  * The IPAManager class is meant to only be instantiated once, by the
  * CameraManager.
  */
-IPAManager::IPAManager(const GlobalConfiguration &configuration)
-	: configuration_(configuration)
+IPAManager::IPAManager(const CameraManager &cm)
+	: cm_(cm)
 {
+	const GlobalConfiguration &configuration = cm._d()->configuration();
+
 #if HAVE_IPA_PUBKEY
 	if (!pubKey_.isValid())
 		LOG(IPAManager, Warning) << "Public key not valid";

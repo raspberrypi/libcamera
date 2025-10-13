@@ -93,7 +93,8 @@ void CameraManager::Private::run()
 
 int CameraManager::Private::init()
 {
-	ipaManager_ = std::make_unique<IPAManager>(configuration());
+	CameraManager *const o = LIBCAMERA_O_PTR();
+	ipaManager_ = std::make_unique<IPAManager>(*o);
 
 	enumerator_ = DeviceEnumerator::create();
 	if (!enumerator_ || enumerator_->enumerate())

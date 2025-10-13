@@ -20,7 +20,6 @@
 
 #include "libcamera/internal/bayer_format.h"
 #include "libcamera/internal/framebuffer.h"
-#include "libcamera/internal/global_configuration.h"
 #include "libcamera/internal/shared_mem_object.h"
 #include "libcamera/internal/software_isp/swisp_stats.h"
 
@@ -28,14 +27,15 @@
 
 namespace libcamera {
 
-class PixelFormat;
+class CameraManager;
 class MappedFrameBuffer;
+class PixelFormat;
 struct StreamConfiguration;
 
 class SwStatsCpu
 {
 public:
-	SwStatsCpu(const GlobalConfiguration &configuration);
+	SwStatsCpu(const CameraManager &cm);
 	~SwStatsCpu() = default;
 
 	/*

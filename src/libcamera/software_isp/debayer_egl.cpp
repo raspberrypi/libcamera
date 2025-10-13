@@ -29,13 +29,12 @@ namespace libcamera {
  */
 
 /**
- * \fn DebayerEGL::DebayerEGL(std::unique_ptr<SwStatsCpu> stats, const GlobalConfiguration &configuration)
  * \brief Construct a DebayerEGL object
  * \param[in] stats Statistics processing object
- * \param[in] configuration Global configuration reference
+ * \param[in] cm The camera manager
  */
-DebayerEGL::DebayerEGL(std::unique_ptr<SwStatsCpu> stats, const GlobalConfiguration &configuration)
-	: Debayer(configuration), stats_(std::move(stats))
+DebayerEGL::DebayerEGL(std::unique_ptr<SwStatsCpu> stats, const CameraManager &cm)
+	: Debayer(cm), stats_(std::move(stats))
 {
 }
 

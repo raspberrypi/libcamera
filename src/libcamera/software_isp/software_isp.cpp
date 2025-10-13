@@ -95,9 +95,9 @@ SoftwareIsp::SoftwareIsp(PipelineHandler *pipe, const CameraSensor *sensor,
 		return;
 	}
 
-	const GlobalConfiguration &configuration = pipe->cameraManager()->_d()->configuration();
+	const CameraManager &cm = *pipe->cameraManager();
 
-	auto stats = std::make_unique<SwStatsCpu>(configuration);
+	auto stats = std::make_unique<SwStatsCpu>(cm);
 	if (!stats->isValid()) {
 		LOG(SoftwareIsp, Error) << "Failed to create SwStatsCpu object";
 		return;
@@ -105,6 +105,7 @@ SoftwareIsp::SoftwareIsp(PipelineHandler *pipe, const CameraSensor *sensor,
 	stats->statsReady.connect(this, &SoftwareIsp::statsReady);
 
 #if HAVE_DEBAYER_EGL
+	const GlobalConfiguration &configuration = cm._d()->configuration();
 	std::optional<std::string> softISPMode = configuration.envOption("LIBCAMERA_SOFTISP_MODE", { "software_isp", "mode" });
 	if (softISPMode) {
 		if (softISPMode != "gpu" && softISPMode != "cpu") {
@@ -117,11 +118,11 @@ SoftwareIsp::SoftwareIsp(PipelineHandler *pipe, const CameraSensor *sensor,
 	}
 
 	if (!softISPMode || softISPMode == "gpu")
-		debayer_ = std::make_unique<DebayerEGL>(std::move(stats), configuration);
+		debayer_ = std::make_unique<DebayerEGL>(std::move(stats), cm);
 
 #endif
 	if (!debayer_)
-		debayer_ = std::make_unique<DebayerCpu>(std::move(stats), configuration);
+		debayer_ = std::make_unique<DebayerCpu>(std::move(stats), cm);
 
 	debayer_->inputBufferReady.connect(this, &SoftwareIsp::inputReady);
 	debayer_->outputBufferReady.connect(this, &SoftwareIsp::outputReady);

@@ -47,7 +47,6 @@ public:
 		notifier_.reset();
 		ipa_.reset();
 		ipaManager_.reset();
-		config_.reset();
 		cameraManager_.reset();
 	}
 
@@ -90,8 +89,7 @@ protected:
 		notifier_->activated.connect(this, &IPAInterfaceTest::readTrace);
 
 		/* Create the IPA manager. */
-		config_ = std::make_unique<GlobalConfiguration>();
-		ipaManager_ = std::make_unique<IPAManager>(*config_);
+		ipaManager_ = std::make_unique<IPAManager>(*cameraManager_);
 
 		return TestPass;
 	}
@@ -169,7 +167,6 @@ private:
 	std::shared_ptr<PipelineHandler> pipe_;
 	std::unique_ptr<ipa::vimc::IPAProxyVimc> ipa_;
 	std::unique_ptr<CameraManager> cameraManager_;
-	std::unique_ptr<GlobalConfiguration> config_;
 	std::unique_ptr<IPAManager> ipaManager_;
 	enum ipa::vimc::IPAOperationCode trace_;
 	std::unique_ptr<EventNotifier> notifier_;

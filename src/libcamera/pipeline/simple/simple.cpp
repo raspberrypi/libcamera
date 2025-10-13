@@ -1266,8 +1266,8 @@ CameraConfiguration::Status SimpleCameraConfiguration::validate()
 			cfg.frameSize = format.planes[0].size;
 		}
 
-		const auto bufferCount = cfg.bufferCount;
-		if (bufferCount <= 0)
+		const unsigned int bufferCount = cfg.bufferCount;
+		if (!bufferCount)
 			cfg.bufferCount = kNumBuffersDefault;
 		else if (bufferCount > kNumBuffersMax)
 			cfg.bufferCount = kNumBuffersMax;

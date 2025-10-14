@@ -192,8 +192,6 @@ static_assert(sizeof(ipa_controls_header) == 32,
 /**
  * \struct ipa_control_value_entry
  * \brief Description of a serialized ControlValue entry
- * \var ipa_control_value_entry::id
- * The numerical ID of the control
  * \var ipa_control_value_entry::type
  * The type of the control (defined by enum ControlType)
  * \var ipa_control_value_entry::is_array
@@ -205,10 +203,24 @@ static_assert(sizeof(ipa_controls_header) == 32,
  * value data (shall be a multiple of 8 bytes).
  * \var ipa_control_value_entry::padding
  * Padding bytes (shall be set to 0)
+ * \var ipa_control_value_entry::reserved
+ * Reserved for future extensions
  */
 
 static_assert(sizeof(ipa_control_value_entry) == 16,
 	      "Invalid ABI size change for struct ipa_control_value_entry");
+
+/**
+ * \struct ipa_control_list_entry
+ * \brief Description of a serialized ControlList entry
+ * \var ipa_control_list_entry::id
+ * The numerical ID of the control
+ * \var ipa_control_list_entry::value
+ * The description of the serialized ControlValue
+ */
+
+static_assert(sizeof(ipa_control_list_entry) == 20,
+	      "Invalid ABI size change for struct ipa_control_list_entry");
 
 /**
  * \struct ipa_control_info_entry
@@ -217,8 +229,6 @@ static_assert(sizeof(ipa_control_value_entry) == 16,
  * The numerical ID of the control
  * \var ipa_control_info_entry::type
  * The type of the control (defined by enum ControlType)
- * \var ipa_control_info_entry::offset
- * The offset in bytes from the beginning of the data section to the control
  * info data (shall be a multiple of 8 bytes)
  * \var ipa_control_info_entry::direction
  * The directions in which the control is allowed to be sent. This is a flags
@@ -226,6 +236,8 @@ static_assert(sizeof(ipa_control_value_entry) == 16,
  * metadata). \sa ControlId::Direction
  * \var ipa_control_info_entry::padding
  * Padding bytes (shall be set to 0)
+ * \var ipa_control_info_entry::reserved
+ * Reserved for future extensions
  */
 
 static_assert(sizeof(ipa_control_info_entry) == 16,

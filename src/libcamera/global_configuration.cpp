@@ -53,6 +53,48 @@ LOG_DEFINE_CATEGORY(Configuration)
  * options, or configuration() to access the whole configuration.
  */
 
+/**
+ * \typedef GlobalConfiguration::Configuration
+ * \brief Type representing global libcamera configuration
+ *
+ * All code outside GlobalConfiguration must use this type declaration and not
+ * the underlying type.
+ */
+
+/**
+ * \brief Initialize the global configuration
+ */
+GlobalConfiguration::GlobalConfiguration()
+{
+	load();
+}
+
+void GlobalConfiguration::load()
+{
+	std::filesystem::path userConfigurationDirectory;
+	const char *xdgConfigHome = utils::secure_getenv("XDG_CONFIG_HOME");
+	if (xdgConfigHome) {
+		userConfigurationDirectory = xdgConfigHome;
+	} else {
+		const char *home = utils::secure_getenv("HOME");
+		if (home)
+			userConfigurationDirectory =
+				std::filesystem::path(home) / ".config";
+	}
+
+	if (!userConfigurationDirectory.empty()) {
+		std::filesystem::path user_configuration_file =
+			userConfigurationDirectory / "libcamera" / "configuration.yaml";
+		if (loadFile(user_configuration_file))
+			return;
+	}
+
+	for (const auto &path : globalConfigurationFiles) {
+		if (loadFile(path))
+			return;
+	}
+}
+
 bool GlobalConfiguration::loadFile(const std::filesystem::path &fileName)
 {
 	File file(fileName);
@@ -85,47 +127,39 @@ bool GlobalConfiguration::loadFile(const std::filesystem::path &fileName)
 	return true;
 }
 
-void GlobalConfiguration::load()
-{
-	std::filesystem::path userConfigurationDirectory;
-	const char *xdgConfigHome = utils::secure_getenv("XDG_CONFIG_HOME");
-	if (xdgConfigHome) {
-		userConfigurationDirectory = xdgConfigHome;
-	} else {
-		const char *home = utils::secure_getenv("HOME");
-		if (home)
-			userConfigurationDirectory =
-				std::filesystem::path(home) / ".config";
-	}
-
-	if (!userConfigurationDirectory.empty()) {
-		std::filesystem::path user_configuration_file =
-			userConfigurationDirectory / "libcamera" / "configuration.yaml";
-		if (loadFile(user_configuration_file))
-			return;
-	}
-
-	for (const auto &path : globalConfigurationFiles) {
-		if (loadFile(path))
-			return;
-	}
-}
-
 /**
- * \brief Initialize the global configuration
- */
-GlobalConfiguration::GlobalConfiguration()
-{
-	load();
-}
-
-/**
- * \typedef GlobalConfiguration::Configuration
- * \brief Type representing global libcamera configuration
+ * \brief Retrieve the configuration version
  *
- * All code outside GlobalConfiguration must use this type declaration and not
- * the underlying type.
+ * The version is declared in the configuration file in the top-level `%version`
+ * element, alongside `%configuration`. This has currently no real use but may be
+ * needed in future if configuration incompatibilities occur.
+ *
+ * \return Configuration version as declared in the configuration file or 0 if
+ * no global configuration is available
  */
+unsigned int GlobalConfiguration::version() const
+{
+	return (*yamlConfiguration_)["version"].get<unsigned int>().value_or(0);
+}
+
+/**
+ * \brief Retrieve the libcamera global configuration
+ *
+ * This returns the whole configuration stored in the top-level section
+ * `%configuration` of the YAML configuration file.
+ *
+ * The requested part of the configuration can be accessed using \a ValueNode
+ * methods.
+ *
+ * \note \a ValueNode type itself shouldn't be used in type declarations to
+ * avoid trouble if we decide to change the underlying data objects in future.
+ *
+ * \return The whole configuration section
+ */
+GlobalConfiguration::Configuration GlobalConfiguration::configuration() const
+{
+	return (*yamlConfiguration_)["configuration"];
+}
 
 /**
  * \fn std::optional<T> GlobalConfiguration::option(const std::initializer_list<std::string_view> &confPath) const
@@ -214,40 +248,6 @@ std::optional<std::vector<std::string>> GlobalConfiguration::envListOption(
 		return std::vector<std::string>(items.begin(), items.end());
 	}
 	return listOption(confPath);
-}
-
-/**
- * \brief Retrieve the configuration version
- *
- * The version is declared in the configuration file in the top-level `%version`
- * element, alongside `%configuration`. This has currently no real use but may be
- * needed in future if configuration incompatibilities occur.
- *
- * \return Configuration version as declared in the configuration file or 0 if
- * no global configuration is available
- */
-unsigned int GlobalConfiguration::version() const
-{
-	return (*yamlConfiguration_)["version"].get<unsigned int>().value_or(0);
-}
-
-/**
- * \brief Retrieve the libcamera global configuration
- *
- * This returns the whole configuration stored in the top-level section
- * `%configuration` of the YAML configuration file.
- *
- * The requested part of the configuration can be accessed using \a ValueNode
- * methods.
- *
- * \note \a ValueNode type itself shouldn't be used in type declarations to
- * avoid trouble if we decide to change the underlying data objects in future.
- *
- * \return The whole configuration section
- */
-GlobalConfiguration::Configuration GlobalConfiguration::configuration() const
-{
-	return (*yamlConfiguration_)["configuration"];
 }
 
 } /* namespace libcamera */

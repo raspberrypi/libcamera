@@ -52,8 +52,8 @@ public:
 		const std::string delimiter = ":") const;
 
 private:
-	bool loadFile(const std::filesystem::path &fileName);
 	void load();
+	bool loadFile(const std::filesystem::path &fileName);
 
 	std::unique_ptr<ValueNode> yamlConfiguration_ =
 		std::make_unique<ValueNode>();

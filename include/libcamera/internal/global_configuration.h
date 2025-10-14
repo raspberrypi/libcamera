@@ -56,7 +56,7 @@ private:
 	void load();
 	bool loadFile(const std::filesystem::path &fileName);
 
-	std::unique_ptr<ValueNode> yamlConfiguration_ =
+	std::unique_ptr<ValueNode> configuration_ =
 		std::make_unique<ValueNode>();
 };
 

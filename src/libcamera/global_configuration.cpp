@@ -125,7 +125,7 @@ bool GlobalConfiguration::loadFile(const std::filesystem::path &fileName)
 		return true;
 	}
 
-	yamlConfiguration_ = std::move(configuration);
+	configuration_ = std::move(configuration);
 	return true;
 }
 
@@ -141,7 +141,7 @@ bool GlobalConfiguration::loadFile(const std::filesystem::path &fileName)
  */
 unsigned int GlobalConfiguration::version() const
 {
-	return (*yamlConfiguration_)["version"].get<unsigned int>().value_or(0);
+	return (*configuration_)["version"].get<unsigned int>().value_or(0);
 }
 
 /**
@@ -160,7 +160,7 @@ unsigned int GlobalConfiguration::version() const
  */
 GlobalConfiguration::Configuration GlobalConfiguration::configuration() const
 {
-	return (*yamlConfiguration_)["configuration"];
+	return (*configuration_)["configuration"];
 }
 
 /**

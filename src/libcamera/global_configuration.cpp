@@ -56,8 +56,8 @@ LOG_DEFINE_CATEGORY(Configuration)
  */
 
 /**
- * \typedef GlobalConfiguration::Configuration
- * \brief Type representing global libcamera configuration
+ * \typedef GlobalConfiguration::Option
+ * \brief Type representing a configuration option
  *
  * All code outside GlobalConfiguration must use this type declaration and not
  * the underlying type.
@@ -156,9 +156,9 @@ unsigned int GlobalConfiguration::version() const
  * \note \a ValueNode type itself shouldn't be used in type declarations to
  * avoid trouble if we decide to change the underlying data objects in future.
  *
- * \return The whole configuration section
+ * \return The top-level configuration option
  */
-GlobalConfiguration::Configuration GlobalConfiguration::configuration() const
+GlobalConfiguration::Option GlobalConfiguration::configuration() const
 {
 	return (*configuration_)["configuration"];
 }

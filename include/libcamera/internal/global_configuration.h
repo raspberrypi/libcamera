@@ -22,12 +22,12 @@ namespace libcamera {
 class GlobalConfiguration
 {
 public:
-	using Configuration = const ValueNode &;
+	using Option = const ValueNode &;
 
 	GlobalConfiguration();
 
 	unsigned int version() const;
-	Configuration configuration() const;
+	Option configuration() const;
 
 	template<typename T>
 	std::optional<T> option(

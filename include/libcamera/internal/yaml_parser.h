@@ -36,8 +36,7 @@ private:
 		std::unique_ptr<YamlObject> value;
 	};
 
-	using Container = std::vector<Value>;
-	using ListContainer = std::vector<std::unique_ptr<YamlObject>>;
+	using ValueContainer = std::vector<Value>;
 
 public:
 #ifndef __DOXYGEN__
@@ -48,7 +47,7 @@ public:
 		using difference_type = std::ptrdiff_t;
 		using iterator_category = std::forward_iterator_tag;
 
-		Iterator(typename Container::const_iterator it)
+		Iterator(typename ValueContainer::const_iterator it)
 			: it_(it)
 		{
 		}
@@ -77,14 +76,14 @@ public:
 		}
 
 	protected:
-		Container::const_iterator it_;
+		ValueContainer::const_iterator it_;
 	};
 
 	template<typename Iterator>
 	class Adapter
 	{
 	public:
-		Adapter(const Container &container)
+		Adapter(const ValueContainer &container)
 			: container_(container)
 		{
 		}
@@ -100,7 +99,7 @@ public:
 		}
 
 	protected:
-		const Container &container_;
+		const ValueContainer &container_;
 	};
 
 	class ListIterator : public Iterator<ListIterator>
@@ -232,7 +231,7 @@ private:
 	Type type_;
 
 	std::string value_;
-	Container list_;
+	ValueContainer list_;
 	std::map<std::string, YamlObject *, std::less<>> dictionary_;
 };
 

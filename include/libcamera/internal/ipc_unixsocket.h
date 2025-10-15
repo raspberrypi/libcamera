@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <memory>
 #include <stdint.h>
 #include <sys/types.h>
 #include <vector>
@@ -53,7 +54,7 @@ private:
 	UniqueFD fd_;
 	bool headerReceived_;
 	struct Header header_;
-	EventNotifier *notifier_;
+	std::unique_ptr<EventNotifier> notifier_;
 };
 
 } /* namespace libcamera */

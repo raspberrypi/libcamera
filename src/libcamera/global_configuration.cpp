@@ -61,6 +61,11 @@ LOG_DEFINE_CATEGORY(Configuration)
 GlobalConfiguration::GlobalConfiguration()
 {
 	load();
+
+	if (configuration_->isEmpty()) {
+		configuration_->add("version", std::make_unique<ValueNode>(1));
+		configuration_->add("configuration", std::make_unique<ValueNode>());
+	}
 }
 
 void GlobalConfiguration::load()

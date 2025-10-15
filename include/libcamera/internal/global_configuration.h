@@ -42,13 +42,6 @@ public:
 
 	std::optional<std::vector<std::string>> listOption(
 		const std::initializer_list<std::string_view> confPath) const;
-	std::optional<std::string> envOption(
-		const char *const envVariable,
-		const std::initializer_list<std::string_view> confPath) const;
-	std::optional<std::vector<std::string>> envListOption(
-		const char *const envVariable,
-		const std::initializer_list<std::string_view> confPath,
-		const std::string delimiter = ":") const;
 
 private:
 	void load();

@@ -114,18 +114,15 @@ IPAManager::IPAManager(const CameraManager &cm)
 	if (!pubKey_.isValid())
 		LOG(IPAManager, Warning) << "Public key not valid";
 
-	char *force = utils::secure_getenv("LIBCAMERA_IPA_FORCE_ISOLATION");
-	forceIsolation_ = (force && force[0] != '\0') ||
-			  (!force && configuration.option<bool>({ "ipa", "force_isolation" })
-					     .value_or(false));
+	forceIsolation_ = configuration.option<bool>({ "ipa", "force_isolation" })
+				       .value_or(false);
 #endif
 
 	unsigned int ipaCount = 0;
 
 	/* User-specified paths take precedence. */
 	const auto modulePaths =
-		configuration.envListOption(
-				     "LIBCAMERA_IPA_MODULE_PATH", { "ipa", "module_paths" })
+		configuration.listOption({ "ipa", "module_paths" })
 			.value_or(std::vector<std::string>());
 	for (const auto &dir : modulePaths) {
 		if (dir.empty())

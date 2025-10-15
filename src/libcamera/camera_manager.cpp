@@ -114,9 +114,7 @@ void CameraManager::Private::createPipelineHandlers()
 	 * there is no configuration file.
 	 */
 	const auto pipesList =
-		configuration().envListOption("LIBCAMERA_PIPELINES_MATCH_LIST",
-					      { "pipelines_match_list" },
-					      ",");
+		configuration().listOption({ "pipelines_match_list" });
 	if (pipesList.has_value()) {
 		/*
 		 * When a list of preferred pipelines is defined, iterate

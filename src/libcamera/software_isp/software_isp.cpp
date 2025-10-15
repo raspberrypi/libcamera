@@ -106,11 +106,11 @@ SoftwareIsp::SoftwareIsp(PipelineHandler *pipe, const CameraSensor *sensor,
 
 #if HAVE_DEBAYER_EGL
 	const GlobalConfiguration &configuration = cm._d()->configuration();
-	std::optional<std::string> softISPMode = configuration.envOption("LIBCAMERA_SOFTISP_MODE", { "software_isp", "mode" });
+	std::optional<std::string> softISPMode = configuration.option<std::string>({ "software_isp", "mode" });
 	if (softISPMode) {
 		if (softISPMode != "gpu" && softISPMode != "cpu") {
 			LOG(SoftwareIsp, Error)
-				<< "Invalid LIBCAMERA_SOFTISP_MODE \""
+				<< "Invalid software ISP mode \""
 				<< softISPMode.value()
 				<< "\", must be \"cpu\" or \"gpu\"";
 			return;

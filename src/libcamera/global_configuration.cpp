@@ -7,6 +7,7 @@
 
 #include "libcamera/internal/global_configuration.h"
 
+#include <array>
 #include <filesystem>
 #include <memory>
 #include <optional>
@@ -30,6 +31,99 @@ const std::vector<std::filesystem::path> globalConfigurationFiles = {
 	std::filesystem::path(LIBCAMERA_DATA_DIR) / "configuration.yaml",
 };
 
+class EnvironmentProcessor
+{
+public:
+	virtual ~EnvironmentProcessor() = default;
+
+	virtual void process(ValueNode &node, const char *env) = 0;
+};
+
+/* A processor that sets a fixed value. */
+template<typename T>
+class EnvironmentFixedProcessor : public EnvironmentProcessor
+{
+public:
+	EnvironmentFixedProcessor(const T &value)
+		: value_(value)
+	{
+	}
+
+	void process(ValueNode &node, [[maybe_unused]] const char *env) override
+	{
+		node.set(value_);
+	}
+
+private:
+	T value_;
+};
+
+/*
+ * A processor that parses the environment variable as a list of strings with a
+ * custom delimiter.
+ */
+class EnvironmentListProcessor : public EnvironmentProcessor
+{
+public:
+	EnvironmentListProcessor(const char *delimiter)
+		: delimiter_(delimiter)
+	{
+	}
+
+	void process(ValueNode &node, const char *env) override
+	{
+		for (auto &&value : utils::split(env, delimiter_))
+			node.add(std::make_unique<ValueNode>(std::move(value)));
+	}
+
+private:
+	const std::string delimiter_;
+};
+
+/* A processor that copies the value of the environment variable. */
+class EnvironmentValueProcessor : public EnvironmentProcessor
+{
+public:
+	void process(ValueNode &node, const char *env) override
+	{
+		node.set(std::string{ env });
+	}
+};
+
+struct EnvironmentOverride {
+	const char *variable;
+	std::initializer_list<std::string_view> path;
+	std::unique_ptr<EnvironmentProcessor> processor;
+};
+
+const std::array<EnvironmentOverride, 6> environmentOverrides{ {
+	{
+		"LIBCAMERA_IPA_CONFIG_PATH",
+		{ "ipa", "config_paths" },
+		std::make_unique<EnvironmentListProcessor>(":"),
+	}, {
+		"LIBCAMERA_IPA_FORCE_ISOLATION",
+		{ "ipa", "force_isolation" },
+		std::make_unique<EnvironmentFixedProcessor<bool>>(true),
+	}, {
+		"LIBCAMERA_IPA_MODULE_PATH",
+		{ "ipa", "module_paths" },
+		std::make_unique<EnvironmentListProcessor>(":"),
+	}, {
+		"LIBCAMERA_IPA_PROXY_PATH",
+		{ "ipa", "proxy_paths" },
+		std::make_unique<EnvironmentListProcessor>(":"),
+	}, {
+		"LIBCAMERA_PIPELINES_MATCH_LIST",
+		{ "pipelines_match_list" },
+		std::make_unique<EnvironmentListProcessor>(","),
+	}, {
+		"LIBCAMERA_SOFTISP_MODE",
+		{ "software_isp", "mode" },
+		std::make_unique<EnvironmentValueProcessor>(),
+	},
+} };
+
 } /* namespace */
 
 LOG_DEFINE_CATEGORY(Configuration)
@@ -50,9 +144,9 @@ LOG_DEFINE_CATEGORY(Configuration)
  * reported and no configuration file is used. This is to prevent libcamera from
  * using an unintended configuration file.
  *
- * The configuration can be accessed using the provided helpers, namely
- * option(), envOption(), listOption() and envListOption() to access individual
- * options, or configuration() to access the whole configuration.
+ * The configuration can be accessed using the provided helpers, namely option()
+ * and listOption() to access individual options, or configuration() to access
+ * the whole configuration.
  */
 
 /**
@@ -65,6 +159,25 @@ GlobalConfiguration::GlobalConfiguration()
 	if (configuration_->isEmpty()) {
 		configuration_->add("version", std::make_unique<ValueNode>(1));
 		configuration_->add("configuration", std::make_unique<ValueNode>());
+	}
+
+	/* Process environment variables that override configuration options. */
+	ValueNode *cfg = configuration_->at("configuration");
+
+	for (const EnvironmentOverride &envOverride : environmentOverrides) {
+		const char *envValue = utils::secure_getenv(envOverride.variable);
+		if (!envValue || !envValue[0])
+			continue;
+
+		std::unique_ptr<ValueNode> node = std::make_unique<ValueNode>();
+		envOverride.processor->process(*node.get(), envValue);
+
+		cfg->erase(envOverride.path);
+
+		if (!cfg->add(envOverride.path, std::move(node)))
+			LOG(Configuration, Error)
+				<< "Failed to override "
+				<< utils::join(envOverride.path, "/");
 	}
 }
 
@@ -183,67 +296,6 @@ std::optional<std::vector<std::string>> GlobalConfiguration::listOption(
 			return {};
 	}
 	return c->get<std::vector<std::string>>();
-}
-
-/**
- * \brief Retrieve the value of environment variable with a fallback on the configuration file
- * \param[in] envVariable Environment variable to get the value from
- * \param[in] confPath The sequence of YAML section names to fall back on when
- * \a envVariable is unavailable
- *
- * This helper looks first at the given environment variable and if it is
- * defined then it returns its value (even if it is empty). Otherwise it looks
- * for \a confPath the same way as in GlobalConfiguration::option. Only string
- * values are supported.
- *
- * \note Support for using environment variables to configure libcamera behavior
- * is provided here mostly for backward compatibility reasons. Introducing new
- * configuration environment variables is discouraged.
- *
- * \return The value retrieved from the given environment if it is set,
- * otherwise the value from the configuration file if it exists, or no value if
- * it does not
- */
-std::optional<std::string> GlobalConfiguration::envOption(
-	const char *envVariable,
-	const std::initializer_list<std::string_view> confPath) const
-{
-	const char *envValue = utils::secure_getenv(envVariable);
-	if (envValue)
-		return std::optional{ std::string{ envValue } };
-	return option<std::string>(confPath);
-}
-
-/**
- * \brief Retrieve the value of the configuration option from a file or environment
- * \param[in] envVariable Environment variable to get the value from
- * \param[in] confPath The same as in GlobalConfiguration::option
- * \param[in] delimiter Items separator in the environment variable
- *
- * This helper looks first at the given environment variable and if it is
- * defined (even if it is empty) then it splits its value by semicolons and
- * returns the resulting list of strings. Otherwise it looks for \a confPath the
- * same way as in GlobalConfiguration::option, value of which must be a list of
- * strings.
- *
- * \note Support for using environment variables to configure libcamera behavior
- * is provided here mostly for backward compatibility reasons. Introducing new
- * configuration environment variables is discouraged.
- *
- * \return A vector of strings retrieved from the given environment option or
- * configuration file or no value if not found; the vector may be empty
- */
-std::optional<std::vector<std::string>> GlobalConfiguration::envListOption(
-	const char *const envVariable,
-	const std::initializer_list<std::string_view> confPath,
-	const std::string delimiter) const
-{
-	const char *envValue = utils::secure_getenv(envVariable);
-	if (envValue) {
-		auto items = utils::split(envValue, delimiter);
-		return std::vector<std::string>(items.begin(), items.end());
-	}
-	return listOption(confPath);
 }
 
 } /* namespace libcamera */

@@ -124,11 +124,9 @@ IPAProxy::IPAProxy(IPAModule *ipam, const CameraManager &cm)
 {
 	const GlobalConfiguration &configuration = cm._d()->configuration();
 
-	configPaths_ = configuration.envListOption("LIBCAMERA_IPA_CONFIG_PATH",
-						   { "ipa", "config_paths" })
+	configPaths_ = configuration.listOption({ "ipa", "config_paths" })
 				    .value_or(std::vector<std::string>());
-	execPaths_ = configuration.envListOption("LIBCAMERA_IPA_PROXY_PATH",
-						 { "ipa", "proxy_paths" })
+	execPaths_ = configuration.listOption({ "ipa", "proxy_paths" })
 				  .value_or(std::vector<std::string>());
 }
 

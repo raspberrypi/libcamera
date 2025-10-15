@@ -769,7 +769,7 @@ std::unique_ptr<YamlObject> YamlParser::parse(File &file)
 	if (context.init(file))
 		return nullptr;
 
-	std::unique_ptr<YamlObject> root(new YamlObject());
+	std::unique_ptr<YamlObject> root = std::make_unique<YamlObject>();
 
 	if (context.parseContent(*root)) {
 		LOG(YamlParser, Error)

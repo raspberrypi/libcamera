@@ -883,8 +883,10 @@ void PipelineHandlerBase::mapBuffers(Camera *camera, const BufferMap &buffers, u
 	 * handler and the IPA.
 	 */
 	for (auto const &[id, buffer] : buffers) {
-		bufferIds.push_back(IPABuffer(mask | id,
-					      buffer.buffer->planes()));
+		Span<const FrameBuffer::Plane> planes = buffer.buffer->planes();
+
+		bufferIds.emplace_back(mask | id,
+				       std::vector<FrameBuffer::Plane>{ planes.begin(), planes.end() });
 		data->bufferIds_.insert(mask | id);
 	}
 

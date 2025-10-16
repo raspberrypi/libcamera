@@ -502,7 +502,7 @@ ControlValue CaptureScript::parseScalarControl(const ControlId *id,
 		break;
 	}
 	case ControlTypeString: {
-		value.set<std::string>(repr);
+		value.set<std::string_view>(repr);
 		break;
 	}
 	default:

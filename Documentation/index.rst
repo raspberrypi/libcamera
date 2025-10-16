@@ -4,28 +4,35 @@
 
 .. toctree::
    :maxdepth: 1
-   :caption: Contents:
+   :caption: For Users
 
-   Home <self>
-   Contribute <contributing>
-   Getting Started <getting-started>
-
-   Application Writer's Guide <guides/application-developer>
-   Camera Sensor Model <camera-sensor-model>
-   Environment variables <environment_variables>
+   Introduction <self>
    Feature Requirements <feature_requirements>
-   IPA Writer's guide <guides/ipa>
-   Lens driver requirements <lens_driver_requirements>
-   libcamera Architecture <libcamera_architecture>
-   Pipeline Handler Writer's Guide <guides/pipeline-handler>
+   Runtime configuration <runtime_configuration>
+   Application Writer's Guide <guides/application-developer>
    Python Bindings <python-bindings>
-   Sensor driver requirements <sensor_driver_requirements>
-   SoftwareISP Benchmarking <software-isp-benchmarking>
-   Tracing guide <guides/tracing>
-
-   Design document: AE <design/ae>
+   Public API <public-api/index>
 
 .. toctree::
-   :hidden:
+   :maxdepth: 1
+   :caption: For Developers
 
-   introduction
+   Contribute <contributing>
+   Getting Started <getting-started>
+   Camera Sensor Model <camera-sensor-model>
+   IPA Writer's guide <guides/ipa>
+   libcamera Architecture <libcamera_architecture>
+   Pipeline Handler Writer's Guide <guides/pipeline-handler>
+   SoftwareISP Benchmarking <software-isp-benchmarking>
+   Tracing guide <guides/tracing>
+   Design document: AE <design/ae>
+   Internal API <internal-api/index>
+
+.. toctree::
+   :maxdepth: 1
+   :caption: For System Integrators
+
+   Lens driver requirements <lens_driver_requirements>
+   Sensor driver requirements <sensor_driver_requirements>
+
+

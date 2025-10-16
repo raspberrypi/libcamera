@@ -115,13 +115,13 @@ int generateLut(const ipa::Pwl &pwl, uint32_t *lut, std::size_t lutSize,
 	return 0;
 }
 
-int generateDecompandLut(const ipa::Pwl &pwl, uint16_t *lut, std::size_t lutSize = 65)
+int generateDecompandLut(const ipa::Pwl &pwl, Span<uint16_t> lut)
 {
 	if (pwl.empty())
 		return -EINVAL;
 
 	constexpr int step = 1024;
-	for (std::size_t i = 0; i < lutSize; ++i) {
+	for (std::size_t i = 0; i < lut.size(); ++i) {
 		int x = i * step;
 
 		int y = pwl.eval(x);
@@ -751,7 +751,7 @@ void IpaPiSP::applyDecompand(const DecompandStatus *decompandStatus, pisp_fe_glo
 {
 	pisp_fe_decompand_config decompand = {};
 
-	if (!generateDecompandLut(decompandStatus->decompandCurve, decompand.lut, PISP_FE_DECOMPAND_LUT_SIZE)) {
+	if (!generateDecompandLut(decompandStatus->decompandCurve, decompand.lut)) {
 		fe_->SetDecompand(decompand);
 		feGlobal.enables |= PISP_FE_ENABLE_DECOMPAND;
 	} else

@@ -30,11 +30,13 @@
 #include <libcamera/stream.h>
 
 #include "libcamera/internal/camera.h"
+#include "libcamera/internal/camera_manager.h"
 #include "libcamera/internal/camera_sensor.h"
 #include "libcamera/internal/camera_sensor_properties.h"
 #include "libcamera/internal/converter.h"
 #include "libcamera/internal/delayed_controls.h"
 #include "libcamera/internal/device_enumerator.h"
+#include "libcamera/internal/global_configuration.h"
 #include "libcamera/internal/media_device.h"
 #include "libcamera/internal/pipeline_handler.h"
 #include "libcamera/internal/software_isp/software_isp.h"
@@ -376,6 +378,9 @@ public:
 	const Transform &combinedTransform() const { return combinedTransform_; }
 
 private:
+	static constexpr unsigned int kNumBuffersDefault = 4;
+	static constexpr unsigned int kNumBuffersMax = 32;
+
 	/*
 	 * The SimpleCameraData instance is guaranteed to be valid as long as
 	 * the corresponding Camera instance is valid. In order to borrow a
@@ -415,7 +420,8 @@ protected:
 	int queueRequestDevice(Camera *camera, Request *request) override;
 
 private:
-	static constexpr unsigned int kNumInternalBuffers = 3;
+	static constexpr unsigned int kMaxQueuedRequestsDevice = 4;
+	static constexpr unsigned int kNumInternalBuffers = 4;
 
 	struct EntityData {
 		std::unique_ptr<V4L2VideoDevice> video;
@@ -1237,7 +1243,7 @@ CameraConfiguration::Status SimpleCameraConfiguration::validate()
 		    cfg.size != pipeConfig_->captureSize)
 			needConversion_ = true;
 
-		/* Set the stride, frameSize and bufferCount. */
+		/* Set the stride and frameSize. */
 		if (needConversion_) {
 			std::tie(cfg.stride, cfg.frameSize) =
 				data_->converter_
@@ -1260,7 +1266,18 @@ CameraConfiguration::Status SimpleCameraConfiguration::validate()
 			cfg.frameSize = format.planes[0].size;
 		}
 
-		cfg.bufferCount = 4;
+		const auto bufferCount = cfg.bufferCount;
+		if (bufferCount <= 0)
+			cfg.bufferCount = kNumBuffersDefault;
+		else if (bufferCount > kNumBuffersMax)
+			cfg.bufferCount = kNumBuffersMax;
+
+		if (cfg.bufferCount != bufferCount) {
+			LOG(SimplePipeline, Debug)
+				<< "Adjusting bufferCount from " << bufferCount
+				<< " to " << cfg.bufferCount;
+			status = Adjusted;
+		}
 	}
 
 	return status;
@@ -1271,7 +1288,8 @@ CameraConfiguration::Status SimpleCameraConfiguration::validate()
  */
 
 SimplePipelineHandler::SimplePipelineHandler(CameraManager *manager)
-	: PipelineHandler(manager), converter_(nullptr)
+	: PipelineHandler(manager, kMaxQueuedRequestsDevice),
+	  converter_(nullptr)
 {
 }
 
@@ -1682,6 +1700,19 @@ bool SimplePipelineHandler::matchDevice(MediaDevice *media,
 	}
 
 	swIspEnabled_ = info.swIspEnabled;
+	const GlobalConfiguration &configuration = cameraManager()->_d()->configuration();
+	for (GlobalConfiguration::Configuration entry :
+	     configuration.configuration()["pipelines"]["simple"]["supported_devices"]
+		     .asList()) {
+		auto name = entry["driver"].get<std::string>();
+		if (name == info.driver) {
+			swIspEnabled_ = entry["software_isp"].get<bool>().value_or(swIspEnabled_);
+			LOG(SimplePipeline, Debug)
+				<< "Configuration file overrides software ISP for "
+				<< info.driver << " to " << swIspEnabled_;
+			break;
+		}
+	}
 
 	/* Locate the sensors. */
 	std::vector<MediaEntity *> sensors = locateSensors(media);

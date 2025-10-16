@@ -43,6 +43,11 @@ option('lc-compliance',
         value : 'disabled',
         description : 'Compile the lc-compliance test application')
 
+option('libunwind',
+        type : 'feature',
+        value : 'auto',
+        description : 'Enable libunwind integration for backtrace generation')
+
 option('pipelines',
         type : 'array',
         value : ['auto'],

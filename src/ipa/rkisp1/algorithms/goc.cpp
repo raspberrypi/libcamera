@@ -50,7 +50,7 @@ const float kDefaultGamma = 2.2f;
  */
 int GammaOutCorrection::init(IPAContext &context, const YamlObject &tuningData)
 {
-	if (context.hw->numGammaOutSamples !=
+	if (context.hw.numGammaOutSamples !=
 	    RKISP1_CIF_ISP_GAMMA_OUT_MAX_SAMPLES_V10) {
 		LOG(RkISP1Gamma, Error)
 			<< "Gamma is not implemented for RkISP1 V12";
@@ -101,7 +101,7 @@ void GammaOutCorrection::prepare(IPAContext &context,
 				 IPAFrameContext &frameContext,
 				 RkISP1Params *params)
 {
-	ASSERT(context.hw->numGammaOutSamples ==
+	ASSERT(context.hw.numGammaOutSamples ==
 	       RKISP1_CIF_ISP_GAMMA_OUT_MAX_SAMPLES_V10);
 
 	if (!frameContext.goc.update)

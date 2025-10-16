@@ -564,7 +564,7 @@ int DNGWriter::write(const char *filename, const Camera *camera,
 
 	const auto &model = cameraProperties.get(properties::Model);
 	if (model) {
-		TIFFSetField(tif, TIFFTAG_MODEL, model->c_str());
+		TIFFSetField(tif, TIFFTAG_MODEL, std::string(*model).c_str());
 		/* \todo set TIFFTAG_UNIQUECAMERAMODEL. */
 	}
 

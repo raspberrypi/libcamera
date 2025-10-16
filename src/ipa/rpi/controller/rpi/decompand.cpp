@@ -33,7 +33,7 @@ void Decompand::initialise()
 {
 }
 
-void Decompand::switchMode([[maybe_unused]] CameraMode const &cameraMode,
+void Decompand::switchMode(CameraMode const &cameraMode,
 			   [[maybe_unused]] Metadata *metadata)
 {
 	mode_ = cameraMode;
@@ -60,7 +60,7 @@ void Decompand::prepare(Metadata *imageMetadata)
 /* Register algorithm with the system. */
 static Algorithm *create(Controller *controller)
 {
-	return (Algorithm *)new Decompand(controller);
+	return new Decompand(controller);
 }
 
 static RegisterAlgorithm reg(NAME, &create);

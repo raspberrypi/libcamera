@@ -51,18 +51,18 @@ void Agc::updateExposure(IPAContext &context, IPAFrameContext &frameContext, dou
 	static constexpr uint8_t kExpNumeratorUp = kExpDenominator + 1;
 	static constexpr uint8_t kExpNumeratorDown = kExpDenominator - 1;
 
-	double next;
 	int32_t &exposure = frameContext.sensor.exposure;
 	double &again = frameContext.sensor.gain;
 
 	if (exposureMSV < kExposureOptimal - kExposureSatisfactory) {
-		next = exposure * kExpNumeratorUp / kExpDenominator;
-		if (next - exposure < 1)
-			exposure += 1;
-		else
-			exposure = next;
-		if (exposure >= context.configuration.agc.exposureMax) {
-			next = again * kExpNumeratorUp / kExpDenominator;
+		if (exposure < context.configuration.agc.exposureMax) {
+			int32_t next = exposure * kExpNumeratorUp / kExpDenominator;
+			if (next - exposure < 1)
+				exposure += 1;
+			else
+				exposure = next;
+		} else {
+			double next = again * kExpNumeratorUp / kExpDenominator;
 			if (next - again < context.configuration.agc.againMinStep)
 				again += context.configuration.agc.againMinStep;
 			else
@@ -71,15 +71,14 @@ void Agc::updateExposure(IPAContext &context, IPAFrameContext &frameContext, dou
 	}
 
 	if (exposureMSV > kExposureOptimal + kExposureSatisfactory) {
-		if (exposure == context.configuration.agc.exposureMax &&
-		    again > context.configuration.agc.againMin) {
-			next = again * kExpNumeratorDown / kExpDenominator;
+		if (again > context.configuration.agc.again10) {
+			double next = again * kExpNumeratorDown / kExpDenominator;
 			if (again - next < context.configuration.agc.againMinStep)
 				again -= context.configuration.agc.againMinStep;
 			else
 				again = next;
 		} else {
-			next = exposure * kExpNumeratorDown / kExpDenominator;
+			int32_t next = exposure * kExpNumeratorDown / kExpDenominator;
 			if (exposure - next < 1)
 				exposure -= 1;
 			else
@@ -92,13 +91,16 @@ void Agc::updateExposure(IPAContext &context, IPAFrameContext &frameContext, dou
 	again = std::clamp(again, context.configuration.agc.againMin,
 			   context.configuration.agc.againMax);
 
+	context.activeState.agc.exposure = exposure;
+	context.activeState.agc.again = again;
+
 	LOG(IPASoftExposure, Debug)
 		<< "exposureMSV " << exposureMSV
 		<< " exp " << exposure << " again " << again;
 }
 
 void Agc::process(IPAContext &context,
-		  [[maybe_unused]] const uint32_t frame,
+		  const uint32_t frame,
 		  IPAFrameContext &frameContext,
 		  const SwIspStats *stats,
 		  ControlList &metadata)
@@ -107,6 +109,25 @@ void Agc::process(IPAContext &context,
 		context.configuration.agc.lineDuration * frameContext.sensor.exposure;
 	metadata.set(controls::ExposureTime, exposureTime.get<std::micro>());
 	metadata.set(controls::AnalogueGain, frameContext.sensor.gain);
+
+	if (frame == 0) {
+		/*
+		 * Init active-state from sensor values in case updateExposure()
+		 * does not run for the first frame.
+		 */
+		context.activeState.agc.exposure = frameContext.sensor.exposure;
+		context.activeState.agc.again = frameContext.sensor.gain;
+	}
+
+	if (!stats->valid) {
+		/*
+		 * Use the new exposure and gain values calculated the last time
+		 * there were valid stats.
+		 */
+		frameContext.sensor.exposure = context.activeState.agc.exposure;
+		frameContext.sensor.gain = context.activeState.agc.again;
+		return;
+	}
 
 	/*
 	 * Calculate Mean Sample Value (MSV) according to formula from:
@@ -123,6 +144,12 @@ void Agc::process(IPAContext &context,
 	int exposureBins[kExposureBinsCount] = {};
 	unsigned int denom = 0;
 	unsigned int num = 0;
+
+	if (yHistValsPerBin == 0) {
+		LOG(IPASoftExposure, Debug)
+			<< "Not adjusting exposure due to insufficient histogram data";
+		return;
+	}
 
 	for (unsigned int i = 0; i < histogramSize; i++) {
 		unsigned int idx = (i - (i / yHistValsPerBinMod)) / yHistValsPerBin;

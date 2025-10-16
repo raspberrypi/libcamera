@@ -15,7 +15,7 @@ struct DecompandConfig {
 class Decompand : public DecompandAlgorithm
 {
 public:
-	Decompand(Controller *controller = NULL);
+	Decompand(Controller *controller = nullptr);
 	char const *name() const override;
 	int read(const libcamera::YamlObject &params) override;
 	void initialise() override;

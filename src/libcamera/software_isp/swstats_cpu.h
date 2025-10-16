@@ -32,6 +32,14 @@ public:
 	SwStatsCpu();
 	~SwStatsCpu() = default;
 
+	/*
+	 * The combination of pipeline + sensor delays means that
+	 * exposure changes can take up to 3 frames to get applied,
+	 * Run stats once every 4 frames to ensure any previous
+	 * exposure changes have been applied.
+	 */
+	static constexpr uint32_t kStatPerNumFrames = 4;
+
 	bool isValid() const { return sharedStats_.fd().isValid(); }
 
 	const SharedFD &getStatsFD() { return sharedStats_.fd(); }
@@ -40,11 +48,14 @@ public:
 
 	int configure(const StreamConfiguration &inputCfg);
 	void setWindow(const Rectangle &window);
-	void startFrame();
+	void startFrame(uint32_t frame);
 	void finishFrame(uint32_t frame, uint32_t bufferId);
 
-	void processLine0(unsigned int y, const uint8_t *src[])
+	void processLine0(uint32_t frame, unsigned int y, const uint8_t *src[])
 	{
+		if (frame % kStatPerNumFrames)
+			return;
+
 		if ((y & ySkipMask_) || y < static_cast<unsigned int>(window_.y) ||
 		    y >= (window_.y + window_.height))
 			return;
@@ -52,8 +63,11 @@ public:
 		(this->*stats0_)(src);
 	}
 
-	void processLine2(unsigned int y, const uint8_t *src[])
+	void processLine2(uint32_t frame, unsigned int y, const uint8_t *src[])
 	{
+		if (frame % kStatPerNumFrames)
+			return;
+
 		if ((y & ySkipMask_) || y < static_cast<unsigned int>(window_.y) ||
 		    y >= (window_.y + window_.height))
 			return;

@@ -12,6 +12,7 @@
 #include <utility>
 
 #include <libcamera/base/class.h>
+#include <libcamera/base/span.h>
 
 #include <libcamera/fence.h>
 #include <libcamera/framebuffer.h>
@@ -23,7 +24,7 @@ class FrameBuffer::Private : public Extensible::Private
 	LIBCAMERA_DECLARE_PUBLIC(FrameBuffer)
 
 public:
-	Private(const std::vector<Plane> &planes, uint64_t cookie = 0);
+	Private(Span<const Plane> planes, uint64_t cookie = 0);
 	virtual ~Private();
 
 	void setRequest(Request *request) { request_ = request; }

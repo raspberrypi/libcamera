@@ -7,6 +7,7 @@
 
 #include "agc_mean_luminance.h"
 
+#include <algorithm>
 #include <cmath>
 
 #include <libcamera/base/log.h>
@@ -312,6 +313,21 @@ int AgcMeanLuminance::parseExposureModes(const YamlObject &tuningData)
 }
 
 /**
+ * \brief Configure the exposure mode helpers
+ * \param[in] lineDuration The sensor line length
+ * \param[in] sensorHelper The sensor helper
+ *
+ * This function configures the exposure mode helpers so they can correctly
+ * take quantization effects into account.
+ */
+void AgcMeanLuminance::configure(utils::Duration lineDuration,
+				 const CameraSensorHelper *sensorHelper)
+{
+	for (auto &[id, helper] : exposureModeHelpers_)
+		helper->configure(lineDuration, sensorHelper);
+}
+
+/**
  * \brief Parse tuning data for AeConstraintMode and AeExposureMode controls
  * \param[in] tuningData the YamlObject representing the tuning data
  *
@@ -393,16 +409,20 @@ int AgcMeanLuminance::parseTuningData(const YamlObject &tuningData)
  * \param[in] maxExposureTime Maximum ewposure time to allow
  * \param[in] minGain Minimum gain to allow
  * \param[in] maxGain Maximum gain to allow
+ * \param[in] constraints Additional constraints to apply
  *
  * This function calls \ref ExposureModeHelper::setLimits() for each
  * ExposureModeHelper that has been created for this class.
  */
 void AgcMeanLuminance::setLimits(utils::Duration minExposureTime,
 				 utils::Duration maxExposureTime,
-				 double minGain, double maxGain)
+				 double minGain, double maxGain,
+				 std::vector<AgcMeanLuminance::AgcConstraint> constraints)
 {
 	for (auto &[id, helper] : exposureModeHelpers_)
 		helper->setLimits(minExposureTime, maxExposureTime, minGain, maxGain);
+
+	additionalConstraints_ = std::move(constraints);
 }
 
 /**
@@ -443,8 +463,7 @@ void AgcMeanLuminance::setLimits(utils::Duration minExposureTime,
  */
 double AgcMeanLuminance::estimateInitialGain() const
 {
-	double yTarget = std::min(relativeLuminanceTarget_ * exposureCompensation_,
-				  kMaxRelativeLuminanceTarget);
+	double yTarget = effectiveYTarget();
 	double yGain = 1.0;
 
 	/*
@@ -481,29 +500,46 @@ double AgcMeanLuminance::constraintClampGain(uint32_t constraintModeIndex,
 					     const Histogram &hist,
 					     double gain)
 {
-	std::vector<AgcConstraint> &constraints = constraintModes_[constraintModeIndex];
-	for (const AgcConstraint &constraint : constraints) {
+	auto applyConstraint = [&gain, &hist](const AgcConstraint &constraint) {
 		double newGain = constraint.yTarget * hist.bins() /
 				 hist.interQuantileMean(constraint.qLo, constraint.qHi);
 
 		if (constraint.bound == AgcConstraint::Bound::Lower &&
 		    newGain > gain) {
-			gain = newGain;
 			LOG(AgcMeanLuminance, Debug)
 				<< "Apply lower bound: " << gain << " to "
 				<< newGain;
+			gain = newGain;
 		}
 
 		if (constraint.bound == AgcConstraint::Bound::Upper &&
 		    newGain < gain) {
-			gain = newGain;
 			LOG(AgcMeanLuminance, Debug)
 				<< "Apply upper bound: " << gain << " to "
 				<< newGain;
+			gain = newGain;
 		}
-	}
+	};
+
+	std::vector<AgcConstraint> &constraints = constraintModes_[constraintModeIndex];
+	std::for_each(constraints.begin(), constraints.end(), applyConstraint);
+
+	std::for_each(additionalConstraints_.begin(), additionalConstraints_.end(), applyConstraint);
 
 	return gain;
+}
+
+/**
+ * \brief Get the currently effective y target
+ *
+ * This function returns the current y target including exposure compensation.
+ *
+ * \return The y target value
+ */
+double AgcMeanLuminance::effectiveYTarget() const
+{
+	return std::min(relativeLuminanceTarget_ * exposureCompensation_,
+			kMaxRelativeLuminanceTarget);
 }
 
 /**
@@ -551,11 +587,12 @@ utils::Duration AgcMeanLuminance::filterExposure(utils::Duration exposureValue)
  *
  * Calculate a new exposure value to try to obtain the target. The calculated
  * exposure value is filtered to prevent rapid changes from frame to frame, and
- * divided into exposure time, analogue and digital gain.
+ * divided into exposure time, analogue, quantization and digital gain.
  *
- * \return Tuple of exposure time, analogue gain, and digital gain
+ * \return Tuple of exposure time, analogue gain, quantization gain and digital
+ * gain
  */
-std::tuple<utils::Duration, double, double>
+std::tuple<utils::Duration, double, double, double>
 AgcMeanLuminance::calculateNewEv(uint32_t constraintModeIndex,
 				 uint32_t exposureModeIndex,
 				 const Histogram &yHist,

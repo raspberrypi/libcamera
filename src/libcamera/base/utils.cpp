@@ -426,6 +426,12 @@ std::string toAscii(const std::string &str)
  */
 
 /**
+ * \fn Duration::operator-()
+ * \brief Negation operator to negate a \a Duration
+ * \return The duration, with the number of ticks negated
+ */
+
+/**
  * \fn Duration::operator bool()
  * \brief Boolean operator to test if a \a Duration holds a non-zero time value
  *

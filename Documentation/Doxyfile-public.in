@@ -3,11 +3,8 @@
 @INCLUDE_PATH          = @TOP_BUILDDIR@/Documentation
 @INCLUDE               = Doxyfile-common
 
-GENERATE_TAGFILE       = @TOP_BUILDDIR@/Documentation/api-html/tagfile.xml
-
-HIDE_UNDOC_CLASSES     = YES
 HIDE_UNDOC_MEMBERS     = YES
-HTML_OUTPUT            = api-html
+HIDE_UNDOC_CLASSES     = YES
 INTERNAL_DOCS          = NO
 
 INPUT                  = "@TOP_SRCDIR@/Documentation" \
@@ -19,4 +16,8 @@ EXCLUDE                = @TOP_SRCDIR@/include/libcamera/base/class.h \
                          @TOP_SRCDIR@/src/libcamera/base/class.cpp \
                          @TOP_SRCDIR@/src/libcamera/base/object.cpp
 
+HTML_OUTPUT            = public-api
+
 PREDEFINED            += __DOXYGEN_PUBLIC__
+
+GENERATE_TAGFILE       = @TOP_BUILDDIR@/Documentation/public-api/tagfile.xml

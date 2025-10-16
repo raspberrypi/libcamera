@@ -363,8 +363,11 @@ int PipelineHandlerVimc::start(Camera *camera, [[maybe_unused]] const ControlLis
 	/* Map the mock IPA buffers to VIMC IPA to exercise IPC code paths. */
 	std::vector<IPABuffer> ipaBuffers;
 	for (auto [i, buffer] : utils::enumerate(data->mockIPABufs_)) {
+		Span<const FrameBuffer::Plane> planes = buffer->planes();
+
 		buffer->setCookie(i + 1);
-		ipaBuffers.emplace_back(buffer->cookie(), buffer->planes());
+		ipaBuffers.emplace_back(buffer->cookie(),
+					std::vector<FrameBuffer::Plane>{ planes.begin(), planes.end() });
 	}
 	data->ipa_->mapBuffers(ipaBuffers);
 

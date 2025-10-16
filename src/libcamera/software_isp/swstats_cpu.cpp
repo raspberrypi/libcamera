@@ -62,8 +62,9 @@ namespace libcamera {
  */
 
 /**
- * \fn void SwStatsCpu::processLine0(unsigned int y, const uint8_t *src[])
+ * \fn void SwStatsCpu::processLine0(uint32_t frame, unsigned int y, const uint8_t *src[])
  * \brief Process line 0
+ * \param[in] frame The frame number
  * \param[in] y The y coordinate.
  * \param[in] src The input data.
  *
@@ -74,8 +75,9 @@ namespace libcamera {
  */
 
 /**
- * \fn void SwStatsCpu::processLine2(unsigned int y, const uint8_t *src[])
+ * \fn void SwStatsCpu::processLine2(uint32_t frame, unsigned int y, const uint8_t *src[])
  * \brief Process line 2 and 3
+ * \param[in] frame The frame number
  * \param[in] y The y coordinate.
  * \param[in] src The input data.
  *
@@ -87,6 +89,11 @@ namespace libcamera {
 /**
  * \var Signal<> SwStatsCpu::statsReady
  * \brief Signals that the statistics are ready
+ */
+
+/**
+ * \var SwStatsCpu::kStatPerNumFrames
+ * \brief Run stats once every kStatPerNumFrames frames
  */
 
 /**
@@ -295,11 +302,15 @@ void SwStatsCpu::statsGBRG10PLine0(const uint8_t *src[])
 
 /**
  * \brief Reset state to start statistics gathering for a new frame
+ * \param[in] frame The frame number
  *
  * This may only be called after a successful setWindow() call.
  */
-void SwStatsCpu::startFrame(void)
+void SwStatsCpu::startFrame(uint32_t frame)
 {
+	if (frame % kStatPerNumFrames)
+		return;
+
 	if (window_.width == 0)
 		LOG(SwStatsCpu, Error) << "Calling startFrame() without setWindow()";
 
@@ -318,6 +329,7 @@ void SwStatsCpu::startFrame(void)
  */
 void SwStatsCpu::finishFrame(uint32_t frame, uint32_t bufferId)
 {
+	stats_.valid = frame % kStatPerNumFrames == 0;
 	*sharedStats_ = stats_;
 	statsReady.emit(frame, bufferId);
 }
@@ -416,9 +428,33 @@ int SwStatsCpu::configure(const StreamConfiguration &inputCfg)
 /**
  * \brief Specify window coordinates over which to gather statistics
  * \param[in] window The window object.
+ *
+ * This method specifies the image area over which to gather the statistics.
+ * It must be called to set the area, otherwise the default zero-sized
+ * \a Rectangle is used and no statistics is gathered.
+ *
+ * The specified \a window is relative to what is passed to the processLine*
+ * methods. For example, if statistics are to be gathered from the entire
+ * processed area, then \a window should be a rectangle with the top-left corner
+ * of (0,0) and the same size as the processed area. If only a part of the
+ * processed area (e.g. its centre) is to be considered for statistics, then
+ * \a window should specify such a restriction accordingly.
+ *
+ * It is the responsibility of the callers to provide sensible \a window values,
+ * most notably not exceeding the original image boundaries. This means, among
+ * other, that neither coordinate of the top-left corner shall be negative.
+ *
+ * Due to limitations of the implementation, the method may adjust the window
+ * slightly if it is not aligned according to the bayer pattern determined in
+ * \a SwStatsCpu::configure(). In that case the window will be modified such that
+ * the sides are no larger than the original, and that the new bottom-left
+ * corner will be no further from (0,0) (along either axis) than the original
+ * was.
  */
 void SwStatsCpu::setWindow(const Rectangle &window)
 {
+	ASSERT(window.x >= 0 && window.y >= 0);
+
 	window_ = window;
 
 	window_.x &= ~(patternSize_.width - 1);
@@ -426,7 +462,7 @@ void SwStatsCpu::setWindow(const Rectangle &window)
 	window_.y &= ~(patternSize_.height - 1);
 
 	/* width_ - xShift_ to make sure the window fits */
-	window_.width -= xShift_;
+	window_.width = (window_.width > xShift_ ? window_.width - xShift_ : 0);
 	window_.width &= ~(patternSize_.width - 1);
 	window_.height &= ~(patternSize_.height - 1);
 }

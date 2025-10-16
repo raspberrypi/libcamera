@@ -18,6 +18,7 @@
 #include <libcamera/base/object.h>
 
 #include "libcamera/internal/bayer_format.h"
+#include "libcamera/internal/global_configuration.h"
 
 #include "debayer.h"
 #include "swstats_cpu.h"
@@ -27,7 +28,7 @@ namespace libcamera {
 class DebayerCpu : public Debayer, public Object
 {
 public:
-	DebayerCpu(std::unique_ptr<SwStatsCpu> stats);
+	DebayerCpu(std::unique_ptr<SwStatsCpu> stats, const GlobalConfiguration &configuration);
 	~DebayerCpu();
 
 	int configure(const StreamConfiguration &inputCfg,
@@ -132,8 +133,8 @@ private:
 	void setupInputMemcpy(const uint8_t *linePointers[]);
 	void shiftLinePointers(const uint8_t *linePointers[], const uint8_t *src);
 	void memcpyNextLine(const uint8_t *linePointers[]);
-	void process2(const uint8_t *src, uint8_t *dst);
-	void process4(const uint8_t *src, uint8_t *dst);
+	void process2(uint32_t frame, const uint8_t *src, uint8_t *dst);
+	void process4(uint32_t frame, const uint8_t *src, uint8_t *dst);
 
 	/* Max. supported Bayer pattern height is 4, debayering this requires 5 lines */
 	static constexpr unsigned int kMaxLineBuffers = 5;
@@ -160,11 +161,10 @@ private:
 	unsigned int xShift_; /* Offset of 0/1 applied to window_.x */
 	bool enableInputMemcpy_;
 	bool swapRedBlueGains_;
-	unsigned int measuredFrames_;
+	unsigned int encounteredFrames_;
 	int64_t frameProcessTime_;
-	/* Skip 30 frames for things to stabilize then measure 30 frames */
-	static constexpr unsigned int kFramesToSkip = 30;
-	static constexpr unsigned int kLastFrameToMeasure = 60;
+	unsigned int skipBeforeMeasure_ = 30;
+	unsigned int framesToMeasure_ = 30;
 };
 
 } /* namespace libcamera */

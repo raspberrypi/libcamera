@@ -1,16 +1,8 @@
 .. SPDX-License-Identifier: CC-BY-SA-4.0
 
-.. include:: documentation-contents.rst
-
 ************
 Introduction
 ************
-
-.. toctree::
-   :hidden:
-
-   API <api-html/index>
-   Internal API <internal-api-html/index>
 
 What is libcamera?
 ==================

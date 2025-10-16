@@ -45,35 +45,12 @@ namespace {{ns}} {
 {% endfor %}
 {%- endif %}
 
-{{proxy_name}}::{{proxy_name}}(IPAModule *ipam, bool isolate)
-	: IPAProxy(ipam), isolate_(isolate),
-	  controlSerializer_(ControlSerializer::Role::Proxy), seq_(0)
+{{proxy_name}}Threaded::{{proxy_name}}Threaded(IPAModule *ipam, const GlobalConfiguration &configuration)
+	: {{proxy_name}}(ipam, configuration)
 {
 	LOG(IPAProxy, Debug)
-		<< "initializing {{module_name}} proxy: loading IPA from "
+		<< "initializing {{module_name}} proxy in thread: loading IPA from "
 		<< ipam->path();
-
-	if (isolate_) {
-		const std::string proxyWorkerPath = resolvePath("{{module_name}}_ipa_proxy");
-		if (proxyWorkerPath.empty()) {
-			LOG(IPAProxy, Error)
-				<< "Failed to get proxy worker path";
-			return;
-		}
-
-		auto ipc = std::make_unique<IPCPipeUnixSocket>(ipam->path().c_str(),
-							       proxyWorkerPath.c_str());
-		if (!ipc->isConnected()) {
-			LOG(IPAProxy, Error) << "Failed to create IPCPipe";
-			return;
-		}
-
-		ipc->recv.connect(this, &{{proxy_name}}::recvMessage);
-
-		ipc_ = std::move(ipc);
-		valid_ = true;
-		return;
-	}
 
 	if (!ipam->load())
 		return;
@@ -89,59 +66,16 @@ namespace {{ns}} {
 	proxy_.setIPA(ipa_.get());
 
 {% for method in interface_event.methods %}
-	ipa_->{{method.mojom_name}}.connect(this, &{{proxy_name}}::{{method.mojom_name}}Thread);
+	ipa_->{{method.mojom_name}}.connect(this, &{{proxy_name}}Threaded::{{method.mojom_name}}Handler);
 {%- endfor %}
 
 	valid_ = true;
 }
 
-{{proxy_name}}::~{{proxy_name}}()
-{
-	if (ipc_) {
-		IPCMessage::Header header =
-			{ static_cast<uint32_t>({{cmd_enum_name}}::Exit), seq_++ };
-		IPCMessage msg(header);
-		ipc_->sendAsync(msg);
-	}
-}
-
-{% if interface_event.methods|length > 0 %}
-void {{proxy_name}}::recvMessage(const IPCMessage &data)
-{
-	size_t dataSize = data.data().size();
-	{{cmd_event_enum_name}} _cmd = static_cast<{{cmd_event_enum_name}}>(data.header().cmd);
-
-	switch (_cmd) {
-{%- for method in interface_event.methods %}
-	case {{cmd_event_enum_name}}::{{method.mojom_name|cap}}: {
-		{{method.mojom_name}}IPC(data.data().cbegin(), dataSize, data.fds());
-		break;
-	}
-{%- endfor %}
-	default:
-		LOG(IPAProxy, Error) << "Unknown command " << static_cast<uint32_t>(_cmd);
-	}
-}
-{%- endif %}
+{{proxy_name}}Threaded::~{{proxy_name}}Threaded() = default;
 
 {% for method in interface_main.methods %}
-{{proxy_funcs.func_sig(proxy_name, method)}}
-{
-	if (isolate_)
-		return {{method.mojom_name}}IPC(
-{%- for param in method|method_param_names -%}
-		{{param}}{{- ", " if not loop.last}}
-{%- endfor -%}
-);
-	else
-		return {{method.mojom_name}}Thread(
-{%- for param in method|method_param_names -%}
-		{{param}}{{- ", " if not loop.last}}
-{%- endfor -%}
-);
-}
-
-{{proxy_funcs.func_sig(proxy_name, method, "Thread")}}
+{{proxy_funcs.func_sig(proxy_name + "Threaded", method)}}
 {
 {%- if method.mojom_name == "stop" %}
 	{{proxy_funcs.stop_thread_body()}}
@@ -181,8 +115,57 @@ void {{proxy_name}}::recvMessage(const IPCMessage &data)
 );
 {%- endif %}
 }
+{% endfor %}
 
-{{proxy_funcs.func_sig(proxy_name, method, "IPC")}}
+{% for method in interface_event.methods %}
+{{proxy_funcs.func_sig(proxy_name + "Threaded", method, "Handler")}}
+{
+	ASSERT(state_ != ProxyStopped);
+	{{method.mojom_name}}.emit({{method.parameters|params_comma_sep}});
+}
+{% endfor %}
+
+/* ========================================================================== */
+
+{{proxy_name}}Isolated::{{proxy_name}}Isolated(IPAModule *ipam, const GlobalConfiguration &configuration)
+	: {{proxy_name}}(ipam, configuration),
+	  controlSerializer_(ControlSerializer::Role::Proxy), seq_(0)
+{
+	LOG(IPAProxy, Debug)
+		<< "initializing {{module_name}} proxy in isolation: loading IPA from "
+		<< ipam->path();
+
+	const std::string proxyWorkerPath = resolvePath("{{module_name}}_ipa_proxy");
+	if (proxyWorkerPath.empty()) {
+		LOG(IPAProxy, Error) << "Failed to get proxy worker path";
+		return;
+	}
+
+	auto ipc = std::make_unique<IPCPipeUnixSocket>(ipam->path().c_str(),
+						       proxyWorkerPath.c_str());
+	if (!ipc->isConnected()) {
+		LOG(IPAProxy, Error) << "Failed to create IPCPipe";
+		return;
+	}
+
+	ipc->recv.connect(this, &{{proxy_name}}Isolated::recvMessage);
+
+	ipc_ = std::move(ipc);
+	valid_ = true;
+}
+
+{{proxy_name}}Isolated::~{{proxy_name}}Isolated()
+{
+	if (ipc_) {
+		IPCMessage::Header header =
+			{ static_cast<uint32_t>({{cmd_enum_name}}::Exit), seq_++ };
+		IPCMessage msg(header);
+		ipc_->sendAsync(msg);
+	}
+}
+
+{% for method in interface_main.methods %}
+{{proxy_funcs.func_sig(proxy_name + "Isolated", method)}}
 {
 {%- if method.mojom_name == "configure" %}
 	controlSerializer_.reset();
@@ -226,14 +209,25 @@ void {{proxy_name}}::recvMessage(const IPCMessage &data)
 
 {% endfor %}
 
-{% for method in interface_event.methods %}
-{{proxy_funcs.func_sig(proxy_name, method, "Thread")}}
+void {{proxy_name}}Isolated::recvMessage(const IPCMessage &data)
 {
-	ASSERT(state_ != ProxyStopped);
-	{{method.mojom_name}}.emit({{method.parameters|params_comma_sep}});
+	size_t dataSize = data.data().size();
+	{{cmd_event_enum_name}} _cmd = static_cast<{{cmd_event_enum_name}}>(data.header().cmd);
+
+	switch (_cmd) {
+{%- for method in interface_event.methods %}
+	case {{cmd_event_enum_name}}::{{method.mojom_name|cap}}: {
+		{{method.mojom_name}}Handler(data.data().cbegin(), dataSize, data.fds());
+		break;
+	}
+{%- endfor %}
+	default:
+		LOG(IPAProxy, Error) << "Unknown command " << static_cast<uint32_t>(_cmd);
+	}
 }
 
-void {{proxy_name}}::{{method.mojom_name}}IPC(
+{% for method in interface_event.methods %}
+void {{proxy_name}}Isolated::{{method.mojom_name}}Handler(
 	[[maybe_unused]] std::vector<uint8_t>::const_iterator data,
 	[[maybe_unused]] size_t dataSize,
 	[[maybe_unused]] const std::vector<SharedFD> &fds)

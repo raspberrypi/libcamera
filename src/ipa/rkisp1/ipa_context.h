@@ -26,6 +26,7 @@
 
 #include <libipa/camera_sensor_helper.h>
 #include <libipa/fc_queue.h>
+#include "libipa/agc_mean_luminance.h"
 
 namespace libcamera {
 
@@ -36,6 +37,7 @@ struct IPAHwSettings {
 	unsigned int numHistogramBins;
 	unsigned int numHistogramWeights;
 	unsigned int numGammaOutSamples;
+	uint32_t supportedBlocks;
 	bool compand;
 };
 
@@ -48,6 +50,10 @@ struct IPASessionConfiguration {
 		struct rkisp1_cif_isp_window measureWindow;
 		bool enabled;
 	} awb;
+
+	struct {
+		bool supported;
+	} compress;
 
 	struct {
 		bool enabled;
@@ -77,6 +83,8 @@ struct IPAActiveState {
 		struct {
 			uint32_t exposure;
 			double gain;
+			double quantizationGain;
+			double yTarget;
 		} automatic;
 
 		bool autoExposureEnabled;
@@ -124,6 +132,13 @@ struct IPAActiveState {
 	struct {
 		double gamma;
 	} goc;
+
+	struct {
+		controls::WdrModeEnum mode;
+		AgcMeanLuminance::AgcConstraint constraint;
+		double gain;
+		double strength;
+	} wdr;
 };
 
 struct IPAFrameContext : public FrameContext {
@@ -131,7 +146,9 @@ struct IPAFrameContext : public FrameContext {
 		uint32_t exposure;
 		double gain;
 		double exposureValue;
+		double quantizationGain;
 		uint32_t vblank;
+		double yTarget;
 		bool autoExposureEnabled;
 		bool autoGainEnabled;
 		controls::AeConstraintModeEnum constraintMode;
@@ -157,6 +174,11 @@ struct IPAFrameContext : public FrameContext {
 		uint8_t saturation;
 		bool update;
 	} cproc;
+
+	struct {
+		bool enable;
+		double gain;
+	} compress;
 
 	struct {
 		bool denoise;
@@ -186,15 +208,21 @@ struct IPAFrameContext : public FrameContext {
 	struct {
 		double lux;
 	} lux;
+
+	struct {
+		controls::WdrModeEnum mode;
+		double strength;
+		double gain;
+	} wdr;
 };
 
 struct IPAContext {
 	IPAContext(unsigned int frameContextSize)
-		: hw(nullptr), frameContexts(frameContextSize)
+		: frameContexts(frameContextSize)
 	{
 	}
 
-	const IPAHwSettings *hw;
+	IPAHwSettings hw;
 	IPACameraSensorInfo sensorInfo;
 	IPASessionConfiguration configuration;
 	IPAActiveState activeState;

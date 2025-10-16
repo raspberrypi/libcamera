@@ -132,6 +132,29 @@ double CameraSensorHelper::gain(uint32_t gainCode) const
 }
 
 /**
+ * \brief Quantize the given gain value
+ * \param[in] _gain The real gain
+ * \param[out] quantizationGain The gain that is lost due to quantization
+ *
+ * This function returns the actual gain that is applied when the sensor's gain
+ * is set to gainCode(_gain).
+ *
+ * It shall be guaranteed that gainCode(_gain) == gainCode(quantizeGain(_gain)).
+ *
+ * If \a quantizationGain is provided it is populated with the gain that must be
+ * applied on top to correct for the losses due to quantization.
+ *
+ * \return The quantized real gain
+ */
+double CameraSensorHelper::quantizeGain(double _gain, double *quantizationGain) const
+{
+	double g = gain(gainCode(_gain));
+	if (quantizationGain)
+		*quantizationGain = _gain / g;
+	return g;
+}
+
+/**
  * \struct CameraSensorHelper::AnalogueGainLinear
  * \brief Analogue gain constants for the linear gain model
  *
@@ -497,6 +520,16 @@ public:
 };
 REGISTER_CAMERA_SENSOR_HELPER("gc08a3", CameraSensorHelperGc08a3)
 
+class CameraSensorHelperHm1246 : public CameraSensorHelper
+{
+public:
+	CameraSensorHelperHm1246()
+	{
+		gain_ = AnalogueGainLinear{ 1, 16, 0, 16 };
+	}
+};
+REGISTER_CAMERA_SENSOR_HELPER("hm1246", CameraSensorHelperHm1246)
+
 class CameraSensorHelperImx214 : public CameraSensorHelper
 {
 public:
@@ -744,6 +777,18 @@ public:
 	}
 };
 REGISTER_CAMERA_SENSOR_HELPER("ov13858", CameraSensorHelperOv13858)
+
+class CameraSensorHelperVd55g1 : public CameraSensorHelper
+{
+public:
+	CameraSensorHelperVd55g1()
+	{
+		/* From datasheet: 0x40 at 10bits. */
+		blackLevel_ = 4096;
+		gain_ = AnalogueGainLinear{ 0, 32, -1, 32 };
+	}
+};
+REGISTER_CAMERA_SENSOR_HELPER("vd55g1", CameraSensorHelperVd55g1)
 
 class CameraSensorHelperVd56g3 : public CameraSensorHelper
 {

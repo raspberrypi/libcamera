@@ -43,7 +43,7 @@ int BlackLevel::configure(IPAContext &context,
 	if (definedLevel_.has_value())
 		context.configuration.black.level = definedLevel_;
 	context.activeState.blc.level =
-		context.configuration.black.level.value_or(255);
+		context.configuration.black.level.value_or(16);
 	return 0;
 }
 
@@ -59,6 +59,9 @@ void BlackLevel::process(IPAContext &context,
 		blackLevel, blackLevel, blackLevel, blackLevel
 	};
 	metadata.set(controls::SensorBlackLevels, blackLevels);
+
+	if (!stats->valid)
+		return;
 
 	if (context.configuration.black.level.has_value())
 		return;
@@ -77,6 +80,11 @@ void BlackLevel::process(IPAContext &context,
 	constexpr float ignoredPercentage = 0.02;
 	const unsigned int total =
 		std::accumulate(begin(histogram), end(histogram), 0);
+	if (total == 0) {
+		LOG(IPASoftBL, Debug) << "Not guessing black level, histogram is empty";
+		return;
+	}
+
 	const unsigned int pixelThreshold = ignoredPercentage * total;
 	const unsigned int histogramRatio = 256 / SwIspStats::kYHistogramSize;
 	const unsigned int currentBlackIdx =

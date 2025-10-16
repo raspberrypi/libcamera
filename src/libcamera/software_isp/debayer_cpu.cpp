@@ -24,6 +24,7 @@
 #include "libcamera/internal/bayer_format.h"
 #include "libcamera/internal/dma_buf_allocator.h"
 #include "libcamera/internal/framebuffer.h"
+#include "libcamera/internal/global_configuration.h"
 #include "libcamera/internal/mapped_framebuffer.h"
 
 namespace libcamera {
@@ -38,8 +39,9 @@ namespace libcamera {
 /**
  * \brief Constructs a DebayerCpu object
  * \param[in] stats Pointer to the stats object to use
+ * \param[in] configuration The global configuration
  */
-DebayerCpu::DebayerCpu(std::unique_ptr<SwStatsCpu> stats)
+DebayerCpu::DebayerCpu(std::unique_ptr<SwStatsCpu> stats, const GlobalConfiguration &configuration)
 	: stats_(std::move(stats))
 {
 	/*
@@ -49,8 +51,19 @@ DebayerCpu::DebayerCpu(std::unique_ptr<SwStatsCpu> stats)
 	 * enable_input_memcpy_ makes this behavior configurable.  At the moment, we
 	 * always set it to true as the safer choice but this should be changed in
 	 * future.
+	 *
+	 * \todo Make memcpy automatic based on runtime detection of platform
+	 * capabilities.
 	 */
-	enableInputMemcpy_ = true;
+	enableInputMemcpy_ =
+		configuration.option<bool>({ "software_isp", "copy_input_buffer" }).value_or(true);
+
+	skipBeforeMeasure_ = configuration.option<unsigned int>(
+						  { "software_isp", "measure", "skip" })
+				     .value_or(skipBeforeMeasure_);
+	framesToMeasure_ = configuration.option<unsigned int>(
+						{ "software_isp", "measure", "number" })
+				   .value_or(framesToMeasure_);
 
 	/* Initialize color lookup tables */
 	for (unsigned int i = 0; i < DebayerParams::kRGBLookupSize; i++) {
@@ -541,7 +554,11 @@ int DebayerCpu::configure(const StreamConfiguration &inputCfg,
 	window_.width = outputCfg.size.width;
 	window_.height = outputCfg.size.height;
 
-	/* Don't pass x,y since process() already adjusts src before passing it */
+	/*
+	 * Set the stats window to the whole processed window. Its coordinates are
+	 * relative to the debayered area since debayering passes only the part of
+	 * data to be processed to the stats; see SwStatsCpu::setWindow.
+	 */
 	stats_->setWindow(Rectangle(window_.size()));
 
 	/* pad with patternSize.Width on both left and right side */
@@ -554,7 +571,7 @@ int DebayerCpu::configure(const StreamConfiguration &inputCfg,
 			lineBuffers_[i].resize(lineBufferLength_);
 	}
 
-	measuredFrames_ = 0;
+	encounteredFrames_ = 0;
 	frameProcessTime_ = 0;
 
 	return 0;
@@ -642,9 +659,9 @@ void DebayerCpu::memcpyNextLine(const uint8_t *linePointers[])
 	lineBufferIndex_ = (lineBufferIndex_ + 1) % (patternHeight + 1);
 }
 
-void DebayerCpu::process2(const uint8_t *src, uint8_t *dst)
+void DebayerCpu::process2(uint32_t frame, const uint8_t *src, uint8_t *dst)
 {
-	unsigned int yEnd = window_.y + window_.height;
+	unsigned int yEnd = window_.height;
 	/* Holds [0] previous- [1] current- [2] next-line */
 	const uint8_t *linePointers[3];
 
@@ -659,16 +676,19 @@ void DebayerCpu::process2(const uint8_t *src, uint8_t *dst)
 		/* window_.y == 0, use the next line as prev line */
 		linePointers[1] = src + inputConfig_.stride;
 		linePointers[2] = src;
-		/* Last 2 lines also need special handling */
+		/*
+		 * Last 2 lines also need special handling.
+		 * (And configure() ensures that yEnd >= 2.)
+		 */
 		yEnd -= 2;
 	}
 
 	setupInputMemcpy(linePointers);
 
-	for (unsigned int y = window_.y; y < yEnd; y += 2) {
+	for (unsigned int y = 0; y < yEnd; y += 2) {
 		shiftLinePointers(linePointers, src);
 		memcpyNextLine(linePointers);
-		stats_->processLine0(y, linePointers);
+		stats_->processLine0(frame, y, linePointers);
 		(this->*debayer0_)(dst, linePointers);
 		src += inputConfig_.stride;
 		dst += outputConfig_.stride;
@@ -683,7 +703,7 @@ void DebayerCpu::process2(const uint8_t *src, uint8_t *dst)
 	if (window_.y == 0) {
 		shiftLinePointers(linePointers, src);
 		memcpyNextLine(linePointers);
-		stats_->processLine0(yEnd, linePointers);
+		stats_->processLine0(frame, yEnd, linePointers);
 		(this->*debayer0_)(dst, linePointers);
 		src += inputConfig_.stride;
 		dst += outputConfig_.stride;
@@ -697,9 +717,8 @@ void DebayerCpu::process2(const uint8_t *src, uint8_t *dst)
 	}
 }
 
-void DebayerCpu::process4(const uint8_t *src, uint8_t *dst)
+void DebayerCpu::process4(uint32_t frame, const uint8_t *src, uint8_t *dst)
 {
-	const unsigned int yEnd = window_.y + window_.height;
 	/*
 	 * This holds pointers to [0] 2-lines-up [1] 1-line-up [2] current-line
 	 * [3] 1-line-down [4] 2-lines-down.
@@ -717,10 +736,10 @@ void DebayerCpu::process4(const uint8_t *src, uint8_t *dst)
 
 	setupInputMemcpy(linePointers);
 
-	for (unsigned int y = window_.y; y < yEnd; y += 4) {
+	for (unsigned int y = 0; y < window_.height; y += 4) {
 		shiftLinePointers(linePointers, src);
 		memcpyNextLine(linePointers);
-		stats_->processLine0(y, linePointers);
+		stats_->processLine0(frame, y, linePointers);
 		(this->*debayer0_)(dst, linePointers);
 		src += inputConfig_.stride;
 		dst += outputConfig_.stride;
@@ -733,7 +752,7 @@ void DebayerCpu::process4(const uint8_t *src, uint8_t *dst)
 
 		shiftLinePointers(linePointers, src);
 		memcpyNextLine(linePointers);
-		stats_->processLine2(y, linePointers);
+		stats_->processLine2(frame, y, linePointers);
 		(this->*debayer2_)(dst, linePointers);
 		src += inputConfig_.stride;
 		dst += outputConfig_.stride;
@@ -760,7 +779,10 @@ void DebayerCpu::process(uint32_t frame, FrameBuffer *input, FrameBuffer *output
 {
 	timespec frameStartTime;
 
-	if (measuredFrames_ < DebayerCpu::kLastFrameToMeasure) {
+	bool measure = framesToMeasure_ > 0 &&
+		       encounteredFrames_ < skipBeforeMeasure_ + framesToMeasure_ &&
+		       ++encounteredFrames_ > skipBeforeMeasure_;
+	if (measure) {
 		frameStartTime = {};
 		clock_gettime(CLOCK_MONOTONIC_RAW, &frameStartTime);
 	}
@@ -805,30 +827,27 @@ void DebayerCpu::process(uint32_t frame, FrameBuffer *input, FrameBuffer *output
 		return;
 	}
 
-	stats_->startFrame();
+	stats_->startFrame(frame);
 
 	if (inputConfig_.patternSize.height == 2)
-		process2(in.planes()[0].data(), out.planes()[0].data());
+		process2(frame, in.planes()[0].data(), out.planes()[0].data());
 	else
-		process4(in.planes()[0].data(), out.planes()[0].data());
+		process4(frame, in.planes()[0].data(), out.planes()[0].data());
 
 	metadata.planes()[0].bytesused = out.planes()[0].size();
 
 	dmaSyncers.clear();
 
 	/* Measure before emitting signals */
-	if (measuredFrames_ < DebayerCpu::kLastFrameToMeasure &&
-	    ++measuredFrames_ > DebayerCpu::kFramesToSkip) {
+	if (measure) {
 		timespec frameEndTime = {};
 		clock_gettime(CLOCK_MONOTONIC_RAW, &frameEndTime);
 		frameProcessTime_ += timeDiff(frameEndTime, frameStartTime);
-		if (measuredFrames_ == DebayerCpu::kLastFrameToMeasure) {
-			const unsigned int measuredFrames = DebayerCpu::kLastFrameToMeasure -
-							    DebayerCpu::kFramesToSkip;
+		if (encounteredFrames_ == skipBeforeMeasure_ + framesToMeasure_) {
 			LOG(Debayer, Info)
-				<< "Processed " << measuredFrames
+				<< "Processed " << framesToMeasure_
 				<< " frames in " << frameProcessTime_ / 1000 << "us, "
-				<< frameProcessTime_ / (1000 * measuredFrames)
+				<< frameProcessTime_ / (1000 * framesToMeasure_)
 				<< " us/frame";
 		}
 	}

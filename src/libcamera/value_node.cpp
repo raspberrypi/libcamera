@@ -338,6 +338,11 @@ template struct ValueNode::Accessor<std::vector<std::string>>;
 #endif /* __DOXYGEN__ */
 
 /**
+ * \fn ValueNode::asDict()
+ * \copydoc ValueNode::asDict() const
+ */
+
+/**
  * \fn ValueNode::asDict() const
  * \brief Wrap a dictionary ValueNode in an adapter that exposes iterators
  *
@@ -355,6 +360,11 @@ template struct ValueNode::Accessor<std::vector<std::string>>;
  * as an empty container.
  *
  * \return An adapter of unspecified type compatible with range-based for loops
+ */
+
+/**
+ * \fn ValueNode::asList()
+ * \copydoc ValueNode::asList() const
  */
 
 /**

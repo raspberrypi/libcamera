@@ -143,17 +143,31 @@ public:
 		}
 	};
 
-	class DictAdapter : public Adapter<DictIterator<const ValueNode,
-							ValueContainer::const_iterator>,
-					   const ValueContainer>
+	class DictAdapter : public Adapter<DictIterator<ValueNode,
+							ValueContainer::iterator>,
+					   ValueContainer>
 	{
 	public:
 		using key_type = std::string;
 	};
 
-	class ListAdapter : public Adapter<ListIterator<const ValueNode,
-							ValueContainer::const_iterator>,
-					   const ValueContainer>
+	class ListAdapter : public Adapter<ListIterator<ValueNode,
+							ValueContainer::iterator>,
+					   ValueContainer>
+	{
+	};
+
+	class ConstDictAdapter : public Adapter<DictIterator<const ValueNode,
+							     ValueContainer::const_iterator>,
+						const ValueContainer>
+	{
+	public:
+		using key_type = std::string;
+	};
+
+	class ConstListAdapter : public Adapter<ListIterator<const ValueNode,
+							     ValueContainer::const_iterator>,
+						const ValueContainer>
 	{
 	};
 #endif /* __DOXYGEN__ */
@@ -211,8 +225,10 @@ public:
 			.set(*this, std::forward<T>(value));
 	}
 
-	DictAdapter asDict() const { return DictAdapter{ list_ }; }
-	ListAdapter asList() const { return ListAdapter{ list_ }; }
+	DictAdapter asDict() { return DictAdapter{ list_ }; }
+	ListAdapter asList() { return ListAdapter{ list_ }; }
+	ConstDictAdapter asDict() const { return ConstDictAdapter{ list_ }; }
+	ConstListAdapter asList() const { return ConstListAdapter{ list_ }; }
 
 	const ValueNode &operator[](std::size_t index) const;
 

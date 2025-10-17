@@ -519,8 +519,8 @@ private:
 
 	EventPtr nextEvent();
 
-	void readValue(std::string &value, EventPtr event);
-	int parseDictionaryOrList(YamlObject::Type type,
+	std::string readValue(const EventPtr &event);
+	int parseDictionaryOrList(yaml_event_type_t endEventType,
 				  const std::function<int(EventPtr event)> &parseItem);
 	int parseNextYamlObject(YamlObject &yamlObject, EventPtr event);
 
@@ -662,22 +662,22 @@ int YamlParserContext::parseContent(YamlObject &yamlObject)
 /**
  * \fn YamlParserContext::readValue()
  * \brief Parse event scalar and fill its content into a string
- * \param[in] value The string reference to fill value
  *
  * A helper function to parse a scalar event as string. The caller needs to
- * guarantee the event is of scaler type.
+ * guarantee the event is of scalar type.
+ *
+ * \return The scalar event value as a string
  */
-void YamlParserContext::readValue(std::string &value, EventPtr event)
+std::string YamlParserContext::readValue(const EventPtr &event)
 {
-	value.assign(reinterpret_cast<char *>(event->data.scalar.value),
-		     event->data.scalar.length);
+	return std::string{ reinterpret_cast<const char *>(event->data.scalar.value),
+			    event->data.scalar.length };
 }
 
 /**
  * \fn YamlParserContext::parseDictionaryOrList()
  * \brief A helper function to abstract the common part of parsing dictionary or list
- *
- * \param[in] isDictionary True for parsing a dictionary, and false for a list
+ * \param[in] endEventType The YAML end event type (sequence or mapping)
  * \param[in] parseItem The callback to handle an item
  *
  * A helper function to abstract parsing an item from a dictionary or a list.
@@ -692,13 +692,9 @@ void YamlParserContext::readValue(std::string &value, EventPtr event)
  * \return 0 on success or a negative error code otherwise
  * \retval -EINVAL The parser is failed to initialize
  */
-int YamlParserContext::parseDictionaryOrList(YamlObject::Type type,
+int YamlParserContext::parseDictionaryOrList(yaml_event_type_t endEventType,
 					     const std::function<int(EventPtr event)> &parseItem)
 {
-	yaml_event_type_t endEventType = YAML_SEQUENCE_END_EVENT;
-	if (type == YamlObject::Type::Dictionary)
-		endEventType = YAML_MAPPING_END_EVENT;
-
 	/*
 	 * Add a safety counter to make sure we don't loop indefinitely in case
 	 * the YAML file is malformed.
@@ -740,24 +736,19 @@ int YamlParserContext::parseNextYamlObject(YamlObject &yamlObject, EventPtr even
 
 	switch (event->type) {
 	case YAML_SCALAR_EVENT:
-		yamlObject.type_ = YamlObject::Type::Value;
-		readValue(yamlObject.value_, std::move(event));
+		yamlObject.set(readValue(event));
 		return 0;
 
 	case YAML_SEQUENCE_START_EVENT: {
-		yamlObject.type_ = YamlObject::Type::List;
-		auto &list = yamlObject.list_;
-		auto handler = [this, &list](EventPtr evt) {
-			list.emplace_back(std::string{}, std::make_unique<YamlObject>());
-			return parseNextYamlObject(*list.back().value, std::move(evt));
+		auto handler = [this, &yamlObject](EventPtr evt) {
+			YamlObject *child = yamlObject.add(std::make_unique<YamlObject>());
+			return parseNextYamlObject(*child, std::move(evt));
 		};
-		return parseDictionaryOrList(YamlObject::Type::List, handler);
+		return parseDictionaryOrList(YAML_SEQUENCE_END_EVENT, handler);
 	}
 
 	case YAML_MAPPING_START_EVENT: {
-		yamlObject.type_ = YamlObject::Type::Dictionary;
-		auto &list = yamlObject.list_;
-		auto handler = [this, &list](EventPtr evtKey) {
+		auto handler = [this, &yamlObject](EventPtr evtKey) {
 			/* Parse key */
 			if (evtKey->type != YAML_SCALAR_EVENT) {
 				LOG(YamlParser, Error) << "Expect key at line: "
@@ -767,25 +758,27 @@ int YamlParserContext::parseNextYamlObject(YamlObject &yamlObject, EventPtr even
 				return -EINVAL;
 			}
 
-			std::string key;
-			readValue(key, std::move(evtKey));
+			std::string key = readValue(evtKey);
 
 			/* Parse value */
 			EventPtr evtValue = nextEvent();
 			if (!evtValue)
 				return -EINVAL;
 
-			auto &elem = list.emplace_back(std::move(key),
-						       std::make_unique<YamlObject>());
-			return parseNextYamlObject(*elem.value, std::move(evtValue));
+			YamlObject *child = yamlObject.add(std::move(key),
+							   std::make_unique<YamlObject>());
+			if (!child) {
+				LOG(YamlParser, Error)
+					<< "Duplicated key at line "
+					<< evtKey->start_mark.line;
+				return -EINVAL;
+			}
+
+			return parseNextYamlObject(*child, std::move(evtValue));
 		};
-		int ret = parseDictionaryOrList(YamlObject::Type::Dictionary, handler);
+		int ret = parseDictionaryOrList(YAML_MAPPING_END_EVENT, handler);
 		if (ret)
 			return ret;
-
-		auto &dictionary = yamlObject.dictionary_;
-		for (const auto &elem : list)
-			dictionary.emplace(elem.key, elem.value.get());
 
 		return 0;
 	}

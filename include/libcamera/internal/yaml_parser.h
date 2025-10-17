@@ -205,7 +205,6 @@ private:
 
 	template<typename T>
 	friend struct Accessor;
-	friend class YamlParserContext;
 
 	enum class Type {
 		Dictionary,

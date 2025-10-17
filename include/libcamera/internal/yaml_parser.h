@@ -182,25 +182,6 @@ public:
 		return get<T>().value_or(std::forward<U>(defaultValue));
 	}
 
-#ifndef __DOXYGEN__
-	template<typename T,
-		 std::enable_if_t<
-			 std::is_same_v<bool, T> ||
-			 std::is_same_v<float, T> ||
-			 std::is_same_v<double, T> ||
-			 std::is_same_v<int8_t, T> ||
-			 std::is_same_v<uint8_t, T> ||
-			 std::is_same_v<int16_t, T> ||
-			 std::is_same_v<uint16_t, T> ||
-			 std::is_same_v<int32_t, T> ||
-			 std::is_same_v<uint32_t, T> ||
-			 std::is_same_v<std::string, T> ||
-			 std::is_same_v<Size, T>> * = nullptr>
-#else
-	template<typename T>
-#endif
-	std::optional<std::vector<T>> getList() const;
-
 	DictAdapter asDict() const { return DictAdapter{ list_ }; }
 	ListAdapter asList() const { return ListAdapter{ list_ }; }
 

@@ -66,13 +66,13 @@ readMeteringModes(std::map<std::string, AgcMeteringMode> &metering_modes,
 
 int AgcExposureMode::read(const libcamera::YamlObject &params)
 {
-	auto value = params["shutter"].getList<double>();
+	auto value = params["shutter"].get<std::vector<double>>();
 	if (!value)
 		return -EINVAL;
 	std::transform(value->begin(), value->end(), std::back_inserter(exposureTime),
 		       [](double v) { return v * 1us; });
 
-	value = params["gain"].getList<double>();
+	value = params["gain"].get<std::vector<double>>();
 	if (!value)
 		return -EINVAL;
 	gain = std::move(*value);

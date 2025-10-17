@@ -48,11 +48,11 @@ int Lsc::init([[maybe_unused]] IPAContext &context, const YamlObject &tuningData
 		}
 
 		std::vector<uint8_t> rTable =
-			yamlSet["r"].getList<uint8_t>().value_or(std::vector<uint8_t>{});
+			yamlSet["r"].get<std::vector<uint8_t>>().value_or(std::vector<uint8_t>{});
 		std::vector<uint8_t> gTable =
-			yamlSet["g"].getList<uint8_t>().value_or(std::vector<uint8_t>{});
+			yamlSet["g"].get<std::vector<uint8_t>>().value_or(std::vector<uint8_t>{});
 		std::vector<uint8_t> bTable =
-			yamlSet["b"].getList<uint8_t>().value_or(std::vector<uint8_t>{});
+			yamlSet["b"].get<std::vector<uint8_t>>().value_or(std::vector<uint8_t>{});
 
 		/*
 		 * Some validation to do; only 16x16 and 32x32 tables of

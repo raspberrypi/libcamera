@@ -211,9 +211,9 @@ int AwbBayes::readPriors(const YamlObject &tuningData)
 		}
 
 		std::vector<uint32_t> temperatures =
-			p["ct"].getList<uint32_t>().value_or(std::vector<uint32_t>{});
+			p["ct"].get<std::vector<uint32_t>>().value_or(std::vector<uint32_t>{});
 		std::vector<double> probabilities =
-			p["probability"].getList<double>().value_or(std::vector<double>{});
+			p["probability"].get<std::vector<double>>().value_or(std::vector<double>{});
 
 		if (temperatures.size() != probabilities.size()) {
 			LOG(Awb, Error)

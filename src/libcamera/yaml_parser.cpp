@@ -109,11 +109,15 @@ std::size_t YamlObject::size() const
 
 /**
  * \fn template<typename T> YamlObject::get<T>() const
+ * \tparam T Type of the value
  * \brief Parse the YamlObject as a \a T value
  *
  * This function parses the value of the YamlObject as a \a T object, and
  * returns the value. If parsing fails (usually because the YamlObject doesn't
  * store a \a T value), std::nullopt is returned.
+ *
+ * If the type \a T is an std::vector, the YamlObject will be parsed as a list
+ * of values.
  *
  * \return The YamlObject value, or std::nullopt if parsing failed
  */
@@ -126,6 +130,9 @@ std::size_t YamlObject::size() const
  * This function parses the value of the YamlObject as a \a T object, and
  * returns the value. If parsing fails (usually because the YamlObject doesn't
  * store a \a T value), the \a defaultValue is returned.
+ *
+ * Unlike the get() function, this overload does not support std::vector for the
+ * type \a T.
  *
  * \return The YamlObject value, or \a defaultValue if parsing failed
  */
@@ -239,65 +246,38 @@ YamlObject::Accessor<Size>::get(const YamlObject &obj) const
 	return Size(*width, *height);
 }
 
-#endif /* __DOXYGEN__ */
-
-/**
- * \fn template<typename T> YamlObject::getList<T>() const
- * \brief Parse the YamlObject as a list of \a T
- *
- * This function parses the value of the YamlObject as a list of \a T objects,
- * and returns the value as a \a std::vector<T>. If parsing fails, std::nullopt
- * is returned.
- *
- * \return The YamlObject value as a std::vector<T>, or std::nullopt if parsing
- * failed
- */
-
-#ifndef __DOXYGEN__
-
-template<typename T,
-	 std::enable_if_t<
-		 std::is_same_v<bool, T> ||
-		 std::is_same_v<float, T> ||
-		 std::is_same_v<double, T> ||
-		 std::is_same_v<int8_t, T> ||
-		 std::is_same_v<uint8_t, T> ||
-		 std::is_same_v<int16_t, T> ||
-		 std::is_same_v<uint16_t, T> ||
-		 std::is_same_v<int32_t, T> ||
-		 std::is_same_v<uint32_t, T> ||
-		 std::is_same_v<std::string, T> ||
-		 std::is_same_v<Size, T>> *>
-std::optional<std::vector<T>> YamlObject::getList() const
-{
-	if (type_ != Type::List)
-		return std::nullopt;
-
-	std::vector<T> values;
-	values.reserve(list_.size());
-
-	for (const YamlObject &entry : asList()) {
-		const auto value = entry.get<T>();
-		if (!value)
+template<typename T>
+struct YamlObject::Accessor<std::vector<T>> {
+	std::optional<std::vector<T>> get(const YamlObject &obj) const
+	{
+		if (obj.type_ != Type::List)
 			return std::nullopt;
-		values.emplace_back(*value);
+
+		std::vector<T> values;
+		values.reserve(obj.list_.size());
+
+		for (const YamlObject &entry : obj.asList()) {
+			auto value = entry.get<T>();
+			if (!value)
+				return std::nullopt;
+			values.emplace_back(std::move(*value));
+		}
+
+		return values;
 	}
+};
 
-	return values;
-}
-
-template std::optional<std::vector<bool>> YamlObject::getList<bool>() const;
-template std::optional<std::vector<float>> YamlObject::getList<float>() const;
-template std::optional<std::vector<double>> YamlObject::getList<double>() const;
-template std::optional<std::vector<int8_t>> YamlObject::getList<int8_t>() const;
-template std::optional<std::vector<uint8_t>> YamlObject::getList<uint8_t>() const;
-template std::optional<std::vector<int16_t>> YamlObject::getList<int16_t>() const;
-template std::optional<std::vector<uint16_t>> YamlObject::getList<uint16_t>() const;
-template std::optional<std::vector<int32_t>> YamlObject::getList<int32_t>() const;
-template std::optional<std::vector<uint32_t>> YamlObject::getList<uint32_t>() const;
-template std::optional<std::vector<std::string>> YamlObject::getList<std::string>() const;
-template std::optional<std::vector<Size>> YamlObject::getList<Size>() const;
-
+template struct YamlObject::Accessor<std::vector<bool>>;
+template struct YamlObject::Accessor<std::vector<float>>;
+template struct YamlObject::Accessor<std::vector<double>>;
+template struct YamlObject::Accessor<std::vector<int8_t>>;
+template struct YamlObject::Accessor<std::vector<uint8_t>>;
+template struct YamlObject::Accessor<std::vector<int16_t>>;
+template struct YamlObject::Accessor<std::vector<uint16_t>>;
+template struct YamlObject::Accessor<std::vector<int32_t>>;
+template struct YamlObject::Accessor<std::vector<uint32_t>>;
+template struct YamlObject::Accessor<std::vector<std::string>>;
+template struct YamlObject::Accessor<std::vector<Size>>;
 #endif /* __DOXYGEN__ */
 
 /**

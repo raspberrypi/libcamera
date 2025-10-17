@@ -115,7 +115,7 @@ int ConfigParser::parseSupportedFormats(const YamlObject &cameraConfigData,
 			std::vector<int64_t> frameRates;
 			if (supportedResolution.contains("frame_rates")) {
 				auto frameRatesList =
-					supportedResolution["frame_rates"].getList<int>();
+					supportedResolution["frame_rates"].get<std::vector<int>>();
 				if (!frameRatesList || (frameRatesList->size() != 1 &&
 							frameRatesList->size() != 2)) {
 					LOG(Virtual, Error) << "Invalid frame_rates: either one or two values";

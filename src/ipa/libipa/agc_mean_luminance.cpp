@@ -288,9 +288,9 @@ int AgcMeanLuminance::parseExposureModes(const YamlObject &tuningData)
 			}
 
 			std::vector<uint32_t> exposureTimes =
-				modeValues["exposureTime"].getList<uint32_t>().value_or(std::vector<uint32_t>{});
+				modeValues["exposureTime"].get<std::vector<uint32_t>>().value_or(std::vector<uint32_t>{});
 			std::vector<double> gains =
-				modeValues["gain"].getList<double>().value_or(std::vector<double>{});
+				modeValues["gain"].get<std::vector<double>>().value_or(std::vector<double>{});
 
 			if (exposureTimes.size() != gains.size()) {
 				LOG(AgcMeanLuminance, Error)

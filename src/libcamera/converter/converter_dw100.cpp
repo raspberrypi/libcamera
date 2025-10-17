@@ -126,7 +126,7 @@ int ConverterDW100Module::init(const YamlObject &params)
 		return -EINVAL;
 	}
 
-	const auto coeffs = coefficients.getList<double>();
+	const auto coeffs = coefficients.get<std::vector<double>>();
 	if (!coeffs) {
 		LOG(Converter, Error) << "Dewarp parameters 'coefficients' value is not a list";
 		return -EINVAL;

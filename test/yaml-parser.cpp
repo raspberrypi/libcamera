@@ -587,9 +587,9 @@ protected:
 			return TestFail;
 		}
 
-		const auto &values = firstElement.getList<uint16_t>();
+		const auto &values = firstElement.get<std::vector<uint16_t>>();
 		if (!values || values->size() != 2 || (*values)[0] != 1 || (*values)[1] != 2) {
-			cerr << "getList() failed to return correct vector" << std::endl;
+			cerr << "get() failed to return correct vector" << std::endl;
 			return TestFail;
 		}
 

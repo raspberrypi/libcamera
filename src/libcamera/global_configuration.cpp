@@ -152,7 +152,7 @@ std::optional<std::vector<std::string>> GlobalConfiguration::listOption(
 		if (!*c)
 			return {};
 	}
-	return c->getList<std::string>();
+	return c->get<std::vector<std::string>>();
 }
 
 /**

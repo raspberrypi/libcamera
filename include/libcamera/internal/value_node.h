@@ -38,14 +38,14 @@ private:
 
 public:
 #ifndef __DOXYGEN__
-	template<typename Derived>
+	template<typename Derived, typename ContainerIterator>
 	class Iterator
 	{
 	public:
 		using difference_type = std::ptrdiff_t;
 		using iterator_category = std::forward_iterator_tag;
 
-		Iterator(typename ValueContainer::const_iterator it)
+		Iterator(ContainerIterator it)
 			: it_(it)
 		{
 		}
@@ -74,14 +74,14 @@ public:
 		}
 
 	protected:
-		ValueContainer::const_iterator it_;
+		ContainerIterator it_;
 	};
 
-	template<typename Iterator>
+	template<typename Iterator, typename Container>
 	class Adapter
 	{
 	public:
-		Adapter(const ValueContainer &container)
+		Adapter(Container &container)
 			: container_(container)
 		{
 		}
@@ -97,47 +97,63 @@ public:
 		}
 
 	protected:
-		const ValueContainer &container_;
+		Container &container_;
 	};
 
-	class ListIterator : public Iterator<ListIterator>
+	template<typename Value, typename ContainerIterator>
+	class ListIterator : public Iterator<ListIterator<Value, ContainerIterator>,
+					     ContainerIterator>
 	{
-	public:
-		using value_type = const ValueNode &;
-		using pointer = const ValueNode *;
-		using reference = value_type;
+	private:
+		using Base = Iterator<ListIterator<Value, ContainerIterator>,
+				      ContainerIterator>;
 
-		value_type operator*() const
+	public:
+		using value_type = Value;
+		using pointer = value_type *;
+		using reference = value_type &;
+
+		reference operator*() const
 		{
-			return *it_->value.get();
+			return *Base::it_->value.get();
 		}
 
 		pointer operator->() const
 		{
-			return it_->value.get();
+			return Base::it_->value.get();
 		}
 	};
 
-	class DictIterator : public Iterator<DictIterator>
+	template<typename Value, typename ContainerIterator>
+	class DictIterator : public Iterator<DictIterator<Value, ContainerIterator>,
+					     ContainerIterator>
 	{
+	private:
+		using Base = Iterator<DictIterator<Value, ContainerIterator>,
+				      ContainerIterator>;
+
 	public:
-		using value_type = std::pair<const std::string &, const ValueNode &>;
+		using value_type = std::pair<const std::string &, Value &>;
 		using pointer = value_type *;
 		using reference = value_type &;
 
 		value_type operator*() const
 		{
-			return { it_->key, *it_->value.get() };
+			return { Base::it_->key, *Base::it_->value.get() };
 		}
 	};
 
-	class DictAdapter : public Adapter<DictIterator>
+	class DictAdapter : public Adapter<DictIterator<const ValueNode,
+							ValueContainer::const_iterator>,
+					   const ValueContainer>
 	{
 	public:
 		using key_type = std::string;
 	};
 
-	class ListAdapter : public Adapter<ListIterator>
+	class ListAdapter : public Adapter<ListIterator<const ValueNode,
+							ValueContainer::const_iterator>,
+					   const ValueContainer>
 	{
 	};
 #endif /* __DOXYGEN__ */

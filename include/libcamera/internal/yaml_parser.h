@@ -182,6 +182,13 @@ public:
 		return get<T>().value_or(std::forward<U>(defaultValue));
 	}
 
+	template<typename T>
+	void set(T &&value)
+	{
+		return Accessor<std::remove_cv_t<std::remove_reference_t<T>>>{}
+			.set(*this, std::forward<T>(value));
+	}
+
 	DictAdapter asDict() const { return DictAdapter{ list_ }; }
 	ListAdapter asList() const { return ListAdapter{ list_ }; }
 
@@ -207,6 +214,7 @@ private:
 	template<typename T, typename Enable = void>
 	struct Accessor {
 		std::optional<T> get(const YamlObject &obj) const;
+		void set(YamlObject &obj, T value);
 	};
 
 	Type type_;

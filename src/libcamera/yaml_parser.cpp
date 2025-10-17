@@ -137,6 +137,22 @@ std::size_t YamlObject::size() const
  * \return The YamlObject value, or \a defaultValue if parsing failed
  */
 
+/**
+ * \fn template<typename T> YamlObject::set<T>(T &&value)
+ * \brief Set the value of a YamlObject
+ * \param[in] value The value
+ *
+ * This function sets the value stored in a YamlObject to \a value. The value is
+ * converted to a string in an implementation-specific way that guarantees that
+ * subsequent calls to get<T>() will return the same value.
+ *
+ * \todo Implement the conversion guarantee for floating point types
+ *
+ * Values can only be set on YamlObject of Type::Value type or empty YamlObject.
+ * Attempting to set a value on an object of type Type::Dict or Type::List does
+ * not modify the YamlObject.
+ */
+
 #ifndef __DOXYGEN__
 
 template<>
@@ -152,6 +168,16 @@ YamlObject::Accessor<bool>::get(const YamlObject &obj) const
 		return false;
 
 	return std::nullopt;
+}
+
+template<>
+void YamlObject::Accessor<bool>::set(YamlObject &obj, bool value)
+{
+	if (obj.type_ != Type::Empty && obj.type_ != Type::Value)
+		return;
+
+	obj.type_ = Type::Value;
+	obj.value_ = value ? "true" : "false";
 }
 
 template<typename T>
@@ -178,6 +204,15 @@ struct YamlObject::Accessor<T, std::enable_if_t<
 
 		return value;
 	}
+
+	void set(YamlObject &obj, T value)
+	{
+		if (obj.type_ != Type::Empty && obj.type_ != Type::Value)
+			return;
+
+		obj.type_ = Type::Value;
+		obj.value_ = std::to_string(value);
+	}
 };
 
 template struct YamlObject::Accessor<int8_t>;
@@ -192,6 +227,12 @@ std::optional<float>
 YamlObject::Accessor<float>::get(const YamlObject &obj) const
 {
 	return obj.get<double>();
+}
+
+template<>
+void YamlObject::Accessor<float>::set(YamlObject &obj, float value)
+{
+	obj.set<double>(value);
 }
 
 template<>
@@ -216,6 +257,16 @@ YamlObject::Accessor<double>::get(const YamlObject &obj) const
 }
 
 template<>
+void YamlObject::Accessor<double>::set(YamlObject &obj, double value)
+{
+	if (obj.type_ != Type::Empty && obj.type_ != Type::Value)
+		return;
+
+	obj.type_ = Type::Value;
+	obj.value_ = std::to_string(value);
+}
+
+template<>
 std::optional<std::string>
 YamlObject::Accessor<std::string>::get(const YamlObject &obj) const
 {
@@ -223,6 +274,16 @@ YamlObject::Accessor<std::string>::get(const YamlObject &obj) const
 		return std::nullopt;
 
 	return obj.value_;
+}
+
+template<>
+void YamlObject::Accessor<std::string>::set(YamlObject &obj, std::string value)
+{
+	if (obj.type_ != Type::Empty && obj.type_ != Type::Value)
+		return;
+
+	obj.type_ = Type::Value;
+	obj.value_ = std::move(value);
 }
 
 template<>

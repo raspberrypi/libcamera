@@ -391,6 +391,25 @@ template struct ValueNode::Accessor<std::vector<std::string>>;
  * \param[in] index The element index
  *
  * This function retrieves an element of the ValueNode. Only ValueNode
+ * instances of List type associate elements with an index, calling this
+ * function on other types of instances or with an invalid index returns a null
+ * pointer.
+ *
+ * \return The ValueNode corresponding to \a index
+ */
+ValueNode *ValueNode::at(std::size_t index)
+{
+	if (type_ != Type::List || index >= size())
+		return nullptr;
+
+	return list_[index].value.get();
+}
+
+/**
+ * \brief Retrieve the element from list ValueNode by index
+ * \param[in] index The element index
+ *
+ * This function retrieves an element of the ValueNode. Only ValueNode
  * instances of List type associate elements with index, calling this function
  * on other types of instances or with an invalid index results in an empty
  * node.
@@ -419,6 +438,29 @@ const ValueNode &ValueNode::operator[](std::size_t index) const
 bool ValueNode::contains(std::string_view key) const
 {
 	return dictionary_.find(key) != dictionary_.end();
+}
+
+/**
+ * \brief Retrieve a member by key from the dictionary
+ * \param[in] key The element key
+ *
+ * This function retrieves a member of a ValueNode by \a key. Only ValueNode
+ * instances of Dictionary type associate elements with keys, calling this
+ * function on other types of instances or with a nonexistent key returns a null
+ * pointer.
+ *
+ * \return The ValueNode corresponding to the \a key member
+ */
+ValueNode *ValueNode::at(std::string_view key)
+{
+	if (type_ != Type::Dictionary)
+		return nullptr;
+
+	auto iter = dictionary_.find(key);
+	if (iter == dictionary_.end())
+		return nullptr;
+
+	return iter->second;
 }
 
 /**

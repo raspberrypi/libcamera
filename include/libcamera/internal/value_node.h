@@ -230,9 +230,11 @@ public:
 	ConstDictAdapter asDict() const { return ConstDictAdapter{ list_ }; }
 	ConstListAdapter asList() const { return ConstListAdapter{ list_ }; }
 
+	ValueNode *at(std::size_t index);
 	const ValueNode &operator[](std::size_t index) const;
 
 	bool contains(std::string_view key) const;
+	ValueNode *at(std::string_view key);
 	const ValueNode &operator[](std::string_view key) const;
 
 	ValueNode *add(std::unique_ptr<ValueNode> &&child);

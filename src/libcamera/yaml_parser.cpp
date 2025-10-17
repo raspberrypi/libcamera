@@ -438,6 +438,61 @@ const YamlObject &YamlObject::operator[](std::string_view key) const
 	return *iter->second;
 }
 
+/**
+ * \brief Add a child object to a list
+ * \param[in] child The child object
+ *
+ * Append the \a child object as the last element of this object's children
+ * list. This object must be empty, in which case it is converted to the
+ * Type::List type, or be a list. Otherwise, the function returns a nullptr and
+ * the \a child is not modified.
+ *
+ * \return A pointer to the child object if successfully added, nullptr
+ * otherwise
+ */
+YamlObject *YamlObject::add(std::unique_ptr<YamlObject> &&child)
+{
+	if (type_ == Type::Empty)
+		type_ = Type::List;
+
+	if (type_ != Type::List)
+		return nullptr;
+
+	Value &elem = list_.emplace_back(std::string{}, std::move(child));
+	return elem.value.get();
+}
+
+/**
+ * \brief Add a child object to a dictionary
+ * \param[in] key The dictionary key
+ * \param[in] child The child object
+ *
+ * Add the \a child object with the given \a key to this object's children. This
+ * object must be empty, in which case it is converted to the Type::Dictionary
+ * type, or be a dictionary. Otherwise, the function returns a nullptr and the
+ * \a child is not modified.
+ *
+ * Keys are unique. If a child with the same \a key already exists, the function
+ * returns a nullptr and the \a child is not modified.
+ *
+ * \return A pointer to the child object if successfully added, nullptr
+ * otherwise
+ */
+YamlObject *YamlObject::add(std::string key, std::unique_ptr<YamlObject> &&child)
+{
+	if (type_ == Type::Empty)
+		type_ = Type::Dictionary;
+
+	if (type_ != Type::Dictionary)
+		return nullptr;
+
+	auto [it, inserted] = dictionary_.try_emplace(std::move(key), child.get());
+	if (!inserted)
+		return nullptr;
+
+	return list_.emplace_back(it->first, std::move(child)).value.get();
+}
+
 #ifndef __DOXYGEN__
 
 class YamlParserContext

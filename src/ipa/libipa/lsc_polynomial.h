@@ -81,7 +81,7 @@ private:
 #ifndef __DOXYGEN__
 
 template<>
-struct YamlObject::Getter<ipa::LscPolynomial> {
+struct YamlObject::Accessor<ipa::LscPolynomial> {
 	std::optional<ipa::LscPolynomial> get(const YamlObject &obj) const
 	{
 		std::optional<double> cx = obj["cx"].get<double>();

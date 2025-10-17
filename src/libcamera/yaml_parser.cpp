@@ -134,7 +134,7 @@ std::size_t YamlObject::size() const
 
 template<>
 std::optional<bool>
-YamlObject::Getter<bool>::get(const YamlObject &obj) const
+YamlObject::Accessor<bool>::get(const YamlObject &obj) const
 {
 	if (obj.type_ != Type::Value)
 		return std::nullopt;
@@ -148,7 +148,7 @@ YamlObject::Getter<bool>::get(const YamlObject &obj) const
 }
 
 template<typename T>
-struct YamlObject::Getter<T, std::enable_if_t<
+struct YamlObject::Accessor<T, std::enable_if_t<
 	std::is_same_v<int8_t, T> ||
 	std::is_same_v<uint8_t, T> ||
 	std::is_same_v<int16_t, T> ||
@@ -173,23 +173,23 @@ struct YamlObject::Getter<T, std::enable_if_t<
 	}
 };
 
-template struct YamlObject::Getter<int8_t>;
-template struct YamlObject::Getter<uint8_t>;
-template struct YamlObject::Getter<int16_t>;
-template struct YamlObject::Getter<uint16_t>;
-template struct YamlObject::Getter<int32_t>;
-template struct YamlObject::Getter<uint32_t>;
+template struct YamlObject::Accessor<int8_t>;
+template struct YamlObject::Accessor<uint8_t>;
+template struct YamlObject::Accessor<int16_t>;
+template struct YamlObject::Accessor<uint16_t>;
+template struct YamlObject::Accessor<int32_t>;
+template struct YamlObject::Accessor<uint32_t>;
 
 template<>
 std::optional<float>
-YamlObject::Getter<float>::get(const YamlObject &obj) const
+YamlObject::Accessor<float>::get(const YamlObject &obj) const
 {
 	return obj.get<double>();
 }
 
 template<>
 std::optional<double>
-YamlObject::Getter<double>::get(const YamlObject &obj) const
+YamlObject::Accessor<double>::get(const YamlObject &obj) const
 {
 	if (obj.type_ != Type::Value)
 		return std::nullopt;
@@ -210,7 +210,7 @@ YamlObject::Getter<double>::get(const YamlObject &obj) const
 
 template<>
 std::optional<std::string>
-YamlObject::Getter<std::string>::get(const YamlObject &obj) const
+YamlObject::Accessor<std::string>::get(const YamlObject &obj) const
 {
 	if (obj.type_ != Type::Value)
 		return std::nullopt;
@@ -220,7 +220,7 @@ YamlObject::Getter<std::string>::get(const YamlObject &obj) const
 
 template<>
 std::optional<Size>
-YamlObject::Getter<Size>::get(const YamlObject &obj) const
+YamlObject::Accessor<Size>::get(const YamlObject &obj) const
 {
 	if (obj.type_ != Type::List)
 		return std::nullopt;

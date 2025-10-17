@@ -347,7 +347,7 @@ std::ostream &operator<<(std::ostream &out, const Vector<T, Rows> &v)
 }
 
 template<typename T, unsigned int Rows>
-struct YamlObject::Getter<Vector<T, Rows>> {
+struct YamlObject::Accessor<Vector<T, Rows>> {
 	std::optional<Vector<T, Rows>> get(const YamlObject &obj) const
 	{
 		if (!vectorValidateYaml(obj, Rows))

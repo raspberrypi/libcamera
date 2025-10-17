@@ -173,7 +173,7 @@ public:
 	template<typename T>
 	std::optional<T> get() const
 	{
-		return Getter<T>{}.get(*this);
+		return Accessor<T>{}.get(*this);
 	}
 
 	template<typename T, typename U>
@@ -213,7 +213,7 @@ private:
 	LIBCAMERA_DISABLE_COPY_AND_MOVE(YamlObject)
 
 	template<typename T>
-	friend struct Getter;
+	friend struct Accessor;
 	friend class YamlParserContext;
 
 	enum class Type {
@@ -224,7 +224,7 @@ private:
 	};
 
 	template<typename T, typename Enable = void>
-	struct Getter {
+	struct Accessor {
 		std::optional<T> get(const YamlObject &obj) const;
 	};
 

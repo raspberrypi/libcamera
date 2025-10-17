@@ -200,7 +200,7 @@ std::ostream &operator<<(std::ostream &out, const Matrix<T, Rows, Cols> &m)
 }
 
 template<typename T, unsigned int Rows, unsigned int Cols>
-struct YamlObject::Getter<Matrix<T, Rows, Cols>> {
+struct YamlObject::Accessor<Matrix<T, Rows, Cols>> {
 	std::optional<Matrix<T, Rows, Cols>> get(const YamlObject &obj) const
 	{
 		if (!matrixValidateYaml(obj, Rows * Cols))

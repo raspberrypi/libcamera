@@ -16,7 +16,7 @@
 #include <string>
 
 #include <libcamera/base/utils.h>
-#include "libcamera/internal/yaml_parser.h"
+#include "libcamera/internal/yaml_object.h"
 
 #include "camera_mode.h"
 #include "device_status.h"

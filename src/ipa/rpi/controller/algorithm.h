@@ -15,7 +15,7 @@
 #include <memory>
 #include <map>
 
-#include "libcamera/internal/yaml_parser.h"
+#include "libcamera/internal/yaml_object.h"
 
 #include "controller.h"
 

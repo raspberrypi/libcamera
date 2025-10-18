@@ -16,7 +16,7 @@
 
 #include <libcamera/ipa/core_ipa_interface.h>
 
-#include "libcamera/internal/yaml_parser.h"
+#include "libcamera/internal/yaml_object.h"
 
 #include "libipa/fixedpoint.h"
 #include "libipa/interpolator.h"

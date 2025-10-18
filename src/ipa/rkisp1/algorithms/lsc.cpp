@@ -14,7 +14,7 @@
 #include <libcamera/base/log.h>
 #include <libcamera/base/utils.h>
 
-#include "libcamera/internal/yaml_parser.h"
+#include "libcamera/internal/yaml_object.h"
 
 #include "libipa/lsc_polynomial.h"
 #include "linux/rkisp1-config.h"

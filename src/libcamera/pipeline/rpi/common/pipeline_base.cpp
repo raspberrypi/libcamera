@@ -21,6 +21,7 @@
 
 #include "libcamera/internal/camera_lens.h"
 #include "libcamera/internal/v4l2_subdevice.h"
+#include "libcamera/internal/yaml_parser.h"
 
 using namespace std::chrono_literals;
 

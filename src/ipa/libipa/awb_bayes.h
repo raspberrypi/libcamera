@@ -10,7 +10,7 @@
 #include <libcamera/controls.h>
 
 #include "libcamera/internal/vector.h"
-#include "libcamera/internal/yaml_parser.h"
+#include "libcamera/internal/yaml_object.h"
 
 #include "awb.h"
 #include "interpolator.h"

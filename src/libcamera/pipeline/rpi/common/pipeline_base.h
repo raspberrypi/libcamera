@@ -26,7 +26,7 @@
 #include "libcamera/internal/pipeline_handler.h"
 #include "libcamera/internal/request.h"
 #include "libcamera/internal/v4l2_videodevice.h"
-#include "libcamera/internal/yaml_parser.h"
+#include "libcamera/internal/yaml_object.h"
 
 #include <libcamera/ipa/raspberrypi_ipa_interface.h>
 #include <libcamera/ipa/raspberrypi_ipa_proxy.h>

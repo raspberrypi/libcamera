@@ -16,7 +16,7 @@
 
 #include <libcamera/geometry.h>
 
-#include "libcamera/internal/yaml_parser.h"
+#include "libcamera/internal/yaml_object.h"
 
 namespace libcamera {
 

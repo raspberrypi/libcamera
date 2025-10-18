@@ -16,7 +16,7 @@
 
 #include <libcamera/controls.h>
 
-#include "libcamera/internal/yaml_parser.h"
+#include "libcamera/internal/yaml_object.h"
 
 #include "exposure_mode_helper.h"
 #include "histogram.h"

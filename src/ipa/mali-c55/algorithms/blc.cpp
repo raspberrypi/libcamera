@@ -10,7 +10,7 @@
 #include <libcamera/base/log.h>
 #include <libcamera/control_ids.h>
 
-#include "libcamera/internal/yaml_parser.h"
+#include "libcamera/internal/yaml_object.h"
 
 /**
  * \file blc.h

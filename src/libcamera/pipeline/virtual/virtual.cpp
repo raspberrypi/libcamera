@@ -37,7 +37,7 @@
 #include "libcamera/internal/framebuffer.h"
 #include "libcamera/internal/pipeline_handler.h"
 #include "libcamera/internal/request.h"
-#include "libcamera/internal/yaml_parser.h"
+#include "libcamera/internal/yaml_object.h"
 
 #include "pipeline/virtual/config_parser.h"
 

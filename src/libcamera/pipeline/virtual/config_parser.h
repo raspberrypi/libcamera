@@ -13,7 +13,7 @@
 #include <libcamera/base/file.h>
 
 #include "libcamera/internal/pipeline_handler.h"
-#include "libcamera/internal/yaml_parser.h"
+#include "libcamera/internal/yaml_object.h"
 
 #include "virtual.h"
 

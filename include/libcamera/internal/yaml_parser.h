@@ -17,8 +17,6 @@
 
 #include <libcamera/base/class.h>
 
-#include <libcamera/geometry.h>
-
 namespace libcamera {
 
 class File;

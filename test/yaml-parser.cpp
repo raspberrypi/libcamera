@@ -14,6 +14,8 @@
 #include <libcamera/base/file.h>
 #include <libcamera/base/utils.h>
 
+#include <libcamera/geometry.h>
+
 #include "libcamera/internal/yaml_parser.h"
 
 #include "test.h"

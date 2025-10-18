@@ -14,6 +14,8 @@
 #include <libcamera/base/log.h>
 #include <libcamera/base/span.h>
 
+#include <libcamera/geometry.h>
+
 #include "libcamera/internal/yaml_parser.h"
 
 namespace libcamera {

@@ -55,7 +55,21 @@ if (pipelines.contains('virtual') or get_option('android').allowed()) and \
          '-Wno-unused-parameter')
     libyuv_vars.append_link_args('-ljpeg')
     libyuv = cmake.subproject('libyuv', options : libyuv_vars)
-    libyuv_dep = libyuv.dependency('yuv')
+
+    # Meson fails to apply the -fPIC flag to static libraries produced by CMake
+    # that wraps other static libraries without adding any source file, despite
+    # setting CMAKE_POSITION_INDEPENDENT_CODE to ON. See
+    # https://github.com/mesonbuild/meson/issues/10764.
+    #
+    # Work around the issue by wrapping the libyuv static library into another
+    # static library with 'pic' set to true.
+    libyuv_static = static_library('libyuv-static',
+                                   dependencies : libyuv.dependency('yuv'),
+                                   pic : true,
+                                   install : false)
+    libyuv_include = libyuv.include_directories('yuv')
+    libyuv_dep = declare_dependency(link_with : libyuv_static,
+                                    include_directories : libyuv_include)
 endif
 
 # libcamera must be built first as a dependency to the other components.

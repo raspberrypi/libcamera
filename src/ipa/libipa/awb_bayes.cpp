@@ -143,7 +143,7 @@ void Interpolator<Pwl>::interpolate(const Pwl &a, const Pwl &b, Pwl &dest, doubl
  * \brief The currently selected mode
  */
 
-int AwbBayes::init(const YamlObject &tuningData)
+int AwbBayes::init(const ValueNode &tuningData)
 {
 	int ret = colourGainCurve_.readYaml(tuningData["colourGains"], "ct", "gains");
 	if (ret) {
@@ -188,7 +188,7 @@ int AwbBayes::init(const YamlObject &tuningData)
 	return 0;
 }
 
-int AwbBayes::readPriors(const YamlObject &tuningData)
+int AwbBayes::readPriors(const ValueNode &tuningData)
 {
 	const auto &priorsList = tuningData["priors"];
 	std::map<uint32_t, Pwl> priors;

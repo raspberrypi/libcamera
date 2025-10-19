@@ -3,7 +3,7 @@
  * Copyright (C) 2022, Google Inc.
  * Copyright (C) 2026, Ideas on Board
  *
- * libcamera YAML object
+ * Data structure to manage tree of values
  */
 
 #pragma once
@@ -22,16 +22,16 @@
 
 namespace libcamera {
 
-class YamlObject
+class ValueNode
 {
 private:
 	struct Value {
-		Value(std::string k, std::unique_ptr<YamlObject> &&v)
+		Value(std::string k, std::unique_ptr<ValueNode> &&v)
 			: key(std::move(k)), value(std::move(v))
 		{
 		}
 		std::string key;
-		std::unique_ptr<YamlObject> value;
+		std::unique_ptr<ValueNode> value;
 	};
 
 	using ValueContainer = std::vector<Value>;
@@ -103,8 +103,8 @@ public:
 	class ListIterator : public Iterator<ListIterator>
 	{
 	public:
-		using value_type = const YamlObject &;
-		using pointer = const YamlObject *;
+		using value_type = const ValueNode &;
+		using pointer = const ValueNode *;
 		using reference = value_type;
 
 		value_type operator*() const
@@ -121,7 +121,7 @@ public:
 	class DictIterator : public Iterator<DictIterator>
 	{
 	public:
-		using value_type = std::pair<const std::string &, const YamlObject &>;
+		using value_type = std::pair<const std::string &, const ValueNode &>;
 		using pointer = value_type *;
 		using reference = value_type &;
 
@@ -142,8 +142,8 @@ public:
 	};
 #endif /* __DOXYGEN__ */
 
-	YamlObject();
-	~YamlObject();
+	ValueNode();
+	~ValueNode();
 
 	bool isValue() const
 	{
@@ -190,16 +190,16 @@ public:
 	DictAdapter asDict() const { return DictAdapter{ list_ }; }
 	ListAdapter asList() const { return ListAdapter{ list_ }; }
 
-	const YamlObject &operator[](std::size_t index) const;
+	const ValueNode &operator[](std::size_t index) const;
 
 	bool contains(std::string_view key) const;
-	const YamlObject &operator[](std::string_view key) const;
+	const ValueNode &operator[](std::string_view key) const;
 
-	YamlObject *add(std::unique_ptr<YamlObject> &&child);
-	YamlObject *add(std::string key, std::unique_ptr<YamlObject> &&child);
+	ValueNode *add(std::unique_ptr<ValueNode> &&child);
+	ValueNode *add(std::string key, std::unique_ptr<ValueNode> &&child);
 
 private:
-	LIBCAMERA_DISABLE_COPY_AND_MOVE(YamlObject)
+	LIBCAMERA_DISABLE_COPY_AND_MOVE(ValueNode)
 
 	template<typename T>
 	friend struct Accessor;
@@ -213,15 +213,15 @@ private:
 
 	template<typename T, typename Enable = void>
 	struct Accessor {
-		std::optional<T> get(const YamlObject &obj) const;
-		void set(YamlObject &obj, T value);
+		std::optional<T> get(const ValueNode &obj) const;
+		void set(ValueNode &obj, T value);
 	};
 
 	Type type_;
 
 	std::string value_;
 	ValueContainer list_;
-	std::map<std::string, YamlObject *, std::less<>> dictionary_;
+	std::map<std::string, ValueNode *, std::less<>> dictionary_;
 };
 
 } /* namespace libcamera */

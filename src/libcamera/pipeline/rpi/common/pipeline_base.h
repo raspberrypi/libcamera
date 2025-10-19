@@ -26,7 +26,7 @@
 #include "libcamera/internal/pipeline_handler.h"
 #include "libcamera/internal/request.h"
 #include "libcamera/internal/v4l2_videodevice.h"
-#include "libcamera/internal/yaml_object.h"
+#include "libcamera/internal/value_node.h"
 
 #include <libcamera/ipa/raspberrypi_ipa_interface.h>
 #include <libcamera/ipa/raspberrypi_ipa_proxy.h>
@@ -96,7 +96,7 @@ public:
 	virtual V4L2VideoDevice::Formats rawFormats() const = 0;
 	virtual V4L2VideoDevice *frontendDevice() = 0;
 
-	virtual int platformPipelineConfigure(const std::unique_ptr<YamlObject> &root) = 0;
+	virtual int platformPipelineConfigure(const std::unique_ptr<ValueNode> &root) = 0;
 
 	std::unique_ptr<ipa::RPi::IPAProxyRPi> ipa_;
 

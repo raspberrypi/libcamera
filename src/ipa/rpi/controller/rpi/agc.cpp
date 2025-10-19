@@ -31,7 +31,7 @@ char const *Agc::name() const
 	return NAME;
 }
 
-int Agc::read(const libcamera::YamlObject &params)
+int Agc::read(const libcamera::ValueNode &params)
 {
 	/*
 	 * When there is only a single channel we can read the old style syntax.

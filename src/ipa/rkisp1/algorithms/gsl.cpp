@@ -10,7 +10,7 @@
 #include <libcamera/base/log.h>
 #include <libcamera/base/utils.h>
 
-#include "libcamera/internal/yaml_object.h"
+#include "libcamera/internal/value_node.h"
 
 #include "linux/rkisp1-config.h"
 
@@ -56,7 +56,7 @@ GammaSensorLinearization::GammaSensorLinearization()
  * \copydoc libcamera::ipa::Algorithm::init
  */
 int GammaSensorLinearization::init([[maybe_unused]] IPAContext &context,
-				   const YamlObject &tuningData)
+				   const ValueNode &tuningData)
 {
 	std::vector<uint16_t> xIntervals =
 		tuningData["x-intervals"].get<std::vector<uint16_t>>().value_or(std::vector<uint16_t>{});
@@ -75,7 +75,7 @@ int GammaSensorLinearization::init([[maybe_unused]] IPAContext &context,
 	for (unsigned int i = 0; i < kDegammaXIntervals; ++i)
 		gammaDx_[i / 8] |= (xIntervals[i] & 0x07) << ((i % 8) * 4);
 
-	const YamlObject &yObject = tuningData["y"];
+	const ValueNode &yObject = tuningData["y"];
 	if (!yObject.isDictionary()) {
 		LOG(RkISP1Gsl, Error)
 			<< "Issue while parsing 'y' in tuning file: "

@@ -14,7 +14,7 @@
 #include <libcamera/base/log.h>
 #include <libcamera/base/utils.h>
 
-#include "libcamera/internal/yaml_object.h"
+#include "libcamera/internal/value_node.h"
 
 #include "libipa/lsc_polynomial.h"
 #include "linux/rkisp1-config.h"
@@ -184,14 +184,14 @@ public:
 	{
 	}
 
-	int parseLscData(const YamlObject &yamlSets,
+	int parseLscData(const ValueNode &yamlSets,
 			 LensShadingCorrection::ShadingDescriptorMap &lscData);
 
 private:
 	Size sensorSize_;
 };
 
-int LscPolynomialLoader::parseLscData(const YamlObject &yamlSets,
+int LscPolynomialLoader::parseLscData(const ValueNode &yamlSets,
 				      LensShadingCorrection::ShadingDescriptorMap &lscData)
 {
 	const auto &sets = yamlSets.asList();
@@ -261,15 +261,15 @@ private:
 class LscTableLoader
 {
 public:
-	int parseLscData(const YamlObject &yamlSets,
+	int parseLscData(const ValueNode &yamlSets,
 			 LensShadingCorrection::ShadingDescriptorMap &lscData);
 
 private:
-	std::vector<uint16_t> parseTable(const YamlObject &tuningData,
+	std::vector<uint16_t> parseTable(const ValueNode &tuningData,
 					 const char *prop);
 };
 
-int LscTableLoader::parseLscData(const YamlObject &yamlSets,
+int LscTableLoader::parseLscData(const ValueNode &yamlSets,
 				 LensShadingCorrection::ShadingDescriptorMap &lscData)
 {
 	const auto &sets = yamlSets.asList();
@@ -310,7 +310,7 @@ int LscTableLoader::parseLscData(const YamlObject &yamlSets,
 	return 0;
 }
 
-std::vector<uint16_t> LscTableLoader::parseTable(const YamlObject &tuningData,
+std::vector<uint16_t> LscTableLoader::parseTable(const ValueNode &tuningData,
 						 const char *prop)
 {
 	static constexpr unsigned int kLscNumSamples =
@@ -329,7 +329,7 @@ std::vector<uint16_t> LscTableLoader::parseTable(const YamlObject &tuningData,
 	return table;
 }
 
-std::vector<double> parseSizes(const YamlObject &tuningData,
+std::vector<double> parseSizes(const ValueNode &tuningData,
 			       const char *prop)
 {
 	std::vector<double> sizes =
@@ -375,7 +375,7 @@ LensShadingCorrection::LensShadingCorrection()
  * \copydoc libcamera::ipa::Algorithm::init
  */
 int LensShadingCorrection::init([[maybe_unused]] IPAContext &context,
-				const YamlObject &tuningData)
+				const ValueNode &tuningData)
 {
 	xSize_ = parseSizes(tuningData, "x-size");
 	ySize_ = parseSizes(tuningData, "y-size");
@@ -384,7 +384,7 @@ int LensShadingCorrection::init([[maybe_unused]] IPAContext &context,
 		return -EINVAL;
 
 	/* Get all defined sets to apply. */
-	const YamlObject &yamlSets = tuningData["sets"];
+	const ValueNode &yamlSets = tuningData["sets"];
 	if (!yamlSets.isList()) {
 		LOG(RkISP1Lsc, Error)
 			<< "'sets' parameter not found in tuning file";

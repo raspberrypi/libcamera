@@ -9,7 +9,7 @@
 
 #include <memory>
 
-#include "libcamera/internal/yaml_object.h"
+#include "libcamera/internal/value_node.h"
 
 namespace libcamera {
 
@@ -18,7 +18,7 @@ class File;
 class YamlParser final
 {
 public:
-	static std::unique_ptr<YamlObject> parse(File &file);
+	static std::unique_ptr<ValueNode> parse(File &file);
 };
 
 } /* namespace libcamera */

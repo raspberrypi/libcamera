@@ -102,7 +102,7 @@ int Controller::read(char const *filename)
 		return -EINVAL;
 	}
 
-	std::unique_ptr<YamlObject> root = YamlParser::parse(file);
+	std::unique_ptr<ValueNode> root = YamlParser::parse(file);
 	if (!root)
 		return -EINVAL;
 
@@ -143,7 +143,7 @@ int Controller::read(char const *filename)
 	return 0;
 }
 
-int Controller::createAlgorithm(const std::string &name, const YamlObject &params)
+int Controller::createAlgorithm(const std::string &name, const ValueNode &params)
 {
 	/* Any algorithm may be disabled by setting "enabled" to false. */
 	bool enabled = params["enabled"].get<bool>(true);

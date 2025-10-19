@@ -27,7 +27,7 @@ namespace ipa::soft::algorithms {
 
 LOG_DEFINE_CATEGORY(IPASoftCcm)
 
-int Ccm::init([[maybe_unused]] IPAContext &context, const YamlObject &tuningData)
+int Ccm::init([[maybe_unused]] IPAContext &context, const ValueNode &tuningData)
 {
 	int ret = ccm_.readYaml(tuningData["ccms"], "ct", "ccm");
 	if (ret < 0) {

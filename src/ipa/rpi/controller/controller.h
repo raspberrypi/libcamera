@@ -16,7 +16,7 @@
 #include <string>
 
 #include <libcamera/base/utils.h>
-#include "libcamera/internal/yaml_object.h"
+#include "libcamera/internal/value_node.h"
 
 #include "camera_mode.h"
 #include "device_status.h"
@@ -65,7 +65,7 @@ public:
 	const HardwareConfig &getHardwareConfig() const;
 
 protected:
-	int createAlgorithm(const std::string &name, const libcamera::YamlObject &params);
+	int createAlgorithm(const std::string &name, const libcamera::ValueNode &params);
 
 	Metadata globalMetadata_;
 	std::vector<AlgorithmPtr> algorithms_;

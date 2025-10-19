@@ -35,7 +35,7 @@ public:
 	~YamlParserContext();
 
 	int init(File &file);
-	int parseContent(YamlObject &yamlObject);
+	int parseContent(ValueNode &valueNode);
 
 private:
 	struct EventDeleter {
@@ -55,7 +55,7 @@ private:
 	std::string readValue(const EventPtr &event);
 	int parseDictionaryOrList(yaml_event_type_t endEventType,
 				  const std::function<int(EventPtr event)> &parseItem);
-	int parseNextYamlObject(YamlObject &yamlObject, EventPtr event);
+	int parseNextNode(ValueNode &valueNode, EventPtr event);
 
 	bool parserValid_;
 	yaml_parser_t parser_;
@@ -153,15 +153,15 @@ YamlParserContext::EventPtr YamlParserContext::nextEvent()
 
 /**
  * \brief Parse the content of a YAML document
- * \param[in] yamlObject The result of YamlObject
+ * \param[in] valueNode The result of ValueNode
  *
  * Check YAML start and end events of a YAML document, and parse the root object
- * of the YAML document into a YamlObject.
+ * of the YAML document into a ValueNode.
  *
  * \return 0 on success or a negative error code otherwise
  * \retval -EINVAL The parser has failed to validate end of a YAML file
  */
-int YamlParserContext::parseContent(YamlObject &yamlObject)
+int YamlParserContext::parseContent(ValueNode &valueNode)
 {
 	/* Check start of the YAML file. */
 	EventPtr event = nextEvent();
@@ -174,7 +174,7 @@ int YamlParserContext::parseContent(YamlObject &yamlObject)
 
 	/* Parse the root object. */
 	event = nextEvent();
-	if (parseNextYamlObject(yamlObject, std::move(event)))
+	if (parseNextNode(valueNode, std::move(event)))
 		return -EINVAL;
 
 	/* Check end of the YAML file. */
@@ -247,8 +247,8 @@ int YamlParserContext::parseDictionaryOrList(yaml_event_type_t endEventType,
 }
 
 /**
- * \brief Parse next YAML event and read it as a YamlObject
- * \param[in] yamlObject The result of YamlObject
+ * \brief Parse next YAML event and read it as a ValueNode
+ * \param[in] valueNode The result of ValueNode
  * \param[in] event The leading event of the object
  *
  * Parse next YAML object separately as a value, list or dictionary.
@@ -256,26 +256,26 @@ int YamlParserContext::parseDictionaryOrList(yaml_event_type_t endEventType,
  * \return 0 on success or a negative error code otherwise
  * \retval -EINVAL Fail to parse the YAML file.
  */
-int YamlParserContext::parseNextYamlObject(YamlObject &yamlObject, EventPtr event)
+int YamlParserContext::parseNextNode(ValueNode &valueNode, EventPtr event)
 {
 	if (!event)
 		return -EINVAL;
 
 	switch (event->type) {
 	case YAML_SCALAR_EVENT:
-		yamlObject.set(readValue(event));
+		valueNode.set(readValue(event));
 		return 0;
 
 	case YAML_SEQUENCE_START_EVENT: {
-		auto handler = [this, &yamlObject](EventPtr evt) {
-			YamlObject *child = yamlObject.add(std::make_unique<YamlObject>());
-			return parseNextYamlObject(*child, std::move(evt));
+		auto handler = [this, &valueNode](EventPtr evt) {
+			ValueNode *child = valueNode.add(std::make_unique<ValueNode>());
+			return parseNextNode(*child, std::move(evt));
 		};
 		return parseDictionaryOrList(YAML_SEQUENCE_END_EVENT, handler);
 	}
 
 	case YAML_MAPPING_START_EVENT: {
-		auto handler = [this, &yamlObject](EventPtr evtKey) {
+		auto handler = [this, &valueNode](EventPtr evtKey) {
 			/* Parse key */
 			if (evtKey->type != YAML_SCALAR_EVENT) {
 				LOG(YamlParser, Error) << "Expect key at line: "
@@ -292,8 +292,8 @@ int YamlParserContext::parseNextYamlObject(YamlObject &yamlObject, EventPtr even
 			if (!evtValue)
 				return -EINVAL;
 
-			YamlObject *child = yamlObject.add(std::move(key),
-							   std::make_unique<YamlObject>());
+			ValueNode *child = valueNode.add(std::move(key),
+							 std::make_unique<ValueNode>());
 			if (!child) {
 				LOG(YamlParser, Error)
 					<< "Duplicated key at line "
@@ -301,7 +301,7 @@ int YamlParserContext::parseNextYamlObject(YamlObject &yamlObject, EventPtr even
 				return -EINVAL;
 			}
 
-			return parseNextYamlObject(*child, std::move(evtValue));
+			return parseNextNode(*child, std::move(evtValue));
 		};
 		int ret = parseDictionaryOrList(YAML_MAPPING_END_EVENT, handler);
 		if (ret)
@@ -323,7 +323,7 @@ int YamlParserContext::parseNextYamlObject(YamlObject &yamlObject, EventPtr even
  * \brief A helper class for parsing a YAML file
  *
  * The YamlParser class provides an easy interface to parse the contents of a
- * YAML file into a tree of YamlObject instances.
+ * YAML file into a tree of ValueNode instances.
  *
  * Example usage:
  *
@@ -341,17 +341,17 @@ int YamlParserContext::parseNextYamlObject(YamlObject &yamlObject, EventPtr even
  *
  * \code{.cpp}
  *
- * std::unique_ptr<YamlObject> root = YamlParser::parse(fh);
+ * std::unique_ptr<ValueNode> root = YamlParser::parse(fh);
  * if (!root)
  *   return;
  *
  * if (!root->isDictionary())
  *   return;
  *
- * const YamlObject &name = (*root)["name"];
+ * const ValueNode &name = (*root)["name"];
  * std::cout << name.get<std::string>("") << std::endl;
  *
- * const YamlObject &numbers = (*root)["numbers"];
+ * const ValueNode &numbers = (*root)["numbers"];
  * if (!numbers.isList())
  *   return;
  *
@@ -361,7 +361,7 @@ int YamlParserContext::parseNextYamlObject(YamlObject &yamlObject, EventPtr even
  * \endcode
  *
  * The YamlParser::parse() function takes an open FILE, parses its contents, and
- * returns a pointer to a YamlObject corresponding to the root node of the YAML
+ * returns a pointer to a ValueNode corresponding to the root node of the YAML
  * document.
  *
  * The parser preserves the order of items in the YAML file, for both lists and
@@ -369,23 +369,23 @@ int YamlParserContext::parseNextYamlObject(YamlObject &yamlObject, EventPtr even
  */
 
 /**
- * \brief Parse a YAML file as a YamlObject
+ * \brief Parse a YAML file as a ValueNode
  * \param[in] file The YAML file to parse
  *
  * The YamlParser::parse() function takes a file, parses its contents, and
- * returns a pointer to a YamlObject corresponding to the root node of the YAML
+ * returns a pointer to a ValueNode corresponding to the root node of the YAML
  * document.
  *
- * \return Pointer to result YamlObject on success or nullptr otherwise
+ * \return Pointer to result ValueNode on success or nullptr otherwise
  */
-std::unique_ptr<YamlObject> YamlParser::parse(File &file)
+std::unique_ptr<ValueNode> YamlParser::parse(File &file)
 {
 	YamlParserContext context;
 
 	if (context.init(file))
 		return nullptr;
 
-	std::unique_ptr<YamlObject> root = std::make_unique<YamlObject>();
+	std::unique_ptr<ValueNode> root = std::make_unique<ValueNode>();
 
 	if (context.parseContent(*root)) {
 		LOG(YamlParser, Error)

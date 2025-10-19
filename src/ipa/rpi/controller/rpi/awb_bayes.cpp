@@ -41,14 +41,14 @@ constexpr double kDefaultCT = 4500.0;
 namespace RPiController {
 
 struct AwbPrior {
-	int read(const libcamera::YamlObject &params);
+	int read(const libcamera::ValueNode &params);
 	double lux; /* lux level */
 	libcamera::ipa::Pwl prior; /* maps CT to prior log likelihood for this lux level */
 };
 
 struct AwbBayesConfig {
 	AwbBayesConfig() {}
-	int read(const libcamera::YamlObject &params, AwbConfig &config);
+	int read(const libcamera::ValueNode &params, AwbConfig &config);
 	/* table of illuminant priors at different lux levels */
 	std::vector<AwbPrior> priors;
 	/*
@@ -81,7 +81,7 @@ public:
 	AwbBayes(Controller *controller = NULL);
 	~AwbBayes();
 	char const *name() const override;
-	int read(const libcamera::YamlObject &params) override;
+	int read(const libcamera::ValueNode &params) override;
 
 protected:
 	void prepareStats() override;
@@ -96,7 +96,7 @@ private:
 	std::vector<libcamera::ipa::Pwl::Point> points_;
 };
 
-int AwbPrior::read(const libcamera::YamlObject &params)
+int AwbPrior::read(const libcamera::ValueNode &params)
 {
 	auto value = params["lux"].get<double>();
 	if (!value)
@@ -107,7 +107,7 @@ int AwbPrior::read(const libcamera::YamlObject &params)
 	return prior.empty() ? -EINVAL : 0;
 }
 
-int AwbBayesConfig::read(const libcamera::YamlObject &params, AwbConfig &config)
+int AwbBayesConfig::read(const libcamera::ValueNode &params, AwbConfig &config)
 {
 	int ret;
 
@@ -175,7 +175,7 @@ char const *AwbBayes::name() const
 	return NAME;
 }
 
-int AwbBayes::read(const libcamera::YamlObject &params)
+int AwbBayes::read(const libcamera::ValueNode &params)
 {
 	int ret;
 

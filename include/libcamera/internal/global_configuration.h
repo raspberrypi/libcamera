@@ -14,14 +14,14 @@
 
 #include <libcamera/base/utils.h>
 
-#include "libcamera/internal/yaml_object.h"
+#include "libcamera/internal/value_node.h"
 
 namespace libcamera {
 
 class GlobalConfiguration
 {
 public:
-	using Configuration = const YamlObject &;
+	using Configuration = const ValueNode &;
 
 	GlobalConfiguration();
 
@@ -32,7 +32,7 @@ public:
 	std::optional<T> option(
 		const std::initializer_list<std::string_view> confPath) const
 	{
-		const YamlObject *c = &configuration();
+		const ValueNode *c = &configuration();
 		for (auto part : confPath) {
 			c = &(*c)[part];
 			if (!*c)
@@ -55,8 +55,8 @@ private:
 	bool loadFile(const std::filesystem::path &fileName);
 	void load();
 
-	std::unique_ptr<YamlObject> yamlConfiguration_ =
-		std::make_unique<YamlObject>();
+	std::unique_ptr<ValueNode> yamlConfiguration_ =
+		std::make_unique<ValueNode>();
 };
 
 } /* namespace libcamera */

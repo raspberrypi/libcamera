@@ -131,7 +131,7 @@ Agc::Agc()
 {
 }
 
-int Agc::init(IPAContext &context, const YamlObject &tuningData)
+int Agc::init(IPAContext &context, const ValueNode &tuningData)
 {
 	int ret = parseTuningData(tuningData);
 	if (ret)

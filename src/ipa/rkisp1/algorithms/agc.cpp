@@ -19,7 +19,7 @@
 #include <libcamera/control_ids.h>
 #include <libcamera/ipa/core_ipa_interface.h>
 
-#include "libcamera/internal/yaml_object.h"
+#include "libcamera/internal/value_node.h"
 
 #include "libipa/histogram.h"
 
@@ -40,7 +40,7 @@ namespace ipa::rkisp1::algorithms {
 
 LOG_DEFINE_CATEGORY(RkISP1Agc)
 
-int Agc::parseMeteringModes(IPAContext &context, const YamlObject &tuningData)
+int Agc::parseMeteringModes(IPAContext &context, const ValueNode &tuningData)
 {
 	if (!tuningData.isDictionary())
 		LOG(RkISP1Agc, Warning)
@@ -127,14 +127,14 @@ Agc::Agc()
 /**
  * \brief Initialise the AGC algorithm from tuning files
  * \param[in] context The shared IPA context
- * \param[in] tuningData The YamlObject containing Agc tuning data
+ * \param[in] tuningData The ValueNode containing Agc tuning data
  *
  * This function calls the base class' tuningData parsers to discover which
  * control values are supported.
  *
  * \return 0 on success or errors from the base class
  */
-int Agc::init(IPAContext &context, const YamlObject &tuningData)
+int Agc::init(IPAContext &context, const ValueNode &tuningData)
 {
 	int ret;
 
@@ -142,7 +142,7 @@ int Agc::init(IPAContext &context, const YamlObject &tuningData)
 	if (ret)
 		return ret;
 
-	const YamlObject &yamlMeteringModes = tuningData["AeMeteringMode"];
+	const ValueNode &yamlMeteringModes = tuningData["AeMeteringMode"];
 	ret = parseMeteringModes(context, yamlMeteringModes);
 	if (ret)
 		return ret;

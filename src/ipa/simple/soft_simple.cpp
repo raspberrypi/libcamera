@@ -118,7 +118,7 @@ int IPASoftSimple::init(const IPASettings &settings,
 		return ret;
 	}
 
-	std::unique_ptr<libcamera::YamlObject> data = YamlParser::parse(file);
+	std::unique_ptr<ValueNode> data = YamlParser::parse(file);
 	if (!data)
 		return -EINVAL;
 

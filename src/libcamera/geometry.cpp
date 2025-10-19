@@ -12,7 +12,7 @@
 
 #include <libcamera/base/log.h>
 
-#include "libcamera/internal/yaml_object.h"
+#include "libcamera/internal/value_node.h"
 
 /**
  * \file geometry.h
@@ -933,7 +933,7 @@ std::ostream &operator<<(std::ostream &out, const Rectangle &r)
  */
 template<>
 std::optional<Size>
-YamlObject::Accessor<Size>::get(const YamlObject &obj) const
+ValueNode::Accessor<Size>::get(const ValueNode &obj) const
 {
 	if (obj.type_ != Type::List)
 		return std::nullopt;

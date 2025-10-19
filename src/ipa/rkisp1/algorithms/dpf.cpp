@@ -45,7 +45,7 @@ Dpf::Dpf()
  * \copydoc libcamera::ipa::Algorithm::init
  */
 int Dpf::init([[maybe_unused]] IPAContext &context,
-	      const YamlObject &tuningData)
+	      const ValueNode &tuningData)
 {
 	std::vector<uint8_t> values;
 
@@ -53,7 +53,7 @@ int Dpf::init([[maybe_unused]] IPAContext &context,
 	 * The domain kernel is configured with a 9x9 kernel for the green
 	 * pixels, and a 13x9 or 9x9 kernel for red and blue pixels.
 	 */
-	const YamlObject &dFObject = tuningData["DomainFilter"];
+	const ValueNode &dFObject = tuningData["DomainFilter"];
 
 	/*
 	 * For the green component, we have the 9x9 kernel specified
@@ -134,7 +134,7 @@ int Dpf::init([[maybe_unused]] IPAContext &context,
 	 * which stores a piecewise linear function that characterizes the
 	 * sensor noise profile as a noise level function curve (NLF).
 	 */
-	const YamlObject &rFObject = tuningData["NoiseLevelFunction"];
+	const ValueNode &rFObject = tuningData["NoiseLevelFunction"];
 
 	std::vector<uint16_t> nllValues;
 	nllValues = rFObject["coeff"].get<std::vector<uint16_t>>().value_or(std::vector<uint16_t>{});
@@ -162,7 +162,7 @@ int Dpf::init([[maybe_unused]] IPAContext &context,
 		return -EINVAL;
 	}
 
-	const YamlObject &fSObject = tuningData["FilterStrength"];
+	const ValueNode &fSObject = tuningData["FilterStrength"];
 
 	strengthConfig_.r = fSObject["r"].get<uint16_t>(64);
 	strengthConfig_.g = fSObject["g"].get<uint16_t>(64);

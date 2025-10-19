@@ -28,7 +28,7 @@ public:
 	Agc();
 	~Agc() = default;
 
-	int init(IPAContext &context, const YamlObject &tuningData) override;
+	int init(IPAContext &context, const ValueNode &tuningData) override;
 	int configure(IPAContext &context, const IPACameraSensorInfo &configInfo) override;
 	void queueRequest(IPAContext &context,
 			  const uint32_t frame,
@@ -43,7 +43,7 @@ public:
 		     ControlList &metadata) override;
 
 private:
-	int parseMeteringModes(IPAContext &context, const YamlObject &tuningData);
+	int parseMeteringModes(IPAContext &context, const ValueNode &tuningData);
 	uint8_t computeHistogramPredivider(const Size &size,
 					   enum rkisp1_cif_isp_histogram_mode mode);
 

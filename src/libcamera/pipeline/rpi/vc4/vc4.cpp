@@ -69,7 +69,7 @@ public:
 
 	CameraConfiguration::Status platformValidate(RPi::RPiCameraConfiguration *rpiConfig) const override;
 
-	int platformPipelineConfigure(const std::unique_ptr<YamlObject> &root) override;
+	int platformPipelineConfigure(const std::unique_ptr<ValueNode> &root) override;
 
 	void platformStart() override;
 	void platformStop() override;
@@ -498,7 +498,7 @@ CameraConfiguration::Status Vc4CameraData::platformValidate(RPi::RPiCameraConfig
 	return status;
 }
 
-int Vc4CameraData::platformPipelineConfigure(const std::unique_ptr<YamlObject> &root)
+int Vc4CameraData::platformPipelineConfigure(const std::unique_ptr<ValueNode> &root)
 {
 	config_ = {
 		.minUnicamBuffers = 2,
@@ -521,7 +521,7 @@ int Vc4CameraData::platformPipelineConfigure(const std::unique_ptr<YamlObject> &
 		return -EINVAL;
 	}
 
-	const YamlObject &phConfig = (*root)["pipeline_handler"];
+	const ValueNode &phConfig = (*root)["pipeline_handler"];
 	config_.minUnicamBuffers =
 		phConfig["min_unicam_buffers"].get<unsigned int>(config_.minUnicamBuffers);
 	config_.minTotalUnicamBuffers =

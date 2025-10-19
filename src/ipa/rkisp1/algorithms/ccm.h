@@ -25,7 +25,7 @@ public:
 	Ccm() {}
 	~Ccm() = default;
 
-	int init(IPAContext &context, const YamlObject &tuningData) override;
+	int init(IPAContext &context, const ValueNode &tuningData) override;
 	int configure(IPAContext &context,
 		      const IPACameraSensorInfo &configInfo) override;
 	void queueRequest(IPAContext &context,
@@ -41,7 +41,7 @@ public:
 		     ControlList &metadata) override;
 
 private:
-	void parseYaml(const YamlObject &tuningData);
+	void parseYaml(const ValueNode &tuningData);
 	void setParameters(struct rkisp1_cif_isp_ctk_config &config,
 			   const Matrix<float, 3, 3> &matrix,
 			   const Matrix<int16_t, 3, 1> &offsets);

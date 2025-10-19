@@ -41,7 +41,7 @@ namespace ipa {
  *
  * \return 0 on success, a negative error code otherwise
  */
-int AwbGrey::init(const YamlObject &tuningData)
+int AwbGrey::init(const ValueNode &tuningData)
 {
 	Interpolator<Vector<double, 2>> gains;
 	int ret = gains.readYaml(tuningData["colourGains"], "ct", "gains");

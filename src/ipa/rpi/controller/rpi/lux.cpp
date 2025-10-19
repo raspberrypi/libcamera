@@ -35,7 +35,7 @@ char const *Lux::name() const
 	return NAME;
 }
 
-int Lux::read(const libcamera::YamlObject &params)
+int Lux::read(const libcamera::ValueNode &params)
 {
 	auto value = params["reference_shutter_speed"].get<double>();
 	if (!value)

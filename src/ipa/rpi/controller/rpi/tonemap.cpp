@@ -27,7 +27,7 @@ char const *Tonemap::name() const
 	return NAME;
 }
 
-int Tonemap::read(const libcamera::YamlObject &params)
+int Tonemap::read(const libcamera::ValueNode &params)
 {
 	config_.detailConstant = params["detail_constant"].get<uint16_t>(0);
 	config_.detailSlope = params["detail_slope"].get<double>(0.1);

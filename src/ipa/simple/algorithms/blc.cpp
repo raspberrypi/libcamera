@@ -24,7 +24,7 @@ BlackLevel::BlackLevel()
 }
 
 int BlackLevel::init([[maybe_unused]] IPAContext &context,
-		     const YamlObject &tuningData)
+		     const ValueNode &tuningData)
 {
 	auto blackLevel = tuningData["blackLevel"].get<int16_t>();
 	if (blackLevel.has_value()) {

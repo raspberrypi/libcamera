@@ -97,7 +97,7 @@ ConverterDW100Module::createModule(DeviceEnumerator *enumerator)
  * \sa Dw100VertexMap::setDewarpParams()
  * \return 0 if successful, an error code otherwise
  */
-int ConverterDW100Module::init(const YamlObject &params)
+int ConverterDW100Module::init(const ValueNode &params)
 {
 	DewarpParms dp;
 

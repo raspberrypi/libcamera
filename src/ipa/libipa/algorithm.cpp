@@ -44,7 +44,7 @@ namespace ipa {
  * \param[in] tuningData The tuning data for the algorithm
  *
  * This function is called once, when the IPA module is initialized, to
- * initialize the algorithm. The \a tuningData YamlObject contains the tuning
+ * initialize the algorithm. The \a tuningData ValueNode contains the tuning
  * data for algorithm.
  *
  * \return 0 if successful, an error code otherwise

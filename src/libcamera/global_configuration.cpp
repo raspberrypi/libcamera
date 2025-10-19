@@ -65,7 +65,7 @@ bool GlobalConfiguration::loadFile(const std::filesystem::path &fileName)
 		return true;
 	}
 
-	std::unique_ptr<YamlObject> configuration = YamlParser::parse(file);
+	std::unique_ptr<ValueNode> configuration = YamlParser::parse(file);
 	if (!configuration) {
 		LOG(Configuration, Error)
 			<< "Failed to parse configuration file " << fileName;
@@ -146,7 +146,7 @@ GlobalConfiguration::GlobalConfiguration()
 std::optional<std::vector<std::string>> GlobalConfiguration::listOption(
 	const std::initializer_list<std::string_view> confPath) const
 {
-	const YamlObject *c = &configuration();
+	const ValueNode *c = &configuration();
 	for (auto part : confPath) {
 		c = &(*c)[part];
 		if (!*c)
@@ -237,10 +237,10 @@ unsigned int GlobalConfiguration::version() const
  * This returns the whole configuration stored in the top-level section
  * `%configuration` of the YAML configuration file.
  *
- * The requested part of the configuration can be accessed using \a YamlObject
+ * The requested part of the configuration can be accessed using \a ValueNode
  * methods.
  *
- * \note \a YamlObject type itself shouldn't be used in type declarations to
+ * \note \a ValueNode type itself shouldn't be used in type declarations to
  * avoid trouble if we decide to change the underlying data objects in future.
  *
  * \return The whole configuration section

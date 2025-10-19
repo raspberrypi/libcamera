@@ -23,7 +23,7 @@ LOG_DEFINE_CATEGORY(RPiHdr)
 
 #define NAME "rpi.hdr"
 
-void HdrConfig::read(const libcamera::YamlObject &params, const std::string &modeName)
+void HdrConfig::read(const libcamera::ValueNode &params, const std::string &modeName)
 {
 	name = modeName;
 
@@ -111,7 +111,7 @@ char const *Hdr::name() const
 	return NAME;
 }
 
-int Hdr::read(const libcamera::YamlObject &params)
+int Hdr::read(const libcamera::ValueNode &params)
 {
 	/* Make an "HDR off" mode by default so that tuning files don't have to. */
 	HdrConfig &offMode = config_["Off"];

@@ -118,7 +118,7 @@ int IPAMaliC55::init(const IPASettings &settings, const IPAConfigInfo &ipaConfig
 		return ret;
 	}
 
-	std::unique_ptr<libcamera::YamlObject> data = YamlParser::parse(file);
+	std::unique_ptr<ValueNode> data = YamlParser::parse(file);
 	if (!data)
 		return -EINVAL;
 

@@ -94,7 +94,7 @@ protected:
 		Dictionary,
 	};
 
-	int testObjectType(const YamlObject &obj, const char *name, Type type)
+	int testObjectType(const ValueNode &obj, const char *name, Type type)
 	{
 		bool isList = type == Type::List || type == Type::Size;
 		bool isScalar = !isList && type != Type::Dictionary;
@@ -194,7 +194,7 @@ protected:
 		return TestPass;
 	}
 
-	int testIntegerObject(const YamlObject &obj, const char *name, Type type,
+	int testIntegerObject(const ValueNode &obj, const char *name, Type type,
 			      int64_t value)
 	{
 		uint64_t unsignedValue = static_cast<uint64_t>(value);
@@ -292,7 +292,7 @@ protected:
 			return TestFail;
 		}
 
-		std::unique_ptr<YamlObject> root = YamlParser::parse(file);
+		std::unique_ptr<ValueNode> root = YamlParser::parse(file);
 		if (root) {
 			cerr << "Invalid YAML file parse successfully" << std::endl;
 			return TestFail;

@@ -7,7 +7,7 @@
 
 #include "lsc.h"
 
-#include "libcamera/internal/yaml_object.h"
+#include "libcamera/internal/value_node.h"
 
 namespace libcamera {
 
@@ -15,7 +15,7 @@ namespace ipa::mali_c55::algorithms {
 
 LOG_DEFINE_CATEGORY(MaliC55Lsc)
 
-int Lsc::init([[maybe_unused]] IPAContext &context, const YamlObject &tuningData)
+int Lsc::init([[maybe_unused]] IPAContext &context, const ValueNode &tuningData)
 {
 	if (!tuningData.contains("meshScale")) {
 		LOG(MaliC55Lsc, Error) << "meshScale missing from tuningData";
@@ -24,7 +24,7 @@ int Lsc::init([[maybe_unused]] IPAContext &context, const YamlObject &tuningData
 
 	meshScale_ = tuningData["meshScale"].get<uint32_t>(0);
 
-	const YamlObject &yamlSets = tuningData["sets"];
+	const ValueNode &yamlSets = tuningData["sets"];
 	if (!yamlSets.isList()) {
 		LOG(MaliC55Lsc, Error) << "LSC tables missing or invalid";
 		return -EINVAL;

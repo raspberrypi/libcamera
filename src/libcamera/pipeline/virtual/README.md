@@ -51,7 +51,7 @@ in Virtual Pipeline Handler. `parseConfigFile()` is exposed to use in
 Virtual Pipeline Handler.
 
 This is the procedure of the Parser class:
-1. `parseConfigFile()` parses the config file to `YamlObject` using `YamlParser::parse()`.
+1. `parseConfigFile()` parses the config file to `ValueNode` using `YamlParser::parse()`.
     - Parse the top level of config file which are the camera ids and look into
       each camera properties.
 2. For each camera, `parseCameraConfigData()` returns a camera with the configuration.

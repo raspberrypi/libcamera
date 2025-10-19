@@ -1122,7 +1122,7 @@ int CameraData::loadPipelineConfiguration()
 
 	LOG(RPI, Info) << "Using configuration file '" << filename << "'";
 
-	std::unique_ptr<YamlObject> root = YamlParser::parse(file);
+	std::unique_ptr<ValueNode> root = YamlParser::parse(file);
 	if (!root) {
 		LOG(RPI, Warning) << "Failed to parse configuration file, using defaults";
 		return 0;
@@ -1135,7 +1135,7 @@ int CameraData::loadPipelineConfiguration()
 		return 0;
 	}
 
-	const YamlObject &phConfig = (*root)["pipeline_handler"];
+	const ValueNode &phConfig = (*root)["pipeline_handler"];
 
 	if (phConfig.contains("disable_startup_frame_drops"))
 		LOG(RPI, Warning)

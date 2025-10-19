@@ -9,7 +9,7 @@
 
 using namespace RPiController;
 
-int Algorithm::read([[maybe_unused]] const libcamera::YamlObject &params)
+int Algorithm::read([[maybe_unused]] const libcamera::ValueNode &params)
 {
 	return 0;
 }

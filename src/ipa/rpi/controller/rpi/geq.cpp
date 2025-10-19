@@ -34,7 +34,7 @@ char const *Geq::name() const
 	return NAME;
 }
 
-int Geq::read(const libcamera::YamlObject &params)
+int Geq::read(const libcamera::ValueNode &params)
 {
 	config_.offset = params["offset"].get<uint16_t>(0);
 	config_.slope = params["slope"].get<double>(0.0);

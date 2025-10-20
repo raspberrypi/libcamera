@@ -22,6 +22,8 @@
 
 #include "libcamera/internal/camera_manager.h"
 #include "libcamera/internal/device_enumerator.h"
+#include "libcamera/internal/global_configuration.h"
+#include "libcamera/internal/ipa_manager.h"
 #include "libcamera/internal/ipa_module.h"
 #include "libcamera/internal/pipeline_handler.h"
 
@@ -43,6 +45,8 @@ public:
 	{
 		delete notifier_;
 		ipa_.reset();
+		ipaManager_.reset();
+		config_.reset();
 		cameraManager_.reset();
 	}
 
@@ -90,6 +94,10 @@ protected:
 		notifier_ = new EventNotifier(fd_, EventNotifier::Read, this);
 		notifier_->activated.connect(this, &IPAInterfaceTest::readTrace);
 
+		/* Create the IPA manager. */
+		config_ = std::make_unique<GlobalConfiguration>();
+		ipaManager_ = std::make_unique<IPAManager>(*config_);
+
 		return TestPass;
 	}
 
@@ -98,7 +106,7 @@ protected:
 		EventDispatcher *dispatcher = thread()->eventDispatcher();
 		Timer timer;
 
-		ipa_ = pipe_->createIPA<ipa::vimc::IPAProxyVimc>(0, 0);
+		ipa_ = ipaManager_->createIPA<ipa::vimc::IPAProxyVimc>(pipe_.get(), 0, 0);
 		if (!ipa_) {
 			cerr << "Failed to create VIMC IPA interface" << endl;
 			return TestFail;
@@ -173,6 +181,8 @@ private:
 	std::shared_ptr<PipelineHandler> pipe_;
 	std::unique_ptr<ipa::vimc::IPAProxyVimc> ipa_;
 	std::unique_ptr<CameraManager> cameraManager_;
+	std::unique_ptr<GlobalConfiguration> config_;
+	std::unique_ptr<IPAManager> ipaManager_;
 	enum ipa::vimc::IPAOperationCode trace_;
 	EventNotifier *notifier_;
 	int fd_;

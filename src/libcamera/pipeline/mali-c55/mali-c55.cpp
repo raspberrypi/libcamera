@@ -35,7 +35,6 @@
 #include "libcamera/internal/delayed_controls.h"
 #include "libcamera/internal/device_enumerator.h"
 #include "libcamera/internal/framebuffer.h"
-#include "libcamera/internal/ipa_manager.h"
 #include "libcamera/internal/media_device.h"
 #include "libcamera/internal/pipeline_handler.h"
 #include "libcamera/internal/request.h"
@@ -382,7 +381,7 @@ int MaliC55CameraData::loadIPA()
 	if (!sensor_)
 		return 0;
 
-	ipa_ = IPAManager::createIPA<ipa::mali_c55::IPAProxyMaliC55>(pipe(), 1, 1);
+	ipa_ = pipe()->createIPA<ipa::mali_c55::IPAProxyMaliC55>(1, 1);
 	if (!ipa_)
 		return -ENOENT;
 

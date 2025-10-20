@@ -20,7 +20,6 @@
 #include <libcamera/property_ids.h>
 
 #include "libcamera/internal/camera_lens.h"
-#include "libcamera/internal/ipa_manager.h"
 #include "libcamera/internal/v4l2_subdevice.h"
 
 using namespace std::chrono_literals;
@@ -1161,7 +1160,7 @@ int CameraData::loadIPA(ipa::RPi::InitResult *result)
 {
 	int ret;
 
-	ipa_ = IPAManager::createIPA<ipa::RPi::IPAProxyRPi>(pipe(), 1, 1);
+	ipa_ = pipe()->createIPA<ipa::RPi::IPAProxyRPi>(1, 1);
 
 	if (!ipa_)
 		return -ENOENT;

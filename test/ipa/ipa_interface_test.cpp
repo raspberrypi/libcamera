@@ -22,7 +22,6 @@
 
 #include "libcamera/internal/camera_manager.h"
 #include "libcamera/internal/device_enumerator.h"
-#include "libcamera/internal/ipa_manager.h"
 #include "libcamera/internal/ipa_module.h"
 #include "libcamera/internal/pipeline_handler.h"
 
@@ -99,7 +98,7 @@ protected:
 		EventDispatcher *dispatcher = thread()->eventDispatcher();
 		Timer timer;
 
-		ipa_ = IPAManager::createIPA<ipa::vimc::IPAProxyVimc>(pipe_.get(), 0, 0);
+		ipa_ = pipe_->createIPA<ipa::vimc::IPAProxyVimc>(0, 0);
 		if (!ipa_) {
 			cerr << "Failed to create VIMC IPA interface" << endl;
 			return TestFail;

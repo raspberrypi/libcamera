@@ -387,20 +387,20 @@ In the pipeline handler, we first need to construct a specialized IPA proxy.
 From the point of view of the pipeline hander, this is the object that is the
 IPA.
 
-To do so, we invoke the IPAManager:
+To do so, we call the PipelineHandler::createIPA() function:
 
 .. code-block:: C++
 
         std::unique_ptr<ipa::rpi::IPAProxyRPi> ipa_ =
-                IPAManager::createIPA<ipa::rpi::IPAProxyRPi>(pipe_, 1, 1);
+                pipe_->createIPA<ipa::rpi::IPAProxyRPi>(1, 1);
 
 The ipa::rpi namespace comes from the namespace that we defined in the mojo
 data definition file, in the "Namespacing" section. The name of the proxy,
 IPAProxyRPi, comes from the name given to the main IPA interface,
 IPARPiInterface, in the "The Main IPA interface" section.
 
-The return value of IPAManager::createIPA shall be error-checked, to confirm
-that the returned pointer is not a nullptr.
+The return value of createIPA() shall be error-checked, to confirm that the
+returned pointer is not a nullptr.
 
 After this, before initializing the IPA, slots should be connected to all of
 the IPA's signals, as defined in the Event IPA interface:

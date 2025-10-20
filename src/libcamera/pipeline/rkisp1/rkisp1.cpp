@@ -40,7 +40,6 @@
 #include "libcamera/internal/delayed_controls.h"
 #include "libcamera/internal/device_enumerator.h"
 #include "libcamera/internal/framebuffer.h"
-#include "libcamera/internal/ipa_manager.h"
 #include "libcamera/internal/media_device.h"
 #include "libcamera/internal/media_pipeline.h"
 #include "libcamera/internal/pipeline_handler.h"
@@ -395,7 +394,7 @@ const PipelineHandlerRkISP1 *RkISP1CameraData::pipe() const
 
 int RkISP1CameraData::loadIPA(unsigned int hwRevision, uint32_t supportedBlocks)
 {
-	ipa_ = IPAManager::createIPA<ipa::rkisp1::IPAProxyRkISP1>(pipe(), 1, 1);
+	ipa_ = pipe()->createIPA<ipa::rkisp1::IPAProxyRkISP1>(1, 1);
 	if (!ipa_)
 		return -ENOENT;
 

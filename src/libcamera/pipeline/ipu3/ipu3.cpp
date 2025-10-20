@@ -31,7 +31,6 @@
 #include "libcamera/internal/delayed_controls.h"
 #include "libcamera/internal/device_enumerator.h"
 #include "libcamera/internal/framebuffer.h"
-#include "libcamera/internal/ipa_manager.h"
 #include "libcamera/internal/media_device.h"
 #include "libcamera/internal/pipeline_handler.h"
 #include "libcamera/internal/request.h"
@@ -1151,7 +1150,7 @@ int PipelineHandlerIPU3::registerCameras()
 
 int IPU3CameraData::loadIPA()
 {
-	ipa_ = IPAManager::createIPA<ipa::ipu3::IPAProxyIPU3>(pipe(), 1, 1);
+	ipa_ = pipe()->createIPA<ipa::ipu3::IPAProxyIPU3>(1, 1);
 	if (!ipa_)
 		return -ENOENT;
 

@@ -105,6 +105,7 @@ LOG_DEFINE_CATEGORY(IPAManager)
  * CameraManager.
  */
 IPAManager::IPAManager(const GlobalConfiguration &configuration)
+	: configuration_(configuration)
 {
 #if HAVE_IPA_PUBKEY
 	if (!pubKey_.isValid())

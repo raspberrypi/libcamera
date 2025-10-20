@@ -498,7 +498,7 @@ bool PipelineHandlerVimc::match(DeviceEnumerator *enumerator)
 	std::string conf = data->ipa_->configurationFile("vimc.conf");
 	Flags<ipa::vimc::TestFlag> inFlags = ipa::vimc::TestFlag::Flag2;
 	Flags<ipa::vimc::TestFlag> outFlags;
-	data->ipa_->init(IPASettings{ conf, data->sensor_->model() },
+	data->ipa_->init(IPASettings{ conf, data->sensor_->model() }, SharedFD{},
 			 ipa::vimc::IPAOperationInit, inFlags, &outFlags);
 
 	LOG(VIMC, Debug)

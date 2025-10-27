@@ -355,18 +355,10 @@ private:
 } /* namespace details */
 
 template<typename T>
-auto enumerate(T &iterable) -> details::enumerate_adapter<decltype(iterable.begin())>
+auto enumerate(T &iterable)
 {
-	return { std::begin(iterable), std::end(iterable) };
+	return details::enumerate_adapter{ std::begin(iterable), std::end(iterable) };
 }
-
-#ifndef __DOXYGEN__
-template<typename T, size_t N>
-auto enumerate(T (&iterable)[N]) -> details::enumerate_adapter<T *>
-{
-	return { std::begin(iterable), std::end(iterable) };
-}
-#endif
 
 class Duration : public std::chrono::duration<double, std::nano>
 {

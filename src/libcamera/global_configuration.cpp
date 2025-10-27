@@ -37,7 +37,7 @@ LOG_DEFINE_CATEGORY(Configuration)
  * \brief Support for global libcamera configuration
  *
  * The configuration file is a YAML file and the configuration itself is stored
- * under a `configuration' top-level item.
+ * under a `%configuration` top-level item.
  *
  * The configuration file is looked up in the user's home directory first and,
  * if it is not found, then in system-wide configuration directories. If
@@ -132,7 +132,7 @@ GlobalConfiguration::GlobalConfiguration()
  * \brief Retrieve the value of configuration option \a confPath
  * \tparam T The type of the retrieved configuration value
  * \param[in] confPath Sequence of the YAML section names (excluding
- * `configuration') leading to the requested option
+ * `%configuration`) leading to the requested option
  * \return The value of the configuration item corresponding to \a confPath if
  * it exists in the configuration file, or no value otherwise
  */
@@ -140,7 +140,7 @@ GlobalConfiguration::GlobalConfiguration()
 /**
  * \brief Retrieve the value of configuration option \a confPath
  * \param[in] confPath Sequence of the YAML section names (excluding
- * `configuration') leading to the requested list option, separated by dots
+ * `%configuration`) leading to the requested list option, separated by dots
  * \return A vector of strings or no value if not found
  */
 std::optional<std::vector<std::string>> GlobalConfiguration::listOption(
@@ -219,8 +219,8 @@ std::optional<std::vector<std::string>> GlobalConfiguration::envListOption(
 /**
  * \brief Retrieve the configuration version
  *
- * The version is declared in the configuration file in the top-level `version'
- * element, alongside `configuration'. This has currently no real use but may be
+ * The version is declared in the configuration file in the top-level `%version`
+ * element, alongside `%configuration`. This has currently no real use but may be
  * needed in future if configuration incompatibilities occur.
  *
  * \return Configuration version as declared in the configuration file or 0 if
@@ -235,7 +235,7 @@ unsigned int GlobalConfiguration::version() const
  * \brief Retrieve the libcamera global configuration
  *
  * This returns the whole configuration stored in the top-level section
- * `configuration' of the YAML configuration file.
+ * `%configuration` of the YAML configuration file.
  *
  * The requested part of the configuration can be accessed using \a YamlObject
  * methods.

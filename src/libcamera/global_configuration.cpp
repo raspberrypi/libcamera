@@ -24,11 +24,13 @@
 namespace libcamera {
 
 namespace {
+
 const std::vector<std::filesystem::path> globalConfigurationFiles = {
 	std::filesystem::path(LIBCAMERA_SYSCONF_DIR) / "configuration.yaml",
 	std::filesystem::path(LIBCAMERA_DATA_DIR) / "configuration.yaml",
 };
-}
+
+} /* namespace */
 
 LOG_DEFINE_CATEGORY(Configuration)
 

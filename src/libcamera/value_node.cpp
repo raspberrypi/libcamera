@@ -44,6 +44,13 @@ ValueNode::ValueNode()
 {
 }
 
+/**
+ * \fn template<typename T> ValueNode::ValueNode(T &&value)
+ * \brief Construct a ValueNode instance with a value
+ * \tparam T Type of the value
+ * \param[in] value The value
+ */
+
 ValueNode::~ValueNode() = default;
 
 /**

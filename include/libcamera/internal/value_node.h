@@ -143,6 +143,14 @@ public:
 #endif /* __DOXYGEN__ */
 
 	ValueNode();
+
+	template<typename T>
+	ValueNode(T &&value)
+		: type_(Type::Empty)
+	{
+		set(std::forward<T>(value));
+	}
+
 	~ValueNode();
 
 	bool isValue() const

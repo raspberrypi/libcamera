@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <initializer_list>
 #include <iterator>
 #include <map>
 #include <memory>
@@ -239,6 +240,8 @@ public:
 
 	ValueNode *add(std::unique_ptr<ValueNode> &&child);
 	ValueNode *add(std::string key, std::unique_ptr<ValueNode> &&child);
+	ValueNode *add(std::initializer_list<std::string_view> path,
+		       std::unique_ptr<ValueNode> &&child);
 
 private:
 	LIBCAMERA_DISABLE_COPY_AND_MOVE(ValueNode)

@@ -491,6 +491,29 @@ const ValueNode &ValueNode::operator[](std::string_view key) const
 }
 
 /**
+ * \brief Retrieve a descendant node by path
+ * \param[in] path The path
+ *
+ * This function retrieves a descendant of a ValueNode by following a \a path.
+ * The path is a list of keys that index nested dictionary nodes. If any node
+ * along the path is not a Dictionary node, an empty node is returned.
+ *
+ * \return The ValueNode corresponding to the \a path
+ */
+const ValueNode &ValueNode::operator[](std::initializer_list<std::string_view> path) const
+{
+	const ValueNode *node = this;
+
+	for (const auto &part : path) {
+		node = &(*node)[part];
+		if (!*node)
+			return empty;
+	}
+
+	return *node;
+}
+
+/**
  * \brief Add a child node to a list
  * \param[in] child The child node
  *

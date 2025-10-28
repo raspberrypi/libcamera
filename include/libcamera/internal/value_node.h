@@ -237,6 +237,7 @@ public:
 	bool contains(std::string_view key) const;
 	ValueNode *at(std::string_view key);
 	const ValueNode &operator[](std::string_view key) const;
+	const ValueNode &operator[](std::initializer_list<std::string_view> path) const;
 
 	ValueNode *add(std::unique_ptr<ValueNode> &&child);
 	ValueNode *add(std::string key, std::unique_ptr<ValueNode> &&child);

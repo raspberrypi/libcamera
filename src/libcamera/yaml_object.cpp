@@ -81,7 +81,6 @@ YamlObject::~YamlObject() = default;
  */
 
 /**
- * \fn YamlObject::size()
  * \brief Retrieve the number of elements in a dictionary or list YamlObject
  *
  * This function retrieves the size of the YamlObject, defined as the number of
@@ -104,8 +103,8 @@ std::size_t YamlObject::size() const
 
 /**
  * \fn template<typename T> YamlObject::get<T>() const
- * \tparam T Type of the value
  * \brief Parse the YamlObject as a \a T value
+ * \tparam T Type of the value
  *
  * This function parses the value of the YamlObject as a \a T object, and
  * returns the value. If parsing fails (usually because the YamlObject doesn't
@@ -120,11 +119,14 @@ std::size_t YamlObject::size() const
 /**
  * \fn template<typename T, typename U> YamlObject::get<T>(U &&defaultValue) const
  * \brief Parse the YamlObject as a \a T value
+ * \tparam T Type of the value
+ * \tparam U Type of the default value
  * \param[in] defaultValue The default value when failing to parse
  *
  * This function parses the value of the YamlObject as a \a T object, and
  * returns the value. If parsing fails (usually because the YamlObject doesn't
- * store a \a T value), the \a defaultValue is returned.
+ * store a \a T value), the \a defaultValue is returned. Type \a U must be
+ * convertible to type \a T.
  *
  * Unlike the get() function, this overload does not support std::vector for the
  * type \a T.
@@ -135,6 +137,7 @@ std::size_t YamlObject::size() const
 /**
  * \fn template<typename T> YamlObject::set<T>(T &&value)
  * \brief Set the value of a YamlObject
+ * \tparam T Type of the value
  * \param[in] value The value
  *
  * This function sets the value stored in a YamlObject to \a value. The value is
@@ -354,8 +357,8 @@ template struct YamlObject::Accessor<std::vector<std::string>>;
  */
 
 /**
- * \fn YamlObject::operator[](std::size_t index) const
  * \brief Retrieve the element from list YamlObject by index
+ * \param[in] index The element index
  *
  * This function retrieves an element of the YamlObject. Only YamlObject
  * instances of List type associate elements with index, calling this function
@@ -373,13 +376,13 @@ const YamlObject &YamlObject::operator[](std::size_t index) const
 }
 
 /**
- * \fn YamlObject::contains()
  * \brief Check if an element of a dictionary exists
+ * \param[in] key The element key
  *
- * This function check if the YamlObject contains an element. Only YamlObject
- * instances of Dictionary type associate elements with names, calling this
- * function on other types of instances is invalid and results in undefined
- * behaviour.
+ * This function checks if the YamlObject contains an element for the given
+ * \a key. Only YamlObject instances of Dictionary type associate elements with
+ * keys, calling this function on other types of instances is invalid and
+ * results in undefined behaviour.
  *
  * \return True if an element exists, false otherwise
  */
@@ -389,11 +392,11 @@ bool YamlObject::contains(std::string_view key) const
 }
 
 /**
- * \fn YamlObject::operator[](std::string_view key) const
- * \brief Retrieve a member by name from the dictionary
+ * \brief Retrieve a member by key from the dictionary
+ * \param[in] key The element key
  *
- * This function retrieve a member of a YamlObject by name. Only YamlObject
- * instances of Dictionary type associate elements with names, calling this
+ * This function retrieves a member of a YamlObject by \a key. Only YamlObject
+ * instances of Dictionary type associate elements with keys, calling this
  * function on other types of instances or with a nonexistent key results in an
  * empty object.
  *

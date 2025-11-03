@@ -48,8 +48,6 @@ private:
 
 	CameraHalManager();
 
-	static int32_t cameraLocation(const libcamera::Camera *cam);
-
 	void cameraAdded(std::shared_ptr<libcamera::Camera> cam);
 	void cameraRemoved(std::shared_ptr<libcamera::Camera> cam);
 

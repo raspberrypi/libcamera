@@ -48,11 +48,11 @@ struct RequestWrap {
 	RequestWrap(std::unique_ptr<Request> request);
 	~RequestWrap();
 
-	void attachBuffer(Stream *stream, GstBuffer *buffer);
-	GstBuffer *detachBuffer(Stream *stream);
+	void attachBuffer(GstPad *srcpad, GstBuffer *buffer);
+	GstBuffer *detachBuffer(GstPad *srcpad);
 
 	std::unique_ptr<Request> request_;
-	std::map<Stream *, GstBuffer *> buffers_;
+	std::map<GstPad *, GstBuffer *> buffers_;
 
 	GstClockTime latency_;
 	GstClockTime pts_;
@@ -65,32 +65,33 @@ RequestWrap::RequestWrap(std::unique_ptr<Request> request)
 
 RequestWrap::~RequestWrap()
 {
-	for (std::pair<Stream *const, GstBuffer *> &item : buffers_) {
+	for (std::pair<GstPad *const, GstBuffer *> &item : buffers_) {
 		if (item.second)
 			gst_buffer_unref(item.second);
 	}
 }
 
-void RequestWrap::attachBuffer(Stream *stream, GstBuffer *buffer)
+void RequestWrap::attachBuffer(GstPad *srcpad, GstBuffer *buffer)
 {
 	FrameBuffer *fb = gst_libcamera_buffer_get_frame_buffer(buffer);
+	Stream *stream = gst_libcamera_pad_get_stream(srcpad);
 
 	request_->addBuffer(stream, fb);
 
-	auto item = buffers_.find(stream);
+	auto item = buffers_.find(srcpad);
 	if (item != buffers_.end()) {
 		gst_buffer_unref(item->second);
 		item->second = buffer;
 	} else {
-		buffers_[stream] = buffer;
+		buffers_[srcpad] = buffer;
 	}
 }
 
-GstBuffer *RequestWrap::detachBuffer(Stream *stream)
+GstBuffer *RequestWrap::detachBuffer(GstPad *srcpad)
 {
 	GstBuffer *buffer = nullptr;
 
-	auto item = buffers_.find(stream);
+	auto item = buffers_.find(srcpad);
 	if (item != buffers_.end()) {
 		buffer = item->second;
 		item->second = nullptr;
@@ -189,7 +190,6 @@ int GstLibcameraSrcState::queueRequest()
 		std::make_unique<RequestWrap>(std::move(request));
 
 	for (GstPad *srcpad : srcpads_) {
-		Stream *stream = gst_libcamera_pad_get_stream(srcpad);
 		GstLibcameraPool *pool = gst_libcamera_pad_get_pool(srcpad);
 		GstBuffer *buffer;
 		GstFlowReturn ret;
@@ -204,7 +204,7 @@ int GstLibcameraSrcState::queueRequest()
 			return -ENOBUFS;
 		}
 
-		wrap->attachBuffer(stream, buffer);
+		wrap->attachBuffer(srcpad, buffer);
 	}
 
 	GST_TRACE_OBJECT(src_, "Requesting buffers");
@@ -354,7 +354,7 @@ int GstLibcameraSrcState::processRequest()
 	for (gsize i = 0; i < srcpads_.size(); i++) {
 		GstPad *srcpad = srcpads_[i];
 		Stream *stream = gst_libcamera_pad_get_stream(srcpad);
-		GstBuffer *buffer = wrap->detachBuffer(stream);
+		GstBuffer *buffer = wrap->detachBuffer(srcpad);
 
 		FrameBuffer *fb = gst_libcamera_buffer_get_frame_buffer(buffer);
 		const StreamConfiguration &stream_cfg = stream->configuration();

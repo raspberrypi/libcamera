@@ -574,12 +574,8 @@ gst_libcamera_create_video_pool(GstLibcameraSrc *self, GstPad *srcpad,
 		gst_buffer_pool_set_config(GST_BUFFER_POOL_CAST(pool), config);
 	}
 
-	if (!gst_buffer_pool_set_active(pool, true)) {
-		GST_ELEMENT_ERROR(self, RESOURCE, SETTINGS,
-				  ("Failed to active buffer pool"),
-				  ("gst_libcamera_src_negotiate() failed."));
+	if (!gst_buffer_pool_set_active(pool, true))
 		return { nullptr, -EINVAL };
-	}
 
 	return { std::exchange(pool, nullptr), 0 };
 }
@@ -680,8 +676,12 @@ gst_libcamera_src_negotiate(GstLibcameraSrc *self)
 			std::tie(video_pool, ret) =
 				gst_libcamera_create_video_pool(self, srcpad,
 								caps, &info);
-			if (ret)
+			if (ret) {
+				GST_ELEMENT_ERROR(self, RESOURCE, SETTINGS,
+						  ("Failed to create video pool: %s", g_strerror(-ret)),
+						  ("gst_libcamera_src_negotiate() failed."));
 				return false;
+			}
 		}
 
 		GstLibcameraPool *pool = gst_libcamera_pool_new(self->allocator,

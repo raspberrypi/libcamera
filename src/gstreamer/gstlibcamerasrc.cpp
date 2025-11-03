@@ -357,7 +357,7 @@ int GstLibcameraSrcState::processRequest()
 		GstBuffer *buffer = wrap->detachBuffer(stream);
 
 		FrameBuffer *fb = gst_libcamera_buffer_get_frame_buffer(buffer);
-		const StreamConfiguration &stream_cfg = config_->at(i);
+		const StreamConfiguration &stream_cfg = stream->configuration();
 		GstBufferPool *video_pool = gst_libcamera_pad_get_video_pool(srcpad);
 
 		if (video_pool) {
@@ -692,6 +692,9 @@ gst_libcamera_src_negotiate(GstLibcameraSrc *self)
 		gst_libcamera_pad_set_pool(srcpad, pool);
 		gst_libcamera_pad_set_video_pool(srcpad, video_pool);
 
+		/* Associate the configured stream with the source pad. */
+		gst_libcamera_pad_set_stream(srcpad, stream_cfg.stream());
+
 		/* Clear all reconfigure flags. */
 		gst_pad_check_reconfigure(srcpad);
 	}
@@ -888,6 +891,7 @@ gst_libcamera_src_task_leave([[maybe_unused]] GstTask *task,
 		for (GstPad *srcpad : state->srcpads_) {
 			gst_libcamera_pad_set_latency(srcpad, GST_CLOCK_TIME_NONE);
 			gst_libcamera_pad_set_pool(srcpad, nullptr);
+			gst_libcamera_pad_set_stream(srcpad, nullptr);
 		}
 	}
 

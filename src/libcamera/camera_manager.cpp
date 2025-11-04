@@ -39,7 +39,7 @@ LOG_DEFINE_CATEGORY(Camera)
 
 #ifndef __DOXYGEN_PUBLIC__
 CameraManager::Private::Private()
-	: initialized_(false)
+	: Thread("CameraManager"), initialized_(false)
 {
 	ipaManager_ = std::make_unique<IPAManager>(this->configuration());
 }

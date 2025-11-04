@@ -812,6 +812,12 @@ void PipelineHandler::disconnect()
  */
 
 /**
+ * \fn PipelineHandler::useCount()
+ * \brief Retrieve the pipeline handler's used camera count
+ * \return The number of acquired cameras of the pipeline handler
+ */
+
+/**
  * \fn PipelineHandler::cameraManager() const
  * \brief Retrieve the CameraManager that this pipeline handler belongs to
  * \context This function is \threadsafe.

@@ -380,7 +380,16 @@ void PipelineHandler::stop(Camera *camera)
 	while (!waitingRequests.empty()) {
 		Request *request = waitingRequests.front();
 		waitingRequests.pop();
-		cancelRequest(request);
+
+		/*
+		 * Cancel all requests by marking them as cancelled and calling
+		 * doQueueRequest() instead of cancelRequest(). This ensures
+		 * that the requests get a sequence number and are temporarily
+		 * added to queuedRequests_ so they can be properly completed in
+		 * completeRequest().
+		 */
+		request->_d()->cancel();
+		doQueueRequest(request);
 	}
 
 	/* Make sure no requests are pending. */

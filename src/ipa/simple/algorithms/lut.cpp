@@ -61,7 +61,6 @@ void Lut::updateGammaTable(IPAContext &context)
 	const unsigned int blackIndex = blackLevel * gammaTable.size() / 256;
 	const auto contrast = context.activeState.knobs.contrast.value_or(1.0);
 
-	std::fill(gammaTable.begin(), gammaTable.begin() + blackIndex, 0);
 	const float divisor = gammaTable.size() - blackIndex - 1.0;
 	for (unsigned int i = blackIndex; i < gammaTable.size(); i++) {
 		double normalized = (i - blackIndex) / divisor;
@@ -75,6 +74,14 @@ void Lut::updateGammaTable(IPAContext &context)
 		gammaTable[i] = UINT8_MAX *
 				std::pow(normalized, context.configuration.gamma);
 	}
+	/*
+	 * Due to CCM operations, the table lookup may reach indices below the black
+	 * level. Let's set the table values below black level to the minimum
+	 * non-black value to prevent problems when the minimum value is
+	 * significantly non-zero (for example, when the image should be all grey).
+	 */
+	std::fill(gammaTable.begin(), gammaTable.begin() + blackIndex,
+		  gammaTable[blackIndex]);
 
 	context.activeState.gamma.blackLevel = blackLevel;
 	context.activeState.gamma.contrast = contrast;

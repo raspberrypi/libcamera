@@ -225,8 +225,12 @@ void Dpf::prepare(IPAContext &context, const uint32_t frame,
 	auto config = params->block<BlockType::Dpf>();
 	config.setEnabled(frameContext.dpf.denoise);
 
+	auto strengthConfig = params->block<BlockType::DpfStrength>();
+	strengthConfig.setEnabled(frameContext.dpf.denoise);
+
 	if (frameContext.dpf.denoise) {
 		*config = config_;
+		*strengthConfig = strengthConfig_;
 
 		const auto &awb = context.configuration.awb;
 		const auto &lsc = context.configuration.lsc;
@@ -249,12 +253,6 @@ void Dpf::prepare(IPAContext &context, const uint32_t frame,
 			mode = RKISP1_CIF_ISP_DPF_GAIN_USAGE_LSC_GAINS;
 		else
 			mode = RKISP1_CIF_ISP_DPF_GAIN_USAGE_DISABLED;
-	}
-
-	if (frame == 0) {
-		auto strengthConfig = params->block<BlockType::DpfStrength>();
-		strengthConfig.setEnabled(true);
-		*strengthConfig = strengthConfig_;
 	}
 }
 

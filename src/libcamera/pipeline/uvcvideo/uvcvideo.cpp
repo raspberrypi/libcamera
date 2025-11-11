@@ -143,6 +143,9 @@ CameraConfiguration::Status UVCCameraConfiguration::validate()
 	if (config_.empty())
 		return Invalid;
 
+	if (sensorConfig)
+		return Invalid;
+
 	if (orientation != Orientation::Rotate0) {
 		orientation = Orientation::Rotate0;
 		status = Adjusted;

@@ -292,8 +292,7 @@ void Thread::startThread()
 	currentThreadData = data_.get();
 
 	if (!name_.empty())
-		pthread_setname_np(thread_.native_handle(),
-				   name_.substr(0, 15).c_str());
+		pthread_setname_np(pthread_self(), name_.substr(0, 15).c_str());
 
 	run();
 }

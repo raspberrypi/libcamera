@@ -10,6 +10,7 @@
 #include <atomic>
 #include <list>
 #include <optional>
+#include <pthread.h>
 #include <sys/syscall.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -105,8 +106,12 @@ public:
 class ThreadData
 {
 public:
-	ThreadData()
-		: thread_(nullptr), running_(false), dispatcher_(nullptr)
+	/**
+	 * \brief Constructor for internal thread data
+	 * \param[in] thread The associated thread
+	 */
+	ThreadData(Thread *thread)
+		: thread_(thread), running_(false), dispatcher_(nullptr)
 	{
 	}
 
@@ -140,6 +145,7 @@ class ThreadMain : public Thread
 {
 public:
 	ThreadMain()
+		: Thread("libcamera-main")
 	{
 		data_->running_ = true;
 	}
@@ -167,7 +173,7 @@ ThreadData *ThreadData::current()
 	 * The main thread doesn't receive thread-local data when it is
 	 * started, set it here.
 	 */
-	ThreadData *data = mainThread.data_;
+	ThreadData *data = mainThread.data_.get();
 	data->tid_ = syscall(SYS_gettid);
 	currentThreadData = data;
 	return data;
@@ -230,16 +236,15 @@ ThreadData *ThreadData::current()
 /**
  * \brief Create a thread
  */
-Thread::Thread()
+Thread::Thread(std::string name)
+	: name_(std::move(name)),
+	  data_(std::make_unique<ThreadData>(this))
 {
-	data_ = new ThreadData;
-	data_->thread_ = this;
 }
 
 Thread::~Thread()
 {
 	delete data_->dispatcher_.load(std::memory_order_relaxed);
-	delete data_;
 }
 
 /**
@@ -284,7 +289,11 @@ void Thread::startThread()
 	thread_local ThreadCleaner cleaner(this, &Thread::finishThread);
 
 	data_->tid_ = syscall(SYS_gettid);
-	currentThreadData = data_;
+	currentThreadData = data_.get();
+
+	if (!name_.empty())
+		pthread_setname_np(thread_.native_handle(),
+				   name_.substr(0, 15).c_str());
 
 	run();
 }
@@ -516,7 +525,7 @@ pid_t Thread::currentId()
  */
 EventDispatcher *Thread::eventDispatcher()
 {
-	ASSERT(data_ == ThreadData::current());
+	ASSERT(data_.get() == ThreadData::current());
 
 	if (!data_->dispatcher_.load(std::memory_order_relaxed))
 		data_->dispatcher_.store(new EventDispatcherPoll(),
@@ -621,7 +630,7 @@ void Thread::removeMessages(Object *receiver)
  */
 void Thread::dispatchMessages(Message::Type type, Object *receiver)
 {
-	ASSERT(data_ == ThreadData::current());
+	ASSERT(data_.get() == ThreadData::current());
 
 	++data_->messages_.recursion_;
 
@@ -677,8 +686,8 @@ void Thread::dispatchMessages(Message::Type type, Object *receiver)
  */
 void Thread::moveObject(Object *object)
 {
-	ThreadData *currentData = object->thread_->data_;
-	ThreadData *targetData = data_;
+	ThreadData *currentData = object->thread_->data_.get();
+	ThreadData *targetData = data_.get();
 
 	MutexLocker lockerFrom(currentData->messages_.mutex_, std::defer_lock);
 	MutexLocker lockerTo(targetData->messages_.mutex_, std::defer_lock);

@@ -218,6 +218,23 @@ protected:
 		os << utils::hex(static_cast<uint64_t>(0x42), 1) << " ";
 		ref += "0x42 ";
 
+		os << utils::hex(static_cast<int8_t>(-1)) << " ";
+		ref += "0xff ";
+		os << utils::hex(static_cast<uint8_t>(-1)) << " ";
+		ref += "0xff ";
+		os << utils::hex(static_cast<int16_t>(-1)) << " ";
+		ref += "0xffff ";
+		os << utils::hex(static_cast<uint16_t>(-1)) << " ";
+		ref += "0xffff ";
+		os << utils::hex(static_cast<int32_t>(-1)) << " ";
+		ref += "0xffffffff ";
+		os << utils::hex(static_cast<uint32_t>(-1)) << " ";
+		ref += "0xffffffff ";
+		os << utils::hex(static_cast<int64_t>(-1)) << " ";
+		ref += "0xffffffffffffffff ";
+		os << utils::hex(static_cast<uint64_t>(-1)) << " ";
+		ref += "0xffffffffffffffff ";
+
 		std::string s = os.str();
 		if (s != ref) {
 			cerr << "utils::hex() test failed, expected '" << ref

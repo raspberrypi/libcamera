@@ -533,7 +533,7 @@ RPiController::StatisticsPtr IpaPiSP::platformProcessStats(Span<uint8_t> mem)
 
 	/* AGC region sums only get collected on floating zones. */
 	statistics->agcRegions.init({ 0, 0 }, PISP_FLOATING_STATS_NUM_ZONES);
-	for (i = 0; i < statistics->agcRegions.numRegions(); i++)
+	for (i = 0; i < PISP_FLOATING_STATS_NUM_ZONES; i++)
 		statistics->agcRegions.setFloating(i,
 						   { { 0, 0, 0, stats->agc.floating[i].Y_sum },
 						     stats->agc.floating[i].counted, 0 });
@@ -1074,6 +1074,12 @@ void IpaPiSP::setStatsAndDebin()
 	 * out of the Frontend scoped lock.
 	 */
 	setHistogramWeights();
+
+	/* Configure the first AGC floating region to cover the whole image, for the lux algo. */
+	pisp_fe_floating_stats_config floatingStatsConfig = {};
+	floatingStatsConfig.regions[0].size_x = mode_.width;
+	floatingStatsConfig.regions[0].size_y = mode_.height;
+	fe_->SetFloatingStats(floatingStatsConfig);
 
 	pisp_be_global_config beGlobal;
 	be_->GetGlobal(beGlobal);

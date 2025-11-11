@@ -53,12 +53,12 @@ public:
 	void setLimits(utils::Duration minExposureTime, utils::Duration maxExposureTime,
 		       double minGain, double maxGain, std::vector<AgcConstraint> constraints);
 
-	std::map<int32_t, std::vector<AgcConstraint>> constraintModes()
+	const std::map<int32_t, std::vector<AgcConstraint>> &constraintModes() const
 	{
 		return constraintModes_;
 	}
 
-	std::map<int32_t, std::shared_ptr<ExposureModeHelper>> exposureModeHelpers()
+	const std::map<int32_t, std::shared_ptr<ExposureModeHelper>> &exposureModeHelpers() const
 	{
 		return exposureModeHelpers_;
 	}

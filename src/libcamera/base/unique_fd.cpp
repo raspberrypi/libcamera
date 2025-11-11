@@ -7,6 +7,7 @@
 
 #include <libcamera/base/unique_fd.h>
 
+#include <string.h>
 #include <unistd.h>
 #include <utility>
 
@@ -98,8 +99,11 @@ void UniqueFD::reset(int fd)
 
 	std::swap(fd, fd_);
 
-	if (fd >= 0)
-		close(fd);
+	if (fd >= 0 && close(fd) < 0) {
+		int ret = -errno;
+		LOG(UniqueFD, Error) << "Failed to close file descriptor "
+				     << fd << ": " << strerror(-ret);
+	}
 }
 
 /**

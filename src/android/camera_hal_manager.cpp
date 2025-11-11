@@ -125,7 +125,7 @@ void CameraHalManager::cameraAdded(std::shared_ptr<Camera> cam)
 		 * Now check if this is an external camera and assign
 		 * its id accordingly.
 		 */
-		if (cameraLocation(cam.get()) == properties::CameraLocationExternal) {
+		if (cam->properties().get(properties::Location) == properties::CameraLocationExternal) {
 			isCameraExternal = true;
 			id = nextExternalCameraId_;
 		} else {
@@ -225,11 +225,6 @@ void CameraHalManager::cameraRemoved(std::shared_ptr<Camera> cam)
 	cameras_.erase(iter);
 
 	LOG(HAL, Debug) << "Camera ID: " << id << " removed successfully.";
-}
-
-int32_t CameraHalManager::cameraLocation(const Camera *cam)
-{
-	return cam->properties().get(properties::Location).value_or(-1);
 }
 
 CameraDevice *CameraHalManager::cameraDeviceFromHalId(unsigned int id)

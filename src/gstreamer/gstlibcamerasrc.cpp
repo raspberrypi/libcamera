@@ -48,11 +48,11 @@ struct RequestWrap {
 	RequestWrap(std::unique_ptr<Request> request);
 	~RequestWrap();
 
-	void attachBuffer(Stream *stream, GstBuffer *buffer);
-	GstBuffer *detachBuffer(Stream *stream);
+	void attachBuffer(GstPad *srcpad, GstBuffer *buffer);
+	GstBuffer *detachBuffer(GstPad *srcpad);
 
 	std::unique_ptr<Request> request_;
-	std::map<Stream *, GstBuffer *> buffers_;
+	std::map<GstPad *, GstBuffer *> buffers_;
 
 	GstClockTime latency_;
 	GstClockTime pts_;
@@ -65,32 +65,33 @@ RequestWrap::RequestWrap(std::unique_ptr<Request> request)
 
 RequestWrap::~RequestWrap()
 {
-	for (std::pair<Stream *const, GstBuffer *> &item : buffers_) {
+	for (std::pair<GstPad *const, GstBuffer *> &item : buffers_) {
 		if (item.second)
 			gst_buffer_unref(item.second);
 	}
 }
 
-void RequestWrap::attachBuffer(Stream *stream, GstBuffer *buffer)
+void RequestWrap::attachBuffer(GstPad *srcpad, GstBuffer *buffer)
 {
 	FrameBuffer *fb = gst_libcamera_buffer_get_frame_buffer(buffer);
+	Stream *stream = gst_libcamera_pad_get_stream(srcpad);
 
 	request_->addBuffer(stream, fb);
 
-	auto item = buffers_.find(stream);
+	auto item = buffers_.find(srcpad);
 	if (item != buffers_.end()) {
 		gst_buffer_unref(item->second);
 		item->second = buffer;
 	} else {
-		buffers_[stream] = buffer;
+		buffers_[srcpad] = buffer;
 	}
 }
 
-GstBuffer *RequestWrap::detachBuffer(Stream *stream)
+GstBuffer *RequestWrap::detachBuffer(GstPad *srcpad)
 {
 	GstBuffer *buffer = nullptr;
 
-	auto item = buffers_.find(stream);
+	auto item = buffers_.find(srcpad);
 	if (item != buffers_.end()) {
 		buffer = item->second;
 		item->second = nullptr;
@@ -189,7 +190,6 @@ int GstLibcameraSrcState::queueRequest()
 		std::make_unique<RequestWrap>(std::move(request));
 
 	for (GstPad *srcpad : srcpads_) {
-		Stream *stream = gst_libcamera_pad_get_stream(srcpad);
 		GstLibcameraPool *pool = gst_libcamera_pad_get_pool(srcpad);
 		GstBuffer *buffer;
 		GstFlowReturn ret;
@@ -204,7 +204,7 @@ int GstLibcameraSrcState::queueRequest()
 			return -ENOBUFS;
 		}
 
-		wrap->attachBuffer(stream, buffer);
+		wrap->attachBuffer(srcpad, buffer);
 	}
 
 	GST_TRACE_OBJECT(src_, "Requesting buffers");
@@ -354,10 +354,10 @@ int GstLibcameraSrcState::processRequest()
 	for (gsize i = 0; i < srcpads_.size(); i++) {
 		GstPad *srcpad = srcpads_[i];
 		Stream *stream = gst_libcamera_pad_get_stream(srcpad);
-		GstBuffer *buffer = wrap->detachBuffer(stream);
+		GstBuffer *buffer = wrap->detachBuffer(srcpad);
 
 		FrameBuffer *fb = gst_libcamera_buffer_get_frame_buffer(buffer);
-		const StreamConfiguration &stream_cfg = config_->at(i);
+		const StreamConfiguration &stream_cfg = stream->configuration();
 		GstBufferPool *video_pool = gst_libcamera_pad_get_video_pool(srcpad);
 
 		if (video_pool) {
@@ -574,12 +574,8 @@ gst_libcamera_create_video_pool(GstLibcameraSrc *self, GstPad *srcpad,
 		gst_buffer_pool_set_config(GST_BUFFER_POOL_CAST(pool), config);
 	}
 
-	if (!gst_buffer_pool_set_active(pool, true)) {
-		GST_ELEMENT_ERROR(self, RESOURCE, SETTINGS,
-				  ("Failed to active buffer pool"),
-				  ("gst_libcamera_src_negotiate() failed."));
+	if (!gst_buffer_pool_set_active(pool, true))
 		return { nullptr, -EINVAL };
-	}
 
 	return { std::exchange(pool, nullptr), 0 };
 }
@@ -680,8 +676,12 @@ gst_libcamera_src_negotiate(GstLibcameraSrc *self)
 			std::tie(video_pool, ret) =
 				gst_libcamera_create_video_pool(self, srcpad,
 								caps, &info);
-			if (ret)
+			if (ret) {
+				GST_ELEMENT_ERROR(self, RESOURCE, SETTINGS,
+						  ("Failed to create video pool: %s", g_strerror(-ret)),
+						  ("gst_libcamera_src_negotiate() failed."));
 				return false;
+			}
 		}
 
 		GstLibcameraPool *pool = gst_libcamera_pool_new(self->allocator,
@@ -691,6 +691,9 @@ gst_libcamera_src_negotiate(GstLibcameraSrc *self)
 
 		gst_libcamera_pad_set_pool(srcpad, pool);
 		gst_libcamera_pad_set_video_pool(srcpad, video_pool);
+
+		/* Associate the configured stream with the source pad. */
+		gst_libcamera_pad_set_stream(srcpad, stream_cfg.stream());
 
 		/* Clear all reconfigure flags. */
 		gst_pad_check_reconfigure(srcpad);
@@ -888,6 +891,7 @@ gst_libcamera_src_task_leave([[maybe_unused]] GstTask *task,
 		for (GstPad *srcpad : state->srcpads_) {
 			gst_libcamera_pad_set_latency(srcpad, GST_CLOCK_TIME_NONE);
 			gst_libcamera_pad_set_pool(srcpad, nullptr);
+			gst_libcamera_pad_set_stream(srcpad, nullptr);
 		}
 	}
 

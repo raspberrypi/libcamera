@@ -75,7 +75,8 @@ LOG_DEFINE_CATEGORY(SoftwareIsp)
  */
 SoftwareIsp::SoftwareIsp(PipelineHandler *pipe, const CameraSensor *sensor,
 			 ControlInfoMap *ipaControls)
-	: dmaHeap_(DmaBufAllocator::DmaBufAllocatorFlag::CmaHeap |
+	: ispWorkerThread_("SWIspWorker"),
+	  dmaHeap_(DmaBufAllocator::DmaBufAllocatorFlag::CmaHeap |
 		   DmaBufAllocator::DmaBufAllocatorFlag::SystemHeap |
 		   DmaBufAllocator::DmaBufAllocatorFlag::UDmaBuf)
 {
@@ -358,6 +359,7 @@ void SoftwareIsp::stop()
 {
 	ispWorkerThread_.exit();
 	ispWorkerThread_.wait();
+	ispWorkerThread_.removeMessages(debayer_.get());
 
 	Thread::current()->dispatchMessages(Message::Type::InvokeMessage, this);
 

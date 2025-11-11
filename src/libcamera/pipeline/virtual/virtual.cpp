@@ -115,7 +115,7 @@ private:
 
 VirtualCameraData::VirtualCameraData(PipelineHandler *pipe,
 				     const std::vector<Resolution> &supportedResolutions)
-	: Camera::Private(pipe)
+	: Camera::Private(pipe), Thread("VirtualCamera")
 {
 	config_.resolutions = supportedResolutions;
 	for (const auto &resolution : config_.resolutions) {

@@ -46,7 +46,7 @@ namespace {{ns}} {
 {%- endif %}
 
 {{proxy_name}}Threaded::{{proxy_name}}Threaded(IPAModule *ipam, const GlobalConfiguration &configuration)
-	: {{proxy_name}}(ipam, configuration)
+	: {{proxy_name}}(ipam, configuration), thread_("{{proxy_name}}")
 {
 	LOG(IPAProxy, Debug)
 		<< "initializing {{module_name}} proxy in thread: loading IPA from "

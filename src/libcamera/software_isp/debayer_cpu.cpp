@@ -803,6 +803,7 @@ void DebayerCpu::process(uint32_t frame, FrameBuffer *input, FrameBuffer *output
 		blueCcm_ = params.redCcm;
 		for (unsigned int i = 0; i < 256; i++) {
 			std::swap(redCcm_[i].r, redCcm_[i].b);
+			std::swap(greenCcm_[i].r, greenCcm_[i].b);
 			std::swap(blueCcm_[i].r, blueCcm_[i].b);
 		}
 	} else {

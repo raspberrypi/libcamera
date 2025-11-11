@@ -1164,15 +1164,16 @@ CameraConfiguration::Status SimpleCameraConfiguration::validate()
 	pipeConfig_ = nullptr;
 
 	for (const SimpleCameraData::Configuration *pipeConfig : *configs) {
-		const Size &size = pipeConfig->captureSize;
+		const Size &captureSize = pipeConfig->captureSize;
+		const Size &maxOutputSize = pipeConfig->outputSizes.max;
 
-		if (size.width >= maxStreamSize.width &&
-		    size.height >= maxStreamSize.height) {
-			if (!pipeConfig_ || size < pipeConfig_->captureSize)
+		if (maxOutputSize.width >= maxStreamSize.width &&
+		    maxOutputSize.height >= maxStreamSize.height) {
+			if (!pipeConfig_ || captureSize < pipeConfig_->captureSize)
 				pipeConfig_ = pipeConfig;
 		}
 
-		if (!maxPipeConfig || maxPipeConfig->captureSize < size)
+		if (!maxPipeConfig || maxPipeConfig->captureSize < captureSize)
 			maxPipeConfig = pipeConfig;
 	}
 
@@ -1266,8 +1267,8 @@ CameraConfiguration::Status SimpleCameraConfiguration::validate()
 			cfg.frameSize = format.planes[0].size;
 		}
 
-		const auto bufferCount = cfg.bufferCount;
-		if (bufferCount <= 0)
+		const unsigned int bufferCount = cfg.bufferCount;
+		if (!bufferCount)
 			cfg.bufferCount = kNumBuffersDefault;
 		else if (bufferCount > kNumBuffersMax)
 			cfg.bufferCount = kNumBuffersMax;

@@ -8,6 +8,7 @@
 #pragma once
 
 #include <memory>
+#include <string>
 #include <sys/types.h>
 #include <thread>
 
@@ -30,7 +31,7 @@ class ThreadMain;
 class Thread
 {
 public:
-	Thread();
+	Thread(std::string name = {});
 	virtual ~Thread();
 
 	void start();
@@ -74,8 +75,9 @@ private:
 	void moveObject(Object *object, ThreadData *currentData,
 			ThreadData *targetData);
 
+	std::string name_;
 	std::thread thread_;
-	ThreadData *data_;
+	std::unique_ptr<ThreadData> data_;
 };
 
 } /* namespace libcamera */

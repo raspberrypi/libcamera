@@ -50,6 +50,13 @@ if cc.get_id() == 'clang' and glib_dep.version().version_compare('<2.63.0')
     libcamera_gst_cpp_args += ['-Wno-unused-function']
 endif
 
+# In C++20 many operations involving the `volatile` qualifier became deprecated.
+# glib however made use of `volatile` in certain macros that would trigger
+# this warning. See https://gitlab.gnome.org/GNOME/glib/-/merge_requests/1719.
+if cc.get_id() == 'gcc' and glib_dep.version().version_compare('<2.67.1')
+    libcamera_gst_cpp_args += ['-Wno-volatile']
+endif
+
 libcamera_gst = shared_library('gstlibcamera',
     libcamera_gst_sources,
     cpp_args : libcamera_gst_cpp_args,

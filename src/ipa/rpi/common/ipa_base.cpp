@@ -7,6 +7,7 @@
 
 #include "ipa_base.h"
 
+#include <array>
 #include <cmath>
 
 #include <libcamera/base/log.h>
@@ -105,7 +106,8 @@ const ControlInfoMap::Map ipaAfControls{
 	{ &controls::AfRange, ControlInfo(controls::AfRangeValues) },
 	{ &controls::AfSpeed, ControlInfo(controls::AfSpeedValues) },
 	{ &controls::AfMetering, ControlInfo(controls::AfMeteringValues) },
-	{ &controls::AfWindows, ControlInfo(Rectangle{}, Rectangle(65535, 65535, 65535, 65535), Rectangle{}) },
+	{ &controls::AfWindows, ControlInfo(Rectangle{}, Rectangle(65535, 65535, 65535, 65535),
+					    Span<const Rectangle, 1>{ { Rectangle{} } }) },
 	{ &controls::AfTrigger, ControlInfo(controls::AfTriggerValues) },
 	{ &controls::AfPause, ControlInfo(controls::AfPauseValues) },
 	{ &controls::LensPosition, ControlInfo(0.0f, 32.0f, 1.0f) }
@@ -246,7 +248,8 @@ int32_t IpaBase::configure(const IPACameraSensorInfo &sensorInfo, const ConfigPa
 	ctrlMap[&controls::FrameDurationLimits] =
 		ControlInfo(static_cast<int64_t>(mode_.minFrameDuration.get<std::micro>()),
 			    static_cast<int64_t>(mode_.maxFrameDuration.get<std::micro>()),
-			    static_cast<int64_t>(defaultMinFrameDuration.get<std::micro>()));
+			    Span<const int64_t, 2>{ { static_cast<int64_t>(defaultMinFrameDuration.get<std::micro>()),
+						      static_cast<int64_t>(defaultMinFrameDuration.get<std::micro>()) } });
 
 	ctrlMap[&controls::AnalogueGain] =
 		ControlInfo(static_cast<float>(mode_.minAnalogueGain),

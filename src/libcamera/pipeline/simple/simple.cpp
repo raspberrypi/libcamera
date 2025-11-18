@@ -710,9 +710,14 @@ void SimpleCameraData::tryPipeline(unsigned int code, const Size &size)
 		<< " ]";
 
 	for (const auto &videoFormat : videoFormats) {
-		PixelFormat pixelFormat = videoFormat.first.toPixelFormat();
-		if (!pixelFormat)
+		PixelFormat pixelFormat = videoFormat.first.toPixelFormat(false);
+		if (!pixelFormat) {
+			LOG(SimplePipeline, Debug)
+				<< "Unsupported V4L2 pixel format "
+				<< videoFormat.first.toString();
+
 			continue;
+		}
 
 		Configuration config;
 		config.code = code;

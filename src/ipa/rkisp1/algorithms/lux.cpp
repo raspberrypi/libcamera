@@ -47,6 +47,16 @@ int Lux::init([[maybe_unused]] IPAContext &context, const YamlObject &tuningData
 }
 
 /**
+ * \copydoc libcamera::ipa::Algorithm::prepare
+ */
+void Lux::prepare(IPAContext &context, [[maybe_unused]] const uint32_t frame,
+		  IPAFrameContext &frameContext,
+		  [[maybe_unused]] RkISP1Params *params)
+{
+	frameContext.lux.lux = context.activeState.lux.lux;
+}
+
+/**
  * \copydoc libcamera::ipa::Algorithm::process
  */
 void Lux::process(IPAContext &context,
@@ -55,8 +65,17 @@ void Lux::process(IPAContext &context,
 		  const rkisp1_stat_buffer *stats,
 		  ControlList &metadata)
 {
-	utils::Duration exposureTime = context.configuration.sensor.lineDuration
-				     * frameContext.sensor.exposure;
+	/*
+	 * Report the lux level used by algorithms to prepare this frame
+	 * not the lux level *of* this frame.
+	 */
+	metadata.set(controls::Lux, frameContext.lux.lux);
+
+	if (!stats)
+		return;
+
+	utils::Duration exposureTime = context.configuration.sensor.lineDuration *
+				       frameContext.sensor.exposure;
 	double gain = frameContext.sensor.gain;
 
 	/* \todo Deduplicate the histogram calculation from AGC */
@@ -64,9 +83,7 @@ void Lux::process(IPAContext &context,
 	Histogram yHist({ params->hist.hist_bins, context.hw.numHistogramBins },
 			[](uint32_t x) { return x >> 4; });
 
-	double lux = lux_.estimateLux(exposureTime, gain, 1.0, yHist);
-	frameContext.lux.lux = lux;
-	metadata.set(controls::Lux, lux);
+	context.activeState.lux.lux = lux_.estimateLux(exposureTime, gain, 1.0, yHist);
 }
 
 REGISTER_IPA_ALGORITHM(Lux, "Lux")

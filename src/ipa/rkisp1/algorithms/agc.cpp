@@ -618,6 +618,7 @@ void Agc::process(IPAContext &context, [[maybe_unused]] const uint32_t frame,
 		effectiveExposureValue *= frameContext.agc.quantizationGain;
 
 	setExposureCompensation(pow(2.0, frameContext.agc.exposureValue));
+	setLux(frameContext.lux.lux);
 
 	utils::Duration newExposureTime;
 	double aGain, qGain, dGain;

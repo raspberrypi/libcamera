@@ -175,7 +175,8 @@ int WideDynamicRange::configure(IPAContext &context,
 	constraint.bound = AgcMeanLuminance::AgcConstraint::Bound::Upper;
 	constraint.qHi = 1.0;
 	constraint.qLo = 1.0 - exposureConstraintMaxBrightPixels_;
-	constraint.yTarget = exposureConstraintY_;
+	constraint.yTarget.clear();
+	constraint.yTarget.append(0, exposureConstraintY_);
 	return 0;
 }
 

@@ -40,7 +40,7 @@ public:
 		Bound bound;
 		double qLo;
 		double qHi;
-		double yTarget;
+		Pwl yTarget;
 	};
 
 	void configure(utils::Duration lineDuration, const CameraSensorHelper *sensorHelper);
@@ -89,7 +89,7 @@ private:
 	virtual double estimateLuminance(const double gain) const = 0;
 
 	int parseRelativeLuminanceTarget(const YamlObject &tuningData);
-	void parseConstraint(const YamlObject &modeDict, int32_t id);
+	int parseConstraint(const YamlObject &modeDict, int32_t id);
 	int parseConstraintModes(const YamlObject &tuningData);
 	int parseExposureModes(const YamlObject &tuningData);
 	double estimateInitialGain() const;

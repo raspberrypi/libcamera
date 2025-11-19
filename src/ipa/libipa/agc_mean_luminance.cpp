@@ -178,7 +178,7 @@ int AgcMeanLuminance::parseRelativeLuminanceTarget(const YamlObject &tuningData)
 	return 0;
 }
 
-void AgcMeanLuminance::parseConstraint(const YamlObject &modeDict, int32_t id)
+int AgcMeanLuminance::parseConstraint(const YamlObject &modeDict, int32_t id)
 {
 	for (const auto &[boundName, content] : modeDict.asDict()) {
 		if (boundName != "upper" && boundName != "lower") {
@@ -191,10 +191,14 @@ void AgcMeanLuminance::parseConstraint(const YamlObject &modeDict, int32_t id)
 		AgcConstraint::Bound bound = static_cast<AgcConstraint::Bound>(idx);
 		double qLo = content["qLo"].get<double>().value_or(0.98);
 		double qHi = content["qHi"].get<double>().value_or(1.0);
-		double yTarget =
-			content["yTarget"].getList<double>().value_or(std::vector<double>{ 0.5 }).at(0);
+		auto yTarget = content["yTarget"].get<Pwl>();
+		if (!yTarget) {
+			LOG(AgcMeanLuminance, Error)
+				<< "Failed to parse yTarget";
+			return -EINVAL;
+		}
 
-		AgcConstraint constraint = { bound, qLo, qHi, yTarget };
+		AgcConstraint constraint = { bound, qLo, qHi, std::move(*yTarget) };
 
 		if (!constraintModes_.count(id))
 			constraintModes_[id] = {};
@@ -204,6 +208,8 @@ void AgcMeanLuminance::parseConstraint(const YamlObject &modeDict, int32_t id)
 		else
 			constraintModes_[id].insert(constraintModes_[id].begin(), constraint);
 	}
+
+	return 0;
 }
 
 int AgcMeanLuminance::parseConstraintModes(const YamlObject &tuningData)
@@ -226,8 +232,11 @@ int AgcMeanLuminance::parseConstraintModes(const YamlObject &tuningData)
 				return -EINVAL;
 			}
 
-			parseConstraint(modeDict,
-					AeConstraintModeNameValueMap.at(modeName));
+			int ret = parseConstraint(modeDict,
+						  AeConstraintModeNameValueMap.at(modeName));
+			if (ret)
+				return ret;
+
 			availableConstraintModes.push_back(
 				AeConstraintModeNameValueMap.at(modeName));
 		}
@@ -244,7 +253,7 @@ int AgcMeanLuminance::parseConstraintModes(const YamlObject &tuningData)
 			AgcConstraint::Bound::Lower,
 			0.98,
 			1.0,
-			0.5
+			Pwl({ { { 0.0, 0.5 } } })
 		};
 
 		constraintModes_[controls::ConstraintNormal].insert(
@@ -359,8 +368,9 @@ void AgcMeanLuminance::configure(utils::Duration lineDuration,
  * the data in a specific format; the Agc algorithm's tuning data should contain
  * a dictionary called AeConstraintMode containing per-mode setting dictionaries
  * with the key being a value from \ref controls::AeConstraintModeNameValueMap.
- * Each mode dict may contain either a "lower" or "upper" key or both, for
- * example:
+ * The yTarget can either be provided as single value or as array in which case
+ * it is interpreted as a PWL mapping lux levels to yTarget values. Each mode
+ * dict may contain either a "lower" or "upper" key or both, for example:
  *
  * \code{.unparsed}
  * algorithms:
@@ -379,7 +389,7 @@ void AgcMeanLuminance::configure(utils::Duration lineDuration,
  *           upper:
  *             qLo: 0.98
  *             qHi: 1.0
- *             yTarget: 0.8
+ *             yTarget: [ 100, 0.8, 20000, 0.5 ]
  *
  * \endcode
  *
@@ -535,8 +545,15 @@ double AgcMeanLuminance::constraintClampGain(uint32_t constraintModeIndex,
 					     const Histogram &hist,
 					     double gain)
 {
-	auto applyConstraint = [&gain, &hist](const AgcConstraint &constraint) {
-		double newGain = constraint.yTarget * hist.bins() /
+	auto applyConstraint = [this, &gain, &hist](const AgcConstraint &constraint) {
+		double lux = lux_;
+
+		if (relativeLuminanceTarget_.size() > 1 && lux_ == 0)
+			lux = kDefaultLuxLevel;
+
+		double target = constraint.yTarget.eval(
+			constraint.yTarget.domain().clamp(lux));
+		double newGain = target * hist.bins() /
 				 hist.interQuantileMean(constraint.qLo, constraint.qHi);
 
 		if (constraint.bound == AgcConstraint::Bound::Lower &&

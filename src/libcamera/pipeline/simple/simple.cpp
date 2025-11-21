@@ -25,6 +25,7 @@
 #include <libcamera/base/log.h>
 
 #include <libcamera/camera.h>
+#include <libcamera/color_space.h>
 #include <libcamera/control_ids.h>
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
@@ -36,6 +37,7 @@
 #include "libcamera/internal/converter.h"
 #include "libcamera/internal/delayed_controls.h"
 #include "libcamera/internal/device_enumerator.h"
+#include "libcamera/internal/formats.h"
 #include "libcamera/internal/global_configuration.h"
 #include "libcamera/internal/media_device.h"
 #include "libcamera/internal/pipeline_handler.h"
@@ -1225,6 +1227,44 @@ CameraConfiguration::Status SimpleCameraConfiguration::validate()
 				<< cfg.pixelFormat << " to " << pixelFormat;
 			cfg.pixelFormat = pixelFormat;
 			status = Adjusted;
+		}
+
+		/*
+		 * Best effort to fix the color space. If the color space is not set,
+		 * set it according to the pixel format, which may not be correct (pixel
+		 * formats and color spaces are different things, although somewhat
+		 * related) but we don't have a better option at the moment. Then in any
+		 * case, perform the standard pixel format based color space adjustment.
+		 */
+		if (!cfg.colorSpace) {
+			const PixelFormatInfo &info = PixelFormatInfo::info(pixelFormat);
+			switch (info.colourEncoding) {
+			case PixelFormatInfo::ColourEncodingRGB:
+				cfg.colorSpace = ColorSpace::Srgb;
+				break;
+			case PixelFormatInfo::ColourEncodingYUV:
+				cfg.colorSpace = ColorSpace::Sycc;
+				break;
+			default:
+				cfg.colorSpace = ColorSpace::Raw;
+			}
+			LOG(SimplePipeline, Debug)
+				<< "Unspecified color space set to "
+				<< cfg.colorSpace.value().toString();
+			/*
+			 * Adjust the assigned color space to make sure everything is OK.
+			 * Since this is assigning an unspecified color space rather than
+			 * adjusting a requested one, changes here shouldn't set the status
+			 * to Adjusted.
+			 */
+			cfg.colorSpace->adjust(pixelFormat);
+		} else {
+			if (cfg.colorSpace->adjust(pixelFormat)) {
+				LOG(SimplePipeline, Debug)
+					<< "Color space adjusted to "
+					<< cfg.colorSpace.value().toString();
+				status = Adjusted;
+			}
 		}
 
 		if (!pipeConfig_->outputSizes.contains(cfg.size)) {

@@ -54,10 +54,10 @@ A mirror is also hosted on `LinuxTV`_.
 Issue Tracker
 -------------
 
-Our `issue tracker`_ tracks all bugs, issues and feature requests. All issues
-are publicly visible, and you can register for an account to create new issues.
+Our `issue tracker`_ also hosted at Freedesktop tracks all bugs, issues and
+feature requests.
 
-.. _issue tracker: https://bugs.libcamera.org/
+.. _issue tracker: https://gitlab.freedesktop.org/camera/libcamera/-/issues
 
 Documentation
 -------------

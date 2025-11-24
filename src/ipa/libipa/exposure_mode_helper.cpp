@@ -144,9 +144,13 @@ utils::Duration ExposureModeHelper::clampExposureTime(utils::Duration exposureTi
 double ExposureModeHelper::clampGain(double gain, double *quantizationGain) const
 {
 	double clamped = std::clamp(gain, minGain_, maxGain_);
-	if (!sensorHelper_)
-		return clamped;
-	return sensorHelper_->quantizeGain(clamped, quantizationGain);
+	if (sensorHelper_)
+		return sensorHelper_->quantizeGain(clamped, quantizationGain);
+
+	if (quantizationGain)
+		*quantizationGain = 1.0;
+
+	return clamped;
 }
 
 /**

@@ -30,6 +30,11 @@ to the public. Point your IRC client to #libcamera to say hello, or use the
 
 .. _WebChat: https://webchat.oftc.net/?channels=libcamera
 
+The IRC channel is also bridged and accessible via `Matrix`_ in the #libcamera
+room:
+
+.. _Matrix: https://matrix.to/#/#libcamera:matrix.org
+
 Source Code
 -----------
 

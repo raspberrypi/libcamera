@@ -356,7 +356,7 @@ Request::Request(Camera *camera, uint64_t cookie)
 	: Extensible(std::make_unique<Private>(camera)),
 	  cookie_(cookie), status_(RequestPending)
 {
-	controls_ = new ControlList(controls::controls,
+	controls_ = new ControlList(camera->controls(),
 				    camera->_d()->validator());
 
 	/**

@@ -343,6 +343,9 @@ void ConverterDW100Module::updateControlInfos(const Stream *stream, ControlInfoM
 	controls[&controls::ScalerCrop] = ControlInfo(Rectangle(sensorCrop_.x, sensorCrop_.y, 1, 1),
 						      sensorCrop_, sensorCrop_);
 
+	if (dewarpParams_.has_value())
+		controls[&controls::LensDewarpEnable] = ControlInfo(false, true, true);
+
 	if (!converter_.supportsRequests())
 		LOG(Converter, Warning)
 			<< "dw100 kernel driver has no requests support."
@@ -365,6 +368,12 @@ void ConverterDW100Module::setControls(const Stream *stream, const ControlList &
 
 	auto &info = vertexMaps_[stream];
 	auto &vertexMap = info.map;
+
+	const auto &lensDewarpEnable = controls.get(controls::LensDewarpEnable);
+	if (lensDewarpEnable) {
+		vertexMap.setLensDewarpEnable(*lensDewarpEnable);
+		info.update = true;
+	}
 
 	const auto &crop = controls.get(controls::ScalerCrop);
 	if (crop) {
@@ -394,6 +403,9 @@ void ConverterDW100Module::populateMetadata(const Stream *stream, ControlList &m
 	auto &vertexMap = vertexMaps_[stream].map;
 
 	meta.set(controls::ScalerCrop, vertexMap.effectiveScalerCrop());
+
+	if (dewarpParams_.has_value())
+		meta.set(controls::LensDewarpEnable, vertexMap.lensDewarpEnable());
 }
 
 /**

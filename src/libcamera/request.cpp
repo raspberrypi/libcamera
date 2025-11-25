@@ -57,11 +57,16 @@ LOG_DEFINE_CATEGORY(Request)
 Request::Private::Private(Camera *camera)
 	: camera_(camera), cancelled_(false)
 {
+	/**
+	 * \todo Add a validator for metadata controls.
+	 */
+	metadata_ = new ControlList(controls::controls);
 }
 
 Request::Private::~Private()
 {
 	doCancelRequest();
+	delete metadata_;
 }
 
 /**
@@ -81,6 +86,12 @@ bool Request::Private::hasPendingBuffers() const
 {
 	return !pending_.empty();
 }
+
+/**
+ * \fn Request::Private::metadata()
+ * \brief Retrieve the request's metadata
+ * \return The metadata associated with the request
+ */
 
 /**
  * \brief Complete a buffer for the request
@@ -359,11 +370,6 @@ Request::Request(Camera *camera, uint64_t cookie)
 	controls_ = new ControlList(camera->controls(),
 				    camera->_d()->validator());
 
-	/**
-	 * \todo Add a validator for metadata controls.
-	 */
-	metadata_ = new ControlList(controls::controls);
-
 	LIBCAMERA_TRACEPOINT(request_construct, this);
 
 	LOG(Request, Debug) << "Created request - cookie: " << cookie_;
@@ -372,8 +378,6 @@ Request::Request(Camera *camera, uint64_t cookie)
 Request::~Request()
 {
 	LIBCAMERA_TRACEPOINT(request_destroy, this);
-
-	delete metadata_;
 	delete controls_;
 }
 
@@ -406,7 +410,7 @@ void Request::reuse(ReuseFlag flags)
 	status_ = RequestPending;
 
 	controls_->clear();
-	metadata_->clear();
+	_d()->metadata_->clear();
 }
 
 /**
@@ -424,6 +428,15 @@ void Request::reuse(ReuseFlag flags)
  *
  * \return A reference to the ControlList in this request
  */
+
+/**
+ * \brief Retrieve the request's metadata
+ * \return The a const reference to the metadata associated with the request
+ */
+const ControlList &Request::metadata() const
+{
+	return *_d()->metadata_;
+}
 
 /**
  * \fn Request::buffers()
@@ -524,14 +537,6 @@ FrameBuffer *Request::findBuffer(const Stream *stream) const
 
 	return it->second;
 }
-
-/**
- * \fn Request::metadata()
- * \brief Retrieve the request's metadata
- * \todo Offer a read-only API towards applications while keeping a read/write
- * API internally.
- * \return The metadata associated with the request
- */
 
 /**
  * \brief Retrieve the sequence number for the request

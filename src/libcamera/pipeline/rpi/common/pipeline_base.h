@@ -15,7 +15,6 @@
 #include <vector>
 
 #include <libcamera/controls.h>
-#include <libcamera/request.h>
 
 #include "libcamera/internal/bayer_format.h"
 #include "libcamera/internal/camera.h"
@@ -25,6 +24,7 @@
 #include "libcamera/internal/media_device.h"
 #include "libcamera/internal/media_object.h"
 #include "libcamera/internal/pipeline_handler.h"
+#include "libcamera/internal/request.h"
 #include "libcamera/internal/v4l2_videodevice.h"
 #include "libcamera/internal/yaml_parser.h"
 

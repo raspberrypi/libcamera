@@ -26,7 +26,6 @@
 #include <libcamera/formats.h>
 #include <libcamera/framebuffer.h>
 #include <libcamera/property_ids.h>
-#include <libcamera/request.h>
 #include <libcamera/stream.h>
 #include <libcamera/transform.h>
 
@@ -45,6 +44,7 @@
 #include "libcamera/internal/media_device.h"
 #include "libcamera/internal/media_pipeline.h"
 #include "libcamera/internal/pipeline_handler.h"
+#include "libcamera/internal/request.h"
 #include "libcamera/internal/v4l2_subdevice.h"
 #include "libcamera/internal/v4l2_videodevice.h"
 #include "libcamera/internal/yaml_parser.h"
@@ -507,7 +507,7 @@ void RkISP1CameraData::metadataReady(unsigned int frame, const ControlList &meta
 	if (!info)
 		return;
 
-	info->request->metadata().merge(metadata);
+	info->request->_d()->metadata().merge(metadata);
 	info->metadataProcessed = true;
 
 	pipe()->tryCompleteRequest(info);
@@ -1643,8 +1643,8 @@ void PipelineHandlerRkISP1::imageBufferReady(FrameBuffer *buffer)
 		 * \todo The sensor timestamp should be better estimated by connecting
 		 * to the V4L2Device::frameStart signal.
 		 */
-		request->metadata().set(controls::SensorTimestamp,
-					metadata.timestamp);
+		request->_d()->metadata().set(controls::SensorTimestamp,
+					      metadata.timestamp);
 
 		if (isRaw_) {
 			const ControlList &ctrls =
@@ -1686,7 +1686,7 @@ void PipelineHandlerRkISP1::imageBufferReady(FrameBuffer *buffer)
 		return;
 	}
 
-	dewarper_->populateMetadata(&data->mainPathStream_, request->metadata());
+	dewarper_->populateMetadata(&data->mainPathStream_, request->_d()->metadata());
 }
 
 void PipelineHandlerRkISP1::dewarpBufferReady(FrameBuffer *buffer)

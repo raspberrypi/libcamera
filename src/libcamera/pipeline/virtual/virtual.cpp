@@ -29,13 +29,13 @@
 #include <libcamera/formats.h>
 #include <libcamera/pixel_format.h>
 #include <libcamera/property_ids.h>
-#include <libcamera/request.h>
 
 #include "libcamera/internal/camera.h"
 #include "libcamera/internal/dma_buf_allocator.h"
 #include "libcamera/internal/formats.h"
 #include "libcamera/internal/framebuffer.h"
 #include "libcamera/internal/pipeline_handler.h"
+#include "libcamera/internal/request.h"
 #include "libcamera/internal/yaml_parser.h"
 
 #include "pipeline/virtual/config_parser.h"
@@ -366,7 +366,7 @@ int PipelineHandlerVirtual::queueRequestDevice([[maybe_unused]] Camera *camera,
 	VirtualCameraData *data = cameraData(camera);
 	const auto timestamp = currentTimestamp();
 
-	request->metadata().set(controls::SensorTimestamp, timestamp);
+	request->_d()->metadata().set(controls::SensorTimestamp, timestamp);
 	data->invokeMethod(&VirtualCameraData::processRequest,
 			   ConnectionTypeQueued, request);
 

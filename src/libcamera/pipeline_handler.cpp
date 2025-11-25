@@ -129,10 +129,12 @@ PipelineHandler::~PipelineHandler()
  *
  * \context This function shall be called from the CameraManager thread.
  *
- * \return A pointer to the matching MediaDevice, or nullptr if no match is found
+ * \return A shared pointer to the matching MediaDevice, or nullptr if no match
+ * is found
  */
-MediaDevice *PipelineHandler::acquireMediaDevice(DeviceEnumerator *enumerator,
-						 const DeviceMatch &dm)
+std::shared_ptr<MediaDevice>
+PipelineHandler::acquireMediaDevice(DeviceEnumerator *enumerator,
+				    const DeviceMatch &dm)
 {
 	std::shared_ptr<MediaDevice> media = enumerator->search(dm);
 	if (!media)
@@ -143,7 +145,7 @@ MediaDevice *PipelineHandler::acquireMediaDevice(DeviceEnumerator *enumerator,
 
 	mediaDevices_.push_back(media);
 
-	return media.get();
+	return media;
 }
 
 /**
@@ -734,7 +736,7 @@ void PipelineHandler::registerCamera(std::shared_ptr<Camera> camera)
  * handler gets notified and automatically disconnects all the cameras it has
  * registered without requiring any manual intervention.
  */
-void PipelineHandler::hotplugMediaDevice(MediaDevice *media)
+void PipelineHandler::hotplugMediaDevice(std::shared_ptr<MediaDevice> media)
 {
 	media->disconnected.connect(this, [this, media] { mediaDeviceDisconnected(media); });
 }
@@ -742,7 +744,7 @@ void PipelineHandler::hotplugMediaDevice(MediaDevice *media)
 /**
  * \brief Slot for the MediaDevice disconnected signal
  */
-void PipelineHandler::mediaDeviceDisconnected(MediaDevice *media)
+void PipelineHandler::mediaDeviceDisconnected(std::shared_ptr<MediaDevice> media)
 {
 	media->disconnected.disconnect(this);
 

@@ -37,7 +37,7 @@ public:
 	RkISP1Path(const char *name, const Span<const PixelFormat> &formats,
 		   const Size &minResolution, const Size &maxResolution);
 
-	bool init(MediaDevice *media);
+	bool init(std::shared_ptr<MediaDevice> media);
 
 	int setEnabled(bool enable) { return link_->setEnabled(enable); }
 	bool isEnabled() const { return link_->flags() & MEDIA_LNK_FL_ENABLED; }

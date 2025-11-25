@@ -38,7 +38,7 @@ public:
 	std::vector<PixelFormat> formats() const;
 	std::vector<SizeRange> sizes(const PixelFormat &format) const;
 
-	int init(const MediaDevice *media, unsigned int index);
+	int init(std::shared_ptr<const MediaDevice> media, unsigned int index);
 	int configure(const Size &size, const Transform &transform,
 		      V4L2DeviceFormat *outputFormat);
 

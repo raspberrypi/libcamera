@@ -415,7 +415,7 @@ public:
 
 	V4L2VideoDevice *video(const MediaEntity *entity);
 	V4L2Subdevice *subdev(const MediaEntity *entity);
-	MediaDevice *converter() { return converter_; }
+	MediaDevice *converter() { return converter_.get(); }
 	bool swIspEnabled() const { return swIspEnabled_; }
 
 protected:
@@ -436,7 +436,8 @@ private:
 		return static_cast<SimpleCameraData *>(camera->_d());
 	}
 
-	bool matchDevice(MediaDevice *media, const SimplePipelineInfo &info,
+	bool matchDevice(std::shared_ptr<MediaDevice> media,
+			 const SimplePipelineInfo &info,
 			 DeviceEnumerator *enumerator);
 
 	std::vector<MediaEntity *> locateSensors(MediaDevice *media);
@@ -447,7 +448,7 @@ private:
 
 	std::map<const MediaEntity *, EntityData> entities_;
 
-	MediaDevice *converter_;
+	std::shared_ptr<MediaDevice> converter_;
 	bool swIspEnabled_;
 };
 
@@ -1742,7 +1743,7 @@ int SimplePipelineHandler::resetRoutingTable(V4L2Subdevice *subdev)
 	return 0;
 }
 
-bool SimplePipelineHandler::matchDevice(MediaDevice *media,
+bool SimplePipelineHandler::matchDevice(std::shared_ptr<MediaDevice> media,
 					const SimplePipelineInfo &info,
 					DeviceEnumerator *enumerator)
 {
@@ -1773,7 +1774,7 @@ bool SimplePipelineHandler::matchDevice(MediaDevice *media,
 	}
 
 	/* Locate the sensors. */
-	std::vector<MediaEntity *> sensors = locateSensors(media);
+	std::vector<MediaEntity *> sensors = locateSensors(media.get());
 	if (sensors.empty()) {
 		LOG(SimplePipeline, Info) << "No sensor found for " << media->deviceNode();
 		return false;
@@ -1891,7 +1892,7 @@ bool SimplePipelineHandler::matchDevice(MediaDevice *media,
 
 bool SimplePipelineHandler::match(DeviceEnumerator *enumerator)
 {
-	MediaDevice *media;
+	std::shared_ptr<MediaDevice> media;
 
 	for (const SimplePipelineInfo &inf : supportedDevices) {
 		DeviceMatch dm(inf.driver);

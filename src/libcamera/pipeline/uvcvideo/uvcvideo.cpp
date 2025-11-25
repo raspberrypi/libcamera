@@ -46,7 +46,7 @@ public:
 	{
 	}
 
-	int init(MediaDevice *media);
+	int init(std::shared_ptr<MediaDevice> media);
 	void addControl(uint32_t cid, const ControlInfo &v4l2info,
 			ControlInfoMap::Map *ctrls);
 	void imageBufferReady(FrameBuffer *buffer);
@@ -469,7 +469,7 @@ int PipelineHandlerUVC::queueRequestDevice(Camera *camera, Request *request)
 
 bool PipelineHandlerUVC::match(DeviceEnumerator *enumerator)
 {
-	MediaDevice *media;
+	std::shared_ptr<MediaDevice> media;
 	DeviceMatch dm("uvcvideo");
 
 	media = acquireMediaDevice(enumerator, dm);
@@ -511,7 +511,7 @@ void PipelineHandlerUVC::releaseDevice(Camera *camera)
 	data->video_->close();
 }
 
-int UVCCameraData::init(MediaDevice *media)
+int UVCCameraData::init(std::shared_ptr<MediaDevice> media)
 {
 	int ret;
 

@@ -141,7 +141,7 @@ private:
 
 	void bufferReady(FrameBuffer *buffer);
 
-	MediaDevice *isiDev_;
+	std::shared_ptr<MediaDevice> isiDev_;
 
 	std::unique_ptr<V4L2Subdevice> crossbar_;
 	std::vector<Pipe> pipes_;
@@ -996,7 +996,7 @@ bool PipelineHandlerISI::match(DeviceEnumerator *enumerator)
 	 * Acquire the subdevs and video nodes for the crossbar switch and the
 	 * processing pipelines.
 	 */
-	crossbar_ = V4L2Subdevice::fromEntityName(isiDev_, "crossbar");
+	crossbar_ = V4L2Subdevice::fromEntityName(isiDev_.get(), "crossbar");
 	if (!crossbar_)
 		return false;
 
@@ -1007,7 +1007,7 @@ bool PipelineHandlerISI::match(DeviceEnumerator *enumerator)
 	for (unsigned int i = 0; ; ++i) {
 		std::string entityName = "mxc_isi." + std::to_string(i);
 		std::unique_ptr<V4L2Subdevice> isi =
-			V4L2Subdevice::fromEntityName(isiDev_, entityName);
+			V4L2Subdevice::fromEntityName(isiDev_.get(), entityName);
 		if (!isi)
 			break;
 
@@ -1017,7 +1017,7 @@ bool PipelineHandlerISI::match(DeviceEnumerator *enumerator)
 
 		entityName += ".capture";
 		std::unique_ptr<V4L2VideoDevice> capture =
-			V4L2VideoDevice::fromEntityName(isiDev_, entityName);
+			V4L2VideoDevice::fromEntityName(isiDev_.get(), entityName);
 		if (!capture)
 			return false;
 

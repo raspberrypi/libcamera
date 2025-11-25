@@ -218,7 +218,7 @@ private:
 
 	int updateControls(RkISP1CameraData *data);
 
-	MediaDevice *media_;
+	std::shared_ptr<MediaDevice> media_;
 	std::unique_ptr<V4L2Subdevice> isp_;
 	std::unique_ptr<V4L2VideoDevice> param_;
 	std::unique_ptr<V4L2VideoDevice> stat_;
@@ -1412,16 +1412,16 @@ bool PipelineHandlerRkISP1::match(DeviceEnumerator *enumerator)
 	hasSelfPath_ = !!media_->getEntityByName("rkisp1_selfpath");
 
 	/* Create the V4L2 subdevices we will need. */
-	isp_ = V4L2Subdevice::fromEntityName(media_, "rkisp1_isp");
+	isp_ = V4L2Subdevice::fromEntityName(media_.get(), "rkisp1_isp");
 	if (isp_->open() < 0)
 		return false;
 
 	/* Locate and open the stats and params video nodes. */
-	stat_ = V4L2VideoDevice::fromEntityName(media_, "rkisp1_stats");
+	stat_ = V4L2VideoDevice::fromEntityName(media_.get(), "rkisp1_stats");
 	if (stat_->open() < 0)
 		return false;
 
-	param_ = V4L2VideoDevice::fromEntityName(media_, "rkisp1_params");
+	param_ = V4L2VideoDevice::fromEntityName(media_.get(), "rkisp1_params");
 	if (param_->open() < 0)
 		return false;
 

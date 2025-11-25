@@ -9,6 +9,7 @@
 #include "libcamera/internal/converter/converter_v4l2_m2m.h"
 
 #include <algorithm>
+#include <errno.h>
 #include <limits.h>
 #include <memory>
 #include <set>
@@ -266,7 +267,7 @@ void V4L2M2MConverter::V4L2M2MStream::captureBufferReady(FrameBuffer *buffer)
  * \param[in] media The media device implementing the converter
  */
 V4L2M2MConverter::V4L2M2MConverter(std::shared_ptr<MediaDevice> media)
-	: Converter(media)
+	: Converter(media), media_(media)
 {
 	if (deviceNode().empty())
 		return;
@@ -740,6 +741,37 @@ int V4L2M2MConverter::queueBuffers(FrameBuffer *input,
 		       std::forward_as_tuple(outputs.size()));
 
 	return 0;
+}
+
+/**
+ * \copydoc libcamera::MediaDevice::allocateRequests
+ */
+int V4L2M2MConverter::allocateRequests(unsigned int count,
+				       std::vector<std::unique_ptr<V4L2Request>> *requests)
+{
+	/* \todo The acquire() must be moved to the right place. */
+	media_->acquire();
+	if (!media_->busy())
+		LOG(Converter, Error)
+			<< "MediaDevice must be valid.";
+	int ret = media_->allocateRequests(count, requests);
+	media_->release();
+	return ret;
+}
+
+/**
+ * \copydoc libcamera::MediaDevice::supportsRequests
+ */
+bool V4L2M2MConverter::supportsRequests()
+{
+	/* \todo The acquire() must be moved to the right place. */
+	media_->acquire();
+	if (!media_->busy())
+		LOG(Converter, Error)
+			<< "MediaDevice must be valid.";
+	bool ret = media_->supportsRequests();
+	media_->release();
+	return ret;
 }
 
 /*

@@ -73,6 +73,11 @@ public:
 	std::pair<Rectangle, Rectangle> inputCropBounds() override { return inputCropBounds_; }
 	std::pair<Rectangle, Rectangle> inputCropBounds(const Stream *stream) override;
 
+	int allocateRequests(unsigned int count,
+			     std::vector<std::unique_ptr<V4L2Request>> *requests);
+
+	bool supportsRequests();
+
 private:
 	class V4L2M2MStream : protected Loggable
 	{
@@ -122,6 +127,8 @@ private:
 	std::map<const Stream *, std::unique_ptr<V4L2M2MStream>> streams_;
 	std::map<FrameBuffer *, unsigned int> queue_;
 	std::pair<Rectangle, Rectangle> inputCropBounds_;
+
+	std::shared_ptr<MediaDevice> media_;
 };
 
 } /* namespace libcamera */

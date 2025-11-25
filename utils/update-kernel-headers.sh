@@ -49,6 +49,7 @@ headers="
 	drm/drm_fourcc.h
 	linux/dma-buf.h
 	linux/dma-heap.h
+	linux/dw100.h
 	linux/media-bus-format.h
 	linux/media.h
 	linux/rkisp1-config.h

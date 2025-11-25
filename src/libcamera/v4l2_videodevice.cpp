@@ -30,6 +30,7 @@
 #include "libcamera/internal/framebuffer.h"
 #include "libcamera/internal/media_device.h"
 #include "libcamera/internal/media_object.h"
+#include "libcamera/internal/v4l2_request.h"
 
 /**
  * \file v4l2_videodevice.h
@@ -1629,6 +1630,7 @@ int V4L2VideoDevice::releaseBuffers()
 /**
  * \brief Queue a buffer to the video device
  * \param[in] buffer The buffer to be queued
+ * \param[in] request An optional request
  *
  * For capture video devices the \a buffer will be filled with data by the
  * device. For output video devices the \a buffer shall contain valid data and
@@ -1641,9 +1643,11 @@ int V4L2VideoDevice::releaseBuffers()
  * Note that queueBuffer() will fail if the device is in the process of being
  * stopped from a streaming state through streamOff().
  *
+ * If \a request is specified, the buffer will be tied to that request.
+ *
  * \return 0 on success or a negative error code otherwise
  */
-int V4L2VideoDevice::queueBuffer(FrameBuffer *buffer)
+int V4L2VideoDevice::queueBuffer(FrameBuffer *buffer, const V4L2Request *request)
 {
 	struct v4l2_plane v4l2Planes[VIDEO_MAX_PLANES] = {};
 	struct v4l2_buffer buf = {};
@@ -1674,6 +1678,10 @@ int V4L2VideoDevice::queueBuffer(FrameBuffer *buffer)
 	buf.type = bufferType_;
 	buf.memory = memoryType_;
 	buf.field = V4L2_FIELD_NONE;
+	if (request) {
+		buf.flags = V4L2_BUF_FLAG_REQUEST_FD;
+		buf.request_fd = request->fd();
+	}
 
 	bool multiPlanar = V4L2_TYPE_IS_MULTIPLANAR(buf.type);
 	Span<const FrameBuffer::Plane> planes = buffer->planes();

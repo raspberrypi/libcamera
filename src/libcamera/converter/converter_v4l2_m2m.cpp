@@ -18,6 +18,7 @@
 #include <libcamera/base/signal.h>
 #include <libcamera/base/utils.h>
 
+#include <libcamera/controls.h>
 #include <libcamera/framebuffer.h>
 #include <libcamera/geometry.h>
 #include <libcamera/stream.h>
@@ -249,6 +250,20 @@ void V4L2M2MConverter::V4L2M2MStream::outputBufferReady(FrameBuffer *buffer)
 void V4L2M2MConverter::V4L2M2MStream::captureBufferReady(FrameBuffer *buffer)
 {
 	converter_->outputBufferReady.emit(buffer);
+}
+
+/**
+ * \brief Apply controls
+ * \param[in] ctrls The controls to apply
+ * \param[in] request An optional request
+ *
+ * \return 0 on success or a negative error code otherwise
+ * \see V4L2Device::setControls()
+ */
+int V4L2M2MConverter::V4L2M2MStream::applyControls(ControlList &ctrls,
+						   const V4L2Request *request)
+{
+	return m2m_->capture()->setControls(&ctrls, request);
 }
 
 /* -----------------------------------------------------------------------------
@@ -742,6 +757,25 @@ int V4L2M2MConverter::queueBuffers(FrameBuffer *input,
 		       std::forward_as_tuple(outputs.size()));
 
 	return 0;
+}
+
+/**
+ * \brief Apply controls
+ * \param[in] stream The stream on which to apply the controls
+ * \param[in] ctrls The controls to apply
+ * \param[in] request An optional request
+ *
+ * \return 0 on success or a negative error code otherwise
+ * \see V4L2Device::setControls()
+ */
+int V4L2M2MConverter::applyControls(const Stream *stream, ControlList &ctrls,
+				    const V4L2Request *request)
+{
+	auto iter = streams_.find(stream);
+	if (iter == streams_.end())
+		return -EINVAL;
+
+	return iter->second->applyControls(ctrls, request);
 }
 
 /**

@@ -24,6 +24,7 @@
 
 namespace libcamera {
 
+class ControlList;
 class FrameBuffer;
 class MediaDevice;
 class Size;
@@ -73,6 +74,8 @@ public:
 	std::pair<Rectangle, Rectangle> inputCropBounds() override { return inputCropBounds_; }
 	std::pair<Rectangle, Rectangle> inputCropBounds(const Stream *stream) override;
 
+	int applyControls(const Stream *stream, ControlList &ctrls, const V4L2Request *request = nullptr);
+
 	int allocateRequests(unsigned int count,
 			     std::vector<std::unique_ptr<V4L2Request>> *requests);
 
@@ -93,6 +96,8 @@ private:
 
 		int start();
 		void stop();
+
+		int applyControls(ControlList &ctrls, const V4L2Request *request = nullptr);
 
 		int queueBuffers(FrameBuffer *input, FrameBuffer *output,
 				 const V4L2Request *request = nullptr);

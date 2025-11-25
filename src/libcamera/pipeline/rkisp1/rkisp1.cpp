@@ -609,6 +609,11 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 			return false;
 
 		if (useDewarper) {
+			/*
+			 * The dewarper output is independent of the ISP path.
+			 * Reset to the originally requested size.
+			 */
+			tryCfg.size = cfg.size;
 			bool adjusted;
 
 			pipe->dewarper_->validateOutput(&tryCfg, &adjusted,

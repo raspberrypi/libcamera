@@ -88,6 +88,7 @@ public:
 	int sensorInfo(IPACameraSensorInfo *info) const override;
 	Transform computeTransform(Orientation *orientation) const override;
 	BayerFormat::Order bayerOrder(Transform t) const override;
+	Orientation mountingOrientation() const override { return mountingOrientation_; }
 
 	const ControlInfoMap &controls() const override;
 	ControlList getControls(Span<const uint32_t> ids) override;

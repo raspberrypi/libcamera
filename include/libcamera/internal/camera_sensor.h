@@ -73,6 +73,7 @@ public:
 	virtual int sensorInfo(IPACameraSensorInfo *info) const = 0;
 	virtual Transform computeTransform(Orientation *orientation) const = 0;
 	virtual BayerFormat::Order bayerOrder(Transform t) const = 0;
+	virtual Orientation mountingOrientation() const = 0;
 
 	virtual const ControlInfoMap &controls() const = 0;
 	virtual ControlList getControls(Span<const uint32_t> ids) = 0;

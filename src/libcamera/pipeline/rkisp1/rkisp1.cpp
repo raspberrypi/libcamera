@@ -677,21 +677,16 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 	}
 
 	/* Select the sensor format. */
-	PixelFormat rawFormat;
 	Size maxSize;
 
 	for (const StreamConfiguration &cfg : config_) {
-		const PixelFormatInfo &info = PixelFormatInfo::info(cfg.pixelFormat);
-		if (info.colourEncoding == PixelFormatInfo::ColourEncodingRAW)
-			rawFormat = cfg.pixelFormat;
-
 		maxSize = std::max(maxSize, cfg.size);
 	}
 
 	std::vector<unsigned int> mbusCodes;
 
-	if (rawFormat.isValid()) {
-		mbusCodes = { rawFormats.at(rawFormat) };
+	if (isRaw) {
+		mbusCodes = { rawFormats.at(config_[0].pixelFormat) };
 	} else {
 		std::transform(rawFormats.begin(), rawFormats.end(),
 			       std::back_inserter(mbusCodes),

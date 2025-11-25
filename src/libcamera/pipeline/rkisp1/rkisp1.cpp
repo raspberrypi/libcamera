@@ -883,16 +883,31 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 	/*
 	 * On devices without DUAL_CROP (like the imx8mp) cropping needs to be
 	 * done on the ISP/IS output.
+	 *
+	 * If the dewarper is used, the cropping shall be done by the dewarper.
 	 */
 	if (media_->hwRevision() == RKISP1_V_IMX8MP) {
 		/* imx8mp has only a single path. */
 		const auto &cfg = config->at(0);
-		Size ispCrop = format.size.boundedToAspectRatio(cfg.size);
+		/*
+		 * If the dewarper is used, all cropping including aspect ratio
+		 * preservation shall be done there. To ensure that the output
+		 * format provided by the ISP is supported by the dewarper, a
+		 * minimal crop still needs to be applied on the ISP output.
+		 *
+		 * \todo It might be possible to allocate bigger buffers
+		 * (aligned to 8 pixels) with a stride matching format.size for
+		 * the ISP. The not-filled border could later be ignored by the
+		 * dewarper. This way we could skip the minimal crop here and
+		 * the MaximumScalerCrop would always match the isp output.
+		 */
+		Size ispCrop;
 		if (data->usesDewarper_)
 			ispCrop = dewarper_->adjustInputSize(cfg.pixelFormat,
-							     ispCrop);
+							     format.size);
 		else
-			ispCrop.alignUpTo(2, 2);
+			ispCrop = format.size.boundedToAspectRatio(cfg.size)
+					  .alignedUpTo(2, 2);
 
 		outputCrop = ispCrop.centeredTo(Rectangle(format.size).center());
 		format.size = ispCrop;
@@ -925,13 +940,21 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 
 	for (const StreamConfiguration &cfg : *config) {
 		if (cfg.stream() == &data->mainPathStream_) {
-			ret = mainPath_.configure(cfg, format);
-			streamConfig[0] = IPAStream(cfg.pixelFormat,
-						    cfg.size);
-			/* Configure dewarp */
+			/*
+			 * To allow for digital zoom, scaling down should happen
+			 * in the dewarper, instead of the resizer. Configure
+			 * the isp output to the same size as the sensor output.
+			 */
+			StreamConfiguration ispCfg = cfg;
 			if (data->usesDewarper_) {
 				outputCfgs.push_back(const_cast<StreamConfiguration &>(cfg));
-				ret = dewarper_->configure(cfg, outputCfgs);
+
+				ispCfg.size = format.size;
+				ispCfg.stride =
+					PixelFormatInfo::info(ispCfg.pixelFormat)
+						.stride(ispCfg.size.width, 0);
+
+				ret = dewarper_->configure(ispCfg, outputCfgs);
 				if (ret)
 					return ret;
 
@@ -944,6 +967,10 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 					outputCrop.transformedBetween(inputCrop,
 								      sensorInfo.analogCrop);
 			}
+
+			ret = mainPath_.configure(ispCfg, format);
+			streamConfig[0] = IPAStream(cfg.pixelFormat,
+						    cfg.size);
 		} else if (hasSelfPath_) {
 			ret = selfPath_.configure(cfg, format);
 			streamConfig[1] = IPAStream(cfg.pixelFormat,

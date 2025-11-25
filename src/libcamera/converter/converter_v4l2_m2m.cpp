@@ -680,6 +680,7 @@ int V4L2M2MConverter::validateOutput(StreamConfiguration *cfg, bool *adjusted,
 
 	const Size cfgSize = cfg->size;
 	cfg->size = adjustSizes(cfgSize, it->second, align);
+	cfg->stride = PixelFormatInfo::info(cfg->pixelFormat).stride(cfg->size.width, 0);
 
 	if (cfg->size.isNull())
 		return -EINVAL;

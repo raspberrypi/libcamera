@@ -22,6 +22,7 @@
 #include <libcamera/stream.h>
 
 #include "libcamera/internal/media_device.h"
+#include "libcamera/internal/v4l2_request.h"
 #include "libcamera/internal/v4l2_videodevice.h"
 
 /**
@@ -197,9 +198,11 @@ void V4L2M2MConverter::V4L2M2MStream::stop()
 	m2m_->output()->releaseBuffers();
 }
 
-int V4L2M2MConverter::V4L2M2MStream::queueBuffers(FrameBuffer *input, FrameBuffer *output)
+int V4L2M2MConverter::V4L2M2MStream::queueBuffers(FrameBuffer *input,
+						  FrameBuffer *output,
+						  const V4L2Request *request)
 {
-	int ret = m2m_->output()->queueBuffer(input);
+	int ret = m2m_->output()->queueBuffer(input, request);
 	if (ret < 0)
 		return ret;
 
@@ -696,7 +699,8 @@ int V4L2M2MConverter::validateOutput(StreamConfiguration *cfg, bool *adjusted,
  * \copydoc libcamera::Converter::queueBuffers
  */
 int V4L2M2MConverter::queueBuffers(FrameBuffer *input,
-				   const std::map<const Stream *, FrameBuffer *> &outputs)
+				   const std::map<const Stream *, FrameBuffer *> &outputs,
+				   const V4L2Request *request)
 {
 	std::set<FrameBuffer *> outputBufs;
 	int ret;
@@ -721,7 +725,7 @@ int V4L2M2MConverter::queueBuffers(FrameBuffer *input,
 
 	/* Queue the input and output buffers to all the streams. */
 	for (auto [stream, buffer] : outputs) {
-		ret = streams_.at(stream)->queueBuffers(input, buffer);
+		ret = streams_.at(stream)->queueBuffers(input, buffer, request);
 		if (ret < 0)
 			return ret;
 	}

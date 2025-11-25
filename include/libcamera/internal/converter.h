@@ -22,6 +22,7 @@
 #include <libcamera/base/signal.h>
 
 #include <libcamera/geometry.h>
+#include "libcamera/internal/v4l2_request.h"
 
 namespace libcamera {
 
@@ -79,7 +80,8 @@ public:
 	virtual void stop() = 0;
 
 	virtual int queueBuffers(FrameBuffer *input,
-				 const std::map<const Stream *, FrameBuffer *> &outputs) = 0;
+				 const std::map<const Stream *, FrameBuffer *> &outputs,
+				 const V4L2Request *request = nullptr) = 0;
 
 	virtual int setInputCrop(const Stream *stream, Rectangle *rect) = 0;
 	virtual std::pair<Rectangle, Rectangle> inputCropBounds() = 0;

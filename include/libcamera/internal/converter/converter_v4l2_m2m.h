@@ -66,7 +66,8 @@ public:
 			   Alignment align = Alignment::Down) override;
 
 	int queueBuffers(FrameBuffer *input,
-			 const std::map<const Stream *, FrameBuffer *> &outputs) override;
+			 const std::map<const Stream *, FrameBuffer *> &outputs,
+			 const V4L2Request *request = nullptr) override;
 
 	int setInputCrop(const Stream *stream, Rectangle *rect) override;
 	std::pair<Rectangle, Rectangle> inputCropBounds() override { return inputCropBounds_; }
@@ -88,7 +89,8 @@ private:
 		int start();
 		void stop();
 
-		int queueBuffers(FrameBuffer *input, FrameBuffer *output);
+		int queueBuffers(FrameBuffer *input, FrameBuffer *output,
+				 const V4L2Request *request = nullptr);
 
 		int setInputSelection(unsigned int target, Rectangle *rect);
 		int getInputSelection(unsigned int target, Rectangle *rect);

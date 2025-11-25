@@ -205,10 +205,13 @@ Converter::~Converter()
  * \param[in] input The frame buffer to apply the conversion
  * \param[out] outputs The container holding the output stream pointers and
  * their respective frame buffer outputs.
+ * \param[in] request An optional request
  *
  * This function queues the \a input frame buffer on the output streams of the
  * \a outputs map key and retrieve the output frame buffer indicated by the
  * buffer map value.
+ *
+ * If \a request is provided the buffers are tied to that request.
  *
  * \return 0 on success or a negative error code otherwise
  */

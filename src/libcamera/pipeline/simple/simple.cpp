@@ -415,7 +415,7 @@ public:
 
 	V4L2VideoDevice *video(const MediaEntity *entity);
 	V4L2Subdevice *subdev(const MediaEntity *entity);
-	MediaDevice *converter() { return converter_.get(); }
+	std::shared_ptr<MediaDevice> converter() { return converter_; }
 	bool swIspEnabled() const { return swIspEnabled_; }
 
 protected:
@@ -588,7 +588,7 @@ int SimpleCameraData::init()
 	int ret;
 
 	/* Open the converter, if any. */
-	MediaDevice *converter = pipe->converter();
+	std::shared_ptr<MediaDevice> converter = pipe->converter();
 	if (converter) {
 		converter_ = ConverterFactoryBase::create(converter);
 		if (!converter_) {

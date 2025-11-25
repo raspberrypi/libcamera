@@ -1445,7 +1445,7 @@ bool PipelineHandlerRkISP1::match(DeviceEnumerator *enumerator)
 
 	std::shared_ptr<MediaDevice> dwpMediaDevice = enumerator->search(dwp);
 	if (dwpMediaDevice) {
-		dewarper_ = std::make_unique<V4L2M2MConverter>(dwpMediaDevice.get());
+		dewarper_ = std::make_unique<V4L2M2MConverter>(dwpMediaDevice);
 		if (dewarper_->isValid()) {
 			dewarper_->outputBufferReady.connect(
 				this, &PipelineHandlerRkISP1::dewarpBufferReady);

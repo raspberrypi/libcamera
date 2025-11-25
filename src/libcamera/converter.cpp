@@ -8,6 +8,7 @@
 #include "libcamera/internal/converter.h"
 
 #include <algorithm>
+#include <memory>
 
 #include <libcamera/base/log.h>
 
@@ -68,7 +69,7 @@ LOG_DEFINE_CATEGORY(Converter)
  * This searches for the entity implementing the data streaming function in the
  * media graph entities and use its device node as the converter device node.
  */
-Converter::Converter(MediaDevice *media, Features features)
+Converter::Converter(std::shared_ptr<MediaDevice> media, Features features)
 {
 	const std::vector<MediaEntity *> &entities = media->entities();
 	auto it = std::find_if(entities.begin(), entities.end(),
@@ -332,7 +333,7 @@ ConverterFactoryBase::ConverterFactoryBase(const std::string name, std::initiali
  * \return A new instance of the converter subclass corresponding to the media
  * device, or null if the media device driver name doesn't match anything
  */
-std::unique_ptr<Converter> ConverterFactoryBase::create(MediaDevice *media)
+std::unique_ptr<Converter> ConverterFactoryBase::create(std::shared_ptr<MediaDevice> media)
 {
 	const std::vector<ConverterFactoryBase *> &factories =
 		ConverterFactoryBase::factories();

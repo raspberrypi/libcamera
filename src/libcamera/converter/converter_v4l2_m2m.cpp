@@ -10,6 +10,7 @@
 
 #include <algorithm>
 #include <limits.h>
+#include <memory>
 #include <set>
 
 #include <libcamera/base/log.h>
@@ -261,8 +262,7 @@ void V4L2M2MConverter::V4L2M2MStream::captureBufferReady(FrameBuffer *buffer)
  * \brief Construct a V4L2M2MConverter instance
  * \param[in] media The media device implementing the converter
  */
-
-V4L2M2MConverter::V4L2M2MConverter(MediaDevice *media)
+V4L2M2MConverter::V4L2M2MConverter(std::shared_ptr<MediaDevice> media)
 	: Converter(media)
 {
 	if (deviceNode().empty())

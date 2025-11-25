@@ -36,7 +36,7 @@ class V4L2M2MDevice;
 class V4L2M2MConverter : public Converter
 {
 public:
-	V4L2M2MConverter(MediaDevice *media);
+	V4L2M2MConverter(std::shared_ptr<MediaDevice> media);
 
 	int loadConfiguration([[maybe_unused]] const std::string &filename) override { return 0; }
 	bool isValid() const override { return m2m_ != nullptr; }

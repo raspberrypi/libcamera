@@ -551,31 +551,30 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 		status = Adjusted;
 
 	/*
-	 * Simultaneous capture of raw and processed streams isn't possible. If
-	 * there is any raw stream, cap the number of streams to one.
+	 * Simultaneous capture of raw and processed streams isn't possible.
+	 * Let the first stream decide on the type.
 	 */
-	if (config_.size() > 1) {
-		for (const auto &cfg : config_) {
-			if (PixelFormatInfo::info(cfg.pixelFormat).colourEncoding ==
+	bool isRaw = (PixelFormatInfo::info(config_[0].pixelFormat).colourEncoding ==
+		      PixelFormatInfo::ColourEncodingRAW);
+	if (isRaw) {
+		if (config_.size() > 1) {
+			config_.resize(1);
+			status = Adjusted;
+		}
+	} else {
+		/* Drop all raw configs. */
+		for (auto it = config_.begin(); it != config_.end();) {
+			if (PixelFormatInfo::info(it->pixelFormat).colourEncoding ==
 			    PixelFormatInfo::ColourEncodingRAW) {
-				config_.resize(1);
+				it = config_.erase(it);
 				status = Adjusted;
-				break;
+				continue;
 			}
+			++it;
 		}
 	}
 
-	bool useDewarper = false;
-	if (pipe->dewarper_) {
-		/*
-		 * Platforms with dewarper support, such as i.MX8MP, support
-		 * only a single stream. We can inspect config_[0] only here.
-		 */
-		bool isRaw = PixelFormatInfo::info(config_[0].pixelFormat).colourEncoding ==
-			     PixelFormatInfo::ColourEncodingRAW;
-		if (!isRaw)
-			useDewarper = true;
-	}
+	bool useDewarper = (pipe->dewarper_ && !isRaw);
 
 	/*
 	 * If there are more than one stream in the configuration figure out the

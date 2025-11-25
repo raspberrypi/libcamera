@@ -954,6 +954,7 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 			if (data->usesDewarper_) {
 				outputCfgs.push_back(const_cast<StreamConfiguration &>(cfg));
 
+				ispCfg.bufferCount = kRkISP1MinBufferCount;
 				ispCfg.size = format.size;
 				ispCfg.stride =
 					PixelFormatInfo::info(ispCfg.pixelFormat)

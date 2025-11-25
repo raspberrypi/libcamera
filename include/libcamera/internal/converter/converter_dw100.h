@@ -31,6 +31,8 @@ public:
 
 	static std::unique_ptr<ConverterDW100Module> createModule(DeviceEnumerator *enumerator);
 
+	int init(const YamlObject &params);
+
 	int configure(const StreamConfiguration &inputCfg,
 		      const std::vector<std::reference_wrapper<StreamConfiguration>>
 			      &outputCfg);
@@ -67,12 +69,18 @@ private:
 	int applyControls(const Stream *stream, const V4L2Request *request);
 	void reinitRequest(V4L2Request *request);
 
+	struct DewarpParms {
+		Matrix<double, 3, 3> cm;
+		std::vector<double> coeffs;
+	};
+
 	struct VertexMapInfo {
 		Dw100VertexMap map;
 		bool update;
 	};
 
 	std::map<const Stream *, VertexMapInfo> vertexMaps_;
+	std::optional<DewarpParms> dewarpParams_;
 	unsigned int inputBufferCount_;
 	V4L2M2MConverter converter_;
 	Rectangle sensorCrop_;

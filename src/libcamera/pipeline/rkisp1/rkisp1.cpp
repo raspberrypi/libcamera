@@ -453,10 +453,18 @@ int RkISP1CameraData::loadTuningFile(const std::string &path)
 
 	const auto &modules = (*data)["modules"].asList();
 	for (const auto &module : modules) {
-		if (module.contains("Dewarp")) {
-			canUseDewarper_ = true;
-			break;
-		}
+		const auto &params = module["Dewarp"];
+		if (!params)
+			continue;
+
+		ret = pipe()->dewarper_->init(params);
+		if (ret)
+			return ret;
+
+		LOG(RkISP1, Info) << "Dw100 dewarper initialized";
+
+		canUseDewarper_ = true;
+		return 0;
 	}
 
 	return 0;

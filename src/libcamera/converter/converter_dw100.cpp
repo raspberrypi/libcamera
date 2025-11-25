@@ -71,6 +71,74 @@ ConverterDW100Module::createModule(DeviceEnumerator *enumerator)
 }
 
 /**
+ * \brief Initialize the module with configuration data
+ * \param[in] params The config parameters
+ *
+ * This function shall be called from the pipeline handler to initialize the
+ * module with the provided parameters.
+ *
+ * A typical tuning file entry for the dewarper looks like this:
+ * \code{.unparsed}
+ * modules:
+ * - Dewarp:
+ *    cm: [
+ *      1.0, 0.0, 0.0,
+ *      0.0, 1.0, 0.0,
+ *      0.0, 0.0, 1.0,
+ *    ]
+ *    coefficients: [
+ *      0,0,0,0,0,
+ *    ]
+ * \endcode
+ *
+ * The \a cm and \a coefficients parameters are documented in
+ * Dw100VertexMap::setDewarpParams()
+ *
+ * \sa Dw100VertexMap::setDewarpParams()
+ * \return 0 if successful, an error code otherwise
+ */
+int ConverterDW100Module::init(const YamlObject &params)
+{
+	DewarpParms dp;
+
+	auto &cm = params["cm"];
+	auto &coefficients = params["coefficients"];
+
+	/* If nothing is provided, the dewarper is still functional */
+	if (!cm && !coefficients)
+		return 0;
+
+	if (!cm) {
+		LOG(Converter, Error) << "Dewarp parameters are missing 'cm' value";
+		return -EINVAL;
+	}
+
+	auto matrix = cm.get<Matrix<double, 3, 3>>();
+	if (!matrix) {
+		LOG(Converter, Error) << "Failed to load 'cm' value";
+		return -EINVAL;
+	}
+
+	dp.cm = *matrix;
+
+	if (!coefficients) {
+		LOG(Converter, Error) << "Dewarp parameters are missing 'coefficients' value";
+		return -EINVAL;
+	}
+
+	const auto coeffs = coefficients.getList<double>();
+	if (!coeffs) {
+		LOG(Converter, Error) << "Dewarp parameters 'coefficients' value is not a list";
+		return -EINVAL;
+	}
+	dp.coeffs = std::move(*coeffs);
+
+	dewarpParams_ = dp;
+
+	return 0;
+}
+
+/**
  * \copydoc libcamera::V4L2M2MConverter::configure
  */
 int ConverterDW100Module::configure(const StreamConfiguration &inputCfg,
@@ -93,6 +161,9 @@ int ConverterDW100Module::configure(const StreamConfiguration &inputCfg,
 		vertexMap.setInputSize(inputCfg.size);
 		vertexMap.setOutputSize(outputCfg.size);
 		vertexMap.setSensorCrop(sensorCrop_);
+
+		if (dewarpParams_)
+			vertexMap.setDewarpParams(dewarpParams_->cm, dewarpParams_->coeffs);
 		info.update = true;
 	}
 

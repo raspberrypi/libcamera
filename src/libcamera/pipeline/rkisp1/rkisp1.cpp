@@ -122,6 +122,8 @@ public:
 	 */
 	MediaPipeline pipe_;
 
+	bool usesDewarper_;
+
 private:
 	void paramsComputed(unsigned int frame, unsigned int bytesused);
 	void setSensorControls(unsigned int frame,
@@ -232,7 +234,6 @@ private:
 
 	std::unique_ptr<V4L2M2MConverter> dewarper_;
 	Rectangle scalerMaxCrop_;
-	bool useDewarper_;
 
 	std::optional<Rectangle> activeCrop_;
 
@@ -280,7 +281,7 @@ RkISP1FrameInfo *RkISP1Frames::create(const RkISP1CameraData *data, Request *req
 		statBuffer = pipe_->availableStatBuffers_.front();
 		pipe_->availableStatBuffers_.pop();
 
-		if (pipe_->useDewarper_) {
+		if (data->usesDewarper_) {
 			mainPathBuffer = pipe_->availableMainPathBuffers_.front();
 			pipe_->availableMainPathBuffers_.pop();
 		}
@@ -710,8 +711,7 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
  */
 
 PipelineHandlerRkISP1::PipelineHandlerRkISP1(CameraManager *manager)
-	: PipelineHandler(manager, kRkISP1MaxQueuedRequests),
-	  hasSelfPath_(true), useDewarper_(false)
+	: PipelineHandler(manager, kRkISP1MaxQueuedRequests), hasSelfPath_(true)
 {
 }
 
@@ -874,7 +874,7 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 	const PixelFormat &streamFormat = config->at(0).pixelFormat;
 	const PixelFormatInfo &info = PixelFormatInfo::info(streamFormat);
 	isRaw_ = info.colourEncoding == PixelFormatInfo::ColourEncodingRAW;
-	useDewarper_ = dewarper_ && !isRaw_;
+	data->usesDewarper_ = dewarper_ && !isRaw_;
 
 	/* YUYV8_2X8 is required on the ISP source path pad for YUV output. */
 	if (!isRaw_)
@@ -888,7 +888,7 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 		/* imx8mp has only a single path. */
 		const auto &cfg = config->at(0);
 		Size ispCrop = format.size.boundedToAspectRatio(cfg.size);
-		if (useDewarper_)
+		if (data->usesDewarper_)
 			ispCrop = dewarper_->adjustInputSize(cfg.pixelFormat,
 							     ispCrop);
 		else
@@ -929,7 +929,7 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 			streamConfig[0] = IPAStream(cfg.pixelFormat,
 						    cfg.size);
 			/* Configure dewarp */
-			if (dewarper_ && !isRaw_) {
+			if (data->usesDewarper_) {
 				outputCfgs.push_back(const_cast<StreamConfiguration &>(cfg));
 				ret = dewarper_->configure(cfg, outputCfgs);
 				if (ret)
@@ -994,7 +994,7 @@ int PipelineHandlerRkISP1::exportFrameBuffers([[maybe_unused]] Camera *camera, S
 		 * It has mainpath and no self path. Hence, export buffers from
 		 * dewarper just for the main path stream, for now.
 		 */
-		if (useDewarper_)
+		if (data->usesDewarper_)
 			return dewarper_->exportBuffers(&data->mainPathStream_, count, buffers);
 		else
 			return mainPath_.exportBuffers(count, buffers);
@@ -1028,7 +1028,7 @@ int PipelineHandlerRkISP1::allocateBuffers(Camera *camera)
 	}
 
 	/* If the dewarper is being used, allocate internal buffers for ISP. */
-	if (useDewarper_) {
+	if (data->usesDewarper_) {
 		ret = mainPath_.exportBuffers(kRkISP1MinBufferCount, &mainPathBuffers_);
 		if (ret < 0)
 			return ret;
@@ -1131,7 +1131,7 @@ int PipelineHandlerRkISP1::start(Camera *camera, [[maybe_unused]] const ControlL
 		}
 		actions += [&]() { stat_->streamOff(); };
 
-		if (useDewarper_) {
+		if (data->usesDewarper_) {
 			ret = dewarper_->start();
 			if (ret) {
 				LOG(RkISP1, Error) << "Failed to start dewarper";
@@ -1186,7 +1186,7 @@ void PipelineHandlerRkISP1::stopDevice(Camera *camera)
 			LOG(RkISP1, Warning)
 				<< "Failed to stop parameters for " << camera->id();
 
-		if (useDewarper_)
+		if (data->usesDewarper_)
 			dewarper_->stop();
 	}
 
@@ -1282,7 +1282,7 @@ int PipelineHandlerRkISP1::updateControls(RkISP1CameraData *data)
 {
 	ControlInfoMap::Map controls;
 
-	if (dewarper_) {
+	if (data->usesDewarper_) {
 		std::pair<Rectangle, Rectangle> cropLimits;
 		if (dewarper_->isConfigured(&data->mainPathStream_))
 			cropLimits = dewarper_->inputCropBounds(&data->mainPathStream_);
@@ -1452,7 +1452,7 @@ bool PipelineHandlerRkISP1::match(DeviceEnumerator *enumerator)
 				this, &PipelineHandlerRkISP1::dewarpBufferReady);
 
 			LOG(RkISP1, Info)
-				<< "Using DW100 dewarper " << dewarper_->deviceNode();
+				<< "Found DW100 dewarper " << dewarper_->deviceNode();
 		} else {
 			LOG(RkISP1, Warning)
 				<< "Found DW100 dewarper " << dewarper_->deviceNode()
@@ -1557,7 +1557,7 @@ void PipelineHandlerRkISP1::imageBufferReady(FrameBuffer *buffer)
 			info->metadataProcessed = true;
 	}
 
-	if (!useDewarper_) {
+	if (!data->usesDewarper_) {
 		completeBuffer(request, buffer);
 		tryCompleteRequest(info);
 

@@ -111,6 +111,7 @@ int V4L2M2MConverter::V4L2M2MStream::configure(const StreamConfiguration &inputC
 	format.planesCount = 1;
 	format.planes[0].bpl = inputCfg.stride;
 
+	LOG(Converter, Debug) << "Set input format to: " << format;
 	int ret = m2m_->output()->setFormat(&format);
 	if (ret < 0) {
 		LOG(Converter, Error)
@@ -133,6 +134,7 @@ int V4L2M2MConverter::V4L2M2MStream::configure(const StreamConfiguration &inputC
 	format.fourcc = videoFormat;
 	format.size = outputCfg.size;
 
+	LOG(Converter, Debug) << "Set output format to: " << format;
 	ret = m2m_->capture()->setFormat(&format);
 	if (ret < 0) {
 		LOG(Converter, Error)

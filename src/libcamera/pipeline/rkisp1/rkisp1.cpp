@@ -16,6 +16,7 @@
 #include <linux/media-bus-format.h>
 #include <linux/rkisp1-config.h>
 
+#include <libcamera/base/file.h>
 #include <libcamera/base/log.h>
 #include <libcamera/base/utils.h>
 
@@ -46,6 +47,7 @@
 #include "libcamera/internal/pipeline_handler.h"
 #include "libcamera/internal/v4l2_subdevice.h"
 #include "libcamera/internal/v4l2_videodevice.h"
+#include "libcamera/internal/yaml_parser.h"
 
 #include "rkisp1_path.h"
 
@@ -94,7 +96,8 @@ public:
 	RkISP1CameraData(PipelineHandler *pipe, RkISP1MainPath *mainPath,
 			 RkISP1SelfPath *selfPath)
 		: Camera::Private(pipe), frame_(0), frameInfo_(pipe),
-		  mainPath_(mainPath), selfPath_(selfPath)
+		  mainPath_(mainPath), selfPath_(selfPath),
+		  canUseDewarper_(false), usesDewarper_(false)
 	{
 	}
 
@@ -122,6 +125,7 @@ public:
 	 */
 	MediaPipeline pipe_;
 
+	bool canUseDewarper_;
 	bool usesDewarper_;
 
 private:
@@ -130,6 +134,7 @@ private:
 			       const ControlList &sensorControls);
 
 	void metadataReady(unsigned int frame, const ControlList &metadata);
+	int loadTuningFile(const std::string &file);
 };
 
 class RkISP1CameraConfiguration : public CameraConfiguration
@@ -411,6 +416,49 @@ int RkISP1CameraData::loadIPA(unsigned int hwRevision, uint32_t supportedBlocks)
 		return ret;
 	}
 
+	ret = loadTuningFile(ipaTuningFile);
+	if (ret < 0) {
+		LOG(RkISP1, Error) << "Failed to load tuning file";
+		return ret;
+	}
+
+	return 0;
+}
+
+int RkISP1CameraData::loadTuningFile(const std::string &path)
+{
+	int ret;
+
+	if (!pipe()->dewarper_)
+		/* Nothing to do without dewarper */
+		return 0;
+
+	LOG(RkISP1, Debug) << "Load tuning file " << path;
+
+	File file(path);
+	if (!file.open(File::OpenModeFlag::ReadOnly)) {
+		ret = file.error();
+		LOG(RkISP1, Error)
+			<< "Failed to open tuning file "
+			<< path << ": " << strerror(-ret);
+		return ret;
+	}
+
+	std::unique_ptr<libcamera::YamlObject> data = YamlParser::parse(file);
+	if (!data)
+		return -EINVAL;
+
+	if (!data->contains("modules"))
+		return 0;
+
+	const auto &modules = (*data)["modules"].asList();
+	for (const auto &module : modules) {
+		if (module.contains("Dewarp")) {
+			canUseDewarper_ = true;
+			break;
+		}
+	}
+
 	return 0;
 }
 
@@ -574,7 +622,7 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 		}
 	}
 
-	bool useDewarper = (pipe->dewarper_ && !isRaw);
+	bool useDewarper = (data_->canUseDewarper_ && !isRaw);
 
 	/*
 	 * If there are more than one stream in the configuration figure out the

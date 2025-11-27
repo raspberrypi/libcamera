@@ -38,8 +38,7 @@ struct ipa_control_value_entry {
 	uint8_t is_array;
 	uint16_t count;
 	uint32_t offset;
-	uint32_t padding[1];
-	uint32_t reserved;
+	uint32_t reserved[2];
 };
 
 struct ipa_control_list_entry {
@@ -51,8 +50,10 @@ struct ipa_control_info_entry {
 	uint32_t id;
 	uint32_t type;
 	uint8_t direction;
-	uint8_t padding[3];
-	uint32_t reserved;
+	uint8_t padding[7];
+	struct ipa_control_value_entry min;
+	struct ipa_control_value_entry max;
+	struct ipa_control_value_entry def;
 };
 
 #ifdef __cplusplus

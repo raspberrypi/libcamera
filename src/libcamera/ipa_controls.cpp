@@ -26,28 +26,28 @@
  * The following diagram describes the layout of the ControlList packet.
  *
  * ~~~~
- *           +-------------------------+    .                      .
- *  Header / | ipa_controls_header     |    |                      |
- *         | |                         |    |                      |
- *         \ |                         |    |                      |
- *           +-------------------------+    |                      |
- *         / | ipa_control_value_entry |    | hdr.data_offset      |
- *         | | #0                      |    |                      |
- * Control | +-------------------------+    |                      |
- *   value | | ...                     |    |                      |
- * entries | +-------------------------+    |                      |
- *         | | ipa_control_value_entry |    |             hdr.size |
- *         \ | #hdr.entries - 1        |    |                      |
- *           +-------------------------+    |                      |
- *           | empty space (optional)  |    |                      |
- *           +-------------------------+ <--´  .                   |
- *         / | ...                     |       | entry[n].offset   |
- *    Data | | ...                     |       |                   |
- * section | | value data for entry #n | <-----´                   |
- *         \ | ...                     |                           |
- *           +-------------------------+                           |
- *           | empty space (optional)  |                           |
- *           +-------------------------+ <-------------------------´
+ *           +-------------------------+    .                          .
+ *  Header / | ipa_controls_header     |    |                          |
+ *         | |                         |    |                          |
+ *         \ |                         |    |                          |
+ *           +-------------------------+    |                          |
+ *         / | ipa_control_list_entry  |    | hdr.data_offset          |
+ *         | | #0                      |    |                          |
+ * Control | +-------------------------+    |                          |
+ *   value | | ...                     |    |                          |
+ * entries | +-------------------------+    |                          |
+ *         | | ipa_control_list_entry  |    |             hdr.size     |
+ *         \ | #hdr.entries - 1        |    |                          |
+ *           +-------------------------+    |                          |
+ *           | empty space (optional)  |    |                          |
+ *           +-------------------------+ <--´  .                       |
+ *         / | ...                     |       | entry[n].value.offset |
+ *    Data | | ...                     |       |                       |
+ * section | | value data for entry #n | <-----´                       |
+ *         \ | ...                     |                               |
+ *           +-------------------------+                               |
+ *           | empty space (optional)  |                               |
+ *           +-------------------------+ <-----------------------------´
  * ~~~~
  *
  * The packet header contains the size of the packet, the number of entries, and
@@ -56,12 +56,14 @@
  * offset ipa_controls_header::data_offset from the beginning of the packet, and
  * shall be aligned to a multiple of 8 bytes.
  *
- * Entries are described by the ipa_control_value_entry structure. They contain
- * the numerical ID of the control, its type, and the number of control values.
+ * Entries are described by the ipa_control_list_entry structure. They contain
+ * the numerical ID of the control and an ipa_control_value_entry structure,
+ * which contains the type and the number of control values.
  *
- * The control values are stored in the data section in the platform's native
- * format. The ipa_control_value_entry::offset field stores the offset from the
- * beginning of the data section to the values.
+ * The control values are stored (as ipa_control_list_entry) in the data
+ * section in the platform's native format. The ipa_control_value_entry::offset
+ * field stores the offset from the beginning of the data section to the
+ * values.
  *
  * All control values in the data section shall be stored in the same order as
  * the respective control entries, shall be aligned to a multiple of 8 bytes,
@@ -74,59 +76,65 @@
  * The following diagram describes the layout of the ControlInfoMap packet.
  *
  * ~~~~
- *           +-------------------------+    .                      .
- *  Header / | ipa_controls_header     |    |                      |
- *         | |                         |    |                      |
- *         \ |                         |    |                      |
- *           +-------------------------+    |                      |
- *         / | ipa_control_info_entry  |    | hdr.data_offset      |
- *         | | #0                      |    |                      |
- * Control | +-------------------------+    |                      |
- *    info | | ...                     |    |                      |
- * entries | +-------------------------+    |                      |
- *         | | ipa_control_info_entry  |    |             hdr.size |
- *         \ | #hdr.entries - 1        |    |                      |
- *           +-------------------------+    |                      |
- *           | empty space (optional)  |    |                      |
- *           +-------------------------+ <--´  .                   |
- *         / | ...                     |       | entry[n].offset   |
- *    Data | | ...                     |       |                   |
- * section | | info data for entry #n  | <-----´                   |
- *         \ | ...                     |                           |
- *           +-------------------------+                           |
- *           | empty space (optional)  |                           |
- *           +-------------------------+ <-------------------------´
+ *           +------------------------------+    .                            .
+ *  Header / | ipa_controls_header          |    |                            |
+ *         | |                              |    |                            |
+ *         \ |                              |    |                            |
+ *           +------------------------------+    |                            |
+ *         / | ipa_control_info_entry       |    | hdr.data_offset            |
+ *         | | #0                           |    |                            |
+ * Control | +------------------------------+    |                            |
+ *    info | | ...                          |    |                            |
+ * entries | +------------------------------+    |                            |
+ *         | | ipa_control_info_entry       |    |                            |
+ *         \ | #hdr.entries - 1             |    |                            |
+ *           +------------------------------+    |                            |
+ *           | empty space (optional)       |    |                            |
+ *           +------------------------------+ <--´  . . .                     |
+ *         / | ...                          |       | entry[n].min.offset     |
+ *         | | ...                          |       | | |                     |
+ *    Data | | ...                          |       | | entry[n].max.offset   |
+ * section | | min value data for entry #n  | <-----´ | |                     |
+ *         | | max value data for entry #n  | <-------´ | entry[n].def.offset |
+ *         | | def value data for entry #n  | <---------´                     |
+ *         | | ...                          |                                 |
+ *         \ | ...                          |                                 |
+ *           +------------------------------+                                 |
+ *           | empty space (optional)       |                                 |
+ *           +------------------------------+ <-------------------------------´
  * ~~~~
  *
  * The packet header is identical to the ControlList packet header.
  *
  * Entries are described by the ipa_control_info_entry structure. They contain
- * the numerical ID and type of the control. The control info data is stored
- * in the data section as described by the following diagram.
+ * the numerical ID, direction (in/out) of the control, and three
+ * ipa_control_value_entry structures for the min, max, and def ControlValues
+ * that make up the ControlInfo.
  *
- * ~~~~
- *           +-------------------------+       .
- *         / | ...                     |       | entry[n].offset
- *         | +-------------------------+ <-----´
- *         | | minimum value (#n)      | \
- *    Data | +-------------------------+ |
- * section | | maximum value (#n)      | | Entry #n
- *         | +-------------------------+ |
- *         | | default value (#n)      | /
- *         | +-------------------------+
- *         \ | ...                     |
- *           +-------------------------+
- * ~~~~
+ * The control info has no associated data in the data section;
+ * instead the three control values for min, max, and def are stored in the data section
  *
- * The minimum, maximum and default values are stored in the platform's native
- * data format. The ipa_control_info_entry::offset field stores the offset from
- * the beginning of the data section to the info data.
  *
- * Info data in the data section shall be stored in the same order as the
- * entries array, shall be aligned to a multiple of 8 bytes, and shall be
- * contiguous in memory.
+ * The control values are stored (as ipa_control_list_entry) in the data
+ * section in the platform's native format. The ipa_control_value_entry::offset
+ * field stores the offset from the beginning of the data section to the
+ * values.
  *
- * As for the ControlList packet, empty spaces may be present between the end of
+ * ipa_control_value_entry structures contain the relevant
+ * ControlValue information for the ControlInfo's min, max, and def
+ * respectively, and their associated data is stored in the data section.
+ *
+ * The control info has no associated data in the data section. Instead the
+ * minimum, maximum, and default control values of the control info are stored
+ * n the data section in the platform's native data format. The
+ * ipa_control_value_entry::offset field stores the offset from the beginning
+ * of the data section to the control value data.
+ *
+ * All control values in the data section shall be stored in the same order as
+ * the respective control info entries, in the order of min, max, def, and shall be
+ * aligned to a multiple of 8 bytes, and shall be contiguous in memory.
+ *
+ * As with the ControlList packet, empty spaces may be present between the end of
  * the entries array and the data section, and after the data section. They
  * shall be ignored when parsing the packet.
  */
@@ -201,8 +209,6 @@ static_assert(sizeof(ipa_controls_header) == 32,
  * \var ipa_control_value_entry::offset
  * The offset in bytes from the beginning of the data section to the control
  * value data (shall be a multiple of 8 bytes).
- * \var ipa_control_value_entry::padding
- * Padding bytes (shall be set to 0)
  * \var ipa_control_value_entry::reserved
  * Reserved for future extensions
  */
@@ -236,11 +242,15 @@ static_assert(sizeof(ipa_control_list_entry) == 20,
  * metadata). \sa ControlId::Direction
  * \var ipa_control_info_entry::padding
  * Padding bytes (shall be set to 0)
- * \var ipa_control_info_entry::reserved
- * Reserved for future extensions
+ * \var ipa_control_info_entry::min
+ * The description of the serialized ControlValue (min)
+ * \var ipa_control_info_entry::max
+ * The description of the serialized ControlValue (max)
+ * \var ipa_control_info_entry::def
+ * The description of the serialized ControlValue (def)
  */
 
-static_assert(sizeof(ipa_control_info_entry) == 16,
+static_assert(sizeof(ipa_control_info_entry) == 64,
 	      "Invalid ABI size change for struct ipa_control_info_entry");
 
 } /* namespace libcamera */

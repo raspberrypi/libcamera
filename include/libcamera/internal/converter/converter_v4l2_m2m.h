@@ -24,6 +24,7 @@
 
 namespace libcamera {
 
+class ControlList;
 class FrameBuffer;
 class MediaDevice;
 class Size;
@@ -36,7 +37,7 @@ class V4L2M2MDevice;
 class V4L2M2MConverter : public Converter
 {
 public:
-	V4L2M2MConverter(MediaDevice *media);
+	V4L2M2MConverter(std::shared_ptr<MediaDevice> media);
 
 	int loadConfiguration([[maybe_unused]] const std::string &filename) override { return 0; }
 	bool isValid() const override { return m2m_ != nullptr; }
@@ -66,11 +67,19 @@ public:
 			   Alignment align = Alignment::Down) override;
 
 	int queueBuffers(FrameBuffer *input,
-			 const std::map<const Stream *, FrameBuffer *> &outputs) override;
+			 const std::map<const Stream *, FrameBuffer *> &outputs,
+			 const V4L2Request *request = nullptr) override;
 
 	int setInputCrop(const Stream *stream, Rectangle *rect) override;
 	std::pair<Rectangle, Rectangle> inputCropBounds() override { return inputCropBounds_; }
 	std::pair<Rectangle, Rectangle> inputCropBounds(const Stream *stream) override;
+
+	int applyControls(const Stream *stream, ControlList &ctrls, const V4L2Request *request = nullptr);
+
+	int allocateRequests(unsigned int count,
+			     std::vector<std::unique_ptr<V4L2Request>> *requests);
+
+	bool supportsRequests();
 
 private:
 	class V4L2M2MStream : protected Loggable
@@ -88,7 +97,10 @@ private:
 		int start();
 		void stop();
 
-		int queueBuffers(FrameBuffer *input, FrameBuffer *output);
+		int applyControls(ControlList &ctrls, const V4L2Request *request = nullptr);
+
+		int queueBuffers(FrameBuffer *input, FrameBuffer *output,
+				 const V4L2Request *request = nullptr);
 
 		int setInputSelection(unsigned int target, Rectangle *rect);
 		int getInputSelection(unsigned int target, Rectangle *rect);
@@ -120,6 +132,8 @@ private:
 	std::map<const Stream *, std::unique_ptr<V4L2M2MStream>> streams_;
 	std::map<FrameBuffer *, unsigned int> queue_;
 	std::pair<Rectangle, Rectangle> inputCropBounds_;
+
+	std::shared_ptr<MediaDevice> media_;
 };
 
 } /* namespace libcamera */

@@ -541,7 +541,7 @@ class TrailersChecker(CommitChecker):
 
     known_trailers = {
         'Acked-by': email_regex,
-        'Bug': link_regex,
+        'Closes': link_regex,
         'Co-developed-by': email_regex,
         'Fixes': commit_regex,
         'Link': link_regex,

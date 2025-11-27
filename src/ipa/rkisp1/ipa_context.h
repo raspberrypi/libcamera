@@ -134,6 +134,10 @@ struct IPAActiveState {
 	} goc;
 
 	struct {
+		double lux;
+	} lux;
+
+	struct {
 		controls::WdrModeEnum mode;
 		AgcMeanLuminance::AgcConstraint constraint;
 		double gain;

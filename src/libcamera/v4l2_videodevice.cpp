@@ -30,6 +30,7 @@
 #include "libcamera/internal/framebuffer.h"
 #include "libcamera/internal/media_device.h"
 #include "libcamera/internal/media_object.h"
+#include "libcamera/internal/v4l2_request.h"
 
 /**
  * \file v4l2_videodevice.h
@@ -1627,8 +1628,9 @@ int V4L2VideoDevice::releaseBuffers()
 }
 
 /**
- * \brief Queue a buffer to the video device if possible
+ * \brief Queue a buffer to the video device
  * \param[in] buffer The buffer to be queued
+ * \param[in] request An optional request
  *
  * For capture video devices the \a buffer will be filled with data by the
  * device. For output video devices the \a buffer shall contain valid data and
@@ -1641,62 +1643,20 @@ int V4L2VideoDevice::releaseBuffers()
  * Note that queueBuffer() will fail if the device is in the process of being
  * stopped from a streaming state through streamOff().
  *
- * V4L2 only allows upto VIDEO_MAX_FRAME frames to be queued at a time, so if
- * we reach this limit, store the framebuffers in a pending queue, and try to
- * enqueue once a buffer has been dequeued.
+ * If \a request is specified, the buffer will be tied to that request.
  *
  * \return 0 on success or a negative error code otherwise
  */
-int V4L2VideoDevice::queueBuffer(FrameBuffer *buffer)
-{
-	if (state_ == State::Stopping) {
-		LOG(V4L2, Error) << "Device is in a stopping state.";
-		return -ESHUTDOWN;
-	}
-
-	if (queuedBuffers_.size() == VIDEO_MAX_FRAME) {
-		LOG(V4L2, Debug) << "V4L2 queue has " << VIDEO_MAX_FRAME
-				 << " already queued, differing queueing.";
-
-		pendingBuffersToQueue_.push(buffer);
-		return 0;
-	}
-
-	if (!pendingBuffersToQueue_.empty()) {
-		LOG(V4L2, Debug) << "Adding buffer " << buffer
-				 << " to the pending queue and replacing with "
-				 << pendingBuffersToQueue_.front();
-
-		pendingBuffersToQueue_.push(buffer);
-		buffer = pendingBuffersToQueue_.front();
-		pendingBuffersToQueue_.pop();
-	}
-
-	return queueToDevice(buffer);
-}
-
-/**
- * \brief Queue a buffer to the video device if possible
- * \param[in] buffer The buffer to be queued
- *
- * For capture video devices the \a buffer will be filled with data by the
- * device. For output video devices the \a buffer shall contain valid data and
- * will be processed by the device. Once the device has finished processing the
- * buffer, it will be available for dequeue.
- *
- * The best available V4L2 buffer is picked for \a buffer using the V4L2 buffer
- * cache.
- *
- * Note that queueToDevice() will fail if the device is in the process of being
- * stopped from a streaming state through streamOff().
- *
- * \return 0 on success or a negative error code otherwise
- */
-int V4L2VideoDevice::queueToDevice(FrameBuffer *buffer)
+int V4L2VideoDevice::queueBuffer(FrameBuffer *buffer, const V4L2Request *request)
 {
 	struct v4l2_plane v4l2Planes[VIDEO_MAX_PLANES] = {};
 	struct v4l2_buffer buf = {};
 	int ret;
+
+	if (state_ == State::Stopping) {
+		LOG(V4L2, Error) << "Device is in a stopping state.";
+		return -ESHUTDOWN;
+	}
 
 	/*
 	 * Pipeline handlers should not requeue buffers after releasing the
@@ -1718,6 +1678,10 @@ int V4L2VideoDevice::queueToDevice(FrameBuffer *buffer)
 	buf.type = bufferType_;
 	buf.memory = memoryType_;
 	buf.field = V4L2_FIELD_NONE;
+	if (request) {
+		buf.flags = V4L2_BUF_FLAG_REQUEST_FD;
+		buf.request_fd = request->fd();
+	}
 
 	bool multiPlanar = V4L2_TYPE_IS_MULTIPLANAR(buf.type);
 	Span<const FrameBuffer::Plane> planes = buffer->planes();
@@ -1865,11 +1829,6 @@ void V4L2VideoDevice::bufferAvailable()
  * This function dequeues the next available buffer from the device. If no
  * buffer is available to be dequeued it will return nullptr immediately.
  *
- * Once a buffer is dequeued from the device, this function may also enqueue
- * a buffer that has been placed in the pending queue (due to reaching the V4L2
- * queue size limit. Note that if this enqueue fails, we log the error, but
- * continue running this function to completion.
- *
  * \return A pointer to the dequeued buffer on success, or nullptr otherwise
  */
 FrameBuffer *V4L2VideoDevice::dequeueBuffer()
@@ -1921,20 +1880,6 @@ FrameBuffer *V4L2VideoDevice::dequeueBuffer()
 
 	FrameBuffer *buffer = it->second;
 	queuedBuffers_.erase(it);
-
-	if (!pendingBuffersToQueue_.empty()) {
-		FrameBuffer *pending = pendingBuffersToQueue_.front();
-
-		pendingBuffersToQueue_.pop();
-		/*
-		 * If the pending buffer enqueue fails, we must continue this
-		 * function to completion for the dequeue operation.
-		 */
-		if (queueToDevice(pending))
-			LOG(V4L2, Error)
-				<< "Failed to re-queue pending buffer "
-				<< pending;
-	}
 
 	if (queuedBuffers_.empty()) {
 		fdBufferNotifier_->setEnabled(false);

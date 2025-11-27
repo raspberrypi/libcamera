@@ -284,31 +284,17 @@ int ControlSerializer::serialize(const ControlInfoMap &infoMap,
 		entry.id = id->id();
 		entry.type = id->type();
 		entry.direction = static_cast<ControlId::DirectionFlags::Type>(id->direction());
-		entries.write(&entry);
 
-		/*
-		 * Write the metadata for the ControlValue entries as well,
-		 * since we need type, isArray, and numElements information for
-		 * min/max/def of the ControlInfo. Doing it this way is the
-		 * least intrusive in terms of changing the structs in
-		 * ipa_controls.h
-		 */
-		struct ipa_control_value_entry valueEntry;
-
-		populateControlValueEntry(valueEntry, info.min(),
-					  values.offset());
-		entries.write(&valueEntry);
+		populateControlValueEntry(entry.min, info.min(), values.offset());
 		store(info.min(), values);
 
-		populateControlValueEntry(valueEntry, info.max(),
-					  values.offset());
-		entries.write(&valueEntry);
+		populateControlValueEntry(entry.max, info.max(), values.offset());
 		store(info.max(), values);
 
-		populateControlValueEntry(valueEntry, info.def(),
-					  values.offset());
-		entries.write(&valueEntry);
+		populateControlValueEntry(entry.def, info.def(), values.offset());
 		store(info.def(), values);
+
+		entries.write(&entry);
 	}
 
 	if (buffer.overflow())
@@ -494,10 +480,7 @@ ControlInfoMap ControlSerializer::deserialize<ControlInfoMap>(ByteStreamBuffer &
 	ControlInfoMap::Map ctrls;
 	for (unsigned int i = 0; i < hdr->entries; ++i) {
 		const auto *entry = entries.read<const ipa_control_info_entry>();
-		const auto *min_entry = entries.read<const ipa_control_value_entry>();
-		const auto *max_entry = entries.read<const ipa_control_value_entry>();
-		const auto *def_entry = entries.read<const ipa_control_value_entry>();
-		if (!entry || !min_entry || !max_entry || !def_entry) {
+		if (!entry) {
 			LOG(Serializer, Error) << "Out of data";
 			return {};
 		}
@@ -523,35 +506,39 @@ ControlInfoMap ControlSerializer::deserialize<ControlInfoMap>(ByteStreamBuffer &
 		const ControlId *controlId = idMap->at(entry->id);
 		ASSERT(controlId);
 
-		if (min_entry->offset != values.offset()) {
+		const ipa_control_value_entry &min_entry = entry->min;
+		const ipa_control_value_entry &max_entry = entry->max;
+		const ipa_control_value_entry &def_entry = entry->def;
+
+		if (min_entry.offset != values.offset()) {
 			LOG(Serializer, Error)
 				<< "Bad data, entry offset mismatch (min entry "
 				<< i << ")";
 			return {};
 		}
 		ControlValue min =
-			loadControlValue(values, static_cast<ControlType>(min_entry->type),
-					 min_entry->is_array, min_entry->count);
+			loadControlValue(values, static_cast<ControlType>(min_entry.type),
+					 min_entry.is_array, min_entry.count);
 
-		if (max_entry->offset != values.offset()) {
+		if (max_entry.offset != values.offset()) {
 			LOG(Serializer, Error)
 				<< "Bad data, entry offset mismatch (max entry "
 				<< i << ")";
 			return {};
 		}
 		ControlValue max =
-			loadControlValue(values, static_cast<ControlType>(max_entry->type),
-					 max_entry->is_array, max_entry->count);
+			loadControlValue(values, static_cast<ControlType>(max_entry.type),
+					 max_entry.is_array, max_entry.count);
 
-		if (def_entry->offset != values.offset()) {
+		if (def_entry.offset != values.offset()) {
 			LOG(Serializer, Error)
 				<< "Bad data, entry offset mismatch (def entry "
 				<< i << ")";
 			return {};
 		}
 		ControlValue def =
-			loadControlValue(values, static_cast<ControlType>(def_entry->type),
-					 def_entry->is_array, def_entry->count);
+			loadControlValue(values, static_cast<ControlType>(def_entry.type),
+					 def_entry.is_array, def_entry.count);
 
 
 		/* Create and store the ControlInfo. */

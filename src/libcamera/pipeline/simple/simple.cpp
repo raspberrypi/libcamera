@@ -25,6 +25,7 @@
 #include <libcamera/base/log.h>
 
 #include <libcamera/camera.h>
+#include <libcamera/color_space.h>
 #include <libcamera/control_ids.h>
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
@@ -36,6 +37,7 @@
 #include "libcamera/internal/converter.h"
 #include "libcamera/internal/delayed_controls.h"
 #include "libcamera/internal/device_enumerator.h"
+#include "libcamera/internal/formats.h"
 #include "libcamera/internal/global_configuration.h"
 #include "libcamera/internal/media_device.h"
 #include "libcamera/internal/pipeline_handler.h"
@@ -413,7 +415,7 @@ public:
 
 	V4L2VideoDevice *video(const MediaEntity *entity);
 	V4L2Subdevice *subdev(const MediaEntity *entity);
-	MediaDevice *converter() { return converter_; }
+	std::shared_ptr<MediaDevice> converter() { return converter_; }
 	bool swIspEnabled() const { return swIspEnabled_; }
 
 protected:
@@ -434,7 +436,8 @@ private:
 		return static_cast<SimpleCameraData *>(camera->_d());
 	}
 
-	bool matchDevice(MediaDevice *media, const SimplePipelineInfo &info,
+	bool matchDevice(std::shared_ptr<MediaDevice> media,
+			 const SimplePipelineInfo &info,
 			 DeviceEnumerator *enumerator);
 
 	std::vector<MediaEntity *> locateSensors(MediaDevice *media);
@@ -445,7 +448,7 @@ private:
 
 	std::map<const MediaEntity *, EntityData> entities_;
 
-	MediaDevice *converter_;
+	std::shared_ptr<MediaDevice> converter_;
 	bool swIspEnabled_;
 };
 
@@ -585,7 +588,7 @@ int SimpleCameraData::init()
 	int ret;
 
 	/* Open the converter, if any. */
-	MediaDevice *converter = pipe->converter();
+	std::shared_ptr<MediaDevice> converter = pipe->converter();
 	if (converter) {
 		converter_ = ConverterFactoryBase::create(converter);
 		if (!converter_) {
@@ -710,9 +713,14 @@ void SimpleCameraData::tryPipeline(unsigned int code, const Size &size)
 		<< " ]";
 
 	for (const auto &videoFormat : videoFormats) {
-		PixelFormat pixelFormat = videoFormat.first.toPixelFormat();
-		if (!pixelFormat)
+		PixelFormat pixelFormat = videoFormat.first.toPixelFormat(false);
+		if (!pixelFormat) {
+			LOG(SimplePipeline, Debug)
+				<< "Unsupported V4L2 pixel format "
+				<< videoFormat.first.toString();
+
 			continue;
+		}
 
 		Configuration config;
 		config.code = code;
@@ -1222,6 +1230,44 @@ CameraConfiguration::Status SimpleCameraConfiguration::validate()
 			status = Adjusted;
 		}
 
+		/*
+		 * Best effort to fix the color space. If the color space is not set,
+		 * set it according to the pixel format, which may not be correct (pixel
+		 * formats and color spaces are different things, although somewhat
+		 * related) but we don't have a better option at the moment. Then in any
+		 * case, perform the standard pixel format based color space adjustment.
+		 */
+		if (!cfg.colorSpace) {
+			const PixelFormatInfo &info = PixelFormatInfo::info(pixelFormat);
+			switch (info.colourEncoding) {
+			case PixelFormatInfo::ColourEncodingRGB:
+				cfg.colorSpace = ColorSpace::Srgb;
+				break;
+			case PixelFormatInfo::ColourEncodingYUV:
+				cfg.colorSpace = ColorSpace::Sycc;
+				break;
+			default:
+				cfg.colorSpace = ColorSpace::Raw;
+			}
+			LOG(SimplePipeline, Debug)
+				<< "Unspecified color space set to "
+				<< cfg.colorSpace.value().toString();
+			/*
+			 * Adjust the assigned color space to make sure everything is OK.
+			 * Since this is assigning an unspecified color space rather than
+			 * adjusting a requested one, changes here shouldn't set the status
+			 * to Adjusted.
+			 */
+			cfg.colorSpace->adjust(pixelFormat);
+		} else {
+			if (cfg.colorSpace->adjust(pixelFormat)) {
+				LOG(SimplePipeline, Debug)
+					<< "Color space adjusted to "
+					<< cfg.colorSpace.value().toString();
+				status = Adjusted;
+			}
+		}
+
 		if (!pipeConfig_->outputSizes.contains(cfg.size)) {
 			Size adjustedSize = pipeConfig_->captureSize;
 			/*
@@ -1378,8 +1424,20 @@ int SimplePipelineHandler::configure(Camera *camera, CameraConfiguration *c)
 	if (ret < 0)
 		return ret;
 
-	/* Configure the video node. */
-	V4L2PixelFormat videoFormat = video->toV4L2PixelFormat(pipeConfig->captureFormat);
+	/* Configure the video node, taking into account any Bayer pattern change. */
+	V4L2PixelFormat videoFormat;
+	if (format.code == pipeConfig->code) {
+		videoFormat = video->toV4L2PixelFormat(pipeConfig->captureFormat);
+	} else {
+		/*
+		 * Bayer pattern has changed because of the transform that was applied on
+		 * the sensor. Get the V4L2PixelFormat corresponding to the configured Bayer
+		 * pattern.
+		 */
+		BayerFormat cfgBayer = BayerFormat::fromPixelFormat(pipeConfig->captureFormat);
+		cfgBayer.order = data->sensor_->bayerOrder(config->combinedTransform());
+		videoFormat = cfgBayer.toV4L2PixelFormat();
+	}
 
 	V4L2DeviceFormat captureFormat;
 	captureFormat.fourcc = videoFormat;
@@ -1421,7 +1479,7 @@ int SimplePipelineHandler::configure(Camera *camera, CameraConfiguration *c)
 		return 0;
 
 	StreamConfiguration inputCfg;
-	inputCfg.pixelFormat = pipeConfig->captureFormat;
+	inputCfg.pixelFormat = videoFormat.toPixelFormat();
 	inputCfg.size = pipeConfig->captureSize;
 	inputCfg.stride = captureFormat.planes[0].bpl;
 	inputCfg.bufferCount = kNumInternalBuffers;
@@ -1685,7 +1743,7 @@ int SimplePipelineHandler::resetRoutingTable(V4L2Subdevice *subdev)
 	return 0;
 }
 
-bool SimplePipelineHandler::matchDevice(MediaDevice *media,
+bool SimplePipelineHandler::matchDevice(std::shared_ptr<MediaDevice> media,
 					const SimplePipelineInfo &info,
 					DeviceEnumerator *enumerator)
 {
@@ -1716,7 +1774,7 @@ bool SimplePipelineHandler::matchDevice(MediaDevice *media,
 	}
 
 	/* Locate the sensors. */
-	std::vector<MediaEntity *> sensors = locateSensors(media);
+	std::vector<MediaEntity *> sensors = locateSensors(media.get());
 	if (sensors.empty()) {
 		LOG(SimplePipeline, Info) << "No sensor found for " << media->deviceNode();
 		return false;
@@ -1834,7 +1892,7 @@ bool SimplePipelineHandler::matchDevice(MediaDevice *media,
 
 bool SimplePipelineHandler::match(DeviceEnumerator *enumerator)
 {
-	MediaDevice *media;
+	std::shared_ptr<MediaDevice> media;
 
 	for (const SimplePipelineInfo &inf : supportedDevices) {
 		DeviceMatch dm(inf.driver);

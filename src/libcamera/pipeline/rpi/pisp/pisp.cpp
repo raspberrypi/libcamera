@@ -866,7 +866,8 @@ private:
 
 	int prepareBuffers(Camera *camera) override;
 	int platformRegister(std::unique_ptr<RPi::CameraData> &cameraData,
-			     MediaDevice *cfe, MediaDevice *isp) override;
+			     std::shared_ptr<MediaDevice> cfe,
+			     std::shared_ptr<MediaDevice> isp) override;
 };
 
 bool PipelineHandlerPiSP::match(DeviceEnumerator *enumerator)
@@ -884,7 +885,7 @@ bool PipelineHandlerPiSP::match(DeviceEnumerator *enumerator)
 		cfe.add("rp1-cfe-fe_image0");
 		cfe.add("rp1-cfe-fe_stats");
 		cfe.add("rp1-cfe-fe_config");
-		MediaDevice *cfeDevice = acquireMediaDevice(enumerator, cfe);
+		std::shared_ptr<MediaDevice> cfeDevice = acquireMediaDevice(enumerator, cfe);
 
 		if (!cfeDevice) {
 			LOG(RPI, Debug) << "Unable to acquire a CFE instance";
@@ -900,7 +901,7 @@ bool PipelineHandlerPiSP::match(DeviceEnumerator *enumerator)
 		isp.add("pispbe-tdn_input");
 		isp.add("pispbe-stitch_output");
 		isp.add("pispbe-stitch_input");
-		MediaDevice *ispDevice = acquireMediaDevice(enumerator, isp);
+		std::shared_ptr<MediaDevice> ispDevice = acquireMediaDevice(enumerator, isp);
 
 		if (!ispDevice) {
 			LOG(RPI, Debug) << "Unable to acquire ISP instance";
@@ -1065,7 +1066,8 @@ int PipelineHandlerPiSP::prepareBuffers(Camera *camera)
 }
 
 int PipelineHandlerPiSP::platformRegister(std::unique_ptr<RPi::CameraData> &cameraData,
-					  MediaDevice *cfe, MediaDevice *isp)
+					  std::shared_ptr<MediaDevice> cfe,
+					  std::shared_ptr<MediaDevice> isp)
 {
 	PiSPCameraData *data = static_cast<PiSPCameraData *>(cameraData.get());
 	int ret;

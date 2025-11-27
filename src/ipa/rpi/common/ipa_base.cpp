@@ -105,8 +105,6 @@ const ControlInfoMap::Map ipaColourControls{
 	{ &controls::Saturation, ControlInfo(0.0f, 32.0f, 1.0f) },
 };
 
-std::array<Rectangle, 1> defaultAfWindows = { Rectangle{} };
-
 /* IPA controls handled conditionally, if the lens has a focus control */
 const ControlInfoMap::Map ipaAfControls{
 	{ &controls::AfMode, ControlInfo(controls::AfModeValues) },
@@ -114,7 +112,7 @@ const ControlInfoMap::Map ipaAfControls{
 	{ &controls::AfSpeed, ControlInfo(controls::AfSpeedValues) },
 	{ &controls::AfMetering, ControlInfo(controls::AfMeteringValues) },
 	{ &controls::AfWindows, ControlInfo(Rectangle{}, Rectangle(65535, 65535, 65535, 65535),
-					    Span<const Rectangle, 1>{ defaultAfWindows }) },
+					    Span<const Rectangle, 1>{ { Rectangle{} } }) },
 	{ &controls::AfTrigger, ControlInfo(controls::AfTriggerValues) },
 	{ &controls::AfPause, ControlInfo(controls::AfPauseValues) },
 	{ &controls::LensPosition, ControlInfo(0.0f, 32.0f, 1.0f) }

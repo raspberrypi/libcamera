@@ -214,6 +214,17 @@ CameraConfiguration::Status VirtualCameraConfiguration::validate()
 			adjusted = true;
 		}
 
+		if (cfg.colorSpace != ColorSpace::Rec709) {
+			cfg.colorSpace = ColorSpace::Rec709;
+			status = Adjusted;
+			adjusted = true;
+		}
+
+		if (validateColorSpaces() == Adjusted) {
+			status = Adjusted;
+			adjusted = true;
+		}
+
 		if (adjusted)
 			LOG(Virtual, Info)
 				<< "Stream configuration adjusted to " << cfg.toString();
@@ -278,6 +289,7 @@ PipelineHandlerVirtual::generateConfiguration(Camera *camera,
 		cfg.pixelFormat = pixelFormat;
 		cfg.size = data->config_.maxResolutionSize;
 		cfg.bufferCount = VirtualCameraConfiguration::kBufferCount;
+		cfg.colorSpace = ColorSpace::Rec709;
 
 		config->addConfiguration(cfg);
 	}

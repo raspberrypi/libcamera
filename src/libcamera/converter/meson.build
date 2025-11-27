@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
 libcamera_internal_sources += files([
+        'converter_dw100.cpp',
+        'converter_dw100_vertexmap.cpp',
         'converter_v4l2_m2m.cpp'
 ])

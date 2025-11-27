@@ -164,8 +164,8 @@ private:
 
 	ImgUDevice imgu0_;
 	ImgUDevice imgu1_;
-	MediaDevice *cio2MediaDev_;
-	MediaDevice *imguMediaDev_;
+	std::shared_ptr<MediaDevice> cio2MediaDev_;
+	std::shared_ptr<MediaDevice> imguMediaDev_;
 
 	std::vector<IPABuffer> ipaBuffers_;
 };

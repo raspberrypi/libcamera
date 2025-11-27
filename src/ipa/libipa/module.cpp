@@ -94,6 +94,14 @@ namespace ipa {
  * algorithms. The configuration data is expected to be correct, any error
  * causes the function to fail and return immediately.
  *
+ * Algorithms can optionally be disabled via the tuning file of the camera
+ * module as shown here, with AGC being used as an example:
+ *
+ * - Agc:
+ *     enabled: false
+ *
+ * If this is the case, the algorithm will not be instantiated.
+ *
  * \return 0 on success, or a negative error code on failure
  */
 

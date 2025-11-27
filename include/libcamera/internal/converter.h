@@ -22,6 +22,7 @@
 #include <libcamera/base/signal.h>
 
 #include <libcamera/geometry.h>
+#include "libcamera/internal/v4l2_request.h"
 
 namespace libcamera {
 
@@ -46,7 +47,7 @@ public:
 		Up,
 	};
 
-	Converter(MediaDevice *media, Features features = Feature::None);
+	Converter(std::shared_ptr<MediaDevice> media, Features features = Feature::None);
 	virtual ~Converter();
 
 	virtual int loadConfiguration(const std::string &filename) = 0;
@@ -79,7 +80,8 @@ public:
 	virtual void stop() = 0;
 
 	virtual int queueBuffers(FrameBuffer *input,
-				 const std::map<const Stream *, FrameBuffer *> &outputs) = 0;
+				 const std::map<const Stream *, FrameBuffer *> &outputs,
+				 const V4L2Request *request = nullptr) = 0;
 
 	virtual int setInputCrop(const Stream *stream, Rectangle *rect) = 0;
 	virtual std::pair<Rectangle, Rectangle> inputCropBounds() = 0;
@@ -107,7 +109,7 @@ public:
 
 	const std::vector<std::string> &compatibles() const { return compatibles_; }
 
-	static std::unique_ptr<Converter> create(MediaDevice *media);
+	static std::unique_ptr<Converter> create(std::shared_ptr<MediaDevice> media);
 	static std::vector<ConverterFactoryBase *> &factories();
 	static std::vector<std::string> names();
 
@@ -116,7 +118,8 @@ private:
 
 	static void registerType(ConverterFactoryBase *factory);
 
-	virtual std::unique_ptr<Converter> createInstance(MediaDevice *media) const = 0;
+	virtual std::unique_ptr<Converter>
+	createInstance(std::shared_ptr<MediaDevice> media) const = 0;
 
 	std::string name_;
 	std::vector<std::string> compatibles_;
@@ -131,7 +134,7 @@ public:
 	{
 	}
 
-	std::unique_ptr<Converter> createInstance(MediaDevice *media) const override
+	std::unique_ptr<Converter> createInstance(std::shared_ptr<MediaDevice> media) const override
 	{
 		return std::make_unique<_Converter>(media);
 	}

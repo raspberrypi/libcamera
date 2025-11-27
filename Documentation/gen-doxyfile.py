@@ -12,15 +12,6 @@ import string
 import sys
 
 
-def fill_template(template, data):
-
-    template = open(template, 'rb').read()
-    template = template.decode('utf-8')
-    template = string.Template(template)
-
-    return template.substitute(data)
-
-
 def main(argv):
 
     parser = argparse.ArgumentParser()
@@ -28,7 +19,8 @@ def main(argv):
                         type=argparse.FileType('w', encoding='utf-8'),
                         default=sys.stdout,
                         help='Output file name (default: standard output)')
-    parser.add_argument('template', metavar='doxyfile.tmpl', type=str,
+    parser.add_argument('template', metavar='doxyfile.tmpl',
+                        type=argparse.FileType('r', encoding='utf-8'),
                         help='Doxyfile template')
     parser.add_argument('inputs', type=str, nargs='*',
                         help='Input files')
@@ -36,7 +28,9 @@ def main(argv):
     args = parser.parse_args(argv[1:])
 
     inputs = [f'"{os.path.realpath(input)}"' for input in args.inputs]
-    data = fill_template(args.template, {'inputs': (' \\\n' + ' ' * 25).join(inputs)})
+    data = string.Template(args.template.read()).substitute({
+        'inputs': (' \\\n' + ' ' * 25).join(inputs),
+    })
     args.output.write(data)
 
     return 0

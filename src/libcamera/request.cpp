@@ -228,15 +228,12 @@ void Request::Private::prepare(std::chrono::milliseconds timeout)
 		if (!fence)
 			continue;
 
-		std::unique_ptr<EventNotifier> notifier =
-			std::make_unique<EventNotifier>(fence->fd().get(),
-							EventNotifier::Read);
+		auto [it, inserted] = notifiers_.try_emplace(buffer, fence->fd().get(), EventNotifier::Type::Read);
+		ASSERT(inserted);
 
-		notifier->activated.connect(this, [this, buffer] {
-							notifierActivated(buffer);
-					    });
-
-		notifiers_[buffer] = std::move(notifier);
+		it->second.activated.connect(this, [this, buffer] {
+			notifierActivated(buffer);
+		});
 	}
 
 	if (notifiers_.empty()) {

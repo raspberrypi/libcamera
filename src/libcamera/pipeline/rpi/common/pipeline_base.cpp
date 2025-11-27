@@ -786,8 +786,10 @@ int PipelineHandlerBase::queueRequestDevice(Camera *camera, Request *request)
 }
 
 int PipelineHandlerBase::registerCamera(std::unique_ptr<RPi::CameraData> &cameraData,
-					MediaDevice *frontend, const std::string &frontendName,
-					MediaDevice *backend, MediaEntity *sensorEntity)
+					std::shared_ptr<MediaDevice> frontend,
+					const std::string &frontendName,
+					std::shared_ptr<MediaDevice> backend,
+					MediaEntity *sensorEntity)
 {
 	CameraData *data = cameraData.get();
 	int ret;

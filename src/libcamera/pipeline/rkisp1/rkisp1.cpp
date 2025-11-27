@@ -16,6 +16,7 @@
 #include <linux/media-bus-format.h>
 #include <linux/rkisp1-config.h>
 
+#include <libcamera/base/file.h>
 #include <libcamera/base/log.h>
 #include <libcamera/base/utils.h>
 
@@ -36,7 +37,7 @@
 #include "libcamera/internal/camera.h"
 #include "libcamera/internal/camera_sensor.h"
 #include "libcamera/internal/camera_sensor_properties.h"
-#include "libcamera/internal/converter/converter_v4l2_m2m.h"
+#include "libcamera/internal/converter/converter_dw100.h"
 #include "libcamera/internal/delayed_controls.h"
 #include "libcamera/internal/device_enumerator.h"
 #include "libcamera/internal/framebuffer.h"
@@ -46,6 +47,7 @@
 #include "libcamera/internal/pipeline_handler.h"
 #include "libcamera/internal/v4l2_subdevice.h"
 #include "libcamera/internal/v4l2_videodevice.h"
+#include "libcamera/internal/yaml_parser.h"
 
 #include "rkisp1_path.h"
 
@@ -94,7 +96,8 @@ public:
 	RkISP1CameraData(PipelineHandler *pipe, RkISP1MainPath *mainPath,
 			 RkISP1SelfPath *selfPath)
 		: Camera::Private(pipe), frame_(0), frameInfo_(pipe),
-		  mainPath_(mainPath), selfPath_(selfPath)
+		  mainPath_(mainPath), selfPath_(selfPath),
+		  canUseDewarper_(false), usesDewarper_(false)
 	{
 	}
 
@@ -122,12 +125,16 @@ public:
 	 */
 	MediaPipeline pipe_;
 
+	bool canUseDewarper_;
+	bool usesDewarper_;
+
 private:
 	void paramsComputed(unsigned int frame, unsigned int bytesused);
 	void setSensorControls(unsigned int frame,
 			       const ControlList &sensorControls);
 
 	void metadataReady(unsigned int frame, const ControlList &metadata);
+	int loadTuningFile(const std::string &file);
 };
 
 class RkISP1CameraConfiguration : public CameraConfiguration
@@ -207,6 +214,7 @@ private:
 	int initLinks(Camera *camera, const RkISP1CameraConfiguration &config);
 	int createCamera(MediaEntity *sensor);
 	void tryCompleteRequest(RkISP1FrameInfo *info);
+	void cancelDewarpRequest(RkISP1FrameInfo *info);
 	void imageBufferReady(FrameBuffer *buffer);
 	void paramBufferReady(FrameBuffer *buffer);
 	void statBufferReady(FrameBuffer *buffer);
@@ -218,7 +226,7 @@ private:
 
 	int updateControls(RkISP1CameraData *data);
 
-	MediaDevice *media_;
+	std::shared_ptr<MediaDevice> media_;
 	std::unique_ptr<V4L2Subdevice> isp_;
 	std::unique_ptr<V4L2VideoDevice> param_;
 	std::unique_ptr<V4L2VideoDevice> stat_;
@@ -229,11 +237,7 @@ private:
 	RkISP1MainPath mainPath_;
 	RkISP1SelfPath selfPath_;
 
-	std::unique_ptr<V4L2M2MConverter> dewarper_;
-	Rectangle scalerMaxCrop_;
-	bool useDewarper_;
-
-	std::optional<Rectangle> activeCrop_;
+	std::unique_ptr<ConverterDW100Module> dewarper_;
 
 	/* Internal buffers used when dewarper is being used */
 	std::vector<std::unique_ptr<FrameBuffer>> mainPathBuffers_;
@@ -279,7 +283,7 @@ RkISP1FrameInfo *RkISP1Frames::create(const RkISP1CameraData *data, Request *req
 		statBuffer = pipe_->availableStatBuffers_.front();
 		pipe_->availableStatBuffers_.pop();
 
-		if (pipe_->useDewarper_) {
+		if (data->usesDewarper_) {
 			mainPathBuffer = pipe_->availableMainPathBuffers_.front();
 			pipe_->availableMainPathBuffers_.pop();
 		}
@@ -410,6 +414,57 @@ int RkISP1CameraData::loadIPA(unsigned int hwRevision, uint32_t supportedBlocks)
 	if (ret < 0) {
 		LOG(RkISP1, Error) << "IPA initialization failure";
 		return ret;
+	}
+
+	ret = loadTuningFile(ipaTuningFile);
+	if (ret < 0) {
+		LOG(RkISP1, Error) << "Failed to load tuning file";
+		return ret;
+	}
+
+	return 0;
+}
+
+int RkISP1CameraData::loadTuningFile(const std::string &path)
+{
+	int ret;
+
+	if (!pipe()->dewarper_)
+		/* Nothing to do without dewarper */
+		return 0;
+
+	LOG(RkISP1, Debug) << "Load tuning file " << path;
+
+	File file(path);
+	if (!file.open(File::OpenModeFlag::ReadOnly)) {
+		ret = file.error();
+		LOG(RkISP1, Error)
+			<< "Failed to open tuning file "
+			<< path << ": " << strerror(-ret);
+		return ret;
+	}
+
+	std::unique_ptr<libcamera::YamlObject> data = YamlParser::parse(file);
+	if (!data)
+		return -EINVAL;
+
+	if (!data->contains("modules"))
+		return 0;
+
+	const auto &modules = (*data)["modules"].asList();
+	for (const auto &module : modules) {
+		const auto &params = module["Dewarp"];
+		if (!params)
+			continue;
+
+		ret = pipe()->dewarper_->init(params);
+		if (ret)
+			return ret;
+
+		LOG(RkISP1, Info) << "Dw100 dewarper initialized";
+
+		canUseDewarper_ = true;
+		return 0;
 	}
 
 	return 0;
@@ -546,36 +601,46 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 		status = Adjusted;
 	}
 
-	Orientation requestedOrientation = orientation;
-	combinedTransform_ = data_->sensor_->computeTransform(&orientation);
-	if (orientation != requestedOrientation)
-		status = Adjusted;
-
 	/*
-	 * Simultaneous capture of raw and processed streams isn't possible. If
-	 * there is any raw stream, cap the number of streams to one.
+	 * Simultaneous capture of raw and processed streams isn't possible.
+	 * Let the first stream decide on the type.
 	 */
-	if (config_.size() > 1) {
-		for (const auto &cfg : config_) {
-			if (PixelFormatInfo::info(cfg.pixelFormat).colourEncoding ==
+	bool isRaw = (PixelFormatInfo::info(config_[0].pixelFormat).colourEncoding ==
+		      PixelFormatInfo::ColourEncodingRAW);
+	if (isRaw) {
+		if (config_.size() > 1) {
+			config_.resize(1);
+			status = Adjusted;
+		}
+	} else {
+		/* Drop all raw configs. */
+		for (auto it = config_.begin(); it != config_.end();) {
+			if (PixelFormatInfo::info(it->pixelFormat).colourEncoding ==
 			    PixelFormatInfo::ColourEncodingRAW) {
-				config_.resize(1);
+				it = config_.erase(it);
 				status = Adjusted;
-				break;
+				continue;
 			}
+			++it;
 		}
 	}
 
-	bool useDewarper = false;
-	if (pipe->dewarper_) {
-		/*
-		 * Platforms with dewarper support, such as i.MX8MP, support
-		 * only a single stream. We can inspect config_[0] only here.
-		 */
-		bool isRaw = PixelFormatInfo::info(config_[0].pixelFormat).colourEncoding ==
-			     PixelFormatInfo::ColourEncodingRAW;
-		if (!isRaw)
-			useDewarper = true;
+	/*
+	 * If the dewarper supports orientation adjustments, apply that completely
+	 * there. Even if the sensor supports flips, it is beneficial to do that
+	 * in the dewarper so that lens dewarping happens on the unflipped image
+	 */
+	bool transposeAfterIsp = false;
+	bool useDewarper = (data_->canUseDewarper_ && !isRaw);
+	if (useDewarper) {
+		combinedTransform_ = orientation / data_->sensor_->mountingOrientation();
+		if (!!(combinedTransform_ & Transform::Transpose))
+			transposeAfterIsp = true;
+	} else {
+		Orientation requestedOrientation = orientation;
+		combinedTransform_ = data_->sensor_->computeTransform(&orientation);
+		if (orientation != requestedOrientation)
+			status = Adjusted;
 	}
 
 	/*
@@ -592,11 +657,17 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 
 	/*
 	 * Validate the configuration against the desired path and, if the
-	 * platform supports it, the dewarper.
+	 * platform supports it, the dewarper. While iterating over the
+	 * configurations collect the smallest common sensor format.
 	 */
+	Size accumulatedSensorSize;
 	auto validateConfig = [&](StreamConfiguration &cfg, RkISP1Path *path,
 				  Stream *stream, Status expectedStatus) {
 		StreamConfiguration tryCfg = cfg;
+
+		/* Need to validate the path before the transpose */
+		if (transposeAfterIsp)
+			tryCfg.size.transpose();
 
 		Status ret = path->validate(sensor, sensorConfig, &tryCfg);
 		if (ret == Invalid)
@@ -606,7 +677,14 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 		    (expectedStatus == Valid && ret == Adjusted))
 			return false;
 
+		Size sensorSize = tryCfg.size;
+
 		if (useDewarper) {
+			/*
+			 * The dewarper output is independent of the ISP path.
+			 * Reset to the originally requested size.
+			 */
+			tryCfg.size = cfg.size;
 			bool adjusted;
 
 			pipe->dewarper_->validateOutput(&tryCfg, &adjusted,
@@ -623,6 +701,8 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 
 		cfg = tryCfg;
 		cfg.setStream(stream);
+
+		accumulatedSensorSize = std::max(accumulatedSensorSize, sensorSize);
 		return true;
 	};
 
@@ -673,29 +753,17 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
 		return Invalid;
 	}
 
-	/* Select the sensor format. */
-	PixelFormat rawFormat;
-	Size maxSize;
-
-	for (const StreamConfiguration &cfg : config_) {
-		const PixelFormatInfo &info = PixelFormatInfo::info(cfg.pixelFormat);
-		if (info.colourEncoding == PixelFormatInfo::ColourEncodingRAW)
-			rawFormat = cfg.pixelFormat;
-
-		maxSize = std::max(maxSize, cfg.size);
-	}
-
 	std::vector<unsigned int> mbusCodes;
 
-	if (rawFormat.isValid()) {
-		mbusCodes = { rawFormats.at(rawFormat) };
+	if (isRaw) {
+		mbusCodes = { rawFormats.at(config_[0].pixelFormat) };
 	} else {
 		std::transform(rawFormats.begin(), rawFormats.end(),
 			       std::back_inserter(mbusCodes),
 			       [](const auto &value) { return value.second; });
 	}
 
-	sensorFormat_ = sensor->getFormat(mbusCodes, maxSize,
+	sensorFormat_ = sensor->getFormat(mbusCodes, accumulatedSensorSize,
 					  mainPath->maxResolution());
 
 	if (sensorFormat_.size.isNull())
@@ -709,8 +777,7 @@ CameraConfiguration::Status RkISP1CameraConfiguration::validate()
  */
 
 PipelineHandlerRkISP1::PipelineHandlerRkISP1(CameraManager *manager)
-	: PipelineHandler(manager, kRkISP1MaxQueuedRequests),
-	  hasSelfPath_(true), useDewarper_(false)
+	: PipelineHandler(manager, kRkISP1MaxQueuedRequests), hasSelfPath_(true)
 {
 }
 
@@ -730,6 +797,22 @@ PipelineHandlerRkISP1::generateConfiguration(Camera *camera,
 		std::make_unique<RkISP1CameraConfiguration>(camera, data);
 	if (roles.empty())
 		return config;
+
+	Transform transform = Transform::Identity;
+	Size previewSize = kRkISP1PreviewSize;
+	bool transposeAfterIsp = false;
+	if (data->canUseDewarper_) {
+		transform = Orientation::Rotate0 / data->sensor_->mountingOrientation();
+		if (!!(transform & Transform::Transpose))
+			transposeAfterIsp = true;
+	}
+
+	/*
+	 * In case of a transpose transform we need to create a path for the
+	 * transposed size.
+	 */
+	if (transposeAfterIsp)
+		previewSize.transpose();
 
 	/*
 	 * As the ISP can't output different color spaces for the main and self
@@ -759,7 +842,7 @@ PipelineHandlerRkISP1::generateConfiguration(Camera *camera,
 			if (!colorSpace)
 				colorSpace = ColorSpace::Sycc;
 
-			size = kRkISP1PreviewSize;
+			size = previewSize;
 			break;
 
 		case StreamRole::VideoRecording:
@@ -767,7 +850,7 @@ PipelineHandlerRkISP1::generateConfiguration(Camera *camera,
 			if (!colorSpace)
 				colorSpace = ColorSpace::Rec709;
 
-			size = kRkISP1PreviewSize;
+			size = previewSize;
 			break;
 
 		case StreamRole::Raw:
@@ -809,6 +892,9 @@ PipelineHandlerRkISP1::generateConfiguration(Camera *camera,
 		if (!cfg.pixelFormat.isValid())
 			return nullptr;
 
+		if (transposeAfterIsp && role != StreamRole::Raw)
+			cfg.size.transpose();
+
 		cfg.colorSpace = colorSpace;
 		cfg.bufferCount = kRkISP1MinBufferCount;
 		config->addConfiguration(cfg);
@@ -831,6 +917,19 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 	if (ret)
 		return ret;
 
+	const PixelFormat &streamFormat = config->at(0).pixelFormat;
+	const PixelFormatInfo &info = PixelFormatInfo::info(streamFormat);
+	isRaw_ = info.colourEncoding == PixelFormatInfo::ColourEncodingRAW;
+	data->usesDewarper_ = data->canUseDewarper_ && !isRaw_;
+
+	Transform transform = config->combinedTransform();
+	bool transposeAfterIsp = false;
+	if (data->usesDewarper_) {
+		if (!!(transform & Transform::Transpose))
+			transposeAfterIsp = true;
+		transform = Transform::Identity;
+	}
+
 	/*
 	 * Configure the format on the sensor output and propagate it through
 	 * the pipeline.
@@ -840,10 +939,10 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 
 	if (config->sensorConfig)
 		ret = sensor->applyConfiguration(*config->sensorConfig,
-						 config->combinedTransform(),
+						 transform,
 						 &format);
 	else
-		ret = sensor->setFormat(&format, config->combinedTransform());
+		ret = sensor->setFormat(&format, transform);
 
 	if (ret < 0)
 		return ret;
@@ -870,10 +969,6 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 		<< " crop " << inputCrop;
 
 	Rectangle outputCrop = inputCrop;
-	const PixelFormat &streamFormat = config->at(0).pixelFormat;
-	const PixelFormatInfo &info = PixelFormatInfo::info(streamFormat);
-	isRaw_ = info.colourEncoding == PixelFormatInfo::ColourEncodingRAW;
-	useDewarper_ = dewarper_ && !isRaw_;
 
 	/* YUYV8_2X8 is required on the ISP source path pad for YUV output. */
 	if (!isRaw_)
@@ -882,16 +977,31 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 	/*
 	 * On devices without DUAL_CROP (like the imx8mp) cropping needs to be
 	 * done on the ISP/IS output.
+	 *
+	 * If the dewarper is used, the cropping shall be done by the dewarper.
 	 */
 	if (media_->hwRevision() == RKISP1_V_IMX8MP) {
 		/* imx8mp has only a single path. */
 		const auto &cfg = config->at(0);
-		Size ispCrop = format.size.boundedToAspectRatio(cfg.size);
-		if (useDewarper_)
+		/*
+		 * If the dewarper is used, all cropping including aspect ratio
+		 * preservation shall be done there. To ensure that the output
+		 * format provided by the ISP is supported by the dewarper, a
+		 * minimal crop still needs to be applied on the ISP output.
+		 *
+		 * \todo It might be possible to allocate bigger buffers
+		 * (aligned to 8 pixels) with a stride matching format.size for
+		 * the ISP. The not-filled border could later be ignored by the
+		 * dewarper. This way we could skip the minimal crop here and
+		 * the MaximumScalerCrop would always match the isp output.
+		 */
+		Size ispCrop;
+		if (data->usesDewarper_)
 			ispCrop = dewarper_->adjustInputSize(cfg.pixelFormat,
-							     ispCrop);
+							     format.size);
 		else
-			ispCrop.alignUpTo(2, 2);
+			ispCrop = format.size.boundedToAspectRatio(cfg.size)
+					  .alignedUpTo(2, 2);
 
 		outputCrop = ispCrop.centeredTo(Rectangle(format.size).center());
 		format.size = ispCrop;
@@ -919,30 +1029,55 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 	if (ret)
 		return ret;
 
+	/* Apply the actual sensor crop for proper dewarp map calculation. */
+	Rectangle sensorCrop = outputCrop.transformedBetween(
+		inputCrop, sensorInfo.analogCrop);
+	if (data->usesDewarper_)
+		dewarper_->setSensorCrop(sensorCrop);
+	data->properties_.set(properties::ScalerCropMaximum, sensorCrop);
+
 	std::map<unsigned int, IPAStream> streamConfig;
 	std::vector<std::reference_wrapper<StreamConfiguration>> outputCfgs;
 
 	for (const StreamConfiguration &cfg : *config) {
 		if (cfg.stream() == &data->mainPathStream_) {
-			ret = mainPath_.configure(cfg, format);
-			streamConfig[0] = IPAStream(cfg.pixelFormat,
-						    cfg.size);
-			/* Configure dewarp */
-			if (dewarper_ && !isRaw_) {
+			/*
+			 * To allow for digital zoom, scaling down should happen
+			 * in the dewarper, instead of the resizer. Configure
+			 * the isp output to the same size as the sensor output.
+			 */
+			StreamConfiguration ispCfg = cfg;
+			if (data->usesDewarper_) {
 				outputCfgs.push_back(const_cast<StreamConfiguration &>(cfg));
-				ret = dewarper_->configure(cfg, outputCfgs);
+
+				ispCfg.bufferCount = kRkISP1MinBufferCount;
+				ispCfg.size = format.size;
+				ispCfg.stride =
+					PixelFormatInfo::info(ispCfg.pixelFormat)
+						.stride(ispCfg.size.width, 0);
+
+				ret = dewarper_->configure(ispCfg, outputCfgs);
 				if (ret)
 					return ret;
 
+				dewarper_->setTransform(cfg.stream(), config->combinedTransform());
 				/*
-				 * Calculate the crop rectangle of the data
-				 * flowing into the dewarper in sensor
-				 * coordinates.
+				 * Apply a default scaler crop that keeps the
+				 * aspect ratio.
 				 */
-				scalerMaxCrop_ =
-					outputCrop.transformedBetween(inputCrop,
-								      sensorInfo.analogCrop);
+				Size size = cfg.size;
+				if (transposeAfterIsp)
+					size.transpose();
+				size = sensorCrop.size().boundedToAspectRatio(size);
+
+				ControlList ctrls;
+				ctrls.set(controls::ScalerCrop, size.centeredTo(sensorCrop.center()));
+				dewarper_->setControls(cfg.stream(), ctrls);
 			}
+
+			ret = mainPath_.configure(ispCfg, format);
+			streamConfig[0] = IPAStream(cfg.pixelFormat,
+						    cfg.size);
 		} else if (hasSelfPath_) {
 			ret = selfPath_.configure(cfg, format);
 			streamConfig[1] = IPAStream(cfg.pixelFormat,
@@ -993,7 +1128,7 @@ int PipelineHandlerRkISP1::exportFrameBuffers([[maybe_unused]] Camera *camera, S
 		 * It has mainpath and no self path. Hence, export buffers from
 		 * dewarper just for the main path stream, for now.
 		 */
-		if (useDewarper_)
+		if (data->usesDewarper_)
 			return dewarper_->exportBuffers(&data->mainPathStream_, count, buffers);
 		else
 			return mainPath_.exportBuffers(count, buffers);
@@ -1027,7 +1162,7 @@ int PipelineHandlerRkISP1::allocateBuffers(Camera *camera)
 	}
 
 	/* If the dewarper is being used, allocate internal buffers for ISP. */
-	if (useDewarper_) {
+	if (data->usesDewarper_) {
 		ret = mainPath_.exportBuffers(kRkISP1MinBufferCount, &mainPathBuffers_);
 		if (ret < 0)
 			return ret;
@@ -1130,7 +1265,10 @@ int PipelineHandlerRkISP1::start(Camera *camera, [[maybe_unused]] const ControlL
 		}
 		actions += [&]() { stat_->streamOff(); };
 
-		if (useDewarper_) {
+		if (data->usesDewarper_) {
+			if (controls)
+				dewarper_->setControls(&data->mainPathStream_, *controls);
+
 			ret = dewarper_->start();
 			if (ret) {
 				LOG(RkISP1, Error) << "Failed to start dewarper";
@@ -1185,7 +1323,7 @@ void PipelineHandlerRkISP1::stopDevice(Camera *camera)
 			LOG(RkISP1, Warning)
 				<< "Failed to stop parameters for " << camera->id();
 
-		if (useDewarper_)
+		if (data->usesDewarper_)
 			dewarper_->stop();
 	}
 
@@ -1281,28 +1419,8 @@ int PipelineHandlerRkISP1::updateControls(RkISP1CameraData *data)
 {
 	ControlInfoMap::Map controls;
 
-	if (dewarper_) {
-		std::pair<Rectangle, Rectangle> cropLimits;
-		if (dewarper_->isConfigured(&data->mainPathStream_))
-			cropLimits = dewarper_->inputCropBounds(&data->mainPathStream_);
-		else
-			cropLimits = dewarper_->inputCropBounds();
-
-		/*
-		 * ScalerCrop is specified to be in Sensor coordinates.
-		 * So we need to transform the limits to sensor coordinates.
-		 * We can safely assume that the maximum crop limit contains the
-		 * full fov of the dewarper.
-		 */
-		Rectangle min = cropLimits.first.transformedBetween(cropLimits.second,
-								    scalerMaxCrop_);
-
-		controls[&controls::ScalerCrop] = ControlInfo(min,
-							      scalerMaxCrop_,
-							      scalerMaxCrop_);
-		data->properties_.set(properties::ScalerCropMaximum, scalerMaxCrop_);
-		activeCrop_ = scalerMaxCrop_;
-	}
+	if (data->usesDewarper_)
+		dewarper_->updateControlInfos(&data->mainPathStream_, controls);
 
 	/* Add the IPA registered controls to list of camera controls. */
 	for (const auto &ipaControl : data->ipaControls_)
@@ -1341,8 +1459,6 @@ int PipelineHandlerRkISP1::createCamera(MediaEntity *sensor)
 
 	/* Initialize the camera properties. */
 	data->properties_ = data->sensor_->properties();
-
-	scalerMaxCrop_ = Rectangle(data->sensor_->resolution());
 
 	const CameraSensorProperties::SensorDelays &delays = data->sensor_->sensorDelays();
 	std::unordered_map<uint32_t, DelayedControls::ControlParams> params = {
@@ -1412,16 +1528,16 @@ bool PipelineHandlerRkISP1::match(DeviceEnumerator *enumerator)
 	hasSelfPath_ = !!media_->getEntityByName("rkisp1_selfpath");
 
 	/* Create the V4L2 subdevices we will need. */
-	isp_ = V4L2Subdevice::fromEntityName(media_, "rkisp1_isp");
+	isp_ = V4L2Subdevice::fromEntityName(media_.get(), "rkisp1_isp");
 	if (isp_->open() < 0)
 		return false;
 
 	/* Locate and open the stats and params video nodes. */
-	stat_ = V4L2VideoDevice::fromEntityName(media_, "rkisp1_stats");
+	stat_ = V4L2VideoDevice::fromEntityName(media_.get(), "rkisp1_stats");
 	if (stat_->open() < 0)
 		return false;
 
-	param_ = V4L2VideoDevice::fromEntityName(media_, "rkisp1_params");
+	param_ = V4L2VideoDevice::fromEntityName(media_.get(), "rkisp1_params");
 	if (param_->open() < 0)
 		return false;
 
@@ -1438,27 +1554,11 @@ bool PipelineHandlerRkISP1::match(DeviceEnumerator *enumerator)
 	stat_->bufferReady.connect(this, &PipelineHandlerRkISP1::statBufferReady);
 	param_->bufferReady.connect(this, &PipelineHandlerRkISP1::paramBufferReady);
 
-	/* If dewarper is present, create its instance. */
-	DeviceMatch dwp("dw100");
-	dwp.add("dw100-source");
-	dwp.add("dw100-sink");
-
-	std::shared_ptr<MediaDevice> dwpMediaDevice = enumerator->search(dwp);
-	if (dwpMediaDevice) {
-		dewarper_ = std::make_unique<V4L2M2MConverter>(dwpMediaDevice.get());
-		if (dewarper_->isValid()) {
-			dewarper_->outputBufferReady.connect(
-				this, &PipelineHandlerRkISP1::dewarpBufferReady);
-
-			LOG(RkISP1, Info)
-				<< "Using DW100 dewarper " << dewarper_->deviceNode();
-		} else {
-			LOG(RkISP1, Warning)
-				<< "Found DW100 dewarper " << dewarper_->deviceNode()
-				<< " but invalid";
-
-			dewarper_.reset();
-		}
+	dewarper_ = ConverterDW100Module::createModule(enumerator);
+	if (dewarper_) {
+		dewarper_->outputBufferReady.connect(
+			this, &PipelineHandlerRkISP1::dewarpBufferReady);
+		LOG(RkISP1, Debug) << "Found DW100 dewarper";
 	}
 
 	/*
@@ -1499,6 +1599,31 @@ void PipelineHandlerRkISP1::tryCompleteRequest(RkISP1FrameInfo *info)
 	completeRequest(request);
 }
 
+void PipelineHandlerRkISP1::cancelDewarpRequest(RkISP1FrameInfo *info)
+{
+	RkISP1CameraData *data = cameraData(activeCamera_);
+	Request *request = info->request;
+	/*
+	 * i.MX8MP is the only known platform with dewarper. It has
+	 * no self path. Hence, only main path buffer completion is
+	 * required.
+	 *
+	 * Also, we cannot completeBuffer(request, buffer) as buffer
+	 * here, is an internal buffer (between ISP and dewarper) and
+	 * is not associated to the any specific request. The request
+	 * buffer associated with main path stream is the one that
+	 * is required to be completed (not the internal buffer).
+	 */
+	for (auto [stream, buffer] : request->buffers()) {
+		if (stream == &data->mainPathStream_) {
+			buffer->_d()->cancel();
+			completeBuffer(request, buffer);
+		}
+	}
+
+	tryCompleteRequest(info);
+}
+
 void PipelineHandlerRkISP1::imageBufferReady(FrameBuffer *buffer)
 {
 	ASSERT(activeCamera_);
@@ -1531,7 +1656,7 @@ void PipelineHandlerRkISP1::imageBufferReady(FrameBuffer *buffer)
 			info->metadataProcessed = true;
 	}
 
-	if (!useDewarper_) {
+	if (!data->usesDewarper_) {
 		completeBuffer(request, buffer);
 		tryCompleteRequest(info);
 
@@ -1540,57 +1665,11 @@ void PipelineHandlerRkISP1::imageBufferReady(FrameBuffer *buffer)
 
 	/* Do not queue cancelled frames to dewarper. */
 	if (metadata.status == FrameMetadata::FrameCancelled) {
-		/*
-		 * i.MX8MP is the only known platform with dewarper. It has
-		 * no self path. Hence, only main path buffer completion is
-		 * required.
-		 *
-		 * Also, we cannot completeBuffer(request, buffer) as buffer
-		 * here, is an internal buffer (between ISP and dewarper) and
-		 * is not associated to the any specific request. The request
-		 * buffer associated with main path stream is the one that
-		 * is required to be completed (not the internal buffer).
-		 */
-		for (auto it : request->buffers()) {
-			if (it.first == &data->mainPathStream_)
-				completeBuffer(request, it.second);
-		}
-
-		tryCompleteRequest(info);
+		cancelDewarpRequest(info);
 		return;
 	}
 
-	/* Handle scaler crop control. */
-	const auto &crop = request->controls().get(controls::ScalerCrop);
-	if (crop) {
-		Rectangle rect = crop.value();
-
-		/*
-		 * ScalerCrop is specified to be in Sensor coordinates.
-		 * So we need to transform it into dewarper coordinates.
-		 * We can safely assume that the maximum crop limit contains the
-		 * full fov of the dewarper.
-		 */
-		std::pair<Rectangle, Rectangle> cropLimits =
-			dewarper_->inputCropBounds(&data->mainPathStream_);
-
-		rect = rect.transformedBetween(scalerMaxCrop_, cropLimits.second);
-		int ret = dewarper_->setInputCrop(&data->mainPathStream_,
-						  &rect);
-		rect = rect.transformedBetween(cropLimits.second, scalerMaxCrop_);
-		if (!ret && rect != crop.value()) {
-			/*
-			 * If the rectangle is changed by setInputCrop on the
-			 * dewarper, log a debug message and cache the actual
-			 * applied rectangle for metadata reporting.
-			 */
-			LOG(RkISP1, Debug)
-				<< "Applied rectangle " << rect.toString()
-				<< " differs from requested " << crop.value().toString();
-		}
-
-		activeCrop_ = rect;
-	}
+	dewarper_->setControls(&data->mainPathStream_, request->controls());
 
 	/*
 	 * Queue input and output buffers to the dewarper. The output
@@ -1598,11 +1677,16 @@ void PipelineHandlerRkISP1::imageBufferReady(FrameBuffer *buffer)
 	 * by the application.
 	 */
 	int ret = dewarper_->queueBuffers(buffer, request->buffers());
-	if (ret < 0)
-		LOG(RkISP1, Error) << "Cannot queue buffers to dewarper: "
+	if (ret < 0) {
+		LOG(RkISP1, Error) << "Failed to queue buffers to dewarper: -"
 				   << strerror(-ret);
 
-	request->metadata().set(controls::ScalerCrop, activeCrop_.value());
+		cancelDewarpRequest(info);
+
+		return;
+	}
+
+	dewarper_->populateMetadata(&data->mainPathStream_, request->metadata());
 }
 
 void PipelineHandlerRkISP1::dewarpBufferReady(FrameBuffer *buffer)

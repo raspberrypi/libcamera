@@ -54,6 +54,14 @@ static constexpr double kDefaultRelativeLuminanceTarget = 0.16;
  */
 static constexpr double kMaxRelativeLuminanceTarget = 0.95;
 
+/*
+ * Default lux level
+ *
+ * If no lux level or a zero lux level is specified, but PWLs are used to
+ * specify luminance targets, this default level is used.
+ */
+static constexpr unsigned int kDefaultLuxLevel = 500;
+
 /**
  * \struct AgcMeanLuminance::AgcConstraint
  * \brief The boundaries and target for an AeConstraintMode constraint
@@ -144,20 +152,33 @@ static constexpr double kMaxRelativeLuminanceTarget = 0.95;
  */
 
 AgcMeanLuminance::AgcMeanLuminance()
-	: exposureCompensation_(1.0), frameCount_(0), filteredExposure_(0s),
-	  relativeLuminanceTarget_(0)
+	: filteredExposure_(0s), luxWarningEnabled_(true),
+	  exposureCompensation_(1.0), frameCount_(0), lux_(0)
 {
 }
 
 AgcMeanLuminance::~AgcMeanLuminance() = default;
 
-void AgcMeanLuminance::parseRelativeLuminanceTarget(const YamlObject &tuningData)
+int AgcMeanLuminance::parseRelativeLuminanceTarget(const YamlObject &tuningData)
 {
-	relativeLuminanceTarget_ =
-		tuningData["relativeLuminanceTarget"].get<double>(kDefaultRelativeLuminanceTarget);
+	auto &target = tuningData["relativeLuminanceTarget"];
+	if (!target) {
+		relativeLuminanceTarget_ = { { { { 0.0, kDefaultRelativeLuminanceTarget } } } };
+		return 0;
+	}
+
+	auto pwl = target.get<Pwl>();
+	if (!pwl) {
+		LOG(AgcMeanLuminance, Error)
+			<< "Failed to load relative luminance target.";
+		return -EINVAL;
+	}
+
+	relativeLuminanceTarget_ = std::move(*pwl);
+	return 0;
 }
 
-void AgcMeanLuminance::parseConstraint(const YamlObject &modeDict, int32_t id)
+int AgcMeanLuminance::parseConstraint(const YamlObject &modeDict, int32_t id)
 {
 	for (const auto &[boundName, content] : modeDict.asDict()) {
 		if (boundName != "upper" && boundName != "lower") {
@@ -170,10 +191,14 @@ void AgcMeanLuminance::parseConstraint(const YamlObject &modeDict, int32_t id)
 		AgcConstraint::Bound bound = static_cast<AgcConstraint::Bound>(idx);
 		double qLo = content["qLo"].get<double>().value_or(0.98);
 		double qHi = content["qHi"].get<double>().value_or(1.0);
-		double yTarget =
-			content["yTarget"].getList<double>().value_or(std::vector<double>{ 0.5 }).at(0);
+		auto yTarget = content["yTarget"].get<Pwl>();
+		if (!yTarget) {
+			LOG(AgcMeanLuminance, Error)
+				<< "Failed to parse yTarget";
+			return -EINVAL;
+		}
 
-		AgcConstraint constraint = { bound, qLo, qHi, yTarget };
+		AgcConstraint constraint = { bound, qLo, qHi, std::move(*yTarget) };
 
 		if (!constraintModes_.count(id))
 			constraintModes_[id] = {};
@@ -183,6 +208,8 @@ void AgcMeanLuminance::parseConstraint(const YamlObject &modeDict, int32_t id)
 		else
 			constraintModes_[id].insert(constraintModes_[id].begin(), constraint);
 	}
+
+	return 0;
 }
 
 int AgcMeanLuminance::parseConstraintModes(const YamlObject &tuningData)
@@ -205,8 +232,11 @@ int AgcMeanLuminance::parseConstraintModes(const YamlObject &tuningData)
 				return -EINVAL;
 			}
 
-			parseConstraint(modeDict,
-					AeConstraintModeNameValueMap.at(modeName));
+			int ret = parseConstraint(modeDict,
+						  AeConstraintModeNameValueMap.at(modeName));
+			if (ret)
+				return ret;
+
 			availableConstraintModes.push_back(
 				AeConstraintModeNameValueMap.at(modeName));
 		}
@@ -223,7 +253,7 @@ int AgcMeanLuminance::parseConstraintModes(const YamlObject &tuningData)
 			AgcConstraint::Bound::Lower,
 			0.98,
 			1.0,
-			0.5
+			Pwl({ { { 0.0, 0.5 } } })
 		};
 
 		constraintModes_[controls::ConstraintNormal].insert(
@@ -325,6 +355,8 @@ void AgcMeanLuminance::configure(utils::Duration lineDuration,
 {
 	for (auto &[id, helper] : exposureModeHelpers_)
 		helper->configure(lineDuration, sensorHelper);
+
+	luxWarningEnabled_ = true;
 }
 
 /**
@@ -336,8 +368,9 @@ void AgcMeanLuminance::configure(utils::Duration lineDuration,
  * the data in a specific format; the Agc algorithm's tuning data should contain
  * a dictionary called AeConstraintMode containing per-mode setting dictionaries
  * with the key being a value from \ref controls::AeConstraintModeNameValueMap.
- * Each mode dict may contain either a "lower" or "upper" key or both, for
- * example:
+ * The yTarget can either be provided as single value or as array in which case
+ * it is interpreted as a PWL mapping lux levels to yTarget values. Each mode
+ * dict may contain either a "lower" or "upper" key or both, for example:
  *
  * \code{.unparsed}
  * algorithms:
@@ -356,7 +389,7 @@ void AgcMeanLuminance::configure(utils::Duration lineDuration,
  *           upper:
  *             qLo: 0.98
  *             qHi: 1.0
- *             yTarget: 0.8
+ *             yTarget: [ 100, 0.8, 20000, 0.5 ]
  *
  * \endcode
  *
@@ -385,7 +418,9 @@ int AgcMeanLuminance::parseTuningData(const YamlObject &tuningData)
 {
 	int ret;
 
-	parseRelativeLuminanceTarget(tuningData);
+	ret = parseRelativeLuminanceTarget(tuningData);
+	if (ret)
+		return ret;
 
 	ret = parseConstraintModes(tuningData);
 	if (ret)
@@ -401,6 +436,16 @@ int AgcMeanLuminance::parseTuningData(const YamlObject &tuningData)
  *
  * This function sets the exposure compensation value to be used in the
  * AGC calculations. It is expressed as gain instead of EV.
+ */
+
+/**
+ * \fn AgcMeanLuminance::setLux(int lux)
+ * \brief Set the lux level
+ * \param[in] lux The lux level
+ *
+ * This function sets the lux level to be used in the AGC calculations. A value
+ * of 0 means no measurement and a default value of \a kDefaultLuxLevel is used
+ * if necessary.
  */
 
 /**
@@ -500,8 +545,15 @@ double AgcMeanLuminance::constraintClampGain(uint32_t constraintModeIndex,
 					     const Histogram &hist,
 					     double gain)
 {
-	auto applyConstraint = [&gain, &hist](const AgcConstraint &constraint) {
-		double newGain = constraint.yTarget * hist.bins() /
+	auto applyConstraint = [this, &gain, &hist](const AgcConstraint &constraint) {
+		double lux = lux_;
+
+		if (relativeLuminanceTarget_.size() > 1 && lux_ == 0)
+			lux = kDefaultLuxLevel;
+
+		double target = constraint.yTarget.eval(
+			constraint.yTarget.domain().clamp(lux));
+		double newGain = target * hist.bins() /
 				 hist.interQuantileMean(constraint.qLo, constraint.qHi);
 
 		if (constraint.bound == AgcConstraint::Bound::Lower &&
@@ -538,7 +590,32 @@ double AgcMeanLuminance::constraintClampGain(uint32_t constraintModeIndex,
  */
 double AgcMeanLuminance::effectiveYTarget() const
 {
-	return std::min(relativeLuminanceTarget_ * exposureCompensation_,
+	double lux = lux_;
+	if (relativeLuminanceTarget_.size() > 1 && lux_ == 0) {
+		/*
+		 * Warn after a few frames if there is still no lux measurement
+		 * available. The number of 10 is chosen a bit arbitrarily. It
+		 * is big enough to skip the frames that get queued on start
+		 * (and therefore are expected to have no valid lux value) and
+		 * small enough to show up quickly.
+		 */
+		if (frameCount_ > 10 && luxWarningEnabled_) {
+			luxWarningEnabled_ = false;
+			LOG(AgcMeanLuminance, Warning)
+				<< "Missing lux value for luminance target "
+				   "calculation, default to "
+				<< kDefaultLuxLevel
+				<< ". Note that the Lux algorithm must be "
+				   "included before the Agc algorithm.";
+		}
+
+		lux = kDefaultLuxLevel;
+	}
+
+	double luminanceTarget = relativeLuminanceTarget_.eval(
+		relativeLuminanceTarget_.domain().clamp(lux));
+
+	return std::min(luminanceTarget * exposureCompensation_,
 			kMaxRelativeLuminanceTarget);
 }
 

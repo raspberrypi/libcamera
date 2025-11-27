@@ -108,6 +108,12 @@ public:
 		return *this;
 	}
 
+	Size &transpose()
+	{
+		std::swap(width, height);
+		return *this;
+	}
+
 	[[nodiscard]] constexpr Size alignedDownTo(unsigned int hAlignment,
 						   unsigned int vAlignment) const
 	{

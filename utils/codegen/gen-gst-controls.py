@@ -138,18 +138,20 @@ def extend_control(ctrl):
 def main(argv):
     # Parse command line arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument('--output', '-o', metavar='file', type=str,
+    parser.add_argument('--output', '-o', metavar='file', default=sys.stdout,
+                        type=argparse.FileType('w', encoding='utf-8'),
                         help='Output file name. Defaults to standard output if not specified.')
-    parser.add_argument('--template', '-t', dest='template', type=str, required=True,
+    parser.add_argument('--template', '-t', dest='template', required=True,
+                        type=argparse.FileType('r', encoding='utf-8'),
                         help='Template file name.')
-    parser.add_argument('input', type=str, nargs='+',
+    parser.add_argument('input', nargs='+', type=argparse.FileType('rb'),
                         help='Input file name.')
 
     args = parser.parse_args(argv[1:])
 
     controls = {}
     for input in args.input:
-        data = yaml.safe_load(open(input, 'rb').read())
+        data = yaml.safe_load(input)
 
         vendor = data['vendor']
         ctrls = controls.setdefault(vendor, [])
@@ -167,14 +169,10 @@ def main(argv):
     env.filters['indent_str'] = indent_str
     env.filters['snake_case'] = snake_case
     env.filters['kebab_case'] = kebab_case
-    template = env.from_string(open(args.template, 'r', encoding='utf-8').read())
+    template = env.from_string(args.template.read())
     string = template.render(data)
 
-    if args.output:
-        with open(args.output, 'w', encoding='utf-8') as output:
-            output.write(string)
-    else:
-        sys.stdout.write(string)
+    args.output.write(string)
 
     return 0
 

@@ -224,13 +224,16 @@ public:
 
 protected:
 	int registerCamera(std::unique_ptr<RPi::CameraData> &cameraData,
-			   MediaDevice *frontent, const std::string &frontendName,
-			   MediaDevice *backend, MediaEntity *sensorEntity);
+			   std::shared_ptr<MediaDevice> frontend,
+			   const std::string &frontendName,
+			   std::shared_ptr<MediaDevice> backend,
+			   MediaEntity *sensorEntity);
 
 	void mapBuffers(Camera *camera, const BufferMap &buffers, unsigned int mask);
 
 	virtual int platformRegister(std::unique_ptr<CameraData> &cameraData,
-				     MediaDevice *unicam, MediaDevice *isp) = 0;
+				     std::shared_ptr<MediaDevice> unicam,
+				     std::shared_ptr<MediaDevice> isp) = 0;
 
 private:
 	CameraData *cameraData(Camera *camera)

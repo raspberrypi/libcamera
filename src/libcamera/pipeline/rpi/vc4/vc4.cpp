@@ -5,6 +5,8 @@
  * Pipeline handler for VC4-based Raspberry Pi devices
  */
 
+#include <memory>
+
 #include <linux/bcm2835-isp.h>
 #include <linux/v4l2-controls.h>
 #include <linux/videodev2.h>
@@ -168,7 +170,8 @@ private:
 
 	int prepareBuffers(Camera *camera) override;
 	int platformRegister(std::unique_ptr<RPi::CameraData> &cameraData,
-			     MediaDevice *unicam, MediaDevice *isp) override;
+			     std::shared_ptr<MediaDevice> unicam,
+			     std::shared_ptr<MediaDevice> isp) override;
 };
 
 bool PipelineHandlerVc4::match(DeviceEnumerator *enumerator)
@@ -183,7 +186,7 @@ bool PipelineHandlerVc4::match(DeviceEnumerator *enumerator)
 	 */
 	for (unsigned int i = 0; i < numUnicamDevices; i++) {
 		DeviceMatch unicam("unicam");
-		MediaDevice *unicamDevice = acquireMediaDevice(enumerator, unicam);
+		std::shared_ptr<MediaDevice> unicamDevice = acquireMediaDevice(enumerator, unicam);
 
 		if (!unicamDevice) {
 			LOG(RPI, Debug) << "Unable to acquire a Unicam instance";
@@ -191,7 +194,7 @@ bool PipelineHandlerVc4::match(DeviceEnumerator *enumerator)
 		}
 
 		DeviceMatch isp("bcm2835-isp");
-		MediaDevice *ispDevice = acquireMediaDevice(enumerator, isp);
+		std::shared_ptr<MediaDevice> ispDevice = acquireMediaDevice(enumerator, isp);
 
 		if (!ispDevice) {
 			LOG(RPI, Debug) << "Unable to acquire ISP instance";
@@ -342,7 +345,9 @@ int PipelineHandlerVc4::prepareBuffers(Camera *camera)
 	return 0;
 }
 
-int PipelineHandlerVc4::platformRegister(std::unique_ptr<RPi::CameraData> &cameraData, MediaDevice *unicam, MediaDevice *isp)
+int PipelineHandlerVc4::platformRegister(std::unique_ptr<RPi::CameraData> &cameraData,
+					 std::shared_ptr<MediaDevice> unicam,
+					 std::shared_ptr<MediaDevice> isp)
 {
 	Vc4CameraData *data = static_cast<Vc4CameraData *>(cameraData.get());
 

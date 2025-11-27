@@ -1344,4 +1344,11 @@ controls:
         reduces the WdrExposureValue until the amount of pixels that are close
         to saturation is lower than this value.
 
+  - LensDewarpEnable:
+      type: bool
+      direction: inout
+      description: |
+        Enable or disable lens dewarping. This control is only available if lens
+        dewarp parameters are configured in the tuning file.
+
 ...

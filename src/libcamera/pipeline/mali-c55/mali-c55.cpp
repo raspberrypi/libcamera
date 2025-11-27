@@ -682,7 +682,7 @@ private:
 	bool registerTPGCamera(MediaLink *link);
 	bool registerSensorCamera(MediaLink *link);
 
-	MediaDevice *media_;
+	std::shared_ptr<MediaDevice> media_;
 	std::unique_ptr<V4L2Subdevice> isp_;
 	std::unique_ptr<V4L2VideoDevice> stats_;
 	std::unique_ptr<V4L2VideoDevice> params_;
@@ -1647,24 +1647,24 @@ bool PipelineHandlerMaliC55::match(DeviceEnumerator *enumerator)
 	if (!media_)
 		return false;
 
-	isp_ = V4L2Subdevice::fromEntityName(media_, "mali-c55 isp");
+	isp_ = V4L2Subdevice::fromEntityName(media_.get(), "mali-c55 isp");
 	if (isp_->open() < 0)
 		return false;
 
-	stats_ = V4L2VideoDevice::fromEntityName(media_, "mali-c55 3a stats");
+	stats_ = V4L2VideoDevice::fromEntityName(media_.get(), "mali-c55 3a stats");
 	if (stats_->open() < 0)
 		return false;
 
-	params_ = V4L2VideoDevice::fromEntityName(media_, "mali-c55 3a params");
+	params_ = V4L2VideoDevice::fromEntityName(media_.get(), "mali-c55 3a params");
 	if (params_->open() < 0)
 		return false;
 
 	MaliC55Pipe *frPipe = &pipes_[MaliC55FR];
-	frPipe->resizer = V4L2Subdevice::fromEntityName(media_, "mali-c55 resizer fr");
+	frPipe->resizer = V4L2Subdevice::fromEntityName(media_.get(), "mali-c55 resizer fr");
 	if (frPipe->resizer->open() < 0)
 		return false;
 
-	frPipe->cap = V4L2VideoDevice::fromEntityName(media_, "mali-c55 fr");
+	frPipe->cap = V4L2VideoDevice::fromEntityName(media_.get(), "mali-c55 fr");
 	if (frPipe->cap->open() < 0)
 		return false;
 
@@ -1682,11 +1682,11 @@ bool PipelineHandlerMaliC55::match(DeviceEnumerator *enumerator)
 
 		MaliC55Pipe *dsPipe = &pipes_[MaliC55DS];
 
-		dsPipe->resizer = V4L2Subdevice::fromEntityName(media_, "mali-c55 resizer ds");
+		dsPipe->resizer = V4L2Subdevice::fromEntityName(media_.get(), "mali-c55 resizer ds");
 		if (dsPipe->resizer->open() < 0)
 			return false;
 
-		dsPipe->cap = V4L2VideoDevice::fromEntityName(media_, "mali-c55 ds");
+		dsPipe->cap = V4L2VideoDevice::fromEntityName(media_.get(), "mali-c55 ds");
 		if (dsPipe->cap->open() < 0)
 			return false;
 

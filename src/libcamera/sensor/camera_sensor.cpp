@@ -332,6 +332,13 @@ int CameraSensor::setEmbeddedDataEnabled(bool enable)
  */
 
 /**
+ * \fn CameraSensor::mountingOrientation()
+ * \brief Fetch the mounting orientation of the sensor
+ *
+ * \return The mounting orientation of the sensor
+ */
+
+/**
  * \fn CameraSensor::controls()
  * \brief Retrieve the supported V4L2 controls and their information
  *

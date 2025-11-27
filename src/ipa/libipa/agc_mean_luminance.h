@@ -20,6 +20,7 @@
 
 #include "exposure_mode_helper.h"
 #include "histogram.h"
+#include "pwl.h"
 
 namespace libcamera {
 
@@ -39,7 +40,7 @@ public:
 		Bound bound;
 		double qLo;
 		double qHi;
-		double yTarget;
+		Pwl yTarget;
 	};
 
 	void configure(utils::Duration lineDuration, const CameraSensorHelper *sensorHelper);
@@ -48,6 +49,11 @@ public:
 	void setExposureCompensation(double gain)
 	{
 		exposureCompensation_ = gain;
+	}
+
+	void setLux(unsigned int lux)
+	{
+		lux_ = lux;
 	}
 
 	void setLimits(utils::Duration minExposureTime, utils::Duration maxExposureTime,
@@ -82,8 +88,8 @@ public:
 private:
 	virtual double estimateLuminance(const double gain) const = 0;
 
-	void parseRelativeLuminanceTarget(const YamlObject &tuningData);
-	void parseConstraint(const YamlObject &modeDict, int32_t id);
+	int parseRelativeLuminanceTarget(const YamlObject &tuningData);
+	int parseConstraint(const YamlObject &modeDict, int32_t id);
 	int parseConstraintModes(const YamlObject &tuningData);
 	int parseExposureModes(const YamlObject &tuningData);
 	double estimateInitialGain() const;
@@ -92,10 +98,12 @@ private:
 				   double gain);
 	utils::Duration filterExposure(utils::Duration exposureValue);
 
-	double exposureCompensation_;
-	uint64_t frameCount_;
 	utils::Duration filteredExposure_;
-	double relativeLuminanceTarget_;
+	mutable bool luxWarningEnabled_;
+	double exposureCompensation_;
+	Pwl relativeLuminanceTarget_;
+	uint64_t frameCount_;
+	unsigned int lux_;
 
 	std::vector<AgcConstraint> additionalConstraints_;
 	std::map<int32_t, std::vector<AgcConstraint>> constraintModes_;

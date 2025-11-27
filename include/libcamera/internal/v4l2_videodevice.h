@@ -11,7 +11,6 @@
 #include <memory>
 #include <optional>
 #include <ostream>
-#include <queue>
 #include <stdint.h>
 #include <string>
 #include <unordered_set>
@@ -34,6 +33,7 @@
 #include "libcamera/internal/formats.h"
 #include "libcamera/internal/v4l2_device.h"
 #include "libcamera/internal/v4l2_pixelformat.h"
+#include "libcamera/internal/v4l2_request.h"
 
 namespace libcamera {
 
@@ -218,7 +218,7 @@ public:
 	int importBuffers(unsigned int count);
 	int releaseBuffers();
 
-	int queueBuffer(FrameBuffer *buffer);
+	int queueBuffer(FrameBuffer *buffer, const V4L2Request *request = nullptr);
 	Signal<FrameBuffer *> bufferReady;
 
 	int streamOn();
@@ -267,8 +267,6 @@ private:
 	void bufferAvailable();
 	FrameBuffer *dequeueBuffer();
 
-	int queueToDevice(FrameBuffer *buffer);
-
 	void watchdogExpired();
 
 	template<typename T>
@@ -284,7 +282,6 @@ private:
 
 	V4L2BufferCache *cache_;
 	std::map<unsigned int, FrameBuffer *> queuedBuffers_;
-	std::queue<FrameBuffer *> pendingBuffersToQueue_;
 
 	EventNotifier *fdBufferNotifier_;
 

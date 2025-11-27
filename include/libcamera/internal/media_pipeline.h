@@ -23,36 +23,21 @@ struct V4L2SubdeviceFormat;
 class MediaPipeline
 {
 public:
+	struct Entity {
+		MediaEntity *entity;
+		bool supportsRouting;
+		const MediaPad *sink;
+		const MediaPad *source;
+		MediaLink *sourceLink;
+	};
+
 	int init(MediaEntity *source, std::string_view sink);
 	int initLinks();
 	int configure(CameraSensor *sensor, V4L2SubdeviceFormat *);
 
-private:
-	struct Entity {
-		/* The media entity, always valid. */
-		MediaEntity *entity;
-		/*
-		 * Whether or not the entity is a subdev that supports the
-		 * routing API.
-		 */
-		bool supportsRouting;
-		/*
-		 * The local sink pad connected to the upstream entity, null for
-		 * the camera sensor at the beginning of the pipeline.
-		 */
-		const MediaPad *sink;
-		/*
-		 * The local source pad connected to the downstream entity, null
-		 * for the video node at the end of the pipeline.
-		 */
-		const MediaPad *source;
-		/*
-		 * The link on the source pad, to the downstream entity, null
-		 * for the video node at the end of the pipeline.
-		 */
-		MediaLink *sourceLink;
-	};
+	const std::list<Entity> &entities() const { return entities_; }
 
+private:
 	std::list<Entity> entities_;
 };
 

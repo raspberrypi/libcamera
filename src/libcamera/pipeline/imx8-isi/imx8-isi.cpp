@@ -25,6 +25,7 @@
 #include "libcamera/internal/camera_sensor.h"
 #include "libcamera/internal/device_enumerator.h"
 #include "libcamera/internal/media_device.h"
+#include "libcamera/internal/media_pipeline.h"
 #include "libcamera/internal/pipeline_handler.h"
 #include "libcamera/internal/v4l2_subdevice.h"
 #include "libcamera/internal/v4l2_videodevice.h"
@@ -62,14 +63,15 @@ public:
 	unsigned int getYuvMediaBusFormat(const PixelFormat &pixelFormat) const;
 	unsigned int getMediaBusFormat(PixelFormat *pixelFormat) const;
 
+	/* All entities, from the sensor to the ISI. */
+	MediaPipeline mediaPipeline_;
+
 	std::unique_ptr<CameraSensor> sensor_;
-	std::unique_ptr<V4L2Subdevice> csis_;
 
 	std::vector<Stream> streams_;
 
 	std::vector<Stream *> enabledStreams_;
 
-	unsigned int xbarSink_ = 0;
 	unsigned int xbarSourceOffset_ = 0;
 };
 
@@ -141,6 +143,8 @@ private:
 
 	void bufferReady(FrameBuffer *buffer);
 
+	std::vector<MediaEntity *> locateSensors(MediaDevice *media);
+
 	std::shared_ptr<MediaDevice> isiDev_;
 
 	std::unique_ptr<V4L2Subdevice> crossbar_;
@@ -163,10 +167,6 @@ int ISICameraData::init()
 {
 	if (!sensor_)
 		return -ENODEV;
-
-	int ret = csis_->open();
-	if (ret)
-		return ret;
 
 	properties_ = sensor_->properties();
 
@@ -811,18 +811,29 @@ int PipelineHandlerISI::configure(Camera *camera, CameraConfiguration *c)
 {
 	ISICameraConfiguration *camConfig = static_cast<ISICameraConfiguration *>(c);
 	ISICameraData *data = cameraData(camera);
+	CameraSensor *sensor = data->sensor_.get();
+	int ret;
 
-	/* Apply format to the sensor, CSIS receiver and crossbar sink pad. */
+	/*
+	 * Enable the links all the way up to the ISI, through any connected CSI
+	 * receiver and optional formatter.
+	 */
+	ret = data->mediaPipeline_.initLinks();
+	if (ret) {
+		LOG(ISI, Error) << "Failed to set up pipe links";
+		return ret;
+	}
+
+	/*
+	 * Configure the format on the sensor output and propagate it through
+	 * the pipeline.
+	 */
 	V4L2SubdeviceFormat format = camConfig->sensorFormat_;
-	int ret = data->sensor_->setFormat(&format);
+	ret = sensor->setFormat(&format);
 	if (ret)
 		return ret;
 
-	ret = data->csis_->setFormat(0, &format);
-	if (ret)
-		return ret;
-
-	ret = crossbar_->setFormat(data->xbarSink_, &format);
+	ret = data->mediaPipeline_.configure(sensor, &format);
 	if (ret)
 		return ret;
 
@@ -979,13 +990,8 @@ bool PipelineHandlerISI::match(DeviceEnumerator *enumerator)
 		return false;
 
 	/* Count the number of sensors, to create one camera per sensor. */
-	unsigned cameraCount = 0;
-	for (MediaEntity *entity : isiDev_->entities()) {
-		if (entity->function() != MEDIA_ENT_F_CAM_SENSOR)
-			continue;
-
-		cameraCount++;
-	}
+	std::vector<MediaEntity *> sensorEntities = locateSensors(isiDev_.get());
+	unsigned int cameraCount = sensorEntities.size();
 
 	if (!cameraCount) {
 		LOG(ISI, Error) << "No camera sensor found";
@@ -1048,60 +1054,28 @@ bool PipelineHandlerISI::match(DeviceEnumerator *enumerator)
 	 * sensors to get at least one dedicated pipe.
 	 */
 	unsigned int numCameras = 0;
-	unsigned int numSinks = 0;
 	const unsigned int xbarFirstSource = crossbar_->entity()->pads().size() - pipes_.size();
 	const unsigned int maxStreams = pipes_.size() / cameraCount;
 
-	for (MediaPad *pad : crossbar_->entity()->pads()) {
-		unsigned int sink = numSinks;
-
-		if (!(pad->flags() & MEDIA_PAD_FL_SINK))
-			continue;
-
-		/*
-		 * Count each crossbar sink pad to correctly configure
-		 * routing and format for this camera.
-		 */
-		numSinks++;
-
-		if (pad->links().empty())
-			continue;
-
-		MediaEntity *csi = pad->links()[0]->source()->entity();
-		if (csi->pads().size() != 2) {
-			LOG(ISI, Debug) << "Skip unsupported CSI-2 receiver "
-					<< csi->name();
-			continue;
-		}
-
-		pad = csi->pads()[0];
-		if (!(pad->flags() & MEDIA_PAD_FL_SINK) || pad->links().empty())
-			continue;
-
-		MediaEntity *sensor = pad->links()[0]->source()->entity();
-		if (sensor->function() != MEDIA_ENT_F_CAM_SENSOR) {
-			LOG(ISI, Debug) << "Skip unsupported subdevice "
-					<< sensor->name();
-			continue;
-		}
-
-		/* All links are immutable except the sensor -> csis link. */
-		const MediaPad *sensorSrc = sensor->getPadByIndex(0);
-		sensorSrc->links()[0]->setEnabled(true);
-
+	for (MediaEntity *sensor : sensorEntities) {
 		/* Create the camera data. */
 		std::unique_ptr<ISICameraData> data =
 			std::make_unique<ISICameraData>(this, maxStreams);
 
+		ret = data->mediaPipeline_.init(sensor, "crossbar");
+		if (ret)
+			continue;
+
+		const MediaPipeline::Entity *xbarEntity = &data->mediaPipeline_.entities().back();
+		unsigned int xbarSinkIndex = xbarEntity->sink->index();
+
 		data->sensor_ = CameraSensorFactoryBase::create(sensor);
-		data->csis_ = std::make_unique<V4L2Subdevice>(csi);
-		data->xbarSink_ = sink;
 		data->xbarSourceOffset_ = numCameras * data->streams_.size();
 
 		LOG(ISI, Debug)
 			<< "cam" << numCameras
 			<< " streams " << data->streams_.size()
-			<< " sink " << data->xbarSink_
+			<< " sink " << xbarSinkIndex
 			<< " offset " << data->xbarSourceOffset_;
 
 		ret = data->init();
@@ -1120,7 +1094,7 @@ bool PipelineHandlerISI::match(DeviceEnumerator *enumerator)
 		/*  Add routes to the crossbar switch routing table. */
 		for (unsigned i = 0; i < data->streams_.size(); i++) {
 			unsigned int sourcePad = xbarFirstSource + data->xbarSourceOffset_ + i;
-			routing_.emplace_back(V4L2Subdevice::Stream{ data->xbarSink_, 0 },
+			routing_.emplace_back(V4L2Subdevice::Stream{ xbarSinkIndex, 0 },
 					     V4L2Subdevice::Stream{ sourcePad, 0 },
 					     V4L2_SUBDEV_ROUTE_FL_ACTIVE);
 		}
@@ -1161,6 +1135,69 @@ void PipelineHandlerISI::bufferReady(FrameBuffer *buffer)
 		return;
 
 	completeRequest(request);
+}
+
+/* Original function taken from simple.cpp */
+std::vector<MediaEntity *>
+PipelineHandlerISI::locateSensors(MediaDevice *media)
+{
+	std::vector<MediaEntity *> entities;
+
+	/*
+	 * Gather all the camera sensor entities based on the function they
+	 * expose.
+	 */
+	for (MediaEntity *entity : media->entities()) {
+		if (entity->function() == MEDIA_ENT_F_CAM_SENSOR)
+			entities.push_back(entity);
+	}
+
+	if (entities.empty())
+		return {};
+
+	/*
+	 * Sensors can be made of multiple entities. For instance, a raw sensor
+	 * can be connected to an ISP, and the combination of both should be
+	 * treated as one sensor. To support this, as a crude heuristic, check
+	 * the downstream entity from the camera sensor, and if it is an ISP,
+	 * use it instead of the sensor.
+	 */
+	std::vector<MediaEntity *> sensors;
+
+	for (MediaEntity *entity : entities) {
+		/*
+		 * Locate the downstream entity by following the first link
+		 * from a source pad.
+		 */
+		const MediaLink *link = nullptr;
+
+		for (const MediaPad *pad : entity->pads()) {
+			if ((pad->flags() & MEDIA_PAD_FL_SOURCE) &&
+			    !pad->links().empty()) {
+				link = pad->links()[0];
+				break;
+			}
+		}
+
+		if (!link)
+			continue;
+
+		MediaEntity *remote = link->sink()->entity();
+		if (remote->function() == MEDIA_ENT_F_PROC_VIDEO_ISP)
+			sensors.push_back(remote);
+		else
+			sensors.push_back(entity);
+	}
+
+	/*
+	 * Remove duplicates, in case multiple sensors are connected to the
+	 * same ISP.
+	 */
+	std::sort(sensors.begin(), sensors.end());
+	auto last = std::unique(sensors.begin(), sensors.end());
+	sensors.erase(last, sensors.end());
+
+	return sensors;
 }
 
 REGISTER_PIPELINE_HANDLER(PipelineHandlerISI, "imx8-isi")

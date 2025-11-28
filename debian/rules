@@ -11,6 +11,12 @@ CONFFLAGS += \
 	-Dv4l2=true
 endif
 
+ifeq ($(filter nodoc,$(DEB_BUILD_PROFILES)),)
+	DOCUMENTATION=enabled
+else
+	DOCUMENTATION=disabled
+endif
+
 ifneq (,$(filter i386,$(DEB_HOST_ARCH)))
 QCAM=disabled
 # See https://bugs.debian.org/1076986
@@ -25,18 +31,28 @@ else
 	PIPELINES=uvcvideo
 endif
 
+CONFFLAGS += \
+       --libexecdir=libexec/${DEB_HOST_MULTIARCH} \
+	-Dgstreamer=enabled \
+	-Dlibunwind=disabled \
+	-Dpycamera=enabled \
+	-Dpipelines=${PIPELINES} \
+	-Dqcam=$(QCAM) \
+	-Dtest=true \
+	-Dv4l2=true
+
 %:
 	dh $@
 
-override_dh_auto_configure:
+override_dh_auto_configure-arch:
 	dh_auto_configure -- \
-               --libexecdir=libexec/${DEB_HOST_MULTIARCH} \
-		-Dgstreamer=enabled \
-		-Dlibunwind=disabled \
-		-Dpycamera=enabled \
-		-Dpipelines=${PIPELINES} \
-		-Dqcam=$(QCAM) \
-		-Dtest=true \
+		-Ddocumentation=disabled \
+		$(CONFFLAGS) \
+		$(empty)
+
+override_dh_auto_configure-indep:
+	dh_auto_configure -- \
+		-Ddocumentation=${DOCUMENTATION} \
 		$(CONFFLAGS) \
 		$(empty)
 

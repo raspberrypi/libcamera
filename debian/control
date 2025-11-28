@@ -45,7 +45,7 @@ Rules-Requires-Root: no
 Package: libcamera-dev
 Architecture: linux-any
 Section: libdevel
-Depends: libcamera0.5 (= ${binary:Version}),
+Depends: libcamera0.6 (= ${binary:Version}),
          ${misc:Depends},
          ${shlibs:Depends}
 Description: complex camera support library (development files)
@@ -73,7 +73,7 @@ Description: complex camera support library (documentation)
  This package contains the documentation developing with libcamera.
 Build-Profiles: <!nodoc>
 
-Package: libcamera0.5
+Package: libcamera0.6
 Architecture: linux-any
 Multi-Arch: same
 Depends: ${misc:Depends},

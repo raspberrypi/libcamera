@@ -677,7 +677,7 @@ controls:
         stored in conventional reading order in an array of 9 floating point
         values.
 
-        ColourCorrectionMatrix can only be applied in a Request when the AWB is 
+        ColourCorrectionMatrix can only be applied in a Request when the AWB is
         disabled.
 
         \sa AwbEnable
@@ -1283,6 +1283,7 @@ controls:
         \sa SensorTimestamp
 
         The FrameWallClock control can only be returned in metadata.
+
   - WdrMode:
       type: int32_t
       direction: inout
@@ -1329,6 +1330,7 @@ controls:
             This curve preserves most of the information of the image at the
             expense of a very artificial look. It is therefore best suited for
             technical analysis.
+
   - WdrStrength:
       type: float
       direction: in
@@ -1338,6 +1340,7 @@ controls:
         global tone mapping is applied. A values of 1 is the default value and
         the correct value for most scenes. A value above 1 increases the global
         tone mapping effect and can lead to unrealistic image effects.
+
   - WdrMaxBrightPixels:
       type: float
       direction: in

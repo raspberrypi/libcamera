@@ -1,3 +1,13 @@
+libcamera (0.6.0+rpt20251201-1) trixie; urgency=medium
+
+  * New upstream version 0.6.0+rpt20251201
+  * d/patches: drop upstream Disable_libunwind_integration.patch
+  * Bump SONAME to libcamera0.6
+  * d/: Update for documentation build option change
+  * d/gbp.conf: add debian-tag
+
+ -- Serge Schneider <serge@raspberrypi.com>  Mon, 01 Dec 2025 16:57:51 +0000
+
 libcamera (0.5.2+rpt20250903-1) trixie; urgency=medium
 
   * New upstream version 0.5.2+rpt20250903

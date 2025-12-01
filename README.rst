@@ -51,7 +51,7 @@ Download a local copy of Raspberry Pi's fork of ``libcamera`` from GitHub, befor
 
   git clone https://github.com/raspberrypi/libcamera.git
   cd libcamera
-  meson setup build --buildtype=release -Dpipelines=rpi/vc4,rpi/pisp -Dipas=rpi/vc4,rpi/pisp -Dv4l2=true -Dgstreamer=enabled -Dtest=false -Dlc-compliance=disabled -Dcam=disabled -Dqcam=disabled -Ddocumentation=disabled -Dpycamera=enabled
+  meson setup build --buildtype=release -Dgstreamer=enabled -Dpycamera=enabled
   ninja -C build install
 
 You can disable the ``gstreamer`` plugin by replacing ``-Dgstreamer=enabled`` with ``-Dgstreamer=disabled`` during the ``meson`` build configuration.
@@ -99,8 +99,8 @@ for device hotplug enumeration: [optional]
         libudev-dev
 
 for documentation: [optional]
-        doxygen graphviz python3-sphinx python3-sphinxcontrib.doxylink (>= 1.6.1)
-        texlive-latex-extra
+        doxygen graphviz python3-sphinx python3-sphinx-book-theme
+        python3-sphinxcontrib.doxylink (>= 1.6.1) texlive-latex-extra
 
 for gstreamer: [optional]
         libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev

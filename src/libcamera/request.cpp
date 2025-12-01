@@ -228,15 +228,12 @@ void Request::Private::prepare(std::chrono::milliseconds timeout)
 		if (!fence)
 			continue;
 
-		std::unique_ptr<EventNotifier> notifier =
-			std::make_unique<EventNotifier>(fence->fd().get(),
-							EventNotifier::Read);
+		auto [it, inserted] = notifiers_.try_emplace(buffer, fence->fd().get(), EventNotifier::Type::Read);
+		ASSERT(inserted);
 
-		notifier->activated.connect(this, [this, buffer] {
-							notifierActivated(buffer);
-					    });
-
-		notifiers_[buffer] = std::move(notifier);
+		it->second.activated.connect(this, [this, buffer] {
+			notifierActivated(buffer);
+		});
 	}
 
 	if (notifiers_.empty()) {
@@ -327,6 +324,9 @@ void Request::Private::timeout()
  * Don't reuse buffers
  * \var Request::ReuseBuffers
  * Reuse the buffers that were previously added by addBuffer()
+ *
+ * \note Fences associated with the buffers are not reused.
+ *  This flag should not be used if fences are used.
  */
 
 /**
@@ -452,7 +452,9 @@ void Request::reuse(ReuseFlag flags)
  *
  * When a valid Fence is provided to this function, \a fence is moved to \a
  * buffer and this Request will only be queued to the device once the
- * fences of all its buffers have been correctly signalled.
+ * fences of all its buffers have been correctly signalled. Ownership of the
+ * fence will only be taken in case of success, otherwise the fence will
+ * be left unmodified.
  *
  * If the \a fence associated with \a buffer isn't signalled, the request will
  * fail after a timeout. The buffer will still contain the fence, which
@@ -468,7 +470,7 @@ void Request::reuse(ReuseFlag flags)
  * \retval -EINVAL The buffer does not reference a valid Stream
  */
 int Request::addBuffer(const Stream *stream, FrameBuffer *buffer,
-		       std::unique_ptr<Fence> fence)
+		       std::unique_ptr<Fence> &&fence)
 {
 	if (!stream) {
 		LOG(Request, Error) << "Invalid stream reference";

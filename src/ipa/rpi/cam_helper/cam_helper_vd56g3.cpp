@@ -23,7 +23,7 @@ private:
 	 * Smallest difference between the frame length and integration time,
 	 * in units of lines.
 	 */
-	static constexpr int frameIntegrationDiff = 61;
+	static constexpr int frameIntegrationDiff = 75;
 };
 
 CamHelperVd56g3::CamHelperVd56g3()

@@ -372,7 +372,13 @@ PYBIND11_MODULE(_libcamera, m)
 		.def(py::init<std::vector<FrameBuffer::Plane>, unsigned int>(),
 		     py::arg("planes"), py::arg("cookie") = 0)
 		.def_property_readonly("metadata", &FrameBuffer::metadata, py::return_value_policy::reference_internal)
-		.def_property_readonly("planes", &FrameBuffer::planes)
+		.def_property_readonly("planes", [](const FrameBuffer &self) {
+			/* Convert from Span<> to std::vector<> */
+			/* Note: this creates copies */
+			auto planes = self.planes();
+			std::vector<FrameBuffer::Plane> v(planes.begin(), planes.end());
+			return v;
+		})
 		.def_property("cookie", &FrameBuffer::cookie, &FrameBuffer::setCookie);
 
 	pyFrameBufferPlane
@@ -495,7 +501,8 @@ PYBIND11_MODULE(_libcamera, m)
 		.def_property_readonly("planes", [](const FrameMetadata &self) {
 			/* Convert from Span<> to std::vector<> */
 			/* Note: this creates a copy */
-			std::vector<FrameMetadata::Plane> v(self.planes().begin(), self.planes().end());
+			auto planes = self.planes();
+			std::vector<FrameMetadata::Plane> v(planes.begin(), planes.end());
 			return v;
 		});
 

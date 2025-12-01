@@ -210,6 +210,16 @@ std::string Size::toString() const
  */
 
 /**
+ * \fn Size::transpose()
+ * \brief Transpose the size in place
+ *
+ * This function swaps width and height of this size. This effectively applies
+ * the \a Transform::Transpose transformation on this size.
+ *
+ * \return A reference to this object
+ */
+
+/**
  * \fn Size::alignedDownTo(unsigned int hAlignment, unsigned int vAlignment)
  * \brief Align the size down horizontally and vertically
  * \param[in] hAlignment Horizontal alignment

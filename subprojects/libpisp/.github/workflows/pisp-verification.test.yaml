@@ -1,0 +1,48 @@
+# SPDX-License-Identifier: BSD-2-Clause
+# Copyright (C) 2023, Raspberry Pi Ltd
+
+name: pisp verification tests
+
+on:
+  workflow_dispatch:
+
+  pull_request:
+    branches: [ main ]
+
+env:
+  BE_TEST_DIR: "${{github.workspace}}/../be_test"
+  LKG_DIR: "${{github.workspace}}/../lkg"
+  TESTS_DIR: "/home/pi/pisp_tests"
+
+jobs:
+  build-test:
+
+    runs-on: [ self-hosted, pi5 ]
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 1
+        clean: true
+
+    - name: Configure meson
+      run: meson setup build -Dbuildtype=debug -Dexamples=true
+      timeout-minutes: 5
+
+    - name: Build
+      run: ninja -C build
+      timeout-minutes: 10
+
+  run-test:
+
+    runs-on: [ self-hosted, pi5 ]
+    needs: build-test
+
+    steps:
+    - name: Run verification tests
+      run: LD_LIBRARY_PATH=${{github.workspace}}/build/src LIBPISP_BE_CONFIG_FILE="${{github.workspace}}/src/libpisp/backend/backend_default_config.json" ${{env.BE_TEST_DIR}}/run_be_tests.py --hw --logall --test ${{env.BE_TEST_DIR}}/be_test ${{env.TESTS_DIR}}/back_end
+      timeout-minutes: 20
+
+    - name: Run convert tests
+      run: LD_LIBRARY_PATH=${{github.workspace}}/build/src LIBPISP_BE_CONFIG_FILE="${{github.workspace}}/src/libpisp/backend/backend_default_config.json" python3 ${{github.workspace}}/utils/test_convert.py ${{github.workspace}}/build/src/examples/convert --out /tmp/ --in $HOME/libpisp_conv/ --ref ~/libpisp_conv/ref/
+      timeout-minutes: 10

@@ -52,7 +52,8 @@ int BufferSource::allocate(const StreamConfiguration &config)
 		return TestSkip;
 	}
 
-	std::unique_ptr<V4L2VideoDevice> video = V4L2VideoDevice::fromEntityName(media_.get(), videoDeviceName);
+	std::unique_ptr<V4L2VideoDevice> video = V4L2VideoDevice::fromEntityName(media_.get(),
+										 videoDeviceName);
 	if (!video) {
 		std::cout << "Failed to get video device from entity "
 			  << videoDeviceName << std::endl;

@@ -786,8 +786,10 @@ int PipelineHandlerBase::queueRequestDevice(Camera *camera, Request *request)
 }
 
 int PipelineHandlerBase::registerCamera(std::unique_ptr<RPi::CameraData> &cameraData,
-					MediaDevice *frontend, const std::string &frontendName,
-					MediaDevice *backend, MediaEntity *sensorEntity)
+					std::shared_ptr<MediaDevice> frontend,
+					const std::string &frontendName,
+					std::shared_ptr<MediaDevice> backend,
+					MediaEntity *sensorEntity)
 {
 	CameraData *data = cameraData.get();
 	int ret;
@@ -883,8 +885,10 @@ void PipelineHandlerBase::mapBuffers(Camera *camera, const BufferMap &buffers, u
 	 * handler and the IPA.
 	 */
 	for (auto const &[id, buffer] : buffers) {
-		bufferIds.push_back(IPABuffer(mask | id,
-					      buffer.buffer->planes()));
+		Span<const FrameBuffer::Plane> planes = buffer.buffer->planes();
+
+		bufferIds.emplace_back(mask | id,
+				       std::vector<FrameBuffer::Plane>{ planes.begin(), planes.end() });
 		data->bufferIds_.insert(mask | id);
 	}
 

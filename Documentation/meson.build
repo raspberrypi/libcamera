@@ -64,9 +64,9 @@ if doxygen.found() and dot.found()
                                    configuration : cdata)
 
     # The set of public input files stored in the doxygen_public_input array
-    # needs to be set in Doxyfile public. We can't pass them through cdata
-    # cdata, as some of the array members are custom_tgt instances, which
-    # configuration_data.set() doesn't support. Using a separate script invoked
+    # needs to be set in Doxyfile-public. We can't pass them through cdata, as
+    # some of the array members are custom_tgt instances, which
+    # configuration_data.set() doesn't support. Use a separate script invoked
     # through custom_target(), which supports custom_tgt instances as inputs.
 
     doxyfile = custom_target('doxyfile-public',
@@ -86,7 +86,7 @@ if doxygen.found() and dot.found()
                                        doxyfile,
                                        doxyfile_common,
                                    ],
-                                   output : 'api-html',
+                                   output : 'public-api',
                                    command : [doxygen, doxyfile],
                                    install : true,
                                    install_dir : doc_install_dir,
@@ -106,7 +106,7 @@ if doxygen.found() and dot.found()
                                          doxygen_public_input,
                                          doxygen_internal_input,
                                      ],
-                                     output : 'internal-api-html',
+                                     output : 'internal-api',
                                      command : [doxygen, doxyfile],
                                      install : true,
                                      install_dir : doc_install_dir,
@@ -142,7 +142,7 @@ if sphinx.found()
     sphinx_conf = configure_file(input : 'conf.py.in',
                                  output : 'conf.py',
                                  configuration : {
-                                    'THEME_DIR': meson.current_source_dir(),
+                                    'CURRENT_SRCDIR': meson.current_source_dir(),
                                     'TOP_BUILDDIR': meson.project_build_root(),
                                  })
 
@@ -156,19 +156,20 @@ if sphinx.found()
         sphinx_conf,
         'contributing.rst',
         'design/ae.rst',
-        'documentation-contents.rst',
-        'environment_variables.rst',
         'feature_requirements.rst',
         'guides/application-developer.rst',
         'guides/ipa.rst',
         'guides/pipeline-handler.rst',
         'guides/tracing.rst',
         'index.rst',
+        'internal-api/index.rst',
         'introduction.rst',
         'lens_driver_requirements.rst',
         'libcamera_architecture.rst',
         'mali-c55.dot',
+        'public-api/index.rst',
         'python-bindings.rst',
+        'runtime_configuration.rst',
         'sensor_driver_requirements.rst',
         'software-isp-benchmarking.rst',
        '../README.rst',
@@ -190,6 +191,9 @@ if sphinx.found()
                   install : true,
                   install_dir : doc_install_dir,
                   install_tag : 'doc')
+
+    meson.add_install_script('install-doxygen.sh', doc_install_dir,
+                             'public-api', 'internal-api')
 
     custom_target('documentation-linkcheck',
                   command : [sphinx, '-W', '-b', 'linkcheck',

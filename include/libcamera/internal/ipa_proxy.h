@@ -7,9 +7,13 @@
 
 #pragma once
 
+#include <optional>
 #include <string>
+#include <vector>
 
 #include <libcamera/ipa/ipa_interface.h>
+
+#include "libcamera/internal/global_configuration.h"
 
 namespace libcamera {
 
@@ -24,7 +28,7 @@ public:
 		ProxyRunning,
 	};
 
-	IPAProxy(IPAModule *ipam);
+	IPAProxy(IPAModule *ipam, const GlobalConfiguration &configuration);
 	~IPAProxy();
 
 	bool isValid() const { return valid_; }
@@ -40,6 +44,8 @@ protected:
 
 private:
 	IPAModule *ipam_;
+	std::vector<std::string> configPaths_;
+	std::vector<std::string> execPaths_;
 };
 
 } /* namespace libcamera */

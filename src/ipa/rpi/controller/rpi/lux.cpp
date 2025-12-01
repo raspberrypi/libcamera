@@ -20,7 +20,7 @@ LOG_DEFINE_CATEGORY(RPiLux)
 #define NAME "rpi.lux"
 
 Lux::Lux(Controller *controller)
-	: Algorithm(controller)
+	: Algorithm(controller), sensitivity_(1.0)
 {
 	/*
 	 * Put in some defaults as there will be no meaningful values until
@@ -68,6 +68,13 @@ void Lux::setCurrentAperture(double aperture)
 	currentAperture_ = aperture;
 }
 
+void Lux::switchMode(CameraMode const &cameraMode, [[maybe_unused]] Metadata *metadata)
+{
+	/* We will need to compensate for the camera sensitivity. */
+	ASSERT(cameraMode.sensitivity);
+	sensitivity_ = cameraMode.sensitivity;
+}
+
 void Lux::prepare(Metadata *imageMetadata)
 {
 	std::unique_lock<std::mutex> lock(mutex_);
@@ -78,20 +85,29 @@ void Lux::process(StatisticsPtr &stats, Metadata *imageMetadata)
 {
 	DeviceStatus deviceStatus;
 	if (imageMetadata->get("device.status", deviceStatus) == 0) {
+		/*
+		 * We've set up the first floating AGC region to collect full image stats. This
+		 * is a better choice than the Y-histogram, for example, because it's invariant
+		 * to the metering mode (and cheaper to evaluate).
+		 */
+		auto const &fullImageStats = stats->agcRegions.getFloating(0);
+		double currentY = static_cast<double>(fullImageStats.val.ySum) / fullImageStats.counted;
+
 		double currentGain = deviceStatus.analogueGain;
 		double currentAperture = deviceStatus.aperture.value_or(currentAperture_);
-		double currentY = stats->yHist.interQuantileMean(0, 1);
 		double gainRatio = referenceGain_ / currentGain;
 		double exposureTimeRatio =
 			referenceExposureTime_ / deviceStatus.exposureTime;
 		double apertureRatio = referenceAperture_ / currentAperture;
-		double yRatio = currentY * (65536 / stats->yHist.bins()) / referenceY_;
+		double yRatio = currentY / referenceY_;
 		double estimatedLux = exposureTimeRatio * gainRatio *
 				      apertureRatio * apertureRatio *
-				      yRatio * referenceLux_;
+				      yRatio * referenceLux_ / sensitivity_;
+
 		LuxStatus status;
 		status.lux = estimatedLux;
 		status.aperture = currentAperture;
+
 		LOG(RPiLux, Debug) << ": estimated lux " << estimatedLux;
 		{
 			std::unique_lock<std::mutex> lock(mutex_);

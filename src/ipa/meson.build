@@ -24,8 +24,6 @@ subdir('libipa')
 
 ipa_sign = files('ipa-sign.sh')
 
-ipa_names = []
-
 ipa_modules = get_option('ipas')
 
 # Tests require the vimc IPA, similar to vimc pipline-handler for their

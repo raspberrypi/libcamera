@@ -74,6 +74,18 @@ private:
 	int createAlgorithm(Context &context, const YamlObject &data)
 	{
 		const auto &[name, algoData] = *data.asDict().begin();
+
+		/*
+		 * Optionally, algorithms can be disabled via the tuning file
+		 * by including enabled: false as a parameter within the
+		 * algorithm tuning data. This is not an error, so we return 0.
+		 */
+		if (!algoData["enabled"].get<bool>(true)) {
+			LOG(IPAModuleAlgo, Info)
+				<< "Algorithm '" << name << "' disabled via tuning file";
+			return 0;
+		}
+
 		std::unique_ptr<Algorithm<Module>> algo = createAlgorithm(name);
 		if (!algo) {
 			LOG(IPAModuleAlgo, Error)

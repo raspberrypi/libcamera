@@ -437,6 +437,15 @@ template<>
 std::optional<ipa::Pwl>
 YamlObject::Getter<ipa::Pwl>::get(const YamlObject &obj) const
 {
+	/* Treat a single value as single point PWL. */
+	if (obj.isValue()) {
+		auto v = obj.get<double>();
+		if (!v)
+			return std::nullopt;
+
+		return ipa::Pwl({ { { 0.0, *v } } });
+	}
+
 	if (!obj.size() || obj.size() % 2)
 		return std::nullopt;
 

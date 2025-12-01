@@ -111,7 +111,7 @@ class Control(object):
         size = self.__data.get('size')
 
         if typ == 'string':
-            return 'std::string'
+            return 'std::string_view'
 
         if self.__size is None:
             return typ

@@ -682,7 +682,7 @@ private:
 	bool registerTPGCamera(MediaLink *link);
 	bool registerSensorCamera(MediaLink *link);
 
-	MediaDevice *media_;
+	std::shared_ptr<MediaDevice> media_;
 	std::unique_ptr<V4L2Subdevice> isp_;
 	std::unique_ptr<V4L2VideoDevice> stats_;
 	std::unique_ptr<V4L2VideoDevice> params_;
@@ -1133,27 +1133,33 @@ int PipelineHandlerMaliC55::allocateBuffers(Camera *camera)
 		data->dsStream_.configuration().bufferCount,
 	});
 
+	auto pushBuffers = [&](const std::vector<std::unique_ptr<FrameBuffer>> &buffers,
+			       std::queue<FrameBuffer *> &queue,
+			       std::vector<IPABuffer> &ipaBuffers) {
+		for (const std::unique_ptr<FrameBuffer> &buffer : buffers) {
+			Span<const FrameBuffer::Plane> planes = buffer->planes();
+
+			buffer->setCookie(ipaBufferId++);
+			ipaBuffers.emplace_back(buffer->cookie(),
+						std::vector<FrameBuffer::Plane>{ planes.begin(),
+										 planes.end() });
+			queue.push(buffer.get());
+		}
+	};
+
 	ret = stats_->allocateBuffers(bufferCount, &statsBuffers_);
 	if (ret < 0)
 		return ret;
 
-	for (std::unique_ptr<FrameBuffer> &buffer : statsBuffers_) {
-		buffer->setCookie(ipaBufferId++);
-		data->ipaStatBuffers_.emplace_back(buffer->cookie(),
-						   buffer->planes());
-		availableStatsBuffers_.push(buffer.get());
-	}
+	pushBuffers(statsBuffers_, availableStatsBuffers_,
+		    data->ipaStatBuffers_);
 
 	ret = params_->allocateBuffers(bufferCount, &paramsBuffers_);
 	if (ret < 0)
 		return ret;
 
-	for (std::unique_ptr<FrameBuffer> &buffer : paramsBuffers_) {
-		buffer->setCookie(ipaBufferId++);
-		data->ipaParamBuffers_.emplace_back(buffer->cookie(),
-						    buffer->planes());
-		availableParamsBuffers_.push(buffer.get());
-	}
+	pushBuffers(paramsBuffers_, availableParamsBuffers_,
+		    data->ipaParamBuffers_);
 
 	if (data->ipa_) {
 		data->ipa_->mapBuffers(data->ipaStatBuffers_, true);
@@ -1641,24 +1647,24 @@ bool PipelineHandlerMaliC55::match(DeviceEnumerator *enumerator)
 	if (!media_)
 		return false;
 
-	isp_ = V4L2Subdevice::fromEntityName(media_, "mali-c55 isp");
+	isp_ = V4L2Subdevice::fromEntityName(media_.get(), "mali-c55 isp");
 	if (isp_->open() < 0)
 		return false;
 
-	stats_ = V4L2VideoDevice::fromEntityName(media_, "mali-c55 3a stats");
+	stats_ = V4L2VideoDevice::fromEntityName(media_.get(), "mali-c55 3a stats");
 	if (stats_->open() < 0)
 		return false;
 
-	params_ = V4L2VideoDevice::fromEntityName(media_, "mali-c55 3a params");
+	params_ = V4L2VideoDevice::fromEntityName(media_.get(), "mali-c55 3a params");
 	if (params_->open() < 0)
 		return false;
 
 	MaliC55Pipe *frPipe = &pipes_[MaliC55FR];
-	frPipe->resizer = V4L2Subdevice::fromEntityName(media_, "mali-c55 resizer fr");
+	frPipe->resizer = V4L2Subdevice::fromEntityName(media_.get(), "mali-c55 resizer fr");
 	if (frPipe->resizer->open() < 0)
 		return false;
 
-	frPipe->cap = V4L2VideoDevice::fromEntityName(media_, "mali-c55 fr");
+	frPipe->cap = V4L2VideoDevice::fromEntityName(media_.get(), "mali-c55 fr");
 	if (frPipe->cap->open() < 0)
 		return false;
 
@@ -1676,11 +1682,11 @@ bool PipelineHandlerMaliC55::match(DeviceEnumerator *enumerator)
 
 		MaliC55Pipe *dsPipe = &pipes_[MaliC55DS];
 
-		dsPipe->resizer = V4L2Subdevice::fromEntityName(media_, "mali-c55 resizer ds");
+		dsPipe->resizer = V4L2Subdevice::fromEntityName(media_.get(), "mali-c55 resizer ds");
 		if (dsPipe->resizer->open() < 0)
 			return false;
 
-		dsPipe->cap = V4L2VideoDevice::fromEntityName(media_, "mali-c55 ds");
+		dsPipe->cap = V4L2VideoDevice::fromEntityName(media_.get(), "mali-c55 ds");
 		if (dsPipe->cap->open() < 0)
 			return false;
 

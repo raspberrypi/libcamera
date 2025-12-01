@@ -1,0 +1,5 @@
+# SPDX-License-Identifier: CC0-1.0
+# Copyright (C) 2023, Raspberry Pi Ltd
+
+option('logging', type : 'feature', value : 'auto')
+option('examples', type : 'boolean', value : false)

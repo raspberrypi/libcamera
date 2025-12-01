@@ -10,10 +10,10 @@
 #include "sdl_texture.h"
 
 #if SDL_VERSION_ATLEAST(2, 0, 16)
-class SDLTextureNV12 : public SDLTexture
+class SDLTextureNV : public SDLTexture
 {
 public:
-	SDLTextureNV12(const SDL_Rect &rect, unsigned int stride);
+	SDLTextureNV(const SDL_Rect &rect, uint32_t pixelFormat, unsigned int stride);
 	void update(libcamera::Span<const libcamera::Span<const uint8_t>> data) override;
 };
 #endif

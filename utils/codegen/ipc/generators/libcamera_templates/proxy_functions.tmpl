@@ -52,9 +52,6 @@
  #}
 {%- macro serialize_call(params, buf, fds) %}
 {%- for param in params %}
-{%- if param|is_enum %}
-	static_assert(sizeof({{param|name_full}}) <= 4);
-{%- endif %}
 	std::vector<uint8_t> {{param.mojom_name}}Buf;
 {%- if param|has_fd %}
 	std::vector<SharedFD> {{param.mojom_name}}Fds;
@@ -62,13 +59,7 @@
 {%- else %}
 	std::tie({{param.mojom_name}}Buf, std::ignore) =
 {%- endif %}
-{%- if param|is_flags %}
 		IPADataSerializer<{{param|name_full}}>::serialize({{param.mojom_name}}
-{%- elif param|is_enum %}
-		IPADataSerializer<uint32_t>::serialize(static_cast<uint32_t>({{param.mojom_name}})
-{%- else %}
-		IPADataSerializer<{{param|name}}>::serialize({{param.mojom_name}}
-{% endif -%}
 {{- ", &controlSerializer_" if param|needs_control_serializer -}}
 );
 {%- endfor %}
@@ -107,13 +98,7 @@
  #}
 {%- macro deserialize_param(param, pointer, loop, buf, fds, iter, data_size) -%}
 {{"*" if pointer}}{{param.mojom_name}} =
-{%- if param|is_flags %}
 IPADataSerializer<{{param|name_full}}>::deserialize(
-{%- elif param|is_enum %}
-static_cast<{{param|name_full}}>(IPADataSerializer<uint32_t>::deserialize(
-{%- else %}
-IPADataSerializer<{{param|name}}>::deserialize(
-{%- endif %}
 	{{buf}}{{- ".cbegin()" if not iter}} + {{param.mojom_name}}Start,
 {%- if loop.last and not iter %}
 	{{buf}}.cend()
@@ -137,7 +122,7 @@ IPADataSerializer<{{param|name}}>::deserialize(
 {%- if param|needs_control_serializer %}
 	&controlSerializer_
 {%- endif -%}
-){{")" if param|is_enum and not param|is_flags}};
+);
 {%- endmacro -%}
 
 

@@ -67,6 +67,14 @@ namespace libcamera::ipa::rkisp1 {
  */
 
 /**
+ * \var IPASessionConfiguration::compress
+ * \brief Compress parameters configuration of the IPA
+ *
+ * \var IPASessionConfiguration::agc.supported
+ * \brief true if compression is supported and the algorithm is loaded
+ */
+
+/**
  * \var IPASessionConfiguration::lsc
  * \brief Lens Shading Correction configuration of the IPA
  *
@@ -375,6 +383,17 @@ namespace libcamera::ipa::rkisp1 {
  *
  * \struct IPAFrameContext::ccm.ccm
  * \brief Colour Correction Matrix
+ */
+
+/**
+ * \var IPAFrameContext::compress
+ * \brief Compress parameters for this frame
+ *
+ * \struct IPAFrameContext::compress.enable
+ * \brief True if compression is enabled
+ *
+ * \var IPAFrameContext::compress.gain
+ * \brief The gain applied with the compression curve
  */
 
 /**

@@ -9,18 +9,22 @@
 #include "libcamera/internal/converter/converter_v4l2_m2m.h"
 
 #include <algorithm>
+#include <errno.h>
 #include <limits.h>
+#include <memory>
 #include <set>
 
 #include <libcamera/base/log.h>
 #include <libcamera/base/signal.h>
 #include <libcamera/base/utils.h>
 
+#include <libcamera/controls.h>
 #include <libcamera/framebuffer.h>
 #include <libcamera/geometry.h>
 #include <libcamera/stream.h>
 
 #include "libcamera/internal/media_device.h"
+#include "libcamera/internal/v4l2_request.h"
 #include "libcamera/internal/v4l2_videodevice.h"
 
 /**
@@ -107,6 +111,7 @@ int V4L2M2MConverter::V4L2M2MStream::configure(const StreamConfiguration &inputC
 	format.planesCount = 1;
 	format.planes[0].bpl = inputCfg.stride;
 
+	LOG(Converter, Debug) << "Set input format to: " << format;
 	int ret = m2m_->output()->setFormat(&format);
 	if (ret < 0) {
 		LOG(Converter, Error)
@@ -129,6 +134,7 @@ int V4L2M2MConverter::V4L2M2MStream::configure(const StreamConfiguration &inputC
 	format.fourcc = videoFormat;
 	format.size = outputCfg.size;
 
+	LOG(Converter, Debug) << "Set output format to: " << format;
 	ret = m2m_->capture()->setFormat(&format);
 	if (ret < 0) {
 		LOG(Converter, Error)
@@ -196,9 +202,11 @@ void V4L2M2MConverter::V4L2M2MStream::stop()
 	m2m_->output()->releaseBuffers();
 }
 
-int V4L2M2MConverter::V4L2M2MStream::queueBuffers(FrameBuffer *input, FrameBuffer *output)
+int V4L2M2MConverter::V4L2M2MStream::queueBuffers(FrameBuffer *input,
+						  FrameBuffer *output,
+						  const V4L2Request *request)
 {
-	int ret = m2m_->output()->queueBuffer(input);
+	int ret = m2m_->output()->queueBuffer(input, request);
 	if (ret < 0)
 		return ret;
 
@@ -246,6 +254,20 @@ void V4L2M2MConverter::V4L2M2MStream::captureBufferReady(FrameBuffer *buffer)
 	converter_->outputBufferReady.emit(buffer);
 }
 
+/**
+ * \brief Apply controls
+ * \param[in] ctrls The controls to apply
+ * \param[in] request An optional request
+ *
+ * \return 0 on success or a negative error code otherwise
+ * \see V4L2Device::setControls()
+ */
+int V4L2M2MConverter::V4L2M2MStream::applyControls(ControlList &ctrls,
+						   const V4L2Request *request)
+{
+	return m2m_->capture()->setControls(&ctrls, request);
+}
+
 /* -----------------------------------------------------------------------------
  * V4L2M2MConverter
  */
@@ -261,9 +283,8 @@ void V4L2M2MConverter::V4L2M2MStream::captureBufferReady(FrameBuffer *buffer)
  * \brief Construct a V4L2M2MConverter instance
  * \param[in] media The media device implementing the converter
  */
-
-V4L2M2MConverter::V4L2M2MConverter(MediaDevice *media)
-	: Converter(media)
+V4L2M2MConverter::V4L2M2MConverter(std::shared_ptr<MediaDevice> media)
+	: Converter(media), media_(media)
 {
 	if (deviceNode().empty())
 		return;
@@ -676,6 +697,7 @@ int V4L2M2MConverter::validateOutput(StreamConfiguration *cfg, bool *adjusted,
 
 	const Size cfgSize = cfg->size;
 	cfg->size = adjustSizes(cfgSize, it->second, align);
+	cfg->stride = PixelFormatInfo::info(cfg->pixelFormat).stride(cfg->size.width, 0);
 
 	if (cfg->size.isNull())
 		return -EINVAL;
@@ -696,7 +718,8 @@ int V4L2M2MConverter::validateOutput(StreamConfiguration *cfg, bool *adjusted,
  * \copydoc libcamera::Converter::queueBuffers
  */
 int V4L2M2MConverter::queueBuffers(FrameBuffer *input,
-				   const std::map<const Stream *, FrameBuffer *> &outputs)
+				   const std::map<const Stream *, FrameBuffer *> &outputs,
+				   const V4L2Request *request)
 {
 	std::set<FrameBuffer *> outputBufs;
 	int ret;
@@ -721,7 +744,7 @@ int V4L2M2MConverter::queueBuffers(FrameBuffer *input,
 
 	/* Queue the input and output buffers to all the streams. */
 	for (auto [stream, buffer] : outputs) {
-		ret = streams_.at(stream)->queueBuffers(input, buffer);
+		ret = streams_.at(stream)->queueBuffers(input, buffer, request);
 		if (ret < 0)
 			return ret;
 	}
@@ -736,6 +759,56 @@ int V4L2M2MConverter::queueBuffers(FrameBuffer *input,
 		       std::forward_as_tuple(outputs.size()));
 
 	return 0;
+}
+
+/**
+ * \brief Apply controls
+ * \param[in] stream The stream on which to apply the controls
+ * \param[in] ctrls The controls to apply
+ * \param[in] request An optional request
+ *
+ * \return 0 on success or a negative error code otherwise
+ * \see V4L2Device::setControls()
+ */
+int V4L2M2MConverter::applyControls(const Stream *stream, ControlList &ctrls,
+				    const V4L2Request *request)
+{
+	auto iter = streams_.find(stream);
+	if (iter == streams_.end())
+		return -EINVAL;
+
+	return iter->second->applyControls(ctrls, request);
+}
+
+/**
+ * \copydoc libcamera::MediaDevice::allocateRequests
+ */
+int V4L2M2MConverter::allocateRequests(unsigned int count,
+				       std::vector<std::unique_ptr<V4L2Request>> *requests)
+{
+	/* \todo The acquire() must be moved to the right place. */
+	media_->acquire();
+	if (!media_->busy())
+		LOG(Converter, Error)
+			<< "MediaDevice must be valid.";
+	int ret = media_->allocateRequests(count, requests);
+	media_->release();
+	return ret;
+}
+
+/**
+ * \copydoc libcamera::MediaDevice::supportsRequests
+ */
+bool V4L2M2MConverter::supportsRequests()
+{
+	/* \todo The acquire() must be moved to the right place. */
+	media_->acquire();
+	if (!media_->busy())
+		LOG(Converter, Error)
+			<< "MediaDevice must be valid.";
+	bool ret = media_->supportsRequests();
+	media_->release();
+	return ret;
 }
 
 /*

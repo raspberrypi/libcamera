@@ -8,6 +8,7 @@
 #pragma once
 
 #include <memory>
+#include <string>
 #include <sys/types.h>
 #include <thread>
 
@@ -30,7 +31,7 @@ class ThreadMain;
 class Thread
 {
 public:
-	Thread();
+	Thread(std::string name = {});
 	virtual ~Thread();
 
 	void start();
@@ -50,6 +51,7 @@ public:
 
 	void dispatchMessages(Message::Type type = Message::Type::None,
 			      Object *receiver = nullptr);
+	void removeMessages(Object *receiver);
 
 protected:
 	int exec();
@@ -64,7 +66,6 @@ private:
 	void setThreadAffinityInternal();
 
 	void postMessage(std::unique_ptr<Message> msg, Object *receiver);
-	void removeMessages(Object *receiver);
 
 	friend class Object;
 	friend class ThreadData;
@@ -74,8 +75,9 @@ private:
 	void moveObject(Object *object, ThreadData *currentData,
 			ThreadData *targetData);
 
+	std::string name_;
 	std::thread thread_;
-	ThreadData *data_;
+	std::unique_ptr<ThreadData> data_;
 };
 
 } /* namespace libcamera */

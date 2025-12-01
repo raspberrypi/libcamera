@@ -260,7 +260,7 @@ void Sync::process([[maybe_unused]] StatisticsPtr &stats, Metadata *imageMetadat
 			int64_t clientFrameTimestampNearest = clientFrameTimestamp - framePeriodErrors * frameDurationEstimated_;
 			/* We must shorten a single client frame by this amount if it exceeds the minimum: */
 			int32_t correction = clientFrameTimestampNearest - serverFrameTimestamp;
-			if (std::abs(correction) < minAdjustment_)
+			if (static_cast<uint32_t>(std::abs(correction)) < minAdjustment_)
 				correction = 0;
 
 			LOG(RPiSync, Debug) << "Received packet (frameNumber " << frameCount_ << "):";
@@ -314,12 +314,12 @@ void Sync::setMode(Mode mode)
 void Sync::setFrameDuration(libcamera::utils::Duration frameDuration)
 {
 	frameDuration_ = frameDuration;
-};
+}
 
 void Sync::setReadyFrame(unsigned int frame)
 {
 	readyFrame_ = frame;
-};
+}
 
 /* Register algorithm with the system. */
 static Algorithm *create(Controller *controller)

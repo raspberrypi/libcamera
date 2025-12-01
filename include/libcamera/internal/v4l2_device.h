@@ -24,6 +24,7 @@
 #include <libcamera/controls.h>
 
 #include "libcamera/internal/formats.h"
+#include "libcamera/internal/v4l2_request.h"
 
 namespace libcamera {
 
@@ -37,8 +38,8 @@ public:
 
 	const ControlInfoMap &controls() const { return controls_; }
 
-	ControlList getControls(Span<const uint32_t> ids);
-	int setControls(ControlList *ctrls);
+	ControlList getControls(Span<const uint32_t> ids, const V4L2Request *request = nullptr);
+	int setControls(ControlList *ctrls, const V4L2Request *request = nullptr);
 
 	const struct v4l2_query_ext_ctrl *controlInfo(uint32_t id) const;
 

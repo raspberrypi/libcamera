@@ -59,7 +59,7 @@ private:
 	bool prepared_ = false;
 
 	std::unordered_set<FrameBuffer *> pending_;
-	std::map<FrameBuffer *, std::unique_ptr<EventNotifier>> notifiers_;
+	std::map<FrameBuffer *, EventNotifier> notifiers_;
 	std::unique_ptr<Timer> timer_;
 };
 

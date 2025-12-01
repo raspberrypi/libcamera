@@ -61,7 +61,7 @@ T readPOD(std::vector<uint8_t> &vec, size_t pos)
 
 } /* namespace */
 
-template<typename T>
+template<typename T, typename = void>
 class IPADataSerializer
 {
 public:
@@ -339,6 +339,52 @@ public:
 				    [[maybe_unused]] std::vector<SharedFD>::const_iterator fdsBegin,
 				    [[maybe_unused]] std::vector<SharedFD>::const_iterator fdsEnd,
 				    [[maybe_unused]] ControlSerializer *cs = nullptr)
+	{
+		return deserialize(dataBegin, dataEnd);
+	}
+};
+
+template<typename E>
+class IPADataSerializer<E, std::enable_if_t<std::is_enum_v<E>>>
+{
+	using U = uint32_t;
+	static_assert(sizeof(E) <= sizeof(U));
+
+public:
+	static std::tuple<std::vector<uint8_t>, std::vector<SharedFD>>
+	serialize(const E &data, [[maybe_unused]] ControlSerializer *cs = nullptr)
+	{
+		std::vector<uint8_t> dataVec;
+		appendPOD<U>(dataVec, static_cast<U>(data));
+
+		return { dataVec, {} };
+	}
+
+	static E deserialize(std::vector<uint8_t> &data,
+			     [[maybe_unused]] ControlSerializer *cs = nullptr)
+	{
+		return deserialize(data.cbegin(), data.cend());
+	}
+
+	static E deserialize(std::vector<uint8_t>::const_iterator dataBegin,
+			     std::vector<uint8_t>::const_iterator dataEnd,
+			     [[maybe_unused]] ControlSerializer *cs = nullptr)
+	{
+		return static_cast<E>(readPOD<U>(dataBegin, 0, dataEnd));
+	}
+
+	static E deserialize(std::vector<uint8_t> &data,
+			     [[maybe_unused]] std::vector<SharedFD> &fds,
+			     [[maybe_unused]] ControlSerializer *cs = nullptr)
+	{
+		return deserialize(data.cbegin(), data.cend());
+	}
+
+	static E deserialize(std::vector<uint8_t>::const_iterator dataBegin,
+			     std::vector<uint8_t>::const_iterator dataEnd,
+			     [[maybe_unused]] std::vector<SharedFD>::const_iterator fdsBegin,
+			     [[maybe_unused]] std::vector<SharedFD>::const_iterator fdsEnd,
+			     [[maybe_unused]] ControlSerializer *cs = nullptr)
 	{
 		return deserialize(dataBegin, dataEnd);
 	}

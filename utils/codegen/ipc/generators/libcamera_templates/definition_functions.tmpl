@@ -26,31 +26,30 @@ struct {{struct.mojom_name}}
 {
 public:
 #ifndef __DOXYGEN__
-	{{struct.mojom_name}}() {%- if struct|has_default_fields %}
-		:{% endif %}
-{%- for field in struct.fields|with_default_values -%}
-{{" " if loop.first}}{{field.mojom_name}}({{field|default_value}}){{", " if not loop.last}}
-{%- endfor %}
-	{
-	}
+	{{struct.mojom_name}}() = default;
 
+	template<
+	{%- for field in struct.fields %}
+		typename T{{loop.index}} = {{field|name}},
+	{%- endfor %}
+	{%- for field in struct.fields %}
+		std::enable_if_t<std::is_convertible_v<T{{loop.index}}&&, {{field|name}}>> * = nullptr{{"," if not loop.last}}
+	{%- endfor %}
+	>
 	{{struct.mojom_name}}(
 {%- for field in struct.fields -%}
-{{"const " if not field|is_pod}}{{field|name}} {{"&" if not field|is_pod}}_{{field.mojom_name}}{{", " if not loop.last}}
+		T{{loop.index}} &&_{{field.mojom_name}}{{ ", " if not loop.last }}
 {%- endfor -%}
 )
-		:
-{%- for field in struct.fields -%}
-{{" " if loop.first}}{{field.mojom_name}}(_{{field.mojom_name}}){{", " if not loop.last}}
+{%- for field in struct.fields %}
+		{{": " if loop.first else ", "}}{{field.mojom_name}}(std::forward<T{{loop.index}}>(_{{field.mojom_name}}))
 {%- endfor %}
 	{
 	}
 #endif
 
 {% for field in struct.fields %}
-	{{field|name}} {{field.mojom_name}};
+	{{field|name}} {{field.mojom_name}}{% if field|default_value %}{ {{field|default_value}} }{% endif %};
 {%- endfor %}
 };
 {%- endmacro -%}
-
-

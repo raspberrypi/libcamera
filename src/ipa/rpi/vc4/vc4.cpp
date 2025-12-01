@@ -43,6 +43,9 @@ public:
 	IpaVc4()
 		: IpaBase(), lsTable_(nullptr)
 	{
+		lastAwbStatus_.gainR = 1.0;
+		lastAwbStatus_.gainG = 1.0;
+		lastAwbStatus_.gainB = 1.0;
 	}
 
 	~IpaVc4()
@@ -83,6 +86,9 @@ private:
 	/* LS table allocation passed in from the pipeline handler. */
 	SharedFD lsTableHandle_;
 	void *lsTable_;
+
+	/* Remember the most recent AWB values. */
+	AwbStatus lastAwbStatus_;
 };
 
 int32_t IpaVc4::platformInit([[maybe_unused]] const InitParams &params, [[maybe_unused]] InitResult *result)
@@ -147,8 +153,10 @@ void IpaVc4::platformPrepareIsp([[maybe_unused]] const PrepareParams &params,
 	std::unique_lock<RPiController::Metadata> lock(rpiMetadata);
 
 	AwbStatus *awbStatus = rpiMetadata.getLocked<AwbStatus>("awb.status");
-	if (awbStatus)
+	if (awbStatus) {
 		applyAWB(awbStatus, ctrls);
+		lastAwbStatus_ = *awbStatus;
+	}
 
 	CcmStatus *ccmStatus = rpiMetadata.getLocked<CcmStatus>("ccm.status");
 	if (ccmStatus)
@@ -234,7 +242,13 @@ RPiController::StatisticsPtr IpaVc4::platformProcessStats(Span<uint8_t> mem)
 		LOG(IPARPI, Debug) << "No AGC algorithm - not copying statistics";
 		statistics->agcRegions.init(0);
 	} else {
-		statistics->agcRegions.init(hw.agcRegions);
+		RgbySums fullImage;
+		uint32_t countedSum = 0;
+		uint32_t notCountedSum = 0;
+		/* We're going to pretend there's a floating region where we will put a full image Y sum. */
+		const unsigned int numFloating = 1;
+
+		statistics->agcRegions.init(hw.agcRegions, numFloating);
 		const std::vector<double> &weights = agc->getWeights();
 		for (i = 0; i < statistics->agcRegions.numRegions(); i++) {
 			uint64_t rSum = (stats->agc_stats[i].r_sum << scale) * weights[i];
@@ -245,7 +259,20 @@ RPiController::StatisticsPtr IpaVc4::platformProcessStats(Span<uint8_t> mem)
 			statistics->agcRegions.set(i, { { rSum, gSum, bSum },
 							counted,
 							notcounted });
+
+			/* Accumulate values for the full image Y sum. */
+			fullImage.rSum += stats->agc_stats[i].r_sum << scale;
+			fullImage.gSum += stats->agc_stats[i].g_sum << scale;
+			fullImage.bSum += stats->agc_stats[i].b_sum << scale;
+			countedSum += stats->agc_stats[i].counted;
+			notCountedSum += stats->agc_stats[i].notcounted;
 		}
+
+		/* The "floating" region has the Y sum for the entire image. */
+		fullImage.ySum = fullImage.rSum * lastAwbStatus_.gainR * 0.299 +
+				 fullImage.gSum * lastAwbStatus_.gainG * 0.587 +
+				 fullImage.bSum * lastAwbStatus_.gainB * 0.114;
+		statistics->agcRegions.setFloating(0, { fullImage, countedSum, notCountedSum });
 	}
 
 	statistics->focusRegions.init(hw.focusRegions);

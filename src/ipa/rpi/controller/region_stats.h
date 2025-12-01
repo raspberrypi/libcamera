@@ -76,7 +76,7 @@ public:
 	{
 		if (index >= numFloatingRegions())
 			return;
-		set(numRegions() + index, region);
+		set_(numRegions() + index, region);
 	}
 
 	const Region &get(unsigned int index) const

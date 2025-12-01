@@ -44,6 +44,7 @@ struct CnnOutputTensorInfo {
 	char networkName[NetworkNameLen];
 	uint32_t numTensors;
 	OutputTensorInfo info[MaxNumTensors];
+	uint8_t frameCount;
 };
 
 struct CnnInputTensorInfo {
@@ -51,6 +52,7 @@ struct CnnInputTensorInfo {
 	uint32_t width;
 	uint32_t height;
 	uint32_t numChannels;
+	uint8_t frameCount;
 };
 
 struct CnnKpiInfo {

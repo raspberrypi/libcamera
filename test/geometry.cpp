@@ -203,6 +203,11 @@ protected:
 			return TestFail;
 		}
 
+		if (Size(200, 50).transpose() != Size(50, 200)) {
+			cout << "Size::transpose() test failed" << endl;
+			return TestFail;
+		}
+
 		/* Aspect ratio tests */
 		if (Size(0, 0).boundedToAspectRatio(Size(4, 3)) != Size(0, 0) ||
 		    Size(1920, 1440).boundedToAspectRatio(Size(16, 9)) != Size(1920, 1080) ||

@@ -7,6 +7,7 @@
 # Generate formats definitions from YAML
 
 import argparse
+import jinja2
 import re
 import string
 import sys
@@ -18,14 +19,12 @@ class DRMFourCC(object):
     mod_vendor_regex = re.compile(r"#define DRM_FORMAT_MOD_VENDOR_([A-Z0-9_]+)[ \t]+([0-9a-fA-Fx]+)")
     mod_regex = re.compile(r"#define ([A-Za-z0-9_]+)[ \t]+fourcc_mod_code\(([A-Z0-9_]+), ([0-9a-fA-Fx]+)\)")
 
-    def __init__(self, filename):
+    def __init__(self, file):
         self.formats = {}
         self.vendors = {}
         self.mods = {}
 
-        for line in open(filename, 'rb').readlines():
-            line = line.decode('utf-8')
-
+        for line in file:
             match = DRMFourCC.format_regex.match(line)
             if match:
                 format, fourcc = match.groups()
@@ -52,67 +51,54 @@ class DRMFourCC(object):
         return self.vendors[vendor], value
 
 
-def generate_h(formats, drm_fourcc):
-    template = string.Template('constexpr PixelFormat ${name}{ __fourcc(${fourcc}), __mod(${mod}) };')
-
+def generate_formats(formats, drm_fourcc):
     fmts = []
 
     for format in formats:
         name, format = format.popitem()
         fourcc = drm_fourcc.fourcc(format['fourcc'])
-        if format.get('big-endian'):
-            fourcc += '| DRM_FORMAT_BIG_ENDIAN'
 
         data = {
             'name': name,
             'fourcc': fourcc,
             'mod': '0, 0',
+            'big_endian': format.get('big_endian'),
         }
 
         mod = format.get('mod')
         if mod:
             data['mod'] = '%u, %u' % drm_fourcc.mod(mod)
 
-        fmts.append(template.substitute(data))
+        fmts.append(data)
 
-    return {'formats': '\n'.join(fmts)}
-
-
-def fill_template(template, data):
-
-    template = open(template, 'rb').read()
-    template = template.decode('utf-8')
-    template = string.Template(template)
-    return template.substitute(data)
+    return fmts
 
 
 def main(argv):
 
     # Parse command line arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument('-o', dest='output', metavar='file', type=str,
+    parser.add_argument('-o', dest='output', metavar='file', default=sys.stdout,
+                        type=argparse.FileType('w', encoding='utf-8'),
                         help='Output file name. Defaults to standard output if not specified.')
-    parser.add_argument('input', type=str,
+    parser.add_argument('input', type=argparse.FileType('rb'),
                         help='Input file name.')
-    parser.add_argument('template', type=str,
+    parser.add_argument('template', type=argparse.FileType('r', encoding='utf-8'),
                         help='Template file name.')
-    parser.add_argument('drm_fourcc', type=str,
+    parser.add_argument('drm_fourcc', type=argparse.FileType('r', encoding='utf-8'),
                         help='Path to drm_fourcc.h.')
     args = parser.parse_args(argv[1:])
 
-    data = open(args.input, 'rb').read()
-    formats = yaml.safe_load(data)['formats']
+    formats = yaml.safe_load(args.input)['formats']
     drm_fourcc = DRMFourCC(args.drm_fourcc)
 
-    data = generate_h(formats, drm_fourcc)
-    data = fill_template(args.template, data)
+    env = jinja2.Environment()
+    template = env.from_string(args.template.read())
+    string = template.render({
+        'formats': generate_formats(formats, drm_fourcc),
+    })
 
-    if args.output:
-        output = open(args.output, 'wb')
-        output.write(data.encode('utf-8'))
-        output.close()
-    else:
-        sys.stdout.write(data)
+    args.output.write(string)
 
     return 0
 

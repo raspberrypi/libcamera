@@ -64,7 +64,7 @@ public:
 		Size viewfinder;
 	};
 
-	int init(MediaDevice *media, unsigned int index);
+	int init(std::shared_ptr<MediaDevice> media, unsigned int index);
 
 	PipeConfig calculatePipeConfig(Pipe *pipe);
 
@@ -118,7 +118,7 @@ private:
 				 V4L2DeviceFormat *outputFormat);
 
 	std::string name_;
-	MediaDevice *media_;
+	std::shared_ptr<MediaDevice> media_;
 };
 
 } /* namespace libcamera */

@@ -1,0 +1,40 @@
+# SPDX-License-Identifier: BSD-2-Clause
+# Copyright (C) 2023, Raspberry Pi Ltd
+
+name: libpisp build test
+
+on:
+  workflow_dispatch:
+
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-test:
+    strategy:
+      matrix:
+        os: [ ubuntu-latest, ubuntu-24.04-arm ]
+        compiler: [ g++, clang++ ]
+        build_type: [ release, debug ]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 1
+        clean: true
+
+    - name: Install meson and ninja
+      run: pip3 install --user meson ninja
+  
+    - name: Install boost dependencies
+      run: sudo apt install -y libboost-log-dev libboost-thread-dev
+
+    - name: Configure meson
+      run: CXX=${{matrix.compiler}} meson setup build_${{matrix.compiler}}_${{matrix.build_type}} -Dbuildtype=${{matrix.build_type}} -Dexamples=true
+      timeout-minutes: 5
+
+    - name: Build
+      run: ninja -C build_${{matrix.compiler}}_${{matrix.build_type}}
+      timeout-minutes: 10

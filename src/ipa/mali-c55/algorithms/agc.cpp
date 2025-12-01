@@ -173,7 +173,8 @@ int Agc::configure(IPAContext &context,
 	setLimits(context.configuration.agc.minShutterSpeed,
 		  context.configuration.agc.maxShutterSpeed,
 		  context.configuration.agc.minAnalogueGain,
-		  context.configuration.agc.maxAnalogueGain);
+		  context.configuration.agc.maxAnalogueGain,
+		  {});
 
 	resetFrameCount();
 
@@ -381,8 +382,8 @@ void Agc::process(IPAContext &context,
 	utils::Duration effectiveExposureValue = currentShutter * totalGain;
 
 	utils::Duration shutterTime;
-	double aGain, dGain;
-	std::tie(shutterTime, aGain, dGain) =
+	double aGain, qGain, dGain;
+	std::tie(shutterTime, aGain, qGain, dGain) =
 		calculateNewEv(activeState.agc.constraintMode,
 			       activeState.agc.exposureMode, statistics_.yHist,
 			       effectiveExposureValue);

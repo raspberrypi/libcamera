@@ -53,7 +53,7 @@ public:
 	ControlList &metadata() { return *metadata_; }
 	const BufferMap &buffers() const { return bufferMap_; }
 	int addBuffer(const Stream *stream, FrameBuffer *buffer,
-		      std::unique_ptr<Fence> fence = nullptr);
+		      std::unique_ptr<Fence> &&fence = {});
 	FrameBuffer *findBuffer(const Stream *stream) const;
 
 	uint32_t sequence() const;

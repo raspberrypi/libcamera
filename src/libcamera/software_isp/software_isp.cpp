@@ -75,7 +75,8 @@ LOG_DEFINE_CATEGORY(SoftwareIsp)
  */
 SoftwareIsp::SoftwareIsp(PipelineHandler *pipe, const CameraSensor *sensor,
 			 ControlInfoMap *ipaControls)
-	: dmaHeap_(DmaBufAllocator::DmaBufAllocatorFlag::CmaHeap |
+	: ispWorkerThread_("SWIspWorker"),
+	  dmaHeap_(DmaBufAllocator::DmaBufAllocatorFlag::CmaHeap |
 		   DmaBufAllocator::DmaBufAllocatorFlag::SystemHeap |
 		   DmaBufAllocator::DmaBufAllocatorFlag::UDmaBuf)
 {
@@ -114,7 +115,8 @@ SoftwareIsp::SoftwareIsp(PipelineHandler *pipe, const CameraSensor *sensor,
 	}
 	stats->statsReady.connect(this, &SoftwareIsp::statsReady);
 
-	debayer_ = std::make_unique<DebayerCpu>(std::move(stats));
+	const GlobalConfiguration &configuration = pipe->cameraManager()->_d()->configuration();
+	debayer_ = std::make_unique<DebayerCpu>(std::move(stats), configuration);
 	debayer_->inputBufferReady.connect(this, &SoftwareIsp::inputReady);
 	debayer_->outputBufferReady.connect(this, &SoftwareIsp::outputReady);
 
@@ -357,6 +359,7 @@ void SoftwareIsp::stop()
 {
 	ispWorkerThread_.exit();
 	ispWorkerThread_.wait();
+	ispWorkerThread_.removeMessages(debayer_.get());
 
 	Thread::current()->dispatchMessages(Message::Type::InvokeMessage, this);
 

@@ -35,7 +35,7 @@ class GenericFrameBufferData : public FrameBuffer::Private
 public:
 	GenericFrameBufferData(struct alloc_device_t *allocDevice,
 			       buffer_handle_t handle,
-			       const std::vector<FrameBuffer::Plane> &planes)
+			       Span<const FrameBuffer::Plane> planes)
 		: FrameBuffer::Private(planes), allocDevice_(allocDevice),
 		  handle_(handle)
 	{

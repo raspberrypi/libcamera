@@ -19,35 +19,23 @@ def generate(formats):
     return {'formats': '\n'.join(fmts)}
 
 
-def fill_template(template, data):
-    with open(template, encoding='utf-8') as f:
-        template = f.read()
-
-    template = string.Template(template)
-    return template.substitute(data)
-
-
 def main(argv):
     parser = argparse.ArgumentParser()
-    parser.add_argument('-o', dest='output', metavar='file', type=str,
+    parser.add_argument('-o', dest='output', metavar='file', default=sys.stdout,
+                        type=argparse.FileType('w', encoding='utf-8'),
                         help='Output file name. Defaults to standard output if not specified.')
-    parser.add_argument('input', type=str,
+    parser.add_argument('input', type=argparse.FileType('rb'),
                         help='Input file name.')
-    parser.add_argument('template', type=str,
+    parser.add_argument('template', type=argparse.FileType('r', encoding='utf-8'),
                         help='Template file name.')
     args = parser.parse_args(argv[1:])
 
-    with open(args.input, encoding='utf-8') as f:
-        formats = yaml.safe_load(f)['formats']
+    formats = yaml.safe_load(args.input)['formats']
 
     data = generate(formats)
-    data = fill_template(args.template, data)
+    data = string.Template(args.template.read()).substitute(data)
 
-    if args.output:
-        with open(args.output, 'w', encoding='utf-8') as f:
-            f.write(data)
-    else:
-        sys.stdout.write(data)
+    args.output.write(data)
 
     return 0
 

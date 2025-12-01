@@ -164,8 +164,8 @@ private:
 
 	ImgUDevice imgu0_;
 	ImgUDevice imgu1_;
-	MediaDevice *cio2MediaDev_;
-	MediaDevice *imguMediaDev_;
+	std::shared_ptr<MediaDevice> cio2MediaDev_;
+	std::shared_ptr<MediaDevice> imguMediaDev_;
 
 	std::vector<IPABuffer> ipaBuffers_;
 };
@@ -678,15 +678,19 @@ int PipelineHandlerIPU3::allocateBuffers(Camera *camera)
 	/* Map buffers to the IPA. */
 	unsigned int ipaBufferId = 1;
 
-	for (const std::unique_ptr<FrameBuffer> &buffer : imgu->paramBuffers_) {
-		buffer->setCookie(ipaBufferId++);
-		ipaBuffers_.emplace_back(buffer->cookie(), buffer->planes());
-	}
+	auto pushBuffers = [&](const std::vector<std::unique_ptr<FrameBuffer>> &buffers) {
+		for (const std::unique_ptr<FrameBuffer> &buffer : buffers) {
+			Span<const FrameBuffer::Plane> planes = buffer->planes();
 
-	for (const std::unique_ptr<FrameBuffer> &buffer : imgu->statBuffers_) {
-		buffer->setCookie(ipaBufferId++);
-		ipaBuffers_.emplace_back(buffer->cookie(), buffer->planes());
-	}
+			buffer->setCookie(ipaBufferId++);
+			ipaBuffers_.emplace_back(buffer->cookie(),
+						 std::vector<FrameBuffer::Plane>{ planes.begin(),
+										  planes.end() });
+		}
+	};
+
+	pushBuffers(imgu->paramBuffers_);
+	pushBuffers(imgu->statBuffers_);
 
 	data->ipa_->mapBuffers(ipaBuffers_);
 

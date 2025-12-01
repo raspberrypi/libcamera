@@ -114,8 +114,8 @@ void CameraSelectorDialog::updateCameraInfo(QString cameraId)
 		cameraLocation_->setText("Unknown");
 	}
 
-	const auto &model = properties.get(libcamera::properties::Model)
+	const auto model = properties.get(libcamera::properties::Model)
 				    .value_or("Unknown");
 
-	cameraModel_->setText(QString::fromStdString(model));
+	cameraModel_->setText(QString::fromUtf8(model.data(), model.length()));
 }

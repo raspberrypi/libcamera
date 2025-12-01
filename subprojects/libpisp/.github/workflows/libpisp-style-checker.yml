@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: BSD-2-Clause
+# Copyright (C) 2023, Raspberry Pi Ltd
+
+name: libpisp style checker
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  style-check:
+
+    runs-on: [ ubuntu-latest ]
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+        clean: true
+
+    - name: Check style
+      run: ${{github.workspace}}/utils/checkstyle.py $(git log --format=%P -1 | awk '{print $1 ".." $2}')

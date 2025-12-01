@@ -10,12 +10,15 @@
 #include <algorithm>
 #include <dirent.h>
 #include <string.h>
+#include <string>
 #include <sys/types.h>
+#include <vector>
 
 #include <libcamera/base/file.h>
 #include <libcamera/base/log.h>
 #include <libcamera/base/utils.h>
 
+#include "libcamera/internal/global_configuration.h"
 #include "libcamera/internal/ipa_module.h"
 #include "libcamera/internal/ipa_proxy.h"
 #include "libcamera/internal/pipeline_handler.h"
@@ -101,29 +104,36 @@ LOG_DEFINE_CATEGORY(IPAManager)
  * The IPAManager class is meant to only be instantiated once, by the
  * CameraManager.
  */
-IPAManager::IPAManager()
+IPAManager::IPAManager(const GlobalConfiguration &configuration)
 {
 #if HAVE_IPA_PUBKEY
 	if (!pubKey_.isValid())
 		LOG(IPAManager, Warning) << "Public key not valid";
+
+	char *force = utils::secure_getenv("LIBCAMERA_IPA_FORCE_ISOLATION");
+	forceIsolation_ = (force && force[0] != '\0') ||
+			  (!force && configuration.option<bool>({ "ipa", "force_isolation" })
+					     .value_or(false));
 #endif
 
 	unsigned int ipaCount = 0;
 
 	/* User-specified paths take precedence. */
-	const char *modulePaths = utils::secure_getenv("LIBCAMERA_IPA_MODULE_PATH");
-	if (modulePaths) {
-		for (const auto &dir : utils::split(modulePaths, ":")) {
-			if (dir.empty())
-				continue;
+	const auto modulePaths =
+		configuration.envListOption(
+				     "LIBCAMERA_IPA_MODULE_PATH", { "ipa", "module_paths" })
+			.value_or(std::vector<std::string>());
+	for (const auto &dir : modulePaths) {
+		if (dir.empty())
+			continue;
 
-			ipaCount += addDir(dir.c_str());
-		}
-
-		if (!ipaCount)
-			LOG(IPAManager, Warning)
-				<< "No IPA found in '" << modulePaths << "'";
+		ipaCount += addDir(dir.c_str());
 	}
+
+	if (!modulePaths.empty() && !ipaCount)
+		LOG(IPAManager, Warning) << "No IPA found in '"
+					 << utils::join(modulePaths, ":")
+					 << "'";
 
 	/*
 	 * When libcamera is used before it is installed, load IPAs from the
@@ -279,11 +289,10 @@ IPAModule *IPAManager::module(PipelineHandler *pipe, uint32_t minVersion,
 bool IPAManager::isSignatureValid([[maybe_unused]] IPAModule *ipa) const
 {
 #if HAVE_IPA_PUBKEY
-	char *force = utils::secure_getenv("LIBCAMERA_IPA_FORCE_ISOLATION");
-	if (force && force[0] != '\0') {
+	if (forceIsolation_) {
 		LOG(IPAManager, Debug)
 			<< "Isolation of IPA module " << ipa->path()
-			<< " forced through environment variable";
+			<< " forced through configuration";
 		return false;
 	}
 

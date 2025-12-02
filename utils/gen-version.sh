@@ -26,7 +26,7 @@ then
 fi
 
 # Get a short description from the tree.
-version=$(git describe --abbrev=8 --match "v[0-9]*" 2>/dev/null)
+version=$(git describe --tags --abbrev=8 --match "v[0-9]*" 2>/dev/null)
 
 if [ -z "$version" ]
 then

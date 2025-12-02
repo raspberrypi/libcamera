@@ -14,6 +14,8 @@
 #include <string>
 #include <sys/types.h>
 
+#include <libcamera/base/class.h>
+
 #include "libcamera/internal/device_enumerator.h"
 
 struct udev;
@@ -53,6 +55,8 @@ private:
 		std::unique_ptr<MediaDevice> media_;
 		DependencyMap deps_;
 	};
+
+	LIBCAMERA_DISABLE_COPY_AND_MOVE(DeviceEnumeratorUdev)
 
 	int addUdevDevice(struct udev_device *dev);
 	int populateMediaDevice(MediaDevice *media, DependencyMap *deps);

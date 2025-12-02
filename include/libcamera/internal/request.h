@@ -36,7 +36,7 @@ public:
 	Camera *camera() const { return camera_; }
 	bool hasPendingBuffers() const;
 
-	ControlList &metadata() { return *metadata_; }
+	ControlList &metadata() { return metadata_; }
 
 	bool completeBuffer(FrameBuffer *buffer);
 	void complete();
@@ -63,7 +63,7 @@ private:
 	std::unordered_set<FrameBuffer *> pending_;
 	std::map<FrameBuffer *, EventNotifier> notifiers_;
 	std::unique_ptr<Timer> timer_;
-	ControlList *metadata_;
+	ControlList metadata_;
 };
 
 } /* namespace libcamera */

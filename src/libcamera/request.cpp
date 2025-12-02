@@ -53,20 +53,17 @@ LOG_DEFINE_CATEGORY(Request)
 /**
  * \brief Create a Request::Private
  * \param camera The Camera that creates the request
+ *
+ * \todo Add a validator for metadata controls.
  */
 Request::Private::Private(Camera *camera)
-	: camera_(camera), cancelled_(false)
+	: camera_(camera), cancelled_(false), metadata_(controls::controls)
 {
-	/**
-	 * \todo Add a validator for metadata controls.
-	 */
-	metadata_ = new ControlList(controls::controls);
 }
 
 Request::Private::~Private()
 {
 	doCancelRequest();
-	delete metadata_;
 }
 
 /**
@@ -410,7 +407,7 @@ void Request::reuse(ReuseFlag flags)
 	status_ = RequestPending;
 
 	controls_->clear();
-	_d()->metadata_->clear();
+	_d()->metadata_.clear();
 }
 
 /**
@@ -435,7 +432,7 @@ void Request::reuse(ReuseFlag flags)
  */
 const ControlList &Request::metadata() const
 {
-	return *_d()->metadata_;
+	return _d()->metadata_;
 }
 
 /**

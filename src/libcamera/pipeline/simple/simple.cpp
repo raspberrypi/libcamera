@@ -27,6 +27,7 @@
 #include <libcamera/camera.h>
 #include <libcamera/color_space.h>
 #include <libcamera/control_ids.h>
+#include <libcamera/pixel_format.h>
 #include <libcamera/request.h>
 #include <libcamera/stream.h>
 
@@ -263,6 +264,12 @@ static const SimplePipelineInfo supportedDevices[] = {
 	{ "qcom-camss", {}, true },
 	{ "sun6i-csi", {}, false },
 };
+
+bool isRaw(const StreamConfiguration &cfg)
+{
+	return libcamera::PixelFormatInfo::info(cfg.pixelFormat).colourEncoding ==
+	       libcamera::PixelFormatInfo::ColourEncodingRAW;
+}
 
 } /* namespace */
 
@@ -1471,7 +1478,7 @@ int SimplePipelineHandler::configure(Camera *camera, CameraConfiguration *c)
 
 		cfg.setStream(&data->streams_[i]);
 
-		if (data->useConversion_)
+		if (data->useConversion_ && !isRaw(cfg))
 			outputCfgs.push_back(cfg);
 	}
 

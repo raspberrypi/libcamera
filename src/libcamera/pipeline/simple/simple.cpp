@@ -1249,9 +1249,6 @@ CameraConfiguration::Status SimpleCameraConfiguration::validate()
 			default:
 				cfg.colorSpace = ColorSpace::Raw;
 			}
-			LOG(SimplePipeline, Debug)
-				<< "Unspecified color space set to "
-				<< cfg.colorSpace.value().toString();
 			/*
 			 * Adjust the assigned color space to make sure everything is OK.
 			 * Since this is assigning an unspecified color space rather than
@@ -1259,6 +1256,9 @@ CameraConfiguration::Status SimpleCameraConfiguration::validate()
 			 * to Adjusted.
 			 */
 			cfg.colorSpace->adjust(pixelFormat);
+			LOG(SimplePipeline, Debug)
+				<< "Unspecified color space set to "
+				<< cfg.colorSpace.value().toString();
 		} else {
 			if (cfg.colorSpace->adjust(pixelFormat)) {
 				LOG(SimplePipeline, Debug)

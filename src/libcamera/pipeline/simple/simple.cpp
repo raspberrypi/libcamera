@@ -1845,6 +1845,16 @@ bool SimplePipelineHandler::matchDevice(std::shared_ptr<MediaDevice> media,
 		}
 	}
 
+	if (info.swIspEnabled) {
+		/*
+		 * When the software ISP is enabled, the simple pipeline handler
+		 * exposes the raw stream, giving a total of two streams. This
+		 * is mutually exclusive with the presence of a converter.
+		 */
+		ASSERT(!converter_);
+		numStreams = 2;
+	}
+
 	swIspEnabled_ = info.swIspEnabled;
 	const GlobalConfiguration &configuration = cameraManager()->_d()->configuration();
 	for (GlobalConfiguration::Configuration entry :

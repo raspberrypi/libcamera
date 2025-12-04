@@ -1249,7 +1249,7 @@ CameraConfiguration::Status SimpleCameraConfiguration::validate()
 	 * require any conversion, similar to raw capture use cases). This is
 	 * left as a future improvement.
 	 */
-	needConversion_ = config_.size() > 1;
+	needConversion_ = config_.size() > 1 + rawCount;
 
 	for (unsigned int i = 0; i < config_.size(); ++i) {
 		StreamConfiguration &cfg = config_[i];

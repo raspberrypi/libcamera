@@ -337,6 +337,31 @@ Debayer::~Debayer()
  */
 
 /**
+ * \fn int Debayer::start()
+ * \brief Execute a start signal in the debayer object from workerthread context
+ *
+ * The start() method is invoked so that a Debayer object can initialise
+ * internal variables or data. It is called from the software_isp::start
+ * method.
+ *
+ * This method is particularly useful with DebayerEGL as it allows for the
+ * initialisation of the EGL stack after configure in a thread-safe manner.
+ */
+
+/**
+ * \fn void Debayer::stop()
+ * \brief Stop the debayering process and perform cleanup
+ *
+ * The stop() method is invoked as the logically corollary of start().
+ * Debayer::stop() will be called by software_isp::stop() allowing for any
+ * cleanup which should happend with stop().
+ *
+ * The stop method similar to start() is useful for DebayerEGL as it allows
+ * for cleanup of EGL context and/or data that happens in
+ * DebayerEGL::start.
+ */
+
+/**
  * \fn void Debayer::setParams(DebayerParams &params)
  * \brief Select the bayer params to use for the next frame debayer
  * \param[in] params The parameters to be used in debayering

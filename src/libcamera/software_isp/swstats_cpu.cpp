@@ -72,6 +72,19 @@ namespace libcamera {
  * patternSize height == 1.
  * It'll process line 0 and 1 for input formats with patternSize height >= 2.
  * This function may only be called after a successful setWindow() call.
+ *
+ * This function takes an array of src pointers each pointing to a line in
+ * the source image.
+ *
+ * Bayer input data requires (patternSize_.height + 1) src pointers, with
+ * the middle element of the array pointing to the actual line being processed.
+ * Earlier element(s) will point to the previous line(s) and later element(s)
+ * to the next line(s). See the DebayerCpu::debayerFn documentation for details.
+ *
+ * Planar input data requires a src pointer for each plane, with src[0] pointing
+ * to the line in plane 0, etc.
+ *
+ * For non Bayer single plane input data only a single src pointer is required.
  */
 
 /**

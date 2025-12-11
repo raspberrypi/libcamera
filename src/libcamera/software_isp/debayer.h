@@ -33,7 +33,7 @@ LOG_DECLARE_CATEGORY(Debayer)
 class Debayer : public Object
 {
 public:
-	Debayer(const GlobalConfiguration &configuration) : bench_(configuration) {};
+	Debayer(const GlobalConfiguration &configuration);
 	virtual ~Debayer() = 0;
 
 	virtual int configure(const StreamConfiguration &inputCfg,

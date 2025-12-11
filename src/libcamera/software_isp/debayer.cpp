@@ -109,6 +109,17 @@ namespace libcamera {
 
 LOG_DEFINE_CATEGORY(Debayer)
 
+Debayer::Debayer(const GlobalConfiguration &configuration) : bench_(configuration)
+{
+	/* Initialize color lookup tables */
+	for (unsigned int i = 0; i < DebayerParams::kRGBLookupSize; i++) {
+		red_[i] = green_[i] = blue_[i] = i;
+		redCcm_[i] = { static_cast<int16_t>(i), 0, 0 };
+		greenCcm_[i] = { 0, static_cast<int16_t>(i), 0 };
+		blueCcm_[i] = { 0, 0, static_cast<int16_t>(i) };
+	}
+}
+
 Debayer::~Debayer()
 {
 }

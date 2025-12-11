@@ -19,6 +19,7 @@
 
 #include "libcamera/internal/bayer_format.h"
 #include "libcamera/internal/global_configuration.h"
+#include "libcamera/internal/software_isp/benchmark.h"
 #include "libcamera/internal/software_isp/swstats_cpu.h"
 
 #include "debayer.h"
@@ -161,10 +162,7 @@ private:
 	unsigned int xShift_; /* Offset of 0/1 applied to window_.x */
 	bool enableInputMemcpy_;
 	bool swapRedBlueGains_;
-	unsigned int encounteredFrames_;
-	int64_t frameProcessTime_;
-	unsigned int skipBeforeMeasure_ = 30;
-	unsigned int framesToMeasure_ = 30;
+	Benchmark bench_;
 };
 
 } /* namespace libcamera */

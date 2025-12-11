@@ -8,6 +8,7 @@ if not softisp_enabled
 endif
 
 libcamera_internal_sources += files([
+    'benchmark.cpp',
     'debayer.cpp',
     'debayer_cpu.cpp',
     'software_isp.cpp',

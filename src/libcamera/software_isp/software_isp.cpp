@@ -348,7 +348,7 @@ int SoftwareIsp::start()
 
 	ispWorkerThread_.start();
 
-	return debayer_->invokeMethod(&DebayerCpu::start,
+	return debayer_->invokeMethod(&Debayer::start,
 				      ConnectionTypeBlocking);
 }
 
@@ -360,7 +360,7 @@ int SoftwareIsp::start()
  */
 void SoftwareIsp::stop()
 {
-	debayer_->invokeMethod(&DebayerCpu::stop,
+	debayer_->invokeMethod(&Debayer::stop,
 			       ConnectionTypeBlocking);
 
 	ispWorkerThread_.exit();
@@ -394,7 +394,7 @@ void SoftwareIsp::stop()
 void SoftwareIsp::process(uint32_t frame, FrameBuffer *input, FrameBuffer *output)
 {
 	ipa_->computeParams(frame);
-	debayer_->invokeMethod(&DebayerCpu::process,
+	debayer_->invokeMethod(&Debayer::process,
 			       ConnectionTypeQueued, frame, input, output, debayerParams_);
 }
 

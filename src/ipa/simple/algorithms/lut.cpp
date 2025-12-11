@@ -147,6 +147,8 @@ void Lut::prepare(IPAContext &context,
 			params->gammaLut[i] = gammaTable[i / div];
 		}
 	}
+
+	params->gamma = context.configuration.gamma;
 }
 
 void Lut::process([[maybe_unused]] IPAContext &context,

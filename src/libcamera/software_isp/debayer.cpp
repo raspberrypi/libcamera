@@ -111,6 +111,11 @@ namespace libcamera {
  */
 
 /**
+ * \var DebayerParams::gamma
+ * \brief Gamma value for the GPUISP
+ */
+
+/**
  * \class Debayer
  * \brief Base debayering class
  *

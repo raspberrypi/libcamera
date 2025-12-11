@@ -116,6 +116,11 @@ namespace libcamera {
  */
 
 /**
+ * \var DebayerParams::contrast
+ * \brief Contrast value for GPUISP
+ */
+
+/**
  * \class Debayer
  * \brief Base debayering class
  *

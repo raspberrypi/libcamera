@@ -149,6 +149,7 @@ void Lut::prepare(IPAContext &context,
 	}
 
 	params->gamma = context.configuration.gamma;
+	params->contrast = context.activeState.gamma.contrast;
 }
 
 void Lut::process([[maybe_unused]] IPAContext &context,

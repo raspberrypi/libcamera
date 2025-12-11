@@ -336,4 +336,32 @@ Debayer::~Debayer()
  * debayer processing.
  */
 
+/**
+ * \fn void Debayer::setParams(DebayerParams &params)
+ * \brief Select the bayer params to use for the next frame debayer
+ * \param[in] params The parameters to be used in debayering
+ */
+void Debayer::setParams(DebayerParams &params)
+{
+	green_ = params.green;
+	greenCcm_ = params.greenCcm;
+	if (swapRedBlueGains_) {
+		red_ = params.blue;
+		blue_ = params.red;
+		redCcm_ = params.blueCcm;
+		blueCcm_ = params.redCcm;
+		for (unsigned int i = 0; i < 256; i++) {
+			std::swap(redCcm_[i].r, redCcm_[i].b);
+			std::swap(greenCcm_[i].r, greenCcm_[i].b);
+			std::swap(blueCcm_[i].r, blueCcm_[i].b);
+		}
+	} else {
+		red_ = params.red;
+		blue_ = params.blue;
+		redCcm_ = params.redCcm;
+		blueCcm_ = params.blueCcm;
+	}
+	gammaLut_ = params.gammaLut;
+}
+
 } /* namespace libcamera */

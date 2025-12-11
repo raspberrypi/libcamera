@@ -758,25 +758,7 @@ void DebayerCpu::process(uint32_t frame, FrameBuffer *input, FrameBuffer *output
 	for (const FrameBuffer::Plane &plane : output->planes())
 		dmaSyncers.emplace_back(plane.fd, DmaSyncer::SyncType::Write);
 
-	green_ = params.green;
-	greenCcm_ = params.greenCcm;
-	if (swapRedBlueGains_) {
-		red_ = params.blue;
-		blue_ = params.red;
-		redCcm_ = params.blueCcm;
-		blueCcm_ = params.redCcm;
-		for (unsigned int i = 0; i < 256; i++) {
-			std::swap(redCcm_[i].r, redCcm_[i].b);
-			std::swap(greenCcm_[i].r, greenCcm_[i].b);
-			std::swap(blueCcm_[i].r, blueCcm_[i].b);
-		}
-	} else {
-		red_ = params.red;
-		blue_ = params.blue;
-		redCcm_ = params.redCcm;
-		blueCcm_ = params.blueCcm;
-	}
-	gammaLut_ = params.gammaLut;
+	setParams(params);
 
 	/* Copy metadata from the input buffer */
 	FrameMetadata &metadata = output->_d()->metadata();

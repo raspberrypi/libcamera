@@ -1,13 +1,13 @@
 <!-- SPDX-License-Identifier: LGPL-2.1-or-later -->
 <!DOCTYPE RCC><RCC version="1.0">
 <qresource>
-	<file>RGB.frag</file>
-	<file>YUV_2_planes.frag</file>
-	<file>YUV_3_planes.frag</file>
-	<file>YUV_packed.frag</file>
-	<file>bayer_1x_packed.frag</file>
-	<file>bayer_8.frag</file>
-	<file>bayer_8.vert</file>
-	<file>identity.vert</file>
+	<file>../../../../../src/libcamera/shaders/RGB.frag</file>
+	<file>../../../../../src/libcamera/shaders/YUV_2_planes.frag</file>
+	<file>../../../../../src/libcamera/shaders/YUV_3_planes.frag</file>
+	<file>../../../../../src/libcamera/shaders/YUV_packed.frag</file>
+	<file>../../../../../src/libcamera/shaders/bayer_1x_packed.frag</file>
+	<file>../../../../../src/libcamera/shaders/bayer_8.frag</file>
+	<file>../../../../../src/libcamera/shaders/bayer_8.vert</file>
+	<file>../../../../../src/libcamera/shaders/identity.vert</file>
 </qresource>
 </RCC>

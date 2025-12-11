@@ -64,3 +64,6 @@ qcam  = executable('qcam', qcam_sources, resources,
                        qt6_dep,
                    ],
                    cpp_args : qt6_cpp_args)
+
+# Note: qt6.preprocess does not automatically rebuild when the
+# qcam_resources dependency chain is updated.

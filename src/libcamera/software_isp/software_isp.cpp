@@ -108,14 +108,15 @@ SoftwareIsp::SoftwareIsp(PipelineHandler *pipe, const CameraSensor *sensor,
 		return;
 	}
 
-	auto stats = std::make_unique<SwStatsCpu>();
+	const GlobalConfiguration &configuration = pipe->cameraManager()->_d()->configuration();
+
+	auto stats = std::make_unique<SwStatsCpu>(configuration);
 	if (!stats->isValid()) {
 		LOG(SoftwareIsp, Error) << "Failed to create SwStatsCpu object";
 		return;
 	}
 	stats->statsReady.connect(this, &SoftwareIsp::statsReady);
 
-	const GlobalConfiguration &configuration = pipe->cameraManager()->_d()->configuration();
 	debayer_ = std::make_unique<DebayerCpu>(std::move(stats), configuration);
 	debayer_->inputBufferReady.connect(this, &SoftwareIsp::inputReady);
 	debayer_->outputBufferReady.connect(this, &SoftwareIsp::outputReady);

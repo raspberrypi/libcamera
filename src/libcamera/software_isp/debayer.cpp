@@ -364,4 +364,17 @@ void Debayer::setParams(DebayerParams &params)
 	gammaLut_ = params.gammaLut;
 }
 
+/**
+ * \fn void Debayer::dmaSyncBegin(DebayerParams &params)
+ * \brief Common CPU/GPU Dma Sync Buffer begin
+ */
+void Debayer::dmaSyncBegin(std::vector<DmaSyncer> &dmaSyncers, FrameBuffer *input, FrameBuffer *output)
+{
+	for (const FrameBuffer::Plane &plane : input->planes())
+		dmaSyncers.emplace_back(plane.fd, DmaSyncer::SyncType::Read);
+
+	for (const FrameBuffer::Plane &plane : output->planes())
+		dmaSyncers.emplace_back(plane.fd, DmaSyncer::SyncType::Write);
+}
+
 } /* namespace libcamera */

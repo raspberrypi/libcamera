@@ -22,7 +22,6 @@
 #include <libcamera/formats.h>
 
 #include "libcamera/internal/bayer_format.h"
-#include "libcamera/internal/dma_buf_allocator.h"
 #include "libcamera/internal/framebuffer.h"
 #include "libcamera/internal/global_configuration.h"
 #include "libcamera/internal/mapped_framebuffer.h"
@@ -752,11 +751,8 @@ void DebayerCpu::process(uint32_t frame, FrameBuffer *input, FrameBuffer *output
 	bench_.startFrame();
 
 	std::vector<DmaSyncer> dmaSyncers;
-	for (const FrameBuffer::Plane &plane : input->planes())
-		dmaSyncers.emplace_back(plane.fd, DmaSyncer::SyncType::Read);
 
-	for (const FrameBuffer::Plane &plane : output->planes())
-		dmaSyncers.emplace_back(plane.fd, DmaSyncer::SyncType::Write);
+	dmaSyncBegin(dmaSyncers, input, output);
 
 	setParams(params);
 

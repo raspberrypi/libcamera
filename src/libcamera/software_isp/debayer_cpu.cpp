@@ -42,7 +42,7 @@ namespace libcamera {
  * \param[in] configuration The global configuration
  */
 DebayerCpu::DebayerCpu(std::unique_ptr<SwStatsCpu> stats, const GlobalConfiguration &configuration)
-	: stats_(std::move(stats)), bench_(configuration)
+	: Debayer(configuration), stats_(std::move(stats))
 {
 	/*
 	 * Reading from uncached buffers may be very slow.

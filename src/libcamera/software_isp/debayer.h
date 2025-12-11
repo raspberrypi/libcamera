@@ -14,11 +14,14 @@
 #include <stdint.h>
 
 #include <libcamera/base/log.h>
+#include <libcamera/base/object.h>
 #include <libcamera/base/signal.h>
 
 #include <libcamera/geometry.h>
 #include <libcamera/stream.h>
 
+#include "libcamera/internal/global_configuration.h"
+#include "libcamera/internal/software_isp/benchmark.h"
 #include "libcamera/internal/software_isp/debayer_params.h"
 
 namespace libcamera {
@@ -27,9 +30,10 @@ class FrameBuffer;
 
 LOG_DECLARE_CATEGORY(Debayer)
 
-class Debayer
+class Debayer : public Object
 {
 public:
+	Debayer(const GlobalConfiguration &configuration) : bench_(configuration) {};
 	virtual ~Debayer() = 0;
 
 	virtual int configure(const StreamConfiguration &inputCfg,
@@ -45,8 +49,37 @@ public:
 
 	virtual SizeRange sizes(PixelFormat inputFormat, const Size &inputSize) = 0;
 
+	virtual const SharedFD &getStatsFD() = 0;
+
+	unsigned int frameSize() { return outputConfig_.frameSize; }
+
 	Signal<FrameBuffer *> inputBufferReady;
 	Signal<FrameBuffer *> outputBufferReady;
+
+	struct DebayerInputConfig {
+		Size patternSize;
+		unsigned int bpp;
+		unsigned int stride;
+		std::vector<PixelFormat> outputFormats;
+	};
+
+	struct DebayerOutputConfig {
+		unsigned int bpp;
+		unsigned int stride;
+		unsigned int frameSize;
+	};
+
+	DebayerInputConfig inputConfig_;
+	DebayerOutputConfig outputConfig_;
+	DebayerParams::LookupTable red_;
+	DebayerParams::LookupTable green_;
+	DebayerParams::LookupTable blue_;
+	DebayerParams::CcmLookupTable redCcm_;
+	DebayerParams::CcmLookupTable greenCcm_;
+	DebayerParams::CcmLookupTable blueCcm_;
+	DebayerParams::LookupTable gammaLut_;
+	bool swapRedBlueGains_;
+	Benchmark bench_;
 
 private:
 	virtual Size patternSize(PixelFormat inputFormat) = 0;

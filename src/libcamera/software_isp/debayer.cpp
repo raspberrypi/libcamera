@@ -19,6 +19,12 @@ namespace libcamera {
  */
 
 /**
+ * \fn Debayer::Debayer(const GlobalConfiguration &configuration)
+ * \brief Construct a Debayer object
+ * \param[in] configuration Global configuration reference
+ */
+
+/**
  * \var DebayerParams::kRGBLookupSize
  * \brief Size of a color lookup table
  */
@@ -167,6 +173,24 @@ Debayer::~Debayer()
  */
 
 /**
+ * \fn const SharedFD &Debayer::getStatsFD()
+ * \brief Get the file descriptor for the statistics
+ *
+ * This file descriptor provides access to the output statistics buffer
+ * associated with the current debayering process.
+ *
+ * \return The file descriptor pointing to the statistics data
+ */
+
+/**
+ * \fn unsigned int Debayer::frameSize()
+ * \brief Get the output frame size
+ *
+ * \return The total output frame size in bytes as configured for the
+ * current stream.
+ */
+
+/**
  * \var Signal<FrameBuffer *> Debayer::inputBufferReady
  * \brief Signals when the input buffer is ready
  */
@@ -174,6 +198,131 @@ Debayer::~Debayer()
 /**
  * \var Signal<FrameBuffer *> Debayer::outputBufferReady
  * \brief Signals when the output buffer is ready
+ */
+
+/**
+ * \struct Debayer::DebayerInputConfig
+ * \brief Structure describing the incoming Bayer parameters
+ *
+ * The DebayerInputConfig structure defines the characteristics of the raw
+ * Bayer frame being processed, including:
+ *  - The Bayer pattern dimensions (\ref patternSize)
+ *  - Memory layout parameters such as stride and bytes per pixel (\ref bpp)
+ *  - A list of supported output pixel formats.
+ *
+ * \var Debayer::DebayerInputConfig::patternSize
+ * Size of the Bayer pattern in pixels. For standard Bayer formats such as
+ * BGGR, GRBG, GBRG, and RGGB, this is typically 2×2 pixels.
+ *
+ * \var Debayer::DebayerInputConfig::bpp
+ * Number of bytes used per pixel in memory. This reflects storage size,
+ * not precision.
+ *
+ * \var Debayer::DebayerInputConfig::stride
+ * Line stride in bytes for the Bayer input frame.
+ *
+ * \var Debayer::DebayerInputConfig::outputFormats
+ * List of pixel formats supported as output for this input configuration.
+ */
+
+/**
+ * \struct Debayer::DebayerOutputConfig
+ * \brief Structure describing the output frame configuration
+ *
+ * Defines how the output of the debayer process is laid out in memory.
+ * It includes per-pixel size, stride, and total frame size.
+ *
+ * \var Debayer::DebayerOutputConfig::bpp
+ * Bytes used per pixel in the output format.
+ *
+ * \var Debayer::DebayerOutputConfig::stride
+ * Line stride in bytes for the output frame.
+ *
+ * \var Debayer::DebayerOutputConfig::frameSize
+ * Total frame size in bytes for the output buffer.
+ */
+
+/**
+ * \var Debayer::inputConfig_
+ * \brief Input configuration parameters for the current debayer operation
+ *
+ * Holds metadata describing the incoming Bayer image layout, including
+ * pattern size, bytes per pixel, stride, and supported output formats.
+ * Populated during configuration.
+ */
+
+/**
+ * \var Debayer::outputConfig_
+ * \brief Output configuration data for the debayered frame
+ *
+ * Contains bytes per pixel, stride, and total frame size for the
+ * output image buffer. Set during stream configuration.
+ */
+
+/**
+ * \var Debayer::red_
+ * \brief Lookup table for red channel gain and correction values
+ *
+ * This table provides precomputed per-pixel or per-intensity
+ * correction values for the red color channel used during debayering.
+ */
+
+/**
+ * \var Debayer::green_
+ * \brief Lookup table for green channel gain and correction values
+ *
+ * This table provides precomputed per-pixel or per-intensity
+ * correction values for the green color channel used during debayering.
+ */
+
+/**
+ * \var Debayer::blue_
+ * \brief Lookup table for blue channel gain and correction values
+ *
+ * This table provides precomputed per-pixel or per-intensity
+ * correction values for the blue color channel used during debayering.
+ */
+
+/**
+ * \var Debayer::redCcm_
+ * \brief Red channel Color Correction Matrix (CCM) lookup table
+ *
+ * Contains coefficients for green channel color correction.
+ */
+
+/**
+ * \var Debayer::greenCcm_
+ * \brief Green channel Color Correction Matrix (CCM) lookup table
+ *
+ * Contains coefficients for green channel color correction.
+ */
+
+/**
+ * \var Debayer::blueCcm_
+ * \brief Blue channel Color Correction Matrix (CCM) lookup table
+ *
+ * Contains coefficients for blue channel color correction.
+ */
+
+/**
+ * \var Debayer::gammaLut_
+ * \brief Gamma correction lookup table
+ */
+
+/**
+ * \var Debayer::swapRedBlueGains_
+ * \brief Flag indicating whether red and blue channel gains should be swapped
+ *
+ * Used when the Bayer pattern order indicates that red/blue color channels are
+ * reversed.
+ */
+
+/**
+ * \var Debayer::bench_
+ * \brief Benchmarking utility instance for performance measurements
+ *
+ * Used internally to track timing and performance metrics during
+ * debayer processing.
  */
 
 } /* namespace libcamera */

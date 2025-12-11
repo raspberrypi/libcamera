@@ -18,15 +18,13 @@
 #include <libcamera/base/object.h>
 
 #include "libcamera/internal/bayer_format.h"
-#include "libcamera/internal/global_configuration.h"
-#include "libcamera/internal/software_isp/benchmark.h"
 #include "libcamera/internal/software_isp/swstats_cpu.h"
 
 #include "debayer.h"
 
 namespace libcamera {
 
-class DebayerCpu : public Debayer, public Object
+class DebayerCpu : public Debayer
 {
 public:
 	DebayerCpu(std::unique_ptr<SwStatsCpu> stats, const GlobalConfiguration &configuration);
@@ -41,20 +39,7 @@ public:
 	strideAndFrameSize(const PixelFormat &outputFormat, const Size &size);
 	void process(uint32_t frame, FrameBuffer *input, FrameBuffer *output, DebayerParams params);
 	SizeRange sizes(PixelFormat inputFormat, const Size &inputSize);
-
-	/**
-	 * \brief Get the file descriptor for the statistics
-	 *
-	 * \return the file descriptor pointing to the statistics
-	 */
 	const SharedFD &getStatsFD() { return stats_->getStatsFD(); }
-
-	/**
-	 * \brief Get the output frame size
-	 *
-	 * \return The output frame size
-	 */
-	unsigned int frameSize() { return outputConfig_.frameSize; }
 
 private:
 	/**
@@ -112,19 +97,6 @@ private:
 	template<bool addAlphaByte, bool ccmEnabled>
 	void debayer10P_RGRG_BGR888(uint8_t *dst, const uint8_t *src[]);
 
-	struct DebayerInputConfig {
-		Size patternSize;
-		unsigned int bpp; /* Memory used per pixel, not precision */
-		unsigned int stride;
-		std::vector<PixelFormat> outputFormats;
-	};
-
-	struct DebayerOutputConfig {
-		unsigned int bpp; /* Memory used per pixel, not precision */
-		unsigned int stride;
-		unsigned int frameSize;
-	};
-
 	int getInputConfig(PixelFormat inputFormat, DebayerInputConfig &config);
 	int getOutputConfig(PixelFormat outputFormat, DebayerOutputConfig &config);
 	int setupStandardBayerOrder(BayerFormat::Order order);
@@ -140,20 +112,11 @@ private:
 	/* Max. supported Bayer pattern height is 4, debayering this requires 5 lines */
 	static constexpr unsigned int kMaxLineBuffers = 5;
 
-	DebayerParams::LookupTable red_;
-	DebayerParams::LookupTable green_;
-	DebayerParams::LookupTable blue_;
-	DebayerParams::CcmLookupTable redCcm_;
-	DebayerParams::CcmLookupTable greenCcm_;
-	DebayerParams::CcmLookupTable blueCcm_;
-	DebayerParams::LookupTable gammaLut_;
 	debayerFn debayer0_;
 	debayerFn debayer1_;
 	debayerFn debayer2_;
 	debayerFn debayer3_;
 	Rectangle window_;
-	DebayerInputConfig inputConfig_;
-	DebayerOutputConfig outputConfig_;
 	std::unique_ptr<SwStatsCpu> stats_;
 	std::vector<uint8_t> lineBuffers_[kMaxLineBuffers];
 	unsigned int lineBufferLength_;
@@ -161,8 +124,6 @@ private:
 	unsigned int lineBufferIndex_;
 	unsigned int xShift_; /* Offset of 0/1 applied to window_.x */
 	bool enableInputMemcpy_;
-	bool swapRedBlueGains_;
-	Benchmark bench_;
 };
 
 } /* namespace libcamera */

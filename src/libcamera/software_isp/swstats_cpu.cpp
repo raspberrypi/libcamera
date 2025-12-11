@@ -9,7 +9,7 @@
  * CPU based software statistics implementation
  */
 
-#include "swstats_cpu.h"
+#include "libcamera/internal/software_isp/swstats_cpu.h"
 
 #include <libcamera/base/log.h>
 

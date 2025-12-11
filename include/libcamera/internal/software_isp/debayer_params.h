@@ -13,6 +13,8 @@
 #include <array>
 #include <stdint.h>
 
+#include "libcamera/internal/matrix.h"
+
 namespace libcamera {
 
 struct DebayerParams {
@@ -49,6 +51,11 @@ struct DebayerParams {
 	CcmLookupTable greenCcm;
 	CcmLookupTable blueCcm;
 	LookupTable gammaLut;
+
+	/*
+	 * Per frame corrections as calculated by the IPA
+	 */
+	Matrix<float, 3, 3> ccm;
 };
 
 } /* namespace libcamera */

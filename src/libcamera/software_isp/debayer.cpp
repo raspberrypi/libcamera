@@ -101,6 +101,11 @@ namespace libcamera {
  */
 
 /**
+ * \var DebayerParams::ccm
+ * \brief Per frame colour correction matrix for GPUISP
+ */
+
+/**
  * \class Debayer
  * \brief Base debayering class
  *

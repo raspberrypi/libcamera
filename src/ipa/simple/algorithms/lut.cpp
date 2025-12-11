@@ -133,6 +133,7 @@ void Lut::prepare(IPAContext &context,
 		auto &red = params->redCcm;
 		auto &green = params->greenCcm;
 		auto &blue = params->blueCcm;
+		params->ccm = ccm;
 		for (unsigned int i = 0; i < DebayerParams::kRGBLookupSize; i++) {
 			red[i].r = ccmValue(i, ccm[0][0]);
 			red[i].g = ccmValue(i, ccm[1][0]);

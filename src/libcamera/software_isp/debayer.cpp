@@ -106,6 +106,11 @@ namespace libcamera {
  */
 
 /**
+ * \var DebayerParams::blackLevel
+ * \brief Blacklevel gains for the GPUISP
+ */
+
+/**
  * \class Debayer
  * \brief Base debayering class
  *

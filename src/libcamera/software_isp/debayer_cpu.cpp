@@ -288,12 +288,6 @@ void DebayerCpu::debayer10P_RGRG_BGR888(uint8_t *dst, const uint8_t *src[])
 	}
 }
 
-static bool isStandardBayerOrder(BayerFormat::Order order)
-{
-	return order == BayerFormat::BGGR || order == BayerFormat::GBRG ||
-	       order == BayerFormat::GRBG || order == BayerFormat::RGGB;
-}
-
 /*
  * Setup the Debayer object according to the passed in parameters.
  * Return 0 on success, a negative errno value on failure

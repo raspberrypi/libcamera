@@ -379,4 +379,14 @@ void Debayer::dmaSyncBegin(std::vector<DmaSyncer> &dmaSyncers, FrameBuffer *inpu
 	}
 }
 
+/**
+ * \fn void Debayer::isStandardBayerOrder(BayerFormat::Order order)
+ * \brief Common method to validate standard 2x2 Bayer pattern of 2 Green, 1 Blue, 1 Red pixels
+ */
+bool Debayer::isStandardBayerOrder(BayerFormat::Order order)
+{
+	return order == BayerFormat::BGGR || order == BayerFormat::GBRG ||
+	       order == BayerFormat::GRBG || order == BayerFormat::RGGB;
+}
+
 } /* namespace libcamera */

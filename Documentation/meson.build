@@ -172,6 +172,7 @@ if sphinx.found()
         'python-bindings.rst',
         'runtime_configuration.rst',
         'sensor_driver_requirements.rst',
+        'sensor-support.rst',
         'software-isp-benchmarking.rst',
        '../README.rst',
     ]

@@ -9,6 +9,7 @@
    Introduction <self>
    Feature Requirements <feature_requirements>
    Runtime configuration <runtime_configuration>
+   ISP feature support matrix <isp-feature-matrix>
    Application Writer's Guide <guides/application-developer>
    Python Bindings <python-bindings>
    Public API <public-api/index>

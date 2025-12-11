@@ -164,6 +164,7 @@ if sphinx.found()
         'index.rst',
         'internal-api/index.rst',
         'introduction.rst',
+        'isp-feature-matrix.rst',
         'lens_driver_requirements.rst',
         'libcamera_architecture.rst',
         'mali-c55.dot',

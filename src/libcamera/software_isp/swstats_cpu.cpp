@@ -58,6 +58,8 @@ namespace libcamera {
  * also indicates if processLine2() should be called or not.
  * This may only be called after a successful configure() call.
  *
+ * Valid sizes are: 1x1, 2x2, 4x2 or 4x4.
+ *
  * \return The pattern size
  */
 
@@ -131,13 +133,6 @@ namespace libcamera {
 /**
  * \var Rectangle SwStatsCpu::window_
  * \brief Statistics window, set by setWindow(), used every line
- */
-
-/**
- * \var Size SwStatsCpu::patternSize_
- * \brief The size of the bayer pattern
- *
- * Valid sizes are: 2x2, 4x2 or 4x4.
  */
 
 /**

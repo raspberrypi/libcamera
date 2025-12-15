@@ -55,10 +55,9 @@ void Awb::process(IPAContext &context,
 	const SwIspStats::Histogram &histogram = stats->yHistogram;
 	const uint8_t blackLevel = context.activeState.blc.level;
 
-	const float maxGain = 1024.0;
 	const float mdGains[] = {
-		static_cast<float>(frameContext.gains.red / maxGain),
-		static_cast<float>(frameContext.gains.blue / maxGain)
+		static_cast<float>(frameContext.gains.red),
+		static_cast<float>(frameContext.gains.blue)
 	};
 	metadata.set(controls::ColourGains, mdGains);
 

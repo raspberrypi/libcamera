@@ -188,7 +188,7 @@ libcamera_shader_headers = custom_target(
     'gen-shader-headers',
     input : [shader_files],
     output : 'glsl_shaders.h',
-    command : [gen_shader_headers, meson.project_source_root(), meson.project_build_root(), '@OUTPUT@', '@INPUT@'],
+    command : [gen_shader_headers, meson.project_source_root(), '@OUTPUT@', '@INPUT@'],
 )
 
 libcamera_internal_headers += libcamera_shader_headers

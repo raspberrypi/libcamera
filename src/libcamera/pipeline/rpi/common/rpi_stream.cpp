@@ -106,7 +106,7 @@ void Stream::setExportedBuffer(FrameBuffer *buffer)
 	bufferEmplace(++id_, buffer);
 }
 
-int Stream::prepareBuffers(unsigned int count)
+int Stream::allocateBuffers(unsigned int count)
 {
 	int ret;
 

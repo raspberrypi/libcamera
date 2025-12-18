@@ -242,7 +242,7 @@ private:
 	}
 
 	int queueAllBuffers(Camera *camera);
-	virtual int prepareBuffers(Camera *camera) = 0;
+	virtual int allocateBuffers(Camera *camera) = 0;
 };
 
 class RPiCameraConfiguration final : public CameraConfiguration

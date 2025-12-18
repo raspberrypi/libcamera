@@ -125,7 +125,7 @@ public:
 
 	void setExportedBuffer(FrameBuffer *buffer);
 
-	int prepareBuffers(unsigned int count);
+	int allocateBuffers(unsigned int count);
 	int queueBuffer(FrameBuffer *buffer);
 	void returnBuffer(FrameBuffer *buffer);
 

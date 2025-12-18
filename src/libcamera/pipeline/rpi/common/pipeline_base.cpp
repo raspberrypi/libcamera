@@ -668,7 +668,7 @@ int PipelineHandlerBase::start(Camera *camera, const ControlList *controls)
 
 	if (!data->buffersAllocated_) {
 		/* Allocate buffers for internal pipeline usage. */
-		ret = prepareBuffers(camera);
+		ret = allocateBuffers(camera);
 		if (ret) {
 			LOG(RPI, Error) << "Failed to allocate buffers";
 			data->freeBuffers();

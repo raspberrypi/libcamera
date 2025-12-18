@@ -140,7 +140,6 @@ public:
 
 private:
 	void bufferEmplace(unsigned int id, FrameBuffer *buffer);
-	void clearBuffers();
 	int queueToDevice(FrameBuffer *buffer);
 
 	StreamFlags flags_;

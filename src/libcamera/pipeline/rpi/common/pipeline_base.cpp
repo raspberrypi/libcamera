@@ -719,8 +719,10 @@ void PipelineHandlerBase::stopDevice(Camera *camera)
 	data->state_ = CameraData::State::Stopped;
 	data->platformStop();
 
-	for (auto const stream : data->streams_)
+	for (auto const stream : data->streams_) {
 		stream->dev()->streamOff();
+		stream->dev()->releaseBuffers();
+	}
 
 	/* Disable SOF event generation. */
 	data->frontendDevice()->setFrameStartEnabled(false);
@@ -901,6 +903,10 @@ int PipelineHandlerBase::queueAllBuffers(Camera *camera)
 	int ret;
 
 	for (auto const stream : data->streams_) {
+		ret = stream->dev()->importBuffers(VIDEO_MAX_FRAME);
+		if (ret < 0)
+			return ret;
+
 		if (stream->getFlags() & StreamFlag::External)
 			continue;
 

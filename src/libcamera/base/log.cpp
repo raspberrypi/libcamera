@@ -867,8 +867,7 @@ LogMessage::~LogMessage()
 
 	msgStream_ << std::endl;
 
-	if (severity_ >= category_.severity())
-		logger->write(*this);
+	logger->write(*this);
 
 	if (severity_ == LogSeverity::LogFatal) {
 		logger->backtrace();

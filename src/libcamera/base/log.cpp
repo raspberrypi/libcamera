@@ -857,10 +857,6 @@ LogMessage::LogMessage(const char *fileName, unsigned int line,
 
 LogMessage::~LogMessage()
 {
-	/* Don't print anything if we have been moved to another LogMessage. */
-	if (severity_ == LogInvalid)
-		return;
-
 	Logger *logger = Logger::instance();
 	if (!logger)
 		return;

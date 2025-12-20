@@ -40,6 +40,7 @@ struct IPAActiveState {
 	struct {
 		int32_t exposure;
 		double again;
+		bool valid;
 	} agc;
 
 	struct {

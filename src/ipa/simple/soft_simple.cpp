@@ -237,26 +237,9 @@ int IPASoftSimple::configure(const IPAConfigInfo &configInfo)
 				camHelper_->blackLevel().value() / 256;
 		}
 	} else {
-		/*
-		 * The camera sensor gain (g) is usually not equal to the value written
-		 * into the gain register (x). But the way how the AGC algorithm changes
-		 * the gain value to make the total exposure closer to the optimum
-		 * assumes that g(x) is not too far from linear function. If the minimal
-		 * gain is 0, the g(x) is likely to be far from the linear, like
-		 * g(x) = a / (b * x + c). To avoid unexpected changes to the gain by
-		 * the AGC algorithm (abrupt near one edge, and very small near the
-		 * other) we limit the range of the gain values used.
-		 */
 		context_.configuration.agc.againMax = againMax;
 		context_.configuration.agc.again10 = againDef;
-		if (againMin) {
-			context_.configuration.agc.againMin = againMin;
-		} else {
-			LOG(IPASoft, Warning)
-				<< "Minimum gain is zero, that can't be linear";
-			context_.configuration.agc.againMin =
-				std::min(100, againMin / 2 + againMax / 2);
-		}
+		context_.configuration.agc.againMin = againMin;
 		context_.configuration.agc.againMinStep = 1.0;
 	}
 

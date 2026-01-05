@@ -118,7 +118,16 @@ cpp_arguments = [
     '-Wnon-virtual-dtor',
 ]
 
-cxx_stdlib = 'libstdc++'
+# \todo Switch to `version` when moving to C++20 as `ciso646` has been removed in C++20.
+if cxx.has_header_symbol('ciso646', '_LIBCPP_VERSION')
+    cxx_stdlib = 'libc++'
+elif cxx.has_header_symbol('ciso646', '__GLIBCXX__')
+    cxx_stdlib = 'libstdc++'
+else
+    error('C++ standard library cannot be detected')
+endif
+
+message('Detected C++ standard library: ' + cxx_stdlib)
 
 if cc.get_id() == 'clang'
     if cc.version().version_compare('<9')
@@ -137,15 +146,6 @@ if cc.get_id() == 'clang'
                 '-D_FORTIFY_SOURCE=2',
             ]
         endif
-    endif
-
-    # Use libc++ by default if available instead of libstdc++ when compiling
-    # with clang.
-    if cc.find_library('c++', required : false).found()
-        cpp_arguments += [
-            '-stdlib=libc++',
-        ]
-        cxx_stdlib = 'libc++'
     endif
 
     cpp_arguments += [

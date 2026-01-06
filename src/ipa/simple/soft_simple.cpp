@@ -55,6 +55,7 @@ public:
 		 const SharedFD &fdParams,
 		 const IPACameraSensorInfo &sensorInfo,
 		 const ControlInfoMap &sensorControls,
+		 bool gpuIspEnabled,
 		 ControlInfoMap *ipaControls,
 		 bool *ccmEnabled) override;
 	int configure(const IPAConfigInfo &configInfo) override;
@@ -95,6 +96,7 @@ int IPASoftSimple::init(const IPASettings &settings,
 			const SharedFD &fdParams,
 			const IPACameraSensorInfo &sensorInfo,
 			const ControlInfoMap &sensorControls,
+			bool gpuIspEnabled,
 			ControlInfoMap *ipaControls,
 			bool *ccmEnabled)
 {
@@ -106,6 +108,7 @@ int IPASoftSimple::init(const IPASettings &settings,
 	}
 
 	context_.sensorInfo = sensorInfo;
+	context_.gpuIspEnabled = gpuIspEnabled;
 
 	/* Load the tuning data file */
 	File file(settings.configurationFile);

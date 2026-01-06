@@ -17,7 +17,8 @@ interface IPASoftInterface {
 	     libcamera.SharedFD fdStats,
 	     libcamera.SharedFD fdParams,
 	     libcamera.IPACameraSensorInfo sensorInfo,
-	     libcamera.ControlInfoMap sensorControls)
+	     libcamera.ControlInfoMap sensorControls,
+	     bool gpuIspEnabled)
 		=> (int32 ret, libcamera.ControlInfoMap ipaControls, bool ccmEnabled);
 	start() => (int32 ret);
 	stop();

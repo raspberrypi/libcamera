@@ -56,33 +56,34 @@ void Lut::queueRequest(typename Module::Context &context,
 
 void Lut::updateGammaTable(IPAContext &context)
 {
-	auto &gammaTable = context.activeState.gamma.gammaTable;
 	const auto blackLevel = context.activeState.blc.level;
-	const unsigned int blackIndex = blackLevel * gammaTable.size() / 256;
 	const auto contrast = context.activeState.knobs.contrast.value_or(1.0);
 	/* Convert 0..2 to 0..infinity; avoid actual inifinity at tan(pi/2) */
 	double contrastExp = tan(std::clamp(contrast * M_PI_4, 0.0, M_PI_2 - 0.00001));
 
-	const float divisor = gammaTable.size() - blackIndex - 1.0;
-	for (unsigned int i = blackIndex; i < gammaTable.size(); i++) {
-		double normalized = (i - blackIndex) / divisor;
-		/* Convert 0..2 to 0..infinity; avoid actual inifinity at tan(pi/2) */
-		/* Apply simple S-curve */
-		if (normalized < 0.5)
-			normalized = 0.5 * std::pow(normalized / 0.5, contrastExp);
-		else
-			normalized = 1.0 - 0.5 * std::pow((1.0 - normalized) / 0.5, contrastExp);
-		gammaTable[i] = UINT8_MAX *
-				std::pow(normalized, context.configuration.gamma);
+	if (!context.gpuIspEnabled) {
+		auto &gammaTable = context.activeState.gamma.gammaTable;
+		const unsigned int blackIndex = blackLevel * gammaTable.size() / 256;
+		const float divisor = gammaTable.size() - blackIndex - 1.0;
+		for (unsigned int i = blackIndex; i < gammaTable.size(); i++) {
+			double normalized = (i - blackIndex) / divisor;
+			/* Apply simple S-curve */
+			if (normalized < 0.5)
+				normalized = 0.5 * std::pow(normalized / 0.5, contrastExp);
+			else
+				normalized = 1.0 - 0.5 * std::pow((1.0 - normalized) / 0.5, contrastExp);
+			gammaTable[i] = UINT8_MAX *
+					std::pow(normalized, context.configuration.gamma);
+		}
+		/*
+		 * Due to CCM operations, the table lookup may reach indices below the black
+		 * level. Let's set the table values below black level to the minimum
+		 * non-black value to prevent problems when the minimum value is
+		 * significantly non-zero (for example, when the image should be all grey).
+		 */
+		std::fill(gammaTable.begin(), gammaTable.begin() + blackIndex,
+			  gammaTable[blackIndex]);
 	}
-	/*
-	 * Due to CCM operations, the table lookup may reach indices below the black
-	 * level. Let's set the table values below black level to the minimum
-	 * non-black value to prevent problems when the minimum value is
-	 * significantly non-zero (for example, when the image should be all grey).
-	 */
-	std::fill(gammaTable.begin(), gammaTable.begin() + blackIndex,
-		  gammaTable[blackIndex]);
 
 	context.activeState.gamma.blackLevel = blackLevel;
 	context.activeState.gamma.contrastExp = contrastExp;
@@ -135,17 +136,19 @@ void Lut::prepare(IPAContext &context,
 		auto &green = params->greenCcm;
 		auto &blue = params->blueCcm;
 		params->ccm = ccm;
-		for (unsigned int i = 0; i < DebayerParams::kRGBLookupSize; i++) {
-			red[i].r = ccmValue(i, ccm[0][0]);
-			red[i].g = ccmValue(i, ccm[1][0]);
-			red[i].b = ccmValue(i, ccm[2][0]);
-			green[i].r = ccmValue(i, ccm[0][1]);
-			green[i].g = ccmValue(i, ccm[1][1]);
-			green[i].b = ccmValue(i, ccm[2][1]);
-			blue[i].r = ccmValue(i, ccm[0][2]);
-			blue[i].g = ccmValue(i, ccm[1][2]);
-			blue[i].b = ccmValue(i, ccm[2][2]);
-			params->gammaLut[i] = gammaTable[i / div];
+		if (!context.gpuIspEnabled) {
+			for (unsigned int i = 0; i < DebayerParams::kRGBLookupSize; i++) {
+				red[i].r = ccmValue(i, ccm[0][0]);
+				red[i].g = ccmValue(i, ccm[1][0]);
+				red[i].b = ccmValue(i, ccm[2][0]);
+				green[i].r = ccmValue(i, ccm[0][1]);
+				green[i].g = ccmValue(i, ccm[1][1]);
+				green[i].b = ccmValue(i, ccm[2][1]);
+				blue[i].r = ccmValue(i, ccm[0][2]);
+				blue[i].g = ccmValue(i, ccm[1][2]);
+				blue[i].b = ccmValue(i, ccm[2][2]);
+				params->gammaLut[i] = gammaTable[i / div];
+			}
 		}
 	}
 

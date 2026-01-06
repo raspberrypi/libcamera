@@ -97,8 +97,8 @@ private:
 	template<bool addAlphaByte, bool ccmEnabled>
 	void debayer10P_RGRG_BGR888(uint8_t *dst, const uint8_t *src[]);
 
-	int getInputConfig(PixelFormat inputFormat, DebayerInputConfig &config);
-	int getOutputConfig(PixelFormat outputFormat, DebayerOutputConfig &config);
+	static int getInputConfig(PixelFormat inputFormat, DebayerInputConfig &config);
+	static int getOutputConfig(PixelFormat outputFormat, DebayerOutputConfig &config);
 	int setupStandardBayerOrder(BayerFormat::Order order);
 	int setDebayerFunctions(PixelFormat inputFormat,
 				PixelFormat outputFormat,

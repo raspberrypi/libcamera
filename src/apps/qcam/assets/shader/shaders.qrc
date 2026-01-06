@@ -6,8 +6,8 @@
 	<file>../../../../../src/libcamera/shaders/YUV_3_planes.frag</file>
 	<file>../../../../../src/libcamera/shaders/YUV_packed.frag</file>
 	<file>../../../../../src/libcamera/shaders/bayer_1x_packed.frag</file>
-	<file>../../../../../src/libcamera/shaders/bayer_8.frag</file>
-	<file>../../../../../src/libcamera/shaders/bayer_8.vert</file>
+	<file>../../../../../src/libcamera/shaders/bayer_unpacked.frag</file>
+	<file>../../../../../src/libcamera/shaders/bayer_unpacked.vert</file>
 	<file>../../../../../src/libcamera/shaders/identity.vert</file>
 </qresource>
 </RCC>

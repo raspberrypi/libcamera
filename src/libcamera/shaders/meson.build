@@ -4,7 +4,7 @@
 # for the purposes of inclusion in OpenGL debayering
 shader_files = files([
     'bayer_1x_packed.frag',
-    'bayer_8.frag',
-    'bayer_8.vert',
+    'bayer_unpacked.frag',
+    'bayer_unpacked.vert',
     'identity.vert',
 ])

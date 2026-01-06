@@ -235,29 +235,29 @@ bool ViewFinderGL::selectFormat(const libcamera::PixelFormat &format)
 	case libcamera::formats::SBGGR8:
 		firstRed_.setX(1.0);
 		firstRed_.setY(1.0);
-		vertexShaderFile_ = ":src/libcamera/shaders/bayer_8.vert";
-		fragmentShaderFile_ = ":src/libcamera/shaders/bayer_8.frag";
+		vertexShaderFile_ = ":src/libcamera/shaders/bayer_unpacked.vert";
+		fragmentShaderFile_ = ":src/libcamera/shaders/bayer_unpacked.frag";
 		textureMinMagFilters_ = GL_NEAREST;
 		break;
 	case libcamera::formats::SGBRG8:
 		firstRed_.setX(0.0);
 		firstRed_.setY(1.0);
-		vertexShaderFile_ = ":src/libcamera/shaders/bayer_8.vert";
-		fragmentShaderFile_ = ":src/libcamera/shaders/bayer_8.frag";
+		vertexShaderFile_ = ":src/libcamera/shaders/bayer_unpacked.vert";
+		fragmentShaderFile_ = ":src/libcamera/shaders/bayer_unpacked.frag";
 		textureMinMagFilters_ = GL_NEAREST;
 		break;
 	case libcamera::formats::SGRBG8:
 		firstRed_.setX(1.0);
 		firstRed_.setY(0.0);
-		vertexShaderFile_ = ":src/libcamera/shaders/bayer_8.vert";
-		fragmentShaderFile_ = ":src/libcamera/shaders/bayer_8.frag";
+		vertexShaderFile_ = ":src/libcamera/shaders/bayer_unpacked.vert";
+		fragmentShaderFile_ = ":src/libcamera/shaders/bayer_unpacked.frag";
 		textureMinMagFilters_ = GL_NEAREST;
 		break;
 	case libcamera::formats::SRGGB8:
 		firstRed_.setX(0.0);
 		firstRed_.setY(0.0);
-		vertexShaderFile_ = ":src/libcamera/shaders/bayer_8.vert";
-		fragmentShaderFile_ = ":src/libcamera/shaders/bayer_8.frag";
+		vertexShaderFile_ = ":src/libcamera/shaders/bayer_unpacked.vert";
+		fragmentShaderFile_ = ":src/libcamera/shaders/bayer_unpacked.frag";
 		textureMinMagFilters_ = GL_NEAREST;
 		break;
 	case libcamera::formats::SBGGR10_CSI2P:

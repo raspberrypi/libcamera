@@ -24,8 +24,11 @@ uniform sampler2D       tex_y;
 varying vec4            center;
 varying vec4            yCoord;
 varying vec4            xCoord;
+uniform mat3            ccm;
 
 void main(void) {
+    vec3 rgb;
+
     #define fetch(x, y) texture2D(tex_y, vec2(x, y)).r
 
     float C = texture2D(tex_y, center.xy).r; // ( 0, 0)
@@ -97,11 +100,57 @@ void main(void) {
     PATTERN.xw  += kB.xw * B;
     PATTERN.xz  += kF.xz * F;
 
-    gl_FragColor.rgb = (alternate.y == 0.0) ?
+    rgb =  (alternate.y == 0.0) ?
         ((alternate.x == 0.0) ?
             vec3(C, PATTERN.xy) :
             vec3(PATTERN.z, C, PATTERN.w)) :
         ((alternate.x == 0.0) ?
             vec3(PATTERN.w, C, PATTERN.z) :
             vec3(PATTERN.yx, C));
+
+    /*
+     *   CCM is a 3x3 in the format
+     *
+     *   +--------------+----------------+---------------+
+     *   | RedRedGain   | RedGreenGain   | RedBlueGain   |
+     *   +--------------+----------------+---------------+
+     *   | GreenRedGain | GreenGreenGain | GreenBlueGain |
+     *   +--------------+----------------+---------------+
+     *   | BlueRedGain  |  BlueGreenGain | BlueBlueGain  |
+     *   +--------------+----------------+---------------+
+     *
+     *   Rout = RedRedGain * Rin + RedGreenGain * Gin + RedBlueGain * Bin
+     *   Gout = GreenRedGain * Rin + GreenGreenGain * Gin + GreenBlueGain * Bin
+     *   Bout = BlueRedGain * Rin + BlueGreenGain * Gin + BlueBlueGain * Bin
+     *
+     *   We upload to the GPU without transposition glUniformMatrix3f(.., .., GL_FALSE, ccm);
+     *
+     *   CPU
+     *   float ccm [] = {
+     *             RedRedGain,   RedGreenGain,   RedBlueGain,
+     *             GreenRedGain, GreenGreenGain, GreenBlueGain,
+     *             BlueRedGain,  BlueGreenGain,  BlueBlueGain,
+     *   };
+     *
+     *   GPU
+     *   ccm = {
+     *             RedRedGain,   GreenRedGain,   BlueRedGain,
+     *             RedGreenGain, GreenGreenGain, BlueGreenGain,
+     *             RedBlueGain,  GreenBlueGain,  BlueBlueGain,
+     *   }
+     *
+     *   However the indexing for the mat data-type is column major hence
+     *   ccm[0][0] = RedRedGain, ccm[0][1] = RedGreenGain, ccm[0][2] = RedBlueGain
+     *
+     */
+    float rin, gin, bin;
+    rin = rgb.r;
+    gin = rgb.g;
+    bin = rgb.b;
+
+    rgb.r = (rin * ccm[0][0]) + (gin * ccm[0][1]) + (bin * ccm[0][2]);
+    rgb.g = (rin * ccm[1][0]) + (gin * ccm[1][1]) + (bin * ccm[1][2]);
+    rgb.b = (rin * ccm[2][0]) + (gin * ccm[2][1]) + (bin * ccm[2][2]);
+
+    gl_FragColor.rgb = rgb;
 }

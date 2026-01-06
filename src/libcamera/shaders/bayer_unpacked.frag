@@ -41,9 +41,17 @@ float apply_contrast(float value)
 void main(void) {
     vec3 rgb;
 
+    #if defined(RAW10P)
+    #define pixel(p) p.r / 4.0 + p.g * 64.0
+    #define fetch(x, y) pixel(texture2D(tex_y, vec2(x, y)))
+    #elif defined(RAW12P)
+    #define pixel(p) p.r / 16.0 + p.g * 16.0
+    #define fetch(x, y) pixel(texture2D(tex_y, vec2(x, y)))
+    #else
     #define fetch(x, y) texture2D(tex_y, vec2(x, y)).r
+    #endif
 
-    float C = texture2D(tex_y, center.xy).r; // ( 0, 0)
+    float C = fetch(center.x, center.y); // ( 0, 0)
     const vec4 kC = vec4( 4.0,  6.0,  5.0,  5.0) / 8.0;
 
     // Determine which of four types of pixels we are on.

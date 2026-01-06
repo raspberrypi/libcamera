@@ -257,5 +257,9 @@ void main(void)
 	rgb.g = (rin * ccm[1][0]) + (gin * ccm[1][1]) + (bin * ccm[1][2]);
 	rgb.b = (rin * ccm[2][0]) + (gin * ccm[2][1]) + (bin * ccm[2][2]);
 
+#if defined (SWAP_BLUE)
+	gl_FragColor = vec4(rgb.bgr, 1.0);
+#else
 	gl_FragColor = vec4(rgb, 1.0);
+#endif
 }

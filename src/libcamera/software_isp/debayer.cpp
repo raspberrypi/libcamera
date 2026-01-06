@@ -301,6 +301,11 @@ Debayer::~Debayer()
  */
 
 /**
+ * \var Debayer::outputSize_
+ * \brief Output size object
+ */
+
+/**
  * \var Debayer::red_
  * \brief Lookup table for red channel gain and correction values
  *

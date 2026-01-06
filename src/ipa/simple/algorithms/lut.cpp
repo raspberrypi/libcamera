@@ -60,12 +60,13 @@ void Lut::updateGammaTable(IPAContext &context)
 	const auto blackLevel = context.activeState.blc.level;
 	const unsigned int blackIndex = blackLevel * gammaTable.size() / 256;
 	const auto contrast = context.activeState.knobs.contrast.value_or(1.0);
+	/* Convert 0..2 to 0..infinity; avoid actual inifinity at tan(pi/2) */
+	double contrastExp = tan(std::clamp(contrast * M_PI_4, 0.0, M_PI_2 - 0.00001));
 
 	const float divisor = gammaTable.size() - blackIndex - 1.0;
 	for (unsigned int i = blackIndex; i < gammaTable.size(); i++) {
 		double normalized = (i - blackIndex) / divisor;
 		/* Convert 0..2 to 0..infinity; avoid actual inifinity at tan(pi/2) */
-		double contrastExp = tan(std::clamp(contrast * M_PI_4, 0.0, M_PI_2 - 0.00001));
 		/* Apply simple S-curve */
 		if (normalized < 0.5)
 			normalized = 0.5 * std::pow(normalized / 0.5, contrastExp);
@@ -84,7 +85,7 @@ void Lut::updateGammaTable(IPAContext &context)
 		  gammaTable[blackIndex]);
 
 	context.activeState.gamma.blackLevel = blackLevel;
-	context.activeState.gamma.contrast = contrast;
+	context.activeState.gamma.contrastExp = contrastExp;
 }
 
 int16_t Lut::ccmValue(unsigned int i, float ccm) const
@@ -149,7 +150,7 @@ void Lut::prepare(IPAContext &context,
 	}
 
 	params->gamma = context.configuration.gamma;
-	params->contrast = context.activeState.gamma.contrast;
+	params->contrastExp = context.activeState.gamma.contrastExp;
 }
 
 void Lut::process([[maybe_unused]] IPAContext &context,

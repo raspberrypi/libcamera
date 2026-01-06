@@ -59,6 +59,7 @@ struct IPAActiveState {
 		std::array<double, kGammaLookupSize> gammaTable;
 		uint8_t blackLevel;
 		double contrast;
+		double contrastExp;
 	} gamma;
 
 	struct {

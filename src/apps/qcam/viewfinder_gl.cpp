@@ -473,6 +473,10 @@ bool ViewFinderGL::createFragmentShader()
 	textureUniformSize_ = shaderProgram_.uniformLocation("tex_size");
 	textureUniformStrideFactor_ = shaderProgram_.uniformLocation("stride_factor");
 	textureUniformBayerFirstRed_ = shaderProgram_.uniformLocation("tex_bayer_first_red");
+	ccmUniformDataIn_ = shaderProgram_.uniformLocation("ccm");
+	blackLevelUniformDataIn_ = shaderProgram_.uniformLocation("blacklevel");
+	gammaUniformDataIn_ = shaderProgram_.uniformLocation("gamma");
+	contrastExpUniformDataIn_ = shaderProgram_.uniformLocation("contrastExp");
 
 	/* Create the textures. */
 	for (std::unique_ptr<QOpenGLTexture> &texture : textures_) {
@@ -541,6 +545,16 @@ void ViewFinderGL::doRender()
 {
 	/* Stride of the first plane, in pixels. */
 	unsigned int stridePixels;
+
+	/* Identity CCM */
+	float ccm[] = { 1.0f, 0.0f, 0.0f,
+			0.0f, 1.0f, 0.0f,
+			0.0f, 0.0f, 1.0f };
+
+	QMatrix3x3 qCcmMat(ccm);
+
+	/* Black Level */
+	QVector3D qBlackLevelVec(0.0f, 0.0f, 0.0f);
 
 	switch (format_) {
 	case libcamera::formats::NV12:
@@ -788,6 +802,18 @@ void ViewFinderGL::doRender()
 		 * the generic stride factor to 1.0.
 		 */
 		stridePixels = size_.width();
+
+		/* Colour Correction Matrix */
+		shaderProgram_.setUniformValue(ccmUniformDataIn_, qCcmMat);
+
+		/* Black Level */
+		shaderProgram_.setUniformValue(blackLevelUniformDataIn_, qBlackLevelVec);
+
+		/* Gamma */
+		shaderProgram_.setUniformValue(gammaUniformDataIn_, 1.0f);
+
+		/* Contrast */
+		shaderProgram_.setUniformValue(contrastExpUniformDataIn_, 1.0f);
 		break;
 
 	default:

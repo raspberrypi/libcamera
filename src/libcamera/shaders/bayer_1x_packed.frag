@@ -67,6 +67,7 @@ uniform vec2 tex_bayer_first_red;
 uniform sampler2D tex_y;
 uniform mat3 ccm;
 uniform vec3 blacklevel;
+uniform float gamma;
 
 void main(void)
 {
@@ -259,6 +260,9 @@ void main(void)
 	rgb.r = (rin * ccm[0][0]) + (gin * ccm[0][1]) + (bin * ccm[0][2]);
 	rgb.g = (rin * ccm[1][0]) + (gin * ccm[1][1]) + (bin * ccm[1][2]);
 	rgb.b = (rin * ccm[2][0]) + (gin * ccm[2][1]) + (bin * ccm[2][2]);
+
+	/* Apply gamma after colour correction */
+	rgb = pow(rgb, vec3(gamma));
 
 #if defined (SWAP_BLUE)
 	gl_FragColor = vec4(rgb.bgr, 1.0);

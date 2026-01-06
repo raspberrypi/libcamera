@@ -35,7 +35,7 @@ int Lut::configure(IPAContext &context,
 		   [[maybe_unused]] const IPAConfigInfo &configInfo)
 {
 	/* Gamma value is fixed */
-	context.configuration.gamma = 0.5;
+	context.configuration.gamma = 1.0 / 2.2;
 	context.activeState.knobs.contrast = std::optional<double>();
 	updateGammaTable(context);
 

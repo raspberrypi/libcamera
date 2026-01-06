@@ -27,6 +27,16 @@ varying vec4            xCoord;
 uniform mat3            ccm;
 uniform vec3            blacklevel;
 uniform float           gamma;
+uniform float           contrastExp;
+
+float apply_contrast(float value)
+{
+    // Apply simple S-curve
+    if (value < 0.5)
+        return 0.5 * pow(value / 0.5, contrastExp);
+    else
+        return 1.0 - 0.5 * pow((1.0 - value) / 0.5, contrastExp);
+}
 
 void main(void) {
     vec3 rgb;
@@ -155,6 +165,14 @@ void main(void) {
     rgb.r = (rin * ccm[0][0]) + (gin * ccm[0][1]) + (bin * ccm[0][2]);
     rgb.g = (rin * ccm[1][0]) + (gin * ccm[1][1]) + (bin * ccm[1][2]);
     rgb.b = (rin * ccm[2][0]) + (gin * ccm[2][1]) + (bin * ccm[2][2]);
+
+    /*
+     * Contrast
+     */
+    rgb = clamp(rgb, 0.0, 1.0);
+    rgb.r = apply_contrast(rgb.r);
+    rgb.g = apply_contrast(rgb.g);
+    rgb.b = apply_contrast(rgb.b);
 
     /* Apply gamma after colour correction */
     rgb = pow(rgb, vec3(gamma));

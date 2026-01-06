@@ -291,6 +291,16 @@ Debayer::~Debayer()
  */
 
 /**
+ * \var Debayer::inputPixelFormat_
+ * \brief The incoming pixel format
+ */
+
+/**
+ * \var Debayer::outputPixelFormat_
+ * \brief The output pixel format
+ */
+
+/**
  * \var Debayer::red_
  * \brief Lookup table for red channel gain and correction values
  *

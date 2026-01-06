@@ -75,6 +75,8 @@ public:
 
 	DebayerInputConfig inputConfig_;
 	DebayerOutputConfig outputConfig_;
+	PixelFormat inputPixelFormat_;
+	PixelFormat outputPixelFormat_;
 	DebayerParams::LookupTable red_;
 	DebayerParams::LookupTable green_;
 	DebayerParams::LookupTable blue_;

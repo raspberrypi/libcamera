@@ -125,8 +125,15 @@ SoftwareIsp::SoftwareIsp(PipelineHandler *pipe, const CameraSensor *sensor,
 
 #if HAVE_DEBAYER_EGL
 	std::optional<std::string> softISPMode = configuration.envOption("LIBCAMERA_SOFTISP_MODE", { "software_isp", "mode" });
+	if (softISPMode) {
+		if (softISPMode != "gpu" && softISPMode != "cpu") {
+			LOG(SoftwareIsp, Error) << "LIBCAMERA_SOFISP_MODE " << softISPMode.value() << " invalid "
+						<< "must be \"cpu\" or \"gpu\"";
+			return;
+		}
+	}
 
-	if (softISPMode && softISPMode == "gpu") {
+	if (!softISPMode || softISPMode == "gpu") {
 		debayer_ = std::make_unique<DebayerEGL>(std::move(stats), configuration);
 		gpuIspEnabled = true;
 	}

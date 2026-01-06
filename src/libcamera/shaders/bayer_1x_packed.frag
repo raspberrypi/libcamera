@@ -66,6 +66,7 @@ uniform vec2 tex_bayer_first_red;
 
 uniform sampler2D tex_y;
 uniform mat3 ccm;
+uniform vec3 blacklevel;
 
 void main(void)
 {
@@ -212,6 +213,8 @@ void main(void)
 		(even_row ?
 			vec3(patterns.y, C, patterns.x) :
 			vec3(patterns.wz, C));
+
+	rgb = rgb - blacklevel;
 
 	/*
 	 *   CCM is a 3x3 in the format

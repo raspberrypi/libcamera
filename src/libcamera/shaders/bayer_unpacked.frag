@@ -25,6 +25,7 @@ varying vec4            center;
 varying vec4            yCoord;
 varying vec4            xCoord;
 uniform mat3            ccm;
+uniform vec3            blacklevel;
 
 void main(void) {
     vec3 rgb;
@@ -107,6 +108,8 @@ void main(void) {
         ((alternate.x == 0.0) ?
             vec3(PATTERN.w, C, PATTERN.z) :
             vec3(PATTERN.yx, C));
+
+    rgb = rgb - blacklevel;
 
     /*
      *   CCM is a 3x3 in the format

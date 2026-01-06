@@ -16,7 +16,7 @@ Copyright (C) 2021, Linaro
 
 //Pixel Shader
 #ifdef GL_ES
-precision mediump float;
+precision highp float;
 #endif
 
 /** Monochrome RGBA or GL_LUMINANCE Bayer encoded texture.*/

@@ -236,8 +236,8 @@ void LogOutput::write(const LogMessage &msg)
 
 	switch (target_) {
 	case LoggingTargetSyslog:
-		str = std::string(log_severity_name(severity)) + " "
-		    + msg.category().name() + " " + msg.fileInfo() + " ";
+		str = std::string(log_severity_name(severity)) + ' '
+		    + msg.category().name() + ' ' + msg.fileInfo() + ' ';
 		if (!msg.prefix().empty())
 			str += msg.prefix() + ": ";
 		str += msg.msg();
@@ -245,11 +245,11 @@ void LogOutput::write(const LogMessage &msg)
 		break;
 	case LoggingTargetStream:
 	case LoggingTargetFile:
-		str = "[" + utils::time_point_to_string(msg.timestamp()) + "] ["
+		str = '[' + utils::time_point_to_string(msg.timestamp()) + "] ["
 		    + std::to_string(Thread::currentId()) + "] "
-		    + severityColor + log_severity_name(severity) + " "
-		    + categoryColor + msg.category().name() + " "
-		    + fileColor + msg.fileInfo() + " ";
+		    + severityColor + log_severity_name(severity) + ' '
+		    + categoryColor + msg.category().name() + ' '
+		    + fileColor + msg.fileInfo() + ' ';
 		if (!msg.prefix().empty())
 			str += prefixColor + msg.prefix() + ": ";
 		str += resetColor + msg.msg();

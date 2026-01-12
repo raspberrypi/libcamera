@@ -285,8 +285,6 @@ int eGL::initEGLContext(GBM *gbmContext)
 
 	EGLint numConfigs;
 	EGLConfig config;
-	EGLint major;
-	EGLint minor;
 
 	if (!eglBindAPI(EGL_OPENGL_ES_API)) {
 		LOG(eGL, Error) << "API bind fail";
@@ -299,12 +297,11 @@ int eGL::initEGLContext(GBM *gbmContext)
 		goto fail;
 	}
 
-	if (eglInitialize(display_, &major, &minor) != EGL_TRUE) {
+	if (eglInitialize(display_, nullptr, nullptr) != EGL_TRUE) {
 		LOG(eGL, Error) << "eglInitialize fail";
 		goto fail;
 	}
 
-	LOG(eGL, Info) << "EGL: version " << major << "." << minor;
 	LOG(eGL, Info) << "EGL: EGL_VERSION: " << eglQueryString(display_, EGL_VERSION);
 	LOG(eGL, Info) << "EGL: EGL_VENDOR: " << eglQueryString(display_, EGL_VENDOR);
 	LOG(eGL, Info) << "EGL: EGL_CLIENT_APIS: " << eglQueryString(display_, EGL_CLIENT_APIS);

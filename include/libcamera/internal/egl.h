@@ -65,15 +65,6 @@ public:
 	}
 
 	/**
-	 * \brief Construct an eGLImage with automatic stride calculation
-	 */
-	eGLImage(uint32_t width, uint32_t height, uint32_t bpp, GLenum texture_unit, uint32_t texture_unit_uniform_id)
-		: eGLImage(width, height, bpp, utils::alignUp(width * bpp / 8, 256),
-			   texture_unit, texture_unit_uniform_id)
-	{
-	}
-
-	/**
 	 * \brief Destroy the eGLImage
 	 *
 	 * Cleans up OpenGL resources by deleting the framebuffer object and
@@ -108,7 +99,6 @@ public:
 	~eGL();
 
 	int initEGLContext(GBM *gbmContext);
-	void cleanUp();
 
 	int createInputDMABufTexture2D(eGLImage &eglImage, int fd);
 	int createOutputDMABufTexture2D(eGLImage &eglImage, int fd);

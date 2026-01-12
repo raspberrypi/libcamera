@@ -350,16 +350,6 @@ fail:
 }
 
 /**
- * \brief Clean up EGL resources
- *
- * Destroys the EGL sync object. Must be called from the same thread
- * that created the EGL context.
- */
-void eGL::cleanUp()
-{
-}
-
-/**
  * \brief Make the EGL context current for the calling thread
  *
  * Binds the EGL context to the current thread, allowing OpenGL ES

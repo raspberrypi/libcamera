@@ -597,10 +597,10 @@ int DebayerEGL::start()
 	LOG(Debayer, Debug) << "Available fragment shader texture units " << maxTextureImageUnits;
 
 	/* Raw bayer input as texture */
-	eglImageBayerIn_ = std::make_unique<eGLImage>(width_, height_, 32, inputConfig_.stride, GL_TEXTURE0, 0);
+	eglImageBayerIn_ = std::make_unique<eGLImage>(width_, height_, inputConfig_.stride, GL_TEXTURE0, 0);
 
 	/* Texture we will render to */
-	eglImageBayerOut_ = std::make_unique<eGLImage>(outputSize_.width, outputSize_.height, 31, outputConfig_.stride, GL_TEXTURE1, 1);
+	eglImageBayerOut_ = std::make_unique<eGLImage>(outputSize_.width, outputSize_.height, outputConfig_.stride, GL_TEXTURE1, 1);
 
 	if (initBayerShaders(inputPixelFormat_, outputPixelFormat_))
 		return -EINVAL;

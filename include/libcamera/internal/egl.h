@@ -49,14 +49,13 @@ public:
 	 * \brief Construct an eGLImage with explicit stride
 	 * \param[in] width Image width in pixels
 	 * \param[in] height Image height in pixels
-	 * \param[in] bpp Bytes per pixel
 	 * \param[in] stride Row stride in bytes
 	 * \param[in] texture_unit OpenGL texture unit
 	 * \param[in] texture_unit_uniform_id Shader uniform ID
 	 */
-	eGLImage(uint32_t width, uint32_t height, uint32_t bpp, uint32_t stride, GLenum texture_unit, uint32_t texture_unit_uniform_id)
+	eGLImage(uint32_t width, uint32_t height, uint32_t stride, GLenum texture_unit, uint32_t texture_unit_uniform_id)
 		: width_(width), height_(height), stride_(stride),
-		  framesize_(stride * height), bpp_(bpp),
+		  framesize_(stride * height),
 		  texture_unit_uniform_id_(texture_unit_uniform_id),
 		  texture_unit_(texture_unit)
 	{
@@ -81,7 +80,6 @@ public:
 	uint32_t stride_; /**< Row stride in bytes */
 	uint32_t offset_; /**< Buffer offset (reserved for future use) */
 	uint32_t framesize_; /**< Total frame size in bytes (stride * height) */
-	uint32_t bpp_; /**< Bytes per pixel */
 	uint32_t texture_unit_uniform_id_; /**< Shader uniform id for texture unit */
 	GLenum texture_unit_; /**< Texture unit associated with this image eg (GL_TEXTURE0) */
 	GLuint texture_; /**< OpenGL texture object ID */

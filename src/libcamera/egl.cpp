@@ -325,6 +325,12 @@ int eGL::initEGLContext(GBM *gbmContext)
 		goto fail;
 	}
 
+	glGetString = (PFNGLGETSTRINGPROC)eglGetProcAddress("glGetString");
+	if (!glGetString) {
+		LOG(eGL, Error) << "glGetString not found";
+		goto fail;
+	}
+
 	if (eglChooseConfig(display_, configAttribs, &config, 1, &numConfigs) != EGL_TRUE) {
 		LOG(eGL, Error) << "eglChooseConfig fail";
 		goto fail;
@@ -339,6 +345,8 @@ int eGL::initEGLContext(GBM *gbmContext)
 	tid_ = Thread::currentId();
 
 	makeCurrent();
+
+	LOG(eGL, Info) << "EGL: GL_VERSION: " << glGetString(GL_VERSION);
 
 	return 0;
 fail:

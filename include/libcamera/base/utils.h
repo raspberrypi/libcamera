@@ -424,9 +424,7 @@ scope_exit(EF) -> scope_exit<EF>;
 } /* namespace utils */
 
 #ifndef __DOXYGEN__
-template<class CharT, class Traits>
-std::basic_ostream<CharT, Traits> &operator<<(std::basic_ostream<CharT, Traits> &os,
-					      const utils::Duration &d);
+std::ostream &operator<<(std::ostream &os, const utils::Duration &d);
 #endif
 
 } /* namespace libcamera */

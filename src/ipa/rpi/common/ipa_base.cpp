@@ -604,7 +604,7 @@ void IpaBase::setMode(const IPACameraSensorInfo &sensorInfo)
 			mode_.minLineLength = adjustedLineLength;
 		} else {
 			LOG(IPARPI, Error)
-				<< "Sensor minimum line length of " << pixelTime * mode_.width
+				<< "Sensor minimum line length of " << Duration(pixelTime * mode_.width)
 				<< " (" << 1us / pixelTime << " MPix/s)"
 				<< " is below the minimum allowable ISP limit of "
 				<< adjustedLineLength

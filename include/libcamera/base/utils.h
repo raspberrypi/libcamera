@@ -421,10 +421,10 @@ scope_exit(EF) -> scope_exit<EF>;
 
 #endif /* __DOXYGEN__ */
 
-} /* namespace utils */
-
 #ifndef __DOXYGEN__
-std::ostream &operator<<(std::ostream &os, const utils::Duration &d);
+std::ostream &operator<<(std::ostream &os, const Duration &d);
 #endif
+
+} /* namespace utils */
 
 } /* namespace libcamera */

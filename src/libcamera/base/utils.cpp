@@ -655,10 +655,8 @@ void ScopeExitActions::release()
 	actions_.clear();
 }
 
-} /* namespace utils */
-
 #ifndef __DOXYGEN__
-std::ostream &operator<<(std::ostream &os, const utils::Duration &d)
+std::ostream &operator<<(std::ostream &os, const Duration &d)
 {
 	std::ostringstream s;
 
@@ -670,5 +668,7 @@ std::ostream &operator<<(std::ostream &os, const utils::Duration &d)
 	return os << s.str();
 }
 #endif
+
+} /* namespace utils */
 
 } /* namespace libcamera */

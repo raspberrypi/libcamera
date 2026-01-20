@@ -110,8 +110,7 @@ std::string join(const Container &items, const std::string &sep, UnaryOp op)
 	std::ostringstream ss;
 	bool first = true;
 
-	for (typename Container::const_iterator it = std::begin(items);
-	     it != std::end(items); ++it) {
+	for (auto it = std::begin(items); it != std::end(items); ++it) {
 		if (!first)
 			ss << sep;
 		else
@@ -129,8 +128,7 @@ std::string join(const Container &items, const std::string &sep)
 	std::ostringstream ss;
 	bool first = true;
 
-	for (typename Container::const_iterator it = std::begin(items);
-	     it != std::end(items); ++it) {
+	for (auto it = std::begin(items); it != std::end(items); ++it) {
 		if (!first)
 			ss << sep;
 		else

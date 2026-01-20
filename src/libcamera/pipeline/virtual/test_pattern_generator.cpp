@@ -53,8 +53,8 @@ int TestPatternGenerator::generateFrame(const Size &size,
 
 	/* Convert the template_ to the frame buffer */
 	int ret = libyuv::ARGBToNV12(template_.get(), size.width * kARGBSize,
-				     planes[0].begin(), size.width,
-				     planes[1].begin(), size.width,
+				     planes[0].data(), size.width,
+				     planes[1].data(), size.width,
 				     size.width, size.height);
 	if (ret != 0)
 		LOG(Virtual, Error) << "ARGBToNV12() failed with " << ret;

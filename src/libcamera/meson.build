@@ -70,15 +70,6 @@ libcamera_deps = []
 libatomic = cc.find_library('atomic', required : false)
 libthreads = dependency('threads')
 
-libgbm = dependency('gbm', required : false)
-gbm_works = cc.check_header('gbm.h', required: false)
-
-if libgbm.found() and gbm_works
-    libcamera_internal_sources += files([
-        'gbm.cpp',
-    ])
-endif
-
 mesa_works = cc.check_header('EGL/egl.h', required: false)
 libegl = dependency('egl', required : false)
 libglesv2 = dependency('glesv2', required : false)
@@ -91,7 +82,7 @@ if libglesv2.found()
     config_h.set('HAVE_GLESV2', 1)
 endif
 
-if mesa_works and gbm_works
+if mesa_works
     libcamera_internal_sources += files([
         'egl.cpp',
     ])
@@ -209,7 +200,6 @@ libcamera_deps += [
     libcrypto,
     libdl,
     libegl,
-    libgbm,
     libglesv2,
     liblttng,
     libudev,

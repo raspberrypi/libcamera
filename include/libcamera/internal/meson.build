@@ -24,7 +24,6 @@ libcamera_internal_headers = files([
     'formats.h',
     'framebuffer.h',
     'egl.h',
-    'gbm.h',
     'global_configuration.h',
     'ipa_data_serializer.h',
     'ipa_manager.h',

@@ -16,8 +16,6 @@
 #include <libcamera/base/span.h>
 #include <libcamera/base/utils.h>
 
-#include "libcamera/internal/gbm.h"
-
 #define EGL_EGLEXT_PROTOTYPES
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
@@ -96,7 +94,7 @@ public:
 	eGL();
 	~eGL();
 
-	int initEGLContext(GBM *gbmContext);
+	int initEGLContext();
 
 	int createInputDMABufTexture2D(eGLImage &eglImage, int fd);
 	int createOutputDMABufTexture2D(eGLImage &eglImage, int fd);

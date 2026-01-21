@@ -141,8 +141,8 @@ int DebayerEGL::initBayerShaders(PixelFormat inputFormat, PixelFormat outputForm
 	egl_.pushEnv(shaderEnv, "#extension GL_OES_EGL_image_external: enable");
 
 	/*
-	 * Tell shaders how to re-order output taking account of how the
-	 * pixels are actually stored by GBM
+	 * Tell shaders how to re-order output taking account of how the pixels
+	 * are actually stored by EGL.
 	 */
 	switch (outputFormat) {
 	case formats::ARGB8888:
@@ -586,10 +586,7 @@ int DebayerEGL::start()
 {
 	GLint maxTextureImageUnits;
 
-	if (gbmSurface_.createDevice())
-		return -ENODEV;
-
-	if (egl_.initEGLContext(&gbmSurface_))
+	if (egl_.initEGLContext())
 		return -ENODEV;
 
 	glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &maxTextureImageUnits);

@@ -113,7 +113,6 @@ private:
 	Rectangle window_;
 	std::unique_ptr<SwStatsCpu> stats_;
 	eGL egl_;
-	GBM gbmSurface_;
 	uint32_t width_;
 	uint32_t height_;
 	GLint glFormat_;

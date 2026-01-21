@@ -256,24 +256,22 @@ void eGL::createTexture2D(eGLImage &eglImage, GLint format, uint32_t width, uint
 
 /**
  * \brief Initialise the EGL context
- * \param[in] gbmContext Pointer to initialised GBM context
  *
- * Sets up the EGL display from the GBM device, creates an OpenGL ES 2.0
- * context, and retrieves function pointers for required extensions
- * including:
+ * Sets up the EGL display, creates an OpenGL ES 2.0 context, and retrieves
+ * function pointers for required extensions including:
  * - eglCreateImageKHR / eglDestroyImageKHR
  * - glEGLImageTargetTexture2DOES
  *
  * \return 0 on success, or -ENODEV on failure
  */
-int eGL::initEGLContext(GBM *gbmContext)
+int eGL::initEGLContext()
 {
 	EGLint configAttribs[] = {
 		EGL_RED_SIZE, 8,
 		EGL_GREEN_SIZE, 8,
 		EGL_BLUE_SIZE, 8,
 		EGL_ALPHA_SIZE, 8,
-		EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
+		EGL_SURFACE_TYPE, EGL_PBUFFER_BIT,
 		EGL_RENDERABLE_TYPE, EGL_OPENGL_ES2_BIT,
 		EGL_NONE
 	};
@@ -291,7 +289,9 @@ int eGL::initEGLContext(GBM *gbmContext)
 		goto fail;
 	}
 
-	display_ = eglGetDisplay(gbmContext->device());
+	display_ = eglGetPlatformDisplay(EGL_PLATFORM_SURFACELESS_MESA,
+					 EGL_DEFAULT_DISPLAY,
+					 nullptr);
 	if (display_ == EGL_NO_DISPLAY) {
 		LOG(eGL, Error) << "Unable to get EGL display";
 		goto fail;

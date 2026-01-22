@@ -264,7 +264,7 @@ void IPAMaliC55::updateControls(const IPACameraSensorInfo &sensorInfo,
 	 * Merge in any controls that we support either statically or from the
 	 * algorithms.
 	 */
-	ctrlMap.merge(context_.ctrlMap);
+	ctrlMap.insert(context_.ctrlMap.begin(), context_.ctrlMap.end());
 
 	*ipaControls = ControlInfoMap(std::move(ctrlMap), controls::controls);
 }

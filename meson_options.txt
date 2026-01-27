@@ -76,6 +76,11 @@ option('qcam',
         value : 'auto',
         description : 'Compile the qcam test application')
 
+option('rpi-awb-nn',
+        type : 'feature',
+        value : 'auto',
+        description : 'Enable the Raspberry Pi Neural Network AWB algorithm')
+
 option('test',
         type : 'boolean',
         value : false,

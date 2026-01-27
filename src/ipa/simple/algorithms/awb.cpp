@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later */
 /*
- * Copyright (C) 2024, Red Hat Inc.
+ * Copyright (C) 2024-2026 Red Hat Inc.
  *
  * Auto white balance
  */
@@ -73,9 +73,11 @@ void Awb::process(IPAContext &context,
 		histogram.begin(), histogram.end(), uint64_t(0));
 	const uint64_t offset = blackLevel * nPixels;
 	const uint64_t minValid = 1;
-	const uint64_t sumR = stats->sumR_ > offset / 4 ? stats->sumR_ - offset / 4 : minValid;
-	const uint64_t sumG = stats->sumG_ > offset / 2 ? stats->sumG_ - offset / 2 : minValid;
-	const uint64_t sumB = stats->sumB_ > offset / 4 ? stats->sumB_ - offset / 4 : minValid;
+	/*
+	 * Make sure the sums are at least minValid, while preventing unsigned
+	 * integer underflow.
+	 */
+	const RGB<uint64_t> sum = stats->sum_.max(offset + minValid) - offset;
 
 	/*
 	 * Calculate red and blue gains for AWB.
@@ -83,9 +85,9 @@ void Awb::process(IPAContext &context,
 	 */
 	auto &gains = context.activeState.awb.gains;
 	gains = { {
-		sumR <= sumG / 4 ? 4.0f : static_cast<float>(sumG) / sumR,
+		sum.r() <= sum.g() / 4 ? 4.0f : static_cast<float>(sum.g()) / sum.r(),
 		1.0,
-		sumB <= sumG / 4 ? 4.0f : static_cast<float>(sumG) / sumB,
+		sum.b() <= sum.g() / 4 ? 4.0f : static_cast<float>(sum.g()) / sum.b(),
 	} };
 
 	RGB<double> rgbGains{ { 1 / gains.r(), 1 / gains.g(), 1 / gains.b() } };

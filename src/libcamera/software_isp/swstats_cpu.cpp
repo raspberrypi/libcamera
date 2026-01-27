@@ -185,9 +185,9 @@ static constexpr unsigned int kBlueYMul = 29; /* 0.114 * 256 */
 	stats_.yHistogram[yVal * SwIspStats::kYHistogramSize / (256 * 256 * (div))]++;
 
 #define SWSTATS_FINISH_LINE_STATS() \
-	stats_.sumR_ += sumR;       \
-	stats_.sumG_ += sumG;       \
-	stats_.sumB_ += sumB;
+	stats_.sum_.r() += sumR;    \
+	stats_.sum_.g() += sumG;    \
+	stats_.sum_.b() += sumB;
 
 void SwStatsCpu::statsBGGR8Line0(const uint8_t *src[])
 {
@@ -332,9 +332,7 @@ void SwStatsCpu::startFrame(uint32_t frame)
 	if (window_.width == 0)
 		LOG(SwStatsCpu, Error) << "Calling startFrame() without setWindow()";
 
-	stats_.sumR_ = 0;
-	stats_.sumB_ = 0;
-	stats_.sumG_ = 0;
+	stats_.sum_ = RGB<uint64_t>({ 0, 0, 0 });
 	stats_.yHistogram.fill(0);
 }
 

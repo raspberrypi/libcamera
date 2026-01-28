@@ -91,7 +91,9 @@ public:
 
 private:
 	std::vector<double> sizesListToPositions(const std::vector<double> &sizes);
-	std::vector<uint16_t> samplePolynomial(const LscPolynomial &poly);
+	std::vector<uint16_t> samplePolynomial(const LscPolynomial &poly,
+					       Span<const double> xPositions,
+					       Span<const double> yPositions);
 
 	Size sensorSize_;
 	Rectangle cropRectangle_;
@@ -131,10 +133,13 @@ int LscPolynomialLoader::parseLscData(const YamlObject &yamlSets,
 		pgr->setReferenceImageSize(sensorSize_);
 		pgb->setReferenceImageSize(sensorSize_);
 		pb->setReferenceImageSize(sensorSize_);
-		set.r = samplePolynomial(*pr);
-		set.gr = samplePolynomial(*pgr);
-		set.gb = samplePolynomial(*pgb);
-		set.b = samplePolynomial(*pb);
+
+		std::vector<double> xPos = sizesListToPositions(xSizes_);
+		std::vector<double> yPos = sizesListToPositions(ySizes_);
+		set.r = samplePolynomial(*pr, xPos, yPos);
+		set.gr = samplePolynomial(*pgr, xPos, yPos);
+		set.gb = samplePolynomial(*pgb, xPos, yPos);
+		set.b = samplePolynomial(*pb, xPos, yPos);
 	}
 
 	if (lscData.empty()) {
@@ -171,10 +176,10 @@ std::vector<double> LscPolynomialLoader::sizesListToPositions(const std::vector<
 	return positions;
 }
 
-std::vector<uint16_t> LscPolynomialLoader::samplePolynomial(const LscPolynomial &poly)
+std::vector<uint16_t> LscPolynomialLoader::samplePolynomial(const LscPolynomial &poly,
+							    Span<const double> xPositions,
+							    Span<const double> yPositions)
 {
-	constexpr int k = RKISP1_CIF_ISP_LSC_SAMPLES_MAX;
-
 	double m = poly.getM();
 	double x0 = cropRectangle_.x / m;
 	double y0 = cropRectangle_.y / m;
@@ -182,18 +187,12 @@ std::vector<uint16_t> LscPolynomialLoader::samplePolynomial(const LscPolynomial 
 	double h = cropRectangle_.height / m;
 	std::vector<uint16_t> samples;
 
-	ASSERT(xSizes_.size() * 2 + 1 == k);
-	ASSERT(ySizes_.size() * 2 + 1 == k);
+	samples.reserve(xPositions.size() * yPositions.size());
 
-	samples.reserve(k * k);
-
-	std::vector<double> xPos(sizesListToPositions(xSizes_));
-	std::vector<double> yPos(sizesListToPositions(ySizes_));
-
-	for (int y = 0; y < k; y++) {
-		for (int x = 0; x < k; x++) {
-			double xp = x0 + xPos[x] * w;
-			double yp = y0 + yPos[y] * h;
+	for (double y : yPositions) {
+		for (double x : xPositions) {
+			double xp = x0 + x * w;
+			double yp = y0 + y * h;
 			/*
 			 * The hardware uses 2.10 fixed point format and limits
 			 * the legal values to [1..3.999]. Scale and clamp the

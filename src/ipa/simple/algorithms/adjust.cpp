@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later */
 /*
  * Copyright (C) 2024, Ideas On Board
- * Copyright (C) 2024-2025, Red Hat Inc.
+ * Copyright (C) 2024-2026, Red Hat Inc.
  *
  * Common image adjustments
  */
@@ -19,14 +19,20 @@ namespace libcamera {
 
 namespace ipa::soft::algorithms {
 
+constexpr float kDefaultContrast = 1.0f;
+constexpr float kDefaultSaturation = 1.0f;
+
 LOG_DEFINE_CATEGORY(IPASoftAdjust)
 
 int Adjust::init(IPAContext &context, [[maybe_unused]] const YamlObject &tuningData)
 {
-	context.ctrlMap[&controls::Gamma] = ControlInfo(0.1f, 10.0f, kDefaultGamma);
-	context.ctrlMap[&controls::Contrast] = ControlInfo(0.0f, 2.0f, 1.0f);
+	context.ctrlMap[&controls::Gamma] =
+		ControlInfo(0.1f, 10.0f, kDefaultGamma);
+	context.ctrlMap[&controls::Contrast] =
+		ControlInfo(0.0f, 2.0f, kDefaultContrast);
 	if (context.ccmEnabled)
-		context.ctrlMap[&controls::Saturation] = ControlInfo(0.0f, 2.0f, 1.0f);
+		context.ctrlMap[&controls::Saturation] =
+			ControlInfo(0.0f, 2.0f, kDefaultSaturation);
 	return 0;
 }
 
@@ -122,7 +128,7 @@ void Adjust::process([[maybe_unused]] IPAContext &context,
 		metadata.set(controls::Contrast, contrast.value());
 
 	const auto &saturation = frameContext.saturation;
-	metadata.set(controls::Saturation, saturation.value_or(1.0));
+	metadata.set(controls::Saturation, saturation.value_or(kDefaultSaturation));
 }
 
 REGISTER_IPA_ALGORITHM(Adjust, "Adjust")

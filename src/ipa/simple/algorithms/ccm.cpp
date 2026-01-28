@@ -104,6 +104,7 @@ void Ccm::prepare(IPAContext &context, const uint32_t frame,
 	if (saturation)
 		applySaturation(ccm, saturation.value());
 
+	context.activeState.combinedMatrix = ccm;
 	context.activeState.ccm = ccm;
 	frameContext.saturation = saturation;
 	context.activeState.matrixChanged = true;

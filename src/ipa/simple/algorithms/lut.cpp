@@ -131,7 +131,7 @@ void Lut::prepare(IPAContext &context,
 		Matrix<float, 3, 3> gainMatrix = { { gains.r(), 0, 0,
 						     0, gains.g(), 0,
 						     0, 0, gains.b() } };
-		auto matrix = context.activeState.ccm * gainMatrix;
+		auto matrix = context.activeState.combinedMatrix * gainMatrix;
 		auto &red = params->redCcm;
 		auto &green = params->greenCcm;
 		auto &blue = params->blueCcm;

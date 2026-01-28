@@ -33,11 +33,10 @@ template<typename T>
 void interpolateVector(const std::vector<T> &a, const std::vector<T> &b,
 		       std::vector<T> &dest, double lambda)
 {
-	assert(a.size() == b.size());
+	ASSERT(a.size() == b.size());
 	dest.resize(a.size());
-	for (size_t i = 0; i < a.size(); i++) {
+	for (size_t i = 0; i < a.size(); i++)
 		dest[i] = a[i] * (1.0 - lambda) + b[i] * lambda;
-	}
 }
 
 template<>
@@ -167,8 +166,8 @@ private:
 		double h = cropRectangle_.height / m;
 		std::vector<uint16_t> res;
 
-		assert(xSizes_.size() * 2 + 1 == k);
-		assert(ySizes_.size() * 2 + 1 == k);
+		ASSERT(xSizes_.size() * 2 + 1 == k);
+		ASSERT(ySizes_.size() * 2 + 1 == k);
 
 		res.reserve(k * k);
 

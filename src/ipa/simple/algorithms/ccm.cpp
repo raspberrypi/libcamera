@@ -94,7 +94,7 @@ void Ccm::prepare(IPAContext &context, const uint32_t frame,
 	if (frame > 0 &&
 	    utils::abs_diff(ct, lastCt_) < kTemperatureThreshold &&
 	    saturation == lastSaturation_) {
-		frameContext.ccm.ccm = context.activeState.ccm.ccm;
+		frameContext.ccm = context.activeState.ccm.ccm;
 		context.activeState.ccm.changed = false;
 		return;
 	}
@@ -106,9 +106,9 @@ void Ccm::prepare(IPAContext &context, const uint32_t frame,
 		applySaturation(ccm, saturation.value());
 
 	context.activeState.ccm.ccm = ccm;
-	frameContext.ccm.ccm = ccm;
 	frameContext.saturation = saturation;
 	context.activeState.ccm.changed = true;
+	frameContext.ccm = ccm;
 }
 
 void Ccm::process([[maybe_unused]] IPAContext &context,
@@ -117,7 +117,7 @@ void Ccm::process([[maybe_unused]] IPAContext &context,
 		  [[maybe_unused]] const SwIspStats *stats,
 		  ControlList &metadata)
 {
-	metadata.set(controls::ColourCorrectionMatrix, frameContext.ccm.ccm.data());
+	metadata.set(controls::ColourCorrectionMatrix, frameContext.ccm.data());
 
 	const auto &saturation = frameContext.saturation;
 	metadata.set(controls::Saturation, saturation.value_or(1.0));

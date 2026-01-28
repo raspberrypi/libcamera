@@ -75,9 +75,7 @@ struct IPAActiveState {
 };
 
 struct IPAFrameContext : public FrameContext {
-	struct {
-		Matrix<float, 3, 3> ccm;
-	} ccm;
+	Matrix<float, 3, 3> ccm;
 
 	struct {
 		int32_t exposure;

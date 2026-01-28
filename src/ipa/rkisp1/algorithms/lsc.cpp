@@ -72,115 +72,54 @@ namespace {
 
 constexpr int kColourTemperatureQuantization = 10;
 
-class LscPolynomialLoader
+class LscPolynomialShadingDescriptor : public LensShadingCorrection::ShadingDescriptor
 {
 public:
-	LscPolynomialLoader(const Size &sensorSize,
-			    const Rectangle &cropRectangle,
-			    const std::vector<double> &xSizes,
-			    const std::vector<double> &ySizes)
-		: sensorSize_(sensorSize),
-		  cropRectangle_(cropRectangle),
-		  xSizes_(xSizes),
-		  ySizes_(ySizes)
+	LscPolynomialShadingDescriptor(const LscPolynomial &pr, const LscPolynomial &pgr,
+				       const LscPolynomial &pgb, const LscPolynomial &pb)
+		: pr_(pr), pgr_(pgr), pgb_(pgb), pb_(pb)
 	{
 	}
 
-	int parseLscData(const YamlObject &yamlSets,
-			 std::map<unsigned int, LensShadingCorrection::Components> &lscData);
+	LensShadingCorrection::Components sampleForCrop(const Rectangle &cropRectangle,
+							Span<const double> xSizes,
+							Span<const double> ySizes) override;
 
 private:
-	std::vector<double> sizesListToPositions(const std::vector<double> &sizes);
 	std::vector<uint16_t> samplePolynomial(const LscPolynomial &poly,
 					       Span<const double> xPositions,
 					       Span<const double> yPositions,
 					       const Rectangle &cropRectangle);
 
-	Size sensorSize_;
-	Rectangle cropRectangle_;
-	const std::vector<double> &xSizes_;
-	const std::vector<double> &ySizes_;
+	std::vector<double> sizesListToPositions(Span<const double> sizes);
+
+	LscPolynomial pr_;
+	LscPolynomial pgr_;
+	LscPolynomial pgb_;
+	LscPolynomial pb_;
 };
 
-int LscPolynomialLoader::parseLscData(const YamlObject &yamlSets,
-				      std::map<unsigned int, LensShadingCorrection::Components> &lscData)
+LensShadingCorrection::Components
+LscPolynomialShadingDescriptor::sampleForCrop(const Rectangle &cropRectangle,
+					      Span<const double> xSizes,
+					      Span<const double> ySizes)
 {
-	const auto &sets = yamlSets.asList();
-	for (const auto &yamlSet : sets) {
-		std::optional<LscPolynomial> pr, pgr, pgb, pb;
-		uint32_t ct = yamlSet["ct"].get<uint32_t>(0);
+	std::vector<double> xPos = sizesListToPositions(xSizes);
+	std::vector<double> yPos = sizesListToPositions(ySizes);
 
-		if (lscData.count(ct)) {
-			LOG(RkISP1Lsc, Error)
-				<< "Multiple sets found for "
-				<< "color temperature " << ct;
-			return -EINVAL;
-		}
-
-		LensShadingCorrection::Components &set = lscData[ct];
-		pr = yamlSet["r"].get<LscPolynomial>();
-		pgr = yamlSet["gr"].get<LscPolynomial>();
-		pgb = yamlSet["gb"].get<LscPolynomial>();
-		pb = yamlSet["b"].get<LscPolynomial>();
-
-		if (!(pr || pgr || pgb || pb)) {
-			LOG(RkISP1Lsc, Error)
-				<< "Failed to parse polynomial for "
-				<< "colour temperature " << ct;
-			return -EINVAL;
-		}
-
-		pr->setReferenceImageSize(sensorSize_);
-		pgr->setReferenceImageSize(sensorSize_);
-		pgb->setReferenceImageSize(sensorSize_);
-		pb->setReferenceImageSize(sensorSize_);
-
-		std::vector<double> xPos = sizesListToPositions(xSizes_);
-		std::vector<double> yPos = sizesListToPositions(ySizes_);
-		set.r = samplePolynomial(*pr, xPos, yPos, cropRectangle_);
-		set.gr = samplePolynomial(*pgr, xPos, yPos, cropRectangle_);
-		set.gb = samplePolynomial(*pgb, xPos, yPos, cropRectangle_);
-		set.b = samplePolynomial(*pb, xPos, yPos, cropRectangle_);
-	}
-
-	if (lscData.empty()) {
-		LOG(RkISP1Lsc, Error) << "Failed to load any sets";
-		return -EINVAL;
-	}
-
-	return 0;
+	return {
+		.r = samplePolynomial(pr_, xPos, yPos, cropRectangle),
+		.gr = samplePolynomial(pgr_, xPos, yPos, cropRectangle),
+		.gb = samplePolynomial(pgb_, xPos, yPos, cropRectangle),
+		.b = samplePolynomial(pb_, xPos, yPos, cropRectangle)
+	};
 }
 
-/*
- * The rkisp1 LSC grid spacing is defined by the cell sizes on the top-left
- * quadrant of the grid. This is then mirrored in hardware to the other
- * quadrants. See parseSizes() for further details. For easier handling, this
- * function converts the cell sizes of half the grid to a list of position of
- * the whole grid (on one axis). Example:
- *
- * input:   | 0.2 | 0.3 |
- * output: 0.0   0.2   0.5   0.8   1.0
- */
-std::vector<double> LscPolynomialLoader::sizesListToPositions(const std::vector<double> &sizes)
-{
-	const int half = sizes.size();
-	std::vector<double> positions(half * 2 + 1);
-	double x = 0.0;
-
-	positions[half] = 0.5;
-	for (int i = 1; i <= half; i++) {
-		x += sizes[half - i];
-		positions[half - i] = 0.5 - x;
-		positions[half + i] = 0.5 + x;
-	}
-
-	return positions;
-}
-
-std::vector<uint16_t> LscPolynomialLoader::samplePolynomial(const LscPolynomial &poly,
-							    Span<const double> xPositions,
-							    Span<const double> yPositions,
-							    const Rectangle &cropRectangle)
+std::vector<uint16_t>
+LscPolynomialShadingDescriptor::samplePolynomial(const LscPolynomial &poly,
+						 Span<const double> xPositions,
+						 Span<const double> yPositions,
+						 const Rectangle &cropRectangle)
 {
 	double m = poly.getM();
 	double x0 = cropRectangle.x / m;
@@ -203,18 +142,127 @@ std::vector<uint16_t> LscPolynomialLoader::samplePolynomial(const LscPolynomial 
 			int v = static_cast<int>(
 				poly.sampleAtNormalizedPixelPos(xp, yp) *
 				1024);
-			v = std::min(std::max(v, 1024), 4095);
+			v = std::clamp(v, 1024, 4095);
 			samples.push_back(v);
 		}
 	}
 	return samples;
 }
 
+/*
+ * The rkisp1 LSC grid spacing is defined by the cell sizes on the top-left
+ * quadrant of the grid. This is then mirrored in hardware to the other
+ * quadrants. See parseSizes() for further details. For easier handling, this
+ * function converts the cell sizes of half the grid to a list of position of
+ * the whole grid (on one axis). Example:
+ *
+ * input:   | 0.2 | 0.3 |
+ * output: 0.0   0.2   0.5   0.8   1.0
+ */
+std::vector<double>
+LscPolynomialShadingDescriptor::sizesListToPositions(Span<const double> sizes)
+{
+	const int half = sizes.size();
+	std::vector<double> positions(half * 2 + 1);
+	double x = 0.0;
+
+	positions[half] = 0.5;
+	for (int i = 1; i <= half; i++) {
+		x += sizes[half - i];
+		positions[half - i] = 0.5 - x;
+		positions[half + i] = 0.5 + x;
+	}
+
+	return positions;
+}
+
+class LscPolynomialLoader
+{
+public:
+	LscPolynomialLoader(const Size &sensorSize)
+		: sensorSize_(sensorSize)
+	{
+	}
+
+	int parseLscData(const YamlObject &yamlSets,
+			 LensShadingCorrection::ShadingDescriptorMap &lscData);
+
+private:
+	Size sensorSize_;
+};
+
+int LscPolynomialLoader::parseLscData(const YamlObject &yamlSets,
+				      LensShadingCorrection::ShadingDescriptorMap &lscData)
+{
+	const auto &sets = yamlSets.asList();
+	for (const auto &yamlSet : sets) {
+		std::optional<LscPolynomial> pr, pgr, pgb, pb;
+		uint32_t ct = yamlSet["ct"].get<uint32_t>(0);
+
+		if (lscData.count(ct)) {
+			LOG(RkISP1Lsc, Error)
+				<< "Multiple sets found for "
+				<< "color temperature " << ct;
+			return -EINVAL;
+		}
+
+		pr = yamlSet["r"].get<LscPolynomial>();
+		pgr = yamlSet["gr"].get<LscPolynomial>();
+		pgb = yamlSet["gb"].get<LscPolynomial>();
+		pb = yamlSet["b"].get<LscPolynomial>();
+
+		if (!(pr || pgr || pgb || pb)) {
+			LOG(RkISP1Lsc, Error)
+				<< "Failed to parse polynomial for "
+				<< "colour temperature " << ct;
+			return -EINVAL;
+		}
+
+		pr->setReferenceImageSize(sensorSize_);
+		pgr->setReferenceImageSize(sensorSize_);
+		pgb->setReferenceImageSize(sensorSize_);
+		pb->setReferenceImageSize(sensorSize_);
+
+		lscData.emplace(
+			ct, std::make_unique<LscPolynomialShadingDescriptor>(
+				    *pr, *pgr, *pgb, *pb));
+	}
+
+	if (lscData.empty()) {
+		LOG(RkISP1Lsc, Error) << "Failed to load any sets";
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+class LscTableShadingDescriptor : public LensShadingCorrection::ShadingDescriptor
+{
+public:
+	LscTableShadingDescriptor(LensShadingCorrection::Components components)
+		: lscData_(std::move(components))
+	{
+	}
+
+	LensShadingCorrection::Components
+	sampleForCrop([[maybe_unused]] const Rectangle &cropRectangle,
+		      [[maybe_unused]] Span<const double> xSizes,
+		      [[maybe_unused]] Span<const double> ySizes) override
+	{
+		LOG(RkISP1Lsc, Warning)
+			<< "Tabular LSC data doesn't support resampling";
+		return lscData_;
+	}
+
+private:
+	LensShadingCorrection::Components lscData_;
+};
+
 class LscTableLoader
 {
 public:
 	int parseLscData(const YamlObject &yamlSets,
-			 std::map<unsigned int, LensShadingCorrection::Components> &lscData);
+			 LensShadingCorrection::ShadingDescriptorMap &lscData);
 
 private:
 	std::vector<uint16_t> parseTable(const YamlObject &tuningData,
@@ -222,7 +270,7 @@ private:
 };
 
 int LscTableLoader::parseLscData(const YamlObject &yamlSets,
-				 std::map<unsigned int, LensShadingCorrection::Components> &lscData)
+				 LensShadingCorrection::ShadingDescriptorMap &lscData)
 {
 	const auto &sets = yamlSets.asList();
 
@@ -236,8 +284,7 @@ int LscTableLoader::parseLscData(const YamlObject &yamlSets,
 			return -EINVAL;
 		}
 
-		LensShadingCorrection::Components &set = lscData[ct];
-
+		LensShadingCorrection::Components set;
 		set.r = parseTable(yamlSet, "r");
 		set.gr = parseTable(yamlSet, "gr");
 		set.gb = parseTable(yamlSet, "gb");
@@ -250,6 +297,9 @@ int LscTableLoader::parseLscData(const YamlObject &yamlSets,
 				<< " is missing tables";
 			return -EINVAL;
 		}
+
+		lscData.emplace(
+			ct, std::make_unique<LscTableShadingDescriptor>(std::move(set)));
 	}
 
 	if (lscData.empty()) {
@@ -341,7 +391,7 @@ int LensShadingCorrection::init([[maybe_unused]] IPAContext &context,
 		return -EINVAL;
 	}
 
-	std::map<unsigned int, Components> lscData;
+	ShadingDescriptorMap lscData;
 	int ret = 0;
 
 	std::string type = tuningData["type"].get<std::string>("table");
@@ -351,10 +401,11 @@ int LensShadingCorrection::init([[maybe_unused]] IPAContext &context,
 		ret = loader.parseLscData(yamlSets, lscData);
 	} else if (type == "polynomial") {
 		LOG(RkISP1Lsc, Debug) << "Loading polynomial LSC data.";
-		auto loader = LscPolynomialLoader(context.sensorInfo.activeAreaSize,
-						  context.sensorInfo.analogCrop,
-						  xSize_,
-						  ySize_);
+		/*
+		 * \todo: Most likely the reference frame should be native_size.
+		 * Let's wait how the internal discussions progress.
+		 */
+		auto loader = LscPolynomialLoader(context.sensorInfo.activeAreaSize);
 		ret = loader.parseLscData(yamlSets, lscData);
 	} else {
 		LOG(RkISP1Lsc, Error) << "Unsupported LSC data type '"
@@ -365,7 +416,7 @@ int LensShadingCorrection::init([[maybe_unused]] IPAContext &context,
 	if (ret)
 		return ret;
 
-	sets_.setData(std::move(lscData));
+	shadingDescriptors_ = std::move(lscData);
 
 	return 0;
 }
@@ -400,6 +451,14 @@ int LensShadingCorrection::configure(IPAContext &context,
 		xGrad_[i] = std::round(32768 / xSizes_[i]);
 		yGrad_[i] = std::round(32768 / ySizes_[i]);
 	}
+
+	LOG(RkISP1Lsc, Debug) << "Sample LSC data for " << configInfo.analogCrop;
+	std::map<unsigned int, LensShadingCorrection::Components> shadingData;
+	for (const auto &[t, descriptor] : shadingDescriptors_)
+		shadingData[t] = descriptor->sampleForCrop(configInfo.analogCrop,
+							   xSize_, ySize_);
+
+	sets_.setData(std::move(shadingData));
 
 	context.configuration.lsc.enabled = true;
 	return 0;

@@ -8,6 +8,7 @@
 #pragma once
 
 #include <map>
+#include <memory>
 
 #include "libipa/interpolator.h"
 
@@ -36,10 +37,22 @@ public:
 		std::vector<uint16_t> b;
 	};
 
+	class ShadingDescriptor
+	{
+	public:
+		virtual ~ShadingDescriptor() = default;
+		virtual Components sampleForCrop(const Rectangle &cropRectangle,
+						 Span<const double> xSizes,
+						 Span<const double> ySizes) = 0;
+	};
+
+	using ShadingDescriptorMap = std::map<unsigned int, std::unique_ptr<ShadingDescriptor>>;
+
 private:
 	void setParameters(rkisp1_cif_isp_lsc_config &config);
 	void copyTable(rkisp1_cif_isp_lsc_config &config, const Components &set0);
 
+	ShadingDescriptorMap shadingDescriptors_;
 	ipa::Interpolator<Components> sets_;
 	std::vector<double> xSize_;
 	std::vector<double> ySize_;

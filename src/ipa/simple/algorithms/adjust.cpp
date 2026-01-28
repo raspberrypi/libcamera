@@ -23,6 +23,7 @@ LOG_DEFINE_CATEGORY(IPASoftAdjust)
 
 int Adjust::init(IPAContext &context, [[maybe_unused]] const YamlObject &tuningData)
 {
+	context.ctrlMap[&controls::Contrast] = ControlInfo(0.0f, 2.0f, 1.0f);
 	if (context.ccmEnabled)
 		context.ctrlMap[&controls::Saturation] = ControlInfo(0.0f, 2.0f, 1.0f);
 	return 0;
@@ -31,6 +32,7 @@ int Adjust::init(IPAContext &context, [[maybe_unused]] const YamlObject &tuningD
 int Adjust::configure(IPAContext &context,
 		      [[maybe_unused]] const IPAConfigInfo &configInfo)
 {
+	context.activeState.knobs.contrast = std::optional<double>();
 	context.activeState.knobs.saturation = std::optional<double>();
 
 	return 0;
@@ -41,6 +43,12 @@ void Adjust::queueRequest(typename Module::Context &context,
 			  [[maybe_unused]] typename Module::FrameContext &frameContext,
 			  const ControlList &controls)
 {
+	const auto &contrast = controls.get(controls::Contrast);
+	if (contrast.has_value()) {
+		context.activeState.knobs.contrast = contrast;
+		LOG(IPASoftAdjust, Debug) << "Setting contrast to " << contrast.value();
+	}
+
 	const auto &saturation = controls.get(controls::Saturation);
 	if (saturation.has_value()) {
 		context.activeState.knobs.saturation = saturation;
@@ -75,6 +83,8 @@ void Adjust::prepare(IPAContext &context,
 		     IPAFrameContext &frameContext,
 		     [[maybe_unused]] DebayerParams *params)
 {
+	frameContext.contrast = context.activeState.knobs.contrast;
+
 	if (!context.ccmEnabled)
 		return;
 
@@ -95,6 +105,10 @@ void Adjust::process([[maybe_unused]] IPAContext &context,
 		     [[maybe_unused]] const SwIspStats *stats,
 		     ControlList &metadata)
 {
+	const auto &contrast = frameContext.contrast;
+	if (contrast)
+		metadata.set(controls::Contrast, contrast.value());
+
 	const auto &saturation = frameContext.saturation;
 	metadata.set(controls::Saturation, saturation.value_or(1.0));
 }

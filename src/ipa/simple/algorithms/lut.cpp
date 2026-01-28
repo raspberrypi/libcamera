@@ -24,34 +24,14 @@ LOG_DEFINE_CATEGORY(IPASoftLut)
 
 namespace ipa::soft::algorithms {
 
-int Lut::init(IPAContext &context,
-	      [[maybe_unused]] const YamlObject &tuningData)
-{
-	context.ctrlMap[&controls::Contrast] = ControlInfo(0.0f, 2.0f, 1.0f);
-	return 0;
-}
-
 int Lut::configure(IPAContext &context,
 		   [[maybe_unused]] const IPAConfigInfo &configInfo)
 {
 	/* Gamma value is fixed */
 	context.configuration.gamma = 1.0 / 2.2;
-	context.activeState.knobs.contrast = std::optional<double>();
 	updateGammaTable(context);
 
 	return 0;
-}
-
-void Lut::queueRequest(typename Module::Context &context,
-		       [[maybe_unused]] const uint32_t frame,
-		       [[maybe_unused]] typename Module::FrameContext &frameContext,
-		       const ControlList &controls)
-{
-	const auto &contrast = controls.get(controls::Contrast);
-	if (contrast.has_value()) {
-		context.activeState.knobs.contrast = contrast;
-		LOG(IPASoftLut, Debug) << "Setting contrast to " << contrast.value();
-	}
 }
 
 void Lut::updateGammaTable(IPAContext &context)
@@ -96,11 +76,9 @@ int16_t Lut::matrixValue(unsigned int i, float ccm) const
 
 void Lut::prepare(IPAContext &context,
 		  [[maybe_unused]] const uint32_t frame,
-		  IPAFrameContext &frameContext,
+		  [[maybe_unused]] IPAFrameContext &frameContext,
 		  DebayerParams *params)
 {
-	frameContext.contrast = context.activeState.knobs.contrast;
-
 	/*
 	 * Update the gamma table if needed. This means if black level changes
 	 * and since the black level gets updated only if a lower value is
@@ -155,17 +133,6 @@ void Lut::prepare(IPAContext &context,
 
 	params->gamma = context.configuration.gamma;
 	params->contrastExp = context.activeState.gamma.contrastExp;
-}
-
-void Lut::process([[maybe_unused]] IPAContext &context,
-		  [[maybe_unused]] const uint32_t frame,
-		  [[maybe_unused]] IPAFrameContext &frameContext,
-		  [[maybe_unused]] const SwIspStats *stats,
-		  ControlList &metadata)
-{
-	const auto &contrast = frameContext.contrast;
-	if (contrast)
-		metadata.set(controls::Contrast, contrast.value());
 }
 
 REGISTER_IPA_ALGORITHM(Lut, "Lut")

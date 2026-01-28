@@ -39,9 +39,6 @@ public:
 private:
 	void setParameters(rkisp1_cif_isp_lsc_config &config);
 	void copyTable(rkisp1_cif_isp_lsc_config &config, const Components &set0);
-	void interpolateTable(rkisp1_cif_isp_lsc_config &config,
-			      const Components &set0, const Components &set1,
-			      const uint32_t ct);
 
 	ipa::Interpolator<Components> sets_;
 	std::vector<double> xSize_;

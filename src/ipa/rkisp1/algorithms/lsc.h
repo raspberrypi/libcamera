@@ -30,7 +30,6 @@ public:
 		     RkISP1Params *params) override;
 
 	struct Components {
-		uint32_t ct;
 		std::vector<uint16_t> r;
 		std::vector<uint16_t> gr;
 		std::vector<uint16_t> gb;

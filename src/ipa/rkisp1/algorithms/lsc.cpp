@@ -113,7 +113,6 @@ public:
 				return -EINVAL;
 			}
 
-			set.ct = ct;
 			pr->setReferenceImageSize(sensorSize_);
 			pgr->setReferenceImageSize(sensorSize_);
 			pgb->setReferenceImageSize(sensorSize_);
@@ -221,7 +220,6 @@ public:
 
 			LensShadingCorrection::Components &set = lscData[ct];
 
-			set.ct = ct;
 			set.r = parseTable(yamlSet, "r");
 			set.gr = parseTable(yamlSet, "gr");
 			set.gb = parseTable(yamlSet, "gb");

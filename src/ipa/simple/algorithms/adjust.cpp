@@ -124,8 +124,7 @@ void Adjust::process([[maybe_unused]] IPAContext &context,
 	metadata.set(controls::Gamma, gamma);
 
 	const auto &contrast = frameContext.contrast;
-	if (contrast)
-		metadata.set(controls::Contrast, contrast.value());
+	metadata.set(controls::Contrast, contrast.value_or(kDefaultContrast));
 
 	const auto &saturation = frameContext.saturation;
 	metadata.set(controls::Saturation, saturation.value_or(kDefaultSaturation));

@@ -288,15 +288,12 @@ unsigned int DebayerEGL::frameSize()
 
 int DebayerEGL::configure(const StreamConfiguration &inputCfg,
 			  const std::vector<std::reference_wrapper<StreamConfiguration>> &outputCfgs,
-			  bool ccmEnabled)
+			  [[maybe_unused]] bool ccmEnabled)
 {
 	if (getInputConfig(inputCfg.pixelFormat, inputConfig_) != 0)
 		return -EINVAL;
 
 	if (stats_->configure(inputCfg) != 0)
-		return -EINVAL;
-
-	if (!ccmEnabled)
 		return -EINVAL;
 
 	const Size &stats_pattern_size = stats_->patternSize();

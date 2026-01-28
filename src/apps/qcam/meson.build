@@ -40,6 +40,7 @@ qt6_cpp_args = [
     apps_cpp_args,
     '-DQT_NO_KEYWORDS',
     '-Wno-extra-semi',
+    '-Wno-sfinae-incomplete',
 ]
 
 # gcc 12 and 13 output a false positive variable shadowing warning with Qt

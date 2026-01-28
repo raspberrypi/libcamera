@@ -132,9 +132,11 @@ public:
 
 private:
 	/*
-	 * The lsc grid has custom spacing defined on half the range (see
-	 * parseSizes() for details). For easier handling this function converts
-	 * the spaces vector to positions and mirrors them. E.g.:
+	 * The rkisp1 LSC grid spacing is defined by the cell sizes on the
+	 * top-left quadrant of the grid. This is then mirrored in hardware to
+	 * the other quadrants. See parseSizes() for further details. For easier
+	 * handling, this function converts the cell sizes of half the grid to a
+	 * list of position of the whole grid (on one axis). Example:
 	 *
 	 * input:   | 0.2 | 0.3 |
 	 * output: 0.0   0.2   0.5   0.8   1.0
@@ -142,17 +144,17 @@ private:
 	std::vector<double> sizesListToPositions(const std::vector<double> &sizes)
 	{
 		const int half = sizes.size();
-		std::vector<double> res(half * 2 + 1);
+		std::vector<double> positions(half * 2 + 1);
 		double x = 0.0;
 
-		res[half] = 0.5;
+		positions[half] = 0.5;
 		for (int i = 1; i <= half; i++) {
 			x += sizes[half - i];
-			res[half - i] = 0.5 - x;
-			res[half + i] = 0.5 + x;
+			positions[half - i] = 0.5 - x;
+			positions[half + i] = 0.5 + x;
 		}
 
-		return res;
+		return positions;
 	}
 
 	std::vector<uint16_t> samplePolynomial(const LscPolynomial &poly)

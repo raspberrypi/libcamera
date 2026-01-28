@@ -23,6 +23,7 @@ LOG_DEFINE_CATEGORY(IPASoftAdjust)
 
 int Adjust::init(IPAContext &context, [[maybe_unused]] const YamlObject &tuningData)
 {
+	context.ctrlMap[&controls::Gamma] = ControlInfo(0.1f, 10.0f, kDefaultGamma);
 	context.ctrlMap[&controls::Contrast] = ControlInfo(0.0f, 2.0f, 1.0f);
 	if (context.ccmEnabled)
 		context.ctrlMap[&controls::Saturation] = ControlInfo(0.0f, 2.0f, 1.0f);
@@ -32,6 +33,7 @@ int Adjust::init(IPAContext &context, [[maybe_unused]] const YamlObject &tuningD
 int Adjust::configure(IPAContext &context,
 		      [[maybe_unused]] const IPAConfigInfo &configInfo)
 {
+	context.activeState.knobs.gamma = kDefaultGamma;
 	context.activeState.knobs.contrast = std::optional<double>();
 	context.activeState.knobs.saturation = std::optional<double>();
 
@@ -43,6 +45,12 @@ void Adjust::queueRequest(typename Module::Context &context,
 			  [[maybe_unused]] typename Module::FrameContext &frameContext,
 			  const ControlList &controls)
 {
+	const auto &gamma = controls.get(controls::Gamma);
+	if (gamma.has_value()) {
+		context.activeState.knobs.gamma = gamma.value();
+		LOG(IPASoftAdjust, Debug) << "Setting gamma to " << gamma.value();
+	}
+
 	const auto &contrast = controls.get(controls::Contrast);
 	if (contrast.has_value()) {
 		context.activeState.knobs.contrast = contrast;
@@ -83,6 +91,7 @@ void Adjust::prepare(IPAContext &context,
 		     IPAFrameContext &frameContext,
 		     [[maybe_unused]] DebayerParams *params)
 {
+	frameContext.gamma = context.activeState.knobs.gamma;
 	frameContext.contrast = context.activeState.knobs.contrast;
 
 	if (!context.ccmEnabled)
@@ -105,6 +114,9 @@ void Adjust::process([[maybe_unused]] IPAContext &context,
 		     [[maybe_unused]] const SwIspStats *stats,
 		     ControlList &metadata)
 {
+	const auto &gamma = frameContext.gamma;
+	metadata.set(controls::Gamma, gamma);
+
 	const auto &contrast = frameContext.contrast;
 	if (contrast)
 		metadata.set(controls::Contrast, contrast.value());

@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later */
 /*
- * Copyright (C) 2024-2025, Red Hat Inc.
+ * Copyright (C) 2024-2026, Red Hat Inc.
  *
  * Color correction matrix
  */
@@ -18,6 +18,8 @@
 namespace libcamera {
 
 namespace ipa::soft::algorithms {
+
+constexpr float kDefaultGamma = 2.2f;
 
 class Adjust : public Algorithm
 {

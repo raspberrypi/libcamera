@@ -27,8 +27,6 @@ namespace libcamera {
 
 namespace ipa {
 
-constexpr int kColourTemperatureChangeThreshhold = 10;
-
 template<typename T>
 void interpolateVector(const std::vector<T> &a, const std::vector<T> &b,
 		       std::vector<T> &dest, double lambda)
@@ -69,6 +67,10 @@ namespace ipa::rkisp1::algorithms {
  */
 
 LOG_DEFINE_CATEGORY(RkISP1Lsc)
+
+namespace {
+
+constexpr int kColourTemperatureChangeThreshhold = 10;
 
 class LscPolynomialLoader
 {
@@ -276,8 +278,8 @@ std::vector<uint16_t> LscTableLoader::parseTable(const YamlObject &tuningData,
 	return table;
 }
 
-static std::vector<double> parseSizes(const YamlObject &tuningData,
-				      const char *prop)
+std::vector<double> parseSizes(const YamlObject &tuningData,
+			       const char *prop)
 {
 	std::vector<double> sizes =
 		tuningData[prop].getList<double>().value_or(std::vector<double>{});
@@ -305,6 +307,8 @@ static std::vector<double> parseSizes(const YamlObject &tuningData,
 
 	return sizes;
 }
+
+} /* namespace */
 
 LensShadingCorrection::LensShadingCorrection()
 	: lastAppliedCt_(0), lastAppliedQuantizedCt_(0)

@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later */
 /*
  * Copyright (C) 2023, Linaro Ltd
- * Copyright (C) 2023-2025 Red Hat Inc.
+ * Copyright (C) 2023-2026 Red Hat Inc.
  *
  * Authors:
  * Hans de Goede <hdegoede@redhat.com>
@@ -18,6 +18,8 @@
 #include <libcamera/base/object.h>
 
 #include "libcamera/internal/bayer_format.h"
+#include "libcamera/internal/global_configuration.h"
+#include "libcamera/internal/software_isp/debayer_params.h"
 #include "libcamera/internal/software_isp/swstats_cpu.h"
 
 #include "debayer.h"
@@ -108,9 +110,31 @@ private:
 	void memcpyNextLine(const uint8_t *linePointers[]);
 	void process2(uint32_t frame, const uint8_t *src, uint8_t *dst);
 	void process4(uint32_t frame, const uint8_t *src, uint8_t *dst);
+	void updateGammaTable(DebayerParams &params);
+	void updateLookupTables(DebayerParams &params);
 
 	/* Max. supported Bayer pattern height is 4, debayering this requires 5 lines */
 	static constexpr unsigned int kMaxLineBuffers = 5;
+
+	static constexpr unsigned int kRGBLookupSize = 256;
+	static constexpr unsigned int kGammaLookupSize = 1024;
+	struct CcmColumn {
+		int16_t r;
+		int16_t g;
+		int16_t b;
+	};
+	using LookupTable = std::array<uint8_t, kRGBLookupSize>;
+	using CcmLookupTable = std::array<CcmColumn, kRGBLookupSize>;
+	LookupTable red_;
+	LookupTable green_;
+	LookupTable blue_;
+	CcmLookupTable redCcm_;
+	CcmLookupTable greenCcm_;
+	CcmLookupTable blueCcm_;
+	std::array<double, kGammaLookupSize> gammaTable_;
+	LookupTable gammaLut_;
+	bool ccmEnabled_;
+	DebayerParams params_;
 
 	debayerFn debayer0_;
 	debayerFn debayer1_;

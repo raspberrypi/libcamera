@@ -78,13 +78,6 @@ public:
 	Size outputSize_;
 	PixelFormat inputPixelFormat_;
 	PixelFormat outputPixelFormat_;
-	DebayerParams::LookupTable red_;
-	DebayerParams::LookupTable green_;
-	DebayerParams::LookupTable blue_;
-	DebayerParams::CcmLookupTable redCcm_;
-	DebayerParams::CcmLookupTable greenCcm_;
-	DebayerParams::CcmLookupTable blueCcm_;
-	DebayerParams::LookupTable gammaLut_;
 	bool swapRedBlueGains_;
 	Benchmark bench_;
 
@@ -92,7 +85,6 @@ private:
 	virtual Size patternSize(PixelFormat inputFormat) = 0;
 
 protected:
-	void setParams(DebayerParams &params);
 	void dmaSyncBegin(std::vector<DmaSyncer> &dmaSyncers, FrameBuffer *input, FrameBuffer *output);
 	static bool isStandardBayerOrder(BayerFormat::Order order);
 };

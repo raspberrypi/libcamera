@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later */
 /*
  * Copyright (C) 2023, Linaro Ltd
- * Copyright (C) 2023-2025 Red Hat Inc.
+ * Copyright (C) 2023-2026 Red Hat Inc.
  *
  * Authors:
  * Hans de Goede <hdegoede@redhat.com>
@@ -25,99 +25,28 @@ namespace libcamera {
  */
 
 /**
- * \var DebayerParams::kRGBLookupSize
- * \brief Size of a color lookup table
+ * \var DebayerParams::gains
+ * \brief Colour channel gains
  */
 
 /**
- * \struct DebayerParams::CcmColumn
- * \brief Type of a single column of a color correction matrix (CCM)
- *
- * When multiplying an input pixel, columns in the CCM correspond to the red,
- * green or blue component of input pixel values, while rows correspond to the
- * red, green or blue components of the output pixel values. The members of the
- * CcmColumn structure are named after the colour components of the output pixel
- * values they correspond to.
- */
-
-/**
- * \var DebayerParams::CcmColumn::r
- * \brief Red (first) component of a CCM column
- */
-
-/**
- * \var DebayerParams::CcmColumn::g
- * \brief Green (second) component of a CCM column
- */
-
-/**
- * \var DebayerParams::CcmColumn::b
- * \brief Blue (third) component of a CCM column
- */
-
-/**
- * \typedef DebayerParams::LookupTable
- * \brief Type of the lookup tables for single lookup values
- */
-
-/**
- * \typedef DebayerParams::CcmLookupTable
- * \brief Type of the CCM lookup tables for red, green, blue values
- */
-
-/**
- * \var DebayerParams::red
- * \brief Lookup table for red color, mapping input values to output values
- */
-
-/**
- * \var DebayerParams::green
- * \brief Lookup table for green color, mapping input values to output values
- */
-
-/**
- * \var DebayerParams::blue
- * \brief Lookup table for blue color, mapping input values to output values
- */
-
-/**
- * \var DebayerParams::redCcm
- * \brief Lookup table for the CCM red column, mapping input values to output values
- */
-
-/**
- * \var DebayerParams::greenCcm
- * \brief Lookup table for the CCM green column, mapping input values to output values
- */
-
-/**
- * \var DebayerParams::blueCcm
- * \brief Lookup table for the CCM blue column, mapping input values to output values
- */
-
-/**
- * \var DebayerParams::gammaLut
- * \brief Gamma lookup table used with color correction matrix
- */
-
-/**
- * \var DebayerParams::ccm
- * \brief Per frame colour correction matrix for GPUISP
+ * \var DebayerParams::combinedMatrix
+ * \brief Colour correction matrix, including other adjustments
  */
 
 /**
  * \var DebayerParams::blackLevel
- * \brief Blacklevel gains for the GPUISP
+ * \brief Black level values
  */
 
 /**
  * \var DebayerParams::gamma
- * \brief Gamma value for the GPUISP
+ * \brief Gamma value, e.g. 1/2.2
  */
 
 /**
  * \var DebayerParams::contrastExp
- * \brief Contrast value for GPUISP
+ * \brief Contrast value to be used as an exponent
  */
 
 /**
@@ -131,13 +60,6 @@ LOG_DEFINE_CATEGORY(Debayer)
 
 Debayer::Debayer(const GlobalConfiguration &configuration) : bench_(configuration)
 {
-	/* Initialize color lookup tables */
-	for (unsigned int i = 0; i < DebayerParams::kRGBLookupSize; i++) {
-		red_[i] = green_[i] = blue_[i] = i;
-		redCcm_[i] = { static_cast<int16_t>(i), 0, 0 };
-		greenCcm_[i] = { 0, static_cast<int16_t>(i), 0 };
-		blueCcm_[i] = { 0, 0, static_cast<int16_t>(i) };
-	}
 }
 
 Debayer::~Debayer()
@@ -306,56 +228,6 @@ Debayer::~Debayer()
  */
 
 /**
- * \var Debayer::red_
- * \brief Lookup table for red channel gain and correction values
- *
- * This table provides precomputed per-pixel or per-intensity
- * correction values for the red color channel used during debayering.
- */
-
-/**
- * \var Debayer::green_
- * \brief Lookup table for green channel gain and correction values
- *
- * This table provides precomputed per-pixel or per-intensity
- * correction values for the green color channel used during debayering.
- */
-
-/**
- * \var Debayer::blue_
- * \brief Lookup table for blue channel gain and correction values
- *
- * This table provides precomputed per-pixel or per-intensity
- * correction values for the blue color channel used during debayering.
- */
-
-/**
- * \var Debayer::redCcm_
- * \brief Red channel Color Correction Matrix (CCM) lookup table
- *
- * Contains coefficients for green channel color correction.
- */
-
-/**
- * \var Debayer::greenCcm_
- * \brief Green channel Color Correction Matrix (CCM) lookup table
- *
- * Contains coefficients for green channel color correction.
- */
-
-/**
- * \var Debayer::blueCcm_
- * \brief Blue channel Color Correction Matrix (CCM) lookup table
- *
- * Contains coefficients for blue channel color correction.
- */
-
-/**
- * \var Debayer::gammaLut_
- * \brief Gamma correction lookup table
- */
-
-/**
  * \var Debayer::swapRedBlueGains_
  * \brief Flag indicating whether red and blue channel gains should be swapped
  *
@@ -395,34 +267,6 @@ Debayer::~Debayer()
  * for cleanup of EGL context and/or data that happens in
  * DebayerEGL::start.
  */
-
-/**
- * \fn void Debayer::setParams(DebayerParams &params)
- * \brief Select the bayer params to use for the next frame debayer
- * \param[in] params The parameters to be used in debayering
- */
-void Debayer::setParams(DebayerParams &params)
-{
-	green_ = params.green;
-	greenCcm_ = params.greenCcm;
-	if (swapRedBlueGains_) {
-		red_ = params.blue;
-		blue_ = params.red;
-		redCcm_ = params.blueCcm;
-		blueCcm_ = params.redCcm;
-		for (unsigned int i = 0; i < 256; i++) {
-			std::swap(redCcm_[i].r, redCcm_[i].b);
-			std::swap(greenCcm_[i].r, greenCcm_[i].b);
-			std::swap(blueCcm_[i].r, blueCcm_[i].b);
-		}
-	} else {
-		red_ = params.red;
-		blue_ = params.blue;
-		redCcm_ = params.redCcm;
-		blueCcm_ = params.blueCcm;
-	}
-	gammaLut_ = params.gammaLut;
-}
 
 /**
  * \fn void Debayer::dmaSyncBegin(DebayerParams &params)

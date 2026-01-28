@@ -51,7 +51,6 @@ void Ccm::prepare(IPAContext &context, [[maybe_unused]] const uint32_t frame,
 	    utils::abs_diff(ct, lastCt_) >= kTemperatureThreshold) {
 		currentCcm_ = ccm_.getInterpolated(ct);
 		lastCt_ = ct;
-		context.activeState.matrixChanged = true;
 	}
 
 	context.activeState.combinedMatrix =

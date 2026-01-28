@@ -37,7 +37,7 @@ int Awb::configure(IPAContext &context,
 void Awb::prepare(IPAContext &context,
 		  [[maybe_unused]] const uint32_t frame,
 		  IPAFrameContext &frameContext,
-		  [[maybe_unused]] DebayerParams *params)
+		  DebayerParams *params)
 {
 	auto &gains = context.activeState.awb.gains;
 	Matrix<float, 3, 3> gainMatrix = { { gains.r(), 0, 0,
@@ -45,9 +45,11 @@ void Awb::prepare(IPAContext &context,
 					     0, 0, gains.b() } };
 	context.activeState.combinedMatrix =
 		context.activeState.combinedMatrix * gainMatrix;
-	/* Just report, the gains are applied in LUT algorithm. */
+
 	frameContext.gains.red = gains.r();
 	frameContext.gains.blue = gains.b();
+
+	params->gains = gains;
 }
 
 void Awb::process(IPAContext &context,

@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later */
 /*
  * Copyright (C) 2023, Linaro Ltd
- * Copyright (C) 2023-2025 Red Hat Inc.
+ * Copyright (C) 2023-2026 Red Hat Inc.
  *
  * Authors:
  * Hans de Goede <hdegoede@redhat.com>
@@ -68,21 +68,21 @@ DebayerCpu::~DebayerCpu() = default;
 #define GAMMA(value) \
 	*dst++ = gammaLut_[std::clamp(value, 0, static_cast<int>(gammaLut_.size()) - 1)]
 
-#define STORE_PIXEL(b_, g_, r_)                                        \
-	if constexpr (ccmEnabled) {                                    \
-		const DebayerParams::CcmColumn &blue = blueCcm_[b_];   \
-		const DebayerParams::CcmColumn &green = greenCcm_[g_]; \
-		const DebayerParams::CcmColumn &red = redCcm_[r_];     \
-		GAMMA(blue.b + green.b + red.b);                       \
-		GAMMA(blue.g + green.g + red.g);                       \
-		GAMMA(blue.r + green.r + red.r);                       \
-	} else {                                                       \
-		*dst++ = blue_[b_];                                    \
-		*dst++ = green_[g_];                                   \
-		*dst++ = red_[r_];                                     \
-	}                                                              \
-	if constexpr (addAlphaByte)                                    \
-		*dst++ = 255;                                          \
+#define STORE_PIXEL(b_, g_, r_)                         \
+	if constexpr (ccmEnabled) {                     \
+		const CcmColumn &blue = blueCcm_[b_];   \
+		const CcmColumn &green = greenCcm_[g_]; \
+		const CcmColumn &red = redCcm_[r_];     \
+		GAMMA(blue.b + green.b + red.b);        \
+		GAMMA(blue.g + green.g + red.g);        \
+		GAMMA(blue.r + green.r + red.r);        \
+	} else {                                        \
+		*dst++ = blue_[b_];                     \
+		*dst++ = green_[g_];                    \
+		*dst++ = red_[r_];                      \
+	}                                               \
+	if constexpr (addAlphaByte)                     \
+		*dst++ = 255;                           \
 	x++;
 
 /*
@@ -525,6 +525,16 @@ int DebayerCpu::configure(const StreamConfiguration &inputCfg,
 	if (ret != 0)
 		return -EINVAL;
 
+	ccmEnabled_ = ccmEnabled;
+
+	/*
+	 * Lookup tables must be initialized because the initial value is used for
+	 * the first two frames, i.e. until stats processing starts providing its
+	 * own parameters. Let's enforce recomputing lookup tables by setting the
+	 * stored last used gamma to an out-of-range value.
+	 */
+	params_.gamma = 1.0;
+
 	window_.x = ((inputCfg.size.width - outputCfg.size.width) / 2) &
 		    ~(inputConfig_.patternSize.width - 1);
 	window_.y = ((inputCfg.size.height - outputCfg.size.height) / 2) &
@@ -740,6 +750,98 @@ void DebayerCpu::process4(uint32_t frame, const uint8_t *src, uint8_t *dst)
 	}
 }
 
+void DebayerCpu::updateGammaTable(DebayerParams &params)
+{
+	const RGB<float> blackLevel = params.blackLevel;
+	/* Take let's say the green channel black level */
+	const unsigned int blackIndex = blackLevel[1] * gammaTable_.size();
+	const float gamma = params.gamma;
+	const float contrastExp = params.contrastExp;
+
+	const float divisor = gammaTable_.size() - blackIndex - 1.0;
+	for (unsigned int i = blackIndex; i < gammaTable_.size(); i++) {
+		float normalized = (i - blackIndex) / divisor;
+		/* Convert 0..2 to 0..infinity; avoid actual inifinity at tan(pi/2) */
+		/* Apply simple S-curve */
+		if (normalized < 0.5)
+			normalized = 0.5 * std::pow(normalized / 0.5, contrastExp);
+		else
+			normalized = 1.0 - 0.5 * std::pow((1.0 - normalized) / 0.5, contrastExp);
+		gammaTable_[i] = UINT8_MAX *
+				 std::pow(normalized, gamma);
+	}
+	/*
+	 * Due to CCM operations, the table lookup may reach indices below the black
+	 * level. Let's set the table values below black level to the minimum
+	 * non-black value to prevent problems when the minimum value is
+	 * significantly non-zero (for example, when the image should be all grey).
+	 */
+	std::fill(gammaTable_.begin(), gammaTable_.begin() + blackIndex,
+		  gammaTable_[blackIndex]);
+}
+
+void DebayerCpu::updateLookupTables(DebayerParams &params)
+{
+	const bool gammaUpdateNeeded =
+		params.gamma != params_.gamma ||
+		params.blackLevel != params_.blackLevel ||
+		params.contrastExp != params_.contrastExp;
+	if (gammaUpdateNeeded)
+		updateGammaTable(params);
+
+	auto matrixChanged = [](const Matrix<float, 3, 3> &m1, const Matrix<float, 3, 3> &m2) -> bool {
+		return !std::equal(m1.data().begin(), m1.data().end(), m2.data().begin());
+	};
+	const unsigned int gammaTableSize = gammaTable_.size();
+	const double div = static_cast<double>(kRGBLookupSize) / gammaTableSize;
+	if (ccmEnabled_) {
+		if (gammaUpdateNeeded ||
+		    matrixChanged(params.combinedMatrix, params_.combinedMatrix)) {
+			auto &red = swapRedBlueGains_ ? blueCcm_ : redCcm_;
+			auto &green = greenCcm_;
+			auto &blue = swapRedBlueGains_ ? redCcm_ : blueCcm_;
+			const unsigned int redIndex = swapRedBlueGains_ ? 2 : 0;
+			const unsigned int greenIndex = 1;
+			const unsigned int blueIndex = swapRedBlueGains_ ? 0 : 2;
+			for (unsigned int i = 0; i < kRGBLookupSize; i++) {
+				red[i].r = std::round(i * params.combinedMatrix[redIndex][0]);
+				red[i].g = std::round(i * params.combinedMatrix[greenIndex][0]);
+				red[i].b = std::round(i * params.combinedMatrix[blueIndex][0]);
+				green[i].r = std::round(i * params.combinedMatrix[redIndex][1]);
+				green[i].g = std::round(i * params.combinedMatrix[greenIndex][1]);
+				green[i].b = std::round(i * params.combinedMatrix[blueIndex][1]);
+				blue[i].r = std::round(i * params.combinedMatrix[redIndex][2]);
+				blue[i].g = std::round(i * params.combinedMatrix[greenIndex][2]);
+				blue[i].b = std::round(i * params.combinedMatrix[blueIndex][2]);
+				gammaLut_[i] = gammaTable_[i / div];
+			}
+		}
+	} else {
+		if (gammaUpdateNeeded || params.gains != params_.gains) {
+			auto &gains = params.gains;
+			auto &red = swapRedBlueGains_ ? blue_ : red_;
+			auto &green = green_;
+			auto &blue = swapRedBlueGains_ ? red_ : blue_;
+			for (unsigned int i = 0; i < kRGBLookupSize; i++) {
+				/* Apply gamma after gain! */
+				const RGB<float> lutGains = (gains * i / div).min(gammaTableSize - 1);
+				red[i] = gammaTable_[static_cast<unsigned int>(lutGains.r())];
+				green[i] = gammaTable_[static_cast<unsigned int>(lutGains.g())];
+				blue[i] = gammaTable_[static_cast<unsigned int>(lutGains.b())];
+			}
+		}
+	}
+
+	LOG(Debayer, Debug)
+		<< "Debayer parameters: blackLevel=" << params.blackLevel
+		<< "; gamma=" << params.gamma
+		<< "; contrastExp=" << params.contrastExp
+		<< "; gains=" << params.gains
+		<< "; matrix=" << params.combinedMatrix;
+
+	params_ = params;
+}
+
 void DebayerCpu::process(uint32_t frame, FrameBuffer *input, FrameBuffer *output, DebayerParams params)
 {
 	bench_.startFrame();
@@ -748,7 +850,7 @@ void DebayerCpu::process(uint32_t frame, FrameBuffer *input, FrameBuffer *output
 
 	dmaSyncBegin(dmaSyncers, input, output);
 
-	setParams(params);
+	updateLookupTables(params);
 
 	/* Copy metadata from the input buffer */
 	FrameMetadata &metadata = output->_d()->metadata();

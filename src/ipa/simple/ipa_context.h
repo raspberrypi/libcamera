@@ -53,17 +53,7 @@ struct IPAActiveState {
 		unsigned int temperatureK;
 	} awb;
 
-	static constexpr unsigned int kGammaLookupSize = 1024;
-	struct {
-		std::array<double, kGammaLookupSize> gammaTable;
-		uint8_t blackLevel;
-		float gamma;
-		float contrast;
-		float contrastExp;
-	} gamma;
-
 	Matrix<float, 3, 3> combinedMatrix;
-	bool matrixChanged = false;
 
 	struct {
 		float gamma;
@@ -103,7 +93,6 @@ struct IPAContext {
 	FCQueue<IPAFrameContext> frameContexts;
 	ControlInfoMap::Map ctrlMap;
 	bool ccmEnabled = false;
-	bool gpuIspEnabled = false;
 };
 
 } /* namespace ipa::soft */

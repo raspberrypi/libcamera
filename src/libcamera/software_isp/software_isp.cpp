@@ -84,23 +84,6 @@ SoftwareIsp::SoftwareIsp(PipelineHandler *pipe, const CameraSensor *sensor,
 		   DmaBufAllocator::DmaBufAllocatorFlag::SystemHeap |
 		   DmaBufAllocator::DmaBufAllocatorFlag::UDmaBuf)
 {
-	/*
-	 * debayerParams_ must be initialized because the initial value is used for
-	 * the first two frames, i.e. until stats processing starts providing its
-	 * own parameters.
-	 *
-	 * \todo This should be handled in the same place as the related
-	 * operations, in the IPA module.
-	 */
-	std::array<uint8_t, 256> gammaTable;
-	for (unsigned int i = 0; i < 256; i++)
-		gammaTable[i] = UINT8_MAX * std::pow(i / 256.0, 0.5);
-	for (unsigned int i = 0; i < DebayerParams::kRGBLookupSize; i++) {
-		debayerParams_.red[i] = gammaTable[i];
-		debayerParams_.green[i] = gammaTable[i];
-		debayerParams_.blue[i] = gammaTable[i];
-	}
-
 	if (!dmaHeap_.isValid()) {
 		LOG(SoftwareIsp, Error) << "Failed to create DmaBufAllocator object";
 		return;
@@ -121,8 +104,6 @@ SoftwareIsp::SoftwareIsp(PipelineHandler *pipe, const CameraSensor *sensor,
 	}
 	stats->statsReady.connect(this, &SoftwareIsp::statsReady);
 
-	bool gpuIspEnabled;
-
 #if HAVE_DEBAYER_EGL
 	std::optional<std::string> softISPMode = configuration.envOption("LIBCAMERA_SOFTISP_MODE", { "software_isp", "mode" });
 	if (softISPMode) {
@@ -133,15 +114,12 @@ SoftwareIsp::SoftwareIsp(PipelineHandler *pipe, const CameraSensor *sensor,
 		}
 	}
 
-	if (!softISPMode || softISPMode == "gpu") {
+	if (!softISPMode || softISPMode == "gpu")
 		debayer_ = std::make_unique<DebayerEGL>(std::move(stats), configuration);
-		gpuIspEnabled = true;
-	}
+
 #endif
-	if (!debayer_) {
+	if (!debayer_)
 		debayer_ = std::make_unique<DebayerCpu>(std::move(stats), configuration);
-		gpuIspEnabled = false;
-	}
 
 	debayer_->inputBufferReady.connect(this, &SoftwareIsp::inputReady);
 	debayer_->outputBufferReady.connect(this, &SoftwareIsp::outputReady);
@@ -173,7 +151,6 @@ SoftwareIsp::SoftwareIsp(PipelineHandler *pipe, const CameraSensor *sensor,
 			 sharedParams_.fd(),
 			 sensorInfo,
 			 sensor->controls(),
-			 gpuIspEnabled,
 			 ipaControls,
 			 &ccmEnabled_);
 	if (ret) {

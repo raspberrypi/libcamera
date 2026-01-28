@@ -475,18 +475,18 @@ void DebayerEGL::setShaderVariableValues(DebayerParams &params)
 			    << " textureUniformProjMatrix_ " << textureUniformProjMatrix_;
 
 	GLfloat ccm[9] = {
-		params.ccm[0][0],
-		params.ccm[0][1],
-		params.ccm[0][2],
-		params.ccm[1][0],
-		params.ccm[1][1],
-		params.ccm[1][2],
-		params.ccm[2][0],
-		params.ccm[2][1],
-		params.ccm[2][2],
+		params.combinedMatrix[0][0],
+		params.combinedMatrix[0][1],
+		params.combinedMatrix[0][2],
+		params.combinedMatrix[1][0],
+		params.combinedMatrix[1][1],
+		params.combinedMatrix[1][2],
+		params.combinedMatrix[2][0],
+		params.combinedMatrix[2][1],
+		params.combinedMatrix[2][2],
 	};
 	glUniformMatrix3fv(ccmUniformDataIn_, 1, GL_FALSE, ccm);
-	LOG(Debayer, Debug) << " ccmUniformDataIn_ " << ccmUniformDataIn_ << " data " << params.ccm;
+	LOG(Debayer, Debug) << " ccmUniformDataIn_ " << ccmUniformDataIn_ << " data " << params.combinedMatrix;
 
 	/*
 	 * 0 = Red, 1 = Green, 2 = Blue
@@ -543,8 +543,6 @@ void DebayerEGL::process(uint32_t frame, FrameBuffer *input, FrameBuffer *output
 	std::vector<DmaSyncer> dmaSyncers;
 
 	dmaSyncBegin(dmaSyncers, input, nullptr);
-
-	setParams(params);
 
 	/* Copy metadata from the input buffer */
 	FrameMetadata &metadata = output->_d()->metadata();

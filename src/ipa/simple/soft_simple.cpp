@@ -26,6 +26,7 @@
 #include "libcamera/internal/software_isp/swisp_stats.h"
 #include "libcamera/internal/yaml_parser.h"
 
+#include "algorithms/adjust.h"
 #include "libipa/camera_sensor_helper.h"
 
 #include "module.h"
@@ -55,7 +56,6 @@ public:
 		 const SharedFD &fdParams,
 		 const IPACameraSensorInfo &sensorInfo,
 		 const ControlInfoMap &sensorControls,
-		 bool gpuIspEnabled,
 		 ControlInfoMap *ipaControls,
 		 bool *ccmEnabled) override;
 	int configure(const IPAConfigInfo &configInfo) override;
@@ -96,7 +96,6 @@ int IPASoftSimple::init(const IPASettings &settings,
 			const SharedFD &fdParams,
 			const IPACameraSensorInfo &sensorInfo,
 			const ControlInfoMap &sensorControls,
-			bool gpuIspEnabled,
 			ControlInfoMap *ipaControls,
 			bool *ccmEnabled)
 {
@@ -108,7 +107,6 @@ int IPASoftSimple::init(const IPASettings &settings,
 	}
 
 	context_.sensorInfo = sensorInfo;
-	context_.gpuIspEnabled = gpuIspEnabled;
 
 	/* Load the tuning data file */
 	File file(settings.configurationFile);
@@ -161,6 +159,11 @@ int IPASoftSimple::init(const IPASettings &settings,
 		}
 
 		params_ = static_cast<DebayerParams *>(mem);
+		params_->blackLevel = { { 0.0, 0.0, 0.0 } };
+		params_->gamma = 1.0 / algorithms::kDefaultGamma;
+		params_->contrastExp = 1.0;
+		params_->gains = { { 1.0, 1.0, 1.0 } };
+		/* combinedMatrix is reset for each frame. */
 	}
 
 	{
@@ -287,6 +290,8 @@ void IPASoftSimple::computeParams(const uint32_t frame)
 	IPAFrameContext &frameContext = context_.frameContexts.get(frame);
 	for (auto const &algo : algorithms())
 		algo->prepare(context_, frame, frameContext, params_);
+	params_->combinedMatrix = context_.activeState.combinedMatrix;
+
 	setIspParams.emit();
 }
 

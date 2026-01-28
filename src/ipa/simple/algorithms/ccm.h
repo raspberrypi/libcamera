@@ -1,6 +1,6 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later */
 /*
- * Copyright (C) 2024-2025, Red Hat Inc.
+ * Copyright (C) 2024-2026, Red Hat Inc.
  *
  * Color correction matrix
  */
@@ -47,6 +47,7 @@ private:
 	unsigned int lastCt_;
 	std::optional<float> lastSaturation_;
 	Interpolator<Matrix<float, 3, 3>> ccm_;
+	std::optional<Matrix<float, 3, 3>> currentCcm_;
 };
 
 } /* namespace ipa::soft::algorithms */

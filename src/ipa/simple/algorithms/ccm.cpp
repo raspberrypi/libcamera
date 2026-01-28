@@ -83,7 +83,7 @@ void Ccm::applySaturation(Matrix<float, 3, 3> &ccm, float saturation)
 	ccm = ycbcr2rgb * saturationMatrix * rgb2ycbcr * ccm;
 }
 
-void Ccm::prepare(IPAContext &context, const uint32_t frame,
+void Ccm::prepare(IPAContext &context, [[maybe_unused]] const uint32_t frame,
 		  IPAFrameContext &frameContext, [[maybe_unused]] DebayerParams *params)
 {
 	auto &saturation = context.activeState.knobs.saturation;
@@ -91,24 +91,21 @@ void Ccm::prepare(IPAContext &context, const uint32_t frame,
 	const unsigned int ct = context.activeState.awb.temperatureK;
 
 	/* Change CCM only on saturation or bigger temperature changes. */
-	if (frame > 0 &&
-	    utils::abs_diff(ct, lastCt_) < kTemperatureThreshold &&
-	    saturation == lastSaturation_) {
-		frameContext.ccm = context.activeState.ccm;
-		return;
+	if (!currentCcm_ ||
+	    utils::abs_diff(ct, lastCt_) >= kTemperatureThreshold ||
+	    saturation != lastSaturation_) {
+		currentCcm_ = ccm_.getInterpolated(ct);
+		if (saturation)
+			applySaturation(currentCcm_.value(), saturation.value());
+		lastCt_ = ct;
+		lastSaturation_ = saturation;
+		context.activeState.matrixChanged = true;
 	}
 
-	lastCt_ = ct;
-	lastSaturation_ = saturation;
-	Matrix<float, 3, 3> ccm = ccm_.getInterpolated(ct);
-	if (saturation)
-		applySaturation(ccm, saturation.value());
-
-	context.activeState.combinedMatrix = ccm;
-	context.activeState.ccm = ccm;
+	context.activeState.combinedMatrix =
+		currentCcm_.value() * context.activeState.combinedMatrix;
 	frameContext.saturation = saturation;
-	context.activeState.matrixChanged = true;
-	frameContext.ccm = ccm;
+	frameContext.ccm = currentCcm_.value();
 }
 
 void Ccm::process([[maybe_unused]] IPAContext &context,

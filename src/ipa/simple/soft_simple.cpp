@@ -282,6 +282,8 @@ void IPASoftSimple::queueRequest(const uint32_t frame, const ControlList &contro
 
 void IPASoftSimple::computeParams(const uint32_t frame)
 {
+	context_.activeState.combinedMatrix = Matrix<float, 3, 3>::identity();
+
 	IPAFrameContext &frameContext = context_.frameContexts.get(frame);
 	for (auto const &algo : algorithms())
 		algo->prepare(context_, frame, frameContext, params_);

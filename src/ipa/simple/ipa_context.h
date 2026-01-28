@@ -62,7 +62,6 @@ struct IPAActiveState {
 		double contrastExp;
 	} gamma;
 
-	Matrix<float, 3, 3> ccm;
 	Matrix<float, 3, 3> combinedMatrix;
 	bool matrixChanged = false;
 

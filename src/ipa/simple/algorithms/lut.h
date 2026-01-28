@@ -38,7 +38,7 @@ public:
 
 private:
 	void updateGammaTable(IPAContext &context);
-	int16_t ccmValue(unsigned int i, float ccm) const;
+	int16_t matrixValue(unsigned int i, float ccm) const;
 };
 
 } /* namespace ipa::soft::algorithms */

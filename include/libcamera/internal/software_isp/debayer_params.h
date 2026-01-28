@@ -59,7 +59,7 @@ struct DebayerParams {
 	Matrix<float, 3, 3> ccm;
 	RGB<float> blackLevel;
 	float gamma;
-	double contrastExp;
+	float contrastExp;
 };
 
 } /* namespace libcamera */

@@ -34,8 +34,8 @@ int Adjust::configure(IPAContext &context,
 		      [[maybe_unused]] const IPAConfigInfo &configInfo)
 {
 	context.activeState.knobs.gamma = kDefaultGamma;
-	context.activeState.knobs.contrast = std::optional<double>();
-	context.activeState.knobs.saturation = std::optional<double>();
+	context.activeState.knobs.contrast = std::optional<float>();
+	context.activeState.knobs.saturation = std::optional<float>();
 
 	return 0;
 }

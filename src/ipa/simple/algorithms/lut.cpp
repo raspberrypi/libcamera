@@ -40,7 +40,7 @@ void Lut::updateGammaTable(IPAContext &context)
 	const auto gamma = 1.0 / context.activeState.knobs.gamma;
 	const auto contrast = context.activeState.knobs.contrast.value_or(1.0);
 	/* Convert 0..2 to 0..infinity; avoid actual inifinity at tan(pi/2) */
-	double contrastExp = tan(std::clamp(contrast * M_PI_4, 0.0, M_PI_2 - 0.00001));
+	float contrastExp = tan(std::clamp(contrast * M_PI_4, 0.0, M_PI_2 - 0.00001));
 
 	if (!context.gpuIspEnabled) {
 		auto &gammaTable = context.activeState.gamma.gammaTable;

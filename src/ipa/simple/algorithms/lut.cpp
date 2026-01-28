@@ -127,11 +127,11 @@ void Lut::prepare(IPAContext &context,
 			params->green[i] = gammaTable[static_cast<unsigned int>(lutGains.g())];
 			params->blue[i] = gammaTable[static_cast<unsigned int>(lutGains.b())];
 		}
-	} else if (context.activeState.ccm.changed || gammaUpdateNeeded) {
+	} else if (context.activeState.matrixChanged || gammaUpdateNeeded) {
 		Matrix<float, 3, 3> gainCcm = { { gains.r(), 0, 0,
 						  0, gains.g(), 0,
 						  0, 0, gains.b() } };
-		auto ccm = context.activeState.ccm.ccm * gainCcm;
+		auto ccm = context.activeState.ccm * gainCcm;
 		auto &red = params->redCcm;
 		auto &green = params->greenCcm;
 		auto &blue = params->blueCcm;
@@ -150,6 +150,7 @@ void Lut::prepare(IPAContext &context,
 				params->gammaLut[i] = gammaTable[i / div];
 			}
 		}
+		context.activeState.matrixChanged = false;
 	}
 
 	params->gamma = context.configuration.gamma;

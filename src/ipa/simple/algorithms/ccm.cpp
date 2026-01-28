@@ -94,8 +94,7 @@ void Ccm::prepare(IPAContext &context, const uint32_t frame,
 	if (frame > 0 &&
 	    utils::abs_diff(ct, lastCt_) < kTemperatureThreshold &&
 	    saturation == lastSaturation_) {
-		frameContext.ccm = context.activeState.ccm.ccm;
-		context.activeState.ccm.changed = false;
+		frameContext.ccm = context.activeState.ccm;
 		return;
 	}
 
@@ -105,9 +104,9 @@ void Ccm::prepare(IPAContext &context, const uint32_t frame,
 	if (saturation)
 		applySaturation(ccm, saturation.value());
 
-	context.activeState.ccm.ccm = ccm;
+	context.activeState.ccm = ccm;
 	frameContext.saturation = saturation;
-	context.activeState.ccm.changed = true;
+	context.activeState.matrixChanged = true;
 	frameContext.ccm = ccm;
 }
 

@@ -70,7 +70,7 @@ LOG_DEFINE_CATEGORY(RkISP1Lsc)
 
 namespace {
 
-constexpr int kColourTemperatureChangeThreshhold = 10;
+constexpr int kColourTemperatureQuantization = 10;
 
 class LscPolynomialLoader
 {
@@ -308,12 +308,16 @@ std::vector<double> parseSizes(const YamlObject &tuningData,
 	return sizes;
 }
 
+unsigned int quantize(unsigned int value, unsigned int step)
+{
+	return std::lround(value / static_cast<double>(step)) * step;
+}
+
 } /* namespace */
 
 LensShadingCorrection::LensShadingCorrection()
 	: lastAppliedCt_(0), lastAppliedQuantizedCt_(0)
 {
-	sets_.setQuantization(kColourTemperatureChangeThreshhold);
 }
 
 /**
@@ -426,17 +430,23 @@ void LensShadingCorrection::prepare([[maybe_unused]] IPAContext &context,
 				    RkISP1Params *params)
 {
 	uint32_t ct = frameContext.awb.temperatureK;
-	if (std::abs(static_cast<int>(ct) - static_cast<int>(lastAppliedCt_)) <
-	    kColourTemperatureChangeThreshhold)
+	unsigned int quantizedCt = quantize(ct, kColourTemperatureQuantization);
+
+	/*
+	 * Add a threshold so that oscillations around a quantization step don't
+	 * lead to constant changes.
+	 */
+	if (utils::abs_diff(ct, lastAppliedCt_) < kColourTemperatureQuantization / 2)
 		return;
-	unsigned int quantizedCt;
-	const Components &set = sets_.getInterpolated(ct, &quantizedCt);
-	if (lastAppliedQuantizedCt_ == quantizedCt)
+
+	if (quantizedCt == lastAppliedQuantizedCt_)
 		return;
 
 	auto config = params->block<BlockType::Lsc>();
 	config.setEnabled(true);
 	setParameters(*config);
+
+	const Components &set = sets_.getInterpolated(quantizedCt);
 	copyTable(*config, set);
 
 	lastAppliedCt_ = ct;

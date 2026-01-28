@@ -321,27 +321,28 @@ int LensShadingCorrection::init([[maybe_unused]] IPAContext &context,
 	}
 
 	std::map<unsigned int, Components> lscData;
-	int res = 0;
+	int ret = 0;
+
 	std::string type = tuningData["type"].get<std::string>("table");
 	if (type == "table") {
 		LOG(RkISP1Lsc, Debug) << "Loading tabular LSC data.";
 		auto loader = LscTableLoader();
-		res = loader.parseLscData(yamlSets, lscData);
+		ret = loader.parseLscData(yamlSets, lscData);
 	} else if (type == "polynomial") {
 		LOG(RkISP1Lsc, Debug) << "Loading polynomial LSC data.";
 		auto loader = LscPolynomialLoader(context.sensorInfo.activeAreaSize,
 						  context.sensorInfo.analogCrop,
 						  xSize_,
 						  ySize_);
-		res = loader.parseLscData(yamlSets, lscData);
+		ret = loader.parseLscData(yamlSets, lscData);
 	} else {
 		LOG(RkISP1Lsc, Error) << "Unsupported LSC data type '"
 				      << type << "'";
-		res = -EINVAL;
+		ret = -EINVAL;
 	}
 
-	if (res)
-		return res;
+	if (ret)
+		return ret;
 
 	sets_.setData(std::move(lscData));
 

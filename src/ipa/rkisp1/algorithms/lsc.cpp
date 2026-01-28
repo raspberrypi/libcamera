@@ -166,12 +166,12 @@ private:
 		double y0 = cropRectangle_.y / m;
 		double w = cropRectangle_.width / m;
 		double h = cropRectangle_.height / m;
-		std::vector<uint16_t> res;
+		std::vector<uint16_t> samples;
 
 		ASSERT(xSizes_.size() * 2 + 1 == k);
 		ASSERT(ySizes_.size() * 2 + 1 == k);
 
-		res.reserve(k * k);
+		samples.reserve(k * k);
 
 		std::vector<double> xPos(sizesListToPositions(xSizes_));
 		std::vector<double> yPos(sizesListToPositions(ySizes_));
@@ -189,10 +189,10 @@ private:
 					poly.sampleAtNormalizedPixelPos(xp, yp) *
 					1024);
 				v = std::min(std::max(v, 1024), 4095);
-				res.push_back(v);
+				samples.push_back(v);
 			}
 		}
-		return res;
+		return samples;
 	}
 
 	Size sensorSize_;

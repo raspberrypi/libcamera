@@ -7,7 +7,6 @@
 
 #include "awb.h"
 
-#include <algorithm>
 #include <numeric>
 #include <stdint.h>
 

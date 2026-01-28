@@ -70,11 +70,6 @@ public:
 		return 0;
 	}
 
-	void setQuantization(const unsigned int q)
-	{
-		quantization_ = q;
-	}
-
 	void setData(std::map<unsigned int, T> &&data)
 	{
 		data_ = std::move(data);
@@ -86,15 +81,9 @@ public:
 		return data_;
 	}
 
-	const T &getInterpolated(unsigned int key, unsigned int *quantizedKey = nullptr)
+	const T &getInterpolated(unsigned int key)
 	{
 		ASSERT(data_.size() > 0);
-
-		if (quantization_ > 0)
-			key = std::lround(key / static_cast<double>(quantization_)) * quantization_;
-
-		if (quantizedKey)
-			*quantizedKey = key;
 
 		if (lastInterpolatedKey_.has_value() &&
 		    *lastInterpolatedKey_ == key)
@@ -128,7 +117,6 @@ private:
 	std::map<unsigned int, T> data_;
 	T lastInterpolatedValue_;
 	std::optional<unsigned int> lastInterpolatedKey_;
-	unsigned int quantization_ = 0;
 };
 
 } /* namespace ipa */

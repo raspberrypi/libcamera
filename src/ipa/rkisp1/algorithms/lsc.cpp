@@ -416,6 +416,9 @@ int LensShadingCorrection::init([[maybe_unused]] IPAContext &context,
 	if (ret)
 		return ret;
 
+	context.ctrlMap[&controls::LensShadingCorrectionEnable] =
+		ControlInfo(false, true, true);
+
 	shadingDescriptors_ = std::move(lscData);
 
 	return 0;
@@ -460,7 +463,7 @@ int LensShadingCorrection::configure(IPAContext &context,
 
 	sets_.setData(std::move(shadingData));
 
-	context.configuration.lsc.enabled = true;
+	context.activeState.lsc.enabled = true;
 	return 0;
 }
 
@@ -482,6 +485,29 @@ void LensShadingCorrection::copyTable(rkisp1_cif_isp_lsc_config &config,
 }
 
 /**
+ * \copydoc libcamera::ipa::Algorithm::queueRequest
+ */
+void LensShadingCorrection::queueRequest(IPAContext &context,
+					 [[maybe_unused]] const uint32_t frame,
+					 IPAFrameContext &frameContext,
+					 const ControlList &controls)
+{
+	auto &lsc = context.activeState.lsc;
+
+	const auto &lscEnable = controls.get(controls::LensShadingCorrectionEnable);
+	if (lscEnable && *lscEnable != lsc.enabled) {
+		lsc.enabled = *lscEnable;
+
+		LOG(RkISP1Lsc, Debug)
+			<< (lsc.enabled ? "Enabling" : "Disabling") << " Lsc";
+
+		frameContext.lsc.update = true;
+	}
+
+	frameContext.lsc.enabled = lsc.enabled;
+}
+
+/**
  * \copydoc libcamera::ipa::Algorithm::prepare
  */
 void LensShadingCorrection::prepare([[maybe_unused]] IPAContext &context,
@@ -492,18 +518,28 @@ void LensShadingCorrection::prepare([[maybe_unused]] IPAContext &context,
 	uint32_t ct = frameContext.awb.temperatureK;
 	unsigned int quantizedCt = quantize(ct, kColourTemperatureQuantization);
 
-	/*
-	 * Add a threshold so that oscillations around a quantization step don't
-	 * lead to constant changes.
-	 */
-	if (utils::abs_diff(ct, lastAppliedCt_) < kColourTemperatureQuantization / 2)
-		return;
+	/* Check if we can skip the update. */
+	if (!frameContext.lsc.update) {
+		if (!frameContext.lsc.enabled)
+			return;
 
-	if (quantizedCt == lastAppliedQuantizedCt_)
-		return;
+		/*
+		 * Add a threshold so that oscillations around a quantization
+		 * step don't lead to constant changes.
+		 */
+		if (utils::abs_diff(ct, lastAppliedCt_) < kColourTemperatureQuantization / 2)
+			return;
+
+		if (quantizedCt == lastAppliedQuantizedCt_)
+			return;
+	}
 
 	auto config = params->block<BlockType::Lsc>();
-	config.setEnabled(true);
+	config.setEnabled(frameContext.lsc.enabled);
+
+	if (!frameContext.lsc.enabled)
+		return;
+
 	setParameters(*config);
 
 	const Components &set = sets_.getInterpolated(quantizedCt);
@@ -515,6 +551,18 @@ void LensShadingCorrection::prepare([[maybe_unused]] IPAContext &context,
 	LOG(RkISP1Lsc, Debug)
 		<< "ct is " << ct << ", quantized to "
 		<< quantizedCt;
+}
+
+/**
+ * \copydoc libcamera::ipa::Algorithm::process
+ */
+void LensShadingCorrection::process([[maybe_unused]] IPAContext &context,
+				    [[maybe_unused]] const uint32_t frame,
+				    IPAFrameContext &frameContext,
+				    [[maybe_unused]] const rkisp1_stat_buffer *stats,
+				    ControlList &metadata)
+{
+	metadata.set(controls::LensShadingCorrectionEnable, frameContext.lsc.enabled);
 }
 
 REGISTER_IPA_ALGORITHM(LensShadingCorrection, "LensShadingCorrection")

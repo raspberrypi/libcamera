@@ -93,7 +93,8 @@ private:
 	std::vector<double> sizesListToPositions(const std::vector<double> &sizes);
 	std::vector<uint16_t> samplePolynomial(const LscPolynomial &poly,
 					       Span<const double> xPositions,
-					       Span<const double> yPositions);
+					       Span<const double> yPositions,
+					       const Rectangle &cropRectangle);
 
 	Size sensorSize_;
 	Rectangle cropRectangle_;
@@ -136,10 +137,10 @@ int LscPolynomialLoader::parseLscData(const YamlObject &yamlSets,
 
 		std::vector<double> xPos = sizesListToPositions(xSizes_);
 		std::vector<double> yPos = sizesListToPositions(ySizes_);
-		set.r = samplePolynomial(*pr, xPos, yPos);
-		set.gr = samplePolynomial(*pgr, xPos, yPos);
-		set.gb = samplePolynomial(*pgb, xPos, yPos);
-		set.b = samplePolynomial(*pb, xPos, yPos);
+		set.r = samplePolynomial(*pr, xPos, yPos, cropRectangle_);
+		set.gr = samplePolynomial(*pgr, xPos, yPos, cropRectangle_);
+		set.gb = samplePolynomial(*pgb, xPos, yPos, cropRectangle_);
+		set.b = samplePolynomial(*pb, xPos, yPos, cropRectangle_);
 	}
 
 	if (lscData.empty()) {
@@ -178,13 +179,14 @@ std::vector<double> LscPolynomialLoader::sizesListToPositions(const std::vector<
 
 std::vector<uint16_t> LscPolynomialLoader::samplePolynomial(const LscPolynomial &poly,
 							    Span<const double> xPositions,
-							    Span<const double> yPositions)
+							    Span<const double> yPositions,
+							    const Rectangle &cropRectangle)
 {
 	double m = poly.getM();
-	double x0 = cropRectangle_.x / m;
-	double y0 = cropRectangle_.y / m;
-	double w = cropRectangle_.width / m;
-	double h = cropRectangle_.height / m;
+	double x0 = cropRectangle.x / m;
+	double y0 = cropRectangle.y / m;
+	double w = cropRectangle.width / m;
+	double h = cropRectangle.height / m;
 	std::vector<uint16_t> samples;
 
 	samples.reserve(xPositions.size() * yPositions.size());

@@ -1353,7 +1353,12 @@ controls:
       type: bool
       direction: inout
       description: |
-        Enable or disable lens dewarping. This control is only available if lens
-        dewarp parameters are configured in the tuning file.
+        Enable or disable lens dewarping.
+
+  - LensShadingCorrectionEnable:
+      type: bool
+      direction: inout
+      description: |
+        Enable or disable the lens shading correction.
 
 ...

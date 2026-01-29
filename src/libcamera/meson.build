@@ -70,10 +70,6 @@ libcamera_deps = []
 libatomic = cc.find_library('atomic', required : false)
 libthreads = dependency('threads')
 
-libegl = dependency('egl', required : false)
-libglesv2 = dependency('glesv2', required : false)
-mesa_works = cc.check_header('EGL/egl.h', required : false, dependencies : libegl)
-
 subdir('base')
 subdir('converter')
 subdir('ipa')
@@ -182,8 +178,6 @@ libcamera_deps += [
     libcamera_base_private,
     libcrypto,
     libdl,
-    libegl,
-    libglesv2,
     liblttng,
     libudev,
     libyaml,

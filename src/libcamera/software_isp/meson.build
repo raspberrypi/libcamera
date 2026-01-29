@@ -2,7 +2,7 @@
 
 softisp_enabled = pipelines.contains('simple')
 summary({'SoftISP support' : softisp_enabled}, section : 'Configuration')
-summary({'SoftISP GPU acceleration' : gles_headless_enabled}, section : 'Configuration')
+summary({'SoftISP GPU acceleration' : mesa_works}, section : 'Configuration')
 
 if not softisp_enabled
     subdir_done()
@@ -16,7 +16,7 @@ libcamera_internal_sources += files([
     'swstats_cpu.cpp',
 ])
 
-if gles_headless_enabled
+if mesa_works
     config_h.set('HAVE_DEBAYER_EGL', 1)
     libcamera_internal_sources += files([
         '../egl.cpp',

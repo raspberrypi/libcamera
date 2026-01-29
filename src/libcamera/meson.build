@@ -74,12 +74,6 @@ mesa_works = cc.check_header('EGL/egl.h', required: false)
 libegl = dependency('egl', required : false)
 libglesv2 = dependency('glesv2', required : false)
 
-if mesa_works
-    gles_headless_enabled = true
-else
-    gles_headless_enabled = false
-endif
-
 subdir('base')
 subdir('converter')
 subdir('ipa')

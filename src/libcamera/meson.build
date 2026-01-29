@@ -75,9 +75,6 @@ libegl = dependency('egl', required : false)
 libglesv2 = dependency('glesv2', required : false)
 
 if mesa_works
-    libcamera_internal_sources += files([
-        'egl.cpp',
-    ])
     gles_headless_enabled = true
 else
     gles_headless_enabled = false

@@ -19,6 +19,7 @@ libcamera_internal_sources += files([
 if softisp_enabled and gles_headless_enabled
     config_h.set('HAVE_DEBAYER_EGL', 1)
     libcamera_internal_sources += files([
+        '../egl.cpp',
         'debayer_egl.cpp',
     ])
 endif

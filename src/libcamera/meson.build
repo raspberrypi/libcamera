@@ -74,14 +74,6 @@ mesa_works = cc.check_header('EGL/egl.h', required: false)
 libegl = dependency('egl', required : false)
 libglesv2 = dependency('glesv2', required : false)
 
-if libegl.found()
-    config_h.set('HAVE_LIBEGL', 1)
-endif
-
-if libglesv2.found()
-    config_h.set('HAVE_GLESV2', 1)
-endif
-
 if mesa_works
     libcamera_internal_sources += files([
         'egl.cpp',

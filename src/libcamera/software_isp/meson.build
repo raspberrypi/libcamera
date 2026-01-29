@@ -16,7 +16,7 @@ libcamera_internal_sources += files([
     'swstats_cpu.cpp',
 ])
 
-if softisp_enabled and gles_headless_enabled
+if gles_headless_enabled
     config_h.set('HAVE_DEBAYER_EGL', 1)
     libcamera_internal_sources += files([
         '../egl.cpp',

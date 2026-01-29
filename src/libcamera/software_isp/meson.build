@@ -7,9 +7,11 @@ if not softisp_enabled
     subdir_done()
 endif
 
-libegl = dependency('egl', required : false)
-libglesv2 = dependency('glesv2', required : false)
-mesa_works = cc.check_header('EGL/egl.h', required : false, dependencies : libegl)
+libegl = dependency('egl', required : get_option('softisp-gpu'))
+libglesv2 = dependency('glesv2', required : get_option('softisp-gpu'))
+mesa_works = cc.check_header('EGL/egl.h',
+                             required : get_option('softisp-gpu'),
+                             dependencies : libegl)
 
 summary({'SoftISP GPU acceleration' : mesa_works}, section : 'Configuration')
 

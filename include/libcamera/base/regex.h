@@ -5,6 +5,8 @@
  * std::regex wrapper for gcc
  */
 
+#include <libcamera/base/private.h>
+
 #pragma GCC diagnostic push
 #if defined __SANITIZE_ADDRESS__ && defined __OPTIMIZE__
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"

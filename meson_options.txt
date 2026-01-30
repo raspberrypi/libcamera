@@ -62,6 +62,11 @@ option('libdw',
         value : 'auto',
         description : 'Enable libdw integration for backtrace symbolization')
 
+option('apps-output-dng',
+        type : 'feature',
+        value : 'auto',
+        description : 'Enable DNG file creation support in the cam and qcam applications')
+
 option('libunwind',
         type : 'feature',
         value : 'auto',

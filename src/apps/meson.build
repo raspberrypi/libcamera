@@ -10,7 +10,7 @@ if not libevent.found()
     libevent = dependency('libevent_pthreads', required : opt_lc_compliance)
 endif
 
-libtiff = dependency('libtiff-4', required : false)
+libtiff = dependency('libtiff-4', required : get_option('apps-output-dng'))
 
 subdir('common')
 

@@ -16,6 +16,21 @@ option('cam',
         value : 'auto',
         description : 'Compile the cam test application')
 
+option('cam-output-kms',
+        type : 'feature',
+        value : 'auto',
+        description : 'Enable KMS output in the cam application')
+
+option('cam-output-sdl2',
+        type : 'feature',
+        value : 'auto',
+        description : 'Enable SDL2 output in the cam application')
+
+option('cam-jpeg',
+        type : 'feature',
+        value : 'auto',
+        description : 'Enable JPEG support in the cam application')
+
 option('documentation',
         type : 'feature',
         value : 'auto',

@@ -93,6 +93,11 @@ const ControlInfoMap::Map ipaControls{
 	{ &controls::draft::NoiseReductionMode, ControlInfo(controls::draft::NoiseReductionModeValues) },
 	{ &controls::rpi::StatsOutputEnable, ControlInfo(false, true, false) },
 	{ &controls::rpi::CnnEnableInputTensor, ControlInfo(false, true, false) },
+	{ &controls::rpi::SyncMode,
+	  ControlInfo({ { ControlValue(controls::rpi::SyncModeOff),
+			  ControlValue(controls::rpi::SyncModeClient) } },
+		      ControlValue(controls::rpi::SyncModeOff)) },
+	{ &controls::rpi::SyncFrames, ControlInfo(100, 100000, 1000) },
 };
 
 /* IPA controls handled conditionally, if the sensor is not mono */

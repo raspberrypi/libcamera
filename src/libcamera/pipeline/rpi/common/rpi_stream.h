@@ -125,7 +125,7 @@ public:
 
 	void setExportedBuffer(FrameBuffer *buffer);
 
-	int prepareBuffers(unsigned int count);
+	int allocateBuffers(unsigned int count);
 	int queueBuffer(FrameBuffer *buffer);
 	void returnBuffer(FrameBuffer *buffer);
 
@@ -140,7 +140,6 @@ public:
 
 private:
 	void bufferEmplace(unsigned int id, FrameBuffer *buffer);
-	void clearBuffers();
 	int queueToDevice(FrameBuffer *buffer);
 
 	StreamFlags flags_;

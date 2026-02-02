@@ -1,13 +1,12 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later */
 /*
- * Copyright (C) 2024, Red Hat Inc.
+ * Copyright (C) 2024-2026 Red Hat Inc.
  *
  * Auto white balance
  */
 
 #include "awb.h"
 
-#include <algorithm>
 #include <numeric>
 #include <stdint.h>
 
@@ -38,12 +37,19 @@ int Awb::configure(IPAContext &context,
 void Awb::prepare(IPAContext &context,
 		  [[maybe_unused]] const uint32_t frame,
 		  IPAFrameContext &frameContext,
-		  [[maybe_unused]] DebayerParams *params)
+		  DebayerParams *params)
 {
 	auto &gains = context.activeState.awb.gains;
-	/* Just report, the gains are applied in LUT algorithm. */
+	Matrix<float, 3, 3> gainMatrix = { { gains.r(), 0, 0,
+					     0, gains.g(), 0,
+					     0, 0, gains.b() } };
+	context.activeState.combinedMatrix =
+		context.activeState.combinedMatrix * gainMatrix;
+
 	frameContext.gains.red = gains.r();
 	frameContext.gains.blue = gains.b();
+
+	params->gains = gains;
 }
 
 void Awb::process(IPAContext &context,
@@ -55,10 +61,9 @@ void Awb::process(IPAContext &context,
 	const SwIspStats::Histogram &histogram = stats->yHistogram;
 	const uint8_t blackLevel = context.activeState.blc.level;
 
-	const float maxGain = 1024.0;
 	const float mdGains[] = {
-		static_cast<float>(frameContext.gains.red / maxGain),
-		static_cast<float>(frameContext.gains.blue / maxGain)
+		static_cast<float>(frameContext.gains.red),
+		static_cast<float>(frameContext.gains.blue)
 	};
 	metadata.set(controls::ColourGains, mdGains);
 
@@ -74,9 +79,11 @@ void Awb::process(IPAContext &context,
 		histogram.begin(), histogram.end(), uint64_t(0));
 	const uint64_t offset = blackLevel * nPixels;
 	const uint64_t minValid = 1;
-	const uint64_t sumR = stats->sumR_ > offset / 4 ? stats->sumR_ - offset / 4 : minValid;
-	const uint64_t sumG = stats->sumG_ > offset / 2 ? stats->sumG_ - offset / 2 : minValid;
-	const uint64_t sumB = stats->sumB_ > offset / 4 ? stats->sumB_ - offset / 4 : minValid;
+	/*
+	 * Make sure the sums are at least minValid, while preventing unsigned
+	 * integer underflow.
+	 */
+	const RGB<uint64_t> sum = stats->sum_.max(offset + minValid) - offset;
 
 	/*
 	 * Calculate red and blue gains for AWB.
@@ -84,9 +91,9 @@ void Awb::process(IPAContext &context,
 	 */
 	auto &gains = context.activeState.awb.gains;
 	gains = { {
-		sumR <= sumG / 4 ? 4.0f : static_cast<float>(sumG) / sumR,
+		sum.r() <= sum.g() / 4 ? 4.0f : static_cast<float>(sum.g()) / sum.r(),
 		1.0,
-		sumB <= sumG / 4 ? 4.0f : static_cast<float>(sumG) / sumB,
+		sum.b() <= sum.g() / 4 ? 4.0f : static_cast<float>(sum.g()) / sum.b(),
 	} };
 
 	RGB<double> rgbGains{ { 1 / gains.r(), 1 / gains.g(), 1 / gains.b() } };

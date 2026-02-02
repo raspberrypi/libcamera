@@ -37,7 +37,7 @@
 
 namespace libcamera {
 
-class DebayerCpu;
+class Debayer;
 class FrameBuffer;
 class PixelFormat;
 class Stream;
@@ -94,8 +94,7 @@ private:
 	void statsReady(uint32_t frame, uint32_t bufferId);
 	void inputReady(FrameBuffer *input);
 	void outputReady(FrameBuffer *output);
-
-	std::unique_ptr<DebayerCpu> debayer_;
+	std::unique_ptr<Debayer> debayer_;
 	Thread ispWorkerThread_;
 	SharedMemObject<DebayerParams> sharedParams_;
 	DebayerParams debayerParams_;

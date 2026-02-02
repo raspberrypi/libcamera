@@ -52,7 +52,9 @@ headers="
 	linux/dw100.h
 	linux/media-bus-format.h
 	linux/media.h
+	linux/media/v4l2-isp.h
 	linux/rkisp1-config.h
+	linux/stddef.h
 	linux/udmabuf.h
 	linux/v4l2-common.h
 	linux/v4l2-controls.h

@@ -19,7 +19,6 @@
 #include <libcamera/control_ids.h>
 #include <libcamera/formats.h>
 #include <libcamera/property_ids.h>
-#include <libcamera/request.h>
 #include <libcamera/stream.h>
 
 #include <libcamera/ipa/ipu3_ipa_interface.h>
@@ -35,6 +34,7 @@
 #include "libcamera/internal/ipa_manager.h"
 #include "libcamera/internal/media_device.h"
 #include "libcamera/internal/pipeline_handler.h"
+#include "libcamera/internal/request.h"
 
 #include "cio2.h"
 #include "frames.h"
@@ -1249,7 +1249,7 @@ void IPU3CameraData::metadataReady(unsigned int id, const ControlList &metadata)
 		return;
 
 	Request *request = info->request;
-	request->metadata().merge(metadata);
+	request->_d()->metadata().merge(metadata);
 
 	info->metadataProcessed = true;
 	if (frameInfos_.tryComplete(info))
@@ -1276,12 +1276,12 @@ void IPU3CameraData::imguOutputBufferReady(FrameBuffer *buffer)
 
 	pipe()->completeBuffer(request, buffer);
 
-	request->metadata().set(controls::draft::PipelineDepth, 3);
+	request->_d()->metadata().set(controls::draft::PipelineDepth, 3);
 	/* \todo Actually apply the scaler crop region to the ImgU. */
 	const auto &scalerCrop = request->controls().get(controls::ScalerCrop);
 	if (scalerCrop)
 		cropRegion_ = *scalerCrop;
-	request->metadata().set(controls::ScalerCrop, cropRegion_);
+	request->_d()->metadata().set(controls::ScalerCrop, cropRegion_);
 
 	if (frameInfos_.tryComplete(info))
 		pipe()->completeRequest(request);
@@ -1321,8 +1321,8 @@ void IPU3CameraData::cio2BufferReady(FrameBuffer *buffer)
 	 * \todo The sensor timestamp should be better estimated by connecting
 	 * to the V4L2Device::frameStart signal.
 	 */
-	request->metadata().set(controls::SensorTimestamp,
-				buffer->metadata().timestamp);
+	request->_d()->metadata().set(controls::SensorTimestamp,
+				      buffer->metadata().timestamp);
 
 	info->effectiveSensorControls = delayedCtrls_->get(buffer->metadata().sequence);
 
@@ -1416,8 +1416,8 @@ void IPU3CameraData::frameStart(uint32_t sequence)
 		return;
 	}
 
-	request->metadata().set(controls::draft::TestPatternMode,
-				*testPatternMode);
+	request->_d()->metadata().set(controls::draft::TestPatternMode,
+				      *testPatternMode);
 }
 
 REGISTER_PIPELINE_HANDLER(PipelineHandlerIPU3, "ipu3")

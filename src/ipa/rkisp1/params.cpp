@@ -35,7 +35,7 @@ struct BlockTypeInfo {
 #define RKISP1_BLOCK_TYPE_ENTRY(block, id, type, category, bit)			\
 	{ BlockType::block, {							\
 		RKISP1_EXT_PARAMS_BLOCK_TYPE_##id,				\
-		sizeof(struct rkisp1_cif_isp_##type##_config),			\
+		sizeof(struct rkisp1_ext_params_##type##_config),		\
 		offsetof(struct rkisp1_params_cfg, category.type##_config),	\
 		RKISP1_CIF_ISP_MODULE_##bit,					\
 	} }
@@ -49,7 +49,7 @@ struct BlockTypeInfo {
 #define RKISP1_BLOCK_TYPE_ENTRY_EXT(block, id, type)				\
 	{ BlockType::block, {							\
 		RKISP1_EXT_PARAMS_BLOCK_TYPE_##id,				\
-		sizeof(struct rkisp1_cif_isp_##type##_config),			\
+		sizeof(struct rkisp1_ext_params_##type##_config),		\
 		0, 0,								\
 	} }
 
@@ -78,56 +78,6 @@ const std::map<BlockType, BlockTypeInfo> kBlockTypeInfo = {
 };
 
 } /* namespace */
-
-RkISP1ParamsBlockBase::RkISP1ParamsBlockBase(RkISP1Params *params, BlockType type,
-					     const Span<uint8_t> &data)
-	: params_(params), type_(type)
-{
-	if (params_->format() == V4L2_META_FMT_RK_ISP1_EXT_PARAMS) {
-		header_ = data.subspan(0, sizeof(rkisp1_ext_params_block_header));
-		data_ = data.subspan(sizeof(rkisp1_ext_params_block_header));
-	} else {
-		data_ = data;
-	}
-}
-
-void RkISP1ParamsBlockBase::setEnabled(bool enabled)
-{
-	/*
-	 * For the legacy fixed format, blocks are enabled in the top-level
-	 * header. Delegate to the RkISP1Params class.
-	 */
-	if (params_->format() == V4L2_META_FMT_RK_ISP1_PARAMS)
-		return params_->setBlockEnabled(type_, enabled);
-
-	/*
-	 * For the extensible format, set the enable and disable flags in the
-	 * block header directly.
-	 */
-	struct rkisp1_ext_params_block_header *header =
-		reinterpret_cast<struct rkisp1_ext_params_block_header *>(header_.data());
-	header->flags &= ~(RKISP1_EXT_PARAMS_FL_BLOCK_ENABLE |
-			   RKISP1_EXT_PARAMS_FL_BLOCK_DISABLE);
-	header->flags |= enabled ? RKISP1_EXT_PARAMS_FL_BLOCK_ENABLE
-				 : RKISP1_EXT_PARAMS_FL_BLOCK_DISABLE;
-}
-
-RkISP1Params::RkISP1Params(uint32_t format, Span<uint8_t> data)
-	: format_(format), data_(data), used_(0)
-{
-	if (format_ == V4L2_META_FMT_RK_ISP1_EXT_PARAMS) {
-		struct rkisp1_ext_params_cfg *cfg =
-			reinterpret_cast<struct rkisp1_ext_params_cfg *>(data.data());
-
-		cfg->version = RKISP1_EXT_PARAM_BUFFER_V1;
-		cfg->data_size = 0;
-
-		used_ += offsetof(struct rkisp1_ext_params_cfg, data);
-	} else {
-		memset(data.data(), 0, data.size());
-		used_ = sizeof(struct rkisp1_params_cfg);
-	}
-}
 
 void RkISP1Params::setBlockEnabled(BlockType type, bool enabled)
 {
@@ -178,44 +128,7 @@ Span<uint8_t> RkISP1Params::block(BlockType type)
 		return data_.subspan(info.offset, info.size);
 	}
 
-	/*
-	 * For the extensible format, allocate memory for the block, including
-	 * the header. Look up the block in the cache first. If an algorithm
-	 * requests the same block type twice, it should get the same block.
-	 */
-	auto cacheIt = blocks_.find(type);
-	if (cacheIt != blocks_.end())
-		return cacheIt->second;
-
-	/* Make sure we don't run out of space. */
-	size_t size = sizeof(struct rkisp1_ext_params_block_header)
-		    + ((info.size + 7) & ~7);
-	if (size > data_.size() - used_) {
-		LOG(RkISP1Params, Error)
-			<< "Out of memory to allocate block type "
-			<< utils::to_underlying(type);
-		return {};
-	}
-
-	/* Allocate a new block, clear its memory, and initialize its header. */
-	Span<uint8_t> block = data_.subspan(used_, size);
-	used_ += size;
-
-	struct rkisp1_ext_params_cfg *cfg =
-		reinterpret_cast<struct rkisp1_ext_params_cfg *>(data_.data());
-	cfg->data_size += size;
-
-	memset(block.data(), 0, block.size());
-
-	struct rkisp1_ext_params_block_header *header =
-		reinterpret_cast<struct rkisp1_ext_params_block_header *>(block.data());
-	header->type = info.type;
-	header->size = block.size();
-
-	/* Update the cache. */
-	blocks_[type] = block;
-
-	return block;
+	return V4L2Params::block(type, info.type, info.size);
 }
 
 } /* namespace ipa::rkisp1 */

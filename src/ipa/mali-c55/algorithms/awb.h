@@ -22,17 +22,17 @@ public:
 		      const IPACameraSensorInfo &configInfo) override;
 	void prepare(IPAContext &context, const uint32_t frame,
 		     IPAFrameContext &frameContext,
-		     mali_c55_params_buffer *params) override;
+		     MaliC55Params *params) override;
 	void process(IPAContext &context, const uint32_t frame,
 		     IPAFrameContext &frameContext,
 		     const mali_c55_stats_buffer *stats,
 		     ControlList &metadata) override;
 
 private:
-	size_t fillGainsParamBlock(mali_c55_params_block block,
-				   IPAContext &context,
-				   IPAFrameContext &frameContext);
-	size_t fillConfigParamBlock(mali_c55_params_block block);
+	void fillGainsParamBlock(MaliC55Params *params,
+				 IPAContext &context,
+				 IPAFrameContext &frameContext);
+	void fillConfigParamBlock(MaliC55Params *params);
 };
 
 } /* namespace ipa::mali_c55::algorithms */

@@ -12,9 +12,6 @@
 
 #include <libcamera/base/log.h>
 
-/* Maximum number of buffer slots to allocate in the V4L2 device driver. */
-static constexpr unsigned int maxV4L2BufferCount = 32;
-
 namespace libcamera {
 
 LOG_DEFINE_CATEGORY(RPISTREAM)
@@ -106,9 +103,9 @@ void Stream::setExportedBuffer(FrameBuffer *buffer)
 	bufferEmplace(++id_, buffer);
 }
 
-int Stream::prepareBuffers(unsigned int count)
+int Stream::allocateBuffers(unsigned int count)
 {
-	int ret;
+	int ret = 0;
 
 	if (!(flags_ & StreamFlag::ImportOnly)) {
 		/* Export some frame buffers for internal use. */
@@ -121,7 +118,7 @@ int Stream::prepareBuffers(unsigned int count)
 		resetBuffers();
 	}
 
-	return dev_->importBuffers(maxV4L2BufferCount);
+	return ret;
 }
 
 int Stream::queueBuffer(FrameBuffer *buffer)
@@ -243,8 +240,11 @@ int Stream::queueAllBuffers()
 
 void Stream::releaseBuffers()
 {
-	dev_->releaseBuffers();
-	clearBuffers();
+	availableBuffers_ = std::queue<FrameBuffer *>{};
+	requestBuffers_ = std::queue<FrameBuffer *>{};
+	internalBuffers_.clear();
+	bufferMap_.clear();
+	id_ = 0;
 }
 
 void Stream::bufferEmplace(unsigned int id, FrameBuffer *buffer)
@@ -255,15 +255,6 @@ void Stream::bufferEmplace(unsigned int id, FrameBuffer *buffer)
 	else
 		bufferMap_.emplace(std::piecewise_construct, std::forward_as_tuple(id),
 				   std::forward_as_tuple(buffer, false));
-}
-
-void Stream::clearBuffers()
-{
-	availableBuffers_ = std::queue<FrameBuffer *>{};
-	requestBuffers_ = std::queue<FrameBuffer *>{};
-	internalBuffers_.clear();
-	bufferMap_.clear();
-	id_ = 0;
 }
 
 int Stream::queueToDevice(FrameBuffer *buffer)

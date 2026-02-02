@@ -14,13 +14,14 @@
 #include <libipa/module.h>
 
 #include "ipa_context.h"
+#include "params.h"
 
 namespace libcamera {
 
 namespace ipa::mali_c55 {
 
 using Module = ipa::Module<IPAContext, IPAFrameContext, IPACameraSensorInfo,
-			   mali_c55_params_buffer, mali_c55_stats_buffer>;
+			   MaliC55Params, mali_c55_stats_buffer>;
 
 } /* namespace ipa::mali_c55 */
 

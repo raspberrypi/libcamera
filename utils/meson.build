@@ -3,5 +3,7 @@
 subdir('codegen')
 subdir('ipu3')
 
+gen_shader_headers = files('gen-shader-headers.sh')
+
 ## Module signing
 gen_ipa_priv_key = files('gen-ipa-priv-key.sh')

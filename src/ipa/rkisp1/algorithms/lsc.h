@@ -8,6 +8,7 @@
 #pragma once
 
 #include <map>
+#include <memory>
 
 #include "libipa/interpolator.h"
 
@@ -25,25 +26,40 @@ public:
 
 	int init(IPAContext &context, const YamlObject &tuningData) override;
 	int configure(IPAContext &context, const IPACameraSensorInfo &configInfo) override;
+	void queueRequest(IPAContext &context, const uint32_t frame,
+			  IPAFrameContext &frameContext,
+			  const ControlList &controls) override;
 	void prepare(IPAContext &context, const uint32_t frame,
 		     IPAFrameContext &frameContext,
 		     RkISP1Params *params) override;
+	void process(IPAContext &context, const uint32_t frame,
+		     IPAFrameContext &frameContext,
+		     const rkisp1_stat_buffer *stats,
+		     ControlList &metadata) override;
 
 	struct Components {
-		uint32_t ct;
 		std::vector<uint16_t> r;
 		std::vector<uint16_t> gr;
 		std::vector<uint16_t> gb;
 		std::vector<uint16_t> b;
 	};
 
+	class ShadingDescriptor
+	{
+	public:
+		virtual ~ShadingDescriptor() = default;
+		virtual Components sampleForCrop(const Rectangle &cropRectangle,
+						 Span<const double> xSizes,
+						 Span<const double> ySizes) = 0;
+	};
+
+	using ShadingDescriptorMap = std::map<unsigned int, std::unique_ptr<ShadingDescriptor>>;
+
 private:
 	void setParameters(rkisp1_cif_isp_lsc_config &config);
 	void copyTable(rkisp1_cif_isp_lsc_config &config, const Components &set0);
-	void interpolateTable(rkisp1_cif_isp_lsc_config &config,
-			      const Components &set0, const Components &set1,
-			      const uint32_t ct);
 
+	ShadingDescriptorMap shadingDescriptors_;
 	ipa::Interpolator<Components> sets_;
 	std::vector<double> xSize_;
 	std::vector<double> ySize_;

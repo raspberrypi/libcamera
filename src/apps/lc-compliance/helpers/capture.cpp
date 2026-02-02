@@ -27,38 +27,34 @@ void Capture::configure(libcamera::Span<const libcamera::StreamRole> roles)
 {
 	assert(!roles.empty());
 
-	config_ = camera_->generateConfiguration(roles);
-	if (!config_)
+	auto config = camera_->generateConfiguration(roles);
+	if (!config)
 		GTEST_SKIP() << "Roles not supported by camera";
 
-	ASSERT_EQ(config_->size(), roles.size()) << "Unexpected number of streams in configuration";
+	ASSERT_EQ(config->size(), roles.size()) << "Unexpected number of streams in configuration";
 
 	/*
 	 * Set the buffers count to the largest value across all streams.
 	 * \todo: Should all streams from a Camera have the same buffer count ?
 	 */
 	auto largest =
-		std::max_element(config_->begin(), config_->end(),
+		std::max_element(config->begin(), config->end(),
 				 [](const StreamConfiguration &l, const StreamConfiguration &r)
 				 { return l.bufferCount < r.bufferCount; });
 
-	assert(largest != config_->end());
+	assert(largest != config->end());
 
-	for (auto &cfg : *config_)
+	for (auto &cfg : *config)
 		cfg.bufferCount = largest->bufferCount;
 
-	if (config_->validate() != CameraConfiguration::Valid) {
-		config_.reset();
-		FAIL() << "Configuration not valid";
-	}
+	ASSERT_EQ(config->validate(), CameraConfiguration::Valid);
 
-	for (const auto &cfg : *config_)
+	for (const auto &cfg : *config)
 		EXPECT_TRUE(cfg.colorSpace) << "Colorspace not set for " << cfg;
 
-	if (camera_->configure(config_.get())) {
-		config_.reset();
-		FAIL() << "Failed to configure camera";
-	}
+	ASSERT_EQ(camera_->configure(config.get()), 0);
+
+	config_ = std::move(config);
 }
 
 void Capture::run(unsigned int captureLimit, std::optional<unsigned int> queueLimit)

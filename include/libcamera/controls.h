@@ -43,7 +43,7 @@ enum ControlType {
 
 namespace details {
 
-template<typename T, typename = std::void_t<>>
+template<typename T, typename = void>
 struct control_type {
 };
 

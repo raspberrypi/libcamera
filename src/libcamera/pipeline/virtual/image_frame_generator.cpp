@@ -136,8 +136,9 @@ int ImageFrameGenerator::generateFrame(const Size &size, const FrameBuffer *buff
 
 	/* Write the scaledY and scaledUV to the mapped frame buffer */
 	libyuv::NV12Copy(scaledFrameDatas_[frameIndex_].Y.get(), size.width,
-			 scaledFrameDatas_[frameIndex_].UV.get(), size.width, planes[0].begin(),
-			 size.width, planes[1].begin(), size.width,
+			 scaledFrameDatas_[frameIndex_].UV.get(), size.width,
+			 planes[0].data(), size.width,
+			 planes[1].data(), size.width,
 			 size.width, size.height);
 
 	/* Proceed to the next image every 4 frames */

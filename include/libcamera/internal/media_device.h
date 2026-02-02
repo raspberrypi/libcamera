@@ -15,6 +15,7 @@
 #include <linux/media.h>
 
 #include <libcamera/base/log.h>
+#include <libcamera/base/regex.h>
 #include <libcamera/base/signal.h>
 #include <libcamera/base/unique_fd.h>
 
@@ -47,6 +48,7 @@ public:
 
 	const std::vector<MediaEntity *> &entities() const { return entities_; }
 	MediaEntity *getEntityByName(const std::string &name) const;
+	MediaEntity *getEntityByName(const std::regex &name) const;
 
 	MediaLink *link(const std::string &sourceName, unsigned int sourceIdx,
 			const std::string &sinkName, unsigned int sinkIdx);

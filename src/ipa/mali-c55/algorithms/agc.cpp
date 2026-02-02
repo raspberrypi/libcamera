@@ -241,8 +241,8 @@ void Agc::queueRequest(IPAContext &context, const uint32_t frame,
 	}
 }
 
-size_t Agc::fillGainParamBlock(IPAContext &context, IPAFrameContext &frameContext,
-			       mali_c55_params_block block)
+void Agc::fillGainParamBlock(IPAContext &context, IPAFrameContext &frameContext,
+			     MaliC55Params *params)
 {
 	IPAActiveState &activeState = context.activeState;
 	double gain;
@@ -252,52 +252,49 @@ size_t Agc::fillGainParamBlock(IPAContext &context, IPAFrameContext &frameContex
 	else
 		gain = activeState.agc.manual.ispGain;
 
-	block.header->type = MALI_C55_PARAM_BLOCK_DIGITAL_GAIN;
-	block.header->flags = MALI_C55_PARAM_BLOCK_FL_NONE;
-	block.header->size = sizeof(struct mali_c55_params_digital_gain);
+	auto block = params->block<MaliC55Blocks::Dgain>();
+	block->gain = floatingToFixedPoint<5, 8, uint16_t, double>(gain);
 
-	block.digital_gain->gain = floatingToFixedPoint<5, 8, uint16_t, double>(gain);
 	frameContext.agc.ispGain = gain;
-
-	return block.header->size;
 }
 
-size_t Agc::fillParamsBuffer(mali_c55_params_block block,
-			     enum mali_c55_param_block_type type)
+void Agc::fillParamsBuffer(MaliC55Params *params, enum MaliC55Blocks type)
 {
-	block.header->type = type;
-	block.header->flags = MALI_C55_PARAM_BLOCK_FL_NONE;
-	block.header->size = sizeof(struct mali_c55_params_aexp_hist);
+	assert(type == MaliC55Blocks::AexpHist || type == MaliC55Blocks::AexpIhist);
+
+	auto block = type == MaliC55Blocks::AexpHist ?
+			params->block<MaliC55Blocks::AexpHist>() :
+			params->block<MaliC55Blocks::AexpIhist>();
 
 	/* Collect every 3rd pixel horizontally */
-	block.aexp_hist->skip_x = 1;
+	block->skip_x = 1;
 	/* Start from first column */
-	block.aexp_hist->offset_x = 0;
+	block->offset_x = 0;
 	/* Collect every pixel vertically */
-	block.aexp_hist->skip_y = 0;
+	block->skip_y = 0;
 	/* Start from the first row */
-	block.aexp_hist->offset_y = 0;
+	block->offset_y = 0;
 	/* 1x scaling (i.e. none) */
-	block.aexp_hist->scale_bottom = 0;
-	block.aexp_hist->scale_top = 0;
+	block->scale_bottom = 0;
+	block->scale_top = 0;
 	/* Collect all Bayer planes into 4 separate histograms */
-	block.aexp_hist->plane_mode = 1;
+	block->plane_mode = 1;
 	/* Tap the data immediately after the digital gain block */
-	block.aexp_hist->tap_point = MALI_C55_AEXP_HIST_TAP_FS;
-
-	return block.header->size;
+	block->tap_point = MALI_C55_AEXP_HIST_TAP_FS;
 }
 
-size_t Agc::fillWeightsArrayBuffer(mali_c55_params_block block,
-				   enum mali_c55_param_block_type type)
+void Agc::fillWeightsArrayBuffer(MaliC55Params *params, const enum MaliC55Blocks type)
 {
-	block.header->type = type;
-	block.header->flags = MALI_C55_PARAM_BLOCK_FL_NONE;
-	block.header->size = sizeof(struct mali_c55_params_aexp_weights);
+	assert(type == MaliC55Blocks::AexpHistWeights ||
+	       type == MaliC55Blocks::AexpIhistWeights);
+
+	auto block = type == MaliC55Blocks::AexpHistWeights ?
+			params->block<MaliC55Blocks::AexpHistWeights>() :
+			params->block<MaliC55Blocks::AexpIhistWeights>();
 
 	/* We use every zone - a 15x15 grid */
-	block.aexp_weights->nodes_used_horiz = 15;
-	block.aexp_weights->nodes_used_vert = 15;
+	block->nodes_used_horiz = 15;
+	block->nodes_used_vert = 15;
 
 	/*
 	 * We uniformly weight the zones to 1 - this results in the collected
@@ -305,40 +302,25 @@ size_t Agc::fillWeightsArrayBuffer(mali_c55_params_block block,
 	 * approximate colour channel averages for the image.
 	 */
 	Span<uint8_t> weights{
-		block.aexp_weights->zone_weights,
+		block->zone_weights,
 		MALI_C55_MAX_ZONES
 	};
 	std::fill(weights.begin(), weights.end(), 1);
-
-	return block.header->size;
 }
 
 void Agc::prepare(IPAContext &context, const uint32_t frame,
-		  IPAFrameContext &frameContext, mali_c55_params_buffer *params)
+		  IPAFrameContext &frameContext, MaliC55Params *params)
 {
-	mali_c55_params_block block;
-
-	block.data = &params->data[params->total_size];
-	params->total_size += fillGainParamBlock(context, frameContext, block);
+	fillGainParamBlock(context, frameContext, params);
 
 	if (frame > 0)
 		return;
 
-	block.data = &params->data[params->total_size];
-	params->total_size += fillParamsBuffer(block,
-					       MALI_C55_PARAM_BLOCK_AEXP_HIST);
+	fillParamsBuffer(params, MaliC55Blocks::AexpHist);
+	fillWeightsArrayBuffer(params, MaliC55Blocks::AexpHistWeights);
 
-	block.data = &params->data[params->total_size];
-	params->total_size += fillWeightsArrayBuffer(block,
-						     MALI_C55_PARAM_BLOCK_AEXP_HIST_WEIGHTS);
-
-	block.data = &params->data[params->total_size];
-	params->total_size += fillParamsBuffer(block,
-					       MALI_C55_PARAM_BLOCK_AEXP_IHIST);
-
-	block.data = &params->data[params->total_size];
-	params->total_size += fillWeightsArrayBuffer(block,
-						     MALI_C55_PARAM_BLOCK_AEXP_IHIST_WEIGHTS);
+	fillParamsBuffer(params, MaliC55Blocks::AexpIhist);
+	fillWeightsArrayBuffer(params, MaliC55Blocks::AexpIhistWeights);
 }
 
 double Agc::estimateLuminance(const double gain) const

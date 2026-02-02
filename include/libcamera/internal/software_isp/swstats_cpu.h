@@ -18,18 +18,23 @@
 #include <libcamera/geometry.h>
 
 #include "libcamera/internal/bayer_format.h"
+#include "libcamera/internal/framebuffer.h"
+#include "libcamera/internal/global_configuration.h"
 #include "libcamera/internal/shared_mem_object.h"
 #include "libcamera/internal/software_isp/swisp_stats.h"
+
+#include "benchmark.h"
 
 namespace libcamera {
 
 class PixelFormat;
+class MappedFrameBuffer;
 struct StreamConfiguration;
 
 class SwStatsCpu
 {
 public:
-	SwStatsCpu();
+	SwStatsCpu(const GlobalConfiguration &configuration);
 	~SwStatsCpu() = default;
 
 	/*
@@ -50,6 +55,7 @@ public:
 	void setWindow(const Rectangle &window);
 	void startFrame(uint32_t frame);
 	void finishFrame(uint32_t frame, uint32_t bufferId);
+	void processFrame(uint32_t frame, uint32_t bufferId, FrameBuffer *input);
 
 	void processLine0(uint32_t frame, unsigned int y, const uint8_t *src[])
 	{
@@ -79,6 +85,7 @@ public:
 
 private:
 	using statsProcessFn = void (SwStatsCpu::*)(const uint8_t *src[]);
+	using processFrameFn = void (SwStatsCpu::*)(MappedFrameBuffer &in);
 
 	int setupStandardBayerOrder(BayerFormat::Order order);
 	/* Bayer 8 bpp unpacked */
@@ -90,6 +97,10 @@ private:
 	/* Bayer 10 bpp packed */
 	void statsBGGR10PLine0(const uint8_t *src[]);
 	void statsGBRG10PLine0(const uint8_t *src[]);
+
+	void processBayerFrame2(MappedFrameBuffer &in);
+
+	processFrameFn processFrame_;
 
 	/* Variables set by configure(), used every line */
 	statsProcessFn stats0_;
@@ -103,9 +114,11 @@ private:
 	Size patternSize_;
 
 	unsigned int xShift_;
+	unsigned int stride_;
 
 	SharedMemObject<SwIspStats> sharedStats_;
 	SwIspStats stats_;
+	Benchmark bench_;
 };
 
 } /* namespace libcamera */

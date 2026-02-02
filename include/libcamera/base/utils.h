@@ -110,8 +110,7 @@ std::string join(const Container &items, const std::string &sep, UnaryOp op)
 	std::ostringstream ss;
 	bool first = true;
 
-	for (typename Container::const_iterator it = std::begin(items);
-	     it != std::end(items); ++it) {
+	for (auto it = std::begin(items); it != std::end(items); ++it) {
 		if (!first)
 			ss << sep;
 		else
@@ -129,8 +128,7 @@ std::string join(const Container &items, const std::string &sep)
 	std::ostringstream ss;
 	bool first = true;
 
-	for (typename Container::const_iterator it = std::begin(items);
-	     it != std::end(items); ++it) {
+	for (auto it = std::begin(items); it != std::end(items); ++it) {
 		if (!first)
 			ss << sep;
 		else
@@ -423,12 +421,10 @@ scope_exit(EF) -> scope_exit<EF>;
 
 #endif /* __DOXYGEN__ */
 
-} /* namespace utils */
-
 #ifndef __DOXYGEN__
-template<class CharT, class Traits>
-std::basic_ostream<CharT, Traits> &operator<<(std::basic_ostream<CharT, Traits> &os,
-					      const utils::Duration &d);
+std::ostream &operator<<(std::ostream &os, const Duration &d);
 #endif
+
+} /* namespace utils */
 
 } /* namespace libcamera */

@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: LGPL-2.1-or-later */
 /*
  * Copyright (C) 2023, Linaro Ltd
- * Copyright (C) 2023-2025 Red Hat Inc.
+ * Copyright (C) 2023-2026 Red Hat Inc.
  *
  * Authors:
  * Hans de Goede <hdegoede@redhat.com>
@@ -19,79 +19,34 @@ namespace libcamera {
  */
 
 /**
- * \var DebayerParams::kRGBLookupSize
- * \brief Size of a color lookup table
+ * \fn Debayer::Debayer(const GlobalConfiguration &configuration)
+ * \brief Construct a Debayer object
+ * \param[in] configuration Global configuration reference
  */
 
 /**
- * \struct DebayerParams::CcmColumn
- * \brief Type of a single column of a color correction matrix (CCM)
- *
- * When multiplying an input pixel, columns in the CCM correspond to the red,
- * green or blue component of input pixel values, while rows correspond to the
- * red, green or blue components of the output pixel values. The members of the
- * CcmColumn structure are named after the colour components of the output pixel
- * values they correspond to.
+ * \var DebayerParams::gains
+ * \brief Colour channel gains
  */
 
 /**
- * \var DebayerParams::CcmColumn::r
- * \brief Red (first) component of a CCM column
+ * \var DebayerParams::combinedMatrix
+ * \brief Colour correction matrix, including other adjustments
  */
 
 /**
- * \var DebayerParams::CcmColumn::g
- * \brief Green (second) component of a CCM column
+ * \var DebayerParams::blackLevel
+ * \brief Black level values
  */
 
 /**
- * \var DebayerParams::CcmColumn::b
- * \brief Blue (third) component of a CCM column
+ * \var DebayerParams::gamma
+ * \brief Gamma value, e.g. 1/2.2
  */
 
 /**
- * \typedef DebayerParams::LookupTable
- * \brief Type of the lookup tables for single lookup values
- */
-
-/**
- * \typedef DebayerParams::CcmLookupTable
- * \brief Type of the CCM lookup tables for red, green, blue values
- */
-
-/**
- * \var DebayerParams::red
- * \brief Lookup table for red color, mapping input values to output values
- */
-
-/**
- * \var DebayerParams::green
- * \brief Lookup table for green color, mapping input values to output values
- */
-
-/**
- * \var DebayerParams::blue
- * \brief Lookup table for blue color, mapping input values to output values
- */
-
-/**
- * \var DebayerParams::redCcm
- * \brief Lookup table for the CCM red column, mapping input values to output values
- */
-
-/**
- * \var DebayerParams::greenCcm
- * \brief Lookup table for the CCM green column, mapping input values to output values
- */
-
-/**
- * \var DebayerParams::blueCcm
- * \brief Lookup table for the CCM blue column, mapping input values to output values
- */
-
-/**
- * \var DebayerParams::gammaLut
- * \brief Gamma lookup table used with color correction matrix
+ * \var DebayerParams::contrastExp
+ * \brief Contrast value to be used as an exponent
  */
 
 /**
@@ -102,6 +57,10 @@ namespace libcamera {
  */
 
 LOG_DEFINE_CATEGORY(Debayer)
+
+Debayer::Debayer(const GlobalConfiguration &configuration) : bench_(configuration)
+{
+}
 
 Debayer::~Debayer()
 {
@@ -167,6 +126,24 @@ Debayer::~Debayer()
  */
 
 /**
+ * \fn const SharedFD &Debayer::getStatsFD()
+ * \brief Get the file descriptor for the statistics
+ *
+ * This file descriptor provides access to the output statistics buffer
+ * associated with the current debayering process.
+ *
+ * \return The file descriptor pointing to the statistics data
+ */
+
+/**
+ * \fn unsigned int Debayer::frameSize()
+ * \brief Get the output frame size
+ *
+ * \return The total output frame size in bytes as configured for the
+ * current stream.
+ */
+
+/**
  * \var Signal<FrameBuffer *> Debayer::inputBufferReady
  * \brief Signals when the input buffer is ready
  */
@@ -175,5 +152,145 @@ Debayer::~Debayer()
  * \var Signal<FrameBuffer *> Debayer::outputBufferReady
  * \brief Signals when the output buffer is ready
  */
+
+/**
+ * \struct Debayer::DebayerInputConfig
+ * \brief Structure describing the incoming Bayer parameters
+ *
+ * The DebayerInputConfig structure defines the characteristics of the raw
+ * Bayer frame being processed, including:
+ *  - The Bayer pattern dimensions (\ref patternSize)
+ *  - Memory layout parameters such as stride and bytes per pixel (\ref bpp)
+ *  - A list of supported output pixel formats.
+ *
+ * \var Debayer::DebayerInputConfig::patternSize
+ * Size of the Bayer pattern in pixels. For standard Bayer formats such as
+ * BGGR, GRBG, GBRG, and RGGB, this is typically 2×2 pixels.
+ *
+ * \var Debayer::DebayerInputConfig::bpp
+ * Number of bytes used per pixel in memory. This reflects storage size,
+ * not precision.
+ *
+ * \var Debayer::DebayerInputConfig::stride
+ * Line stride in bytes for the Bayer input frame.
+ *
+ * \var Debayer::DebayerInputConfig::outputFormats
+ * List of pixel formats supported as output for this input configuration.
+ */
+
+/**
+ * \struct Debayer::DebayerOutputConfig
+ * \brief Structure describing the output frame configuration
+ *
+ * Defines how the output of the debayer process is laid out in memory.
+ * It includes per-pixel size, stride, and total frame size.
+ *
+ * \var Debayer::DebayerOutputConfig::bpp
+ * Bytes used per pixel in the output format.
+ *
+ * \var Debayer::DebayerOutputConfig::stride
+ * Line stride in bytes for the output frame.
+ *
+ * \var Debayer::DebayerOutputConfig::frameSize
+ * Total frame size in bytes for the output buffer.
+ */
+
+/**
+ * \var Debayer::inputConfig_
+ * \brief Input configuration parameters for the current debayer operation
+ *
+ * Holds metadata describing the incoming Bayer image layout, including
+ * pattern size, bytes per pixel, stride, and supported output formats.
+ * Populated during configuration.
+ */
+
+/**
+ * \var Debayer::outputConfig_
+ * \brief Output configuration data for the debayered frame
+ *
+ * Contains bytes per pixel, stride, and total frame size for the
+ * output image buffer. Set during stream configuration.
+ */
+
+/**
+ * \var Debayer::inputPixelFormat_
+ * \brief The incoming pixel format
+ */
+
+/**
+ * \var Debayer::outputPixelFormat_
+ * \brief The output pixel format
+ */
+
+/**
+ * \var Debayer::outputSize_
+ * \brief Output size object
+ */
+
+/**
+ * \var Debayer::swapRedBlueGains_
+ * \brief Flag indicating whether red and blue channel gains should be swapped
+ *
+ * Used when the Bayer pattern order indicates that red/blue color channels are
+ * reversed.
+ */
+
+/**
+ * \var Debayer::bench_
+ * \brief Benchmarking utility instance for performance measurements
+ *
+ * Used internally to track timing and performance metrics during
+ * debayer processing.
+ */
+
+/**
+ * \fn int Debayer::start()
+ * \brief Execute a start signal in the debayer object from workerthread context
+ *
+ * The start() method is invoked so that a Debayer object can initialise
+ * internal variables or data. It is called from the software_isp::start
+ * method.
+ *
+ * This method is particularly useful with DebayerEGL as it allows for the
+ * initialisation of the EGL stack after configure in a thread-safe manner.
+ */
+
+/**
+ * \fn void Debayer::stop()
+ * \brief Stop the debayering process and perform cleanup
+ *
+ * The stop() method is invoked as the logically corollary of start().
+ * Debayer::stop() will be called by software_isp::stop() allowing for any
+ * cleanup which should happend with stop().
+ *
+ * The stop method similar to start() is useful for DebayerEGL as it allows
+ * for cleanup of EGL context and/or data that happens in
+ * DebayerEGL::start.
+ */
+
+/**
+ * \fn void Debayer::dmaSyncBegin(DebayerParams &params)
+ * \brief Common CPU/GPU Dma Sync Buffer begin
+ */
+void Debayer::dmaSyncBegin(std::vector<DmaSyncer> &dmaSyncers, FrameBuffer *input, FrameBuffer *output)
+{
+	for (const FrameBuffer::Plane &plane : input->planes())
+		dmaSyncers.emplace_back(plane.fd, DmaSyncer::SyncType::Read);
+
+	if (output) {
+		for (const FrameBuffer::Plane &plane : output->planes())
+			dmaSyncers.emplace_back(plane.fd, DmaSyncer::SyncType::Write);
+	}
+}
+
+/**
+ * \fn void Debayer::isStandardBayerOrder(BayerFormat::Order order)
+ * \brief Common method to validate standard 2x2 Bayer pattern of 2 Green, 1 Blue, 1 Red pixels
+ */
+bool Debayer::isStandardBayerOrder(BayerFormat::Order order)
+{
+	return order == BayerFormat::BGGR || order == BayerFormat::GBRG ||
+	       order == BayerFormat::GRBG || order == BayerFormat::RGGB;
+}
 
 } /* namespace libcamera */

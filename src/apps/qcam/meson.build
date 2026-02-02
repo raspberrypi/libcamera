@@ -40,6 +40,7 @@ qt6_cpp_args = [
     apps_cpp_args,
     '-DQT_NO_KEYWORDS',
     '-Wno-extra-semi',
+    '-Wno-sfinae-incomplete',
 ]
 
 # gcc 12 and 13 output a false positive variable shadowing warning with Qt
@@ -64,3 +65,6 @@ qcam  = executable('qcam', qcam_sources, resources,
                        qt6_dep,
                    ],
                    cpp_args : qt6_cpp_args)
+
+# Note: qt6.preprocess does not automatically rebuild when the
+# qcam_resources dependency chain is updated.

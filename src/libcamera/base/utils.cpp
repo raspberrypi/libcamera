@@ -655,14 +655,10 @@ void ScopeExitActions::release()
 	actions_.clear();
 }
 
-} /* namespace utils */
-
 #ifndef __DOXYGEN__
-template<class CharT, class Traits>
-std::basic_ostream<CharT, Traits> &operator<<(std::basic_ostream<CharT, Traits> &os,
-					      const utils::Duration &d)
+std::ostream &operator<<(std::ostream &os, const Duration &d)
 {
-	std::basic_ostringstream<CharT, Traits> s;
+	std::ostringstream s;
 
 	s.flags(os.flags());
 	s.imbue(os.getloc());
@@ -671,11 +667,8 @@ std::basic_ostream<CharT, Traits> &operator<<(std::basic_ostream<CharT, Traits> 
 	s << d.get<std::micro>() << "us";
 	return os << s.str();
 }
-
-template
-std::basic_ostream<char, std::char_traits<char>> &
-operator<< <char, std::char_traits<char>>(std::basic_ostream<char, std::char_traits<char>> &os,
-					  const utils::Duration &d);
 #endif
+
+} /* namespace utils */
 
 } /* namespace libcamera */

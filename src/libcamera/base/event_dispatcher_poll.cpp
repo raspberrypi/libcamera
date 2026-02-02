@@ -244,9 +244,9 @@ void EventDispatcherPoll::processNotifiers(const std::vector<struct pollfd> &pol
 		EventNotifier::Type type;
 		short events;
 	} events[] = {
+		{ EventNotifier::Exception, POLLPRI },
 		{ EventNotifier::Read, POLLIN },
 		{ EventNotifier::Write, POLLOUT },
-		{ EventNotifier::Exception, POLLPRI },
 	};
 
 	processingEvents_ = true;

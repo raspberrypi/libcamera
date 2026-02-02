@@ -44,6 +44,52 @@ LOG_DEFINE_CATEGORY(MediaPipeline)
  */
 
 /**
+ * \struct MediaPipeline::Entity
+ * \brief A node composing the media pipeline
+ *
+ * The MediaPipeline::Entity structure stores how a MediaEntity composing a
+ * media pipeline is connected to other media entities. It stores pointers
+ * to the source pad, the sink pad and the media link traversed by the media
+ * pipeline, as well as a flag that reports if the entity supports internal
+ * routing.
+ */
+
+/**
+ * \var MediaPipeline::Entity::entity
+ * \brief Pointer to the libcamera::MediaEntity, always valid
+ */
+
+/**
+ * \var MediaPipeline::Entity::supportsRouting
+ * \brief Whether or not the entity is a subdev that supports the routing API
+ */
+
+/**
+ * \var MediaPipeline::Entity::sink
+ * \brief The local libcamera::MediaPad sink pad connected to the upstream entity,
+ * null for the camera sensor at the beginning of the pipeline
+ */
+
+/**
+ * \var MediaPipeline::Entity::source
+ * \brief The local libcamera::MediaPad source pad connected to the upstream entity,
+ * null for the last node at the end of the pipeline
+ */
+
+/**
+ * \var MediaPipeline::Entity::sourceLink
+ * \brief The link on the libcamera::MediaLink source pad, to the downstream entity,
+ * null for the last node at the end of the pipeline
+ */
+
+/**
+ * \fn MediaPipeline::entities()
+ * \brief Retrieve list of entities composing the media pipeline
+ * \return The list of MediaPipeline::Entity entities composing the media
+ * pipeline
+ */
+
+/**
  * \brief Retrieve all source pads connected to a sink pad through active routes
  *
  * Examine the entity using the V4L2 Subdevice Routing API to collect all the

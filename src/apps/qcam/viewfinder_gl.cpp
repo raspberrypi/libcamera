@@ -141,7 +141,7 @@ bool ViewFinderGL::selectFormat(const libcamera::PixelFormat &format)
 	textureMinMagFilters_ = GL_LINEAR;
 
 	/* Use identity.vert as the default vertex shader. */
-	vertexShaderFile_ = ":identity.vert";
+	vertexShaderFile_ = ":src/libcamera/shaders/identity.vert";
 
 	fragmentShaderDefines_.clear();
 
@@ -150,170 +150,170 @@ bool ViewFinderGL::selectFormat(const libcamera::PixelFormat &format)
 		horzSubSample_ = 2;
 		vertSubSample_ = 2;
 		fragmentShaderDefines_.append("#define YUV_PATTERN_UV");
-		fragmentShaderFile_ = ":YUV_2_planes.frag";
+		fragmentShaderFile_ = ":src/libcamera/shaders/YUV_2_planes.frag";
 		break;
 	case libcamera::formats::NV21:
 		horzSubSample_ = 2;
 		vertSubSample_ = 2;
 		fragmentShaderDefines_.append("#define YUV_PATTERN_VU");
-		fragmentShaderFile_ = ":YUV_2_planes.frag";
+		fragmentShaderFile_ = ":src/libcamera/shaders/YUV_2_planes.frag";
 		break;
 	case libcamera::formats::NV16:
 		horzSubSample_ = 2;
 		vertSubSample_ = 1;
 		fragmentShaderDefines_.append("#define YUV_PATTERN_UV");
-		fragmentShaderFile_ = ":YUV_2_planes.frag";
+		fragmentShaderFile_ = ":src/libcamera/shaders/YUV_2_planes.frag";
 		break;
 	case libcamera::formats::NV61:
 		horzSubSample_ = 2;
 		vertSubSample_ = 1;
 		fragmentShaderDefines_.append("#define YUV_PATTERN_VU");
-		fragmentShaderFile_ = ":YUV_2_planes.frag";
+		fragmentShaderFile_ = ":src/libcamera/shaders/YUV_2_planes.frag";
 		break;
 	case libcamera::formats::NV24:
 		horzSubSample_ = 1;
 		vertSubSample_ = 1;
 		fragmentShaderDefines_.append("#define YUV_PATTERN_UV");
-		fragmentShaderFile_ = ":YUV_2_planes.frag";
+		fragmentShaderFile_ = ":src/libcamera/shaders/YUV_2_planes.frag";
 		break;
 	case libcamera::formats::NV42:
 		horzSubSample_ = 1;
 		vertSubSample_ = 1;
 		fragmentShaderDefines_.append("#define YUV_PATTERN_VU");
-		fragmentShaderFile_ = ":YUV_2_planes.frag";
+		fragmentShaderFile_ = ":src/libcamera/shaders/YUV_2_planes.frag";
 		break;
 	case libcamera::formats::YUV420:
 		horzSubSample_ = 2;
 		vertSubSample_ = 2;
-		fragmentShaderFile_ = ":YUV_3_planes.frag";
+		fragmentShaderFile_ = ":src/libcamera/shaders/YUV_3_planes.frag";
 		break;
 	case libcamera::formats::YVU420:
 		horzSubSample_ = 2;
 		vertSubSample_ = 2;
-		fragmentShaderFile_ = ":YUV_3_planes.frag";
+		fragmentShaderFile_ = ":src/libcamera/shaders/YUV_3_planes.frag";
 		break;
 	case libcamera::formats::UYVY:
 		fragmentShaderDefines_.append("#define YUV_PATTERN_UYVY");
-		fragmentShaderFile_ = ":YUV_packed.frag";
+		fragmentShaderFile_ = ":src/libcamera/shaders/YUV_packed.frag";
 		break;
 	case libcamera::formats::VYUY:
 		fragmentShaderDefines_.append("#define YUV_PATTERN_VYUY");
-		fragmentShaderFile_ = ":YUV_packed.frag";
+		fragmentShaderFile_ = ":src/libcamera/shaders/YUV_packed.frag";
 		break;
 	case libcamera::formats::YUYV:
 		fragmentShaderDefines_.append("#define YUV_PATTERN_YUYV");
-		fragmentShaderFile_ = ":YUV_packed.frag";
+		fragmentShaderFile_ = ":src/libcamera/shaders/YUV_packed.frag";
 		break;
 	case libcamera::formats::YVYU:
 		fragmentShaderDefines_.append("#define YUV_PATTERN_YVYU");
-		fragmentShaderFile_ = ":YUV_packed.frag";
+		fragmentShaderFile_ = ":src/libcamera/shaders/YUV_packed.frag";
 		break;
 	case libcamera::formats::ABGR8888:
 		fragmentShaderDefines_.append("#define RGB_PATTERN rgb");
-		fragmentShaderFile_ = ":RGB.frag";
+		fragmentShaderFile_ = ":src/libcamera/shaders/RGB.frag";
 		break;
 	case libcamera::formats::ARGB8888:
 		fragmentShaderDefines_.append("#define RGB_PATTERN bgr");
-		fragmentShaderFile_ = ":RGB.frag";
+		fragmentShaderFile_ = ":src/libcamera/shaders/RGB.frag";
 		break;
 	case libcamera::formats::BGRA8888:
 		fragmentShaderDefines_.append("#define RGB_PATTERN gba");
-		fragmentShaderFile_ = ":RGB.frag";
+		fragmentShaderFile_ = ":src/libcamera/shaders/RGB.frag";
 		break;
 	case libcamera::formats::RGBA8888:
 		fragmentShaderDefines_.append("#define RGB_PATTERN abg");
-		fragmentShaderFile_ = ":RGB.frag";
+		fragmentShaderFile_ = ":src/libcamera/shaders/RGB.frag";
 		break;
 	case libcamera::formats::BGR888:
 		fragmentShaderDefines_.append("#define RGB_PATTERN rgb");
-		fragmentShaderFile_ = ":RGB.frag";
+		fragmentShaderFile_ = ":src/libcamera/shaders/RGB.frag";
 		break;
 	case libcamera::formats::RGB888:
 		fragmentShaderDefines_.append("#define RGB_PATTERN bgr");
-		fragmentShaderFile_ = ":RGB.frag";
+		fragmentShaderFile_ = ":src/libcamera/shaders/RGB.frag";
 		break;
 	case libcamera::formats::SBGGR8:
 		firstRed_.setX(1.0);
 		firstRed_.setY(1.0);
-		vertexShaderFile_ = ":bayer_8.vert";
-		fragmentShaderFile_ = ":bayer_8.frag";
+		vertexShaderFile_ = ":src/libcamera/shaders/bayer_unpacked.vert";
+		fragmentShaderFile_ = ":src/libcamera/shaders/bayer_unpacked.frag";
 		textureMinMagFilters_ = GL_NEAREST;
 		break;
 	case libcamera::formats::SGBRG8:
 		firstRed_.setX(0.0);
 		firstRed_.setY(1.0);
-		vertexShaderFile_ = ":bayer_8.vert";
-		fragmentShaderFile_ = ":bayer_8.frag";
+		vertexShaderFile_ = ":src/libcamera/shaders/bayer_unpacked.vert";
+		fragmentShaderFile_ = ":src/libcamera/shaders/bayer_unpacked.frag";
 		textureMinMagFilters_ = GL_NEAREST;
 		break;
 	case libcamera::formats::SGRBG8:
 		firstRed_.setX(1.0);
 		firstRed_.setY(0.0);
-		vertexShaderFile_ = ":bayer_8.vert";
-		fragmentShaderFile_ = ":bayer_8.frag";
+		vertexShaderFile_ = ":src/libcamera/shaders/bayer_unpacked.vert";
+		fragmentShaderFile_ = ":src/libcamera/shaders/bayer_unpacked.frag";
 		textureMinMagFilters_ = GL_NEAREST;
 		break;
 	case libcamera::formats::SRGGB8:
 		firstRed_.setX(0.0);
 		firstRed_.setY(0.0);
-		vertexShaderFile_ = ":bayer_8.vert";
-		fragmentShaderFile_ = ":bayer_8.frag";
+		vertexShaderFile_ = ":src/libcamera/shaders/bayer_unpacked.vert";
+		fragmentShaderFile_ = ":src/libcamera/shaders/bayer_unpacked.frag";
 		textureMinMagFilters_ = GL_NEAREST;
 		break;
 	case libcamera::formats::SBGGR10_CSI2P:
 		firstRed_.setX(1.0);
 		firstRed_.setY(1.0);
 		fragmentShaderDefines_.append("#define RAW10P");
-		fragmentShaderFile_ = ":bayer_1x_packed.frag";
+		fragmentShaderFile_ = ":src/libcamera/shaders/bayer_1x_packed.frag";
 		textureMinMagFilters_ = GL_NEAREST;
 		break;
 	case libcamera::formats::SGBRG10_CSI2P:
 		firstRed_.setX(0.0);
 		firstRed_.setY(1.0);
 		fragmentShaderDefines_.append("#define RAW10P");
-		fragmentShaderFile_ = ":bayer_1x_packed.frag";
+		fragmentShaderFile_ = ":src/libcamera/shaders/bayer_1x_packed.frag";
 		textureMinMagFilters_ = GL_NEAREST;
 		break;
 	case libcamera::formats::SGRBG10_CSI2P:
 		firstRed_.setX(1.0);
 		firstRed_.setY(0.0);
 		fragmentShaderDefines_.append("#define RAW10P");
-		fragmentShaderFile_ = ":bayer_1x_packed.frag";
+		fragmentShaderFile_ = ":src/libcamera/shaders/bayer_1x_packed.frag";
 		textureMinMagFilters_ = GL_NEAREST;
 		break;
 	case libcamera::formats::SRGGB10_CSI2P:
 		firstRed_.setX(0.0);
 		firstRed_.setY(0.0);
 		fragmentShaderDefines_.append("#define RAW10P");
-		fragmentShaderFile_ = ":bayer_1x_packed.frag";
+		fragmentShaderFile_ = ":src/libcamera/shaders/bayer_1x_packed.frag";
 		textureMinMagFilters_ = GL_NEAREST;
 		break;
 	case libcamera::formats::SBGGR12_CSI2P:
 		firstRed_.setX(1.0);
 		firstRed_.setY(1.0);
 		fragmentShaderDefines_.append("#define RAW12P");
-		fragmentShaderFile_ = ":bayer_1x_packed.frag";
+		fragmentShaderFile_ = ":src/libcamera/shaders/bayer_1x_packed.frag";
 		textureMinMagFilters_ = GL_NEAREST;
 		break;
 	case libcamera::formats::SGBRG12_CSI2P:
 		firstRed_.setX(0.0);
 		firstRed_.setY(1.0);
 		fragmentShaderDefines_.append("#define RAW12P");
-		fragmentShaderFile_ = ":bayer_1x_packed.frag";
+		fragmentShaderFile_ = ":src/libcamera/shaders/bayer_1x_packed.frag";
 		textureMinMagFilters_ = GL_NEAREST;
 		break;
 	case libcamera::formats::SGRBG12_CSI2P:
 		firstRed_.setX(1.0);
 		firstRed_.setY(0.0);
 		fragmentShaderDefines_.append("#define RAW12P");
-		fragmentShaderFile_ = ":bayer_1x_packed.frag";
+		fragmentShaderFile_ = ":src/libcamera/shaders/bayer_1x_packed.frag";
 		textureMinMagFilters_ = GL_NEAREST;
 		break;
 	case libcamera::formats::SRGGB12_CSI2P:
 		firstRed_.setX(0.0);
 		firstRed_.setY(0.0);
 		fragmentShaderDefines_.append("#define RAW12P");
-		fragmentShaderFile_ = ":bayer_1x_packed.frag";
+		fragmentShaderFile_ = ":src/libcamera/shaders/bayer_1x_packed.frag";
 		textureMinMagFilters_ = GL_NEAREST;
 		break;
 	default:
@@ -473,6 +473,10 @@ bool ViewFinderGL::createFragmentShader()
 	textureUniformSize_ = shaderProgram_.uniformLocation("tex_size");
 	textureUniformStrideFactor_ = shaderProgram_.uniformLocation("stride_factor");
 	textureUniformBayerFirstRed_ = shaderProgram_.uniformLocation("tex_bayer_first_red");
+	ccmUniformDataIn_ = shaderProgram_.uniformLocation("ccm");
+	blackLevelUniformDataIn_ = shaderProgram_.uniformLocation("blacklevel");
+	gammaUniformDataIn_ = shaderProgram_.uniformLocation("gamma");
+	contrastExpUniformDataIn_ = shaderProgram_.uniformLocation("contrastExp");
 
 	/* Create the textures. */
 	for (std::unique_ptr<QOpenGLTexture> &texture : textures_) {
@@ -541,6 +545,16 @@ void ViewFinderGL::doRender()
 {
 	/* Stride of the first plane, in pixels. */
 	unsigned int stridePixels;
+
+	/* Identity CCM */
+	float ccm[] = { 1.0f, 0.0f, 0.0f,
+			0.0f, 1.0f, 0.0f,
+			0.0f, 0.0f, 1.0f };
+
+	QMatrix3x3 qCcmMat(ccm);
+
+	/* Black Level */
+	QVector3D qBlackLevelVec(0.0f, 0.0f, 0.0f);
 
 	switch (format_) {
 	case libcamera::formats::NV12:
@@ -788,6 +802,18 @@ void ViewFinderGL::doRender()
 		 * the generic stride factor to 1.0.
 		 */
 		stridePixels = size_.width();
+
+		/* Colour Correction Matrix */
+		shaderProgram_.setUniformValue(ccmUniformDataIn_, qCcmMat);
+
+		/* Black Level */
+		shaderProgram_.setUniformValue(blackLevelUniformDataIn_, qBlackLevelVec);
+
+		/* Gamma */
+		shaderProgram_.setUniformValue(gammaUniformDataIn_, 1.0f);
+
+		/* Contrast */
+		shaderProgram_.setUniformValue(contrastExpUniformDataIn_, 1.0f);
 		break;
 
 	default:

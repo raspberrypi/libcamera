@@ -864,7 +864,7 @@ private:
 		return static_cast<PiSPCameraData *>(camera->_d());
 	}
 
-	int prepareBuffers(Camera *camera) override;
+	int allocateBuffers(Camera *camera) override;
 	int platformRegister(std::unique_ptr<RPi::CameraData> &cameraData,
 			     std::shared_ptr<MediaDevice> cfe,
 			     std::shared_ptr<MediaDevice> isp) override;
@@ -958,7 +958,7 @@ bool PipelineHandlerPiSP::match(DeviceEnumerator *enumerator)
 	return false;
 }
 
-int PipelineHandlerPiSP::prepareBuffers(Camera *camera)
+int PipelineHandlerPiSP::allocateBuffers(Camera *camera)
 {
 	PiSPCameraData *data = cameraData(camera);
 	unsigned int numRawBuffers = 0;
@@ -1021,7 +1021,7 @@ int PipelineHandlerPiSP::prepareBuffers(Camera *camera)
 		LOG(RPI, Debug) << "Preparing " << numBuffers
 				<< " buffers for stream " << stream->name();
 
-		ret = stream->prepareBuffers(numBuffers);
+		ret = stream->allocateBuffers(numBuffers);
 		if (ret < 0)
 			return ret;
 	}

@@ -668,7 +668,7 @@ int PipelineHandlerBase::start(Camera *camera, const ControlList *controls)
 
 	if (!data->buffersAllocated_) {
 		/* Allocate buffers for internal pipeline usage. */
-		ret = prepareBuffers(camera);
+		ret = allocateBuffers(camera);
 		if (ret) {
 			LOG(RPI, Error) << "Failed to allocate buffers";
 			data->freeBuffers();
@@ -719,8 +719,10 @@ void PipelineHandlerBase::stopDevice(Camera *camera)
 	data->state_ = CameraData::State::Stopped;
 	data->platformStop();
 
-	for (auto const stream : data->streams_)
+	for (auto const stream : data->streams_) {
 		stream->dev()->streamOff();
+		stream->dev()->releaseBuffers();
+	}
 
 	/* Disable SOF event generation. */
 	data->frontendDevice()->setFrameStartEnabled(false);
@@ -901,6 +903,10 @@ int PipelineHandlerBase::queueAllBuffers(Camera *camera)
 	int ret;
 
 	for (auto const stream : data->streams_) {
+		ret = stream->dev()->importBuffers(VIDEO_MAX_FRAME);
+		if (ret < 0)
+			return ret;
+
 		if (stream->getFlags() & StreamFlag::External)
 			continue;
 
@@ -1221,7 +1227,7 @@ void CameraData::metadataReady(const ControlList &metadata)
 	/* Add to the Request metadata buffer what the IPA has provided. */
 	/* Last thing to do is to fill up the request metadata. */
 	Request *request = requestQueue_.front();
-	request->metadata().merge(metadata);
+	request->_d()->metadata().merge(metadata);
 
 	/*
 	 * Inform the sensor of the latest colour gains if it has the
@@ -1492,9 +1498,9 @@ void CameraData::checkRequestCompleted()
 void CameraData::fillRequestMetadata(const ControlList &bufferControls, Request *request)
 {
 	if (auto x = bufferControls.get(controls::SensorTimestamp))
-		request->metadata().set(controls::SensorTimestamp, *x);
+		request->_d()->metadata().set(controls::SensorTimestamp, *x);
 	if (auto x = bufferControls.get(controls::FrameWallClock))
-		request->metadata().set(controls::FrameWallClock, *x);
+		request->_d()->metadata().set(controls::FrameWallClock, *x);
 
 	if (cropParams_.size()) {
 		std::vector<Rectangle> crops;
@@ -1502,10 +1508,11 @@ void CameraData::fillRequestMetadata(const ControlList &bufferControls, Request 
 		for (auto const &[k, v] : cropParams_)
 			crops.push_back(scaleIspCrop(v.ispCrop));
 
-		request->metadata().set(controls::ScalerCrop, crops[0]);
+		request->_d()->metadata().set(controls::ScalerCrop, crops[0]);
 		if (crops.size() > 1) {
-			request->metadata().set(controls::rpi::ScalerCrops,
-						Span<const Rectangle>(crops.data(), crops.size()));
+			request->_d()->metadata().set(controls::rpi::ScalerCrops,
+						      Span<const Rectangle>(crops.data(),
+									    crops.size()));
 		}
 	}
 }

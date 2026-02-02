@@ -162,7 +162,7 @@ struct YamlObject::Getter<T, std::enable_if_t<
 			return std::nullopt;
 
 		const std::string &str = obj.value_;
-		T value;
+		T value = {};
 
 		auto [ptr, ec] = std::from_chars(str.data(), str.data() + str.size(),
 						 value);

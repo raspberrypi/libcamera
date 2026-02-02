@@ -6,6 +6,7 @@
  */
 
 #include "algorithm.h"
+#include "params.h"
 
 namespace libcamera {
 
@@ -22,7 +23,7 @@ public:
 		      const IPACameraSensorInfo &configInfo) override;
 	void prepare(IPAContext &context, const uint32_t frame,
 		     IPAFrameContext &frameContext,
-		     mali_c55_params_buffer *params) override;
+		     MaliC55Params *params) override;
 	void process(IPAContext &context, const uint32_t frame,
 		     IPAFrameContext &frameContext,
 		     const mali_c55_stats_buffer *stats,

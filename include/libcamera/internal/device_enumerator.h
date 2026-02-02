@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 
+#include <libcamera/base/regex.h>
 #include <libcamera/base/signal.h>
 
 namespace libcamera {
@@ -23,12 +24,14 @@ public:
 	DeviceMatch(const std::string &driver);
 
 	void add(const std::string &entity);
+	void add(std::regex entity);
 
 	bool match(const MediaDevice *device) const;
 
 private:
 	std::string driver_;
 	std::vector<std::string> entities_;
+	std::vector<std::regex> entityRegexs_;
 };
 
 class DeviceEnumerator

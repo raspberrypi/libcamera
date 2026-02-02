@@ -13,17 +13,11 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
-#pragma GCC diagnostic push
-#if defined __SANITIZE_ADDRESS__ && defined __OPTIMIZE__
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
-#endif
-#include <regex>
-#pragma GCC diagnostic pop
-
 #include <linux/media-bus-format.h>
 #include <linux/v4l2-subdev.h>
 
 #include <libcamera/base/log.h>
+#include <libcamera/base/regex.h>
 #include <libcamera/base/utils.h>
 
 #include <libcamera/geometry.h>
@@ -1730,11 +1724,10 @@ const std::string &V4L2Subdevice::model()
 	 * part of the entity name before the first space if the name contains
 	 * an I2C address, and use the full entity name otherwise.
 	 */
-	std::string entityName = entity_->name();
-	std::regex i2cRegex{ " [0-9]+-[0-9a-f]{4}" };
+	const std::string &entityName = entity_->name();
+	static const std::regex i2cRegex{ " [0-9]+-[0-9a-f]{4}" };
 	std::smatch match;
 
-	std::string model;
 	if (std::regex_search(entityName, match, i2cRegex))
 		model_ = entityName.substr(0, entityName.find(' '));
 	else
@@ -1754,12 +1747,29 @@ const std::string &V4L2Subdevice::model()
  * \a media
  * \param[in] media The media device where the entity is registered
  * \param[in] entity The media entity name
- *
  * \return A newly created V4L2Subdevice on success, nullptr otherwise
  */
 std::unique_ptr<V4L2Subdevice>
 V4L2Subdevice::fromEntityName(const MediaDevice *media,
 			      const std::string &entity)
+{
+	MediaEntity *mediaEntity = media->getEntityByName(entity);
+	if (!mediaEntity)
+		return nullptr;
+
+	return std::make_unique<V4L2Subdevice>(mediaEntity);
+}
+
+/**
+ * \brief Create a new video subdevice instance from an entity in media device
+ * \a media
+ * \param[in] media The media device where the entity is registered
+ * \param[in] entity A regex that will match the media entity's name
+ * \return A newly created V4L2Subdevice on success, nullptr otherwise
+ */
+std::unique_ptr<V4L2Subdevice>
+V4L2Subdevice::fromEntityName(const MediaDevice *media,
+			      const std::regex &entity)
 {
 	MediaEntity *mediaEntity = media->getEntityByName(entity);
 	if (!mediaEntity)

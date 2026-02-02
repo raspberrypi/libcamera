@@ -208,10 +208,10 @@ int GstLibcameraSrcState::queueRequest()
 	}
 
 	GST_TRACE_OBJECT(src_, "Requesting buffers");
-	cam_->queueRequest(wrap->request_.get());
 
 	{
 		GLibLocker locker(&lock_);
+		cam_->queueRequest(wrap->request_.get());
 		queuedRequests_.push(std::move(wrap));
 	}
 

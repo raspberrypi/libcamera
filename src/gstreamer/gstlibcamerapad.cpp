@@ -95,6 +95,10 @@ gst_libcamera_stream_role_get_type()
 	static GType type = 0;
 	static const GEnumValue values[] = {
 		{
+			static_cast<gint>(StreamRole::Raw),
+			"libcamera::Raw",
+			"raw",
+		}, {
 			static_cast<gint>(StreamRole::StillCapture),
 			"libcamera::StillCapture",
 			"still-capture",

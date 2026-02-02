@@ -285,7 +285,7 @@ void IPAIPU3::updateControls(const IPACameraSensorInfo &sensorInfo,
 							       frameDurations[1],
 							       Span<const int64_t, 2>{ { frameDurations[2], frameDurations[2] } });
 
-	controls.merge(context_.ctrlMap);
+	controls.insert(context_.ctrlMap.begin(), context_.ctrlMap.end());
 	*ipaControls = ControlInfoMap(std::move(controls), controls::controls);
 }
 

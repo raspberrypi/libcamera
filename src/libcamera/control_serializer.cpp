@@ -164,8 +164,7 @@ size_t ControlSerializer::binarySize(const ControlInfo &info)
 size_t ControlSerializer::binarySize(const ControlInfoMap &infoMap)
 {
 	size_t size = sizeof(struct ipa_controls_header)
-		    + infoMap.size() * (sizeof(struct ipa_control_info_entry) +
-					3 * sizeof(struct ipa_control_value_entry));
+		    + infoMap.size() * sizeof(struct ipa_control_info_entry);
 
 	for (const auto &ctrl : infoMap)
 		size += binarySize(ctrl.second);
@@ -234,8 +233,7 @@ int ControlSerializer::serialize(const ControlInfoMap &infoMap,
 
 	/* Compute entries and data required sizes. */
 	size_t entriesSize = infoMap.size()
-			   * (sizeof(struct ipa_control_info_entry) +
-			      3 * sizeof(struct ipa_control_value_entry));
+			   * sizeof(struct ipa_control_info_entry);
 	size_t valuesSize = 0;
 	for (const auto &ctrl : infoMap)
 		valuesSize += binarySize(ctrl.second);

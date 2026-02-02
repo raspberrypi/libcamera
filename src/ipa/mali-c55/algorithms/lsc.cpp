@@ -108,41 +108,33 @@ int Lsc::init([[maybe_unused]] IPAContext &context, const YamlObject &tuningData
 	return 0;
 }
 
-size_t Lsc::fillConfigParamsBlock(mali_c55_params_block block) const
+void Lsc::fillConfigParamsBlock(MaliC55Params *params) const
 {
-	block.header->type = MALI_C55_PARAM_MESH_SHADING_CONFIG;
-	block.header->flags = MALI_C55_PARAM_BLOCK_FL_NONE;
-	block.header->size = sizeof(struct mali_c55_params_mesh_shading_config);
+	auto block = params->block<MaliC55Blocks::MeshShadingConfig>();
 
-	block.shading_config->mesh_show = false;
-	block.shading_config->mesh_scale = meshScale_;
-	block.shading_config->mesh_page_r = 0;
-	block.shading_config->mesh_page_g = 1;
-	block.shading_config->mesh_page_b = 2;
-	block.shading_config->mesh_width = meshSize_;
-	block.shading_config->mesh_height = meshSize_;
+	block->mesh_show = false;
+	block->mesh_scale = meshScale_;
+	block->mesh_page_r = 0;
+	block->mesh_page_g = 1;
+	block->mesh_page_b = 2;
+	block->mesh_width = meshSize_;
+	block->mesh_height = meshSize_;
 
-	std::copy(mesh_.begin(), mesh_.end(), block.shading_config->mesh);
-
-	return block.header->size;
+	std::copy(mesh_.begin(), mesh_.end(), block->mesh);
 }
 
-size_t Lsc::fillSelectionParamsBlock(mali_c55_params_block block, uint8_t bank,
+void Lsc::fillSelectionParamsBlock(MaliC55Params *params, uint8_t bank,
 				     uint8_t alpha) const
 {
-	block.header->type = MALI_C55_PARAM_MESH_SHADING_SELECTION;
-	block.header->flags = MALI_C55_PARAM_BLOCK_FL_NONE;
-	block.header->size = sizeof(struct mali_c55_params_mesh_shading_selection);
+	auto block = params->block<MaliC55Blocks::MeshShadingSel>();
 
-	block.shading_selection->mesh_alpha_bank_r = bank;
-	block.shading_selection->mesh_alpha_bank_g = bank;
-	block.shading_selection->mesh_alpha_bank_b = bank;
-	block.shading_selection->mesh_alpha_r = alpha;
-	block.shading_selection->mesh_alpha_g = alpha;
-	block.shading_selection->mesh_alpha_b = alpha;
-	block.shading_selection->mesh_strength = 0x1000; /* Otherwise known as 1.0 */
-
-	return block.header->size;
+	block->mesh_alpha_bank_r = bank;
+	block->mesh_alpha_bank_g = bank;
+	block->mesh_alpha_bank_b = bank;
+	block->mesh_alpha_r = alpha;
+	block->mesh_alpha_g = alpha;
+	block->mesh_alpha_b = alpha;
+	block->mesh_strength = 0x1000; /* Otherwise known as 1.0 */
 }
 
 std::tuple<uint8_t, uint8_t> Lsc::findBankAndAlpha(uint32_t ct) const
@@ -170,7 +162,7 @@ std::tuple<uint8_t, uint8_t> Lsc::findBankAndAlpha(uint32_t ct) const
 
 void Lsc::prepare(IPAContext &context, [[maybe_unused]] const uint32_t frame,
 		  [[maybe_unused]] IPAFrameContext &frameContext,
-		  mali_c55_params_buffer *params)
+		  MaliC55Params *params)
 {
 	/*
 	 * For each frame we assess the colour temperature of the **last** frame
@@ -193,10 +185,7 @@ void Lsc::prepare(IPAContext &context, [[maybe_unused]] const uint32_t frame,
 		std::tie(bank, alpha) = findBankAndAlpha(temperatureK);
 	}
 
-	mali_c55_params_block block;
-	block.data = &params->data[params->total_size];
-
-	params->total_size += fillSelectionParamsBlock(block, bank, alpha);
+	fillSelectionParamsBlock(params, bank, alpha);
 
 	if (frame > 0)
 		return;
@@ -205,8 +194,7 @@ void Lsc::prepare(IPAContext &context, [[maybe_unused]] const uint32_t frame,
 	 * If this is the first frame, we need to load the parsed coefficient
 	 * tables from tuning data to the ISP.
 	 */
-	block.data = &params->data[params->total_size];
-	params->total_size += fillConfigParamsBlock(block);
+	fillConfigParamsBlock(params);
 }
 
 REGISTER_IPA_ALGORITHM(Lsc, "Lsc")

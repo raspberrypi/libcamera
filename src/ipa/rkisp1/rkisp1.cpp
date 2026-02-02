@@ -349,7 +349,7 @@ void IPARkISP1::computeParams(const uint32_t frame, const uint32_t bufferId)
 	for (auto const &algo : algorithms())
 		algo->prepare(context_, frame, frameContext, &params);
 
-	paramsComputed.emit(frame, params.size());
+	paramsComputed.emit(frame, params.bytesused());
 }
 
 void IPARkISP1::processStats(const uint32_t frame, const uint32_t bufferId,

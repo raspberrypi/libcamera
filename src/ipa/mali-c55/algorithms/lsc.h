@@ -23,15 +23,15 @@ public:
 	int init(IPAContext &context, const YamlObject &tuningData) override;
 	void prepare(IPAContext &context, const uint32_t frame,
 		     IPAFrameContext &frameContext,
-		     mali_c55_params_buffer *params) override;
+		     MaliC55Params *params) override;
 private:
 	static constexpr unsigned int kRedOffset = 0;
 	static constexpr unsigned int kGreenOffset = 1024;
 	static constexpr unsigned int kBlueOffset = 2048;
 
-	size_t fillConfigParamsBlock(mali_c55_params_block block) const;
-	size_t fillSelectionParamsBlock(mali_c55_params_block block,
-					uint8_t bank, uint8_t alpha) const;
+	void fillConfigParamsBlock(MaliC55Params *params) const;
+	void fillSelectionParamsBlock(MaliC55Params *params,
+				      uint8_t bank, uint8_t alpha) const;
 	std::tuple<uint8_t, uint8_t> findBankAndAlpha(uint32_t ct) const;
 
 	std::vector<uint32_t> mesh_ = std::vector<uint32_t>(3072);

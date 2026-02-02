@@ -9,6 +9,21 @@
 #define __UAPI_MALI_C55_CONFIG_H
 
 #include <linux/types.h>
+#include <linux/v4l2-controls.h>
+#include <linux/media/v4l2-isp.h>
+
+#define V4L2_CID_MALI_C55_CAPABILITIES	(V4L2_CID_USER_MALI_C55_BASE + 0x0)
+#define MALI_C55_GPS_PONG		(1U << 0)
+#define MALI_C55_GPS_WDR		(1U << 1)
+#define MALI_C55_GPS_COMPRESSION	(1U << 2)
+#define MALI_C55_GPS_TEMPER		(1U << 3)
+#define MALI_C55_GPS_SINTER_LITE	(1U << 4)
+#define MALI_C55_GPS_SINTER		(1U << 5)
+#define MALI_C55_GPS_IRIDIX_LTM		(1U << 6)
+#define MALI_C55_GPS_IRIDIX_GTM		(1U << 7)
+#define MALI_C55_GPS_CNR		(1U << 8)
+#define MALI_C55_GPS_FRSCALER		(1U << 9)
+#define MALI_C55_GPS_DS_PIPE		(1U << 10)
 
 /*
  * Frames are split into zones of almost equal width and height - a zone is a
@@ -180,15 +195,6 @@ struct mali_c55_stats_buffer {
 } __attribute__((packed));
 
 /**
- * enum mali_c55_param_buffer_version - Mali-C55 parameters block versioning
- *
- * @MALI_C55_PARAM_BUFFER_V1: First version of Mali-C55 parameters block
- */
-enum mali_c55_param_buffer_version {
-	MALI_C55_PARAM_BUFFER_V1,
-};
-
-/**
  * enum mali_c55_param_block_type - Enumeration of Mali-C55 parameter blocks
  *
  * This enumeration defines the types of Mali-C55 parameters block. Each block
@@ -228,65 +234,6 @@ enum mali_c55_param_block_type {
 	MALI_C55_PARAM_MESH_SHADING_SELECTION,
 };
 
-#define MALI_C55_PARAM_BLOCK_FL_NONE			0
-#define MALI_C55_PARAM_BLOCK_FL_DISABLED		BIT(0)
-
-/**
- * struct mali_c55_params_block_header - Mali-C55 parameter block header
- *
- * This structure represents the common part of all the ISP configuration
- * blocks. Each parameters block embeds an instance of this structure type
- * as its first member, followed by the block-specific configuration data. The
- * driver inspects this common header to discern the block type and its size and
- * properly handle the block content by casting it to the correct block-specific
- * type.
- *
- * The @type field is one of the values enumerated by
- * :c:type:`mali_c55_param_block_type` and specifies how the data should be
- * interpreted by the driver. The @size field specifies the size of the
- * parameters block and is used by the driver for validation purposes. The
- * @flags field holds a bitmask of per-block flags MALI_C55_PARAM_BLOCK_FL_*.
- *
- * If userspace wants to disable an ISP block the
- * MALI_C55_PARAM_BLOCK_FL_DISABLED bit should be set in the @flags field. In
- * that case userspace may optionally omit the remainder of the configuration
- * block, which will in any case be ignored by the driver. If a new
- * configuration of an ISP block has to be applied userspace shall fully
- * populate the ISP block and omit setting the MALI_C55_PARAM_BLOCK_FL_DISABLED
- * bit in the @flags field.
- *
- * Userspace is responsible for correctly populating the parameters block header
- * fields (@type, @flags and @size) and correctly populate the block-specific
- * parameters.
- *
- * For example:
- *
- * .. code-block:: c
- *
- *	void populate_sensor_offs(struct mali_c55_params_block_header *block) {
- *		block->type = MALI_C55_PARAM_BLOCK_SENSOR_OFFS;
- *		block->enabled = MALI_C55_PARAM_BLOCK_FL_NONE;
- *		block->size = sizeof(struct mali_c55_params_sensor_off_preshading);
- *
- *		struct mali_c55_params_sensor_off_preshading *sensor_offs =
- *			(struct mali_c55_params_sensor_off_preshading *)block;
- *
- *		sensor_offs->chan00 = offset00;
- *		sensor_offs->chan01 = offset01;
- *		sensor_offs->chan10 = offset10;
- *		sensor_offs->chan11 = offset11;
- *	}
- *
- * @type: The parameters block type from :c:type:`mali_c55_param_block_type`
- * @flags: Bitmask of block flags
- * @size: Size (in bytes) of the parameters block
- */
-struct mali_c55_params_block_header {
-	__u16 type;
-	__u16 flags;
-	__u32 size;
-} __attribute__((aligned(8)));
-
 /**
  * struct mali_c55_params_sensor_off_preshading - offset subtraction for each
  *						  color channel
@@ -305,7 +252,7 @@ struct mali_c55_params_block_header {
  * @chan11: Offset for color channel 11 (default: B)
  */
 struct mali_c55_params_sensor_off_preshading {
-	struct mali_c55_params_block_header header;
+	struct v4l2_isp_params_block_header header;
 	__u32 chan00;
 	__u32 chan01;
 	__u32 chan10;
@@ -470,7 +417,7 @@ enum mali_c55_aexp_hist_plane_mode {
  *			This parameter is unused for the post-Iridix Histogram
  */
 struct mali_c55_params_aexp_hist {
-	struct mali_c55_params_block_header header;
+	struct v4l2_isp_params_block_header header;
 	__u8 skip_x;
 	__u8 offset_x;
 	__u8 skip_y;
@@ -502,7 +449,7 @@ struct mali_c55_params_aexp_hist {
  *			@nodes_used_horiz
  */
 struct mali_c55_params_aexp_weights {
-	struct mali_c55_params_block_header header;
+	struct v4l2_isp_params_block_header header;
 	__u8 nodes_used_horiz;
 	__u8 nodes_used_vert;
 	__u8 zone_weights[MALI_C55_MAX_ZONES];
@@ -520,7 +467,7 @@ struct mali_c55_params_aexp_weights {
  * @gain:	The digital gain value to apply, in Q5.8 format.
  */
 struct mali_c55_params_digital_gain {
-	struct mali_c55_params_block_header header;
+	struct v4l2_isp_params_block_header header;
 	__u16 gain;
 };
 
@@ -560,7 +507,7 @@ enum mali_c55_awb_stats_mode {
  * @gain11:	Multiplier for colour channel 11
  */
 struct mali_c55_params_awb_gains {
-	struct mali_c55_params_block_header header;
+	struct v4l2_isp_params_block_header header;
 	__u16 gain00;
 	__u16 gain01;
 	__u16 gain10;
@@ -635,7 +582,7 @@ enum mali_c55_params_awb_tap_points {
  * @cb_low:		B/G ratio trim low (Q4.8 format)
  */
 struct mali_c55_params_awb_config {
-	struct mali_c55_params_block_header header;
+	struct v4l2_isp_params_block_header header;
 	__u8 tap_point;
 	__u8 stats_mode;
 	__u16 white_level;
@@ -745,7 +692,7 @@ struct mali_c55_params_awb_config {
  * @mesh:		Mesh shading correction tables
  */
 struct mali_c55_params_mesh_shading_config {
-	struct mali_c55_params_block_header header;
+	struct v4l2_isp_params_block_header header;
 	__u8 mesh_show;
 	__u8 mesh_scale;
 	__u8 mesh_page_r;
@@ -800,7 +747,7 @@ enum mali_c55_params_mesh_alpha_bank {
  * @mesh_strength:	Mesh strength in Q4.12 format [0..4096]
  */
 struct mali_c55_params_mesh_shading_selection {
-	struct mali_c55_params_block_header header;
+	struct v4l2_isp_params_block_header header;
 	__u8 mesh_alpha_bank_r;
 	__u8 mesh_alpha_bank_g;
 	__u8 mesh_alpha_bank_b;
@@ -834,76 +781,5 @@ struct mali_c55_params_mesh_shading_selection {
 	sizeof(struct mali_c55_params_awb_gains) +		\
 	sizeof(struct mali_c55_params_mesh_shading_config) +	\
 	sizeof(struct mali_c55_params_mesh_shading_selection))
-
-/**
- * struct mali_c55_params_buffer - 3A configuration parameters
- *
- * This struct contains the configuration parameters of the Mali-C55 ISP
- * algorithms, serialized by userspace into a data buffer. Each configuration
- * parameter block is represented by a block-specific structure which contains a
- * :c:type:`mali_c55_params_block_header` entry as first member. Userspace
- * populates the @data buffer with configuration parameters for the blocks that
- * it intends to configure. As a consequence, the data buffer effective size
- * changes according to the number of ISP blocks that userspace intends to
- * configure.
- *
- * The parameters buffer is versioned by the @version field to allow modifying
- * and extending its definition. Userspace shall populate the @version field to
- * inform the driver about the version it intends to use. The driver will parse
- * and handle the @data buffer according to the data layout specific to the
- * indicated version and return an error if the desired version is not
- * supported.
- *
- * For each ISP block that userspace wants to configure, a block-specific
- * structure is appended to the @data buffer, one after the other without gaps
- * in between nor overlaps. Userspace shall populate the @total_size field with
- * the effective size, in bytes, of the @data buffer.
- *
- * The expected memory layout of the parameters buffer is::
- *
- *	+-------------------- struct mali_c55_params_buffer ------------------+
- *	| version = MALI_C55_PARAM_BUFFER_V1;                                 |
- *	| total_size = sizeof(struct mali_c55_params_sensor_off_preshading)   |
- *	|              sizeof(struct mali_c55_params_aexp_hist);              |
- *	| +------------------------- data  ---------------------------------+ |
- *	| | +--------- struct mali_c55_params_sensor_off_preshading ------+ | |
- *	| | | +-------- struct mali_c55_params_block_header header -----+ | | |
- *	| | | | type = MALI_C55_PARAM_BLOCK_SENSOR_OFFS;                | | | |
- *	| | | | flags = MALI_C55_PARAM_BLOCK_FL_NONE;                   | | | |
- *	| | | | size =                                                  | | | |
- *	| | | |    sizeof(struct mali_c55_params_sensor_off_preshading);| | | |
- *	| | | +---------------------------------------------------------+ | | |
- *	| | | chan00 = ...;                                               | | |
- *	| | | chan01 = ...;                                               | | |
- *	| | | chan10 = ...;                                               | | |
- *	| | | chan11 = ...;                                               | | |
- *	| | +------------ struct mali_c55_params_aexp_hist ---------------+ | |
- *	| | | +-------- struct mali_c55_params_block_header header -----+ | | |
- *	| | | | type = MALI_C55_PARAM_BLOCK_AEXP_HIST;                  | | | |
- *	| | | | flags = MALI_C55_PARAM_BLOCK_FL_NONE;                   | | | |
- *	| | | | size = sizeof(struct mali_c55_params_aexp_hist);        | | | |
- *	| | | +---------------------------------------------------------+ | | |
- *	| | | skip_x = ...;                                               | | |
- *	| | | offset_x = ...;                                             | | |
- *	| | | skip_y = ...;                                               | | |
- *	| | | offset_y = ...;                                             | | |
- *	| | | scale_bottom = ...;                                         | | |
- *	| | | scale_top = ...;                                            | | |
- *	| | | plane_mode = ...;                                           | | |
- *	| | | tap_point = ...;                                            | | |
- *	| | +-------------------------------------------------------------+ | |
- *	| +-----------------------------------------------------------------+ |
- *	+---------------------------------------------------------------------+
- *
- * @version: The version from :c:type:`mali_c55_param_buffer_version`
- * @total_size: The Mali-C55 configuration data effective size, excluding this
- *		header
- * @data: The Mali-C55 configuration blocks data
- */
-struct mali_c55_params_buffer {
-	__u8 version;
-	__u32 total_size;
-	__u8 data[MALI_C55_PARAMS_MAX_SIZE];
-};
 
 #endif /* __UAPI_MALI_C55_CONFIG_H */

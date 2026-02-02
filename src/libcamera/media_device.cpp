@@ -343,6 +343,32 @@ MediaEntity *MediaDevice::getEntityByName(const std::string &name) const
 }
 
 /**
+ * \brief Return the MediaEntity with name matching the regex \a name
+ * \param[in] name A regex to match the entity name
+ * \return The entity matching the regex \a name, or nullptr if no such entity
+ * is found or multiple entities match on \a name
+ */
+MediaEntity *MediaDevice::getEntityByName(const std::regex &name) const
+{
+	MediaEntity *entity = nullptr;
+
+	for (MediaEntity *e : entities_) {
+		if (!std::regex_search(e->name(), name))
+			continue;
+
+		if (entity) {
+			LOG(MediaDevice, Error)
+				<< "Multiple entities match given regex";
+			return nullptr;
+		}
+
+		entity = e;
+	}
+
+	return entity;
+}
+
+/**
  * \brief Retrieve the MediaLink connecting two pads, identified by entity
  * names and pad indexes
  * \param[in] sourceName The source entity name

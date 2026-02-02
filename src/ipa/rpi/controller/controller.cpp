@@ -145,11 +145,29 @@ int Controller::read(char const *filename)
 
 int Controller::createAlgorithm(const std::string &name, const YamlObject &params)
 {
+	/* Any algorithm may be disabled by setting "enabled" to false. */
+	bool enabled = params["enabled"].get<bool>(true);
+	LOG(RPiController, Debug)
+		<< "Algorithm " << name << ": "
+		<< (enabled ? "enabled" : "disabled");
+	if (!enabled)
+		return 0;
+
 	auto it = getAlgorithms().find(name);
 	if (it == getAlgorithms().end()) {
 		LOG(RPiController, Warning)
 			<< "No algorithm found for \"" << name << "\"";
 		return 0;
+	}
+
+	/* Do not allow duplicate versions of algorithms (e.g. AWB) to run. */
+	size_t pos = name.find_last_of('.');
+	std::string const &algoType =
+		pos == std::string::npos ? name : name.substr(pos + 1);
+	if (getAlgorithm(algoType)) {
+		LOG(RPiController, Error)
+			<< "Algorithm type '" << algoType << "' already exists";
+		return -1;
 	}
 
 	Algorithm *algo = (*it->second)(this);

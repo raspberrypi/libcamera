@@ -16,7 +16,7 @@ Copyright (C) 2021, Linaro
 
 //Pixel Shader
 #ifdef GL_ES
-precision mediump float;
+precision highp float;
 #endif
 
 /** Monochrome RGBA or GL_LUMINANCE Bayer encoded texture.*/
@@ -24,11 +24,34 @@ uniform sampler2D       tex_y;
 varying vec4            center;
 varying vec4            yCoord;
 varying vec4            xCoord;
+uniform mat3            ccm;
+uniform vec3            blacklevel;
+uniform float           gamma;
+uniform float           contrastExp;
+
+float apply_contrast(float value)
+{
+    // Apply simple S-curve
+    if (value < 0.5)
+        return 0.5 * pow(value / 0.5, contrastExp);
+    else
+        return 1.0 - 0.5 * pow((1.0 - value) / 0.5, contrastExp);
+}
 
 void main(void) {
-    #define fetch(x, y) texture2D(tex_y, vec2(x, y)).r
+    vec3 rgb;
 
-    float C = texture2D(tex_y, center.xy).r; // ( 0, 0)
+    #if defined(RAW10P)
+    #define pixel(p) p.r / 4.0 + p.g * 64.0
+    #define fetch(x, y) pixel(texture2D(tex_y, vec2(x, y)))
+    #elif defined(RAW12P)
+    #define pixel(p) p.r / 16.0 + p.g * 16.0
+    #define fetch(x, y) pixel(texture2D(tex_y, vec2(x, y)))
+    #else
+    #define fetch(x, y) texture2D(tex_y, vec2(x, y)).r
+    #endif
+
+    float C = fetch(center.x, center.y); // ( 0, 0)
     const vec4 kC = vec4( 4.0,  6.0,  5.0,  5.0) / 8.0;
 
     // Determine which of four types of pixels we are on.
@@ -97,11 +120,74 @@ void main(void) {
     PATTERN.xw  += kB.xw * B;
     PATTERN.xz  += kF.xz * F;
 
-    gl_FragColor.rgb = (alternate.y == 0.0) ?
+    rgb =  (alternate.y == 0.0) ?
         ((alternate.x == 0.0) ?
             vec3(C, PATTERN.xy) :
             vec3(PATTERN.z, C, PATTERN.w)) :
         ((alternate.x == 0.0) ?
             vec3(PATTERN.w, C, PATTERN.z) :
             vec3(PATTERN.yx, C));
+
+    rgb = rgb - blacklevel;
+
+    /*
+     *   CCM is a 3x3 in the format
+     *
+     *   +--------------+----------------+---------------+
+     *   | RedRedGain   | RedGreenGain   | RedBlueGain   |
+     *   +--------------+----------------+---------------+
+     *   | GreenRedGain | GreenGreenGain | GreenBlueGain |
+     *   +--------------+----------------+---------------+
+     *   | BlueRedGain  |  BlueGreenGain | BlueBlueGain  |
+     *   +--------------+----------------+---------------+
+     *
+     *   Rout = RedRedGain * Rin + RedGreenGain * Gin + RedBlueGain * Bin
+     *   Gout = GreenRedGain * Rin + GreenGreenGain * Gin + GreenBlueGain * Bin
+     *   Bout = BlueRedGain * Rin + BlueGreenGain * Gin + BlueBlueGain * Bin
+     *
+     *   We upload to the GPU without transposition glUniformMatrix3f(.., .., GL_FALSE, ccm);
+     *
+     *   CPU
+     *   float ccm [] = {
+     *             RedRedGain,   RedGreenGain,   RedBlueGain,
+     *             GreenRedGain, GreenGreenGain, GreenBlueGain,
+     *             BlueRedGain,  BlueGreenGain,  BlueBlueGain,
+     *   };
+     *
+     *   GPU
+     *   ccm = {
+     *             RedRedGain,   GreenRedGain,   BlueRedGain,
+     *             RedGreenGain, GreenGreenGain, BlueGreenGain,
+     *             RedBlueGain,  GreenBlueGain,  BlueBlueGain,
+     *   }
+     *
+     *   However the indexing for the mat data-type is column major hence
+     *   ccm[0][0] = RedRedGain, ccm[0][1] = RedGreenGain, ccm[0][2] = RedBlueGain
+     *
+     */
+    float rin, gin, bin;
+    rin = rgb.r;
+    gin = rgb.g;
+    bin = rgb.b;
+
+    rgb.r = (rin * ccm[0][0]) + (gin * ccm[0][1]) + (bin * ccm[0][2]);
+    rgb.g = (rin * ccm[1][0]) + (gin * ccm[1][1]) + (bin * ccm[1][2]);
+    rgb.b = (rin * ccm[2][0]) + (gin * ccm[2][1]) + (bin * ccm[2][2]);
+
+    /*
+     * Contrast
+     */
+    rgb = clamp(rgb, 0.0, 1.0);
+    rgb.r = apply_contrast(rgb.r);
+    rgb.g = apply_contrast(rgb.g);
+    rgb.b = apply_contrast(rgb.b);
+
+    /* Apply gamma after colour correction */
+    rgb = pow(rgb, vec3(gamma));
+
+#if defined (SWAP_BLUE)
+    gl_FragColor = vec4(rgb.bgr, 1.0);
+#else
+    gl_FragColor = vec4(rgb, 1.0);
+#endif
 }

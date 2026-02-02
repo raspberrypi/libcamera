@@ -86,13 +86,18 @@ const ControlInfoMap::Map ipaControls{
 	{ &controls::Sharpness, ControlInfo(0.0f, 16.0f, 1.0f) },
 	{ &controls::ScalerCrop, ControlInfo(Rectangle{}, Rectangle(65535, 65535, 65535, 65535), Rectangle{}) },
 	{ &controls::FrameDurationLimits,
-	  ControlInfo(INT64_C(33333), INT64_C(120000),
-		      static_cast<int64_t>(defaultMinFrameDuration.get<std::micro>())) },
-	{ &controls::rpi::SyncMode, ControlInfo(controls::rpi::SyncModeValues) },
-	{ &controls::rpi::SyncFrames, ControlInfo(1, 1000000, 100) },
+	  ControlInfo(static_cast<int64_t>(defaultMinFrameDuration.get<std::micro>()),
+		      static_cast<int64_t>(defaultMaxFrameDuration.get<std::micro>()),
+		      Span<const int64_t, 2>{ { static_cast<int64_t>(defaultMinFrameDuration.get<std::micro>()),
+						static_cast<int64_t>(defaultMinFrameDuration.get<std::micro>()) } }) },
 	{ &controls::draft::NoiseReductionMode, ControlInfo(controls::draft::NoiseReductionModeValues) },
 	{ &controls::rpi::StatsOutputEnable, ControlInfo(false, true, false) },
 	{ &controls::rpi::CnnEnableInputTensor, ControlInfo(false, true, false) },
+	{ &controls::rpi::SyncMode,
+	  ControlInfo({ { ControlValue(controls::rpi::SyncModeOff),
+			  ControlValue(controls::rpi::SyncModeClient) } },
+		      ControlValue(controls::rpi::SyncModeOff)) },
+	{ &controls::rpi::SyncFrames, ControlInfo(100, 100000, 1000) },
 };
 
 /* IPA controls handled conditionally, if the sensor is not mono */
@@ -622,7 +627,7 @@ void IpaBase::setMode(const IPACameraSensorInfo &sensorInfo)
 			mode_.minLineLength = adjustedLineLength;
 		} else {
 			LOG(IPARPI, Error)
-				<< "Sensor minimum line length of " << pixelTime * mode_.width
+				<< "Sensor minimum line length of " << Duration(pixelTime * mode_.width)
 				<< " (" << 1us / pixelTime << " MPix/s)"
 				<< " is below the minimum allowable ISP limit of "
 				<< adjustedLineLength

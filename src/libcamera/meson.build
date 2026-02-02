@@ -70,12 +70,34 @@ libcamera_deps = []
 libatomic = cc.find_library('atomic', required : false)
 libthreads = dependency('threads')
 
+mesa_works = cc.check_header('EGL/egl.h', required: false)
+libegl = dependency('egl', required : false)
+libglesv2 = dependency('glesv2', required : false)
+
+if libegl.found()
+    config_h.set('HAVE_LIBEGL', 1)
+endif
+
+if libglesv2.found()
+    config_h.set('HAVE_GLESV2', 1)
+endif
+
+if mesa_works
+    libcamera_internal_sources += files([
+        'egl.cpp',
+    ])
+    gles_headless_enabled = true
+else
+    gles_headless_enabled = false
+endif
+
 subdir('base')
 subdir('converter')
 subdir('ipa')
 subdir('pipeline')
 subdir('proxy')
 subdir('sensor')
+subdir('shaders')
 subdir('software_isp')
 
 libdl = dependency('dl')
@@ -177,10 +199,22 @@ libcamera_deps += [
     libcamera_base_private,
     libcrypto,
     libdl,
+    libegl,
+    libglesv2,
     liblttng,
     libudev,
     libyaml,
 ]
+
+# Generate headers from shaders
+libcamera_shader_headers = custom_target(
+    'gen-shader-headers',
+    input : [shader_files],
+    output : 'glsl_shaders.h',
+    command : [gen_shader_headers, meson.project_source_root(), '@OUTPUT@', '@INPUT@'],
+)
+
+libcamera_internal_headers += libcamera_shader_headers
 
 # We add '/' to the build_rpath as a 'safe' path to act as a boolean flag.
 # The build_rpath is stripped at install time by meson, so we determine at

@@ -24,7 +24,6 @@
 #include <libcamera/formats.h>
 #include <libcamera/framebuffer.h>
 #include <libcamera/geometry.h>
-#include <libcamera/request.h>
 #include <libcamera/stream.h>
 
 #include <libcamera/ipa/ipa_interface.h>
@@ -39,6 +38,7 @@
 #include "libcamera/internal/ipa_manager.h"
 #include "libcamera/internal/media_device.h"
 #include "libcamera/internal/pipeline_handler.h"
+#include "libcamera/internal/request.h"
 #include "libcamera/internal/v4l2_subdevice.h"
 #include "libcamera/internal/v4l2_videodevice.h"
 
@@ -618,8 +618,8 @@ void VimcCameraData::imageBufferReady(FrameBuffer *buffer)
 	}
 
 	/* Record the sensor's timestamp in the request metadata. */
-	request->metadata().set(controls::SensorTimestamp,
-				buffer->metadata().timestamp);
+	request->_d()->metadata().set(controls::SensorTimestamp,
+				      buffer->metadata().timestamp);
 
 	pipe->completeBuffer(request, buffer);
 	pipe->completeRequest(request);

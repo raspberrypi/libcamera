@@ -18,6 +18,7 @@
 
 #include <libcamera/base/class.h>
 #include <libcamera/base/log.h>
+#include <libcamera/base/regex.h>
 
 #include <libcamera/color_space.h>
 #include <libcamera/geometry.h>
@@ -163,6 +164,8 @@ public:
 
 	static std::unique_ptr<V4L2Subdevice>
 	fromEntityName(const MediaDevice *media, const std::string &entity);
+	static std::unique_ptr<V4L2Subdevice>
+	fromEntityName(const MediaDevice *media, const std::regex &entity);
 
 protected:
 	std::string logPrefix() const override;

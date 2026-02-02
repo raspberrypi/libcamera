@@ -13,6 +13,9 @@
 #include <set>
 #include <string>
 #include <sys/types.h>
+#include <unordered_set>
+
+#include <libcamera/base/class.h>
 
 #include "libcamera/internal/device_enumerator.h"
 
@@ -54,7 +57,10 @@ private:
 		DependencyMap deps_;
 	};
 
+	LIBCAMERA_DISABLE_COPY_AND_MOVE(DeviceEnumeratorUdev)
+
 	int addUdevDevice(struct udev_device *dev);
+	void removeUdevDevice(struct udev_device *dev);
 	int populateMediaDevice(MediaDevice *media, DependencyMap *deps);
 	std::string lookupDeviceNode(dev_t devnum);
 
@@ -66,6 +72,7 @@ private:
 	EventNotifier *notifier_;
 
 	std::set<dev_t> orphans_;
+	std::unordered_set<dev_t> devices_;
 	std::list<MediaDeviceDeps> pending_;
 	std::map<dev_t, MediaDeviceDeps *> devMap_;
 };

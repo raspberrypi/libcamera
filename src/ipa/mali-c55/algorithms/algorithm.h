@@ -22,7 +22,7 @@ class Algorithm : public libcamera::ipa::Algorithm<Module>
 };
 
 union mali_c55_params_block {
-	struct mali_c55_params_block_header *header;
+	struct v4l2_isp_params_block_header *header;
 	struct mali_c55_params_sensor_off_preshading *sensor_offs;
 	struct mali_c55_params_aexp_hist *aexp_hist;
 	struct mali_c55_params_aexp_weights *aexp_weights;

@@ -24,6 +24,7 @@ libcamera_base_private_headers = files([
     'message.h',
     'mutex.h',
     'private.h',
+    'regex.h',
     'semaphore.h',
     'thread.h',
     'thread_annotations.h',

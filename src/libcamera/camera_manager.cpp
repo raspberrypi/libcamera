@@ -440,7 +440,7 @@ std::shared_ptr<Camera> CameraManager::get(std::string_view id)
 /**
  * \fn const std::string &CameraManager::version()
  * \brief Retrieve the libcamera version string
- * \context This function is \a threadsafe.
+ * \context This function is \threadsafe.
  * \return The libcamera version string
  */
 

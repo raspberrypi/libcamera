@@ -172,10 +172,12 @@ CameraSensorRaw::~CameraSensorRaw() = default;
 std::variant<std::unique_ptr<CameraSensor>, int>
 CameraSensorRaw::match(MediaEntity *entity)
 {
+	using libcamera::_log;
+
 	/* Check the entity type. */
 	if (entity->type() != MediaEntity::Type::V4L2Subdevice ||
 	    entity->function() != MEDIA_ENT_F_CAM_SENSOR) {
-		libcamera::LOG(CameraSensor, Debug)
+		LOG(CameraSensor, Debug)
 			<< entity->name() << ": unsupported entity type ("
 			<< utils::to_underlying(entity->type())
 			<< ") or function (" << utils::hex(entity->function()) << ")";
@@ -200,7 +202,7 @@ CameraSensorRaw::match(MediaEntity *entity)
 			break;
 
 		default:
-			libcamera::LOG(CameraSensor, Debug)
+			LOG(CameraSensor, Debug)
 				<< entity->name() << ": unsupported pad " << pad->index()
 				<< " type " << utils::hex(pad->flags());
 			return { 0 };
@@ -208,7 +210,7 @@ CameraSensorRaw::match(MediaEntity *entity)
 	}
 
 	if (numSinks < 1 || numSinks > 2 || numSources != 1) {
-		libcamera::LOG(CameraSensor, Debug)
+		LOG(CameraSensor, Debug)
 			<< entity->name() << ": unsupported number of sinks ("
 			<< numSinks << ") or sources (" << numSources << ")";
 		return { 0 };

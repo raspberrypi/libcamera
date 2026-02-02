@@ -19,6 +19,7 @@
 #include <string_view>
 #include <syslog.h>
 #include <time.h>
+#include <unistd.h>
 #include <unordered_set>
 
 #include <libcamera/logging.h>
@@ -582,14 +583,21 @@ void Logger::logSetLevel(const char *category, const char *level)
 /**
  * \brief Construct a logger
  *
- * If the environment variable is not set, log to std::cerr. The log messages
- * are then colored by default. This can be overridden by setting the
- * LIBCAMERA_LOG_NO_COLOR environment variable to disable coloring.
+ * If the environment variable is not set, log to std::cerr. The coloring
+ * of log messages can be controlled using the LIBCAMERA_LOG_COLOR environment
+ * variable.
  */
 Logger::Logger()
 {
-	bool color = !utils::secure_getenv("LIBCAMERA_LOG_NO_COLOR");
-	logSetStream(&std::cerr, color);
+	const char *color = utils::secure_getenv("LIBCAMERA_LOG_COLOR");
+	bool wantColor = false;
+
+	if (!color || strcmp(color, "auto") == 0)
+		wantColor = isatty(STDERR_FILENO) == 1;
+	else if (strcmp(color, "yes") == 0)
+		wantColor = true;
+
+	logSetStream(&std::cerr, wantColor);
 
 	parseLogFile();
 	parseLogLevels();
@@ -849,18 +857,13 @@ LogMessage::LogMessage(const char *fileName, unsigned int line,
 
 LogMessage::~LogMessage()
 {
-	/* Don't print anything if we have been moved to another LogMessage. */
-	if (severity_ == LogInvalid)
-		return;
-
 	Logger *logger = Logger::instance();
 	if (!logger)
 		return;
 
 	msgStream_ << std::endl;
 
-	if (severity_ >= category_.severity())
-		logger->write(*this);
+	logger->write(*this);
 
 	if (severity_ == LogSeverity::LogFatal) {
 		logger->backtrace();

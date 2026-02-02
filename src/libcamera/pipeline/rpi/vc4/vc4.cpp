@@ -168,7 +168,7 @@ private:
 		return static_cast<Vc4CameraData *>(camera->_d());
 	}
 
-	int prepareBuffers(Camera *camera) override;
+	int allocateBuffers(Camera *camera) override;
 	int platformRegister(std::unique_ptr<RPi::CameraData> &cameraData,
 			     std::shared_ptr<MediaDevice> unicam,
 			     std::shared_ptr<MediaDevice> isp) override;
@@ -229,7 +229,7 @@ bool PipelineHandlerVc4::match(DeviceEnumerator *enumerator)
 	return false;
 }
 
-int PipelineHandlerVc4::prepareBuffers(Camera *camera)
+int PipelineHandlerVc4::allocateBuffers(Camera *camera)
 {
 	Vc4CameraData *data = cameraData(camera);
 	unsigned int minUnicamBuffers = data->config_.minUnicamBuffers;
@@ -328,7 +328,7 @@ int PipelineHandlerVc4::prepareBuffers(Camera *camera)
 		LOG(RPI, Debug) << "Preparing " << numBuffers
 				<< " buffers for stream " << stream->name();
 
-		ret = stream->prepareBuffers(numBuffers);
+		ret = stream->allocateBuffers(numBuffers);
 		if (ret < 0)
 			return ret;
 	}

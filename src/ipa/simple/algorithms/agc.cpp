@@ -100,7 +100,7 @@ void Agc::updateExposure(IPAContext &context, IPAFrameContext &frameContext, dou
 }
 
 void Agc::process(IPAContext &context,
-		  const uint32_t frame,
+		  [[maybe_unused]] const uint32_t frame,
 		  IPAFrameContext &frameContext,
 		  const SwIspStats *stats,
 		  ControlList &metadata)
@@ -110,13 +110,14 @@ void Agc::process(IPAContext &context,
 	metadata.set(controls::ExposureTime, exposureTime.get<std::micro>());
 	metadata.set(controls::AnalogueGain, frameContext.sensor.gain);
 
-	if (frame == 0) {
+	if (!context.activeState.agc.valid) {
 		/*
 		 * Init active-state from sensor values in case updateExposure()
 		 * does not run for the first frame.
 		 */
 		context.activeState.agc.exposure = frameContext.sensor.exposure;
 		context.activeState.agc.again = frameContext.sensor.gain;
+		context.activeState.agc.valid = true;
 	}
 
 	if (!stats->valid) {

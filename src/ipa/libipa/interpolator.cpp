@@ -6,14 +6,7 @@
  */
 #include "interpolator.h"
 
-#include <algorithm>
-#include <string>
-
 #include <libcamera/base/log.h>
-
-#include "libcamera/internal/yaml_parser.h"
-
-#include "interpolator.h"
 
 /**
  * \file interpolator.h
@@ -105,20 +98,6 @@ namespace ipa {
  */
 
 /**
- * \fn void Interpolator<T>::setQuantization(const unsigned int q)
- * \brief Set the quantization value
- * \param[in] q The quantization value
- *
- * Sets the quantization value. When this is set, 'key' gets quantized to this
- * size, before doing the interpolation. This can help in reducing the number of
- * updates pushed to the hardware.
- *
- * Note that normally a threshold needs to be combined with quantization.
- * Otherwise a value that swings around the edge of the quantization step will
- * lead to constant updates.
- */
-
-/**
  * \fn void Interpolator<T>::setData(std::map<unsigned int, T> &&data)
  * \brief Set the internal map
  *
@@ -136,10 +115,8 @@ namespace ipa {
  * \fn const T& Interpolator<T>::getInterpolated()
  * \brief Retrieve an interpolated value for the given key
  * \param[in] key The unsigned integer key of the object to retrieve
- * \param[out] quantizedKey If provided, the key value after quantization
  * \return The object corresponding to the key. The object is cached internally,
- * so on successive calls with the same key (after quantization) interpolation
- * is not recalculated.
+ * so on successive calls with the same key interpolation is not recalculated.
  */
 
 /**

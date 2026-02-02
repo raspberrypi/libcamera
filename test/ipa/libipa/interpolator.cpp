@@ -40,13 +40,6 @@ protected:
 		ASSERT_EQ(interpolator.getInterpolated(30), 300);
 		ASSERT_EQ(interpolator.getInterpolated(40), 300);
 
-		interpolator.setQuantization(10);
-		unsigned int q = 0;
-		ASSERT_EQ(interpolator.getInterpolated(25, &q), 300);
-		ASSERT_EQ(q, 30);
-		ASSERT_EQ(interpolator.getInterpolated(24, &q), 200);
-		ASSERT_EQ(q, 20);
-
 		return TestPass;
 	}
 };

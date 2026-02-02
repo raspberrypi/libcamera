@@ -93,6 +93,7 @@ Architecture: linux-any
 Multi-Arch: same
 Depends: ${misc:Depends},
          ${shlibs:Depends}
+Recommends: awb-nn
 Breaks: libcamera0
 Replaces: libcamera0
 Description: complex camera support library (IPA modules)

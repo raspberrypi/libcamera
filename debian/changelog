@@ -1,3 +1,9 @@
+libcamera (0.7.0+rpt20260205-1) trixie; urgency=medium
+
+  * New upstream version 0.7.0+rpt20260205
+
+ -- Serge Schneider <serge@raspberrypi.com>  Thu, 05 Feb 2026 16:51:11 +0000
+
 libcamera (0.7.0+rpt20260202-2) trixie; urgency=medium
 
   * Enable rpi-awb-nn

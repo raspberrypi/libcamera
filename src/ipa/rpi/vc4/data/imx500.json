@@ -187,8 +187,8 @@
                     5717.0, 0.4116, 0.6648,
                     7600.0, 0.3609, 0.7138
                 ],
-                "sensitivity_r": 1.0,
-                "sensitivity_b": 1.0,
+                "sensitivity_r": 1.02,
+                "sensitivity_b": 1.02,
                 "transverse_pos": 0.02798,
                 "transverse_neg": 0.02626,
                 "ccm":

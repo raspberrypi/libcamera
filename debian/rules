@@ -39,7 +39,8 @@ CONFFLAGS += \
 	-Dpipelines=${PIPELINES} \
 	-Dqcam=$(QCAM) \
 	-Dtest=true \
-	-Dv4l2=true
+	-Dv4l2=true \
+	-Drpi-awb-nn=enabled
 
 %:
 	dh $@

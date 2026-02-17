@@ -7,11 +7,11 @@
  * This file is auto-generated. Do not edit.
  */
 
-#include <libcamera/formats.h>
-
 #include <pybind11/pybind11.h>
 
 #include "py_main.h"
+
+#include <libcamera/formats.h>
 
 namespace py = pybind11;
 

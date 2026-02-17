@@ -5,16 +5,15 @@
  * Python bindings - Geometry classes
  */
 
-#include <array>
-
-#include <libcamera/geometry.h>
-#include <libcamera/libcamera.h>
-
 #include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
 #include "py_main.h"
+
+#include <array>
+
+#include <libcamera/libcamera.h>
 
 namespace py = pybind11;
 

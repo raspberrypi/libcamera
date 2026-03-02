@@ -35,8 +35,6 @@ using namespace libcamera;
 
 LOG_DECLARE_CATEGORY(RPiAwb)
 
-constexpr double kDefaultCT = 4500.0;
-
 /*
  * The neural networks are trained to work on images rendered at a canonical
  * colour temperature. That value is 5000K, which must be reproduced here.

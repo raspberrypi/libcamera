@@ -736,13 +736,15 @@ def run_ctt(json_output, directory, config, log_output, json_template, grid_size
     try:
         Cam = Camera(json_output, json=json_template)
         Cam.log_user_input(json_output, directory, config, log_output)
-        if alsc_only:
-            disable = set(Cam.json.keys()).symmetric_difference({"rpi.alsc"})
-        Cam.disable = disable
-        Cam.plot = plot
         Cam.add_imgs(directory, mac_config, blacklevel)
     except FileNotFoundError:
         raise ArgError('\n\nError: Input image directory not found!')
+    if len(Cam.imgs) == 0 and len(Cam.imgs_cac) == 0 and len(Cam.imgs_alsc) > 0:
+        alsc_only = True
+    if alsc_only:
+        disable = set(Cam.json.keys()).symmetric_difference({"rpi.alsc"})
+    Cam.disable = disable
+    Cam.plot = plot
 
     """
     preform calibrations as long as check_imgs returns True

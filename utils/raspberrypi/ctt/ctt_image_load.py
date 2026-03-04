@@ -322,14 +322,21 @@ def dng_load_image(Cam, im_str):
             photo = "Image"
         Img.pad = 0
         Img.h = metadata[f'Exif.{subimage}.ImageLength'].value
-        white = metadata[f'Exif.{subimage}.WhiteLevel'].value
+        try:
+            white = metadata[f'Exif.{subimage}.WhiteLevel'].value
+        except:
+            white = (1 << Img.sigbits) - 1
         Img.sigbits = int(white).bit_length()
         Img.fmt = (Img.sigbits - 4) // 2
         Img.exposure = int(metadata[f'Exif.{photo}.ExposureTime'].value * 1000000)
         Img.againQ8 = metadata[f'Exif.{photo}.ISOSpeedRatings'].value * 256 / 100
         Img.againQ8_norm = Img.againQ8 / 256
         Img.camName = metadata['Exif.Image.Model'].value
-        Img.blacklevel = int(metadata[f'Exif.{subimage}.BlackLevel'].value[0])
+        blacks = metadata[f'Exif.{subimage}.BlackLevel'].value
+        try:
+            Img.blacklevel = int(blacks[0])
+        except TypeError:
+            Img.blacklevel = int(blacks)
         Img.blacklevel_16 = Img.blacklevel << (16 - Img.sigbits)
         bayer_case = {
             '0 1 1 2': (0, (0, 1, 2, 3)),
@@ -337,9 +344,13 @@ def dng_load_image(Cam, im_str):
             '2 1 1 0': (2, (3, 2, 1, 0)),
             '1 0 2 1': (3, (1, 0, 3, 2))
         }
-        cfa_pattern = metadata[f'Exif.{subimage}.CFAPattern'].value
-        Img.pattern = bayer_case[cfa_pattern][0]
-        Img.order = bayer_case[cfa_pattern][1]
+        try:
+            cfa_pattern = metadata[f'Exif.{subimage}.CFAPattern'].value
+            Img.pattern = bayer_case[cfa_pattern][0]
+            Img.order = bayer_case[cfa_pattern][1]
+        except:
+            Img.pattern = 128
+            Img.order = (0, 1, 2, 3) # dummy order for mono images
 
         # Now use RawPy tp get the raw Bayer pixels
         raw_im = raw.imread(im_str)
@@ -358,6 +369,7 @@ def dng_load_image(Cam, im_str):
         Cam.log += '\nERROR: DNG file does not exist or is incompatible'
         raise
 
+    Img.str = im_str
     return Img
 
 

@@ -159,7 +159,7 @@ def alsc(Cam, Img, do_alsc_colour, plot=False, grid_size=(16, 12), max_gain=8.0)
         cb = cb/np.min(cb)
         cg = cv2.medianBlur(cg, 3).astype('float64')
         cg = cg/np.min(cg)
-        cg = [min(v, max_gain) for v in cg.flatten()]  # never exceed the max luminance gain
+        cg_clamp = [min(v, max_gain) for v in cg.flatten()]  # never exceed the max luminance gain
 
         """
         debugging code showing 2D surface plot of vignetting. Quite useful for
@@ -183,7 +183,7 @@ def alsc(Cam, Img, do_alsc_colour, plot=False, grid_size=(16, 12), max_gain=8.0)
             # print(Img.str)
             plt.show()
 
-        return Img.col, cr.flatten(), cb.flatten(), cg, (w, h, dx, dy)
+        return Img.col, cr.flatten(), cb.flatten(), cg_clamp, (w, h, dx, dy)
 
     else:
         """
@@ -193,17 +193,17 @@ def alsc(Cam, Img, do_alsc_colour, plot=False, grid_size=(16, 12), max_gain=8.0)
         cg = np.reshape(1/g, (grid_h, grid_w)).astype('float32')
         cg = cv2.medianBlur(cg, 3).astype('float64')
         cg = cg/np.min(cg)
-        cg = [min(v, max_gain) for v in cg.flatten()]  # never exceed the max luminance gain
+        cg_clamp = [min(v, max_gain) for v in cg.flatten()]  # never exceed the max luminance gain
 
         if plot:
-            hf = plt.figure(figssize=(8, 8))
+            hf = plt.figure(figsize=(8, 8))
             ha = hf.add_subplot(1, 1, 1, projection='3d')
-            X, Y = np.meashgrid(range(grid_w), range(grid_h))
+            X, Y = np.meshgrid(range(grid_w), range(grid_h))
             ha.plot_surface(X, -Y, cg, cmap=cm.coolwarm, linewidth=0)
-            ha.set_title('ALSC Plot (Luminance only!)\nImg: {}\n\ncg').format(Img.str)
+            ha.set_title('ALSC Plot (Luminance only!)\nImg: {}\n\ncg'.format(Img.str))
             plt.show()
 
-        return Img.col, None, None, cg.flatten(), (w, h, dx, dy)
+        return Img.col, None, None, cg_clamp, (w, h, dx, dy)
 
 
 """

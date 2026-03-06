@@ -227,7 +227,7 @@ int IPASoftSimple::configure(const IPAConfigInfo &configInfo)
 	if (camHelper_) {
 		context_.configuration.agc.againMin = camHelper_->gain(againMin);
 		context_.configuration.agc.againMax = camHelper_->gain(againMax);
-		context_.configuration.agc.again10 = camHelper_->gain(1.0);
+		context_.configuration.agc.again10 = std::max(context_.configuration.agc.againMin, 1.0);
 		context_.configuration.agc.againMinStep =
 			(context_.configuration.agc.againMax -
 			 context_.configuration.agc.againMin) /

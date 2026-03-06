@@ -25,7 +25,7 @@ struct BrightnessHueTraits {
 		int quantized = std::lround(v * 128.0f);
 		return std::clamp<int>(quantized, -128, 127);
 	}
-	static float toFloat(QuantizedType v)
+	static constexpr float toFloat(QuantizedType v)
 	{
 		return static_cast<float>(v) / 128.0f;
 	}
@@ -40,7 +40,7 @@ struct ContrastSaturationTraits {
 		int quantized = std::lround(v * 128.0f);
 		return std::clamp<int>(quantized, 0, 255);
 	}
-	static float toFloat(QuantizedType v)
+	static constexpr float toFloat(QuantizedType v)
 	{
 		return static_cast<float>(v) / 128.0f;
 	}
@@ -136,6 +136,17 @@ protected:
 
 			if (!(c1 == c2))
 				return TestFail;
+		}
+
+		/* Test constexpr operation */
+		{
+			constexpr BrightnessQ b1(uint8_t(1));
+			constexpr BrightnessQ b2(uint8_t(2));
+
+			static_assert(b1.quantized() == 1);
+			static_assert(b2.quantized() == 2);
+			static_assert(b1 != b2);
+			static_assert(!(b1 == b2));
 		}
 
 		return TestPass;

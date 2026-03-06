@@ -24,34 +24,40 @@ struct Quantized {
 	static_assert(std::is_arithmetic_v<QuantizedType>,
 		      "Quantized: QuantizedType must be arithmetic");
 
-	Quantized()
+	constexpr Quantized()
 		: Quantized(0.0f) {}
-	Quantized(float x) { *this = x; }
-	Quantized(QuantizedType x) { *this = x; }
 
-	Quantized &operator=(float x)
+	constexpr Quantized(float x)
+		: Quantized(Traits::fromFloat(x))
 	{
-		quantized_ = Traits::fromFloat(x);
-		value_ = Traits::toFloat(quantized_);
+	}
+
+	constexpr Quantized(QuantizedType x)
+		: quantized_(x), value_(Traits::toFloat(x))
+	{
+	}
+
+	constexpr Quantized &operator=(float x)
+	{
+		*this = Quantized(x);
 		return *this;
 	}
 
-	Quantized &operator=(QuantizedType x)
+	constexpr Quantized &operator=(QuantizedType x)
 	{
-		value_ = Traits::toFloat(x);
-		quantized_ = x;
+		*this = Quantized(x);
 		return *this;
 	}
 
-	float value() const { return value_; }
-	QuantizedType quantized() const { return quantized_; }
+	constexpr float value() const { return value_; }
+	constexpr QuantizedType quantized() const { return quantized_; }
 
-	bool operator==(const Quantized &other) const
+	constexpr bool operator==(const Quantized &other) const
 	{
 		return quantized_ == other.quantized_;
 	}
 
-	bool operator!=(const Quantized &other) const
+	constexpr bool operator!=(const Quantized &other) const
 	{
 		return !(*this == other);
 	}

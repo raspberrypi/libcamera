@@ -21,6 +21,7 @@
 #include <libcamera/formats.h>
 #include <libcamera/stream.h>
 
+#include "libcamera/internal/bayer_format.h"
 #include "libcamera/internal/framebuffer.h"
 #include "libcamera/internal/ipa_manager.h"
 #include "libcamera/internal/software_isp/debayer_params.h"
@@ -270,7 +271,16 @@ int SoftwareIsp::configure(const StreamConfiguration &inputCfg,
 	if (ret < 0)
 		return ret;
 
-	return debayer_->configure(inputCfg, outputCfgs, ccmEnabled_);
+	ret = debayer_->configure(inputCfg, outputCfgs, ccmEnabled_);
+	if (ret < 0)
+		return ret;
+
+	LOG(SoftwareIsp, Info)
+		<< "Input " << inputCfg.size
+		<< "-" << BayerFormat::fromPixelFormat(inputCfg.pixelFormat)
+		<< " stride " << inputCfg.stride;
+
+	return 0;
 }
 
 /**

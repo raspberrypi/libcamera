@@ -51,6 +51,7 @@ file structure:
       measure:
         skip: # non-negative integer, frames to skip initially
         number: # non-negative integer, frames to measure
+      mode: # cpu/gpu
       threads: # integer >= 1, number of render threads to use, default 2
 
 Configuration file example
@@ -85,6 +86,7 @@ Configuration file example
        measure:
          skip: 50
          number: 30
+       mode: gpu
        threads: 2
 
 List of variables and configuration options
@@ -140,6 +142,13 @@ LIBCAMERA_<NAME>_TUNING_FILE
    Define a custom IPA tuning file to use with the pipeline handler `NAME`.
 
    Example value: ``/usr/local/share/libcamera/ipa/rpi/vc4/custom_sensor.json``
+
+LIBCAMERA_SOFTISP_MODE, software_isp.mode
+   Select if the software ISP should use GPU or CPU image processsing,
+   one of ``cpu`` or ``gpu``. When set to ``gpu`` and EGL is not available
+   the software ISP will automatically fall back to the CPU.
+
+   Example value: ``gpu``
 
 pipelines.simple.supported_devices.driver, pipelines.simple.supported_devices.software_isp
    Override whether software ISP is enabled for the given driver.

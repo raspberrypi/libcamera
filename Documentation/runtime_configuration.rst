@@ -51,6 +51,7 @@ file structure:
       measure:
         skip: # non-negative integer, frames to skip initially
         number: # non-negative integer, frames to measure
+      threads: # integer >= 1, number of render threads to use, default 2
 
 Configuration file example
 --------------------------
@@ -84,6 +85,7 @@ Configuration file example
        measure:
          skip: 50
          number: 30
+       threads: 2
 
 List of variables and configuration options
 -------------------------------------------
@@ -166,6 +168,12 @@ software_isp.measure.skip, software_isp.measure.number
    Example `skip` value: ``50``
 
    Example `number` value: ``30``
+
+software_isp.threads
+   Number of render threads the software ISP uses when using the CPU.
+   This must be between 1 and 8 and the default is 2.
+
+   Example value: ``2``
 
 Further details
 ---------------

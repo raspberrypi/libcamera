@@ -26,6 +26,7 @@
 
 namespace libcamera {
 
+class DebayerCpuThread;
 class DebayerCpu : public Debayer
 {
 public:
@@ -44,6 +45,8 @@ public:
 	const SharedFD &getStatsFD() { return stats_->getStatsFD(); }
 
 private:
+	friend class DebayerCpuThread;
+
 	/**
 	 * \brief Called to debayer 1 line of Bayer input data to output format
 	 * \param[out] dst Pointer to the start of the output line to write
@@ -73,6 +76,11 @@ private:
 	 * src[2] = current-line, src[3] = 1-line-down, src[4] = 2-lines-down.
 	 */
 	using debayerFn = void (DebayerCpu::*)(uint8_t *dst, const uint8_t *src[]);
+
+	void debayer0(uint8_t *dst, const uint8_t *src[]) { (this->*debayer0_)(dst, src); }
+	void debayer1(uint8_t *dst, const uint8_t *src[]) { (this->*debayer1_)(dst, src); }
+	void debayer2(uint8_t *dst, const uint8_t *src[]) { (this->*debayer2_)(dst, src); }
+	void debayer3(uint8_t *dst, const uint8_t *src[]) { (this->*debayer3_)(dst, src); }
 
 	/* 8-bit raw bayer format */
 	template<bool addAlphaByte, bool ccmEnabled>
@@ -105,16 +113,8 @@ private:
 	int setDebayerFunctions(PixelFormat inputFormat,
 				PixelFormat outputFormat,
 				bool ccmEnabled);
-	void setupInputMemcpy(const uint8_t *linePointers[]);
-	void shiftLinePointers(const uint8_t *linePointers[], const uint8_t *src);
-	void memcpyNextLine(const uint8_t *linePointers[]);
-	void process2(uint32_t frame, const uint8_t *src, uint8_t *dst);
-	void process4(uint32_t frame, const uint8_t *src, uint8_t *dst);
 	void updateGammaTable(const DebayerParams &params);
 	void updateLookupTables(const DebayerParams &params);
-
-	/* Max. supported Bayer pattern height is 4, debayering this requires 5 lines */
-	static constexpr unsigned int kMaxLineBuffers = 5;
 
 	static constexpr unsigned int kRGBLookupSize = 256;
 	static constexpr unsigned int kGammaLookupSize = 1024;
@@ -142,12 +142,9 @@ private:
 	debayerFn debayer3_;
 	Rectangle window_;
 	std::unique_ptr<SwStatsCpu> stats_;
-	std::vector<uint8_t> lineBuffers_[kMaxLineBuffers];
-	unsigned int lineBufferLength_;
-	unsigned int lineBufferPadding_;
-	unsigned int lineBufferIndex_;
 	unsigned int xShift_; /* Offset of 0/1 applied to window_.x */
-	bool enableInputMemcpy_;
+
+	std::vector<std::unique_ptr<DebayerCpuThread>> threads_;
 };
 
 } /* namespace libcamera */

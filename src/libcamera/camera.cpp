@@ -1381,6 +1381,57 @@ int Camera::queueRequest(Request *request)
 }
 
 /**
+ * \brief Queue controls to be applied as soon as possible
+ * \param[in] controls The list of controls to queue
+ *
+ * This function tries to ensure that the controls in \a controls are applied
+ * to the camera as soon as possible. If there are still pending controls waiting
+ * to be applied (because of previous calls to Camera::queueControls), then
+ * these controls will be applied as soon as possible on a frame after those.
+ *
+ * The exact guarantees are camera dependent, but it is guaranteed that the
+ * controls will be applied no later than with the next \ref Request"request"
+ * that the application \ref Camera::queueRequest() "queues" (after any requests
+ * have been *used up" for sending previously queued controls).
+ *
+ * \context This function is \threadsafe. It may only be called when the camera
+ * is in the Running state as defined in \ref camera_operation.
+ *
+ * \return 0 on success or a negative error code otherwise
+ * \retval -ENODEV The camera has been disconnected from the system
+ * \retval -EACCES The camera is not running
+ */
+int Camera::queueControls(ControlList &&controls)
+{
+	Private *const d = _d();
+
+	/*
+	 * Like requests, controls can't be queued if the camera is not running.
+	 * Controls can be applied immediately when the camera starts using the
+	 * Camera::Start method.
+	 */
+
+	int ret = d->isAccessAllowed(Private::CameraRunning);
+	if (ret < 0)
+		return ret;
+
+	/*
+	 * We want to be able to queue empty control lists, as this gives a way of
+	 * forcing another frame with the same controls as last time, before queueing
+	 * another control list that might change them again.
+	 */
+
+	patchControlList(controls);
+
+	/*
+	 * \todo Or `ConnectionTypeBlocking` to get the return value?
+	 */
+	d->pipe_->invokeMethod(&PipelineHandler::queueControls, ConnectionTypeQueued, this, std::move(controls));
+
+	return 0;
+}
+
+/**
  * \brief Start capture from camera
  * \param[in] controls Controls to be applied before starting the Camera
  *

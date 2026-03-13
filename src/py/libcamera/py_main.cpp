@@ -239,6 +239,21 @@ PYBIND11_MODULE(_libcamera, m)
 			}
 		})
 
+		.def("queue_controls", [](Camera &self, const std::unordered_map<const ControlId *, py::object> &controls) {
+
+			ControlList controlList(self.controls());
+
+			for (const auto &[id, obj] : controls) {
+				auto val = pyToControlValue(obj, id->type());
+				controlList.set(id->id(), val);
+			}
+
+			int ret = self.queueControls(std::move(controlList));
+			if (ret)
+				throw std::system_error(-ret, std::generic_category(),
+							"Failed to queue controls");
+		}, py::arg("controls") = std::unordered_map<const ControlId *, py::object>())
+
 		.def_property_readonly("streams", [](Camera &self) {
 			py::set set;
 			for (auto &s : self.streams()) {

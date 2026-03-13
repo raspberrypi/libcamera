@@ -787,6 +787,20 @@ int PipelineHandlerBase::queueRequestDevice(Camera *camera, Request *request)
 	return 0;
 }
 
+int PipelineHandlerBase::queueControlsDevice(Camera *camera, const ControlList &controls)
+{
+	CameraData *data = cameraData(camera);
+
+	/*
+	 * For now, just hold these controls in a queue. The front item will get popped
+	 * off and merged into the next request that we pull off our request queue and
+	 * start to process.
+	 */
+	data->controlsQueue_.push(controls);
+
+	return 0;
+}
+
 int PipelineHandlerBase::registerCamera(std::unique_ptr<RPi::CameraData> &cameraData,
 					std::shared_ptr<MediaDevice> frontend,
 					const std::string &frontendName,

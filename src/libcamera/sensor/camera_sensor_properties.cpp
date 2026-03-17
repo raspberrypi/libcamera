@@ -331,8 +331,8 @@ const CameraSensorProperties *CameraSensorProperties::get(const std::string &sen
 			.sensorDelays = {
 				.exposureDelay = 2,
 				.gainDelay = 2,
-				.vblankDelay = 3,
-				.hblankDelay = 3
+				.vblankDelay = 2,
+				.hblankDelay = 2
 			},
 		} },
 		{ "ov2685", {

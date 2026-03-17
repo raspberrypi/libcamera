@@ -2311,6 +2311,9 @@ void PiSPCameraData::tryRunPipeline()
 
 	fillRequestMetadata(job.sensorControls, request);
 
+	/* This sorts out synchronisation with the ControlList queue. */
+	handleControlLists(job.delayContext);
+
 	/* Set our state to say the pipeline is active. */
 	state_ = State::Busy;
 
@@ -2327,7 +2330,7 @@ void PiSPCameraData::tryRunPipeline()
 	params.buffers.bayer = RPi::MaskBayerData | bayerId;
 	params.buffers.stats = RPi::MaskStats | statsId;
 	params.buffers.embedded = 0;
-	params.ipaContext = requestQueue_.front()->sequence();
+	params.ipaContext = request->sequence();
 	params.delayContext = job.delayContext;
 	params.sensorControls = std::move(job.sensorControls);
 	params.requestControls = request->controls();

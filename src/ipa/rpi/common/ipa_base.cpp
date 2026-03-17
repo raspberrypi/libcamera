@@ -440,6 +440,9 @@ void IpaBase::prepareIsp(const PrepareParams &params)
 	fillDeviceStatus(params.sensorControls, ipaContext);
 	fillSyncParams(params, ipaContext);
 
+	if (!params.requestControls.empty())
+		rpiMetadata.set("ipa.request_controls", true);
+
 	if (params.buffers.embedded) {
 		/*
 		 * Pipeline handler has supplied us with an embedded data buffer,
@@ -460,7 +463,7 @@ void IpaBase::prepareIsp(const PrepareParams &params)
 	 */
 	AgcStatus agcStatus;
 	bool hdrChange = false;
-	RPiController::Metadata &delayedMetadata = rpiMetadata_[params.delayContext];
+	RPiController::Metadata &delayedMetadata = rpiMetadata_[params.delayContext % rpiMetadata_.size()];
 	if (!delayedMetadata.get<AgcStatus>("agc.status", agcStatus)) {
 		rpiMetadata.set("agc.delayed_status", agcStatus);
 		hdrChange = agcStatus.hdr.mode != hdrStatus_.mode;
@@ -473,9 +476,13 @@ void IpaBase::prepareIsp(const PrepareParams &params)
 	 */
 	helper_->prepare(embeddedBuffer, rpiMetadata);
 
+	bool delayedRequestControls = false;
+	delayedMetadata.get<bool>("ipa.request_controls", delayedRequestControls);
+
 	/* Allow a 10% margin on the comparison below. */
 	Duration delta = (frameTimestamp - lastRunTimestamp_) * 1.0ns;
-	if (lastRunTimestamp_ && frameCount_ > invalidCount_ &&
+	if (!delayedRequestControls && params.requestControls.empty() &&
+	    lastRunTimestamp_ && frameCount_ > invalidCount_ &&
 	    delta < controllerMinFrameDuration * 0.9 && !hdrChange) {
 		/*
 		 * Ensure we merge the previous frame's metadata with the current
@@ -558,7 +565,7 @@ void IpaBase::processStats(const ProcessParams &params)
 		ControlList ctrls(sensorCtrls_);
 		applyAGC(&agcStatus, ctrls, offset);
 		rpiMetadata.set("agc.status", agcStatus);
-		setDelayedControls.emit(ctrls, ipaContext);
+		setDelayedControls.emit(ctrls, params.ipaContext);
 		setCameraTimeoutValue();
 	}
 
@@ -975,8 +982,6 @@ void IpaBase::applyControls(const ControlList &controls)
 
 			/* The control provides units of microseconds. */
 			agc->setFixedExposureTime(0, ctrl.second.get<int32_t>() * 1.0us);
-
-			libcameraMetadata_.set(controls::ExposureTime, ctrl.second.get<int32_t>());
 			break;
 		}
 
@@ -1000,9 +1005,6 @@ void IpaBase::applyControls(const ControlList &controls)
 				break;
 
 			agc->setFixedGain(0, ctrl.second.get<float>());
-
-			libcameraMetadata_.set(controls::AnalogueGain,
-					       ctrl.second.get<float>());
 			break;
 		}
 

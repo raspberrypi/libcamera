@@ -1531,4 +1531,88 @@ void CameraData::fillRequestMetadata(const ControlList &bufferControls, Request 
 	}
 }
 
+static bool isControlDelayed(unsigned int id)
+{
+	return id == controls::ExposureTime ||
+	       id == controls::AnalogueGain ||
+	       id == controls::FrameDurationLimits ||
+	       id == controls::AeEnable ||
+	       id == controls::ExposureTimeMode ||
+	       id == controls::AnalogueGainMode;
+}
+
+void CameraData::handleControlLists(uint32_t delayContext)
+{
+	/*
+	 * If any control lists have been queued for us, merge them into the
+	 * next request that we're going to process. This route saves controls
+	 * from being queued always with the last request, meaning they get
+	 * picked up here more quickly.
+	 */
+	Request *request = requestQueue_.front();
+	if (!controlsQueue_.empty()) {
+		request->controls().merge(std::move(controlsQueue_.front()),
+					  ControlList::MergePolicy::OverwriteExisting);
+		controlsQueue_.pop();
+		controlListId_++;
+		LOG(RPI, Debug) << "Popped control list " << controlListId_ << " from queue";
+	}
+
+	/*
+	 * Record which control list corresponds to this ipaCookie. Because setDelayedControls
+	 * now gets called by the IPA from the start of the following frame, we must record
+	 * the previous control list id.
+	 */
+	syncTable_.emplace(SyncTableEntry{ request->sequence(), controlListId_ });
+	LOG(RPI, Debug) << "Add sync table entry: sequence " << request->sequence()
+			<< " control list id " << controlListId_;
+
+	/*
+	 * We know we that we added an entry for every delayContext, so we can
+	 * find the one for this Bayer frame, and this links us to the correct
+	 * control list. Anything ahead of "our" entry in the queue is old, so
+	 * can be dropped.
+	 */
+	while (!syncTable_.empty() &&
+	       syncTable_.front().ipaCookie != delayContext) {
+		LOG(RPI, Debug) << "Pop sync entry: ipa cookie "
+				<< syncTable_.front().ipaCookie << " control id "
+				<< syncTable_.front().controlListId << " for job "
+				<< delayContext;
+		syncTable_.pop();
+	}
+
+	if (syncTable_.empty())
+		LOG(RPI, Warning) << "Unable to find ipa cookie for PFC";
+	else {
+		LOG(RPI, Debug) << "Using sync control id " << syncTable_.front().controlListId;
+		requestControlId_ = syncTable_.front().controlListId;
+	}
+
+	/* The control list id is reported as the "ControlListSequence" in the metadata. */
+	request->_d()->metadata().set(controls::rpi::ControlListSequence, requestControlId_);
+
+	/*
+	 * Controls that take effect immediately (typically ISP controls) have to be
+	 * delayed so as to synchronise with those controls that do get delayed. So we
+	 * must remove them from the current request, and push them onto a queue so
+	 * that they can be used later.
+	 */
+	ControlList controls = std::move(request->controls());
+	immediateControls_.push({ controlListId_, request->controls() });
+	for (const auto &ctrl : controls) {
+		if (isControlDelayed(ctrl.first))
+			request->controls().set(ctrl.first, ctrl.second);
+		else
+			immediateControls_.back().controls.set(ctrl.first, ctrl.second);
+	}
+	/* "Immediate" controls that have become due are now merged back into this request. */
+	while (!immediateControls_.empty() &&
+	       immediateControls_.front().controlListId <= requestControlId_) {
+		request->controls().merge(immediateControls_.front().controls,
+					  ControlList::MergePolicy::OverwriteExisting);
+		immediateControls_.pop();
+	}
+}
+
 } /* namespace libcamera */

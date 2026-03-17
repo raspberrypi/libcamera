@@ -2329,7 +2329,7 @@ void PiSPCameraData::tryRunPipeline()
 	params.sensorControls = std::move(job.sensorControls);
 	/* params.requestControls is set by handleControlLists. */
 
-	/* This sorts out synchronisation with ControlLists in earlier requests. */
+	/* This sorts out synchronisation with the ControlList queue. */
 	handleControlLists(job.delayContext, params.requestControls);
 
 	/* Set our state to say the pipeline is active. */

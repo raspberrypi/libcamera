@@ -299,4 +299,13 @@ controls:
         This control returns performance metrics for the CNN processing stage.
         Two values are returned in this span, the runtime of the CNN/DNN stage
         and the DSP stage in milliseconds.
+
+  - ControlListSequence:
+      type: int64_t
+      direction: out
+      description: |
+        This is the sequence number of the request whose control list has
+        just been applied. Controls normally take several frames to apply,
+        so the number here will refer to a request submitted a number of
+        frames earlier.
 ...

@@ -56,14 +56,6 @@ LOG_DEFINE_CATEGORY(Configuration)
  */
 
 /**
- * \typedef GlobalConfiguration::Option
- * \brief Type representing a configuration option
- *
- * All code outside GlobalConfiguration must use this type declaration and not
- * the underlying type.
- */
-
-/**
  * \brief Initialize the global configuration
  */
 GlobalConfiguration::GlobalConfiguration()
@@ -153,12 +145,9 @@ unsigned int GlobalConfiguration::version() const
  * The requested part of the configuration can be accessed using \a ValueNode
  * methods.
  *
- * \note \a ValueNode type itself shouldn't be used in type declarations to
- * avoid trouble if we decide to change the underlying data objects in future.
- *
- * \return The top-level configuration option
+ * \return The global configuration
  */
-GlobalConfiguration::Option GlobalConfiguration::configuration() const
+const ValueNode &GlobalConfiguration::configuration() const
 {
 	return (*configuration_)["configuration"];
 }

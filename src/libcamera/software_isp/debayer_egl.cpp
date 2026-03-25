@@ -277,7 +277,7 @@ int DebayerEGL::initBayerShaders(PixelFormat inputFormat, PixelFormat outputForm
 }
 
 int DebayerEGL::configure(const StreamConfiguration &inputCfg,
-			  const std::vector<std::reference_wrapper<StreamConfiguration>> &outputCfgs,
+			  const std::vector<std::reference_wrapper<const StreamConfiguration>> &outputCfgs,
 			  [[maybe_unused]] bool ccmEnabled)
 {
 	if (getInputConfig(inputCfg.pixelFormat, inputConfig_) != 0)
@@ -307,7 +307,7 @@ int DebayerEGL::configure(const StreamConfiguration &inputCfg,
 		return -EINVAL;
 	}
 
-	StreamConfiguration &outputCfg = outputCfgs[0];
+	const StreamConfiguration &outputCfg = outputCfgs[0];
 	SizeRange outSizeRange = sizes(inputCfg.pixelFormat, inputCfg.size);
 	std::tie(outputConfig_.stride, outputConfig_.frameSize) =
 		strideAndFrameSize(outputCfg.pixelFormat, outputCfg.size);

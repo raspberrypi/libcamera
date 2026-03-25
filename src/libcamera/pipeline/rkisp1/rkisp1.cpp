@@ -1037,7 +1037,7 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 	data->properties_.set(properties::ScalerCropMaximum, sensorCrop);
 
 	std::map<unsigned int, IPAStream> streamConfig;
-	std::vector<std::reference_wrapper<StreamConfiguration>> outputCfgs;
+	std::vector<std::reference_wrapper<const StreamConfiguration>> outputCfgs;
 
 	for (const StreamConfiguration &cfg : *config) {
 		if (cfg.stream() == &data->mainPathStream_) {

@@ -1562,7 +1562,7 @@ int SimplePipelineHandler::configure(Camera *camera, CameraConfiguration *c)
 	}
 
 	/* Configure the converter if needed. */
-	std::vector<std::reference_wrapper<StreamConfiguration>> outputCfgs;
+	std::vector<std::reference_wrapper<const StreamConfiguration>> outputCfgs;
 	data->useConversion_ = config->needConversion();
 
 	data->rawStream_ = nullptr;

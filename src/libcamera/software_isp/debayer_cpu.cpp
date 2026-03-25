@@ -540,7 +540,7 @@ int DebayerCpu::setDebayerFunctions(PixelFormat inputFormat,
 }
 
 int DebayerCpu::configure(const StreamConfiguration &inputCfg,
-			  const std::vector<std::reference_wrapper<StreamConfiguration>> &outputCfgs,
+			  const std::vector<std::reference_wrapper<const StreamConfiguration>> &outputCfgs,
 			  bool ccmEnabled)
 {
 	if (getInputConfig(inputCfg.pixelFormat, inputConfig_) != 0)

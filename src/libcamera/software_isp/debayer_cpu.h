@@ -35,7 +35,7 @@ public:
 	~DebayerCpu();
 
 	int configure(const StreamConfiguration &inputCfg,
-		      const std::vector<std::reference_wrapper<StreamConfiguration>> &outputCfgs,
+		      const std::vector<std::reference_wrapper<const StreamConfiguration>> &outputCfgs,
 		      bool ccmEnabled);
 	Size patternSize(PixelFormat inputFormat);
 	std::vector<PixelFormat> formats(PixelFormat input);

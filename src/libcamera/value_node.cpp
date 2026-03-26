@@ -622,4 +622,58 @@ ValueNode *ValueNode::add(std::initializer_list<std::string_view> path,
 	return node;
 }
 
+/**
+ * \brief Erase a child node in a dictionary
+ * \param[in] key The dictionary key
+ *
+ * Erase the child node referenced by \a key in a dictionary node. If the \a
+ * key does not exist, or if this node is not a dictionary, the function
+ * returns without performing any operation.
+ */
+void ValueNode::erase(std::string_view key)
+{
+	auto node = dictionary_.find(key);
+	if (node == dictionary_.end())
+		return;
+
+	/* \todo Not an ideal algorithm */
+	for (auto iter = list_.begin(); iter != list_.end(); ++iter) {
+		if (iter->value.get() != node->second)
+			continue;
+
+		list_.erase(iter);
+		break;
+	}
+
+	dictionary_.erase(node);
+}
+
+/**
+ * \brief Erase the child node at the given path
+ * \param[in] path The path
+ *
+ * Erase the child node at the given \a path. If no child node exists for the
+ * path, the function returns without performing any operation.
+ */
+void ValueNode::erase(std::initializer_list<std::string_view> path)
+{
+	if (!path.size())
+		return;
+
+	ValueNode *node = this;
+
+	for (const auto [i, name] : utils::enumerate(path)) {
+		if (i == path.size() - 1) {
+			node->erase(name);
+			return;
+		}
+
+		auto iter = node->dictionary_.find(name);
+		if (iter == node->dictionary_.end())
+			return;
+
+		node = iter->second;
+	}
+}
+
 } /* namespace libcamera */

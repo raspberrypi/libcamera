@@ -244,6 +244,9 @@ public:
 	ValueNode *add(std::initializer_list<std::string_view> path,
 		       std::unique_ptr<ValueNode> &&child);
 
+	void erase(std::string_view key);
+	void erase(std::initializer_list<std::string_view> path);
+
 private:
 	LIBCAMERA_DISABLE_COPY_AND_MOVE(ValueNode)
 

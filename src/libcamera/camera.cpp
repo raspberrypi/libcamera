@@ -931,6 +931,7 @@ Camera::Camera(std::unique_ptr<Private> d, const std::string &id,
 	: Extensible(std::move(d))
 {
 	_d()->id_ = id;
+	_d()->properties_.set(properties::PipelineHandler, _d()->pipe_->name());
 	_d()->streams_ = streams;
 	_d()->validator_ = std::make_unique<CameraControlValidator>(this);
 }

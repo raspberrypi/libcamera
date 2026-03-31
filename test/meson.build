@@ -74,6 +74,7 @@ internal_tests = [
     {'name': 'timer-thread', 'sources': ['timer-thread.cpp']},
     {'name': 'unique-fd', 'sources': ['unique-fd.cpp']},
     {'name': 'utils', 'sources': ['utils.cpp']},
+    {'name': 'value-node', 'sources': ['value-node.cpp']},
     {'name': 'vector', 'sources': ['vector.cpp']},
     {'name': 'yaml-parser', 'sources': ['yaml-parser.cpp']},
 ]

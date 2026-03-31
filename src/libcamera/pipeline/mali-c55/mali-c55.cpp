@@ -47,6 +47,8 @@
 
 namespace {
 
+static constexpr unsigned int kMaliC55BufferCount = 8;
+
 bool isFormatRaw(const libcamera::PixelFormat &pixFmt)
 {
 	return libcamera::PixelFormatInfo::info(pixFmt).colourEncoding ==
@@ -777,7 +779,7 @@ private:
 };
 
 PipelineHandlerMaliC55::PipelineHandlerMaliC55(CameraManager *manager)
-	: PipelineHandler(manager), dsFitted_(true)
+	: PipelineHandler(manager, kMaliC55BufferCount), dsFitted_(true)
 {
 }
 
@@ -1226,13 +1228,7 @@ int PipelineHandlerMaliC55::allocateBuffers(Camera *camera)
 {
 	MaliC55CameraData *data = cameraData(camera);
 	unsigned int ipaBufferId = 1;
-	unsigned int bufferCount;
 	int ret;
-
-	bufferCount = std::max({
-		data->frStream_.configuration().bufferCount,
-		data->dsStream_.configuration().bufferCount,
-	});
 
 	auto pushBuffers = [&](const std::vector<std::unique_ptr<FrameBuffer>> &buffers,
 			       std::queue<FrameBuffer *> &queue,
@@ -1248,14 +1244,14 @@ int PipelineHandlerMaliC55::allocateBuffers(Camera *camera)
 		}
 	};
 
-	ret = stats_->allocateBuffers(bufferCount, &statsBuffers_);
+	ret = stats_->allocateBuffers(kMaliC55BufferCount, &statsBuffers_);
 	if (ret < 0)
 		return ret;
 
 	pushBuffers(statsBuffers_, availableStatsBuffers_,
 		    data->ipaStatBuffers_);
 
-	ret = params_->allocateBuffers(bufferCount, &paramsBuffers_);
+	ret = params_->allocateBuffers(kMaliC55BufferCount, &paramsBuffers_);
 	if (ret < 0)
 		return ret;
 

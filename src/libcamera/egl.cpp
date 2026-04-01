@@ -112,8 +112,6 @@ void eGL::syncOutput()
  */
 int eGL::createDMABufTexture2D(eGLImage &eglImage, int fd, bool output)
 {
-	int ret = 0;
-
 	ASSERT(tid_ == Thread::currentId());
 
 	// clang-format off
@@ -130,14 +128,13 @@ int eGL::createDMABufTexture2D(eGLImage &eglImage, int fd, bool output)
 	};
 	// clang-format on
 
-	eglImage.image_ = eglCreateImageKHR(display_, EGL_NO_CONTEXT,
-					    EGL_LINUX_DMA_BUF_EXT,
-					    NULL, image_attrs);
+	EGLImageKHR image = eglCreateImageKHR(display_, EGL_NO_CONTEXT,
+					      EGL_LINUX_DMA_BUF_EXT,
+					      NULL, image_attrs);
 
-	if (eglImage.image_ == EGL_NO_IMAGE_KHR) {
+	if (image == EGL_NO_IMAGE_KHR) {
 		LOG(eGL, Error) << "eglCreateImageKHR fail";
-		ret = -ENODEV;
-		goto done;
+		return -ENODEV;
 	}
 
 	// Bind texture unit and texture
@@ -145,7 +142,8 @@ int eGL::createDMABufTexture2D(eGLImage &eglImage, int fd, bool output)
 	glBindTexture(GL_TEXTURE_2D, eglImage.texture_);
 
 	// Generate texture with filter semantics
-	glEGLImageTargetTexture2DOES(GL_TEXTURE_2D, eglImage.image_);
+	glEGLImageTargetTexture2DOES(GL_TEXTURE_2D, image);
+	eglDestroyImageKHR(display_, image);
 
 	// Nearest filtering
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -163,13 +161,11 @@ int eGL::createDMABufTexture2D(eGLImage &eglImage, int fd, bool output)
 		GLenum err = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 		if (err != GL_FRAMEBUFFER_COMPLETE) {
 			LOG(eGL, Error) << "glFrameBufferTexture2D error " << err;
-			eglDestroyImageKHR(display_, eglImage.image_);
-			ret = -ENODEV;
-			goto done;
+			return -ENODEV;
 		}
 	}
-done:
-	return ret;
+
+	return 0;
 }
 
 /**
@@ -207,19 +203,6 @@ int eGL::createOutputDMABufTexture2D(eGLImage &eglImage, int fd)
 	ASSERT(tid_ == Thread::currentId());
 
 	return createDMABufTexture2D(eglImage, fd, true);
-}
-
-/**
- * \brief Destroy a DMA-BUF texture's EGL image
- * \param[in,out] eglImage EGL image to destroy
- *
- * Destroys the EGL image associated with a DMA-BUF texture. The OpenGL
- * texture and framebuffer objects are destroyed separately in the
- * eGLImage destructor.
- */
-void eGL::destroyDMABufTexture(eGLImage &eglImage)
-{
-	eglDestroyImage(display_, std::exchange(eglImage.image_, EGL_NO_IMAGE_KHR));
 }
 
 /**

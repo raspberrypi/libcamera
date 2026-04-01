@@ -88,7 +88,6 @@ public:
 	GLenum texture_unit_; /**< Texture unit associated with this image eg (GL_TEXTURE0) */
 	GLuint texture_; /**< OpenGL texture object ID */
 	GLuint fbo_; /**< OpenGL frame buffer object ID */
-	EGLImageKHR image_; /**< EGL Image handle */
 
 private:
 	LIBCAMERA_DISABLE_COPY_AND_MOVE(eGLImage)
@@ -104,7 +103,6 @@ public:
 
 	int createInputDMABufTexture2D(eGLImage &eglImage, int fd);
 	int createOutputDMABufTexture2D(eGLImage &eglImage, int fd);
-	void destroyDMABufTexture(eGLImage &eglImage);
 	void createTexture2D(eGLImage &eglImage, GLint format, uint32_t width, uint32_t height, void *data);
 
 	void pushEnv(std::vector<std::string> &shaderEnv, const char *str);

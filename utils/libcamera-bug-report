@@ -1,0 +1,114 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+REPORT="libcamera-report-$(hostname)-$(date +%Y%m%d-%H%M%S).txt"
+
+section() {
+    echo
+    echo "=================================================="
+    echo "$1"
+    echo "=================================================="
+}
+
+run() {
+    echo
+    echo "\$ $*"
+    "$@" || echo "[WARN] Command failed: $*"
+}
+
+# Run a command with sudo if the script was allowed to use it.
+run_with_sudo() {
+    if [ -n "$SUDO" ]; then
+        echo
+        echo "\$ $SUDO $*"
+        $SUDO "$@" || echo "[WARN] Command failed: $SUDO $*"
+    else
+        run "$@"
+    fi
+}
+
+mark_kmsg() {
+    if [ -w /dev/kmsg ]; then
+        echo "libcamera-bug-report[$$]: $1" > /dev/kmsg
+    elif [ -n "$SUDO" ]; then
+        printf "libcamera-bug-report[%s]: %s\n" "$$" "$1" | $SUDO tee /dev/kmsg >/dev/null || \
+            echo "[WARN] failed to write /dev/kmsg with sudo: $1"
+    else
+        echo "[INFO] /dev/kmsg not writable, skipping kernel marker: $1"
+    fi
+}
+
+main() {
+
+    section "Report metadata"
+    echo "Date: $(date -Is)"
+    echo "Host: $(hostname)"
+    echo "User: $(id)"
+
+    section "Kernel & OS"
+    run uname -a
+    run cat /etc/os-release
+    command -v lsb_release >/dev/null && run lsb_release -a
+
+    section "Media / V4L2 tools"
+    command -v media-ctl >/dev/null && run media-ctl --version
+    command -v v4l2-ctl >/dev/null && run v4l2-ctl --version
+    command -v v4l2-ctl >/dev/null && run v4l2-ctl --list-devices
+
+    section "Device nodes"
+    run ls -l /dev/video* /dev/v4l-* /dev/media* 2>/dev/null
+    run grep . /sys/class/video4linux/*/name
+
+    section "Deferred devices"
+    run_with_sudo cat /sys/kernel/debug/devices_deferred
+
+    section "V4L2 async pending subdevices"
+    run_with_sudo cat /sys/kernel/debug/v4l2-async/pending_async_subdevices
+
+    section "Media graph topology"
+    for m in /dev/media*; do
+        echo
+        echo "Parsing $m"
+        command -v media-ctl >/dev/null && run media-ctl -p -d "$m"
+    done
+
+    section "libcamera & userspace"
+    run which cam
+    command -v cam >/dev/null && run ldd "$(which cam)"
+
+    section "libcamera probe (cam -l)"
+    mark_kmsg "BEGIN cam -l"
+    LIBCAMERA_LOG_LEVELS="*:0" run cam -l
+    mark_kmsg "END cam -l"
+
+    section "Kernel log (post cam -l)"
+    run_with_sudo dmesg
+
+    section "Permissions & capabilities"
+    run id
+    run groups
+    command -v getcap >/dev/null && run getcap "$(which cam)"
+
+    section "End of report"
+
+}
+
+# If not running as root, prompt the user once to allow sudo
+SUDO=""
+if [ "$(id -u)" -ne 0 ]; then
+    if [ -t 0 ]; then
+        printf "Some checks require root; allow sudo for privileged commands? [y/N] "
+        read -r ans
+        case "$ans" in
+            [Yy]|[Yy][Ee][Ss]) SUDO="sudo" ;;
+            *) SUDO="" ;;
+        esac
+    fi
+fi
+
+# Run main and tee output to both stdout and the report file.
+main 2>&1 | tee "$REPORT"
+
+echo ""
+echo "Report saved to $REPORT"
+echo "Please inspect the report and remove any sensitive information before sharing."

@@ -61,18 +61,9 @@ public:
 private:
 	static int getInputConfig(PixelFormat inputFormat, DebayerInputConfig &config);
 	static int getOutputConfig(PixelFormat outputFormat, DebayerOutputConfig &config);
-	int setupStandardBayerOrder(BayerFormat::Order order);
-	void pushEnv(std::vector<std::string> &shaderEnv, const char *str);
 	int initBayerShaders(PixelFormat inputFormat, PixelFormat outputFormat);
-	int initEGLContext();
-	int generateTextures();
-	int compileShaderProgram(GLuint &shaderId, GLenum shaderType,
-				 unsigned char *shaderData, int shaderDataLen,
-				 std::vector<std::string> shaderEnv);
-	int linkShaderProgram(void);
 	int getShaderVariableLocations();
 	void setShaderVariableValues(const DebayerParams &params);
-	void configureTexture(GLuint &texture);
 	int debayerGPU(MappedFrameBuffer &in, int out_fd, const DebayerParams &params);
 
 	/* Shader program identifiers */

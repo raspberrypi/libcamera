@@ -86,6 +86,8 @@ public:
 	RkISP1FrameInfo *find(Request *request);
 
 private:
+	void recycleBuffers(const RkISP1FrameInfo &info);
+
 	PipelineHandlerRkISP1 *pipe_;
 	std::map<unsigned int, RkISP1FrameInfo> frameInfo_;
 };
@@ -316,12 +318,7 @@ int RkISP1Frames::destroy(unsigned int frame)
 	if (it == frameInfo_.end())
 		return -ENOENT;
 
-	auto &info = it->second;
-
-	pipe_->availableParamBuffers_.push(info.paramBuffer);
-	pipe_->availableStatBuffers_.push(info.statBuffer);
-	pipe_->availableMainPathBuffers_.push(info.mainPathBuffer);
-
+	recycleBuffers(it->second);
 	frameInfo_.erase(it);
 
 	return 0;
@@ -329,13 +326,22 @@ int RkISP1Frames::destroy(unsigned int frame)
 
 void RkISP1Frames::clear()
 {
-	for (const auto &[frame, info] : frameInfo_) {
-		pipe_->availableParamBuffers_.push(info.paramBuffer);
-		pipe_->availableStatBuffers_.push(info.statBuffer);
-		pipe_->availableMainPathBuffers_.push(info.mainPathBuffer);
-	}
+	for (const auto &[frame, info] : frameInfo_)
+		recycleBuffers(info);
 
 	frameInfo_.clear();
+}
+
+void RkISP1Frames::recycleBuffers(const RkISP1FrameInfo &info)
+{
+	if (info.paramBuffer)
+		pipe_->availableParamBuffers_.push(info.paramBuffer);
+
+	if (info.statBuffer)
+		pipe_->availableStatBuffers_.push(info.statBuffer);
+
+	if (info.mainPathBuffer && pipe_->cameraData(pipe_->activeCamera_)->usesDewarper_)
+		pipe_->availableMainPathBuffers_.push(info.mainPathBuffer);
 }
 
 RkISP1FrameInfo *RkISP1Frames::find(unsigned int frame)

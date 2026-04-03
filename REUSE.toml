@@ -1,0 +1,29 @@
+version = 1
+SPDX-PackageName = "libcamera"
+SPDX-PackageSupplier = "Laurent Pinchart <laurent.pinchart@ideasonboard.com>"
+SPDX-PackageDownloadLocation = "https://git.libcamera.org/libcamera/libcamera.git/"
+
+[[annotations]]
+path = ["Documentation/binning.svg", "Documentation/camera-sensor-model.rst", "Documentation/sensor_model.svg", "Documentation/theme/static/libcamera-logo-text.svg"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Copyright 2023 Ideas On Board Oy"
+SPDX-License-Identifier = "CC-BY-SA-4.0"
+
+[[annotations]]
+path = ["src/ipa/rpi/vc4/data/*.json", "utils/raspberrypi/ctt/ctt_config_example.json", "utils/raspberrypi/ctt/ctt_ref.pgm"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2019-2020 Raspberry Pi Ltd"
+SPDX-License-Identifier = "BSD-2-Clause"
+
+[[annotations]]
+path = "src/qcam/assets/feathericons/*.svg"
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2019 Cole Bemis (and other Feather icons contributors)"
+SPDX-License-Identifier = "MIT"
+SPDX-FileComment = "https://feathericons.com/"
+
+[[annotations]]
+path = ["utils/ipc/mojo", "utils/ipc/tools"]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "Copyright 2013-2020 The Chromium Authors. All rights reserved."
+SPDX-License-Identifier = "BSD-3-Clause"

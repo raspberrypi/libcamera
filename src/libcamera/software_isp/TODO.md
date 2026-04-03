@@ -182,3 +182,50 @@ lower the CPU consumption, but at the same time I don't feel comfortable
 building up on top of an implementation that may work a bit more by chance than
 by correctness, as that's not very maintainable.
 ```
+
+## GPU-based implementation
+
+The TODO items are listed in perceived order of ease.
+
+### Denoising
+
+WIP
+
+### Dead pixel correction
+
+WIP
+
+### Lense shading correction
+
+WIP
+
+### Use dma-buf handle to generate upload texture
+
+`eglCreateImageKHR` can be used to generate the upload texture i.e.to feed the
+bayer data into the GPU.
+
+### processFrame() to run in its own thread
+
+`processFrame()` runs in the context of the Debayer::process() thread. Robert
+Mader suggested and it seems like a good suggestion too to run processFrame()
+in its own thread.
+
+### Multi-pass shaders
+
+- This needs some rewiring the idea is to have a list of algorithms as is done
+  in cpuisp iterating through the list in a for() loop.
+- The logic managing the loop has an initial input buffer and the final output
+  buffer.
+- The higher level logic must then inform each of the algorithms either to
+  generate an internal working buffer or pass the final output buffer to the
+  last shader in the list
+- This will allow for multi-pass shaders with the final algorithm presenting
+  data not to its internal buffer but to the final output buffer
+
+### 24 bit output support
+
+Need to implement compute shader to do this.
+
+### Lense flare correction
+
+Not WIP still TBD

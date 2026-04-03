@@ -1,7 +1,9 @@
 # SPDX-License-Identifier: CC0-1.0
 
 softisp_enabled = pipelines.contains('simple')
-summary({'SoftISP support' : softisp_enabled}, section : 'Configuration')
+summary({'SoftISP support' : softisp_enabled},
+        bool_yn : true,
+        section : 'Configuration')
 
 if not softisp_enabled
     subdir_done()
@@ -13,7 +15,9 @@ mesa_works = cc.check_header('EGL/egl.h',
                              required : get_option('softisp-gpu'),
                              dependencies : libegl)
 
-summary({'SoftISP GPU acceleration' : mesa_works}, section : 'Configuration')
+summary({'SoftISP GPU acceleration' : mesa_works},
+        bool_yn : true,
+        section : 'Configuration')
 
 libcamera_internal_sources += files([
     'benchmark.cpp',

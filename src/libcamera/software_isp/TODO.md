@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: CC0-1.0 -->
+
 # Software ISP TODO list
 
 This file contains the TODO list for the software ISP.

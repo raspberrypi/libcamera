@@ -6,7 +6,6 @@ SPDX-PackageDownloadLocation = "https://git.libcamera.org/libcamera/libcamera.gi
 [[annotations]]
 path = [
 	"Documentation/binning.svg",
-	"Documentation/camera-sensor-model.rst",
 	"Documentation/sensor_model.svg",
 	"Documentation/theme/static/libcamera-logo-text.svg",
 ]

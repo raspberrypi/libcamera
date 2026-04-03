@@ -43,20 +43,20 @@ public:
 
 	int configure(const StreamConfiguration &inputCfg,
 		      const std::vector<std::reference_wrapper<const StreamConfiguration>> &outputCfgs,
-		      bool ccmEnabled);
+		      bool ccmEnabled) override;
 
-	Size patternSize(PixelFormat inputFormat);
+	Size patternSize(PixelFormat inputFormat) override;
 
-	std::vector<PixelFormat> formats(PixelFormat input);
-	std::tuple<unsigned int, unsigned int> strideAndFrameSize(const PixelFormat &outputFormat, const Size &size);
+	std::vector<PixelFormat> formats(PixelFormat input) override;
+	std::tuple<unsigned int, unsigned int> strideAndFrameSize(const PixelFormat &outputFormat, const Size &size) override;
 
-	void process(uint32_t frame, FrameBuffer *input, FrameBuffer *output, const DebayerParams &params);
-	int start();
-	void stop();
+	void process(uint32_t frame, FrameBuffer *input, FrameBuffer *output, const DebayerParams &params) override;
+	int start() override;
+	void stop() override;
 
-	const SharedFD &getStatsFD() { return stats_->getStatsFD(); }
+	const SharedFD &getStatsFD() override { return stats_->getStatsFD(); }
 
-	SizeRange sizes(PixelFormat inputFormat, const Size &inputSize);
+	SizeRange sizes(PixelFormat inputFormat, const Size &inputSize) override;
 
 private:
 	static int getInputConfig(PixelFormat inputFormat, DebayerInputConfig &config);

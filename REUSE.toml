@@ -6,7 +6,9 @@ SPDX-PackageDownloadLocation = "https://git.libcamera.org/libcamera/libcamera.gi
 [[annotations]]
 path = [
 	"Documentation/binning.svg",
+	"Documentation/images/rotation/*.svg",
 	"Documentation/sensor_model.svg",
+	"Documentation/skipping.svg",
 	"Documentation/theme/static/libcamera-logo-text.svg",
 ]
 precedence = "aggregate"
@@ -14,7 +16,10 @@ SPDX-FileCopyrightText = "Copyright 2023 Ideas On Board Oy"
 SPDX-License-Identifier = "CC-BY-SA-4.0"
 
 [[annotations]]
-path = ["src/ipa/rpi/vc4/data/*.json"]
+path = [
+	"src/ipa/rpi/pisp/data/*.json",
+	"src/ipa/rpi/vc4/data/*.json",
+]
 precedence = "aggregate"
 SPDX-FileCopyrightText = "2019-2020 Raspberry Pi Ltd"
 SPDX-License-Identifier = "BSD-2-Clause"

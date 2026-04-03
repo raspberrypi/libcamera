@@ -151,7 +151,7 @@ protected:
 		}
 
 		/* Test list node. */
-		auto &listObj = (*root)["list"];
+		auto &listNode = (*root)["list"];
 
 		static constexpr std::array<const char *, 3> listValues{
 			"libcamera",
@@ -159,13 +159,13 @@ protected:
 			"",
 		};
 
-		if (listObj.size() != listValues.size()) {
-			std::cerr << "List object parsed with wrong size" << std::endl;
+		if (listNode.size() != listValues.size()) {
+			std::cerr << "List node parsed with wrong size" << std::endl;
 			return TestFail;
 		}
 
 		unsigned int i = 0;
-		for (auto &elem : listObj.asList()) {
+		for (auto &elem : listNode.asList()) {
 			if (i >= listValues.size()) {
 				std::cerr << "Too many elements in list during iteration"
 					  << std::endl;
@@ -174,7 +174,7 @@ protected:
 
 			std::string value = listValues[i];
 
-			if (&elem != &listObj[i]) {
+			if (&elem != &listNode[i]) {
 				std::cerr << "List element " << i << " has wrong address"
 					  << std::endl;
 				return TestFail;
@@ -190,32 +190,32 @@ protected:
 		}
 
 		/* Ensure that empty list elements get parsed as empty strings. */
-		if (!listObj[2].isValue()) {
+		if (!listNode[2].isValue()) {
 			std::cerr << "Empty list element is not a value" << std::endl;
 			return TestFail;
 		}
 
 		/* Test nested nodes. */
-		auto &level1Obj = (*root)["level1"];
+		auto &level1Node = (*root)["level1"];
 
-		if (!level1Obj.isDictionary()) {
-			std::cerr << "level1 object failed to parse as Dictionary" << std::endl;
+		if (!level1Node.isDictionary()) {
+			std::cerr << "level1 node failed to parse as Dictionary" << std::endl;
 			return TestFail;
 		}
 
-		auto &level2Obj = level1Obj["level2"];
+		auto &level2Node = level1Node["level2"];
 
-		if (!level2Obj.isList() || level2Obj.size() != 2) {
-			std::cerr << "level2 object should be a 2 element list" << std::endl;
+		if (!level2Node.isList() || level2Node.size() != 2) {
+			std::cerr << "level2 node should be a 2 element list" << std::endl;
 			return TestFail;
 		}
 
-		auto &firstElement = level2Obj[0];
+		auto &firstElement = level2Node[0];
 		if (!firstElement.isList() ||
 		    firstElement.size() != 2 ||
 		    firstElement[0].get<int32_t>(0) != 1 ||
 		    firstElement[1].get<int32_t>(0) != 2) {
-			std::cerr << "The first element of level2 object failed to parse as integer list" << std::endl;
+			std::cerr << "The first element of level2 node failed to parse as integer list" << std::endl;
 			return TestFail;
 		}
 
@@ -225,13 +225,13 @@ protected:
 			return TestFail;
 		}
 
-		auto &secondElement = level2Obj[1];
+		auto &secondElement = level2Node[1];
 		if (!secondElement.isDictionary() ||
 		    !secondElement.contains("one") ||
 		    !secondElement.contains("two") ||
 		    secondElement["one"].get<int32_t>(0) != 1 ||
 		    secondElement["two"].get<int32_t>(0) != 2) {
-			std::cerr << "The second element of level2 object failed to parse as dictionary" << std::endl;
+			std::cerr << "The second element of level2 node failed to parse as dictionary" << std::endl;
 			return TestFail;
 		}
 

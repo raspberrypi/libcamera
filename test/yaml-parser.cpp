@@ -20,9 +20,8 @@
 #include "test.h"
 
 using namespace libcamera;
-using namespace std;
 
-static const string testYaml =
+static const std::string testYaml =
 	"empty:\n"
 	"value: 42\n"
 	"list:\n"
@@ -34,13 +33,13 @@ static const string testYaml =
 	"    - [1, 2]\n"
 	"    - {one: 1, two: 2}\n";
 
-static const string invalidYaml =
+static const std::string invalidYaml =
 	"Invalid : - YAML : - Content";
 
 class YamlParserTest : public Test
 {
 protected:
-	bool createFile(const string &content, string &filename)
+	bool createFile(const std::string &content, std::string &filename)
 	{
 		filename = "/tmp/libcamera.test.XXXXXX";
 		int fd = mkstemp(&filename.front());
@@ -72,13 +71,13 @@ protected:
 		/* Test parsing invalid YAML file. */
 		File file{ invalidYamlFile_ };
 		if (!file.open(File::OpenModeFlag::ReadOnly)) {
-			cerr << "Fail to open invalid YAML file" << std::endl;
+			std::cerr << "Fail to open invalid YAML file" << std::endl;
 			return TestFail;
 		}
 
 		std::unique_ptr<ValueNode> root = YamlParser::parse(file);
 		if (root) {
-			cerr << "Invalid YAML file parse successfully" << std::endl;
+			std::cerr << "Invalid YAML file parse successfully" << std::endl;
 			return TestFail;
 		}
 
@@ -86,20 +85,20 @@ protected:
 		file.close();
 		file.setFileName(testYamlFile_);
 		if (!file.open(File::OpenModeFlag::ReadOnly)) {
-			cerr << "Fail to open test YAML file" << std::endl;
+			std::cerr << "Fail to open test YAML file" << std::endl;
 			return TestFail;
 		}
 
 		root = YamlParser::parse(file);
 
 		if (!root) {
-			cerr << "Fail to parse test YAML file: " << std::endl;
+			std::cerr << "Fail to parse test YAML file: " << std::endl;
 			return TestFail;
 		}
 
 		/* Test that the root dictionary node has been parsed correctly. */
 		if (!root->isDictionary()) {
-			cerr << "Dictionary node has wrong type" << std::endl;
+			std::cerr << "Dictionary node has wrong type" << std::endl;
 			return TestFail;
 		}
 
@@ -138,7 +137,7 @@ protected:
 		/* Test empty node. */
 		auto &emptyNode = (*root)["empty"];
 
-		if (emptyNode.get<string>("-") != "") {
+		if (emptyNode.get<std::string>("-") != "") {
 			std::cerr << "Empty node has incorrect content" << std::endl;
 			return TestFail;
 		}
@@ -146,7 +145,7 @@ protected:
 		/* Test value node. */
 		auto &valueNode = (*root)["value"];
 
-		if (valueNode.get<string>("") != "42") {
+		if (valueNode.get<std::string>("") != "42") {
 			std::cerr << "Value node has incorrect content" << std::endl;
 			return TestFail;
 		}
@@ -161,7 +160,7 @@ protected:
 		};
 
 		if (listObj.size() != listValues.size()) {
-			cerr << "List object parse with wrong size" << std::endl;
+			std::cerr << "List object parsed with wrong size" << std::endl;
 			return TestFail;
 		}
 
@@ -192,7 +191,7 @@ protected:
 
 		/* Ensure that empty list elements get parsed as empty strings. */
 		if (!listObj[2].isValue()) {
-			cerr << "Empty list element is not a value" << std::endl;
+			std::cerr << "Empty list element is not a value" << std::endl;
 			return TestFail;
 		}
 
@@ -200,14 +199,14 @@ protected:
 		auto &level1Obj = (*root)["level1"];
 
 		if (!level1Obj.isDictionary()) {
-			cerr << "level1 object fail to parse as Dictionary" << std::endl;
+			std::cerr << "level1 object fail to parse as Dictionary" << std::endl;
 			return TestFail;
 		}
 
 		auto &level2Obj = level1Obj["level2"];
 
 		if (!level2Obj.isList() || level2Obj.size() != 2) {
-			cerr << "level2 object should be a 2 elements list" << std::endl;
+			std::cerr << "level2 object should be a 2 elements list" << std::endl;
 			return TestFail;
 		}
 
@@ -216,13 +215,13 @@ protected:
 		    firstElement.size() != 2 ||
 		    firstElement[0].get<int32_t>(0) != 1 ||
 		    firstElement[1].get<int32_t>(0) != 2) {
-			cerr << "The first element of level2 object fail to parse as integer list" << std::endl;
+			std::cerr << "The first element of level2 object fail to parse as integer list" << std::endl;
 			return TestFail;
 		}
 
 		const auto &values = firstElement.get<std::vector<uint16_t>>();
 		if (!values || values->size() != 2 || (*values)[0] != 1 || (*values)[1] != 2) {
-			cerr << "get() failed to return correct vector" << std::endl;
+			std::cerr << "get() failed to return correct vector" << std::endl;
 			return TestFail;
 		}
 
@@ -232,7 +231,7 @@ protected:
 		    !secondElement.contains("two") ||
 		    secondElement["one"].get<int32_t>(0) != 1 ||
 		    secondElement["two"].get<int32_t>(0) != 2) {
-			cerr << "The second element of level2 object fail to parse as dictionary" << std::endl;
+			std::cerr << "The second element of level2 object fail to parse as dictionary" << std::endl;
 			return TestFail;
 		}
 

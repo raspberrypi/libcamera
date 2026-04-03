@@ -20,3 +20,13 @@ subdir('cam')
 subdir('qcam')
 
 subdir('ipa-verify')
+
+summary({
+            'cam application': cam_enabled,
+            'cam options': cam_options,
+            'DNG output support': libtiff.found(),
+            'qcam application': qcam_enabled,
+            'lc-compliance application': lc_compliance_enabled,
+        },
+        section : 'Applications',
+        bool_yn : true)

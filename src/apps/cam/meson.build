@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
+cam_options = []
+
 if opt_cam.disabled() or not libevent.found()
     cam_enabled = false
     subdir_done()
@@ -39,6 +41,7 @@ if libdrm.found()
     cam_deps += [
         libdrm,
     ]
+    cam_options += 'output-kms'
 endif
 
 if libsdl2.found()
@@ -52,6 +55,7 @@ if libsdl2.found()
     cam_deps += [
         libsdl2,
     ]
+    cam_options += 'output-sdl2'
 
     if libjpeg.found()
         cam_cpp_args += ['-DHAVE_LIBJPEG']
@@ -61,6 +65,7 @@ if libsdl2.found()
         cam_deps += [
             libjpeg,
         ]
+        cam_options += 'jpeg'
     endif
 endif
 

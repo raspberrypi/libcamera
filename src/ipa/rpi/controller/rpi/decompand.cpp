@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: BSD-2-Clause */
+
 #include "decompand.h"
 
 #include <libcamera/base/log.h>

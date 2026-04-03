@@ -1,3 +1,5 @@
+.. SPDX-License-Identifier: BSD-2-Clause
+
 The Raspberry Pi CTT has moved from this location to the following GitHub
 repository:
 

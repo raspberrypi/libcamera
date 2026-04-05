@@ -105,7 +105,7 @@ headers, and with double quotes for internal libcamera headers.
 C++ Specific Rules
 ------------------
 
-The code shall be implemented in C++17, with the following caveats:
+The code shall be implemented in C++20, with the following caveats:
 
 * Type inference (auto and decltype) shall be used with caution, to avoid
   drifting towards an untyped language.

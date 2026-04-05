@@ -118,10 +118,9 @@ cpp_arguments = [
     '-Wnon-virtual-dtor',
 ]
 
-# \todo Switch to `version` when moving to C++20 as `ciso646` has been removed in C++20.
-if cxx.has_header_symbol('ciso646', '_LIBCPP_VERSION')
+if cxx.has_header_symbol('version', '_LIBCPP_VERSION')
     cxx_stdlib = 'libc++'
-elif cxx.has_header_symbol('ciso646', '__GLIBCXX__')
+elif cxx.has_header_symbol('version', '__GLIBCXX__')
     cxx_stdlib = 'libstdc++'
 else
     error('C++ standard library cannot be detected')

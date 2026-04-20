@@ -68,13 +68,13 @@ void Stream::resetBuffers()
 {
 	/* Add all internal buffers to the queue of usable buffers. */
 	availableBuffers_ = {};
-	for (auto const &buffer : internalBuffers_)
+	for (const auto &buffer : internalBuffers_)
 		availableBuffers_.push(buffer.get());
 }
 
 void Stream::setExportedBuffers(std::vector<std::unique_ptr<FrameBuffer>> *buffers)
 {
-	for (auto const &buffer : *buffers)
+	for (const auto &buffer : *buffers)
 		bufferEmplace(++id_, buffer.get());
 }
 
@@ -90,7 +90,7 @@ unsigned int Stream::getBufferId(FrameBuffer *buffer) const
 
 	/* Find the buffer in the map, and return the buffer id. */
 	auto it = std::find_if(bufferMap_.begin(), bufferMap_.end(),
-			       [&buffer](auto const &p) { return p.second.buffer == buffer; });
+			       [&buffer](const auto &p) { return p.second.buffer == buffer; });
 
 	if (it == bufferMap_.end())
 		return 0;
@@ -201,7 +201,7 @@ void Stream::returnBuffer(FrameBuffer *buffer)
 
 const BufferObject &Stream::getBuffer(unsigned int id)
 {
-	auto const &it = bufferMap_.find(id);
+	const auto &it = bufferMap_.find(id);
 	if (it == bufferMap_.end())
 		return errorBufferObject;
 

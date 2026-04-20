@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # Virtual Pipeline Handler
 
 Virtual pipeline handler emulates fake external camera(s) for testing.
@@ -9,6 +11,7 @@ Virtual pipeline handler emulates fake external camera(s) for testing.
   `share/libcamera/pipeline/virtual/virtual.yaml`.
 
 ### Config File Format
+
 The config file contains the information about cameras' properties to register.
 The config file should be a yaml file with dictionary of the cameraIds
 associated with their properties as top level. The default value will be applied

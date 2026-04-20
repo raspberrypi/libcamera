@@ -300,7 +300,7 @@ void IpaVc4::handleControls(const ControlList &controls)
 		{ controls::draft::NoiseReductionModeZSL, RPiController::DenoiseMode::ColourHighQuality },
 	};
 
-	for (auto const &ctrl : controls) {
+	for (const auto &ctrl : controls) {
 		switch (ctrl.first) {
 		case controls::draft::NOISE_REDUCTION_MODE: {
 			RPiController::DenoiseAlgorithm *sdn = dynamic_cast<RPiController::DenoiseAlgorithm *>(

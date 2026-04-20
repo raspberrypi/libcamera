@@ -1,5 +1,7 @@
 # SPDX-License-Identifier: CC0-1.0
 
+cam_options = []
+
 if opt_cam.disabled() or not libevent.found()
     cam_enabled = false
     subdir_done()
@@ -17,9 +19,18 @@ cam_sources = files([
 
 cam_cpp_args = [apps_cpp_args]
 
-libdrm = dependency('libdrm', required : false)
-libjpeg = dependency('libjpeg', required : false)
-libsdl2 = dependency('SDL2', required : false)
+cam_deps = [
+    libatomic,
+    libcamera_public,
+    libevent,
+    libthreads,
+    libyaml,
+    libtiff,
+]
+
+libdrm = dependency('libdrm', required : get_option('cam-output-kms'))
+libsdl2 = dependency('SDL2', required : get_option('cam-output-sdl2'))
+libjpeg = dependency('libjpeg', required : get_option('cam-jpeg'))
 
 if libdrm.found()
     cam_cpp_args += [ '-DHAVE_KMS' ]
@@ -27,6 +38,10 @@ if libdrm.found()
         'drm.cpp',
         'kms_sink.cpp'
     ])
+    cam_deps += [
+        libdrm,
+    ]
+    cam_options += 'output-kms'
 endif
 
 if libsdl2.found()
@@ -37,28 +52,26 @@ if libsdl2.found()
         'sdl_texture_1plane.cpp',
         'sdl_texture_yuv.cpp',
     ])
+    cam_deps += [
+        libsdl2,
+    ]
+    cam_options += 'output-sdl2'
 
     if libjpeg.found()
         cam_cpp_args += ['-DHAVE_LIBJPEG']
         cam_sources += files([
             'sdl_texture_mjpg.cpp'
         ])
+        cam_deps += [
+            libjpeg,
+        ]
+        cam_options += 'jpeg'
     endif
 endif
 
 cam  = executable('cam', cam_sources,
                   link_with : apps_lib,
-                  dependencies : [
-                      libatomic,
-                      libcamera_public,
-                      libdrm,
-                      libevent,
-                      libjpeg,
-                      libsdl2,
-                      libtiff,
-                      libthreads,
-                      libyaml,
-                  ],
+                  dependencies : cam_deps,
                   cpp_args : cam_cpp_args,
                   install : true,
                   install_tag : 'bin')

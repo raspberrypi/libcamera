@@ -142,7 +142,7 @@ int ConverterDW100Module::init(const YamlObject &params)
  * \copydoc libcamera::V4L2M2MConverter::configure
  */
 int ConverterDW100Module::configure(const StreamConfiguration &inputCfg,
-				    const std::vector<std::reference_wrapper<StreamConfiguration>>
+				    const std::vector<std::reference_wrapper<const StreamConfiguration>>
 					    &outputCfgs)
 {
 	int ret;

@@ -53,6 +53,7 @@ pycamera_deps = [
 
 pycamera_args = [
     '-fvisibility=hidden',
+    '-Wno-invalid-offsetof',
     '-Wno-shadow',
     '-DPYBIND11_USE_SMART_HOLDER_AS_DEFAULT',
 ]

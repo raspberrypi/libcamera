@@ -423,8 +423,7 @@ unsigned int KeyValueParser::maxOptionLength() const
 {
 	unsigned int maxLength = 0;
 
-	for (auto const &iter : optionsMap_) {
-		const Option &option = iter.second;
+	for (const auto &[name, option] : optionsMap_) {
 		unsigned int length = 10 + strlen(option.name);
 		if (option.argument != ArgumentNone)
 			length += 1 + strlen(option.typeName());
@@ -440,8 +439,7 @@ unsigned int KeyValueParser::maxOptionLength() const
 
 void KeyValueParser::usage(int indent)
 {
-	for (auto const &iter : optionsMap_) {
-		const Option &option = iter.second;
+	for (const auto &[name, option] : optionsMap_) {
 		std::string argument = std::string("          ") + option.name;
 
 		if (option.argument != ArgumentNone) {

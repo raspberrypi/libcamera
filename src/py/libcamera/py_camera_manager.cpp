@@ -4,6 +4,7 @@
  */
 
 #include "py_camera_manager.h"
+#include "py_main.h"
 
 #include <errno.h>
 #include <memory>
@@ -11,8 +12,6 @@
 #include <system_error>
 #include <unistd.h>
 #include <vector>
-
-#include "py_main.h"
 
 namespace py = pybind11;
 

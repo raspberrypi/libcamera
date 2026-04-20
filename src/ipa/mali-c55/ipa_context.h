@@ -14,6 +14,8 @@
 
 #include <libipa/fc_queue.h>
 
+#include "libipa/fixedpoint.h"
+
 namespace libcamera {
 
 namespace ipa::mali_c55 {
@@ -39,12 +41,12 @@ struct IPAActiveState {
 		struct {
 			uint32_t exposure;
 			double sensorGain;
-			double ispGain;
+			UQ<5, 8> ispGain;
 		} automatic;
 		struct {
 			uint32_t exposure;
 			double sensorGain;
-			double ispGain;
+			UQ<5, 8> ispGain;
 		} manual;
 		bool autoEnabled;
 		uint32_t constraintMode;
@@ -53,8 +55,8 @@ struct IPAActiveState {
 	} agc;
 
 	struct {
-		double rGain;
-		double bGain;
+		UQ<4, 8> rGain;
+		UQ<4, 8> bGain;
 	} awb;
 };
 
@@ -62,12 +64,12 @@ struct IPAFrameContext : public FrameContext {
 	struct {
 		uint32_t exposure;
 		double sensorGain;
-		double ispGain;
+		UQ<5, 8> ispGain;
 	} agc;
 
 	struct {
-		double rGain;
-		double bGain;
+		UQ<4, 8> rGain;
+		UQ<4, 8> bGain;
 	} awb;
 };
 

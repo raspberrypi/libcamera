@@ -110,13 +110,13 @@ std::string join(const Container &items, const std::string &sep, UnaryOp op)
 	std::ostringstream ss;
 	bool first = true;
 
-	for (auto it = std::begin(items); it != std::end(items); ++it) {
+	for (const auto &item : items) {
 		if (!first)
 			ss << sep;
 		else
 			first = false;
 
-		ss << op(*it);
+		ss << op(item);
 	}
 
 	return ss.str();
@@ -128,13 +128,13 @@ std::string join(const Container &items, const std::string &sep)
 	std::ostringstream ss;
 	bool first = true;
 
-	for (auto it = std::begin(items); it != std::end(items); ++it) {
+	for (const auto &item : items) {
 		if (!first)
 			ss << sep;
 		else
 			first = false;
 
-		ss << *it;
+		ss << item;
 	}
 
 	return ss.str();
@@ -340,7 +340,7 @@ public:
 	template<typename Period>
 	double get() const
 	{
-		auto const c = std::chrono::duration_cast<std::chrono::duration<double, Period>>(*this);
+		const auto c = std::chrono::duration_cast<std::chrono::duration<double, Period>>(*this);
 		return c.count();
 	}
 

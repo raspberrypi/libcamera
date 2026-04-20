@@ -141,6 +141,7 @@ struct _GstLibcameraSrc {
 	GstTask *task;
 
 	gchar *camera_name;
+	GstStructure *sensor_config;
 
 	std::atomic<GstEvent *> pending_eos;
 
@@ -152,6 +153,7 @@ struct _GstLibcameraSrc {
 enum {
 	PROP_0,
 	PROP_CAMERA_NAME,
+	PROP_SENSOR_CONFIG,
 	PROP_LAST
 };
 
@@ -846,6 +848,55 @@ gst_libcamera_src_task_enter(GstTask *task, [[maybe_unused]] GThread *thread,
 	}
 	g_assert(state->config_->size() == state->srcpads_.size());
 
+	/* Apply optional sensor configuration. */
+	if (self->sensor_config) {
+		gint w = 0, h = 0, depth = 0;
+		if (!gst_structure_get_int(self->sensor_config, "width", &w) ||
+		    !gst_structure_get_int(self->sensor_config, "height", &h) ||
+		    !gst_structure_get_int(self->sensor_config, "depth", &depth) ||
+		    w <= 0 || h <= 0 || depth <= 0) {
+			GST_ELEMENT_WARNING(self, RESOURCE, SETTINGS,
+					    ("sensor-config requires non-zero width, height and depth"
+					     " fields, ignoring"),
+					    (nullptr));
+		} else {
+			SensorConfiguration sensorCfg;
+			sensorCfg.outputSize = Size(w, h);
+			sensorCfg.bitDepth = depth;
+
+			/* Optional binning (defaults to 1x1). */
+			gint binX, binY;
+			if (gst_structure_get_int(self->sensor_config, "bin-x", &binX) && binX > 0)
+				sensorCfg.binning.binX = binX;
+			if (gst_structure_get_int(self->sensor_config, "bin-y", &binY) && binY > 0)
+				sensorCfg.binning.binY = binY;
+
+			/* Optional skipping (defaults to 1 for all increments). */
+			gint xOddInc, xEvenInc, yOddInc, yEvenInc;
+			if (gst_structure_get_int(self->sensor_config, "x-odd-inc", &xOddInc) && xOddInc > 0)
+				sensorCfg.skipping.xOddInc = xOddInc;
+			if (gst_structure_get_int(self->sensor_config, "x-even-inc", &xEvenInc) && xEvenInc > 0)
+				sensorCfg.skipping.xEvenInc = xEvenInc;
+			if (gst_structure_get_int(self->sensor_config, "y-odd-inc", &yOddInc) && yOddInc > 0)
+				sensorCfg.skipping.yOddInc = yOddInc;
+			if (gst_structure_get_int(self->sensor_config, "y-even-inc", &yEvenInc) && yEvenInc > 0)
+				sensorCfg.skipping.yEvenInc = yEvenInc;
+
+			/* Optional analog crop (defaults to "unset"). */
+			gint cropX, cropY, cropW, cropH;
+			if (gst_structure_get_int(self->sensor_config, "analog-crop-x", &cropX) &&
+			    gst_structure_get_int(self->sensor_config, "analog-crop-y", &cropY) &&
+			    gst_structure_get_int(self->sensor_config, "analog-crop-width", &cropW) &&
+			    gst_structure_get_int(self->sensor_config, "analog-crop-height", &cropH) &&
+			    cropX >= 0 && cropY >= 0 && cropW > 0 && cropH > 0)
+				sensorCfg.analogCrop = Rectangle(cropX, cropY,
+								 static_cast<unsigned int>(cropW),
+								 static_cast<unsigned int>(cropH));
+
+			state->config_->sensorConfig = sensorCfg;
+		}
+	}
+
 	if (!gst_libcamera_src_negotiate(self)) {
 		state->initControls_.clear();
 		GST_ELEMENT_FLOW_ERROR(self, GST_FLOW_NOT_NEGOTIATED);
@@ -934,6 +985,10 @@ gst_libcamera_src_set_property(GObject *object, guint prop_id,
 		g_free(self->camera_name);
 		self->camera_name = g_value_dup_string(value);
 		break;
+	case PROP_SENSOR_CONFIG:
+		g_clear_pointer(&self->sensor_config, gst_structure_free);
+		self->sensor_config = (GstStructure *)g_value_dup_boxed(value);
+		break;
 	default:
 		if (!state->controls_.setProperty(prop_id - PROP_LAST, value, pspec))
 			G_OBJECT_WARN_INVALID_PROPERTY_ID(object, prop_id, pspec);
@@ -952,6 +1007,9 @@ gst_libcamera_src_get_property(GObject *object, guint prop_id, GValue *value,
 	switch (prop_id) {
 	case PROP_CAMERA_NAME:
 		g_value_set_string(value, self->camera_name);
+		break;
+	case PROP_SENSOR_CONFIG:
+		g_value_set_boxed(value, self->sensor_config);
 		break;
 	default:
 		if (!state->controls_.getProperty(prop_id - PROP_LAST, value, pspec))
@@ -1040,6 +1098,7 @@ gst_libcamera_src_finalize(GObject *object)
 	g_clear_object(&self->task);
 	g_mutex_clear(&self->state->lock_);
 	g_free(self->camera_name);
+	g_clear_pointer(&self->sensor_config, gst_structure_free);
 	delete self->state;
 
 	return klass->finalize(object);
@@ -1161,6 +1220,20 @@ gst_libcamera_src_class_init(GstLibcameraSrcClass *klass)
 							     | G_PARAM_READWRITE
 							     | G_PARAM_STATIC_STRINGS));
 	g_object_class_install_property(object_class, PROP_CAMERA_NAME, spec);
+
+	spec = g_param_spec_boxed("sensor-config", "Sensor Config",
+				  "Desired sensor configuration as a GstStructure with mandatory "
+				  "fields width, height and depth, and optional fields bin-x, bin-y, "
+				  "x-odd-inc, x-even-inc, y-odd-inc, y-even-inc, "
+				  "analog-crop-x, analog-crop-y, analog-crop-width, analog-crop-height "
+				  "(e.g. \"sensor/config,width=2304,height=1296,depth=10\"). "
+				  "Leave unset to let the pipeline negotiate the sensor mode automatically.",
+				  GST_TYPE_STRUCTURE,
+				  (GParamFlags)(GST_PARAM_MUTABLE_READY
+						| G_PARAM_CONSTRUCT
+						| G_PARAM_READWRITE
+						| G_PARAM_STATIC_STRINGS));
+	g_object_class_install_property(object_class, PROP_SENSOR_CONFIG, spec);
 
 	GstCameraControls::installProperties(object_class, PROP_LAST);
 }

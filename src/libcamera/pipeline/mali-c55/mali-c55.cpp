@@ -318,7 +318,7 @@ void MaliC55CameraData::updateControls(const ControlInfoMap &ipaControls)
 		ControlInfo(ispMinCrop, sensorInfo.analogCrop,
 			    sensorInfo.analogCrop);
 
-	for (auto const &c : ipaControls)
+	for (const auto &c : ipaControls)
 		controls.emplace(c.first, c.second);
 
 	controlInfo_ = ControlInfoMap(std::move(controls), controls::controls);

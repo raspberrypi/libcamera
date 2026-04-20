@@ -9,6 +9,8 @@
 
 #include "test.h"
 
+#include <libcamera/base/memfd.h>
+
 Test::Test()
 {
 }
@@ -36,3 +38,12 @@ int Test::execute()
 
 	return ret;
 }
+
+namespace test {
+
+libcamera::UniqueFD createTemporaryFile()
+{
+	return libcamera::MemFd::create("libcamera-test-temporary-file", 0);
+}
+
+} /* namespace test */

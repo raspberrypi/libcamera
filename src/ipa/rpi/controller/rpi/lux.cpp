@@ -90,7 +90,7 @@ void Lux::process(StatisticsPtr &stats, Metadata *imageMetadata)
 		 * is a better choice than the Y-histogram, for example, because it's invariant
 		 * to the metering mode (and cheaper to evaluate).
 		 */
-		auto const &fullImageStats = stats->agcRegions.getFloating(0);
+		const auto &fullImageStats = stats->agcRegions.getFloating(0);
 		double currentY = static_cast<double>(fullImageStats.val.ySum) / fullImageStats.counted;
 
 		double currentGain = deviceStatus.analogueGain;

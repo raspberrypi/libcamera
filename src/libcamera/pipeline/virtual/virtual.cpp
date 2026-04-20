@@ -136,7 +136,7 @@ VirtualCameraData::VirtualCameraData(PipelineHandler *pipe,
 
 void VirtualCameraData::processRequest(Request *request)
 {
-	for (auto const &[stream, buffer] : request->buffers()) {
+	for (const auto &[stream, buffer] : request->buffers()) {
 		bool found = false;
 		/* map buffer and fill test patterns */
 		for (auto &streamConfig : streamConfigs_) {

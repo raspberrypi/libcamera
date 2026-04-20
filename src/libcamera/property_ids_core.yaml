@@ -701,4 +701,13 @@ controls:
 
         Different cameras may report identical devices.
 
+  - PipelineHandler:
+      type: string
+      description: |
+        The name of the pipeline handler that manages this camera device.o
+
+        This property is meant to help development, debugging and support. The
+        pipeline handler name is not guaranteed to be stable across libcamera
+        releases.
+
 ...

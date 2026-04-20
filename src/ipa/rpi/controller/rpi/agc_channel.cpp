@@ -298,7 +298,7 @@ int AgcChannel::read(const libcamera::YamlObject &params,
 		return ret;
 
 	const Size &size = hardwareConfig.agcZoneWeights;
-	for (auto const &modes : config_.meteringModes) {
+	for (const auto &modes : config_.meteringModes) {
 		if (modes.second.weights.size() != size.width * size.height) {
 			LOG(RPiAgc, Error) << "AgcMeteringMode: Incorrect number of weights";
 			return -EINVAL;

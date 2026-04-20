@@ -267,7 +267,7 @@ int PipelineHandlerVc4::allocateBuffers(Camera *camera)
 	}
 
 	/* Decide how many internal buffers to allocate. */
-	for (auto const stream : data->streams_) {
+	for (const auto stream : data->streams_) {
 		unsigned int numBuffers;
 		/*
 		 * For Unicam, allocate a minimum number of buffers for internal

@@ -40,7 +40,6 @@ qt6_cpp_args = [
     apps_cpp_args,
     '-DQT_NO_KEYWORDS',
     '-Wno-extra-semi',
-    '-Wno-sfinae-incomplete',
 ]
 
 # gcc 12 and 13 output a false positive variable shadowing warning with Qt
@@ -48,6 +47,10 @@ qt6_cpp_args = [
 if qt6_dep.version().version_compare('>=6.9.0') and \
    cxx.version().version_compare('>=12') and cxx.version().version_compare('<14')
     qt6_cpp_args += ['-Wno-shadow']
+endif
+
+if cxx.get_id() == 'gcc' and cxx.version().version_compare('>=16')
+    qt6_cpp_args += ['-Wno-sfinae-incomplete']
 endif
 
 resources = qt6.preprocess(moc_headers : qcam_moc_headers,

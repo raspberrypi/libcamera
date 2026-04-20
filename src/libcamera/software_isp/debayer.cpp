@@ -58,7 +58,8 @@ namespace libcamera {
 
 LOG_DEFINE_CATEGORY(Debayer)
 
-Debayer::Debayer(const GlobalConfiguration &configuration) : bench_(configuration)
+Debayer::Debayer(const GlobalConfiguration &configuration)
+	: bench_(configuration, "Debayer")
 {
 }
 

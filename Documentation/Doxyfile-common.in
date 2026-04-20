@@ -57,6 +57,9 @@ IMAGE_PATH             = "@TOP_SRCDIR@/Documentation/images"
 HTML_EXTRA_STYLESHEET  = "@TOP_SRCDIR@/Documentation/doxygen-awesome-css/doxygen-awesome.css" \
                          "@TOP_SRCDIR@/Documentation/doxygen-awesome-css/doxygen-awesome-sidebar-only.css"
 
+# The default value changed to YES in doxygen 1.13.0
+GENERATE_TREEVIEW      = YES
+
 GENERATE_LATEX         = NO
 
 MACRO_EXPANSION        = YES

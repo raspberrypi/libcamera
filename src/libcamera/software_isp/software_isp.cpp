@@ -21,6 +21,7 @@
 #include <libcamera/formats.h>
 #include <libcamera/stream.h>
 
+#include "libcamera/internal/bayer_format.h"
 #include "libcamera/internal/framebuffer.h"
 #include "libcamera/internal/ipa_manager.h"
 #include "libcamera/internal/software_isp/debayer_params.h"
@@ -108,8 +109,10 @@ SoftwareIsp::SoftwareIsp(PipelineHandler *pipe, const CameraSensor *sensor,
 	std::optional<std::string> softISPMode = configuration.envOption("LIBCAMERA_SOFTISP_MODE", { "software_isp", "mode" });
 	if (softISPMode) {
 		if (softISPMode != "gpu" && softISPMode != "cpu") {
-			LOG(SoftwareIsp, Error) << "LIBCAMERA_SOFISP_MODE " << softISPMode.value() << " invalid "
-						<< "must be \"cpu\" or \"gpu\"";
+			LOG(SoftwareIsp, Error)
+				<< "Invalid LIBCAMERA_SOFTISP_MODE \""
+				<< softISPMode.value()
+				<< "\", must be \"cpu\" or \"gpu\"";
 			return;
 		}
 	}
@@ -259,7 +262,7 @@ SoftwareIsp::strideAndFrameSize(const PixelFormat &outputFormat, const Size &siz
  * \return 0 on success, a negative errno on failure
  */
 int SoftwareIsp::configure(const StreamConfiguration &inputCfg,
-			   const std::vector<std::reference_wrapper<StreamConfiguration>> &outputCfgs,
+			   const std::vector<std::reference_wrapper<const StreamConfiguration>> &outputCfgs,
 			   const ipa::soft::IPAConfigInfo &configInfo)
 {
 	ASSERT(ipa_ && debayer_);
@@ -268,7 +271,16 @@ int SoftwareIsp::configure(const StreamConfiguration &inputCfg,
 	if (ret < 0)
 		return ret;
 
-	return debayer_->configure(inputCfg, outputCfgs, ccmEnabled_);
+	ret = debayer_->configure(inputCfg, outputCfgs, ccmEnabled_);
+	if (ret < 0)
+		return ret;
+
+	LOG(SoftwareIsp, Info)
+		<< "Input " << inputCfg.size
+		<< "-" << BayerFormat::fromPixelFormat(inputCfg.pixelFormat)
+		<< " stride " << inputCfg.stride;
+
+	return 0;
 }
 
 /**
@@ -330,8 +342,7 @@ int SoftwareIsp::queueBuffers(uint32_t frame, FrameBuffer *input,
 
 	queuedInputBuffers_.push_back(input);
 
-	for (auto iter = outputs.begin(); iter != outputs.end(); iter++) {
-		FrameBuffer *const buffer = iter->second;
+	for (const auto &[stream, buffer] : outputs) {
 		queuedOutputBuffers_.push_back(buffer);
 		process(frame, input, buffer);
 	}

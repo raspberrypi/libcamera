@@ -11,6 +11,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <string>
 #include <time.h>
 #include <libcamera/base/log.h>
 #include "libcamera/internal/global_configuration.h"
@@ -20,15 +21,16 @@ namespace libcamera {
 class Benchmark
 {
 public:
-	Benchmark(const GlobalConfiguration &configuration);
+	Benchmark(const GlobalConfiguration &configuration, const std::string &name);
 	~Benchmark();
 
 	void startFrame(void);
 	void finishFrame(void);
 
 private:
+	std::string name_;
 	timespec frameStartTime_;
-	bool measure;
+	bool measure_;
 	/* Skip 30 frames for things to stabilize then measure 30 frames */
 	unsigned int encounteredFrames_ = 0;
 	int64_t frameProcessTime_ = 0;

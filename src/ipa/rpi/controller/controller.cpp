@@ -114,7 +114,7 @@ int Controller::read(char const *filename)
 			<< "This format of the tuning file will be deprecated soon!"
 			<< " Please use the convert_tuning.py utility to update to version 2.0.";
 
-		for (auto const &[key, value] : root->asDict()) {
+		for (const auto &[key, value] : root->asDict()) {
 			int ret = createAlgorithm(key, value);
 			if (ret)
 				return ret;
@@ -127,8 +127,8 @@ int Controller::read(char const *filename)
 			return -EINVAL;
 		}
 
-		for (auto const &rootAlgo : (*root)["algorithms"].asList())
-			for (auto const &[key, value] : rootAlgo.asDict()) {
+		for (const auto &rootAlgo : (*root)["algorithms"].asList())
+			for (const auto &[key, value] : rootAlgo.asDict()) {
 				int ret = createAlgorithm(key, value);
 				if (ret)
 					return ret;

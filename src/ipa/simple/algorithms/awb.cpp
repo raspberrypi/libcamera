@@ -17,8 +17,6 @@
 #include "libipa/colours.h"
 #include "simple/ipa_context.h"
 
-#include "control_ids.h"
-
 namespace libcamera {
 
 LOG_DEFINE_CATEGORY(IPASoftAwb)
@@ -44,7 +42,7 @@ void Awb::prepare(IPAContext &context,
 					     0, gains.g(), 0,
 					     0, 0, gains.b() } };
 	context.activeState.combinedMatrix =
-		context.activeState.combinedMatrix * gainMatrix;
+		gainMatrix * context.activeState.combinedMatrix;
 
 	frameContext.gains.red = gains.r();
 	frameContext.gains.blue = gains.b();

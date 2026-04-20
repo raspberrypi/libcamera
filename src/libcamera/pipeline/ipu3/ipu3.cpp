@@ -791,8 +791,7 @@ void IPU3CameraData::cancelPendingRequests()
 	while (!pendingRequests_.empty()) {
 		Request *request = pendingRequests_.front();
 
-		for (auto it : request->buffers()) {
-			FrameBuffer *buffer = it.second;
+		for (const auto &[stream, buffer] : request->buffers()) {
 			buffer->_d()->cancel();
 			pipe()->completeBuffer(request, buffer);
 		}
@@ -1225,10 +1224,7 @@ void IPU3CameraData::paramsComputed(unsigned int id)
 		return;
 
 	/* Queue all buffers from the request aimed for the ImgU. */
-	for (auto it : info->request->buffers()) {
-		const Stream *stream = it.first;
-		FrameBuffer *outbuffer = it.second;
-
+	for (const auto &[stream, outbuffer] : info->request->buffers()) {
 		if (stream == &outStream_)
 			imgu_->output_->queueBuffer(outbuffer);
 		else if (stream == &vfStream_)
@@ -1304,8 +1300,7 @@ void IPU3CameraData::cio2BufferReady(FrameBuffer *buffer)
 
 	/* If the buffer is cancelled force a complete of the whole request. */
 	if (buffer->metadata().status == FrameMetadata::FrameCancelled) {
-		for (auto it : request->buffers()) {
-			FrameBuffer *b = it.second;
+		for (const auto &[stream, b] : request->buffers()) {
 			b->_d()->cancel();
 			pipe()->completeBuffer(request, b);
 		}

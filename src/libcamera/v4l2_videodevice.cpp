@@ -206,7 +206,7 @@ V4L2BufferCache::~V4L2BufferCache()
  */
 bool V4L2BufferCache::isEmpty() const
 {
-	for (auto const &entry : cache_) {
+	for (const auto &entry : cache_) {
 		if (!entry.free_)
 			return false;
 	}
@@ -2042,10 +2042,8 @@ int V4L2VideoDevice::streamOff()
 	state_ = State::Stopping;
 
 	/* Send back all queued buffers. */
-	for (auto it : queuedBuffers_) {
-		FrameBuffer *buffer = it.second;
-
-		cache_->put(it.first);
+	for (const auto &[id, buffer] : queuedBuffers_) {
+		cache_->put(id);
 		buffer->_d()->cancel();
 		bufferReady.emit(buffer);
 	}

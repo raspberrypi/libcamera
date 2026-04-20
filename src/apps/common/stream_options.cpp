@@ -48,7 +48,7 @@ std::vector<StreamRole> StreamKeyValueParser::roles(const OptionValue &values)
 	const std::vector<OptionValue> &streamParameters = values.toArray();
 
 	std::vector<StreamRole> roles;
-	for (auto const &value : streamParameters) {
+	for (const auto &value : streamParameters) {
 		/* If a role is invalid default it to viewfinder. */
 		roles.push_back(parseRole(value.toKeyValues()).value_or(StreamRole::Viewfinder));
 	}
@@ -81,7 +81,7 @@ int StreamKeyValueParser::updateConfiguration(CameraConfiguration *config,
 	}
 
 	unsigned int i = 0;
-	for (auto const &value : streamParameters) {
+	for (const auto &value : streamParameters) {
 		KeyValueParser::Options opts = value.toKeyValues();
 		StreamConfiguration &cfg = config->at(i++);
 

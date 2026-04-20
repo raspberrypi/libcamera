@@ -45,10 +45,10 @@ int Agc::read(const libcamera::YamlObject &params)
 	}
 
 	const auto &channels = params["channels"].asList();
-	for (auto ch = channels.begin(); ch != channels.end(); ch++) {
+	for (const auto &ch : channels) {
 		LOG(RPiAgc, Debug) << "Read AGC channel";
 		channelData_.emplace_back();
-		int ret = channelData_.back().channel.read(*ch, getHardwareConfig());
+		int ret = channelData_.back().channel.read(ch, getHardwareConfig());
 		if (ret)
 			return ret;
 	}

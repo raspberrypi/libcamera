@@ -536,8 +536,8 @@ void CameraSensorLegacy::initTestPatternModes()
 	 * list of supported test patterns.
 	 */
 	std::map<int32_t, controls::draft::TestPatternModeEnum> indexToTestPatternMode;
-	for (const auto &it : testPatternModes)
-		indexToTestPatternMode[it.second] = it.first;
+	for (const auto &[mode, index] : testPatternModes)
+		indexToTestPatternMode[index] = mode;
 
 	for (const ControlValue &value : v4l2TestPattern->second.values()) {
 		const int32_t index = value.get<int32_t>();

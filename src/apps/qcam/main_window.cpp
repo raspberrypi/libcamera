@@ -18,6 +18,7 @@
 #include <QFileDialog>
 #include <QImage>
 #include <QImageWriter>
+#include <QMessageBox>
 #include <QMutexLocker>
 #include <QStandardPaths>
 #include <QStringList>
@@ -637,7 +638,8 @@ void MainWindow::saveImageAs()
 
 	QImageWriter writer(filename);
 	writer.setQuality(95);
-	writer.write(image);
+	if (!writer.write(image))
+		QMessageBox::warning(this, "Failed to save image", writer.errorString());
 }
 
 void MainWindow::captureRaw()

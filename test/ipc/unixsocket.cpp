@@ -137,11 +137,11 @@ private:
 		}
 
 		case CMD_JOIN: {
-			int outfd = open("/tmp", O_TMPFILE | O_RDWR,
-					 S_IRUSR | S_IWUSR);
-			if (outfd < 0) {
+			UniqueFD outfd = test::createTemporaryFile();
+			if (!outfd.isValid()) {
+				ret = errno;
 				cerr << "Create out file failed" << endl;
-				stop(outfd);
+				stop(ret);
 				return;
 			}
 
@@ -152,15 +152,13 @@ private:
 
 					if (num < 0) {
 						cerr << "Read failed" << endl;
-						close(outfd);
 						stop(-EIO);
 						return;
 					} else if (!num)
 						break;
 
-					if (write(outfd, buf, num) < 0) {
+					if (write(outfd.get(), buf, num) < 0) {
 						cerr << "Write failed" << endl;
-						close(outfd);
 						stop(-EIO);
 						return;
 					}
@@ -169,17 +167,15 @@ private:
 				close(fd);
 			}
 
-			lseek(outfd, 0, 0);
+			lseek(outfd.get(), 0, SEEK_SET);
 			response.data.push_back(CMD_JOIN);
-			response.fds.push_back(outfd);
+			response.fds.push_back(outfd.get());
 
 			ret = ipc_.send(response);
 			if (ret < 0) {
 				cerr << "Join failed" << endl;
 				stop(ret);
 			}
-
-			close(outfd);
 
 			break;
 		}
@@ -315,22 +311,21 @@ protected:
 			"Foo",
 			"Bar",
 		};
-		int fds[2];
+		std::array<UniqueFD, 2> fds;
 
 		for (unsigned int i = 0; i < std::size(strings); i++) {
 			unsigned int len = strlen(strings[i]);
 
-			fds[i] = open("/tmp", O_TMPFILE | O_RDWR,
-				      S_IRUSR | S_IWUSR);
-			if (fds[i] < 0)
+			fds[i] = test::createTemporaryFile();
+			if (!fds[i].isValid())
 				return TestFail;
 
-			ret = write(fds[i], strings[i], len);
+			ret = write(fds[i].get(), strings[i], len);
 			if (ret < 0)
 				return TestFail;
 
-			lseek(fds[i], 0, 0);
-			message.fds.push_back(fds[i]);
+			lseek(fds[i].get(), 0, SEEK_SET);
+			message.fds.push_back(fds[i].get());
 		}
 
 		message.data.push_back(CMD_JOIN);
@@ -342,8 +337,6 @@ protected:
 		for (unsigned int i = 0; i < std::size(strings); i++) {
 			unsigned int len = strlen(strings[i]);
 			std::vector<char> buf(len);
-
-			close(fds[i]);
 
 			if (read(response.fds[0], buf.data(), len) <= 0)
 				return TestFail;

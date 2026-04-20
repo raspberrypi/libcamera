@@ -972,7 +972,7 @@ int PipelineHandlerPiSP::allocateBuffers(Camera *camera)
 	}
 
 	/* Decide how many internal buffers to allocate. */
-	for (auto const stream : data->streams_) {
+	for (const auto stream : data->streams_) {
 		unsigned int numBuffers;
 		/*
 		 * For CFE, allocate a minimum of 4 buffers as we want
@@ -1036,12 +1036,12 @@ int PipelineHandlerPiSP::allocateBuffers(Camera *camera)
 	pisp_image_format_config tdn;
 	data->be_->GetTdnOutputFormat(tdn);
 	unsigned int size = tdn.stride * tdn.height;
-	for (auto const &buffer : data->isp_[Isp::TdnOutput].getBuffers()) {
+	for (const auto &buffer : data->isp_[Isp::TdnOutput].getBuffers()) {
 		FrameBuffer *b = buffer.second.buffer;
 		b->_d()->metadata().planes()[0].bytesused = size;
 		data->tdnBuffers_.push_back(b);
 	}
-	for (auto const &buffer : data->isp_[Isp::StitchOutput].getBuffers()) {
+	for (const auto &buffer : data->isp_[Isp::StitchOutput].getBuffers()) {
 		FrameBuffer *b = buffer.second.buffer;
 		b->_d()->metadata().planes()[0].bytesused = size;
 		data->stitchBuffers_.push_back(b);

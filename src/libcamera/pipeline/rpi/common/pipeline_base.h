@@ -169,6 +169,11 @@ public:
 		 * on frame durations.
 		 */
 		unsigned int cameraTimeoutValue;
+		/*
+		 * The minimum frame duration between the IPA's calls to the
+		 * algorithms themselves (in microseconds).
+		 */
+		float controllerMinFrameDurationUs;
 	};
 
 	Config config_;

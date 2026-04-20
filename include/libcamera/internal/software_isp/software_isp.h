@@ -64,7 +64,7 @@ public:
 	strideAndFrameSize(const PixelFormat &outputFormat, const Size &size);
 
 	int configure(const StreamConfiguration &inputCfg,
-		      const std::vector<std::reference_wrapper<StreamConfiguration>> &outputCfgs,
+		      const std::vector<std::reference_wrapper<const StreamConfiguration>> &outputCfgs,
 		      const ipa::soft::IPAConfigInfo &configInfo);
 
 	int exportBuffers(const Stream *stream, unsigned int count,

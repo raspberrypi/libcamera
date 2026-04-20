@@ -280,7 +280,7 @@ int IPARkISP1::configure(const IPAConfigInfo &ipaConfig,
 			return format.colourEncoding == PixelFormatInfo::ColourEncodingRAW;
 		});
 
-	for (auto const &a : algorithms()) {
+	for (const auto &a : algorithms()) {
 		Algorithm *algo = static_cast<Algorithm *>(a.get());
 
 		/* Disable algorithms that don't support raw formats. */
@@ -331,7 +331,7 @@ void IPARkISP1::queueRequest(const uint32_t frame, const ControlList &controls)
 	IPAFrameContext &frameContext = context_.frameContexts.alloc(frame);
 	context_.debugMetadata.enableByControl(controls);
 
-	for (auto const &a : algorithms()) {
+	for (const auto &a : algorithms()) {
 		Algorithm *algo = static_cast<Algorithm *>(a.get());
 		if (algo->disabled_)
 			continue;
@@ -346,7 +346,7 @@ void IPARkISP1::computeParams(const uint32_t frame, const uint32_t bufferId)
 	RkISP1Params params(context_.configuration.paramFormat,
 			    mappedBuffers_.at(bufferId).planes()[0]);
 
-	for (auto const &algo : algorithms())
+	for (const auto &algo : algorithms())
 		algo->prepare(context_, frame, frameContext, &params);
 
 	paramsComputed.emit(frame, params.bytesused());
@@ -373,7 +373,7 @@ void IPARkISP1::processStats(const uint32_t frame, const uint32_t bufferId,
 
 	ControlList metadata(controls::controls);
 
-	for (auto const &a : algorithms()) {
+	for (const auto &a : algorithms()) {
 		Algorithm *algo = static_cast<Algorithm *>(a.get());
 		if (algo->disabled_)
 			continue;

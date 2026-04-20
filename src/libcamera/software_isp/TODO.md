@@ -1,5 +1,18 @@
-2. Reconsider stats sharing
+<!-- SPDX-License-Identifier: CC0-1.0 -->
 
+# Software ISP TODO list
+
+This file contains the TODO list for the software ISP.
+
+## Common code and CPU-based implementation
+
+The TODO items in this section gather comments from patch review that were not
+deemed to require being addressed right away. The text in block quotes is
+copied directly from e-mail review.
+
+### Reconsider stats sharing
+
+```
 >>> +void SwStatsCpu::finishFrame(void)
 >>> +{
 >>> +	*sharedStats_ = stats_;
@@ -22,11 +35,11 @@
 
 That would match how we deal with hardware ISPs, and I think that's a
 good idea. It will help decoupling the processing side from the IPA.
+```
 
----
+### Remove statsReady signal
 
-3. Remove statsReady signal
-
+```
 > class SwStatsCpu
 > {
 > 	/**
@@ -50,11 +63,11 @@ Removing the signal and refactoring those classes doesn't have to be
 addressed now, I think it would be part of a larger refactoring
 (possibly also considering platforms that have no ISP but can produce
 stats in hardware, such as the i.MX7), but please keep it on your radar.
+```
 
----
+### Store ISP parameters in per-frame buffers
 
-5. Store ISP parameters in per-frame buffers
-
+```
 > /**
 >  * \fn void Debayer::process(FrameBuffer *input, FrameBuffer *output, DebayerParams params)
 >  * \brief Process the bayer data into the requested format.
@@ -68,11 +81,11 @@ stats in hardware, such as the i.MX7), but please keep it on your radar.
 
 Possibly something to address later, by storing ISP parameters in
 per-frame buffers like we do for hardware ISPs.
+```
 
----
+### DebayerCpu cleanups
 
-8. DebayerCpu cleanups
-
+```
 > >> class DebayerCpu : public Debayer, public Object
 > >>   const SharedFD &getStatsFD() { return stats_->getStatsFD(); }
 > >
@@ -105,21 +118,21 @@ the need for performances and the need for a maintainable architecture.
 > I think this falls under the lets wait until we have a GPU
 > based SoftISP MVP/POC and then do some refactoring to see which
 > bits should go where.
+```
 
----
+### Decouple pipeline and IPA naming
 
-8. Decouple pipeline and IPA naming
-
+```
 > The current src/ipa/meson.build assumes the IPA name to match the
 > pipeline name. For this reason "-Dipas=simple" is used for the
 > Soft IPA module.
 
 This should be addressed.
+```
 
----
+### Doxyfile cleanup
 
-9. Doxyfile cleanup
-
+```
 >> diff --git a/Documentation/Doxyfile.in b/Documentation/Doxyfile.in
 >> index a86ea6c1..2be8d47b 100644
 >> --- a/Documentation/Doxyfile.in
@@ -160,13 +173,61 @@ Yes, because, well... all the other IPAs were doing that...
 
 > It doesn't have to be done before merging, but could you
 > address this sooner than later ?
+```
 
----
+### Improve black level and colour gains application
 
-13. Improve black level and colour gains application
-
+```
 I think the black level should eventually be moved before debayering, and
 ideally the colour gains as well. I understand the need for optimizations to
 lower the CPU consumption, but at the same time I don't feel comfortable
 building up on top of an implementation that may work a bit more by chance than
 by correctness, as that's not very maintainable.
+```
+
+## GPU-based implementation
+
+The TODO items are listed in perceived order of ease.
+
+### Denoising
+
+WIP
+
+### Dead pixel correction
+
+WIP
+
+### Lense shading correction
+
+WIP
+
+### Use dma-buf handle to generate upload texture
+
+`eglCreateImageKHR` can be used to generate the upload texture i.e.to feed the
+bayer data into the GPU.
+
+### processFrame() to run in its own thread
+
+`processFrame()` runs in the context of the Debayer::process() thread. Robert
+Mader suggested and it seems like a good suggestion too to run processFrame()
+in its own thread.
+
+### Multi-pass shaders
+
+- This needs some rewiring the idea is to have a list of algorithms as is done
+  in cpuisp iterating through the list in a for() loop.
+- The logic managing the loop has an initial input buffer and the final output
+  buffer.
+- The higher level logic must then inform each of the algorithms either to
+  generate an internal working buffer or pass the final output buffer to the
+  last shader in the list
+- This will allow for multi-pass shaders with the final algorithm presenting
+  data not to its internal buffer but to the final output buffer
+
+### 24 bit output support
+
+Need to implement compute shader to do this.
+
+### Lense flare correction
+
+Not WIP still TBD

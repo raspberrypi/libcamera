@@ -81,7 +81,7 @@ DelayedControls::DelayedControls(V4L2Device *device,
 	 * Create a map of control ids to delays for controls exposed by the
 	 * device.
 	 */
-	for (auto const &param : controlParams) {
+	for (const auto &param : controlParams) {
 		auto it = controls.find(param.first);
 		if (it == controls.end()) {
 			LOG(DelayedControls, Error)
@@ -120,7 +120,7 @@ void DelayedControls::reset()
 
 	/* Retrieve control as reported by the device. */
 	std::vector<uint32_t> ids;
-	for (auto const &param : controlParams_)
+	for (const auto &param : controlParams_)
 		ids.push_back(param.first->id());
 
 	ControlList controls = device_->getControls(ids);

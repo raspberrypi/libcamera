@@ -26,7 +26,8 @@ LOG_DEFINE_CATEGORY(Benchmark)
 /**
  * \brief Constructs a Benchmark object
  */
-Benchmark::Benchmark(const GlobalConfiguration &configuration)
+Benchmark::Benchmark(const GlobalConfiguration &configuration, const std::string &name)
+	: name_(name)
 {
 	skipBeforeMeasure_ = configuration.option<unsigned int>(
 						{ "software_isp", "measure", "skip" })
@@ -54,11 +55,11 @@ static inline int64_t timeDiff(timespec &after, timespec &before)
  */
 void Benchmark::startFrame(void)
 {
-	measure = framesToMeasure_ > 0 &&
-		  encounteredFrames_ < skipBeforeMeasure_ + framesToMeasure_ &&
-		  ++encounteredFrames_ > skipBeforeMeasure_;
+	measure_ = framesToMeasure_ > 0 &&
+		   encounteredFrames_ < skipBeforeMeasure_ + framesToMeasure_ &&
+		   ++encounteredFrames_ > skipBeforeMeasure_;
 
-	if (measure) {
+	if (measure_) {
 		frameStartTime_ = {};
 		clock_gettime(CLOCK_MONOTONIC_RAW, &frameStartTime_);
 	}
@@ -75,13 +76,13 @@ void Benchmark::startFrame(void)
  */
 void Benchmark::finishFrame(void)
 {
-	if (measure) {
+	if (measure_) {
 		timespec frameEndTime = {};
 		clock_gettime(CLOCK_MONOTONIC_RAW, &frameEndTime);
 		frameProcessTime_ += timeDiff(frameEndTime, frameStartTime_);
 		if (encounteredFrames_ == skipBeforeMeasure_ + framesToMeasure_) {
 			LOG(Benchmark, Info)
-				<< "Processed " << framesToMeasure_
+				<< name_ << " processed " << framesToMeasure_
 				<< " frames in " << frameProcessTime_ / 1000 << "us, "
 				<< frameProcessTime_ / (1000 * framesToMeasure_)
 				<< " us/frame";

@@ -117,8 +117,7 @@ void Ccm::setParameters(struct rkisp1_cif_isp_ctk_config &config,
 	 */
 	for (unsigned int i = 0; i < 3; i++) {
 		for (unsigned int j = 0; j < 3; j++)
-			config.coeff[i][j] =
-				floatingToFixedPoint<4, 7, uint16_t, double>(matrix[i][j]);
+			config.coeff[i][j] = Q<4, 7>(matrix[i][j]).quantized();
 	}
 
 	for (unsigned int i = 0; i < 3; i++)

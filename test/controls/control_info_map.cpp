@@ -6,6 +6,7 @@
  */
 
 #include <iostream>
+#include <utility>
 
 #include <libcamera/camera.h>
 #include <libcamera/camera_manager.h>
@@ -49,7 +50,7 @@ protected:
 			return TestFail;
 		}
 
-		infoMap.at(&controls::Brightness);
+		std::ignore = infoMap.at(&controls::Brightness);
 
 		/* Test looking up a valid control by numerical ID. */
 		if (infoMap.count(controls::Brightness.id()) != 1) {

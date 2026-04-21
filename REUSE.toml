@@ -39,3 +39,11 @@ path = [
 precedence = "aggregate"
 SPDX-FileCopyrightText = "Copyright 2013-2020 The Chromium Authors. All rights reserved."
 SPDX-License-Identifier = "BSD-3-Clause"
+
+[[annotations]]
+path = [
+	"utils/tuning/libtuning/macbeth_ref.pgm",
+]
+precedence = "aggregate"
+SPDX-FileCopyrightText = "2019-2020 Raspberry Pi Ltd"
+SPDX-License-Identifier = "BSD-2-Clause"

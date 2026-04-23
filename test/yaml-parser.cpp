@@ -71,13 +71,13 @@ protected:
 		/* Test parsing invalid YAML file. */
 		File file{ invalidYamlFile_ };
 		if (!file.open(File::OpenModeFlag::ReadOnly)) {
-			std::cerr << "Fail to open invalid YAML file" << std::endl;
+			std::cerr << "Failed to open invalid YAML file" << std::endl;
 			return TestFail;
 		}
 
 		std::unique_ptr<ValueNode> root = YamlParser::parse(file);
 		if (root) {
-			std::cerr << "Invalid YAML file parse successfully" << std::endl;
+			std::cerr << "Invalid YAML file parsed successfully" << std::endl;
 			return TestFail;
 		}
 
@@ -199,14 +199,14 @@ protected:
 		auto &level1Obj = (*root)["level1"];
 
 		if (!level1Obj.isDictionary()) {
-			std::cerr << "level1 object fail to parse as Dictionary" << std::endl;
+			std::cerr << "level1 object failed to parse as Dictionary" << std::endl;
 			return TestFail;
 		}
 
 		auto &level2Obj = level1Obj["level2"];
 
 		if (!level2Obj.isList() || level2Obj.size() != 2) {
-			std::cerr << "level2 object should be a 2 elements list" << std::endl;
+			std::cerr << "level2 object should be a 2 element list" << std::endl;
 			return TestFail;
 		}
 
@@ -215,7 +215,7 @@ protected:
 		    firstElement.size() != 2 ||
 		    firstElement[0].get<int32_t>(0) != 1 ||
 		    firstElement[1].get<int32_t>(0) != 2) {
-			std::cerr << "The first element of level2 object fail to parse as integer list" << std::endl;
+			std::cerr << "The first element of level2 object failed to parse as integer list" << std::endl;
 			return TestFail;
 		}
 
@@ -231,7 +231,7 @@ protected:
 		    !secondElement.contains("two") ||
 		    secondElement["one"].get<int32_t>(0) != 1 ||
 		    secondElement["two"].get<int32_t>(0) != 2) {
-			std::cerr << "The second element of level2 object fail to parse as dictionary" << std::endl;
+			std::cerr << "The second element of level2 object failed to parse as dictionary" << std::endl;
 			return TestFail;
 		}
 

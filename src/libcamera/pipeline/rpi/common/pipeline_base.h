@@ -48,7 +48,7 @@ class CameraData : public Camera::Private
 {
 public:
 	CameraData(PipelineHandler *pipe)
-		: Camera::Private(pipe), state_(State::Stopped),
+		: Camera::Private(pipe), state_(State::Stopped), controlListId_(0),
 		  startupFrameCount_(0), invalidFrameCount_(0), buffersAllocated_(false)
 	{
 	}
@@ -130,6 +130,9 @@ public:
 	}
 
 	std::queue<Request *> requestQueue_;
+	std::queue<ControlList> controlsQueue_;
+	uint64_t controlListId_;
+	uint64_t requestControlId_;
 
 	/* For handling digital zoom. */
 	IPACameraSensorInfo sensorInfo_;
@@ -175,9 +178,23 @@ public:
 
 	ClockRecovery wallClockRecovery_;
 
+	struct SyncTableEntry {
+		uint32_t ipaCookie;
+		uint64_t controlListId;
+	};
+	std::queue<SyncTableEntry> syncTable_;
+
+	struct ImmediateControlsEntry {
+		uint64_t controlListId;
+		ControlList controls;
+	};
+	std::queue<ImmediateControlsEntry> immediateControls_;
+
 protected:
 	void fillRequestMetadata(const ControlList &bufferControls,
 				 Request *request);
+
+	void handleControlLists(uint32_t delayContext);
 
 	virtual void tryRunPipeline() = 0;
 
@@ -221,6 +238,7 @@ public:
 	void releaseDevice(Camera *camera) override;
 
 	int queueRequestDevice(Camera *camera, Request *request) override;
+	int queueControlsDevice(Camera *camera, const ControlList &controls) override;
 
 protected:
 	int registerCamera(std::unique_ptr<RPi::CameraData> &cameraData,

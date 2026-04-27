@@ -478,6 +478,26 @@ void PipelineHandler::queueRequest(Request *request)
 }
 
 /**
+ * \brief Queue controls to apply as soon as possible
+ * \param[in] camera The camera
+ * \param[in] controls The controls to apply
+ *
+ * This function tries to queue \a controls immediately to the device by
+ * calling queueControlsDevice().
+ *
+ * \context This function is called from the CameraManager thread.
+ */
+int PipelineHandler::queueControls(Camera *camera, ControlList controls)
+{
+	int ret = queueControlsDevice(camera, controls);
+
+	if (ret < 0)
+		LOG(Pipeline, Error) << "Failed to queue controls: " << ret;
+
+	return ret;
+}
+
+/**
  * \brief Queue one requests to the device
  */
 void PipelineHandler::doQueueRequest(Request *request)
@@ -541,6 +561,21 @@ void PipelineHandler::doQueueRequests(Camera *camera)
  * \context This function is called from the CameraManager thread.
  *
  * \return 0 on success or a negative error code otherwise
+ */
+
+/**
+ * \fn PipelineHandler::queueControlsDevice()
+ * \brief Queue controls to be applied as soon as possible
+ * \param[in] camera The camera
+ * \param[in] controls The controls to apply
+ *
+ * This function queues \a controls to \a camera so that they can be
+ * applied as soon as possible
+ *
+ * \context This function is called from the CameraManager thread.
+ *
+ * \return 0 on success or a negative error code otherwise
+ * \return -EOPNOTSUPP if control queueing is not supported
  */
 
 /**

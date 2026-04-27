@@ -57,6 +57,7 @@ public:
 
 	void registerRequest(Request *request);
 	void queueRequest(Request *request);
+	int queueControls(Camera *camera, ControlList controls);
 
 	bool completeBuffer(Request *request, FrameBuffer *buffer);
 	void completeRequest(Request *request);
@@ -76,6 +77,12 @@ protected:
 	unsigned int useCount() const { return useCount_; }
 
 	virtual int queueRequestDevice(Camera *camera, Request *request) = 0;
+
+	virtual int queueControlsDevice([[maybe_unused]] Camera *camera, [[maybe_unused]] const ControlList &controls)
+	{
+		return -EOPNOTSUPP;
+	}
+
 	virtual void stopDevice(Camera *camera) = 0;
 
 	virtual bool acquireDevice(Camera *camera);

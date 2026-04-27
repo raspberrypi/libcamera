@@ -299,4 +299,21 @@ controls:
         This control returns performance metrics for the CNN processing stage.
         Two values are returned in this span, the runtime of the CNN/DNN stage
         and the DSP stage in milliseconds.
+
+  - ControlListSequence:
+      type: int64_t
+      direction: out
+      description: |
+        This is the control list id number that is synchonised with this
+        request, meaning that this request is the first one where the images
+        have had the identified list of controls applied.
+
+        Every time a control list is queued using Camera::queueControls, it
+        is assigned a new sequence number, starting at 1 on the first such
+        after the camera is started, and increasing by one on every subsequent
+        call.
+
+        This is the number that is then reported back as the
+        ControlListSequence. When no controls have been sent with
+        Camera::queueControls, the ControlListSequence reports the value zero.
 ...

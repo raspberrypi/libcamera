@@ -9,8 +9,8 @@
 
 #include <libcamera/controls.h>
 
+#include "libcamera/internal/value_node.h"
 #include "libcamera/internal/vector.h"
-#include "libcamera/internal/yaml_parser.h"
 
 #include "awb.h"
 #include "interpolator.h"
@@ -25,13 +25,13 @@ class AwbBayes : public AwbAlgorithm
 public:
 	AwbBayes() = default;
 
-	int init(const YamlObject &tuningData) override;
+	int init(const ValueNode &tuningData) override;
 	AwbResult calculateAwb(const AwbStats &stats, unsigned int lux) override;
 	std::optional<RGB<double>> gainsFromColourTemperature(double temperatureK) override;
 	void handleControls(const ControlList &controls) override;
 
 private:
-	int readPriors(const YamlObject &tuningData);
+	int readPriors(const ValueNode &tuningData);
 
 	void fineSearch(double &t, double &r, double &b, ipa::Pwl const &prior,
 			const AwbStats &stats) const;

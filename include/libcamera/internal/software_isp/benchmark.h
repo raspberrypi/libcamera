@@ -13,15 +13,15 @@
 #include <stdint.h>
 #include <string>
 #include <time.h>
-#include <libcamera/base/log.h>
-#include "libcamera/internal/global_configuration.h"
 
 namespace libcamera {
+
+class CameraManager;
 
 class Benchmark
 {
 public:
-	Benchmark(const GlobalConfiguration &configuration, const std::string &name);
+	Benchmark(const CameraManager &cm, const std::string &name);
 	~Benchmark();
 
 	void startFrame(void);

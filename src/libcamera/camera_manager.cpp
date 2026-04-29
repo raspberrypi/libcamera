@@ -41,7 +41,6 @@ LOG_DEFINE_CATEGORY(Camera)
 CameraManager::Private::Private()
 	: Thread("CameraManager"), initialized_(false)
 {
-	ipaManager_ = std::make_unique<IPAManager>(this->configuration());
 }
 
 int CameraManager::Private::start()
@@ -94,6 +93,9 @@ void CameraManager::Private::run()
 
 int CameraManager::Private::init()
 {
+	CameraManager *const o = LIBCAMERA_O_PTR();
+	ipaManager_ = std::make_unique<IPAManager>(*o);
+
 	enumerator_ = DeviceEnumerator::create();
 	if (!enumerator_ || enumerator_->enumerate())
 		return -ENODEV;
@@ -112,9 +114,7 @@ void CameraManager::Private::createPipelineHandlers()
 	 * there is no configuration file.
 	 */
 	const auto pipesList =
-		configuration().envListOption("LIBCAMERA_PIPELINES_MATCH_LIST",
-					      { "pipelines_match_list" },
-					      ",");
+		configuration().listOption({ "pipelines_match_list" });
 	if (pipesList.has_value()) {
 		/*
 		 * When a list of preferred pipelines is defined, iterate

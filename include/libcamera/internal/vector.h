@@ -19,7 +19,7 @@
 #include <libcamera/base/span.h>
 
 #include "libcamera/internal/matrix.h"
-#include "libcamera/internal/yaml_parser.h"
+#include "libcamera/internal/value_node.h"
 
 namespace libcamera {
 
@@ -329,7 +329,7 @@ bool operator!=(const Vector<T, Rows> &lhs, const Vector<T, Rows> &rhs)
 }
 
 #ifndef __DOXYGEN__
-bool vectorValidateYaml(const YamlObject &obj, unsigned int size);
+bool vectorValidateYaml(const ValueNode &obj, unsigned int size);
 #endif /* __DOXYGEN__ */
 
 #ifndef __DOXYGEN__
@@ -347,8 +347,8 @@ std::ostream &operator<<(std::ostream &out, const Vector<T, Rows> &v)
 }
 
 template<typename T, unsigned int Rows>
-struct YamlObject::Getter<Vector<T, Rows>> {
-	std::optional<Vector<T, Rows>> get(const YamlObject &obj) const
+struct ValueNode::Accessor<Vector<T, Rows>> {
+	std::optional<Vector<T, Rows>> get(const ValueNode &obj) const
 	{
 		if (!vectorValidateYaml(obj, Rows))
 			return std::nullopt;
@@ -356,7 +356,7 @@ struct YamlObject::Getter<Vector<T, Rows>> {
 		Vector<T, Rows> vector;
 
 		unsigned int i = 0;
-		for (const YamlObject &entry : obj.asList()) {
+		for (const ValueNode &entry : obj.asList()) {
 			const auto value = entry.get<T>();
 			if (!value)
 				return std::nullopt;

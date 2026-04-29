@@ -84,7 +84,7 @@ Awb::Awb()
 /**
  * \copydoc libcamera::ipa::Algorithm::init
  */
-int Awb::init(IPAContext &context, const YamlObject &tuningData)
+int Awb::init(IPAContext &context, const ValueNode &tuningData)
 {
 	auto &cmap = context.ctrlMap;
 	cmap[&controls::ColourTemperature] = ControlInfo(kMinColourTemperature,

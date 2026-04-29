@@ -16,7 +16,7 @@
 
 #include <libcamera/ipa/core_ipa_interface.h>
 
-#include "libcamera/internal/yaml_parser.h"
+#include "libcamera/internal/value_node.h"
 
 #include "libipa/fixedpoint.h"
 #include "libipa/interpolator.h"
@@ -41,7 +41,7 @@ constexpr Matrix<float, 3, 3> kIdentity3x3 = Matrix<float, 3, 3>::identity();
 /**
  * \copydoc libcamera::ipa::Algorithm::init
  */
-int Ccm::init([[maybe_unused]] IPAContext &context, const YamlObject &tuningData)
+int Ccm::init([[maybe_unused]] IPAContext &context, const ValueNode &tuningData)
 {
 	auto &cmap = context.ctrlMap;
 	cmap[&controls::ColourCorrectionMatrix] = ControlInfo(

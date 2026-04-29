@@ -89,10 +89,10 @@ DebayerCpuThread::DebayerCpuThread(DebayerCpu *debayer, unsigned int threadIndex
 /**
  * \brief Constructs a DebayerCpu object
  * \param[in] stats Pointer to the stats object to use
- * \param[in] configuration The global configuration
+ * \param[in] cm The camera manager
  */
-DebayerCpu::DebayerCpu(std::unique_ptr<SwStatsCpu> stats, const GlobalConfiguration &configuration)
-	: Debayer(configuration), stats_(std::move(stats))
+DebayerCpu::DebayerCpu(std::unique_ptr<SwStatsCpu> stats, const CameraManager &cm)
+	: Debayer(cm), stats_(std::move(stats))
 {
 	/*
 	 * Reading from uncached buffers may be very slow.
@@ -105,6 +105,7 @@ DebayerCpu::DebayerCpu(std::unique_ptr<SwStatsCpu> stats, const GlobalConfigurat
 	 * \todo Make memcpy automatic based on runtime detection of platform
 	 * capabilities.
 	 */
+	const GlobalConfiguration &configuration = cm._d()->configuration();
 	bool enableInputMemcpy =
 		configuration.option<bool>({ "software_isp", "copy_input_buffer" }).value_or(true);
 

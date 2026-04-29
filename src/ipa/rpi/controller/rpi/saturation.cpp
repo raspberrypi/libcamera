@@ -27,7 +27,7 @@ char const *Saturation::name() const
 	return NAME;
 }
 
-int Saturation::read(const libcamera::YamlObject &params)
+int Saturation::read(const libcamera::ValueNode &params)
 {
 	config_.shiftR = params["shift_r"].get<uint8_t>(0);
 	config_.shiftG = params["shift_g"].get<uint8_t>(0);

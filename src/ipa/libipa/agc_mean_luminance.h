@@ -16,7 +16,7 @@
 
 #include <libcamera/controls.h>
 
-#include "libcamera/internal/yaml_parser.h"
+#include "libcamera/internal/value_node.h"
 
 #include "exposure_mode_helper.h"
 #include "histogram.h"
@@ -44,7 +44,7 @@ public:
 	};
 
 	void configure(utils::Duration lineDuration, const CameraSensorHelper *sensorHelper);
-	int parseTuningData(const YamlObject &tuningData);
+	int parseTuningData(const ValueNode &tuningData);
 
 	void setExposureCompensation(double gain)
 	{
@@ -88,10 +88,10 @@ public:
 private:
 	virtual double estimateLuminance(const double gain) const = 0;
 
-	int parseRelativeLuminanceTarget(const YamlObject &tuningData);
-	int parseConstraint(const YamlObject &modeDict, int32_t id);
-	int parseConstraintModes(const YamlObject &tuningData);
-	int parseExposureModes(const YamlObject &tuningData);
+	int parseRelativeLuminanceTarget(const ValueNode &tuningData);
+	int parseConstraint(const ValueNode &modeDict, int32_t id);
+	int parseConstraintModes(const ValueNode &tuningData);
+	int parseExposureModes(const ValueNode &tuningData);
 	double estimateInitialGain() const;
 	double constraintClampGain(uint32_t constraintModeIndex,
 				   const Histogram &hist,

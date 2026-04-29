@@ -743,7 +743,7 @@ public:
 	CameraConfiguration::Status
 	platformValidate(RPi::RPiCameraConfiguration *rpiConfig) const override;
 
-	int platformPipelineConfigure(const std::unique_ptr<YamlObject> &root) override;
+	int platformPipelineConfigure(const std::unique_ptr<ValueNode> &root) override;
 
 	void platformStart() override;
 	void platformStop() override;
@@ -1333,7 +1333,7 @@ PiSPCameraData::platformValidate(RPi::RPiCameraConfiguration *rpiConfig) const
 	return status;
 }
 
-int PiSPCameraData::platformPipelineConfigure(const std::unique_ptr<YamlObject> &root)
+int PiSPCameraData::platformPipelineConfigure(const std::unique_ptr<ValueNode> &root)
 {
 	config_ = {
 		.numCfeConfigStatsBuffers = 12,
@@ -1358,7 +1358,7 @@ int PiSPCameraData::platformPipelineConfigure(const std::unique_ptr<YamlObject> 
 		return -EINVAL;
 	}
 
-	const YamlObject &phConfig = (*root)["pipeline_handler"];
+	const ValueNode &phConfig = (*root)["pipeline_handler"];
 	config_.numCfeConfigStatsBuffers =
 		phConfig["num_cfe_config_stats_buffers"].get<unsigned int>(config_.numCfeConfigStatsBuffers);
 	config_.numCfeConfigQueue =

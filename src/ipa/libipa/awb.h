@@ -13,8 +13,8 @@
 #include <libcamera/control_ids.h>
 #include <libcamera/controls.h>
 
+#include "libcamera/internal/value_node.h"
 #include "libcamera/internal/vector.h"
-#include "libcamera/internal/yaml_parser.h"
 
 namespace libcamera {
 
@@ -38,7 +38,7 @@ class AwbAlgorithm
 public:
 	virtual ~AwbAlgorithm() = default;
 
-	virtual int init(const YamlObject &tuningData) = 0;
+	virtual int init(const ValueNode &tuningData) = 0;
 	virtual AwbResult calculateAwb(const AwbStats &stats, unsigned int lux) = 0;
 	virtual std::optional<RGB<double>> gainsFromColourTemperature(double colourTemperature) = 0;
 
@@ -50,7 +50,7 @@ public:
 	virtual void handleControls([[maybe_unused]] const ControlList &controls) {}
 
 protected:
-	int parseModeConfigs(const YamlObject &tuningData,
+	int parseModeConfigs(const ValueNode &tuningData,
 			     const ControlValue &def = {});
 
 	struct ModeConfig {

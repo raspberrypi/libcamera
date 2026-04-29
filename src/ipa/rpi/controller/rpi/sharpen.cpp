@@ -37,7 +37,7 @@ void Sharpen::switchMode(CameraMode const &cameraMode,
 	modeFactor_ = std::max(1.0, cameraMode.noiseFactor);
 }
 
-int Sharpen::read(const libcamera::YamlObject &params)
+int Sharpen::read(const libcamera::ValueNode &params)
 {
 	threshold_ = params["threshold"].get<double>(1.0);
 	strength_ = params["strength"].get<double>(1.0);

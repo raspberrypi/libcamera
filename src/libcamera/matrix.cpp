@@ -314,7 +314,7 @@ template bool matrixInvert<double>(Span<const double> data, Span<double> dataOut
  * to the product of the number of rows and columns of the matrix (Rows x
  * Cols). The values shall be stored in row-major order.
  */
-bool matrixValidateYaml(const YamlObject &obj, unsigned int size)
+bool matrixValidateYaml(const ValueNode &obj, unsigned int size)
 {
 	if (!obj.isList())
 		return false;

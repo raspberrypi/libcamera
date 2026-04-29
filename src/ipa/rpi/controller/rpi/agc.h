@@ -27,7 +27,7 @@ class Agc : public AgcAlgorithm
 public:
 	Agc(Controller *controller);
 	char const *name() const override;
-	int read(const libcamera::YamlObject &params) override;
+	int read(const libcamera::ValueNode &params) override;
 	unsigned int getConvergenceFrames() const override;
 	std::vector<double> const &getWeights() const override;
 	void setEv(unsigned int channel, double ev) override;

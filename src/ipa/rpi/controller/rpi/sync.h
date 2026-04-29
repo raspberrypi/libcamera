@@ -31,7 +31,7 @@ public:
 	Sync(Controller *controller);
 	~Sync();
 	char const *name() const override;
-	int read(const libcamera::YamlObject &params) override;
+	int read(const libcamera::ValueNode &params) override;
 	void setMode(Mode mode) override;
 	void initialiseSocket();
 	void switchMode(CameraMode const &cameraMode, Metadata *metadata) override;

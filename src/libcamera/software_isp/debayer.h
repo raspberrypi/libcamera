@@ -22,12 +22,12 @@
 
 #include "libcamera/internal/bayer_format.h"
 #include "libcamera/internal/dma_buf_allocator.h"
-#include "libcamera/internal/global_configuration.h"
 #include "libcamera/internal/software_isp/benchmark.h"
 #include "libcamera/internal/software_isp/debayer_params.h"
 
 namespace libcamera {
 
+class CameraManager;
 class FrameBuffer;
 
 LOG_DECLARE_CATEGORY(Debayer)
@@ -35,7 +35,7 @@ LOG_DECLARE_CATEGORY(Debayer)
 class Debayer : public Object
 {
 public:
-	Debayer(const GlobalConfiguration &configuration);
+	Debayer(const CameraManager &cm);
 	virtual ~Debayer() = 0;
 
 	virtual int configure(const StreamConfiguration &inputCfg,

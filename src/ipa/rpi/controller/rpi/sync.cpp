@@ -44,7 +44,7 @@ char const *Sync::name() const
 }
 
 /* This reads from json file and intitiaises server and client */
-int Sync::read(const libcamera::YamlObject &params)
+int Sync::read(const libcamera::ValueNode &params)
 {
 	const char *kDefaultGroup = "239.255.255.250";
 	constexpr unsigned int kDefaultPort = 10000;

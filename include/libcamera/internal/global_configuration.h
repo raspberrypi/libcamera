@@ -8,31 +8,30 @@
 #pragma once
 
 #include <filesystem>
+#include <initializer_list>
 #include <optional>
 #include <string>
 #include <string_view>
 
 #include <libcamera/base/utils.h>
 
-#include "libcamera/internal/yaml_parser.h"
+#include "libcamera/internal/value_node.h"
 
 namespace libcamera {
 
 class GlobalConfiguration
 {
 public:
-	using Configuration = const YamlObject &;
-
 	GlobalConfiguration();
 
 	unsigned int version() const;
-	Configuration configuration() const;
+	const ValueNode &configuration() const;
 
 	template<typename T>
 	std::optional<T> option(
 		const std::initializer_list<std::string_view> confPath) const
 	{
-		const YamlObject *c = &configuration();
+		const ValueNode *c = &configuration();
 		for (auto part : confPath) {
 			c = &(*c)[part];
 			if (!*c)
@@ -43,20 +42,13 @@ public:
 
 	std::optional<std::vector<std::string>> listOption(
 		const std::initializer_list<std::string_view> confPath) const;
-	std::optional<std::string> envOption(
-		const char *const envVariable,
-		const std::initializer_list<std::string_view> confPath) const;
-	std::optional<std::vector<std::string>> envListOption(
-		const char *const envVariable,
-		const std::initializer_list<std::string_view> confPath,
-		const std::string delimiter = ":") const;
 
 private:
-	bool loadFile(const std::filesystem::path &fileName);
 	void load();
+	bool loadFile(const std::filesystem::path &fileName);
 
-	std::unique_ptr<YamlObject> yamlConfiguration_ =
-		std::make_unique<YamlObject>();
+	std::unique_ptr<ValueNode> configuration_ =
+		std::make_unique<ValueNode>();
 };
 
 } /* namespace libcamera */

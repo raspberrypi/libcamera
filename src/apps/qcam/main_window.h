@@ -109,7 +109,7 @@ private:
 	/* Camera manager, camera, configuration and buffers */
 	libcamera::CameraManager *cm_;
 	std::shared_ptr<libcamera::Camera> camera_;
-	libcamera::FrameBufferAllocator *allocator_;
+	std::unique_ptr<libcamera::FrameBufferAllocator> allocator_;
 
 	std::unique_ptr<libcamera::CameraConfiguration> config_;
 	std::map<libcamera::FrameBuffer *, std::unique_ptr<Image>> mappedBuffers_;

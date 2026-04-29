@@ -25,7 +25,7 @@ public:
 	Adjust() = default;
 	~Adjust() = default;
 
-	int init(IPAContext &context, const YamlObject &tuningData) override;
+	int init(IPAContext &context, const ValueNode &tuningData) override;
 	int configure(IPAContext &context,
 		      const IPAConfigInfo &configInfo) override;
 	void queueRequest(typename Module::Context &context,

@@ -25,7 +25,7 @@ class Tonemap : public Algorithm
 public:
 	Tonemap(Controller *controller = NULL);
 	char const *name() const override;
-	int read(const libcamera::YamlObject &params) override;
+	int read(const libcamera::ValueNode &params) override;
 	void initialise() override;
 	void prepare(Metadata *imageMetadata) override;
 

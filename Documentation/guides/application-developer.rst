@@ -279,7 +279,7 @@ as the parameter of the ``FrameBufferAllocator::buffers()`` function.
 
 .. code:: cpp
 
-   FrameBufferAllocator *allocator = new FrameBufferAllocator(camera);
+   auto allocator = std::make_unique<FrameBufferAllocator>(camera);
 
    for (StreamConfiguration &cfg : *config) {
        int ret = allocator->allocate(cfg.stream());
@@ -539,7 +539,7 @@ uses, so needs to do the following:
 
    camera->stop();
    allocator->free(stream);
-   delete allocator;
+   allocator.reset();
    camera->release();
    camera.reset();
    cm->stop();

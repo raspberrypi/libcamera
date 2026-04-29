@@ -23,7 +23,6 @@
 
 #include "libcamera/internal/bayer_format.h"
 #include "libcamera/internal/framebuffer.h"
-#include "libcamera/internal/ipa_manager.h"
 #include "libcamera/internal/software_isp/debayer_params.h"
 
 #include "debayer_cpu.h"
@@ -96,9 +95,9 @@ SoftwareIsp::SoftwareIsp(PipelineHandler *pipe, const CameraSensor *sensor,
 		return;
 	}
 
-	const GlobalConfiguration &configuration = pipe->cameraManager()->_d()->configuration();
+	const CameraManager &cm = *pipe->cameraManager();
 
-	auto stats = std::make_unique<SwStatsCpu>(configuration);
+	auto stats = std::make_unique<SwStatsCpu>(cm);
 	if (!stats->isValid()) {
 		LOG(SoftwareIsp, Error) << "Failed to create SwStatsCpu object";
 		return;
@@ -106,11 +105,12 @@ SoftwareIsp::SoftwareIsp(PipelineHandler *pipe, const CameraSensor *sensor,
 	stats->statsReady.connect(this, &SoftwareIsp::statsReady);
 
 #if HAVE_DEBAYER_EGL
-	std::optional<std::string> softISPMode = configuration.envOption("LIBCAMERA_SOFTISP_MODE", { "software_isp", "mode" });
+	const GlobalConfiguration &configuration = cm._d()->configuration();
+	std::optional<std::string> softISPMode = configuration.option<std::string>({ "software_isp", "mode" });
 	if (softISPMode) {
 		if (softISPMode != "gpu" && softISPMode != "cpu") {
 			LOG(SoftwareIsp, Error)
-				<< "Invalid LIBCAMERA_SOFTISP_MODE \""
+				<< "Invalid software ISP mode \""
 				<< softISPMode.value()
 				<< "\", must be \"cpu\" or \"gpu\"";
 			return;
@@ -118,16 +118,16 @@ SoftwareIsp::SoftwareIsp(PipelineHandler *pipe, const CameraSensor *sensor,
 	}
 
 	if (!softISPMode || softISPMode == "gpu")
-		debayer_ = std::make_unique<DebayerEGL>(std::move(stats), configuration);
+		debayer_ = std::make_unique<DebayerEGL>(std::move(stats), cm);
 
 #endif
 	if (!debayer_)
-		debayer_ = std::make_unique<DebayerCpu>(std::move(stats), configuration);
+		debayer_ = std::make_unique<DebayerCpu>(std::move(stats), cm);
 
 	debayer_->inputBufferReady.connect(this, &SoftwareIsp::inputReady);
 	debayer_->outputBufferReady.connect(this, &SoftwareIsp::outputReady);
 
-	ipa_ = IPAManager::createIPA<ipa::soft::IPAProxySoft>(pipe, 0, 0);
+	ipa_ = pipe->createIPA<ipa::soft::IPAProxySoft>(0, 0);
 	if (!ipa_) {
 		LOG(SoftwareIsp, Error)
 			<< "Creating IPA for software ISP failed";

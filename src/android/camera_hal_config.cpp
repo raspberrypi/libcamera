@@ -30,9 +30,9 @@ public:
 	int parseConfigFile(File &file, std::map<std::string, CameraConfigData> *cameras);
 
 private:
-	int parseCameraConfigData(const std::string &cameraId, const YamlObject &);
-	int parseLocation(const YamlObject &, CameraConfigData &cameraConfigData);
-	int parseRotation(const YamlObject &, CameraConfigData &cameraConfigData);
+	int parseCameraConfigData(const std::string &cameraId, const ValueNode &);
+	int parseLocation(const ValueNode &, CameraConfigData &cameraConfigData);
+	int parseRotation(const ValueNode &, CameraConfigData &cameraConfigData);
 
 	std::map<std::string, CameraConfigData> *cameras_;
 };
@@ -65,7 +65,7 @@ int CameraHalConfig::Private::parseConfigFile(File &file,
 
 	cameras_ = cameras;
 
-	std::unique_ptr<YamlObject> root = YamlParser::parse(file);
+	std::unique_ptr<ValueNode> root = YamlParser::parse(file);
 	if (!root)
 		return -EINVAL;
 
@@ -76,7 +76,7 @@ int CameraHalConfig::Private::parseConfigFile(File &file,
 	if (!root->contains("cameras"))
 		return -EINVAL;
 
-	const YamlObject &yamlObjectCameras = (*root)["cameras"];
+	const ValueNode &yamlObjectCameras = (*root)["cameras"];
 
 	if (!yamlObjectCameras.isDictionary())
 		return -EINVAL;
@@ -90,7 +90,7 @@ int CameraHalConfig::Private::parseConfigFile(File &file,
 }
 
 int CameraHalConfig::Private::parseCameraConfigData(const std::string &cameraId,
-						    const YamlObject &cameraObject)
+						    const ValueNode &cameraObject)
 
 {
 	if (!cameraObject.isDictionary())
@@ -109,7 +109,7 @@ int CameraHalConfig::Private::parseCameraConfigData(const std::string &cameraId,
 	return 0;
 }
 
-int CameraHalConfig::Private::parseLocation(const YamlObject &cameraObject,
+int CameraHalConfig::Private::parseLocation(const ValueNode &cameraObject,
 					    CameraConfigData &cameraConfigData)
 {
 	if (!cameraObject.contains("location"))
@@ -127,7 +127,7 @@ int CameraHalConfig::Private::parseLocation(const YamlObject &cameraObject,
 	return 0;
 }
 
-int CameraHalConfig::Private::parseRotation(const YamlObject &cameraObject,
+int CameraHalConfig::Private::parseRotation(const ValueNode &cameraObject,
 					    CameraConfigData &cameraConfigData)
 {
 	if (!cameraObject.contains("rotation"))

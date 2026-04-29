@@ -50,7 +50,7 @@ char const *Alsc::name() const
 	return NAME;
 }
 
-static int generateLut(Array2D<double> &lut, const libcamera::YamlObject &params)
+static int generateLut(Array2D<double> &lut, const libcamera::ValueNode &params)
 {
 	/* These must be signed ints for the co-ordinate calculations below. */
 	int X = lut.dimensions().width, Y = lut.dimensions().height;
@@ -82,7 +82,7 @@ static int generateLut(Array2D<double> &lut, const libcamera::YamlObject &params
 	return 0;
 }
 
-static int readLut(Array2D<double> &lut, const libcamera::YamlObject &params)
+static int readLut(Array2D<double> &lut, const libcamera::ValueNode &params)
 {
 	if (params.size() != lut.size()) {
 		LOG(RPiAlsc, Error) << "Invalid number of entries in LSC table";
@@ -101,7 +101,7 @@ static int readLut(Array2D<double> &lut, const libcamera::YamlObject &params)
 }
 
 static int readCalibrations(std::vector<AlscCalibration> &calibrations,
-			    const libcamera::YamlObject &params,
+			    const libcamera::ValueNode &params,
 			    std::string const &name, const Size &size)
 {
 	if (params.contains(name)) {
@@ -119,7 +119,7 @@ static int readCalibrations(std::vector<AlscCalibration> &calibrations,
 			AlscCalibration calibration;
 			calibration.ct = lastCt = ct;
 
-			const libcamera::YamlObject &table = p["table"];
+			const libcamera::ValueNode &table = p["table"];
 			if (table.size() != size.width * size.height) {
 				LOG(RPiAlsc, Error)
 					<< "Incorrect number of values for ct "
@@ -144,7 +144,7 @@ static int readCalibrations(std::vector<AlscCalibration> &calibrations,
 	return 0;
 }
 
-int Alsc::read(const libcamera::YamlObject &params)
+int Alsc::read(const libcamera::ValueNode &params)
 {
 	config_.tableSize = getHardwareConfig().awbRegions;
 	config_.framePeriod = params["frame_period"].get<uint16_t>(12);

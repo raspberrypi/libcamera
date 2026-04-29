@@ -132,7 +132,7 @@ namespace ipa {
 
 /**
  * \brief Parse the mode configurations from the tuning data
- * \param[in] tuningData the YamlObject representing the tuning data
+ * \param[in] tuningData the ValueNode representing the tuning data
  * \param[in] def The default value for the AwbMode control
  *
  * Utility function to parse the tuning data for an AwbMode entry and read all
@@ -162,12 +162,12 @@ namespace ipa {
  * \sa controls::AwbModeEnum
  * \return Zero on success, negative error code otherwise
  */
-int AwbAlgorithm::parseModeConfigs(const YamlObject &tuningData,
+int AwbAlgorithm::parseModeConfigs(const ValueNode &tuningData,
 				   const ControlValue &def)
 {
 	std::vector<ControlValue> availableModes;
 
-	const YamlObject &yamlModes = tuningData[controls::AwbMode.name()];
+	const ValueNode &yamlModes = tuningData[controls::AwbMode.name()];
 	if (!yamlModes.isDictionary()) {
 		LOG(Awb, Error)
 			<< "AwbModes must be a dictionary.";

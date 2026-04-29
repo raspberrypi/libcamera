@@ -31,7 +31,7 @@ struct DenoiseConfig {
 	bool tdnEnable;
 	bool sdnEnable;
 	bool cdnEnable;
-	int read(const libcamera::YamlObject &params);
+	int read(const libcamera::ValueNode &params);
 };
 
 class Denoise : public DenoiseAlgorithm
@@ -39,7 +39,7 @@ class Denoise : public DenoiseAlgorithm
 public:
 	Denoise(Controller *controller);
 	char const *name() const override;
-	int read(const libcamera::YamlObject &params) override;
+	int read(const libcamera::ValueNode &params) override;
 	void initialise() override;
 	void switchMode(CameraMode const &cameraMode, Metadata *metadata) override;
 	void prepare(Metadata *imageMetadata) override;

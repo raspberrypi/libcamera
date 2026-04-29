@@ -12,7 +12,7 @@
 
 #include <libcamera/base/log.h>
 
-#include "libcamera/internal/yaml_parser.h"
+#include "libcamera/internal/value_node.h"
 
 #include "histogram.h"
 
@@ -78,7 +78,7 @@ Lux::Lux()
 
 /**
  * \brief Parse tuning data
- * \param[in] tuningData The YamlObject representing the tuning data
+ * \param[in] tuningData The ValueNode representing the tuning data
  *
  * This function parses yaml tuning data for the common Lux module. It requires
  * reference exposure time, analogue gain, digital gain, and lux values.
@@ -95,7 +95,7 @@ Lux::Lux()
  *
  * \return 0 on success or a negative error code
  */
-int Lux::parseTuningData(const YamlObject &tuningData)
+int Lux::parseTuningData(const ValueNode &tuningData)
 {
 	auto value = tuningData["referenceExposureTime"].get<double>();
 	if (!value) {

@@ -100,28 +100,29 @@ LOG_DEFINE_CATEGORY(IPAManager)
 
 /**
  * \brief Construct an IPAManager instance
+ * \param[in] cm The camera manager
  *
  * The IPAManager class is meant to only be instantiated once, by the
  * CameraManager.
  */
-IPAManager::IPAManager(const GlobalConfiguration &configuration)
+IPAManager::IPAManager(const CameraManager &cm)
+	: cm_(cm)
 {
+	const GlobalConfiguration &configuration = cm._d()->configuration();
+
 #if HAVE_IPA_PUBKEY
 	if (!pubKey_.isValid())
 		LOG(IPAManager, Warning) << "Public key not valid";
 
-	char *force = utils::secure_getenv("LIBCAMERA_IPA_FORCE_ISOLATION");
-	forceIsolation_ = (force && force[0] != '\0') ||
-			  (!force && configuration.option<bool>({ "ipa", "force_isolation" })
-					     .value_or(false));
+	forceIsolation_ = configuration.option<bool>({ "ipa", "force_isolation" })
+				       .value_or(false);
 #endif
 
 	unsigned int ipaCount = 0;
 
 	/* User-specified paths take precedence. */
 	const auto modulePaths =
-		configuration.envListOption(
-				     "LIBCAMERA_IPA_MODULE_PATH", { "ipa", "module_paths" })
+		configuration.listOption({ "ipa", "module_paths" })
 			.value_or(std::vector<std::string>());
 	for (const auto &dir : modulePaths) {
 		if (dir.empty())

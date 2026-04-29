@@ -23,13 +23,13 @@ LOG_DEFINE_CATEGORY(RPiHdr)
 
 #define NAME "rpi.hdr"
 
-void HdrConfig::read(const libcamera::YamlObject &params, const std::string &modeName)
+void HdrConfig::read(const libcamera::ValueNode &params, const std::string &modeName)
 {
 	name = modeName;
 
 	if (!params.contains("cadence"))
 		LOG(RPiHdr, Fatal) << "No cadence for HDR mode " << name;
-	cadence = params["cadence"].getList<unsigned int>().value();
+	cadence = params["cadence"].get<std::vector<unsigned int>>().value();
 	if (cadence.empty())
 		LOG(RPiHdr, Fatal) << "Empty cadence in HDR mode " << name;
 
@@ -69,14 +69,14 @@ void HdrConfig::read(const libcamera::YamlObject &params, const std::string &mod
 		tonemap = params["tonemap"].get<ipa::Pwl>(ipa::Pwl{});
 	speed = params["speed"].get<double>(1.0);
 	if (params.contains("hi_quantile_targets")) {
-		hiQuantileTargets = params["hi_quantile_targets"].getList<double>().value();
+		hiQuantileTargets = params["hi_quantile_targets"].get<std::vector<double>>().value();
 		if (hiQuantileTargets.empty() || hiQuantileTargets.size() % 2)
 			LOG(RPiHdr, Fatal) << "hi_quantile_targets much be even and non-empty";
 	} else
 		hiQuantileTargets = { 0.95, 0.65, 0.5, 0.28, 0.3, 0.25 };
 	hiQuantileMaxGain = params["hi_quantile_max_gain"].get<double>(1.6);
 	if (params.contains("quantile_targets")) {
-		quantileTargets = params["quantile_targets"].getList<double>().value();
+		quantileTargets = params["quantile_targets"].get<std::vector<double>>().value();
 		if (quantileTargets.empty() || quantileTargets.size() % 2)
 			LOG(RPiHdr, Fatal) << "quantile_targets much be even and non-empty";
 	} else
@@ -84,7 +84,7 @@ void HdrConfig::read(const libcamera::YamlObject &params, const std::string &mod
 	powerMin = params["power_min"].get<double>(0.65);
 	powerMax = params["power_max"].get<double>(1.0);
 	if (params.contains("contrast_adjustments")) {
-		contrastAdjustments = params["contrast_adjustments"].getList<double>().value();
+		contrastAdjustments = params["contrast_adjustments"].get<std::vector<double>>().value();
 	} else
 		contrastAdjustments = { 0.5, 0.75 };
 
@@ -111,7 +111,7 @@ char const *Hdr::name() const
 	return NAME;
 }
 
-int Hdr::read(const libcamera::YamlObject &params)
+int Hdr::read(const libcamera::ValueNode &params)
 {
 	/* Make an "HDR off" mode by default so that tuning files don't have to. */
 	HdrConfig &offMode = config_["Off"];

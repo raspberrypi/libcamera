@@ -7,9 +7,8 @@
 
 #include <fcntl.h>
 #include <iostream>
+#include <memory>
 #include <string.h>
-#include <sys/stat.h>
-#include <sys/types.h>
 #include <unistd.h>
 
 #include <libcamera/ipa/vimc_ipa_proxy.h>
@@ -17,11 +16,14 @@
 #include <libcamera/base/event_dispatcher.h>
 #include <libcamera/base/event_notifier.h>
 #include <libcamera/base/object.h>
+#include <libcamera/base/shared_fd.h>
 #include <libcamera/base/thread.h>
 #include <libcamera/base/timer.h>
+#include <libcamera/base/unique_fd.h>
 
 #include "libcamera/internal/camera_manager.h"
 #include "libcamera/internal/device_enumerator.h"
+#include "libcamera/internal/global_configuration.h"
 #include "libcamera/internal/ipa_manager.h"
 #include "libcamera/internal/ipa_module.h"
 #include "libcamera/internal/pipeline_handler.h"
@@ -36,14 +38,15 @@ class IPAInterfaceTest : public Test, public Object
 {
 public:
 	IPAInterfaceTest()
-		: trace_(ipa::vimc::IPAOperationNone), notifier_(nullptr), fd_(-1)
+		: trace_(ipa::vimc::IPAOperationNone)
 	{
 	}
 
 	~IPAInterfaceTest()
 	{
-		delete notifier_;
+		notifier_.reset();
 		ipa_.reset();
+		ipaManager_.reset();
 		cameraManager_.reset();
 	}
 
@@ -67,29 +70,26 @@ protected:
 			return TestPass;
 		}
 
-		/* Create and open the communication FIFO. */
-		int ret = mkfifo(ipa::vimc::VimcIPAFIFOPath.c_str(), S_IRUSR | S_IWUSR);
+		/* Create the communication pipe. */
+		int pipefds[2];
+		int ret = pipe2(pipefds, O_NONBLOCK);
 		if (ret) {
 			ret = errno;
-			cerr << "Failed to create IPA test FIFO at '"
-			     << ipa::vimc::VimcIPAFIFOPath << "': " << strerror(ret)
+			cerr << "Failed to create IPA test pipe: " << strerror(ret)
 			     << endl;
 			return TestFail;
 		}
 
-		ret = open(ipa::vimc::VimcIPAFIFOPath.c_str(), O_RDONLY | O_NONBLOCK);
-		if (ret < 0) {
-			ret = errno;
-			cerr << "Failed to open IPA test FIFO at '"
-			     << ipa::vimc::VimcIPAFIFOPath << "': " << strerror(ret)
-			     << endl;
-			unlink(ipa::vimc::VimcIPAFIFOPath.c_str());
-			return TestFail;
-		}
-		fd_ = ret;
+		pipeReadFd_ = UniqueFD(pipefds[0]);
+		pipeWriteFd_ = SharedFD(pipefds[1]);
 
-		notifier_ = new EventNotifier(fd_, EventNotifier::Read, this);
+		notifier_ = std::make_unique<EventNotifier>(pipeReadFd_.get(),
+							    EventNotifier::Read,
+							    this);
 		notifier_->activated.connect(this, &IPAInterfaceTest::readTrace);
+
+		/* Create the IPA manager. */
+		ipaManager_ = std::make_unique<IPAManager>(*cameraManager_);
 
 		return TestPass;
 	}
@@ -99,7 +99,7 @@ protected:
 		EventDispatcher *dispatcher = thread()->eventDispatcher();
 		Timer timer;
 
-		ipa_ = IPAManager::createIPA<ipa::vimc::IPAProxyVimc>(pipe_.get(), 0, 0);
+		ipa_ = ipaManager_->createIPA<ipa::vimc::IPAProxyVimc>(pipe_.get(), 0, 0);
 		if (!ipa_) {
 			cerr << "Failed to create VIMC IPA interface" << endl;
 			return TestFail;
@@ -109,7 +109,7 @@ protected:
 		std::string conf = ipa_->configurationFile("vimc.conf");
 		Flags<ipa::vimc::TestFlag> inFlags;
 		Flags<ipa::vimc::TestFlag> outFlags;
-		int ret = ipa_->init(IPASettings{ conf, "vimc" },
+		int ret = ipa_->init(IPASettings{ conf, "vimc" }, pipeWriteFd_,
 				     ipa::vimc::IPAOperationInit,
 				     inFlags, &outFlags);
 		if (ret < 0) {
@@ -152,20 +152,13 @@ protected:
 		return TestPass;
 	}
 
-	void cleanup() override
-	{
-		close(fd_);
-		unlink(ipa::vimc::VimcIPAFIFOPath.c_str());
-	}
-
 private:
 	void readTrace()
 	{
 		ssize_t s = read(notifier_->fd(), &trace_, sizeof(trace_));
 		if (s < 0) {
 			int ret = errno;
-			cerr << "Failed to read from IPA test FIFO at '"
-			     << ipa::vimc::VimcIPAFIFOPath << "': " << strerror(ret)
+			cerr << "Failed to read from IPA test pipe: " << strerror(ret)
 			     << endl;
 			trace_ = ipa::vimc::IPAOperationNone;
 		}
@@ -174,9 +167,11 @@ private:
 	std::shared_ptr<PipelineHandler> pipe_;
 	std::unique_ptr<ipa::vimc::IPAProxyVimc> ipa_;
 	std::unique_ptr<CameraManager> cameraManager_;
+	std::unique_ptr<IPAManager> ipaManager_;
 	enum ipa::vimc::IPAOperationCode trace_;
-	EventNotifier *notifier_;
-	int fd_;
+	std::unique_ptr<EventNotifier> notifier_;
+	UniqueFD pipeReadFd_;
+	SharedFD pipeWriteFd_;
 };
 
 TEST_REGISTER(IPAInterfaceTest)

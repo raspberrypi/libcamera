@@ -36,9 +36,9 @@ namespace libcamera {
  */
 
 /**
- * \fn SwStatsCpu::SwStatsCpu(const GlobalConfiguration &configuration)
+ * \fn SwStatsCpu::SwStatsCpu(const CameraManager &cm)
  * \brief Construct a SwStatsCpu object
- * \param[in] configuration Global configuration reference
+ * \param[in] cm The camera manager
  *
  * Creates a SwStatsCpu object and initialises shared memory for statistics
  * exchange.
@@ -159,8 +159,8 @@ namespace libcamera {
 
 LOG_DEFINE_CATEGORY(SwStatsCpu)
 
-SwStatsCpu::SwStatsCpu(const GlobalConfiguration &configuration)
-	: sharedStats_("softIsp_stats"), bench_(configuration, "CPU stats")
+SwStatsCpu::SwStatsCpu(const CameraManager &cm)
+	: sharedStats_("softIsp_stats"), bench_(cm, "CPU stats")
 {
 	if (!sharedStats_)
 		LOG(SwStatsCpu, Error)

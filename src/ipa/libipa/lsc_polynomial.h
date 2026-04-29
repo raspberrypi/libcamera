@@ -14,7 +14,9 @@
 #include <libcamera/base/log.h>
 #include <libcamera/base/span.h>
 
-#include "libcamera/internal/yaml_parser.h"
+#include <libcamera/geometry.h>
+
+#include "libcamera/internal/value_node.h"
 
 namespace libcamera {
 
@@ -81,8 +83,8 @@ private:
 #ifndef __DOXYGEN__
 
 template<>
-struct YamlObject::Getter<ipa::LscPolynomial> {
-	std::optional<ipa::LscPolynomial> get(const YamlObject &obj) const
+struct ValueNode::Accessor<ipa::LscPolynomial> {
+	std::optional<ipa::LscPolynomial> get(const ValueNode &obj) const
 	{
 		std::optional<double> cx = obj["cx"].get<double>();
 		std::optional<double> cy = obj["cy"].get<double>();

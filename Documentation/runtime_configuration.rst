@@ -89,8 +89,8 @@ Configuration file example
        mode: gpu
        threads: 2
 
-List of variables and configuration options
--------------------------------------------
+List of environment variables and configuration options
+-------------------------------------------------------
 
 LIBCAMERA_LOG_FILE
    The custom destination for log output.

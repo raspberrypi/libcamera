@@ -27,7 +27,7 @@ char const *Cac::name() const
 	return NAME;
 }
 
-static bool arrayToSet(const libcamera::YamlObject &params, std::vector<double> &inputArray, const Size &size)
+static bool arrayToSet(const libcamera::ValueNode &params, std::vector<double> &inputArray, const Size &size)
 {
 	int num = 0;
 	int max_num = (size.width + 1) * (size.height + 1);
@@ -51,7 +51,7 @@ static void setStrength(std::vector<double> &inputArray, std::vector<double> &ou
 	}
 }
 
-int Cac::read(const libcamera::YamlObject &params)
+int Cac::read(const libcamera::ValueNode &params)
 {
 	config_.enabled = params.contains("lut_rx") && params.contains("lut_ry") &&
 			  params.contains("lut_bx") && params.contains("lut_by");

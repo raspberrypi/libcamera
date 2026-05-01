@@ -11,14 +11,14 @@ all architectures.
 Bug-Ubuntu: https://launchpad.net/bugs/1992331
 Bug-Debian: https://bugs.debian.org/1021544
 Forwarded: https://lists.libcamera.org/pipermail/libcamera-devel/2022-October/034764.html
-Last-Update: 2022-10-18
+Last-Update: 2026-05-01
 ---
- src/ipa/raspberrypi/raspberrypi.cpp | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ src/ipa/rpi/common/ipa_base.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
 --- a/src/ipa/rpi/common/ipa_base.cpp
 +++ b/src/ipa/rpi/common/ipa_base.cpp
-@@ -42,7 +42,7 @@
+@@ -45,7 +45,7 @@ constexpr unsigned int FrameLengthsQueue
  /* Configure the sensor with these values initially. */
  constexpr double defaultAnalogueGain = 1.0;
  constexpr Duration defaultExposureTime = 20.0ms;
@@ -26,13 +26,4 @@ Last-Update: 2022-10-18
 +constexpr Duration defaultMinFrameDuration = 1s / 30.0;
  constexpr Duration defaultMaxFrameDuration = 250.0s;
  
- /*
-@@ -51,7 +51,7 @@
-  * we rate-limit the controller Prepare() and Process() calls to lower than or
-  * equal to this rate.
-  */
--constexpr Duration controllerMinFrameDuration = 1.0s / 30.0;
-+constexpr Duration controllerMinFrameDuration = 1s / 30.0;
- 
  /* List of controls handled by the Raspberry Pi IPA */
- const ControlInfoMap::Map ipaControls{

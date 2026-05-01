@@ -5,14 +5,13 @@
  * Python bindings - Color Space classes
  */
 
-#include <libcamera/color_space.h>
-#include <libcamera/libcamera.h>
-
 #include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
 #include "py_main.h"
+
+#include <libcamera/libcamera.h>
 
 namespace py = pybind11;
 

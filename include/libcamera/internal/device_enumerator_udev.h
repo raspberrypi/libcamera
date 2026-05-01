@@ -69,7 +69,7 @@ private:
 
 	struct udev *udev_;
 	struct udev_monitor *monitor_;
-	EventNotifier *notifier_;
+	std::unique_ptr<EventNotifier> notifier_;
 
 	std::set<dev_t> orphans_;
 	std::unordered_set<dev_t> devices_;

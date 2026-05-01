@@ -16,40 +16,36 @@
 #include <libcamera/ipa/ipa_interface.h>
 #include <libcamera/ipa/ipa_module_info.h>
 
-#include "libcamera/internal/camera_manager.h"
-#include "libcamera/internal/global_configuration.h"
-#include "libcamera/internal/ipa_module.h"
-#include "libcamera/internal/pipeline_handler.h"
 #include "libcamera/internal/pub_key.h"
 
 namespace libcamera {
 
 LOG_DECLARE_CATEGORY(IPAManager)
 
+class CameraManager;
+class GlobalConfiguration;
+class IPAModule;
+class PipelineHandler;
+
 class IPAManager
 {
 public:
-	IPAManager(const GlobalConfiguration &configuration);
+	IPAManager(const CameraManager &cm);
 	~IPAManager();
 
 	template<typename T>
-	static std::unique_ptr<T> createIPA(PipelineHandler *pipe,
-					    uint32_t minVersion,
-					    uint32_t maxVersion)
+	std::unique_ptr<T> createIPA(PipelineHandler *pipe, uint32_t minVersion,
+				     uint32_t maxVersion)
 	{
-		CameraManager *cm = pipe->cameraManager();
-		IPAManager *self = cm->_d()->ipaManager();
-		IPAModule *m = self->module(pipe, minVersion, maxVersion);
+		IPAModule *m = module(pipe, minVersion, maxVersion);
 		if (!m)
 			return nullptr;
 
-		const GlobalConfiguration &configuration = cm->_d()->configuration();
-
 		auto proxy = [&]() -> std::unique_ptr<T> {
-			if (self->isSignatureValid(m))
-				return std::make_unique<typename T::Threaded>(m, configuration);
+			if (isSignatureValid(m))
+				return std::make_unique<typename T::Threaded>(m, cm_);
 			else
-				return std::make_unique<typename T::Isolated>(m, configuration);
+				return std::make_unique<typename T::Isolated>(m, cm_);
 		}();
 
 		if (!proxy->isValid()) {
@@ -77,6 +73,7 @@ private:
 
 	bool isSignatureValid(IPAModule *ipa) const;
 
+	const CameraManager &cm_;
 	std::vector<std::unique_ptr<IPAModule>> modules_;
 
 #if HAVE_IPA_PUBKEY

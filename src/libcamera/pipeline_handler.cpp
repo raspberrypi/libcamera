@@ -836,6 +836,16 @@ void PipelineHandler::disconnect()
  */
 
 /**
+ * \fn PipelineHandler::createIPA()
+ * \brief Create an IPA proxy that matches this pipeline handler
+ * \param[in] minVersion Minimum acceptable version of IPA module
+ * \param[in] maxVersion Maximum acceptable version of IPA module
+ *
+ * \return A newly created IPA proxy, or nullptr if no matching IPA module is
+ * found or if the IPA proxy fails to initialize
+ */
+
+/**
  * \class PipelineHandlerFactoryBase
  * \brief Base class for pipeline handler factories
  *

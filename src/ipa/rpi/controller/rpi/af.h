@@ -47,7 +47,7 @@ public:
 	Af(Controller *controller = NULL);
 	~Af();
 	char const *name() const override;
-	int read(const libcamera::YamlObject &params) override;
+	int read(const libcamera::ValueNode &params) override;
 	void initialise() override;
 
 	/* IPA calls */
@@ -87,7 +87,7 @@ private:
 		double focusDefault;		/* default setting ("hyperfocal") */
 
 		RangeDependentParams();
-		void read(const libcamera::YamlObject &params);
+		void read(const libcamera::ValueNode &params);
 	};
 
 	struct SpeedDependentParams {
@@ -104,7 +104,7 @@ private:
 		uint32_t stepFrames;		/* frames to skip in between steps of a scan */
 
 		SpeedDependentParams();
-		void read(const libcamera::YamlObject &params);
+		void read(const libcamera::ValueNode &params);
 	};
 
 	struct CfgParams {
@@ -118,7 +118,7 @@ private:
 		libcamera::ipa::Pwl map;       	/* converts dioptres -> lens driver position */
 
 		CfgParams();
-		int read(const libcamera::YamlObject &params);
+		int read(const libcamera::ValueNode &params);
 		void initialise();
 	};
 

@@ -54,7 +54,7 @@ public:
 			      const Size &size, Alignment align = Alignment::Down) override;
 
 	int configure(const StreamConfiguration &inputCfg,
-		      const std::vector<std::reference_wrapper<StreamConfiguration>>
+		      const std::vector<std::reference_wrapper<const StreamConfiguration>>
 		      &outputCfg) override;
 	bool isConfigured(const Stream *stream) const override;
 	int exportBuffers(const Stream *stream, unsigned int count,

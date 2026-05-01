@@ -12,7 +12,7 @@ import sys
 
 regex_block_start = re.compile(r'^/\*\*$')
 regex_block_end = re.compile(r'^ \*/$')
-regex_spdx = re.compile(r'^/\* SPDX-License-Identifier: .* \*/$')
+regex_spdx = re.compile(r'^/\* (SPDX)-License-Identifier: .* \*/$')
 
 
 def main(argv):

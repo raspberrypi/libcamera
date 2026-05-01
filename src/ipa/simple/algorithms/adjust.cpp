@@ -24,7 +24,7 @@ constexpr float kDefaultSaturation = 1.0f;
 
 LOG_DEFINE_CATEGORY(IPASoftAdjust)
 
-int Adjust::init(IPAContext &context, [[maybe_unused]] const YamlObject &tuningData)
+int Adjust::init(IPAContext &context, [[maybe_unused]] const ValueNode &tuningData)
 {
 	context.ctrlMap[&controls::Gamma] =
 		ControlInfo(0.1f, 10.0f, kDefaultGamma);

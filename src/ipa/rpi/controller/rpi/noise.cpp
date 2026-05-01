@@ -41,7 +41,7 @@ void Noise::switchMode(CameraMode const &cameraMode,
 	modeFactor_ = std::max(1.0, cameraMode.noiseFactor);
 }
 
-int Noise::read(const libcamera::YamlObject &params)
+int Noise::read(const libcamera::ValueNode &params)
 {
 	auto value = params["reference_constant"].get<double>();
 	if (!value)

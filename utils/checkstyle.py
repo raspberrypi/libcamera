@@ -453,6 +453,31 @@ class HeaderAddChecker(CommitChecker):
         return issues
 
 
+class LicenseChecker(CommitChecker):
+    commit_types = (Commit, StagedChanges, Amendment)
+    dependencies = ('reuse',)
+
+    missing_license_regex = re.compile(r'^(.*): no license identifier$')
+
+    @classmethod
+    def check(cls, commit, top_level):
+        issues = []
+
+        ret = subprocess.run(['reuse', 'lint-file'] + commit.files('AR'),
+                             stdout=subprocess.PIPE)
+
+        for line in ret.stdout.decode('utf-8').splitlines():
+            match = LicenseChecker.missing_license_regex.match(line)
+            if not match:
+                continue
+
+            filename = match.group(1)
+            issue = CommitIssue(f'File {filename} has no license identifier')
+            issues.append(issue)
+
+        return issues
+
+
 class TitleChecker(CommitChecker):
     commit_types = (Commit,)
 

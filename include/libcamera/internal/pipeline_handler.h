@@ -17,11 +17,13 @@
 #include <libcamera/controls.h>
 #include <libcamera/stream.h>
 
+#include "libcamera/internal/camera_manager.h"
+#include "libcamera/internal/ipa_manager.h"
+
 namespace libcamera {
 
 class Camera;
 class CameraConfiguration;
-class CameraManager;
 class DeviceEnumerator;
 class DeviceMatch;
 class FrameBuffer;
@@ -69,6 +71,13 @@ public:
 	const char *name() const { return name_; }
 
 	CameraManager *cameraManager() const { return manager_; }
+
+	template<typename T>
+	std::unique_ptr<T> createIPA(uint32_t minVersion, uint32_t maxVersion)
+	{
+		IPAManager *ipaManager = manager_->_d()->ipaManager();
+		return ipaManager->createIPA<T>(this, minVersion, maxVersion);
+	}
 
 protected:
 	void registerCamera(std::shared_ptr<Camera> camera);

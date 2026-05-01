@@ -61,7 +61,7 @@ private:
 
 	FileOperations fops_;
 
-	libcamera::CameraManager *cm_;
+	std::unique_ptr<libcamera::CameraManager> cm_;
 
 	std::vector<std::unique_ptr<V4L2CameraProxy>> proxies_;
 	std::map<int, std::shared_ptr<V4L2CameraFile>> files_;

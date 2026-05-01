@@ -2,11 +2,11 @@
 
 project('libcamera', 'c', 'cpp',
     meson_version : '>= 1.0.1',
-    version : '0.7.0',
+    version : '0.7.1',
     default_options : [
         'werror=true',
         'warning_level=2',
-        'cpp_std=c++17',
+        'cpp_std=c++20',
     ],
     license : 'LGPL 2.1+')
 
@@ -118,10 +118,9 @@ cpp_arguments = [
     '-Wnon-virtual-dtor',
 ]
 
-# \todo Switch to `version` when moving to C++20 as `ciso646` has been removed in C++20.
-if cxx.has_header_symbol('ciso646', '_LIBCPP_VERSION')
+if cxx.has_header_symbol('version', '_LIBCPP_VERSION')
     cxx_stdlib = 'libc++'
-elif cxx.has_header_symbol('ciso646', '__GLIBCXX__')
+elif cxx.has_header_symbol('version', '__GLIBCXX__')
     cxx_stdlib = 'libstdc++'
 else
     error('C++ standard library cannot be detected')
@@ -159,16 +158,17 @@ if cc.get_id() == 'gcc'
         error('gcc version is too old, libcamera requires 9.0 or newer')
     endif
 
-    # gcc 13 implements the C++23 version of automatic move from local
-    # variables in return statements (see
-    # https://en.cppreference.com/w/cpp/language/return). As a result, some
-    # previously required explicit std::move() in return statements generate
-    # warnings. Those moves can't be removed as older compiler versions could
-    # use copy constructors instead of move constructors. The easiest fix is to
-    # disable the warning. With -Wpessimizing-move enabled, the compiler will
-    # still warn of pessimizing moves, only the redundant but not pessimizing
-    # moves will be ignored.
-    if cc.version().version_compare('>=13')
+    # In C++20 mode, prior to gcc 11, object slicing in a return statement didn't
+    # perform automatic move. It required explicit std::move() usage, which now
+    # generate warnings. Those moves can't be removed as older compiler versions
+    # could use copy constructors instead of move constructors. The easiest fix
+    # is to disable the warning. With -Wpessimizing-move enabled, the compiler
+    # will still warn of pessimizing moves, only the redundant but not
+    # pessimizing moves will be ignored.
+    #
+    # \todo When dropping support for compilers older than gcc 11, drop the
+    # argument and remove the unneeded std::move() calls.
+    if cc.version().version_compare('>=11')
         cpp_arguments += [
             '-Wno-redundant-move',
         ]
@@ -304,9 +304,6 @@ summary({
             'GStreamer support': gst_enabled,
             'Python bindings': pycamera_enabled,
             'V4L2 emulation support': v4l2_enabled,
-            'cam application': cam_enabled,
-            'qcam application': qcam_enabled,
-            'lc-compliance application': lc_compliance_enabled,
             'Unit tests': test_enabled,
         },
         section : 'Configuration',

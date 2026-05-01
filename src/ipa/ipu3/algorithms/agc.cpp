@@ -65,14 +65,14 @@ Agc::Agc()
 /**
  * \brief Initialise the AGC algorithm from tuning files
  * \param[in] context The shared IPA context
- * \param[in] tuningData The YamlObject containing Agc tuning data
+ * \param[in] tuningData The ValueNode containing Agc tuning data
  *
  * This function calls the base class' tuningData parsers to discover which
  * control values are supported.
  *
  * \return 0 on success or errors from the base class
  */
-int Agc::init(IPAContext &context, const YamlObject &tuningData)
+int Agc::init(IPAContext &context, const ValueNode &tuningData)
 {
 	int ret;
 

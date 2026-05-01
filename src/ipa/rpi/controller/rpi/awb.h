@@ -17,7 +17,7 @@
 namespace RPiController {
 
 struct AwbMode {
-	int read(const libcamera::YamlObject &params);
+	int read(const libcamera::ValueNode &params);
 	double ctLo; /* low CT value for search */
 	double ctHi; /* high CT value for search */
 };
@@ -25,7 +25,7 @@ struct AwbMode {
 struct AwbConfig {
 	AwbConfig()
 		: defaultMode(nullptr) {}
-	int read(const libcamera::YamlObject &params);
+	int read(const libcamera::ValueNode &params);
 	bool hasCtCurve() const;
 
 	/* Only repeat the AWB calculation every "this many" frames */

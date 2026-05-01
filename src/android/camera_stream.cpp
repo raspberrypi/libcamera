@@ -8,9 +8,9 @@
 #include "camera_stream.h"
 
 #include <errno.h>
+#include <poll.h>
 #include <string.h>
 #include <sys/mman.h>
-#include <sys/poll.h>
 #include <unistd.h>
 
 #include <libcamera/formats.h>

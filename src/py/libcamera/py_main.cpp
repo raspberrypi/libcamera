@@ -5,6 +5,13 @@
  * Python bindings
  */
 
+#include <pybind11/functional.h>
+#include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
+#include <pybind11/stl_bind.h>
+
+#include "py_camera_manager.h"
+#include "py_helpers.h"
 #include "py_main.h"
 
 #include <limits>
@@ -16,14 +23,6 @@
 #include <libcamera/base/log.h>
 
 #include <libcamera/libcamera.h>
-
-#include <pybind11/functional.h>
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-#include <pybind11/stl_bind.h>
-
-#include "py_camera_manager.h"
-#include "py_helpers.h"
 
 namespace py = pybind11;
 

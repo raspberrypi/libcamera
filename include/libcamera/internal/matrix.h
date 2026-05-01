@@ -14,7 +14,7 @@
 #include <libcamera/base/log.h>
 #include <libcamera/base/span.h>
 
-#include "libcamera/internal/yaml_parser.h"
+#include "libcamera/internal/value_node.h"
 
 namespace libcamera {
 
@@ -188,7 +188,7 @@ constexpr Matrix<T, Rows, Cols> operator+(const Matrix<T, Rows, Cols> &m1, const
 }
 
 #ifndef __DOXYGEN__
-bool matrixValidateYaml(const YamlObject &obj, unsigned int size);
+bool matrixValidateYaml(const ValueNode &obj, unsigned int size);
 #endif /* __DOXYGEN__ */
 
 #ifndef __DOXYGEN__
@@ -200,8 +200,8 @@ std::ostream &operator<<(std::ostream &out, const Matrix<T, Rows, Cols> &m)
 }
 
 template<typename T, unsigned int Rows, unsigned int Cols>
-struct YamlObject::Getter<Matrix<T, Rows, Cols>> {
-	std::optional<Matrix<T, Rows, Cols>> get(const YamlObject &obj) const
+struct ValueNode::Accessor<Matrix<T, Rows, Cols>> {
+	std::optional<Matrix<T, Rows, Cols>> get(const ValueNode &obj) const
 	{
 		if (!matrixValidateYaml(obj, Rows * Cols))
 			return std::nullopt;
@@ -210,7 +210,7 @@ struct YamlObject::Getter<Matrix<T, Rows, Cols>> {
 		T *data = &matrix[0][0];
 
 		unsigned int i = 0;
-		for (const YamlObject &entry : obj.asList()) {
+		for (const ValueNode &entry : obj.asList()) {
 			const auto value = entry.get<T>();
 			if (!value)
 				return std::nullopt;

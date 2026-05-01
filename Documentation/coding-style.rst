@@ -95,11 +95,17 @@ System and library headers shall be included with angle brackets. Project
 headers shall be included with angle brackets for the libcamera public API
 headers, and with double quotes for internal libcamera headers.
 
+.. note::
+   As an exception pybind11 headers and local ``py_*`` headers must be included first
+   in the Python bindings due to the requirements outlined in the `Python documentation`_.
+
+.. _Python documentation: https://docs.python.org/3/c-api/intro.html#include-files
+
 
 C++ Specific Rules
 ------------------
 
-The code shall be implemented in C++17, with the following caveats:
+The code shall be implemented in C++20, with the following caveats:
 
 * Type inference (auto and decltype) shall be used with caution, to avoid
   drifting towards an untyped language.

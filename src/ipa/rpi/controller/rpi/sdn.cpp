@@ -35,7 +35,7 @@ char const *Sdn::name() const
 	return NAME;
 }
 
-int Sdn::read(const libcamera::YamlObject &params)
+int Sdn::read(const libcamera::ValueNode &params)
 {
 	deviation_ = params["deviation"].get<double>(3.2);
 	strength_ = params["strength"].get<double>(0.75);

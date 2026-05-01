@@ -77,6 +77,12 @@ IncludeCategories:
   - Regex:           '<Q([A-Za-z0-9\-_])+>'
     CaseSensitive:   true
     Priority:        9
+  # Python.h hence pybind11 headers must be included first
+  # https://docs.python.org/3/c-api/intro.html#include-files
+  - Regex:           '<pybind11/.*>'
+    Priority:        -9
+  - Regex:           '"py_.*"'
+    Priority:        -8
   # Headers in <> with an extension. (+system libraries)
   - Regex:           '<([A-Za-z0-9\-_])+\.h>'
     Priority:        2

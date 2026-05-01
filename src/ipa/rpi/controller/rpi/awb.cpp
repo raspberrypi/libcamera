@@ -17,7 +17,7 @@ LOG_DEFINE_CATEGORY(RPiAwb)
 
 constexpr double kDefaultCT = 4500.0;
 
-static int readCtCurve(ipa::Pwl &ctR, ipa::Pwl &ctB, const libcamera::YamlObject &params)
+static int readCtCurve(ipa::Pwl &ctR, ipa::Pwl &ctB, const libcamera::ValueNode &params)
 {
 	if (params.size() % 3) {
 		LOG(RPiAwb, Error) << "AwbConfig: incomplete CT curve entry";
@@ -53,7 +53,7 @@ static int readCtCurve(ipa::Pwl &ctR, ipa::Pwl &ctB, const libcamera::YamlObject
 	return 0;
 }
 
-int AwbMode::read(const libcamera::YamlObject &params)
+int AwbMode::read(const libcamera::ValueNode &params)
 {
 	auto value = params["lo"].get<double>();
 	if (!value)
@@ -68,7 +68,7 @@ int AwbMode::read(const libcamera::YamlObject &params)
 	return 0;
 }
 
-int AwbConfig::read(const libcamera::YamlObject &params)
+int AwbConfig::read(const libcamera::ValueNode &params)
 {
 	int ret;
 

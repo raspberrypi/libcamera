@@ -31,7 +31,7 @@ class Ccm : public CcmAlgorithm
 public:
 	Ccm(Controller *controller = NULL);
 	char const *name() const override;
-	int read(const libcamera::YamlObject &params) override;
+	int read(const libcamera::ValueNode &params) override;
 	void enableAuto() override;
 	void setSaturation(double saturation) override;
 	void setCcm(Matrix3x3 const &matrix) override;

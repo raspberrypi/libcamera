@@ -14,7 +14,7 @@
 
 namespace libcamera {
 
-class YamlObject;
+class ValueNode;
 
 namespace ipa {
 
@@ -27,7 +27,7 @@ public:
 	virtual ~Algorithm() {}
 
 	virtual int init([[maybe_unused]] typename Module::Context &context,
-			 [[maybe_unused]] const YamlObject &tuningData)
+			 [[maybe_unused]] const ValueNode &tuningData)
 	{
 		return 0;
 	}

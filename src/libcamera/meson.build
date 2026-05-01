@@ -57,6 +57,7 @@ libcamera_internal_sources = files([
     'v4l2_request.cpp',
     'v4l2_subdevice.cpp',
     'v4l2_videodevice.cpp',
+    'value_node.cpp',
     'vector.cpp',
     'yaml_parser.cpp',
 ])
@@ -69,27 +70,6 @@ libcamera_deps = []
 
 libatomic = cc.find_library('atomic', required : false)
 libthreads = dependency('threads')
-
-mesa_works = cc.check_header('EGL/egl.h', required: false)
-libegl = dependency('egl', required : false)
-libglesv2 = dependency('glesv2', required : false)
-
-if libegl.found()
-    config_h.set('HAVE_LIBEGL', 1)
-endif
-
-if libglesv2.found()
-    config_h.set('HAVE_GLESV2', 1)
-endif
-
-if mesa_works
-    libcamera_internal_sources += files([
-        'egl.cpp',
-    ])
-    gles_headless_enabled = true
-else
-    gles_headless_enabled = false
-endif
 
 subdir('base')
 subdir('converter')
@@ -199,8 +179,6 @@ libcamera_deps += [
     libcamera_base_private,
     libcrypto,
     libdl,
-    libegl,
-    libglesv2,
     liblttng,
     libudev,
     libyaml,

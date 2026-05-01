@@ -14,10 +14,11 @@
 #include <algorithm>
 #include <stdlib.h>
 #include <sys/ioctl.h>
-#include <time.h>
 #include <utility>
 
 #include <linux/dma-buf.h>
+
+#include <libcamera/base/thread.h>
 
 #include <libcamera/formats.h>
 
@@ -29,6 +30,56 @@
 namespace libcamera {
 
 /**
+ * \brief Class representing one CPU debayering thread
+ *
+ * Implementation for CPU based debayering threads.
+ */
+class DebayerCpuThread : public Thread, public Object
+{
+public:
+	DebayerCpuThread(DebayerCpu *debayer, unsigned int threadIndex,
+			 bool enableInputMemcpy);
+
+	void configure(unsigned int yStart, unsigned int yEnd);
+	void process(uint32_t frame, const uint8_t *src, uint8_t *dst);
+
+private:
+	void setupInputMemcpy(const uint8_t *linePointers[]);
+	void shiftLinePointers(const uint8_t *linePointers[], const uint8_t *src);
+	void memcpyNextLine(const uint8_t *linePointers[]);
+	void process2(uint32_t frame, const uint8_t *src, uint8_t *dst);
+	void process4(uint32_t frame, const uint8_t *src, uint8_t *dst);
+
+	/* Max. supported Bayer pattern height is 4, debayering this requires 5 lines */
+	static constexpr unsigned int kMaxLineBuffers = 5;
+
+	DebayerCpu *debayer_;
+	unsigned int threadIndex_;
+	unsigned int yStart_;
+	unsigned int yEnd_;
+	unsigned int lineBufferLength_;
+	unsigned int lineBufferPadding_;
+	unsigned int lineBufferIndex_;
+	std::vector<uint8_t> lineBuffers_[kMaxLineBuffers];
+	bool enableInputMemcpy_;
+};
+
+/**
+ * \brief Construct a DebayerCpuThread object
+ * \param[in] debayer pointer back to the DebayerCpuObject this thread belongs to
+ * \param[in] threadIndex 0 .. n thread-index value for the thread
+ * \param[in] enableInputMemcpy when set copy input data to a heap buffer before use
+ */
+DebayerCpuThread::DebayerCpuThread(DebayerCpu *debayer, unsigned int threadIndex,
+				   bool enableInputMemcpy)
+	: Thread("DebayerCpu:" + std::to_string(threadIndex)),
+	  debayer_(debayer), threadIndex_(threadIndex),
+	  enableInputMemcpy_(enableInputMemcpy)
+{
+	moveToThread(this);
+}
+
+/**
  * \class DebayerCpu
  * \brief Class for debayering on the CPU
  *
@@ -38,10 +89,10 @@ namespace libcamera {
 /**
  * \brief Constructs a DebayerCpu object
  * \param[in] stats Pointer to the stats object to use
- * \param[in] configuration The global configuration
+ * \param[in] cm The camera manager
  */
-DebayerCpu::DebayerCpu(std::unique_ptr<SwStatsCpu> stats, const GlobalConfiguration &configuration)
-	: Debayer(configuration), stats_(std::move(stats))
+DebayerCpu::DebayerCpu(std::unique_ptr<SwStatsCpu> stats, const CameraManager &cm)
+	: Debayer(cm), stats_(std::move(stats))
 {
 	/*
 	 * Reading from uncached buffers may be very slow.
@@ -54,8 +105,19 @@ DebayerCpu::DebayerCpu(std::unique_ptr<SwStatsCpu> stats, const GlobalConfigurat
 	 * \todo Make memcpy automatic based on runtime detection of platform
 	 * capabilities.
 	 */
-	enableInputMemcpy_ =
+	const GlobalConfiguration &configuration = cm._d()->configuration();
+	bool enableInputMemcpy =
 		configuration.option<bool>({ "software_isp", "copy_input_buffer" }).value_or(true);
+
+	unsigned int threadCount =
+		configuration.option<unsigned int>({ "software_isp", "threads" }).value_or(kDefaultThreads);
+	threadCount = std::clamp(threadCount, kMinThreads, kMaxThreads);
+	threads_.resize(threadCount);
+
+	for (unsigned int i = 0; i < threads_.size(); i++)
+		threads_[i] = std::make_unique<DebayerCpuThread>(this, i, enableInputMemcpy);
+
+	LOG(Debayer, Debug) << "Thread count " << threadCount;
 }
 
 DebayerCpu::~DebayerCpu() = default;
@@ -479,13 +541,13 @@ int DebayerCpu::setDebayerFunctions(PixelFormat inputFormat,
 }
 
 int DebayerCpu::configure(const StreamConfiguration &inputCfg,
-			  const std::vector<std::reference_wrapper<StreamConfiguration>> &outputCfgs,
+			  const std::vector<std::reference_wrapper<const StreamConfiguration>> &outputCfgs,
 			  bool ccmEnabled)
 {
 	if (getInputConfig(inputCfg.pixelFormat, inputConfig_) != 0)
 		return -EINVAL;
 
-	if (stats_->configure(inputCfg) != 0)
+	if (stats_->configure(inputCfg, threads_.size()) != 0)
 		return -EINVAL;
 
 	const Size &statsPatternSize = stats_->patternSize();
@@ -549,17 +611,43 @@ int DebayerCpu::configure(const StreamConfiguration &inputCfg,
 	 */
 	stats_->setWindow(Rectangle(window_.size()));
 
+	unsigned int yStart = 0;
+	unsigned int linesPerThread = (window_.height / threads_.size()) &
+				      ~(inputConfig_.patternSize.height - 1);
+	unsigned int i;
+
+	for (i = 0; i < (threads_.size() - 1); i++) {
+		threads_[i]->configure(yStart, yStart + linesPerThread);
+		yStart += linesPerThread;
+	}
+	threads_[i]->configure(yStart, window_.height);
+
+	return 0;
+}
+
+/**
+ * \brief Configure thread to process a specific part of the image
+ * \param[in] yStart y coordinate of first line to process
+ * \param[in] yEnd y coordinate of the line at which to stop processing
+ *
+ * Configure the thread to process lines from yStart to yEnd - 1.
+ */
+void DebayerCpuThread::configure(unsigned int yStart, unsigned int yEnd)
+{
+	Debayer::DebayerInputConfig &inputConfig = debayer_->inputConfig_;
+
+	yStart_ = yStart;
+	yEnd_ = yEnd;
+
 	/* pad with patternSize.Width on both left and right side */
-	lineBufferPadding_ = inputConfig_.patternSize.width * inputConfig_.bpp / 8;
-	lineBufferLength_ = window_.width * inputConfig_.bpp / 8 +
+	lineBufferPadding_ = inputConfig.patternSize.width * inputConfig.bpp / 8;
+	lineBufferLength_ = debayer_->window_.width * inputConfig.bpp / 8 +
 			    2 * lineBufferPadding_;
 
 	if (enableInputMemcpy_) {
-		for (unsigned int i = 0; i <= inputConfig_.patternSize.height; i++)
+		for (unsigned int i = 0; i <= inputConfig.patternSize.height; i++)
 			lineBuffers_[i].resize(lineBufferLength_);
 	}
-
-	return 0;
 }
 
 /*
@@ -600,9 +688,9 @@ DebayerCpu::strideAndFrameSize(const PixelFormat &outputFormat, const Size &size
 	return std::make_tuple(stride, stride * size.height);
 }
 
-void DebayerCpu::setupInputMemcpy(const uint8_t *linePointers[])
+void DebayerCpuThread::setupInputMemcpy(const uint8_t *linePointers[])
 {
-	const unsigned int patternHeight = inputConfig_.patternSize.height;
+	const unsigned int patternHeight = debayer_->inputConfig_.patternSize.height;
 
 	if (!enableInputMemcpy_)
 		return;
@@ -618,20 +706,20 @@ void DebayerCpu::setupInputMemcpy(const uint8_t *linePointers[])
 	lineBufferIndex_ = patternHeight;
 }
 
-void DebayerCpu::shiftLinePointers(const uint8_t *linePointers[], const uint8_t *src)
+void DebayerCpuThread::shiftLinePointers(const uint8_t *linePointers[], const uint8_t *src)
 {
-	const unsigned int patternHeight = inputConfig_.patternSize.height;
+	const unsigned int patternHeight = debayer_->inputConfig_.patternSize.height;
 
 	for (unsigned int i = 0; i < patternHeight; i++)
 		linePointers[i] = linePointers[i + 1];
 
-	linePointers[patternHeight] = src +
-				      (patternHeight / 2) * (int)inputConfig_.stride;
+	linePointers[patternHeight] =
+		src + (patternHeight / 2) * (int)debayer_->inputConfig_.stride;
 }
 
-void DebayerCpu::memcpyNextLine(const uint8_t *linePointers[])
+void DebayerCpuThread::memcpyNextLine(const uint8_t *linePointers[])
 {
-	const unsigned int patternHeight = inputConfig_.patternSize.height;
+	const unsigned int patternHeight = debayer_->inputConfig_.patternSize.height;
 
 	if (!enableInputMemcpy_)
 		return;
@@ -644,23 +732,53 @@ void DebayerCpu::memcpyNextLine(const uint8_t *linePointers[])
 	lineBufferIndex_ = (lineBufferIndex_ + 1) % (patternHeight + 1);
 }
 
-void DebayerCpu::process2(uint32_t frame, const uint8_t *src, uint8_t *dst)
+/**
+ * \brief Process part of the image assigned to this debayer thread
+ * \param[in] frame The frame number
+ * \param[in] src The source buffer
+ * \param[in] dst The destination buffer
+ */
+void DebayerCpuThread::process(uint32_t frame, const uint8_t *src, uint8_t *dst)
 {
-	unsigned int yEnd = window_.height;
+	Rectangle &window = debayer_->window_;
+
+	/* Adjust src to top left corner of the window */
+	src += (window.y + yStart_) * debayer_->inputConfig_.stride +
+	       window.x * debayer_->inputConfig_.bpp / 8;
+	/* Adjust dst for yStart_ */
+	dst += yStart_ * debayer_->outputConfig_.stride;
+
+	if (debayer_->inputConfig_.patternSize.height == 2)
+		process2(frame, src, dst);
+	else
+		process4(frame, src, dst);
+
+	debayer_->workPendingMutex_.lock();
+	debayer_->workPending_ &= ~(1 << threadIndex_);
+	debayer_->workPendingMutex_.unlock();
+	debayer_->workPendingCv_.notify_one();
+}
+
+void DebayerCpuThread::process2(uint32_t frame, const uint8_t *src, uint8_t *dst)
+{
+	unsigned int outputStride = debayer_->outputConfig_.stride;
+	unsigned int inputStride = debayer_->inputConfig_.stride;
+	Rectangle &window = debayer_->window_;
+	unsigned int yEnd = yEnd_;
 	/* Holds [0] previous- [1] current- [2] next-line */
 	const uint8_t *linePointers[3];
 
-	/* Adjust src to top left corner of the window */
-	src += window_.y * inputConfig_.stride + window_.x * inputConfig_.bpp / 8;
-
 	/* [x] becomes [x - 1] after initial shiftLinePointers() call */
-	if (window_.y) {
-		linePointers[1] = src - inputConfig_.stride; /* previous-line */
+	if (window.y + yStart_) {
+		linePointers[1] = src - inputStride; /* previous-line */
 		linePointers[2] = src;
 	} else {
-		/* window_.y == 0, use the next line as prev line */
-		linePointers[1] = src + inputConfig_.stride;
+		/* Top line, use the next line as prev line */
+		linePointers[1] = src + inputStride;
 		linePointers[2] = src;
+	}
+
+	if (window.y == 0 && yEnd_ == window.height) {
 		/*
 		 * Last 2 lines also need special handling.
 		 * (And configure() ensures that yEnd >= 2.)
@@ -670,87 +788,97 @@ void DebayerCpu::process2(uint32_t frame, const uint8_t *src, uint8_t *dst)
 
 	setupInputMemcpy(linePointers);
 
-	for (unsigned int y = 0; y < yEnd; y += 2) {
+	/*
+	 * Note y is the line-number *inside* the window, since stats_' window
+	 * is the stats window inside/relative to the debayer window. IOW for
+	 * single thread rendering y goes from 0 to window.height.
+	 */
+	for (unsigned int y = yStart_; y < yEnd; y += 2) {
 		shiftLinePointers(linePointers, src);
 		memcpyNextLine(linePointers);
-		stats_->processLine0(frame, y, linePointers);
-		(this->*debayer0_)(dst, linePointers);
-		src += inputConfig_.stride;
-		dst += outputConfig_.stride;
+		debayer_->stats_->processLine0(frame, y, linePointers, threadIndex_);
+		debayer_->debayer0(dst, linePointers);
+		src += inputStride;
+		dst += outputStride;
 
 		shiftLinePointers(linePointers, src);
 		memcpyNextLine(linePointers);
-		(this->*debayer1_)(dst, linePointers);
-		src += inputConfig_.stride;
-		dst += outputConfig_.stride;
+		debayer_->debayer1(dst, linePointers);
+		src += inputStride;
+		dst += outputStride;
 	}
 
-	if (window_.y == 0) {
+	if (window.y == 0 && yEnd_ == window.height) {
 		shiftLinePointers(linePointers, src);
 		memcpyNextLine(linePointers);
-		stats_->processLine0(frame, yEnd, linePointers);
-		(this->*debayer0_)(dst, linePointers);
-		src += inputConfig_.stride;
-		dst += outputConfig_.stride;
+		debayer_->stats_->processLine0(frame, yEnd, linePointers, threadIndex_);
+		debayer_->debayer0(dst, linePointers);
+		src += inputStride;
+		dst += outputStride;
 
 		shiftLinePointers(linePointers, src);
 		/* next line may point outside of src, use prev. */
 		linePointers[2] = linePointers[0];
-		(this->*debayer1_)(dst, linePointers);
-		src += inputConfig_.stride;
-		dst += outputConfig_.stride;
+		debayer_->debayer1(dst, linePointers);
+		src += inputStride;
+		dst += outputStride;
 	}
 }
 
-void DebayerCpu::process4(uint32_t frame, const uint8_t *src, uint8_t *dst)
+void DebayerCpuThread::process4(uint32_t frame, const uint8_t *src, uint8_t *dst)
 {
+	unsigned int outputStride = debayer_->outputConfig_.stride;
+	unsigned int inputStride = debayer_->inputConfig_.stride;
+
 	/*
 	 * This holds pointers to [0] 2-lines-up [1] 1-line-up [2] current-line
 	 * [3] 1-line-down [4] 2-lines-down.
 	 */
 	const uint8_t *linePointers[5];
 
-	/* Adjust src to top left corner of the window */
-	src += window_.y * inputConfig_.stride + window_.x * inputConfig_.bpp / 8;
-
 	/* [x] becomes [x - 1] after initial shiftLinePointers() call */
-	linePointers[1] = src - 2 * inputConfig_.stride;
-	linePointers[2] = src - inputConfig_.stride;
+	linePointers[1] = src - 2 * inputStride;
+	linePointers[2] = src - inputStride;
 	linePointers[3] = src;
-	linePointers[4] = src + inputConfig_.stride;
+	linePointers[4] = src + inputStride;
 
 	setupInputMemcpy(linePointers);
 
-	for (unsigned int y = 0; y < window_.height; y += 4) {
+	/*
+	 * Note y is the line-number *inside* the window, since stats_' window
+	 * is the stats window inside/relative to the debayer window. IOW for
+	 * single thread rendering y goes from 0 to window.height.
+	 */
+	for (unsigned int y = yStart_; y < yEnd_; y += 4) {
 		shiftLinePointers(linePointers, src);
 		memcpyNextLine(linePointers);
-		stats_->processLine0(frame, y, linePointers);
-		(this->*debayer0_)(dst, linePointers);
-		src += inputConfig_.stride;
-		dst += outputConfig_.stride;
+		debayer_->stats_->processLine0(frame, y, linePointers, threadIndex_);
+		debayer_->debayer0(dst, linePointers);
+		src += inputStride;
+		dst += outputStride;
 
 		shiftLinePointers(linePointers, src);
 		memcpyNextLine(linePointers);
-		(this->*debayer1_)(dst, linePointers);
-		src += inputConfig_.stride;
-		dst += outputConfig_.stride;
+		debayer_->debayer1(dst, linePointers);
+		src += inputStride;
+		dst += outputStride;
 
 		shiftLinePointers(linePointers, src);
 		memcpyNextLine(linePointers);
-		stats_->processLine2(frame, y, linePointers);
-		(this->*debayer2_)(dst, linePointers);
-		src += inputConfig_.stride;
-		dst += outputConfig_.stride;
+		debayer_->stats_->processLine2(frame, y, linePointers, threadIndex_);
+		debayer_->debayer2(dst, linePointers);
+		src += inputStride;
+		dst += outputStride;
 
 		shiftLinePointers(linePointers, src);
 		memcpyNextLine(linePointers);
-		(this->*debayer3_)(dst, linePointers);
-		src += inputConfig_.stride;
-		dst += outputConfig_.stride;
+		debayer_->debayer3(dst, linePointers);
+		src += inputStride;
+		dst += outputStride;
 	}
 }
 
-void DebayerCpu::updateGammaTable(DebayerParams &params)
+void DebayerCpu::updateGammaTable(const DebayerParams &params)
 {
 	const RGB<float> blackLevel = params.blackLevel;
 	/* Take let's say the green channel black level */
@@ -780,7 +908,7 @@ void DebayerCpu::updateGammaTable(DebayerParams &params)
 		  gammaTable_[blackIndex]);
 }
 
-void DebayerCpu::updateLookupTables(DebayerParams &params)
+void DebayerCpu::updateLookupTables(const DebayerParams &params)
 {
 	const bool gammaUpdateNeeded =
 		params.gamma != params_.gamma ||
@@ -842,7 +970,7 @@ void DebayerCpu::updateLookupTables(DebayerParams &params)
 	params_ = params;
 }
 
-void DebayerCpu::process(uint32_t frame, FrameBuffer *input, FrameBuffer *output, DebayerParams params)
+void DebayerCpu::process(uint32_t frame, FrameBuffer *input, FrameBuffer *output, const DebayerParams &params)
 {
 	bench_.startFrame();
 
@@ -868,10 +996,21 @@ void DebayerCpu::process(uint32_t frame, FrameBuffer *input, FrameBuffer *output
 
 	stats_->startFrame(frame);
 
-	if (inputConfig_.patternSize.height == 2)
-		process2(frame, in.planes()[0].data(), out.planes()[0].data());
-	else
-		process4(frame, in.planes()[0].data(), out.planes()[0].data());
+	workPendingMutex_.lock();
+	workPending_ = (1 << threads_.size()) - 1;
+	workPendingMutex_.unlock();
+
+	for (auto &thread : threads_)
+		thread->invokeMethod(&DebayerCpuThread::process,
+				     ConnectionTypeQueued, frame,
+				     in.planes()[0].data(), out.planes()[0].data());
+
+	{
+		MutexLocker locker(workPendingMutex_);
+		workPendingCv_.wait(locker, [&]() LIBCAMERA_TSA_REQUIRES(workPendingMutex_) {
+			return workPending_ == 0;
+		});
+	}
 
 	metadata.planes()[0].bytesused = out.planes()[0].size();
 
@@ -888,6 +1027,23 @@ void DebayerCpu::process(uint32_t frame, FrameBuffer *input, FrameBuffer *output
 	stats_->finishFrame(frame, 0);
 	outputBufferReady.emit(output);
 	inputBufferReady.emit(input);
+}
+
+int DebayerCpu::start()
+{
+	for (auto &thread : threads_)
+		thread->start();
+
+	return 0;
+}
+
+void DebayerCpu::stop()
+{
+	for (auto &thread : threads_)
+		thread->exit();
+
+	for (auto &thread : threads_)
+		thread->wait();
 }
 
 SizeRange DebayerCpu::sizes(PixelFormat inputFormat, const Size &inputSize)

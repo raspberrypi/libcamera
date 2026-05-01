@@ -15,10 +15,11 @@
 #include <stdint.h>
 #include <vector>
 
+#include <libcamera/base/mutex.h>
 #include <libcamera/base/object.h>
 
 #include "libcamera/internal/bayer_format.h"
-#include "libcamera/internal/global_configuration.h"
+#include "libcamera/internal/camera_manager.h"
 #include "libcamera/internal/software_isp/debayer_params.h"
 #include "libcamera/internal/software_isp/swstats_cpu.h"
 
@@ -26,24 +27,29 @@
 
 namespace libcamera {
 
+class DebayerCpuThread;
 class DebayerCpu : public Debayer
 {
 public:
-	DebayerCpu(std::unique_ptr<SwStatsCpu> stats, const GlobalConfiguration &configuration);
+	DebayerCpu(std::unique_ptr<SwStatsCpu> stats, const CameraManager &cm);
 	~DebayerCpu();
 
 	int configure(const StreamConfiguration &inputCfg,
-		      const std::vector<std::reference_wrapper<StreamConfiguration>> &outputCfgs,
-		      bool ccmEnabled);
-	Size patternSize(PixelFormat inputFormat);
-	std::vector<PixelFormat> formats(PixelFormat input);
+		      const std::vector<std::reference_wrapper<const StreamConfiguration>> &outputCfgs,
+		      bool ccmEnabled) override;
+	Size patternSize(PixelFormat inputFormat) override;
+	std::vector<PixelFormat> formats(PixelFormat input) override;
 	std::tuple<unsigned int, unsigned int>
-	strideAndFrameSize(const PixelFormat &outputFormat, const Size &size);
-	void process(uint32_t frame, FrameBuffer *input, FrameBuffer *output, DebayerParams params);
-	SizeRange sizes(PixelFormat inputFormat, const Size &inputSize);
-	const SharedFD &getStatsFD() { return stats_->getStatsFD(); }
+	strideAndFrameSize(const PixelFormat &outputFormat, const Size &size) override;
+	void process(uint32_t frame, FrameBuffer *input, FrameBuffer *output, const DebayerParams &params) override;
+	int start() override;
+	void stop() override;
+	SizeRange sizes(PixelFormat inputFormat, const Size &inputSize) override;
+	const SharedFD &getStatsFD() override { return stats_->getStatsFD(); }
 
 private:
+	friend class DebayerCpuThread;
+
 	/**
 	 * \brief Called to debayer 1 line of Bayer input data to output format
 	 * \param[out] dst Pointer to the start of the output line to write
@@ -73,6 +79,11 @@ private:
 	 * src[2] = current-line, src[3] = 1-line-down, src[4] = 2-lines-down.
 	 */
 	using debayerFn = void (DebayerCpu::*)(uint8_t *dst, const uint8_t *src[]);
+
+	void debayer0(uint8_t *dst, const uint8_t *src[]) { (this->*debayer0_)(dst, src); }
+	void debayer1(uint8_t *dst, const uint8_t *src[]) { (this->*debayer1_)(dst, src); }
+	void debayer2(uint8_t *dst, const uint8_t *src[]) { (this->*debayer2_)(dst, src); }
+	void debayer3(uint8_t *dst, const uint8_t *src[]) { (this->*debayer3_)(dst, src); }
 
 	/* 8-bit raw bayer format */
 	template<bool addAlphaByte, bool ccmEnabled>
@@ -105,16 +116,8 @@ private:
 	int setDebayerFunctions(PixelFormat inputFormat,
 				PixelFormat outputFormat,
 				bool ccmEnabled);
-	void setupInputMemcpy(const uint8_t *linePointers[]);
-	void shiftLinePointers(const uint8_t *linePointers[], const uint8_t *src);
-	void memcpyNextLine(const uint8_t *linePointers[]);
-	void process2(uint32_t frame, const uint8_t *src, uint8_t *dst);
-	void process4(uint32_t frame, const uint8_t *src, uint8_t *dst);
-	void updateGammaTable(DebayerParams &params);
-	void updateLookupTables(DebayerParams &params);
-
-	/* Max. supported Bayer pattern height is 4, debayering this requires 5 lines */
-	static constexpr unsigned int kMaxLineBuffers = 5;
+	void updateGammaTable(const DebayerParams &params);
+	void updateLookupTables(const DebayerParams &params);
 
 	static constexpr unsigned int kRGBLookupSize = 256;
 	static constexpr unsigned int kGammaLookupSize = 1024;
@@ -142,12 +145,16 @@ private:
 	debayerFn debayer3_;
 	Rectangle window_;
 	std::unique_ptr<SwStatsCpu> stats_;
-	std::vector<uint8_t> lineBuffers_[kMaxLineBuffers];
-	unsigned int lineBufferLength_;
-	unsigned int lineBufferPadding_;
-	unsigned int lineBufferIndex_;
 	unsigned int xShift_; /* Offset of 0/1 applied to window_.x */
-	bool enableInputMemcpy_;
+
+	static constexpr unsigned int kMinThreads = 1;
+	static constexpr unsigned int kMaxThreads = 8;
+	static constexpr unsigned int kDefaultThreads = 2;
+
+	unsigned int workPending_ LIBCAMERA_TSA_GUARDED_BY(workPendingMutex_);
+	Mutex workPendingMutex_;
+	ConditionVariable workPendingCv_;
+	std::vector<std::unique_ptr<DebayerCpuThread>> threads_;
 };
 
 } /* namespace libcamera */

@@ -19,12 +19,6 @@ namespace libcamera {
  */
 
 /**
- * \fn Debayer::Debayer(const GlobalConfiguration &configuration)
- * \brief Construct a Debayer object
- * \param[in] configuration Global configuration reference
- */
-
-/**
  * \var DebayerParams::gains
  * \brief Colour channel gains
  */
@@ -58,7 +52,12 @@ namespace libcamera {
 
 LOG_DEFINE_CATEGORY(Debayer)
 
-Debayer::Debayer(const GlobalConfiguration &configuration) : bench_(configuration)
+/**
+ * \brief Construct a Debayer object
+ * \param[in] cm The camera manager
+ */
+Debayer::Debayer(const CameraManager &cm)
+	: bench_(cm, "Debayer")
 {
 }
 

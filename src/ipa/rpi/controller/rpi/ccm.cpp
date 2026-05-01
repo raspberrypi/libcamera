@@ -40,7 +40,7 @@ char const *Ccm::name() const
 	return NAME;
 }
 
-int Ccm::read(const libcamera::YamlObject &params)
+int Ccm::read(const libcamera::ValueNode &params)
 {
 	if (params.contains("saturation")) {
 		config_.saturation = params["saturation"].get<ipa::Pwl>(ipa::Pwl{});

@@ -52,7 +52,7 @@ struct HdrConfig {
 	uint8_t diffPower;
 	double motionThreshold;
 
-	void read(const libcamera::YamlObject &params, const std::string &name);
+	void read(const libcamera::ValueNode &params, const std::string &name);
 };
 
 class Hdr : public HdrAlgorithm
@@ -61,7 +61,7 @@ public:
 	Hdr(Controller *controller);
 	char const *name() const override;
 	void switchMode(CameraMode const &cameraMode, Metadata *metadata) override;
-	int read(const libcamera::YamlObject &params) override;
+	int read(const libcamera::ValueNode &params) override;
 	void prepare(Metadata *imageMetadata) override;
 	void process(StatisticsPtr &stats, Metadata *imageMetadata) override;
 	int setMode(std::string const &mode) override;

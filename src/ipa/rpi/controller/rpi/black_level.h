@@ -18,7 +18,7 @@ class BlackLevel : public BlackLevelAlgorithm
 public:
 	BlackLevel(Controller *controller);
 	char const *name() const override;
-	int read(const libcamera::YamlObject &params) override;
+	int read(const libcamera::ValueNode &params) override;
 	void initialValues(uint16_t &blackLevelR, uint16_t &blackLevelG,
 			   uint16_t &blackLevelB) override;
 	void prepare(Metadata *imageMetadata) override;

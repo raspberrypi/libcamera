@@ -68,7 +68,7 @@ Af::CfgParams::CfgParams()
 }
 
 template<typename T>
-static void readNumber(T &dest, const libcamera::YamlObject &params, char const *name)
+static void readNumber(T &dest, const libcamera::ValueNode &params, char const *name)
 {
 	auto value = params[name].get<T>();
 	if (value)
@@ -77,7 +77,7 @@ static void readNumber(T &dest, const libcamera::YamlObject &params, char const 
 		LOG(RPiAf, Warning) << "Missing parameter \"" << name << "\"";
 }
 
-void Af::RangeDependentParams::read(const libcamera::YamlObject &params)
+void Af::RangeDependentParams::read(const libcamera::ValueNode &params)
 {
 
 	readNumber<double>(focusMin, params, "min");
@@ -85,7 +85,7 @@ void Af::RangeDependentParams::read(const libcamera::YamlObject &params)
 	readNumber<double>(focusDefault, params, "default");
 }
 
-void Af::SpeedDependentParams::read(const libcamera::YamlObject &params)
+void Af::SpeedDependentParams::read(const libcamera::ValueNode &params)
 {
 	readNumber<double>(stepCoarse, params, "step_coarse");
 	readNumber<double>(stepFine, params, "step_fine");
@@ -100,7 +100,7 @@ void Af::SpeedDependentParams::read(const libcamera::YamlObject &params)
 	readNumber<uint32_t>(stepFrames, params, "step_frames");
 }
 
-int Af::CfgParams::read(const libcamera::YamlObject &params)
+int Af::CfgParams::read(const libcamera::ValueNode &params)
 {
 	if (params.contains("ranges")) {
 		auto &rr = params["ranges"];
@@ -226,7 +226,7 @@ char const *Af::name() const
 	return NAME;
 }
 
-int Af::read(const libcamera::YamlObject &params)
+int Af::read(const libcamera::ValueNode &params)
 {
 	return cfg_.read(params);
 }

@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: CC0-1.0
 {
         "version": 1.0,
         "target": "pisp",
@@ -36,5 +37,11 @@
                 # framebuffers required for its operation.
                 #
                 # "disable_hdr": false,
+
+                # Limits the rate at which IPAs are called. The algorithms will
+                # be skipped until this many microseconds have elapsed since
+                # the last call. The default value represents a 30fps limit.
+                #
+                # "controller_min_frame_duration_us": 33333.333,
         }
 }

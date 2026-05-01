@@ -23,7 +23,7 @@ class AwbGrey : public AwbAlgorithm
 public:
 	AwbGrey() = default;
 
-	int init(const YamlObject &tuningData) override;
+	int init(const ValueNode &tuningData) override;
 	AwbResult calculateAwb(const AwbStats &stats, unsigned int lux) override;
 	std::optional<RGB<double>> gainsFromColourTemperature(double colourTemperature) override;
 

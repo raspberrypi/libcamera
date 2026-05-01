@@ -628,6 +628,7 @@ int Dw100VertexMap::setDewarpParams(const Matrix<double, 3, 3> &cm,
 Vector2d Dw100VertexMap::dewarpPoint(const Vector2d &p)
 {
 	double x, y;
+	double xout, yout;
 	double k1 = dewarpCoeffs_[0];
 	double k2 = dewarpCoeffs_[1];
 	double p1 = dewarpCoeffs_[2];
@@ -647,11 +648,11 @@ Vector2d Dw100VertexMap::dewarpPoint(const Vector2d &p)
 	double r2 = x * x + y * y;
 	double d = (1 + k1 * r2 + k2 * r2 * r2 + k3 * r2 * r2 * r2) /
 		   (1 + k4 * r2 + k5 * r2 * r2 + k6 * r2 * r2 * r2);
-	x = x * d + 2 * p1 * x * y + p2 * (r2 + 2 * x * x) + s1 * r2 + s2 * r2 * r2;
-	y = y * d + 2 * p2 * x * y + p1 * (r2 + 2 * y * y) + s3 * r2 + s4 * r2 * r2;
+	xout = x * d + 2 * p1 * x * y + p2 * (r2 + 2 * x * x) + s1 * r2 + s2 * r2 * r2;
+	yout = y * d + 2 * p2 * x * y + p1 * (r2 + 2 * y * y) + s3 * r2 + s4 * r2 * r2;
 
-	return { { x * dewarpM_[0][0] + y * dewarpM_[0][1] + dewarpM_[0][2],
-		   y * dewarpM_[1][1] + dewarpM_[1][2] } };
+	return { { xout * dewarpM_[0][0] + yout * dewarpM_[0][1] + dewarpM_[0][2],
+		   yout * dewarpM_[1][1] + dewarpM_[1][2] } };
 }
 
 } /* namespace libcamera */

@@ -1359,4 +1359,19 @@ controls:
       description: |
         Enable or disable the lens shading correction.
 
+  - Hue:
+      type: float
+      direction: inout
+      description: |
+        Adjusts the image hue (colour rotation) in degrees, as defined in
+        the HSL/HSV colour model.
+
+        The value represents a rotation around the hue circle in HSL/HSV space:
+        positive values rotate hues clockwise (for example a +60° turns
+        Red hues to Yellow hues), and negative values rotate counter-clockwise
+        (a -60° turns Red hues to Magenta hues).
+
+        The nominal range is [-180, 180], where 0° leaves hues unchanged and the
+        range wraps around continuously, with 180° == -180°.
+
 ...

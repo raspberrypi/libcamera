@@ -30,7 +30,7 @@ char const *BlackLevel::name() const
 	return NAME;
 }
 
-int BlackLevel::read(const libcamera::YamlObject &params)
+int BlackLevel::read(const libcamera::ValueNode &params)
 {
 	/* 64 in 10 bits scaled to 16 bits */
 	uint16_t blackLevel = params["black_level"].get<uint16_t>(4096);

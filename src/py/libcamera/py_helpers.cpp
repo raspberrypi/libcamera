@@ -3,13 +3,13 @@
  * Copyright (C) 2022, Tomi Valkeinen <tomi.valkeinen@ideasonboard.com>
  */
 
-#include "py_helpers.h"
-
-#include <libcamera/libcamera.h>
-
 #include <pybind11/functional.h>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
+
+#include "py_helpers.h"
+
+#include <libcamera/libcamera.h>
 
 namespace py = pybind11;
 

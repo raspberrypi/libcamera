@@ -20,7 +20,7 @@ LOG_DECLARE_CATEGORY(V4L2Compat)
 
 V4L2Camera::V4L2Camera(std::shared_ptr<Camera> camera)
 	: camera_(camera), controls_(controls::controls), isRunning_(false),
-	  bufferAllocator_(nullptr), efd_(-1), bufferAvailableCount_(0)
+	  efd_(-1), bufferAvailableCount_(0)
 {
 	camera_->requestCompleted.connect(this, &V4L2Camera::requestComplete);
 }
@@ -43,7 +43,7 @@ int V4L2Camera::open(StreamConfiguration *streamConfig)
 		return -EINVAL;
 	}
 
-	bufferAllocator_ = new FrameBufferAllocator(camera_);
+	bufferAllocator_ = std::make_unique<FrameBufferAllocator>(camera_);
 
 	*streamConfig = config_->at(0);
 	return 0;
@@ -53,8 +53,7 @@ void V4L2Camera::close()
 {
 	requestPool_.clear();
 
-	delete bufferAllocator_;
-	bufferAllocator_ = nullptr;
+	bufferAllocator_.reset();
 
 	camera_->release();
 }

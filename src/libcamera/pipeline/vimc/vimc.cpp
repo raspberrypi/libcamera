@@ -35,7 +35,6 @@
 #include "libcamera/internal/camera_sensor.h"
 #include "libcamera/internal/device_enumerator.h"
 #include "libcamera/internal/framebuffer.h"
-#include "libcamera/internal/ipa_manager.h"
 #include "libcamera/internal/media_device.h"
 #include "libcamera/internal/pipeline_handler.h"
 #include "libcamera/internal/request.h"
@@ -405,8 +404,7 @@ int PipelineHandlerVimc::processControls(VimcCameraData *data, Request *request)
 {
 	ControlList controls(data->sensor_->controls());
 
-	for (const auto &it : request->controls()) {
-		unsigned int id = it.first;
+	for (const auto &[id, value] : request->controls()) {
 		unsigned int offset;
 		uint32_t cid;
 
@@ -423,8 +421,8 @@ int PipelineHandlerVimc::processControls(VimcCameraData *data, Request *request)
 			continue;
 		}
 
-		int32_t value = std::lround(it.second.get<float>() * 128 + offset);
-		controls.set(cid, std::clamp(value, 0, 255));
+		int32_t v4l2Value = std::lround(value.get<float>() * 128 + offset);
+		controls.set(cid, std::clamp(v4l2Value, 0, 255));
 	}
 
 	for (const auto &ctrl : controls)
@@ -489,7 +487,7 @@ bool PipelineHandlerVimc::match(DeviceEnumerator *enumerator)
 	if (data->init())
 		return false;
 
-	data->ipa_ = IPAManager::createIPA<ipa::vimc::IPAProxyVimc>(this, 0, 0);
+	data->ipa_ = createIPA<ipa::vimc::IPAProxyVimc>(0, 0);
 	if (!data->ipa_) {
 		LOG(VIMC, Error) << "no matching IPA found";
 		return false;
@@ -500,7 +498,7 @@ bool PipelineHandlerVimc::match(DeviceEnumerator *enumerator)
 	std::string conf = data->ipa_->configurationFile("vimc.conf");
 	Flags<ipa::vimc::TestFlag> inFlags = ipa::vimc::TestFlag::Flag2;
 	Flags<ipa::vimc::TestFlag> outFlags;
-	data->ipa_->init(IPASettings{ conf, data->sensor_->model() },
+	data->ipa_->init(IPASettings{ conf, data->sensor_->model() }, SharedFD{},
 			 ipa::vimc::IPAOperationInit, inFlags, &outFlags);
 
 	LOG(VIMC, Debug)
@@ -607,8 +605,7 @@ void VimcCameraData::imageBufferReady(FrameBuffer *buffer)
 
 	/* If the buffer is cancelled force a complete of the whole request. */
 	if (buffer->metadata().status == FrameMetadata::FrameCancelled) {
-		for (auto it : request->buffers()) {
-			FrameBuffer *b = it.second;
+		for (const auto &[stream, b] : request->buffers()) {
 			b->_d()->cancel();
 			pipe->completeBuffer(request, b);
 		}

@@ -20,8 +20,8 @@
 #include <libcamera/property_ids.h>
 
 #include "libcamera/internal/camera_lens.h"
-#include "libcamera/internal/ipa_manager.h"
 #include "libcamera/internal/v4l2_subdevice.h"
+#include "libcamera/internal/yaml_parser.h"
 
 using namespace std::chrono_literals;
 
@@ -32,6 +32,12 @@ using namespace RPi;
 LOG_DEFINE_CATEGORY(RPI)
 
 using StreamFlag = RPi::Stream::StreamFlag;
+
+/*
+ * The IPA's algorithms will not be called more often than this many
+ * microseconds. The default corresponds to 30fps.
+ */
+constexpr float defaultControllerMinimumFrameDurationUs = 1000000.0 / 30.0;
 
 namespace {
 
@@ -508,7 +514,7 @@ int PipelineHandlerBase::configure(Camera *camera, CameraConfiguration *config)
 
 	/* Start by freeing all buffers and reset the stream states. */
 	data->freeBuffers();
-	for (auto const stream : data->streams_)
+	for (const auto stream : data->streams_)
 		stream->clearFlags(StreamFlag::External);
 
 	/*
@@ -561,7 +567,7 @@ int PipelineHandlerBase::configure(Camera *camera, CameraConfiguration *config)
 
 	/* Update the controls that the Raspberry Pi IPA can handle. */
 	ControlInfoMap::Map ctrlMap;
-	for (auto const &c : result.controlInfo)
+	for (const auto &c : result.controlInfo)
 		ctrlMap.emplace(c.first, c.second);
 
 	const auto cropParamsIt = data->cropParams_.find(0);
@@ -663,7 +669,7 @@ int PipelineHandlerBase::start(Camera *camera, const ControlList *controls)
 	data->startupFrameCount_ = result.startupFrameCount;
 	data->invalidFrameCount_ = result.invalidFrameCount;
 
-	for (auto const stream : data->streams_)
+	for (const auto stream : data->streams_)
 		stream->resetBuffers();
 
 	if (!data->buffersAllocated_) {
@@ -701,7 +707,7 @@ int PipelineHandlerBase::start(Camera *camera, const ControlList *controls)
 	data->platformStart();
 
 	/* Start all streams. */
-	for (auto const stream : data->streams_) {
+	for (const auto stream : data->streams_) {
 		ret = stream->dev()->streamOn();
 		if (ret) {
 			stop(camera);
@@ -719,7 +725,7 @@ void PipelineHandlerBase::stopDevice(Camera *camera)
 	data->state_ = CameraData::State::Stopped;
 	data->platformStop();
 
-	for (auto const stream : data->streams_) {
+	for (const auto stream : data->streams_) {
 		stream->dev()->streamOff();
 		stream->dev()->releaseBuffers();
 	}
@@ -800,8 +806,14 @@ int PipelineHandlerBase::registerCamera(std::unique_ptr<RPi::CameraData> &camera
 	if (!data->sensor_)
 		return -EINVAL;
 
+	ret = data->loadPipelineConfiguration();
+	if (ret) {
+		LOG(RPI, Error) << "Unable to load pipeline configuration";
+		return ret;
+	}
+
 	/* Populate the map of sensor supported formats and sizes. */
-	for (auto const mbusCode : data->sensor_->mbusCodes())
+	for (const auto mbusCode : data->sensor_->mbusCodes())
 		data->sensorFormats_.emplace(mbusCode,
 					     data->sensor_->sizes(mbusCode));
 
@@ -859,12 +871,6 @@ int PipelineHandlerBase::registerCamera(std::unique_ptr<RPi::CameraData> &camera
 	if (ret)
 		return ret;
 
-	ret = data->loadPipelineConfiguration();
-	if (ret) {
-		LOG(RPI, Error) << "Unable to load pipeline configuration";
-		return ret;
-	}
-
 	/* Setup the general IPA signal handlers. */
 	data->frontendDevice()->dequeueTimeout.connect(data, &RPi::CameraData::cameraTimeout);
 	data->frontendDevice()->frameStart.connect(data, &RPi::CameraData::frameStarted);
@@ -886,7 +892,7 @@ void PipelineHandlerBase::mapBuffers(Camera *camera, const BufferMap &buffers, u
 	 * This will allow us to identify buffers passed between the pipeline
 	 * handler and the IPA.
 	 */
-	for (auto const &[id, buffer] : buffers) {
+	for (const auto &[id, buffer] : buffers) {
 		Span<const FrameBuffer::Plane> planes = buffer.buffer->planes();
 
 		bufferIds.emplace_back(mask | id,
@@ -902,7 +908,7 @@ int PipelineHandlerBase::queueAllBuffers(Camera *camera)
 	CameraData *data = cameraData(camera);
 	int ret;
 
-	for (auto const stream : data->streams_) {
+	for (const auto stream : data->streams_) {
 		ret = stream->dev()->importBuffers(VIDEO_MAX_FRAME);
 		if (ret < 0)
 			return ret;
@@ -941,13 +947,12 @@ V4L2SubdeviceFormat CameraData::findBestFormat(const Size &req, unsigned int bit
 	constexpr float penaltyBitDepth = 500.0;
 
 	/* Calculate the closest/best mode from the user requested size. */
-	for (const auto &iter : sensorFormats_) {
-		const unsigned int mbusCode = iter.first;
+	for (const auto &[mbusCode, sizes] : sensorFormats_) {
 		const PixelFormat format = mbusCodeToPixelFormat(mbusCode,
 								 BayerFormat::Packing::None);
 		const PixelFormatInfo &info = PixelFormatInfo::info(format);
 
-		for (const Size &size : iter.second) {
+		for (const Size &size : sizes) {
 			double reqAr = static_cast<double>(req.width) / req.height;
 			double fmtAr = static_cast<double>(size.width) / size.height;
 
@@ -988,7 +993,7 @@ void CameraData::freeBuffers()
 		bufferIds_.clear();
 	}
 
-	for (auto const stream : streams_)
+	for (const auto stream : streams_)
 		stream->releaseBuffers();
 
 	platformFreeBuffers();
@@ -1096,6 +1101,7 @@ int CameraData::loadPipelineConfiguration()
 {
 	config_ = {
 		.cameraTimeoutValue = 0,
+		.controllerMinFrameDurationUs = defaultControllerMinimumFrameDurationUs,
 	};
 
 	/* Initial configuration of the platform, in case no config file is present */
@@ -1116,7 +1122,7 @@ int CameraData::loadPipelineConfiguration()
 
 	LOG(RPI, Info) << "Using configuration file '" << filename << "'";
 
-	std::unique_ptr<YamlObject> root = YamlParser::parse(file);
+	std::unique_ptr<ValueNode> root = YamlParser::parse(file);
 	if (!root) {
 		LOG(RPI, Warning) << "Failed to parse configuration file, using defaults";
 		return 0;
@@ -1129,7 +1135,7 @@ int CameraData::loadPipelineConfiguration()
 		return 0;
 	}
 
-	const YamlObject &phConfig = (*root)["pipeline_handler"];
+	const ValueNode &phConfig = (*root)["pipeline_handler"];
 
 	if (phConfig.contains("disable_startup_frame_drops"))
 		LOG(RPI, Warning)
@@ -1145,6 +1151,9 @@ int CameraData::loadPipelineConfiguration()
 		frontendDevice()->setDequeueTimeout(config_.cameraTimeoutValue * 1ms);
 	}
 
+	config_.controllerMinFrameDurationUs =
+		phConfig["controller_min_frame_duration_us"].get<double>(config_.controllerMinFrameDurationUs);
+
 	return platformPipelineConfigure(root);
 }
 
@@ -1152,7 +1161,7 @@ int CameraData::loadIPA(ipa::RPi::InitResult *result)
 {
 	int ret;
 
-	ipa_ = IPAManager::createIPA<ipa::RPi::IPAProxyRPi>(pipe(), 1, 1);
+	ipa_ = pipe()->createIPA<ipa::RPi::IPAProxyRPi>(1, 1);
 
 	if (!ipa_)
 		return -ENOENT;
@@ -1173,6 +1182,8 @@ int CameraData::loadIPA(ipa::RPi::InitResult *result)
 	}
 
 	params.lensPresent = !!sensor_->focusLens();
+	params.controllerMinFrameDurationUs = config_.controllerMinFrameDurationUs;
+
 	ret = platformInitIpa(params);
 	if (ret)
 		return ret;
@@ -1323,7 +1334,7 @@ void CameraData::applyScalerCrop(const ControlList &controls)
 			scalerCrops.push_back(*scalerCropCore);
 	}
 
-	for (auto const &[i, scalerCrop] : utils::enumerate(scalerCrops)) {
+	for (const auto &[i, scalerCrop] : utils::enumerate(scalerCrops)) {
 		Rectangle nativeCrop = scalerCrop;
 
 		if (!nativeCrop.width || !nativeCrop.height)
@@ -1365,7 +1376,7 @@ void CameraData::cameraTimeout()
 	 * stop all devices streaming, and return any outstanding requests as
 	 * incomplete and cancelled.
 	 */
-	for (auto const stream : streams_)
+	for (const auto stream : streams_)
 		stream->dev()->streamOff();
 
 	clearIncompleteRequests();
@@ -1505,7 +1516,7 @@ void CameraData::fillRequestMetadata(const ControlList &bufferControls, Request 
 	if (cropParams_.size()) {
 		std::vector<Rectangle> crops;
 
-		for (auto const &[k, v] : cropParams_)
+		for (const auto &[k, v] : cropParams_)
 			crops.push_back(scaleIspCrop(v.ispCrop));
 
 		request->_d()->metadata().set(controls::ScalerCrop, crops[0]);

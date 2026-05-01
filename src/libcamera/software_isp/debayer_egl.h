@@ -35,46 +35,38 @@ namespace libcamera {
 #define DEBAYER_EGL_MIN_SIMPLE_RGB_GAIN_TEXTURE_UNITS 4
 #define DEBAYER_OPENGL_COORDS 4
 
+class CameraManager;
+
 class DebayerEGL : public Debayer
 {
 public:
-	DebayerEGL(std::unique_ptr<SwStatsCpu> stats, const GlobalConfiguration &configuration);
+	DebayerEGL(std::unique_ptr<SwStatsCpu> stats, const CameraManager &cm);
 	~DebayerEGL();
 
 	int configure(const StreamConfiguration &inputCfg,
-		      const std::vector<std::reference_wrapper<StreamConfiguration>> &outputCfgs,
-		      bool ccmEnabled);
+		      const std::vector<std::reference_wrapper<const StreamConfiguration>> &outputCfgs,
+		      bool ccmEnabled) override;
 
-	Size patternSize(PixelFormat inputFormat);
+	Size patternSize(PixelFormat inputFormat) override;
 
-	std::vector<PixelFormat> formats(PixelFormat input);
-	std::tuple<unsigned int, unsigned int> strideAndFrameSize(const PixelFormat &outputFormat, const Size &size);
+	std::vector<PixelFormat> formats(PixelFormat input) override;
+	std::tuple<unsigned int, unsigned int> strideAndFrameSize(const PixelFormat &outputFormat, const Size &size) override;
 
-	void process(uint32_t frame, FrameBuffer *input, FrameBuffer *output, DebayerParams params);
-	int start();
-	void stop();
+	void process(uint32_t frame, FrameBuffer *input, FrameBuffer *output, const DebayerParams &params) override;
+	int start() override;
+	void stop() override;
 
-	const SharedFD &getStatsFD() { return stats_->getStatsFD(); }
-	unsigned int frameSize();
+	const SharedFD &getStatsFD() override { return stats_->getStatsFD(); }
 
-	SizeRange sizes(PixelFormat inputFormat, const Size &inputSize);
+	SizeRange sizes(PixelFormat inputFormat, const Size &inputSize) override;
 
 private:
 	static int getInputConfig(PixelFormat inputFormat, DebayerInputConfig &config);
 	static int getOutputConfig(PixelFormat outputFormat, DebayerOutputConfig &config);
-	int setupStandardBayerOrder(BayerFormat::Order order);
-	void pushEnv(std::vector<std::string> &shaderEnv, const char *str);
 	int initBayerShaders(PixelFormat inputFormat, PixelFormat outputFormat);
-	int initEGLContext();
-	int generateTextures();
-	int compileShaderProgram(GLuint &shaderId, GLenum shaderType,
-				 unsigned char *shaderData, int shaderDataLen,
-				 std::vector<std::string> shaderEnv);
-	int linkShaderProgram(void);
 	int getShaderVariableLocations();
-	void setShaderVariableValues(DebayerParams &params);
-	void configureTexture(GLuint &texture);
-	int debayerGPU(MappedFrameBuffer &in, int out_fd, DebayerParams &params);
+	void setShaderVariableValues(const DebayerParams &params);
+	int debayerGPU(MappedFrameBuffer &in, int out_fd, const DebayerParams &params);
 
 	/* Shader program identifiers */
 	GLuint vertexShaderId_ = 0;

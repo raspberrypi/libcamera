@@ -50,7 +50,7 @@ protected:
 class {{proxy_name}}Threaded : public {{proxy_name}}
 {
 public:
-	{{proxy_name}}Threaded(IPAModule *ipam, const GlobalConfiguration &configuration);
+	{{proxy_name}}Threaded(IPAModule *ipam, const CameraManager &cm);
 	~{{proxy_name}}Threaded();
 
 {% for method in interface_main.methods %}
@@ -112,7 +112,7 @@ private:
 class {{proxy_name}}Isolated : public {{proxy_name}}
 {
 public:
-	{{proxy_name}}Isolated(IPAModule *ipam, const GlobalConfiguration &configuration);
+	{{proxy_name}}Isolated(IPAModule *ipam, const CameraManager &cm);
 	~{{proxy_name}}Isolated();
 
 {% for method in interface_main.methods %}

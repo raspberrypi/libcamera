@@ -3,5 +3,6 @@
 /googletest-release*
 /libpisp
 /libyuv
+/nlohmann_json*
 /packagecache
 /yaml-0.2.5

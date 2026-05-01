@@ -548,7 +548,7 @@ Size V4L2M2MConverter::adjustSizes(const Size &cfgSize,
  * \copydoc libcamera::Converter::configure
  */
 int V4L2M2MConverter::configure(const StreamConfiguration &inputCfg,
-				const std::vector<std::reference_wrapper<StreamConfiguration>> &outputCfgs)
+				const std::vector<std::reference_wrapper<const StreamConfiguration>> &outputCfgs)
 {
 	int ret = 0;
 
@@ -646,8 +646,8 @@ int V4L2M2MConverter::start()
 {
 	int ret;
 
-	for (auto &iter : streams_) {
-		ret = iter.second->start();
+	for (auto &[stream, m2mStream] : streams_) {
+		ret = m2mStream->start();
 		if (ret < 0) {
 			stop();
 			return ret;
@@ -662,8 +662,8 @@ int V4L2M2MConverter::start()
  */
 void V4L2M2MConverter::stop()
 {
-	for (auto &iter : streams_)
-		iter.second->stop();
+	for (auto &[stream, m2mStream] : streams_)
+		m2mStream->stop();
 }
 
 /**

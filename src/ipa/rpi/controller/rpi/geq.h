@@ -26,7 +26,7 @@ class Geq : public Algorithm
 public:
 	Geq(Controller *controller);
 	char const *name() const override;
-	int read(const libcamera::YamlObject &params) override;
+	int read(const libcamera::ValueNode &params) override;
 	void prepare(Metadata *imageMetadata) override;
 
 private:

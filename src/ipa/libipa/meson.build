@@ -17,6 +17,7 @@ libipa_headers = files([
     'lux.h',
     'module.h',
     'pwl.h',
+    'quantized.h',
     'v4l2_params.h',
 ])
 
@@ -37,6 +38,7 @@ libipa_sources = files([
     'lux.cpp',
     'module.cpp',
     'pwl.cpp',
+    'quantized.cpp',
     'v4l2_params.cpp',
 ])
 

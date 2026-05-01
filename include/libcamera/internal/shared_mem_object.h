@@ -79,7 +79,7 @@ public:
 	SharedMemObject(SharedMemObject<T> &&rhs)
 		: SharedMem(std::move(rhs))
 	{
-		this->obj_ = rhs.obj_;
+		obj_ = rhs.obj_;
 		rhs.obj_ = nullptr;
 	}
 
@@ -92,7 +92,7 @@ public:
 	SharedMemObject<T> &operator=(SharedMemObject<T> &&rhs)
 	{
 		SharedMem::operator=(std::move(rhs));
-		this->obj_ = rhs.obj_;
+		obj_ = rhs.obj_;
 		rhs.obj_ = nullptr;
 		return *this;
 	}

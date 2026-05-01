@@ -10,7 +10,7 @@
 #include <libcamera/base/log.h>
 #include <libcamera/base/utils.h>
 
-#include "libcamera/internal/yaml_parser.h"
+#include "libcamera/internal/value_node.h"
 
 #include <libipa/agc_mean_luminance.h>
 #include <libipa/histogram.h>
@@ -110,7 +110,7 @@ WideDynamicRange::WideDynamicRange()
  * \copydoc libcamera::ipa::Algorithm::init
  */
 int WideDynamicRange::init([[maybe_unused]] IPAContext &context,
-			   [[maybe_unused]] const YamlObject &tuningData)
+			   [[maybe_unused]] const ValueNode &tuningData)
 {
 	if (!(context.hw.supportedBlocks & 1 << RKISP1_EXT_PARAMS_BLOCK_TYPE_WDR)) {
 		LOG(RkISP1Wdr, Error)

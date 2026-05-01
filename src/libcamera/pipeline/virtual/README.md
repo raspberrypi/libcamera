@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: CC-BY-SA-4.0 -->
+
 # Virtual Pipeline Handler
 
 Virtual pipeline handler emulates fake external camera(s) for testing.
@@ -9,6 +11,7 @@ Virtual pipeline handler emulates fake external camera(s) for testing.
   `share/libcamera/pipeline/virtual/virtual.yaml`.
 
 ### Config File Format
+
 The config file contains the information about cameras' properties to register.
 The config file should be a yaml file with dictionary of the cameraIds
 associated with their properties as top level. The default value will be applied
@@ -48,7 +51,7 @@ in Virtual Pipeline Handler. `parseConfigFile()` is exposed to use in
 Virtual Pipeline Handler.
 
 This is the procedure of the Parser class:
-1. `parseConfigFile()` parses the config file to `YamlObject` using `YamlParser::parse()`.
+1. `parseConfigFile()` parses the config file to `ValueNode` using `YamlParser::parse()`.
     - Parse the top level of config file which are the camera ids and look into
       each camera properties.
 2. For each camera, `parseCameraConfigData()` returns a camera with the configuration.

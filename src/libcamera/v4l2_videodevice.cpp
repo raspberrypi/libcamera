@@ -206,7 +206,7 @@ V4L2BufferCache::~V4L2BufferCache()
  */
 bool V4L2BufferCache::isEmpty() const
 {
-	for (auto const &entry : cache_) {
+	for (const auto &entry : cache_) {
 		if (!entry.free_)
 			return false;
 	}
@@ -535,8 +535,7 @@ std::ostream &operator<<(std::ostream &out, const V4L2DeviceFormat &f)
  */
 V4L2VideoDevice::V4L2VideoDevice(const std::string &deviceNode)
 	: V4L2Device(deviceNode), formatInfo_(nullptr), cache_(nullptr),
-	  fdBufferNotifier_(nullptr), state_(State::Stopped),
-	  watchdogDuration_(0.0)
+	  state_(State::Stopped), watchdogDuration_(0.0)
 {
 	/*
 	 * We default to an MMAP based CAPTURE video device, however this will
@@ -626,7 +625,7 @@ int V4L2VideoDevice::open()
 		return -EINVAL;
 	}
 
-	fdBufferNotifier_ = new EventNotifier(fd(), notifierType);
+	fdBufferNotifier_ = std::make_unique<EventNotifier>(fd(), notifierType);
 	fdBufferNotifier_->activated.connect(this, &V4L2VideoDevice::bufferAvailable);
 	fdBufferNotifier_->setEnabled(false);
 
@@ -715,7 +714,7 @@ int V4L2VideoDevice::open(SharedFD handle, enum v4l2_buf_type type)
 		return -EINVAL;
 	}
 
-	fdBufferNotifier_ = new EventNotifier(fd(), notifierType);
+	fdBufferNotifier_ = std::make_unique<EventNotifier>(fd(), notifierType);
 	fdBufferNotifier_->activated.connect(this, &V4L2VideoDevice::bufferAvailable);
 	fdBufferNotifier_->setEnabled(false);
 
@@ -760,7 +759,7 @@ void V4L2VideoDevice::close()
 		return;
 
 	releaseBuffers();
-	delete fdBufferNotifier_;
+	fdBufferNotifier_.reset();
 
 	formatInfo_ = nullptr;
 
@@ -1374,7 +1373,7 @@ int V4L2VideoDevice::allocateBuffers(unsigned int count,
 	if (ret < 0)
 		return ret;
 
-	cache_ = new V4L2BufferCache(*buffers);
+	cache_ = std::make_unique<V4L2BufferCache>(*buffers);
 	memoryType_ = V4L2_MEMORY_MMAP;
 
 	return ret;
@@ -1599,7 +1598,7 @@ int V4L2VideoDevice::importBuffers(unsigned int count)
 	if (ret)
 		return ret;
 
-	cache_ = new V4L2BufferCache(count);
+	cache_ = std::make_unique<V4L2BufferCache>(count);
 
 	LOG(V4L2, Debug) << "Prepared to import " << count << " buffers";
 
@@ -1621,8 +1620,7 @@ int V4L2VideoDevice::releaseBuffers()
 
 	LOG(V4L2, Debug) << "Releasing buffers";
 
-	delete cache_;
-	cache_ = nullptr;
+	cache_.reset();
 
 	return requestBuffers(0, memoryType_);
 }
@@ -2042,10 +2040,8 @@ int V4L2VideoDevice::streamOff()
 	state_ = State::Stopping;
 
 	/* Send back all queued buffers. */
-	for (auto it : queuedBuffers_) {
-		FrameBuffer *buffer = it.second;
-
-		cache_->put(it.first);
+	for (const auto &[id, buffer] : queuedBuffers_) {
+		cache_->put(id);
 		buffer->_d()->cancel();
 		bufferReady.emit(buffer);
 	}
@@ -2199,14 +2195,12 @@ V4L2PixelFormat V4L2VideoDevice::toV4L2PixelFormat(const PixelFormat &pixelForma
 V4L2M2MDevice::V4L2M2MDevice(const std::string &deviceNode)
 	: deviceNode_(deviceNode)
 {
-	output_ = new V4L2VideoDevice(deviceNode);
-	capture_ = new V4L2VideoDevice(deviceNode);
+	output_ = std::make_unique<V4L2VideoDevice>(deviceNode);
+	capture_ = std::make_unique<V4L2VideoDevice>(deviceNode);
 }
 
 V4L2M2MDevice::~V4L2M2MDevice()
 {
-	delete capture_;
-	delete output_;
 }
 
 /**

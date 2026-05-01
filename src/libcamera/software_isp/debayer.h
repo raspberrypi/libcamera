@@ -22,12 +22,12 @@
 
 #include "libcamera/internal/bayer_format.h"
 #include "libcamera/internal/dma_buf_allocator.h"
-#include "libcamera/internal/global_configuration.h"
 #include "libcamera/internal/software_isp/benchmark.h"
 #include "libcamera/internal/software_isp/debayer_params.h"
 
 namespace libcamera {
 
+class CameraManager;
 class FrameBuffer;
 
 LOG_DECLARE_CATEGORY(Debayer)
@@ -35,11 +35,11 @@ LOG_DECLARE_CATEGORY(Debayer)
 class Debayer : public Object
 {
 public:
-	Debayer(const GlobalConfiguration &configuration);
+	Debayer(const CameraManager &cm);
 	virtual ~Debayer() = 0;
 
 	virtual int configure(const StreamConfiguration &inputCfg,
-			      const std::vector<std::reference_wrapper<StreamConfiguration>> &outputCfgs,
+			      const std::vector<std::reference_wrapper<const StreamConfiguration>> &outputCfgs,
 			      bool ccmEnabled) = 0;
 
 	virtual std::vector<PixelFormat> formats(PixelFormat inputFormat) = 0;
@@ -47,7 +47,7 @@ public:
 	virtual std::tuple<unsigned int, unsigned int>
 	strideAndFrameSize(const PixelFormat &outputFormat, const Size &size) = 0;
 
-	virtual void process(uint32_t frame, FrameBuffer *input, FrameBuffer *output, DebayerParams params) = 0;
+	virtual void process(uint32_t frame, FrameBuffer *input, FrameBuffer *output, const DebayerParams &params) = 0;
 	virtual int start() { return 0; }
 	virtual void stop() {}
 

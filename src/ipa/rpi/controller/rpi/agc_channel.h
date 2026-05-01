@@ -26,13 +26,13 @@ using AgcChannelTotalExposures = std::vector<libcamera::utils::Duration>;
 
 struct AgcMeteringMode {
 	std::vector<double> weights;
-	int read(const libcamera::YamlObject &params);
+	int read(const libcamera::ValueNode &params);
 };
 
 struct AgcExposureMode {
 	std::vector<libcamera::utils::Duration> exposureTime;
 	std::vector<double> gain;
-	int read(const libcamera::YamlObject &params);
+	int read(const libcamera::ValueNode &params);
 };
 
 struct AgcConstraint {
@@ -42,7 +42,7 @@ struct AgcConstraint {
 	double qLo;
 	double qHi;
 	libcamera::ipa::Pwl yTarget;
-	int read(const libcamera::YamlObject &params);
+	int read(const libcamera::ValueNode &params);
 };
 
 typedef std::vector<AgcConstraint> AgcConstraintMode;
@@ -53,11 +53,11 @@ struct AgcChannelConstraint {
 	Bound bound;
 	unsigned int channel;
 	double factor;
-	int read(const libcamera::YamlObject &params);
+	int read(const libcamera::ValueNode &params);
 };
 
 struct AgcConfig {
-	int read(const libcamera::YamlObject &params);
+	int read(const libcamera::ValueNode &params);
 	std::map<std::string, AgcMeteringMode> meteringModes;
 	std::map<std::string, AgcExposureMode> exposureModes;
 	std::map<std::string, AgcConstraintMode> constraintModes;
@@ -85,7 +85,7 @@ class AgcChannel
 {
 public:
 	AgcChannel();
-	int read(const libcamera::YamlObject &params,
+	int read(const libcamera::ValueNode &params,
 		 const Controller::HardwareConfig &hardwareConfig);
 	unsigned int getConvergenceFrames() const;
 	std::vector<double> const &getWeights() const;

@@ -87,7 +87,7 @@ namespace ipa {
  * \fn Module::createAlgorithms()
  * \brief Create algorithms from YAML configuration data
  * \param[in] context The IPA context
- * \param[in] algorithms Algorithms configuration data as a parsed YamlObject
+ * \param[in] algorithms Algorithms configuration data as a parsed ValueNode
  *
  * This function iterates over the list of \a algorithms parsed from the YAML
  * configuration file, and instantiates and initializes the corresponding

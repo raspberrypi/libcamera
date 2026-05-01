@@ -97,7 +97,7 @@ ConverterDW100Module::createModule(DeviceEnumerator *enumerator)
  * \sa Dw100VertexMap::setDewarpParams()
  * \return 0 if successful, an error code otherwise
  */
-int ConverterDW100Module::init(const YamlObject &params)
+int ConverterDW100Module::init(const ValueNode &params)
 {
 	DewarpParms dp;
 
@@ -126,7 +126,7 @@ int ConverterDW100Module::init(const YamlObject &params)
 		return -EINVAL;
 	}
 
-	const auto coeffs = coefficients.getList<double>();
+	const auto coeffs = coefficients.get<std::vector<double>>();
 	if (!coeffs) {
 		LOG(Converter, Error) << "Dewarp parameters 'coefficients' value is not a list";
 		return -EINVAL;
@@ -142,7 +142,7 @@ int ConverterDW100Module::init(const YamlObject &params)
  * \copydoc libcamera::V4L2M2MConverter::configure
  */
 int ConverterDW100Module::configure(const StreamConfiguration &inputCfg,
-				    const std::vector<std::reference_wrapper<StreamConfiguration>>
+				    const std::vector<std::reference_wrapper<const StreamConfiguration>>
 					    &outputCfgs)
 {
 	int ret;

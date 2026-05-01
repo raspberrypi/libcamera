@@ -1,4 +1,9 @@
+# SPDX-License-Identifier: BSD-2-Clause
+#
+# Copyright (C) 2023, Raspberry Pi Ltd
+#
 # Program to convert from RGB to LAB color space
+
 def RGB_to_LAB(RGB):  # where RGB is a 1x3 array.   e.g RGB = [100, 255, 230]
     num = 0
     XYZ = [0, 0, 0]

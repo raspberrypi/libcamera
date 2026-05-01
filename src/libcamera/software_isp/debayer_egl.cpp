@@ -29,13 +29,12 @@ namespace libcamera {
  */
 
 /**
- * \fn DebayerEGL::DebayerEGL(std::unique_ptr<SwStatsCpu> stats, const GlobalConfiguration &configuration)
  * \brief Construct a DebayerEGL object
  * \param[in] stats Statistics processing object
- * \param[in] configuration Global configuration reference
+ * \param[in] cm The camera manager
  */
-DebayerEGL::DebayerEGL(std::unique_ptr<SwStatsCpu> stats, const GlobalConfiguration &configuration)
-	: Debayer(configuration), stats_(std::move(stats))
+DebayerEGL::DebayerEGL(std::unique_ptr<SwStatsCpu> stats, const CameraManager &cm)
+	: Debayer(cm), stats_(std::move(stats))
 {
 }
 
@@ -276,18 +275,8 @@ int DebayerEGL::initBayerShaders(PixelFormat inputFormat, PixelFormat outputForm
 	return getShaderVariableLocations();
 }
 
-/**
- * \brief Get the output frame size
- *
- * \return The output frame size
- */
-unsigned int DebayerEGL::frameSize()
-{
-	return outputConfig_.frameSize;
-}
-
 int DebayerEGL::configure(const StreamConfiguration &inputCfg,
-			  const std::vector<std::reference_wrapper<StreamConfiguration>> &outputCfgs,
+			  const std::vector<std::reference_wrapper<const StreamConfiguration>> &outputCfgs,
 			  [[maybe_unused]] bool ccmEnabled)
 {
 	if (getInputConfig(inputCfg.pixelFormat, inputConfig_) != 0)
@@ -317,7 +306,7 @@ int DebayerEGL::configure(const StreamConfiguration &inputCfg,
 		return -EINVAL;
 	}
 
-	StreamConfiguration &outputCfg = outputCfgs[0];
+	const StreamConfiguration &outputCfg = outputCfgs[0];
 	SizeRange outSizeRange = sizes(inputCfg.pixelFormat, inputCfg.size);
 	std::tie(outputConfig_.stride, outputConfig_.frameSize) =
 		strideAndFrameSize(outputCfg.pixelFormat, outputCfg.size);
@@ -383,7 +372,7 @@ DebayerEGL::strideAndFrameSize(const PixelFormat &outputFormat, const Size &size
 	return std::make_tuple(stride, stride * size.height);
 }
 
-void DebayerEGL::setShaderVariableValues(DebayerParams &params)
+void DebayerEGL::setShaderVariableValues(const DebayerParams &params)
 {
 	/*
 	 * Raw Bayer 8-bit, and packed raw Bayer 10-bit/12-bit formats
@@ -506,7 +495,7 @@ void DebayerEGL::setShaderVariableValues(DebayerParams &params)
 	return;
 }
 
-int DebayerEGL::debayerGPU(MappedFrameBuffer &in, int out_fd, DebayerParams &params)
+int DebayerEGL::debayerGPU(MappedFrameBuffer &in, int out_fd, const DebayerParams &params)
 {
 	/* eGL context switch */
 	egl_.makeCurrent();
@@ -533,7 +522,7 @@ int DebayerEGL::debayerGPU(MappedFrameBuffer &in, int out_fd, DebayerParams &par
 	return 0;
 }
 
-void DebayerEGL::process(uint32_t frame, FrameBuffer *input, FrameBuffer *output, DebayerParams params)
+void DebayerEGL::process(uint32_t frame, FrameBuffer *input, FrameBuffer *output, const DebayerParams &params)
 {
 	bench_.startFrame();
 

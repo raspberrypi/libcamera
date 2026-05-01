@@ -21,7 +21,7 @@ LOG_DEFINE_CATEGORY(RPiDenoise)
 
 #define NAME "rpi.denoise"
 
-int DenoiseConfig::read(const libcamera::YamlObject &params)
+int DenoiseConfig::read(const libcamera::ValueNode &params)
 {
 	sdnEnable = params.contains("sdn");
 	if (sdnEnable) {
@@ -82,7 +82,7 @@ char const *Denoise::name() const
 	return NAME;
 }
 
-int Denoise::read(const libcamera::YamlObject &params)
+int Denoise::read(const libcamera::ValueNode &params)
 {
 	if (!params.contains("normal")) {
 		configs_["normal"].read(params);

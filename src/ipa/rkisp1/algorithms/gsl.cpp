@@ -10,7 +10,7 @@
 #include <libcamera/base/log.h>
 #include <libcamera/base/utils.h>
 
-#include "libcamera/internal/yaml_parser.h"
+#include "libcamera/internal/value_node.h"
 
 #include "linux/rkisp1-config.h"
 
@@ -56,10 +56,10 @@ GammaSensorLinearization::GammaSensorLinearization()
  * \copydoc libcamera::ipa::Algorithm::init
  */
 int GammaSensorLinearization::init([[maybe_unused]] IPAContext &context,
-				   const YamlObject &tuningData)
+				   const ValueNode &tuningData)
 {
 	std::vector<uint16_t> xIntervals =
-		tuningData["x-intervals"].getList<uint16_t>().value_or(std::vector<uint16_t>{});
+		tuningData["x-intervals"].get<std::vector<uint16_t>>().value_or(std::vector<uint16_t>{});
 	if (xIntervals.size() != kDegammaXIntervals) {
 		LOG(RkISP1Gsl, Error)
 			<< "Invalid 'x' coordinates: expected "
@@ -75,7 +75,7 @@ int GammaSensorLinearization::init([[maybe_unused]] IPAContext &context,
 	for (unsigned int i = 0; i < kDegammaXIntervals; ++i)
 		gammaDx_[i / 8] |= (xIntervals[i] & 0x07) << ((i % 8) * 4);
 
-	const YamlObject &yObject = tuningData["y"];
+	const ValueNode &yObject = tuningData["y"];
 	if (!yObject.isDictionary()) {
 		LOG(RkISP1Gsl, Error)
 			<< "Issue while parsing 'y' in tuning file: "
@@ -83,7 +83,7 @@ int GammaSensorLinearization::init([[maybe_unused]] IPAContext &context,
 		return -EINVAL;
 	}
 
-	curveYr_ = yObject["red"].getList<uint16_t>().value_or(std::vector<uint16_t>{});
+	curveYr_ = yObject["red"].get<std::vector<uint16_t>>().value_or(std::vector<uint16_t>{});
 	if (curveYr_.size() != RKISP1_CIF_ISP_DEGAMMA_CURVE_SIZE) {
 		LOG(RkISP1Gsl, Error)
 			<< "Invalid 'y:red' coordinates: expected "
@@ -92,7 +92,7 @@ int GammaSensorLinearization::init([[maybe_unused]] IPAContext &context,
 		return -EINVAL;
 	}
 
-	curveYg_ = yObject["green"].getList<uint16_t>().value_or(std::vector<uint16_t>{});
+	curveYg_ = yObject["green"].get<std::vector<uint16_t>>().value_or(std::vector<uint16_t>{});
 	if (curveYg_.size() != RKISP1_CIF_ISP_DEGAMMA_CURVE_SIZE) {
 		LOG(RkISP1Gsl, Error)
 			<< "Invalid 'y:green' coordinates: expected "
@@ -101,7 +101,7 @@ int GammaSensorLinearization::init([[maybe_unused]] IPAContext &context,
 		return -EINVAL;
 	}
 
-	curveYb_ = yObject["blue"].getList<uint16_t>().value_or(std::vector<uint16_t>{});
+	curveYb_ = yObject["blue"].get<std::vector<uint16_t>>().value_or(std::vector<uint16_t>{});
 	if (curveYb_.size() != RKISP1_CIF_ISP_DEGAMMA_CURVE_SIZE) {
 		LOG(RkISP1Gsl, Error)
 			<< "Invalid 'y:blue' coordinates: expected "

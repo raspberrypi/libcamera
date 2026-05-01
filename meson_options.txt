@@ -16,6 +16,21 @@ option('cam',
         value : 'disabled',
         description : 'Compile the cam test application')
 
+option('cam-output-kms',
+        type : 'feature',
+        value : 'auto',
+        description : 'Enable KMS output in the cam application')
+
+option('cam-output-sdl2',
+        type : 'feature',
+        value : 'auto',
+        description : 'Enable SDL2 output in the cam application')
+
+option('cam-jpeg',
+        type : 'feature',
+        value : 'auto',
+        description : 'Enable JPEG support in the cam application')
+
 option('documentation',
         type : 'feature',
         value : 'disabled',
@@ -42,6 +57,16 @@ option('lc-compliance',
         type : 'feature',
         value : 'disabled',
         description : 'Compile the lc-compliance test application')
+
+option('libdw',
+        type : 'feature',
+        value : 'auto',
+        description : 'Enable libdw integration for backtrace symbolization')
+
+option('apps-output-dng',
+        type : 'feature',
+        value : 'auto',
+        description : 'Enable DNG file creation support in the cam and qcam applications')
 
 option('libunwind',
         type : 'feature',
@@ -82,6 +107,11 @@ option('rpi-awb-nn',
         type : 'feature',
         value : 'auto',
         description : 'Enable the Raspberry Pi Neural Network AWB algorithm')
+
+option('softisp-gpu',
+        type : 'feature',
+        value : 'auto',
+        description : 'Enable GPU accelerated processing in the software ISP')
 
 option('test',
         type : 'boolean',

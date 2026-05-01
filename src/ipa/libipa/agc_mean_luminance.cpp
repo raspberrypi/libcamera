@@ -159,7 +159,7 @@ AgcMeanLuminance::AgcMeanLuminance()
 
 AgcMeanLuminance::~AgcMeanLuminance() = default;
 
-int AgcMeanLuminance::parseRelativeLuminanceTarget(const YamlObject &tuningData)
+int AgcMeanLuminance::parseRelativeLuminanceTarget(const ValueNode &tuningData)
 {
 	auto &target = tuningData["relativeLuminanceTarget"];
 	if (!target) {
@@ -178,7 +178,7 @@ int AgcMeanLuminance::parseRelativeLuminanceTarget(const YamlObject &tuningData)
 	return 0;
 }
 
-int AgcMeanLuminance::parseConstraint(const YamlObject &modeDict, int32_t id)
+int AgcMeanLuminance::parseConstraint(const ValueNode &modeDict, int32_t id)
 {
 	for (const auto &[boundName, content] : modeDict.asDict()) {
 		if (boundName != "upper" && boundName != "lower") {
@@ -212,11 +212,11 @@ int AgcMeanLuminance::parseConstraint(const YamlObject &modeDict, int32_t id)
 	return 0;
 }
 
-int AgcMeanLuminance::parseConstraintModes(const YamlObject &tuningData)
+int AgcMeanLuminance::parseConstraintModes(const ValueNode &tuningData)
 {
 	std::vector<ControlValue> availableConstraintModes;
 
-	const YamlObject &yamlConstraintModes = tuningData[controls::AeConstraintMode.name()];
+	const ValueNode &yamlConstraintModes = tuningData[controls::AeConstraintMode.name()];
 	if (yamlConstraintModes.isDictionary()) {
 		for (const auto &[modeName, modeDict] : yamlConstraintModes.asDict()) {
 			if (AeConstraintModeNameValueMap.find(modeName) ==
@@ -267,11 +267,11 @@ int AgcMeanLuminance::parseConstraintModes(const YamlObject &tuningData)
 	return 0;
 }
 
-int AgcMeanLuminance::parseExposureModes(const YamlObject &tuningData)
+int AgcMeanLuminance::parseExposureModes(const ValueNode &tuningData)
 {
 	std::vector<ControlValue> availableExposureModes;
 
-	const YamlObject &yamlExposureModes = tuningData[controls::AeExposureMode.name()];
+	const ValueNode &yamlExposureModes = tuningData[controls::AeExposureMode.name()];
 	if (yamlExposureModes.isDictionary()) {
 		for (const auto &[modeName, modeValues] : yamlExposureModes.asDict()) {
 			if (AeExposureModeNameValueMap.find(modeName) ==
@@ -288,9 +288,9 @@ int AgcMeanLuminance::parseExposureModes(const YamlObject &tuningData)
 			}
 
 			std::vector<uint32_t> exposureTimes =
-				modeValues["exposureTime"].getList<uint32_t>().value_or(std::vector<uint32_t>{});
+				modeValues["exposureTime"].get<std::vector<uint32_t>>().value_or(std::vector<uint32_t>{});
 			std::vector<double> gains =
-				modeValues["gain"].getList<double>().value_or(std::vector<double>{});
+				modeValues["gain"].get<std::vector<double>>().value_or(std::vector<double>{});
 
 			if (exposureTimes.size() != gains.size()) {
 				LOG(AgcMeanLuminance, Error)
@@ -361,7 +361,7 @@ void AgcMeanLuminance::configure(utils::Duration lineDuration,
 
 /**
  * \brief Parse tuning data for AeConstraintMode and AeExposureMode controls
- * \param[in] tuningData the YamlObject representing the tuning data
+ * \param[in] tuningData the ValueNode representing the tuning data
  *
  * This function parses tuning data to build the list of allowed values for the
  * AeConstraintMode and AeExposureMode controls. Those tuning data must provide
@@ -414,7 +414,7 @@ void AgcMeanLuminance::configure(utils::Duration lineDuration,
  *
  * \return 0 on success or a negative error code
  */
-int AgcMeanLuminance::parseTuningData(const YamlObject &tuningData)
+int AgcMeanLuminance::parseTuningData(const ValueNode &tuningData)
 {
 	int ret;
 

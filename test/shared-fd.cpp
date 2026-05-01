@@ -27,7 +27,7 @@ protected:
 		desc1_ = nullptr;
 		desc2_ = nullptr;
 
-		fd_ = open("/tmp", O_TMPFILE | O_RDWR, S_IRUSR | S_IWUSR);
+		fd_ = test::createTemporaryFile().release();
 		if (fd_ < 0)
 			return TestFail;
 

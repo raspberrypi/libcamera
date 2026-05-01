@@ -280,10 +280,10 @@ private:
 	enum v4l2_buf_type bufferType_;
 	enum v4l2_memory memoryType_;
 
-	V4L2BufferCache *cache_;
+	std::unique_ptr<V4L2BufferCache> cache_;
 	std::map<unsigned int, FrameBuffer *> queuedBuffers_;
 
-	EventNotifier *fdBufferNotifier_;
+	std::unique_ptr<EventNotifier> fdBufferNotifier_;
 
 	State state_;
 	std::optional<unsigned int> firstFrame_;
@@ -301,14 +301,14 @@ public:
 	int open();
 	void close();
 
-	V4L2VideoDevice *output() { return output_; }
-	V4L2VideoDevice *capture() { return capture_; }
+	V4L2VideoDevice *output() { return output_.get(); }
+	V4L2VideoDevice *capture() { return capture_.get(); }
 
 private:
 	std::string deviceNode_;
 
-	V4L2VideoDevice *output_;
-	V4L2VideoDevice *capture_;
+	std::unique_ptr<V4L2VideoDevice> output_;
+	std::unique_ptr<V4L2VideoDevice> capture_;
 };
 
 } /* namespace libcamera */

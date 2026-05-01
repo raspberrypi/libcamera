@@ -337,7 +337,7 @@ LOG_DEFINE_CATEGORY(Vector)
  */
 
 #ifndef __DOXYGEN__
-bool vectorValidateYaml(const YamlObject &obj, unsigned int size)
+bool vectorValidateYaml(const ValueNode &obj, unsigned int size)
 {
 	if (!obj.isList())
 		return false;

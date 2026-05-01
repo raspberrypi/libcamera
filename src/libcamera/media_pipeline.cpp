@@ -243,11 +243,11 @@ int MediaPipeline::init(MediaEntity *source, std::string_view sink)
 			       [](const Entity &e) {
 				       std::string s = "[";
 				       if (e.sink)
-					       s += std::to_string(e.sink->index()) + "|";
+					       s += std::to_string(e.sink->index()) + '|';
 				       s += e.entity->name();
 				       if (e.source)
-					       s += "|" + std::to_string(e.source->index());
-				       s += "]";
+					       s += '|' + std::to_string(e.source->index());
+				       s += ']';
 				       return s;
 			       });
 

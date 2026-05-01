@@ -10,7 +10,7 @@
 #include <libcamera/base/log.h>
 #include <libcamera/control_ids.h>
 
-#include "libcamera/internal/yaml_parser.h"
+#include "libcamera/internal/value_node.h"
 
 /**
  * \file blc.h
@@ -36,7 +36,7 @@ BlackLevelCorrection::BlackLevelCorrection()
  * \copydoc libcamera::ipa::Algorithm::init
  */
 int BlackLevelCorrection::init([[maybe_unused]] IPAContext &context,
-			       const YamlObject &tuningData)
+			       const ValueNode &tuningData)
 {
 	offset00 = tuningData["offset00"].get<uint32_t>(0);
 	offset01 = tuningData["offset01"].get<uint32_t>(0);

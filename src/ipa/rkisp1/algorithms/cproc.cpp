@@ -37,17 +37,14 @@ namespace {
 
 constexpr float kDefaultBrightness = 0.0f;
 constexpr float kDefaultContrast = 1.0f;
+constexpr float kDefaultHue = 0.0f;
 constexpr float kDefaultSaturation = 1.0f;
 
-int convertBrightness(const float v)
-{
-	return std::clamp<int>(std::lround(v * 128), -128, 127);
-}
-
-int convertContrastOrSaturation(const float v)
-{
-	return std::clamp<int>(std::lround(v * 128), 0, 255);
-}
+/*
+ * The Hue scale is negated as the hardware performs the opposite phase shift
+ * to what is expected and defined from the libcamera Hue control value.
+ */
+constexpr float kHueScale = -90.0f;
 
 } /* namespace */
 
@@ -55,13 +52,18 @@ int convertContrastOrSaturation(const float v)
  * \copydoc libcamera::ipa::Algorithm::init
  */
 int ColorProcessing::init(IPAContext &context,
-			  [[maybe_unused]] const YamlObject &tuningData)
+			  [[maybe_unused]] const ValueNode &tuningData)
 {
 	auto &cmap = context.ctrlMap;
 
 	cmap[&controls::Brightness] = ControlInfo(-1.0f, 0.993f, kDefaultBrightness);
 	cmap[&controls::Contrast] = ControlInfo(0.0f, 1.993f, kDefaultContrast);
 	cmap[&controls::Saturation] = ControlInfo(0.0f, 1.993f, kDefaultSaturation);
+
+	/* Hue adjustment is negated by kHueScale, min/max are swapped */
+	cmap[&controls::Hue] = ControlInfo(HueQ::TraitsType::max * kHueScale,
+					   HueQ::TraitsType::min * kHueScale,
+					   kDefaultHue);
 
 	return 0;
 }
@@ -74,9 +76,10 @@ int ColorProcessing::configure(IPAContext &context,
 {
 	auto &cproc = context.activeState.cproc;
 
-	cproc.brightness = convertBrightness(kDefaultBrightness);
-	cproc.contrast = convertContrastOrSaturation(kDefaultContrast);
-	cproc.saturation = convertContrastOrSaturation(kDefaultSaturation);
+	cproc.brightness = BrightnessQ(kDefaultBrightness);
+	cproc.contrast = ContrastQ(kDefaultContrast);
+	cproc.hue = HueQ(kDefaultHue);
+	cproc.saturation = SaturationQ(kDefaultSaturation);
 
 	return 0;
 }
@@ -97,7 +100,7 @@ void ColorProcessing::queueRequest(IPAContext &context,
 
 	const auto &brightness = controls.get(controls::Brightness);
 	if (brightness) {
-		int value = convertBrightness(*brightness);
+		BrightnessQ value = *brightness;
 		if (cproc.brightness != value) {
 			cproc.brightness = value;
 			update = true;
@@ -108,7 +111,7 @@ void ColorProcessing::queueRequest(IPAContext &context,
 
 	const auto &contrast = controls.get(controls::Contrast);
 	if (contrast) {
-		int value = convertContrastOrSaturation(*contrast);
+		ContrastQ value = *contrast;
 		if (cproc.contrast != value) {
 			cproc.contrast = value;
 			update = true;
@@ -117,9 +120,21 @@ void ColorProcessing::queueRequest(IPAContext &context,
 		LOG(RkISP1CProc, Debug) << "Set contrast to " << value;
 	}
 
+	const auto &hue = controls.get(controls::Hue);
+	if (hue) {
+		/* Scale the Hue from ]-90, +90] */
+		HueQ value = *hue / kHueScale;
+		if (cproc.hue != value) {
+			cproc.hue = value;
+			update = true;
+		}
+
+		LOG(RkISP1CProc, Debug) << "Set hue to " << value;
+	}
+
 	const auto saturation = controls.get(controls::Saturation);
 	if (saturation) {
-		int value = convertContrastOrSaturation(*saturation);
+		SaturationQ value = *saturation;
 		if (cproc.saturation != value) {
 			cproc.saturation = value;
 			update = true;
@@ -130,6 +145,7 @@ void ColorProcessing::queueRequest(IPAContext &context,
 
 	frameContext.cproc.brightness = cproc.brightness;
 	frameContext.cproc.contrast = cproc.contrast;
+	frameContext.cproc.hue = cproc.hue;
 	frameContext.cproc.saturation = cproc.saturation;
 	frameContext.cproc.update = update;
 }
@@ -148,9 +164,25 @@ void ColorProcessing::prepare([[maybe_unused]] IPAContext &context,
 
 	auto config = params->block<BlockType::Cproc>();
 	config.setEnabled(true);
-	config->brightness = frameContext.cproc.brightness;
-	config->contrast = frameContext.cproc.contrast;
-	config->sat = frameContext.cproc.saturation;
+	config->brightness = frameContext.cproc.brightness.quantized();
+	config->contrast = frameContext.cproc.contrast.quantized();
+	config->hue = frameContext.cproc.hue.quantized();
+	config->sat = frameContext.cproc.saturation.quantized();
+}
+
+/**
+ * \copydoc libcamera::ipa::Algorithm::process
+ */
+void ColorProcessing::process([[maybe_unused]] IPAContext &context,
+			      [[maybe_unused]] const uint32_t frame,
+			      IPAFrameContext &frameContext,
+			      [[maybe_unused]] const rkisp1_stat_buffer *stats,
+			      ControlList &metadata)
+{
+	metadata.set(controls::Brightness, frameContext.cproc.brightness.value());
+	metadata.set(controls::Contrast, frameContext.cproc.contrast.value());
+	metadata.set(controls::Hue, frameContext.cproc.hue.value() * kHueScale);
+	metadata.set(controls::Saturation, frameContext.cproc.saturation.value());
 }
 
 REGISTER_IPA_ALGORITHM(ColorProcessing, "ColorProcessing")

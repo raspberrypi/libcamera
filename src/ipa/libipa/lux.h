@@ -12,7 +12,7 @@
 
 namespace libcamera {
 
-class YamlObject;
+class ValueNode;
 
 namespace ipa {
 
@@ -23,7 +23,7 @@ class Lux
 public:
 	Lux();
 
-	int parseTuningData(const YamlObject &tuningData);
+	int parseTuningData(const ValueNode &tuningData);
 	double estimateLux(utils::Duration exposureTime,
 			   double aGain, double dGain,
 			   const Histogram &yHist) const;

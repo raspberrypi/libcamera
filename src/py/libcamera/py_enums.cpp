@@ -5,11 +5,11 @@
  * Python bindings - Enumerations
  */
 
-#include <libcamera/libcamera.h>
-
 #include <pybind11/pybind11.h>
 
 #include "py_main.h"
+
+#include <libcamera/libcamera.h>
 
 namespace py = pybind11;
 

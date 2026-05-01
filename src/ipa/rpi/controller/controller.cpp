@@ -102,7 +102,7 @@ int Controller::read(char const *filename)
 		return -EINVAL;
 	}
 
-	std::unique_ptr<YamlObject> root = YamlParser::parse(file);
+	std::unique_ptr<ValueNode> root = YamlParser::parse(file);
 	if (!root)
 		return -EINVAL;
 
@@ -114,7 +114,7 @@ int Controller::read(char const *filename)
 			<< "This format of the tuning file will be deprecated soon!"
 			<< " Please use the convert_tuning.py utility to update to version 2.0.";
 
-		for (auto const &[key, value] : root->asDict()) {
+		for (const auto &[key, value] : root->asDict()) {
 			int ret = createAlgorithm(key, value);
 			if (ret)
 				return ret;
@@ -127,8 +127,8 @@ int Controller::read(char const *filename)
 			return -EINVAL;
 		}
 
-		for (auto const &rootAlgo : (*root)["algorithms"].asList())
-			for (auto const &[key, value] : rootAlgo.asDict()) {
+		for (const auto &rootAlgo : (*root)["algorithms"].asList())
+			for (const auto &[key, value] : rootAlgo.asDict()) {
 				int ret = createAlgorithm(key, value);
 				if (ret)
 					return ret;
@@ -143,7 +143,7 @@ int Controller::read(char const *filename)
 	return 0;
 }
 
-int Controller::createAlgorithm(const std::string &name, const YamlObject &params)
+int Controller::createAlgorithm(const std::string &name, const ValueNode &params)
 {
 	/* Any algorithm may be disabled by setting "enabled" to false. */
 	bool enabled = params["enabled"].get<bool>(true);

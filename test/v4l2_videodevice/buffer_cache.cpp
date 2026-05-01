@@ -133,7 +133,7 @@ public:
 		if (!cache.isEmpty())
 			return TestFail;
 
-		for (auto const &buffer : buffers) {
+		for (const auto &buffer : buffers) {
 			FrameBuffer &b = *buffer.get();
 			cache.get(b);
 		}

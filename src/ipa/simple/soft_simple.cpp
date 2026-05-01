@@ -118,7 +118,7 @@ int IPASoftSimple::init(const IPASettings &settings,
 		return ret;
 	}
 
-	std::unique_ptr<libcamera::YamlObject> data = YamlParser::parse(file);
+	std::unique_ptr<ValueNode> data = YamlParser::parse(file);
 	if (!data)
 		return -EINVAL;
 
@@ -227,7 +227,7 @@ int IPASoftSimple::configure(const IPAConfigInfo &configInfo)
 	if (camHelper_) {
 		context_.configuration.agc.againMin = camHelper_->gain(againMin);
 		context_.configuration.agc.againMax = camHelper_->gain(againMax);
-		context_.configuration.agc.again10 = camHelper_->gain(1.0);
+		context_.configuration.agc.again10 = std::max(context_.configuration.agc.againMin, 1.0);
 		context_.configuration.agc.againMinStep =
 			(context_.configuration.agc.againMax -
 			 context_.configuration.agc.againMin) /
@@ -249,7 +249,7 @@ int IPASoftSimple::configure(const IPAConfigInfo &configInfo)
 		context_.configuration.agc.againMinStep = 1.0;
 	}
 
-	for (auto const &algo : algorithms()) {
+	for (const auto &algo : algorithms()) {
 		int ret = algo->configure(context_, configInfo);
 		if (ret)
 			return ret;
@@ -279,7 +279,7 @@ void IPASoftSimple::queueRequest(const uint32_t frame, const ControlList &contro
 {
 	IPAFrameContext &frameContext = context_.frameContexts.alloc(frame);
 
-	for (auto const &algo : algorithms())
+	for (const auto &algo : algorithms())
 		algo->queueRequest(context_, frame, frameContext, controls);
 }
 
@@ -288,7 +288,7 @@ void IPASoftSimple::computeParams(const uint32_t frame)
 	context_.activeState.combinedMatrix = Matrix<float, 3, 3>::identity();
 
 	IPAFrameContext &frameContext = context_.frameContexts.get(frame);
-	for (auto const &algo : algorithms())
+	for (const auto &algo : algorithms())
 		algo->prepare(context_, frame, frameContext, params_);
 	params_->combinedMatrix = context_.activeState.combinedMatrix;
 
@@ -307,7 +307,7 @@ void IPASoftSimple::processStats(const uint32_t frame,
 	frameContext.sensor.gain = camHelper_ ? camHelper_->gain(again) : again;
 
 	ControlList metadata(controls::controls);
-	for (auto const &algo : algorithms())
+	for (const auto &algo : algorithms())
 		algo->process(context_, frame, frameContext, stats_, metadata);
 	metadataReady.emit(frame, metadata);
 

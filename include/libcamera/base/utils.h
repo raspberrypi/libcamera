@@ -430,6 +430,21 @@ scope_exit(EF) -> scope_exit<EF>;
 
 #endif /* __DOXYGEN__ */
 
+namespace details {
+
+struct defopt_t {
+	template<typename T>
+	constexpr operator T() const
+	{
+		static_assert(std::is_default_constructible_v<T>);
+		return T{};
+	}
+};
+
+} /* namespace details */
+
+constexpr details::defopt_t defopt;
+
 #ifndef __DOXYGEN__
 std::ostream &operator<<(std::ostream &os, const Duration &d);
 #endif

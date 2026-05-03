@@ -16,10 +16,9 @@
 
 #include <linux/dma-buf.h>
 #include <linux/dma-heap.h>
+#include <linux/drm_fourcc.h>
 
 #include <libcamera/base/thread.h>
-
-#include <libdrm/drm_fourcc.h>
 
 namespace libcamera {
 

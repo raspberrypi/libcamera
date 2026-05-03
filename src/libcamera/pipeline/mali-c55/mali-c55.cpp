@@ -13,9 +13,9 @@
 #include <string>
 #include <variant>
 
-#include <linux/mali-c55-config.h>
 #include <linux/media-bus-format.h>
 #include <linux/media.h>
+#include <linux/media/arm/mali-c55-config.h>
 
 #include <libcamera/base/log.h>
 #include <libcamera/base/utils.h>

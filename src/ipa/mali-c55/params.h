@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <linux/mali-c55-config.h>
+#include <linux/media/arm/mali-c55-config.h>
 #include <linux/videodev2.h>
 
 #include <libipa/v4l2_params.h>

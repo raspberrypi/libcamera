@@ -509,7 +509,7 @@ protected:
 				},
 
 				[&](const Size &arg) -> int {
-					if (node.get<Size>().value_or(Size{}) != arg ||
+					if (node.get<Size>().value_or(utils::defopt) != arg ||
 					    node.get<Size>(Size{}) != arg) {
 						std::cerr
 							<< "Invalid node size value"
@@ -521,7 +521,7 @@ protected:
 				},
 
 				[&](const std::string &arg) -> int {
-					if (node.get<std::string>().value_or(std::string{}) != arg ||
+					if (node.get<std::string>().value_or(utils::defopt) != arg ||
 					    node.get<std::string>(std::string{}) != arg) {
 						std::cerr
 							<< "Invalid node string value"

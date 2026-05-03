@@ -125,9 +125,9 @@ IPAProxy::IPAProxy(IPAModule *ipam, const CameraManager &cm)
 	const GlobalConfiguration &configuration = cm._d()->configuration();
 
 	configPaths_ = configuration.listOption({ "ipa", "config_paths" })
-				    .value_or(std::vector<std::string>());
+				    .value_or(utils::defopt);
 	execPaths_ = configuration.listOption({ "ipa", "proxy_paths" })
-				  .value_or(std::vector<std::string>());
+				  .value_or(utils::defopt);
 }
 
 IPAProxy::~IPAProxy()

@@ -2190,7 +2190,7 @@ int PiSPCameraData::configureEntities(V4L2SubdeviceFormat sensorFormat,
 	};
 	const V4L2Subdevice::Stream embeddedDataStream{
 		csiVideoSinkPad,
-		sensor_->embeddedDataStream().value_or(V4L2Subdevice::Stream{}).stream
+		sensor_->embeddedDataStream().value_or(utils::defopt).stream
 	};
 
 	V4L2Subdevice::Routing routing;

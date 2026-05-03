@@ -17,6 +17,7 @@
 #include <hardware/camera3.h>
 
 #include <libcamera/base/log.h>
+#include <libcamera/base/utils.h>
 
 #include <libcamera/control_ids.h>
 #include <libcamera/controls.h>
@@ -1064,7 +1065,7 @@ int CameraCapabilities::initializeStaticMetadata()
 	/* Sensor static metadata. */
 	std::array<int32_t, 2> pixelArraySize;
 	{
-		const Size &size = properties.get(properties::PixelArraySize).value_or(Size{});
+		const Size &size = properties.get(properties::PixelArraySize).value_or(utils::defopt);
 		pixelArraySize[0] = size.width;
 		pixelArraySize[1] = size.height;
 		staticMetadata_->addEntry(ANDROID_SENSOR_INFO_PIXEL_ARRAY_SIZE,
@@ -1083,7 +1084,7 @@ int CameraCapabilities::initializeStaticMetadata()
 
 	{
 		const Span<const Rectangle> rects =
-			properties.get(properties::PixelArrayActiveAreas).value_or(Span<const Rectangle>{});
+			properties.get(properties::PixelArrayActiveAreas).value_or(utils::defopt);
 		std::vector<int32_t> data{
 			static_cast<int32_t>(rects[0].x),
 			static_cast<int32_t>(rects[0].y),

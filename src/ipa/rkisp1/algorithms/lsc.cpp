@@ -317,7 +317,7 @@ std::vector<uint16_t> LscTableLoader::parseTable(const ValueNode &tuningData,
 		RKISP1_CIF_ISP_LSC_SAMPLES_MAX * RKISP1_CIF_ISP_LSC_SAMPLES_MAX;
 
 	std::vector<uint16_t> table =
-		tuningData[prop].get<std::vector<uint16_t>>().value_or(std::vector<uint16_t>{});
+		tuningData[prop].get<std::vector<uint16_t>>().value_or(utils::defopt);
 	if (table.size() != kLscNumSamples) {
 		LOG(RkISP1Lsc, Error)
 			<< "Invalid '" << prop << "' values: expected "
@@ -333,7 +333,7 @@ std::vector<double> parseSizes(const ValueNode &tuningData,
 			       const char *prop)
 {
 	std::vector<double> sizes =
-		tuningData[prop].get<std::vector<double>>().value_or(std::vector<double>{});
+		tuningData[prop].get<std::vector<double>>().value_or(utils::defopt);
 	if (sizes.size() != RKISP1_CIF_ISP_LSC_SECTORS_TBL_SIZE) {
 		LOG(RkISP1Lsc, Error)
 			<< "Invalid '" << prop << "' values: expected "

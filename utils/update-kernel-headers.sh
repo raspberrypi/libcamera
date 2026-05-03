@@ -65,7 +65,9 @@ headers="
 
 for header in $headers ; do
 	name="${header#*/}"
-	cp "${install_dir}/usr/include/${header}" "${header_dir}/${name}"
+	dest="${header_dir}/${name}"
+	mkdir -p "$(dirname "$dest")"
+	cp "${install_dir}/usr/include/${header}" "${dest}"
 done
 
 # The IPU3 header is a special case, as it's stored in staging. Handle it

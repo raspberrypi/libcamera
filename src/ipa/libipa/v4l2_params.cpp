@@ -146,13 +146,13 @@ namespace ipa {
  * };
  *
  * template<>
- * struct block_type<myISPBlock::Agc> {
+ * struct block_type<myISPBlocks::Agc> {
  *	using type = struct my_isp_kernel_config_type_agc;
  *	static constexpr kernel_enum_type blockType = MY_ISP_TYPE_AGC;
  * };
  *
  * template<>
- * struct block_type<myISPBlock::Awb> {
+ * struct block_type<myISPBlocks::Awb> {
  *	using type = struct my_isp_kernel_config_type_awb;
  *	static constexpr kernel_enum_type blockType = MY_ISP_TYPE_AWB;
  * };

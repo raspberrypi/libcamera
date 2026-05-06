@@ -7,8 +7,10 @@
 
 #include "libcamera/internal/software_isp/software_isp.h"
 
-#include <cmath>
+#include <memory>
+#include <optional>
 #include <stdint.h>
+#include <string>
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <unistd.h>

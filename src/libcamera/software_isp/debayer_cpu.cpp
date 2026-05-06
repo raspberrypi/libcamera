@@ -23,6 +23,7 @@
 #include <libcamera/formats.h>
 
 #include "libcamera/internal/bayer_format.h"
+#include "libcamera/internal/camera_manager.h"
 #include "libcamera/internal/framebuffer.h"
 #include "libcamera/internal/global_configuration.h"
 #include "libcamera/internal/mapped_framebuffer.h"

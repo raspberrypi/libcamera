@@ -11,15 +11,14 @@
 
 #include <memory>
 #include <stdint.h>
+#include <tuple>
 #include <vector>
 
 #define GL_GLEXT_PROTOTYPES
 #define EGL_EGLEXT_PROTOTYPES
 #include <libcamera/base/object.h>
 
-#include "libcamera/internal/bayer_format.h"
 #include "libcamera/internal/egl.h"
-#include "libcamera/internal/framebuffer.h"
 #include "libcamera/internal/mapped_framebuffer.h"
 #include "libcamera/internal/software_isp/benchmark.h"
 #include "libcamera/internal/software_isp/swstats_cpu.h"

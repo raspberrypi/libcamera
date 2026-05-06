@@ -16,10 +16,10 @@
 
 #include <libcamera/base/signal.h>
 
+#include <libcamera/framebuffer.h>
 #include <libcamera/geometry.h>
 
 #include "libcamera/internal/bayer_format.h"
-#include "libcamera/internal/framebuffer.h"
 #include "libcamera/internal/shared_mem_object.h"
 #include "libcamera/internal/software_isp/swisp_stats.h"
 

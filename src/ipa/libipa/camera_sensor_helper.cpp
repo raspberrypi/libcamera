@@ -672,6 +672,8 @@ class CameraSensorHelperOv2740 : public CameraSensorHelper
 public:
 	CameraSensorHelperOv2740()
 	{
+		/* From Linux kernel driver: 0x40 at 10bits. */
+		blackLevel_ = 4096;
 		gain_ = AnalogueGainLinear{ 1, 0, 0, 128 };
 	}
 };

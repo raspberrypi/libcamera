@@ -116,6 +116,7 @@ private:
 
 	unsigned int xShift_;
 	unsigned int stride_;
+	unsigned int sumShift_;
 
 	std::vector<SwIspStats> stats_;
 	SharedMemObject<SwIspStats> sharedStats_;

@@ -362,6 +362,11 @@ void SwStatsCpu::finishFrame(uint32_t frame, uint32_t bufferId)
 			for (unsigned int j = 0; j < SwIspStats::kYHistogramSize; j++)
 				sharedStats_->yHistogram[j] += s.yHistogram[j];
 		}
+		if (sumShift_) {
+			sharedStats_->sum_.r() >>= sumShift_;
+			sharedStats_->sum_.g() >>= sumShift_;
+			sharedStats_->sum_.b() >>= sumShift_;
+		}
 	}
 
 	sharedStats_->valid = valid;
@@ -425,12 +430,15 @@ int SwStatsCpu::configure(const StreamConfiguration &inputCfg, unsigned int stat
 		switch (bayerFormat.bitDepth) {
 		case 8:
 			stats0_ = &SwStatsCpu::statsBGGR8Line0;
+			sumShift_ = 0;
 			return 0;
 		case 10:
 			stats0_ = &SwStatsCpu::statsBGGR10Line0;
+			sumShift_ = 2;
 			return 0;
 		case 12:
 			stats0_ = &SwStatsCpu::statsBGGR12Line0;
+			sumShift_ = 4;
 			return 0;
 		}
 	}
@@ -442,6 +450,7 @@ int SwStatsCpu::configure(const StreamConfiguration &inputCfg, unsigned int stat
 		/* Skip every 3th and 4th line, sample every other 2x2 block */
 		ySkipMask_ = 0x02;
 		xShift_ = 0;
+		sumShift_ = 0;
 		processFrame_ = &SwStatsCpu::processBayerFrame2;
 
 		switch (bayerFormat.order) {

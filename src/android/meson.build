@@ -1,13 +1,18 @@
 # SPDX-License-Identifier: CC0-1.0
 
+android_enabled = true
+
+if not cc.has_header_symbol('uchar.h', 'mbrtoc16', required : get_option('android'))
+    android_enabled = false
+    subdir_done()
+endif
+
 android_deps = [
     dependency('libexif', required : get_option('android')),
     dependency('libjpeg', required : get_option('android')),
     libcamera_private,
     libyuv_dep,
 ]
-
-android_enabled = true
 
 foreach dep : android_deps
     if not dep.found()

@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2025, Ideas On Board
  *
- * V4L2 Parameters
+ * V4L2 ISP Parameters
  */
 
 #pragma once

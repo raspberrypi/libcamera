@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <stdint.h>
+
 #include <linux/media/arm/mali-c55-config.h>
 #include <linux/videodev2.h>
 
@@ -16,7 +18,7 @@ namespace libcamera {
 
 namespace ipa::mali_c55 {
 
-enum class MaliC55Blocks {
+enum class MaliC55Blocks : uint16_t {
 	Bls,
 	AexpHist,
 	AexpHistWeights,

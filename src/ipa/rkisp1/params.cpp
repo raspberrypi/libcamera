@@ -128,7 +128,8 @@ Span<uint8_t> RkISP1Params::block(BlockType type)
 		return data_.subspan(info.offset, info.size);
 	}
 
-	return V4L2Params::block(type, info.type, info.size);
+	return V4L2Params::block(utils::to_underlying(type), info.type,
+				 info.size);
 }
 
 } /* namespace ipa::rkisp1 */

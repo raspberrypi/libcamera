@@ -15,6 +15,7 @@
 
 #include <libcamera/base/log.h>
 #include <libcamera/base/span.h>
+#include <libcamera/base/utils.h>
 
 namespace libcamera {
 
@@ -72,6 +73,8 @@ template<typename Traits>
 class V4L2Params
 {
 public:
+	static_assert(std::is_same_v<std::underlying_type_t<typename Traits::id_type>, uint16_t>);
+
 	V4L2Params(Span<uint8_t> data, unsigned int version)
 		: data_(data)
 	{
@@ -93,13 +96,13 @@ public:
 		using Type = typename Details::type;
 		constexpr auto kernelId = Details::blockType;
 
-		auto data = block(Id, kernelId, sizeof(Type));
+		auto data = block(utils::to_underlying(Id), kernelId, sizeof(Type));
 		return V4L2ParamsBlock<Type>(data);
 	}
 
 protected:
-	Span<uint8_t> block(typename Traits::id_type type,
-			    unsigned int blockType, size_t blockSize)
+	Span<uint8_t> block(uint16_t type, unsigned int blockType,
+			    size_t blockSize)
 	{
 		/*
 		 * Look up the block in the cache first. If an algorithm
@@ -144,7 +147,7 @@ protected:
 	Span<uint8_t> data_;
 	size_t used_;
 
-	std::map<typename Traits::id_type, Span<uint8_t>> blocks_;
+	std::map<uint16_t, Span<uint8_t>> blocks_;
 };
 
 } /* namespace ipa */

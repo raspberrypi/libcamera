@@ -217,7 +217,7 @@ namespace ipa {
  */
 
 /**
- * \fn V4L2Params::block(typename Traits::id_type type, unsigned int blockType, size_t blockSize)
+ * \fn V4L2Params::block(uint16_t type, unsigned int blockType, size_t blockSize)
  * \brief Populate an ISP configuration block a returns a reference to its
  * memory
  * \param[in] type The ISP block identifier enumerated by the IPA module

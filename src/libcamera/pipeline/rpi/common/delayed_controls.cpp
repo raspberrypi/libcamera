@@ -32,14 +32,15 @@ namespace RPi {
  *
  * Some sensor controls take effect with a delay as the sensor needs time to
  * adjust, for example exposure and analog gain. This is a helper class to deal
- * with such controls and the intended users are pipeline handlers.
+ * with such controls.
  *
- * The idea is to extend the concept of the buffer depth of a pipeline the
- * application needs to maintain to also cover controls. Just as with buffer
- * depth if the application keeps the number of requests queued above the
- * control depth the controls are guaranteed to take effect for the correct
- * request. The control depth is determined by the control with the greatest
- * delay.
+ * The idea is to maintain a queue of controls that have been submitted.
+ * Whenever a new frame starts, we can "peak back" into this queue to send
+ * controls at the correct number of frames in advance to account for each
+ * control's delay.
+ *
+ * The overall delay for controls becomes the maximum delay of any of the
+ * controls.
  */
 
 /**
@@ -119,7 +120,6 @@ DelayedControls::DelayedControls(V4L2Device *device,
  */
 void DelayedControls::reset(unsigned int cookie)
 {
-	queueCount_ = 1;
 	writeCount_ = 0;
 	cookies_[0] = cookie;
 
@@ -146,18 +146,25 @@ void DelayedControls::reset(unsigned int cookie)
  * \brief Push a set of controls on the queue
  * \param[in] controls List of controls to add to the device queue
  *
- * Push a set of controls to the control queue. This increases the control queue
- * depth by one.
+ * Push a set of controls to the control queue. The next call to applyControls
+ * will advance the slot in the queue where the next call to push will write
+ * controls.
  *
  * \returns true if \a controls are accepted, or false otherwise
  */
 bool DelayedControls::push(const ControlList &controls, const unsigned int cookie)
 {
 	/* Copy state from previous frame. */
-	for (auto &ctrl : values_) {
-		Info &info = ctrl.second[queueCount_];
-		info = values_[ctrl.first][queueCount_ - 1];
-		info.updated = false;
+	if (writeCount_ > 0) {
+		for (auto &ctrl : values_) {
+			Info &info = ctrl.second[writeCount_];
+			info = values_[ctrl.first][writeCount_ - 1];
+			info.updated = false;
+		}
+	} else {
+		/* Although it works, we don't expect this. */
+		LOG(RPiDelayedControls, Warning)
+			<< "push called before applyControls";
 	}
 
 	/* Update with new controls. */
@@ -175,18 +182,17 @@ bool DelayedControls::push(const ControlList &controls, const unsigned int cooki
 		if (controlParams_.find(id) == controlParams_.end())
 			return false;
 
-		Info &info = values_[id][queueCount_];
+		Info &info = values_[id][writeCount_];
 
 		info = Info(control.second);
 
 		LOG(RPiDelayedControls, Debug)
 			<< "Queuing " << id->name()
 			<< " to " << info.toString()
-			<< " at index " << queueCount_;
+			<< " at index " << writeCount_;
 	}
 
-	cookies_[queueCount_] = cookie;
-	queueCount_++;
+	cookies_[writeCount_] = cookie;
 
 	return true;
 }
@@ -200,9 +206,9 @@ bool DelayedControls::push(const ControlList &controls, const unsigned int cooki
  * the callers responsibility to not read too old sequence numbers that have been
  * pushed out of the history.
  *
- * Historic values are evicted by pushing new values onto the queue using
- * push(). The max history from the current sequence number that yields valid
- * values are thus 16 minus number of controls pushed.
+ * Historic values are evicted by new frames arriving and applyControls
+ * advancing the head of the queue in the ring buffer. The valid history in
+ * the queue consists of 16 entries from this head of the queue.
  *
  * \return The controls at \a sequence number
  */
@@ -234,6 +240,10 @@ std::pair<ControlList, unsigned int> DelayedControls::get(uint32_t sequence)
  * number. Any user of these helpers is responsible to inform the helper about
  * the start of any frame. This can be connected with ease to the start of a
  * exposure (SOE) V4L2 event.
+ *
+ * Controls will be sent to the device, each staggered by the appropriate
+ * number of frames for that control, so that they are applied at the same
+ * time.
  */
 void DelayedControls::applyControls(uint32_t sequence)
 {
@@ -277,12 +287,12 @@ void DelayedControls::applyControls(uint32_t sequence)
 		}
 	}
 
-	writeCount_ = sequence + 1;
-
-	while (writeCount_ > queueCount_) {
+	while (writeCount_ < sequence + 1) {
+		writeCount_++;
 		LOG(RPiDelayedControls, Debug)
-			<< "Queue is empty, auto queue no-op.";
-		push({}, cookies_[queueCount_ - 1]);
+			<< "Pushing noop with for index " << writeCount_
+			<< " with cookie " << cookies_[writeCount_ - 1];
+		push({}, cookies_[writeCount_ - 1]);
 	}
 
 	device_->setControls(&out);

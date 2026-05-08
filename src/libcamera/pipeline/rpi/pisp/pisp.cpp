@@ -2322,9 +2322,6 @@ void PiSPCameraData::tryRunPipeline()
 
 	fillRequestMetadata(job.sensorControls, request);
 
-	/* Set our state to say the pipeline is active. */
-	state_ = State::Busy;
-
 	unsigned int bayerId = cfe_[Cfe::Output0].getBufferId(job.buffers[&cfe_[Cfe::Output0]]);
 	unsigned int statsId = cfe_[Cfe::Stats].getBufferId(job.buffers[&cfe_[Cfe::Stats]]);
 	ASSERT(bayerId && statsId);
@@ -2341,7 +2338,13 @@ void PiSPCameraData::tryRunPipeline()
 	params.ipaContext = requestQueue_.front()->sequence();
 	params.delayContext = job.delayContext;
 	params.sensorControls = std::move(job.sensorControls);
-	params.requestControls = request->controls();
+	/* params.requestControls is set by handleControlLists. */
+
+	/* This sorts out synchronisation with ControlLists in earlier requests. */
+	handleControlLists(job.delayContext, params.requestControls);
+
+	/* Set our state to say the pipeline is active. */
+	state_ = State::Busy;
 
 	if (sensorMetadata_) {
 		unsigned int embeddedId =

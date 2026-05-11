@@ -362,11 +362,10 @@ void SwStatsCpu::finishFrame(uint32_t frame, uint32_t bufferId)
 			for (unsigned int j = 0; j < SwIspStats::kYHistogramSize; j++)
 				sharedStats_->yHistogram[j] += s.yHistogram[j];
 		}
-		if (sumShift_) {
-			sharedStats_->sum_.r() >>= sumShift_;
-			sharedStats_->sum_.g() >>= sumShift_;
-			sharedStats_->sum_.b() >>= sumShift_;
-		}
+
+		sharedStats_->sum_.r() >>= sumShift_;
+		sharedStats_->sum_.g() >>= sumShift_;
+		sharedStats_->sum_.b() >>= sumShift_;
 	}
 
 	sharedStats_->valid = valid;

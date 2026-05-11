@@ -363,9 +363,7 @@ void SwStatsCpu::finishFrame(uint32_t frame, uint32_t bufferId)
 				sharedStats_->yHistogram[j] += s.yHistogram[j];
 		}
 
-		sharedStats_->sum_.r() >>= sumShift_;
-		sharedStats_->sum_.g() >>= sumShift_;
-		sharedStats_->sum_.b() >>= sumShift_;
+		sharedStats_->sum_ >>= sumShift_;
 	}
 
 	sharedStats_->valid = valid;

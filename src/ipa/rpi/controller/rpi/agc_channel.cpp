@@ -941,8 +941,8 @@ void AgcChannel::divideUpExposure()
 	/* Finally work out the digital gain that we will need. */
 	filtered_.totalExposureNoDG = analogueGain * exposureTime;
 	double digitalGain = filtered_.totalExposure / filtered_.totalExposureNoDG;
-	/* Limit dg by what is allowed. */
-	digitalGain = std::min(digitalGain, config_.maxDigitalGain);
+	/* Limit dg by what is allowed (and to 1.0 to avoid saturation issues). */
+	digitalGain = std::clamp(digitalGain, 1.0, config_.maxDigitalGain);
 	/* Update total exposure, in case the dg went down. */
 	filtered_.totalExposure = filtered_.totalExposureNoDG * digitalGain;
 

@@ -180,9 +180,18 @@ public:
 
 	ClockRecovery wallClockRecovery_;
 
+	struct ImmediateControlsEntry {
+		uint64_t controlListId;
+		ControlList controls;
+	};
+	std::queue<ImmediateControlsEntry> immediateControls_;
+
 protected:
 	void fillRequestMetadata(const ControlList &bufferControls,
 				 Request *request);
+
+	void handleControlLists(uint32_t delayContext,
+				ControlList &paramControls);
 
 	virtual void tryRunPipeline() = 0;
 

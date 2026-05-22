@@ -39,7 +39,7 @@ public:
 	{
 	}
 
-	std::tuple<typename std::remove_reference_t<Args>...> args_;
+	std::tuple<std::remove_cv_t<std::remove_reference_t<Args>>...> args_;
 	R ret_;
 };
 
@@ -53,7 +53,7 @@ public:
 	{
 	}
 
-	std::tuple<typename std::remove_reference_t<Args>...> args_;
+	std::tuple<std::remove_cv_t<std::remove_reference_t<Args>>...> args_;
 };
 
 class BoundMethodBase
@@ -90,25 +90,19 @@ class BoundMethodArgs : public BoundMethodBase
 public:
 	using PackType = BoundMethodPack<R, Args...>;
 
-private:
-	template<std::size_t... I>
-	void invokePack(BoundMethodPackBase *pack, std::index_sequence<I...>)
-	{
-		[[maybe_unused]] auto *args = static_cast<PackType *>(pack);
-
-		if constexpr (!std::is_void_v<R>)
-			args->ret_ = invoke(std::get<I>(args->args_)...);
-		else
-			invoke(std::get<I>(args->args_)...);
-	}
-
-public:
 	BoundMethodArgs(void *obj, Object *object, ConnectionType type)
 		: BoundMethodBase(obj, object, type) {}
 
 	void invokePack(BoundMethodPackBase *pack) override
 	{
-		invokePack(pack, std::make_index_sequence<sizeof...(Args)>{});
+		auto *argsPack = static_cast<PackType *>(pack);
+
+		std::apply([&](Args &&...args) {
+			if constexpr (!std::is_void_v<R>)
+				argsPack->ret_ = invoke(std::forward<decltype(args)>(args)...);
+			else
+				invoke(std::forward<decltype(args)>(args)...);
+		}, std::move(argsPack->args_));
 	}
 
 	virtual R activate(Args... args, bool deleteMethod = false) = 0;

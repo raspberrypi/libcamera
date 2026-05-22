@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2025, Ideas On Board
  *
- * V4L2 Parameters
+ * V4L2 ISP Parameters
  */
 
 #include "v4l2_params.h"
@@ -118,6 +118,115 @@ namespace ipa {
  */
 
 /**
+ * \class V4L2ParamsBase
+ * \brief Base class for V4L2Params
+ *
+ * The V4L2ParamsBase is an integral part of V4L2Params. It serves as a
+ * container for all code that does not depend on the V4L2Params template
+ * arguments, to avoid duplicate copies of inline code.
+ */
+
+/**
+ * \brief Construct an instance of V4L2ParamsBase
+ * \param[in] data Reference to the v4l2-buffer memory mapped area
+ * \param[in] version The ISP parameters version the implementation supports
+ */
+V4L2ParamsBase::V4L2ParamsBase(Span<uint8_t> data, unsigned int version)
+	: data_(data)
+{
+	struct v4l2_isp_params_buffer *params =
+		reinterpret_cast<struct v4l2_isp_params_buffer *>(data_.data());
+	params->data_size = 0;
+	params->version = version;
+
+	used_ = offsetof(struct v4l2_isp_params_buffer, data);
+}
+
+/**
+ * \fn V4L2ParamsBase::bytesused()
+ * \brief Retrieve the used size of the parameters buffer (in bytes)
+ *
+ * The parameters buffer size is mostly used to populate the v4l2_buffer
+ * bytesused field before queueing the buffer to the ISP.
+ *
+ * \return The number of bytes occupied by the ISP configuration parameters
+ */
+
+/**
+ * \brief Populate an ISP configuration block a returns a reference to its
+ * memory
+ * \param[in] type The ISP block identifier enumerated by the IPA module
+ * \param[in] blockType The kernel-defined ISP block identifier, used to
+ * populate the block header
+ * \param[in] blockSize The ISP block size, used to populate the block header
+ *
+ * Initialize the block header with \a blockType and \a blockSize and
+ * returns a reference to the memory used to store an ISP configuration block.
+ *
+ * IPA modules that derive the V4L2Params class shall use this function to
+ * retrieve the memory area that will be used to construct a V4L2ParamsBlock<T>
+ * before returning it to the caller.
+ */
+Span<uint8_t> V4L2ParamsBase::block(uint16_t type, unsigned int blockType,
+				    size_t blockSize)
+{
+	/*
+	 * Look up the block in the cache first. If an algorithm
+	 * requests the same block type twice, it should get the same
+	 * block.
+	 */
+	auto cacheIt = blocks_.find(type);
+	if (cacheIt != blocks_.end())
+		return cacheIt->second;
+
+	/*
+	 * Make sure we don't run out of space. Assert as otherwise
+	 * we get a segfault as soon as someone tries to access the
+	 * empty Span<> returned from here.
+	 */
+	if (blockSize > data_.size() - used_) {
+		LOG(Fatal)
+			<< "Parameters buffer out of space; potential version mismatch between driver and libcamera";
+		return {};
+	}
+
+	/* Allocate a new block, clear its memory, and initialize its header. */
+	Span<uint8_t> block = data_.subspan(used_, blockSize);
+	memset(block.data(), 0, block.size());
+
+	struct v4l2_isp_params_block_header *header =
+		reinterpret_cast<struct v4l2_isp_params_block_header *>(block.data());
+	header->type = blockType;
+	header->size = block.size();
+
+	used_ += block.size();
+
+	struct v4l2_isp_params_buffer *buffer =
+		reinterpret_cast<struct v4l2_isp_params_buffer *>(data_.data());
+	buffer->data_size += block.size();
+
+	/* Update the cache. */
+	blocks_[type] = block;
+
+	return block;
+}
+
+/**
+ * \var V4L2ParamsBase::data_
+ * \brief The ISP parameters buffer memory
+ */
+
+/**
+ * \var V4L2ParamsBase::used_
+ * \brief The number of bytes used in the parameters buffer
+ */
+
+/**
+ * \var V4L2ParamsBase::blocks_
+ * \brief Cache of ISP configuration blocks
+ */
+
+/**
  * \class V4L2Params
  * \brief Helper class that represent an ISP configuration buffer
  *
@@ -146,13 +255,13 @@ namespace ipa {
  * };
  *
  * template<>
- * struct block_type<myISPBlock::Agc> {
+ * struct block_type<myISPBlocks::Agc> {
  *	using type = struct my_isp_kernel_config_type_agc;
  *	static constexpr kernel_enum_type blockType = MY_ISP_TYPE_AGC;
  * };
  *
  * template<>
- * struct block_type<myISPBlock::Awb> {
+ * struct block_type<myISPBlocks::Awb> {
  *	using type = struct my_isp_kernel_config_type_awb;
  *	static constexpr kernel_enum_type blockType = MY_ISP_TYPE_AWB;
  * };
@@ -201,51 +310,9 @@ namespace ipa {
  */
 
 /**
- * \fn V4L2Params::bytesused()
- * \brief Retrieve the used size of the parameters buffer (in bytes)
- *
- * The parameters buffer size is mostly used to populate the v4l2_buffer
- * bytesused field before queueing the buffer to the ISP.
- *
- * \return The number of bytes occupied by the ISP configuration parameters
- */
-
-/**
  * \fn V4L2Params::block()
  * \brief Retrieve the location of an ISP configuration block a return it
  * \return A V4L2ParamsBlock instance that points to the ISP configuration block
- */
-
-/**
- * \fn V4L2Params::block(typename Traits::id_type type, unsigned int blockType, size_t blockSize)
- * \brief Populate an ISP configuration block a returns a reference to its
- * memory
- * \param[in] type The ISP block identifier enumerated by the IPA module
- * \param[in] blockType The kernel-defined ISP block identifier, used to
- * populate the block header
- * \param[in] blockSize The ISP block size, used to populate the block header
- *
- * Initialize the block header with \a blockType and \a blockSize and
- * returns a reference to the memory used to store an ISP configuration block.
- *
- * IPA modules that derive the V4L2Params class shall use this function to
- * retrieve the memory area that will be used to construct a V4L2ParamsBlock<T>
- * before returning it to the caller.
- */
-
-/**
- * \var V4L2Params::data_
- * \brief The ISP parameters buffer memory
- */
-
-/**
- * \var V4L2Params::used_
- * \brief The number of bytes used in the parameters buffer
- */
-
-/**
- * \var V4L2Params::blocks_
- * \brief Cache of ISP configuration blocks
  */
 
 } /* namespace ipa */

@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <linux/mali-c55-config.h>
+#include <linux/media/arm/mali-c55-config.h>
 
 #include <libcamera/ipa/mali-c55_ipa_interface.h>
 

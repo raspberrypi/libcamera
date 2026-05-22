@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <stdint.h>
+
 #include <linux/rkisp1-config.h>
 #include <linux/videodev2.h>
 
@@ -16,7 +18,7 @@ namespace libcamera {
 
 namespace ipa::rkisp1 {
 
-enum class BlockType {
+enum class BlockType : uint16_t {
 	Bls,
 	Dpcc,
 	Sdg,

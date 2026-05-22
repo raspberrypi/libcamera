@@ -111,6 +111,13 @@ public:
 		return apply(*this, scalar, std::divides<>{});
 	}
 
+	constexpr Vector operator>>(unsigned int shift) const
+	{
+		static_assert(std::is_integral_v<T>,
+			      "Vector::operator>> requires an integer element type");
+		return apply(*this, shift, [](T a, unsigned int b) { return a >> b; });
+	}
+
 	Vector &operator+=(const Vector &other)
 	{
 		return apply(other, [](T a, T b) { return a + b; });
@@ -149,6 +156,13 @@ public:
 	Vector &operator/=(T scalar)
 	{
 		return apply(scalar, [](T a, T b) { return a / b; });
+	}
+
+	Vector &operator>>=(unsigned int shift)
+	{
+		static_assert(std::is_integral_v<T>,
+			      "Vector::operator>>= requires an integer element type");
+		return apply(shift, [](T a, unsigned int b) { return a >> b; });
 	}
 
 	constexpr Vector min(const Vector &other) const
@@ -260,8 +274,8 @@ private:
 		return result;
 	}
 
-	template<class BinaryOp>
-	static constexpr Vector apply(const Vector &lhs, T rhs, BinaryOp op)
+	template<class U, class BinaryOp>
+	static constexpr Vector apply(const Vector &lhs, U rhs, BinaryOp op)
 	{
 		Vector result;
 		std::transform(lhs.data_.begin(), lhs.data_.end(),
@@ -281,8 +295,8 @@ private:
 		return *this;
 	}
 
-	template<class BinaryOp>
-	Vector &apply(T scalar, BinaryOp op)
+	template<class U, class BinaryOp>
+	Vector &apply(U scalar, BinaryOp op)
 	{
 		std::for_each(data_.begin(), data_.end(),
 			      [&op, scalar](T &v) { v = op(v, scalar); });

@@ -10,7 +10,7 @@
 #include <string.h>
 #include <vector>
 
-#include <linux/mali-c55-config.h>
+#include <linux/media/arm/mali-c55-config.h>
 #include <linux/v4l2-controls.h>
 
 #include <libcamera/base/file.h>

@@ -184,6 +184,15 @@ controls:
         \sa SyncReady
         \sa SyncTimer
 
+  - ControlListSequence:
+      type: int64_t
+      direction: out
+      description: |
+        This is the sequence number of the request whose control list has
+        just been applied. Controls normally take several frames to apply,
+        so the number here will refer to a request submitted a number of
+        frames earlier.
+
   - CnnOutputTensor:
       type: float
       size: [n]

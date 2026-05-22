@@ -11,6 +11,8 @@
 #include <cmath>
 
 #include <libcamera/base/log.h>
+#include <libcamera/base/utils.h>
+
 #include <libcamera/control_ids.h>
 
 #include "exposure_mode_helper.h"
@@ -288,9 +290,9 @@ int AgcMeanLuminance::parseExposureModes(const ValueNode &tuningData)
 			}
 
 			std::vector<uint32_t> exposureTimes =
-				modeValues["exposureTime"].get<std::vector<uint32_t>>().value_or(std::vector<uint32_t>{});
+				modeValues["exposureTime"].get<std::vector<uint32_t>>().value_or(utils::defopt);
 			std::vector<double> gains =
-				modeValues["gain"].get<std::vector<double>>().value_or(std::vector<double>{});
+				modeValues["gain"].get<std::vector<double>>().value_or(utils::defopt);
 
 			if (exposureTimes.size() != gains.size()) {
 				LOG(AgcMeanLuminance, Error)

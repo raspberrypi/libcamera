@@ -37,6 +37,8 @@ private:
 template<typename... Args>
 class Signal : public SignalBase
 {
+	static_assert((!std::is_rvalue_reference_v<Args> && ...));
+
 public:
 	~Signal()
 	{

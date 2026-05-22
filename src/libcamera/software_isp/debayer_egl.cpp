@@ -9,13 +9,18 @@
 
 #include "debayer_egl.h"
 
-#include <cmath>
+#include <algorithm>
+#include <memory>
 #include <stdlib.h>
-#include <time.h>
+#include <string>
+#include <tuple>
+#include <vector>
 
 #include <libcamera/base/utils.h>
 
 #include <libcamera/formats.h>
+
+#include "libcamera/internal/framebuffer.h"
 
 #include "../glsl_shaders.h"
 

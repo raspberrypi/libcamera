@@ -9,7 +9,6 @@
 
 #include <deque>
 #include <functional>
-#include <initializer_list>
 #include <map>
 #include <memory>
 #include <stdint.h>

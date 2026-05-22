@@ -16,10 +16,10 @@
 
 #include <libcamera/base/signal.h>
 
+#include <libcamera/framebuffer.h>
 #include <libcamera/geometry.h>
 
 #include "libcamera/internal/bayer_format.h"
-#include "libcamera/internal/framebuffer.h"
 #include "libcamera/internal/shared_mem_object.h"
 #include "libcamera/internal/software_isp/swisp_stats.h"
 
@@ -116,6 +116,7 @@ private:
 
 	unsigned int xShift_;
 	unsigned int stride_;
+	unsigned int sumShift_;
 
 	std::vector<SwIspStats> stats_;
 	SharedMemObject<SwIspStats> sharedStats_;

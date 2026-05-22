@@ -123,7 +123,7 @@ IPAManager::IPAManager(const CameraManager &cm)
 	/* User-specified paths take precedence. */
 	const auto modulePaths =
 		configuration.listOption({ "ipa", "module_paths" })
-			.value_or(std::vector<std::string>());
+			.value_or(utils::defopt);
 	for (const auto &dir : modulePaths) {
 		if (dir.empty())
 			continue;

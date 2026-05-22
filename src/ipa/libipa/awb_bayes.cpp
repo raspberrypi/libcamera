@@ -16,6 +16,8 @@
 #include <vector>
 
 #include <libcamera/base/log.h>
+#include <libcamera/base/utils.h>
+
 #include <libcamera/control_ids.h>
 
 #include "colours.h"
@@ -211,9 +213,9 @@ int AwbBayes::readPriors(const ValueNode &tuningData)
 		}
 
 		std::vector<uint32_t> temperatures =
-			p["ct"].get<std::vector<uint32_t>>().value_or(std::vector<uint32_t>{});
+			p["ct"].get<std::vector<uint32_t>>().value_or(utils::defopt);
 		std::vector<double> probabilities =
-			p["probability"].get<std::vector<double>>().value_or(std::vector<double>{});
+			p["probability"].get<std::vector<double>>().value_or(utils::defopt);
 
 		if (temperatures.size() != probabilities.size()) {
 			LOG(Awb, Error)

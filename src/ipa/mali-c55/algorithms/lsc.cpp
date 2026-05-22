@@ -7,6 +7,8 @@
 
 #include "lsc.h"
 
+#include <libcamera/base/utils.h>
+
 #include "libcamera/internal/value_node.h"
 
 namespace libcamera {
@@ -48,11 +50,11 @@ int Lsc::init([[maybe_unused]] IPAContext &context, const ValueNode &tuningData)
 		}
 
 		std::vector<uint8_t> rTable =
-			yamlSet["r"].get<std::vector<uint8_t>>().value_or(std::vector<uint8_t>{});
+			yamlSet["r"].get<std::vector<uint8_t>>().value_or(utils::defopt);
 		std::vector<uint8_t> gTable =
-			yamlSet["g"].get<std::vector<uint8_t>>().value_or(std::vector<uint8_t>{});
+			yamlSet["g"].get<std::vector<uint8_t>>().value_or(utils::defopt);
 		std::vector<uint8_t> bTable =
-			yamlSet["b"].get<std::vector<uint8_t>>().value_or(std::vector<uint8_t>{});
+			yamlSet["b"].get<std::vector<uint8_t>>().value_or(utils::defopt);
 
 		/*
 		 * Some validation to do; only 16x16 and 32x32 tables of

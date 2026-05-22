@@ -146,7 +146,7 @@ std::string Option::optionName() const
 	if (name)
 		return "--" + std::string(name);
 	else
-		return "-" + std::string(1, opt);
+		return '-' + std::string(1, opt);
 }
 
 /* -----------------------------------------------------------------------------

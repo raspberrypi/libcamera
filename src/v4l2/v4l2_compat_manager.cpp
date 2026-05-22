@@ -117,7 +117,7 @@ int V4L2CompatManager::getCameraIndex(int fd)
 	for (auto [index, camera] : utils::enumerate(cameras)) {
 		Span<const int64_t> devices = camera->properties()
 						      .get(properties::SystemDevices)
-						      .value_or(Span<int64_t>{});
+						      .value_or(utils::defopt);
 
 		/*
 		 * While there may be multiple cameras that could reference the

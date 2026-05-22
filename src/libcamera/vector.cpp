@@ -127,6 +127,13 @@ LOG_DEFINE_CATEGORY(Vector)
  */
 
 /**
+ * \fn Vector::operator>>(unsigned int shift) const
+ * \brief Right-shift each element of this vector by \a shift bits
+ * \param[in] shift The shift amount
+ * \return A new vector with each element right-shifted by \a shift
+ */
+
+/**
  * \fn Vector::operator+=(Vector const &other)
  * \brief Add \a other element-wise to this vector
  * \param[in] other The other vector
@@ -179,6 +186,13 @@ LOG_DEFINE_CATEGORY(Vector)
  * \fn Vector::operator/=(T scalar)
  * \brief Divide this vector by \a scalar element-wise
  * \param[in] scalar The scalar
+ * \return This vector
+ */
+
+/**
+ * \fn Vector::operator>>=(unsigned int shift)
+ * \brief Right-shift each element of this vector by \a shift bits in place
+ * \param[in] shift The shift amount
  * \return This vector
  */
 

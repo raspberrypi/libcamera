@@ -685,6 +685,23 @@ void ScopeExitActions::release()
 	actions_.clear();
 }
 
+/**
+ * \var defopt
+ * \brief Constant used with std::optional::value_or() to create a
+ * default-constructed object
+ *
+ * The std::optional<T>::value_or(U &&default_value) function returns the
+ * contained value if available, or \a default_value if the std::optional has no
+ * value. If the desired default value is a default-constructed T, the obvious
+ * option is to call std::optional<T>::value_or(T{}). This approach however
+ * constructs the \a default_value T{} even if the std::optional instance has a
+ * value, which impacts efficiency.
+ *
+ * The defopt variable solves this issue by providing a value that can be passed
+ * to std::optional<T>::value_or() and get implicitly converted to a
+ * default-constructed T.
+ */
+
 #ifndef __DOXYGEN__
 std::ostream &operator<<(std::ostream &os, const Duration &d)
 {

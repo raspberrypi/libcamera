@@ -1223,6 +1223,17 @@ PiSPCameraData::platformValidate(RPi::RPiCameraConfiguration *rpiConfig) const
 			status = CameraConfiguration::Adjusted;
 		}
 
+		unsigned bpp = MediaBusFormatInfo::info(rpiConfig->sensorFormat_.code).bitsPerPixel;
+		if ((bpp == 16 || bpp == 14) &&
+		    bayer.packing != BayerFormat::Packing::None) {
+			LOG(RPI, Info)
+				<< "The sensor is configured for a 16/14-bit output, "
+				<< "compression is not available for SW fixups needed.";
+			bayer.packing = BayerFormat::Packing::None;
+			rawStream->pixelFormat = bayer.toPixelFormat();
+			status = CameraConfiguration::Adjusted;
+		}
+
 		rawStreams[0].format =
 			RPi::PipelineHandlerBase::toV4L2DeviceFormat(cfe_[Cfe::Output0].dev(), rawStream);
 

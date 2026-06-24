@@ -410,7 +410,7 @@ PipelineHandlerBase::generateConfiguration(Camera *camera, Span<const StreamRole
 			size = sensorSize;
 			sensorFormat = data->findBestFormat(size, defaultRawBitDepth);
 			pixelFormat = mbusCodeToPixelFormat(sensorFormat.code,
-							    BayerFormat::Packing::CSI2);
+							    BayerFormat::Packing::None);
 			ASSERT(pixelFormat.isValid());
 			colorSpace = ColorSpace::Raw;
 			bufferCount = 2;

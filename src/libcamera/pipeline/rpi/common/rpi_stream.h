@@ -97,14 +97,14 @@ public:
 	using StreamFlags = Flags<StreamFlag>;
 
 	Stream()
-		: flags_(StreamFlag::None), id_(0), swDownscale_(0)
+		: flags_(StreamFlag::None), id_(0), swDownscale_(0), ispOutputIndex_(-1)
 	{
 	}
 
 	Stream(const char *name, MediaEntity *dev, StreamFlags flags = StreamFlag::None)
 		: flags_(flags), name_(name),
 		  dev_(std::make_unique<V4L2VideoDevice>(dev)), id_(0),
-		  swDownscale_(0)
+		  swDownscale_(0), ispOutputIndex_(-1)
 	{
 	}
 
@@ -124,6 +124,9 @@ public:
 	unsigned int getBufferId(FrameBuffer *buffer) const;
 
 	void setExportedBuffer(FrameBuffer *buffer);
+
+	void setIspIndex(int ispIndex) { ispOutputIndex_ = ispIndex; }
+	int getIspIndex() const { return ispOutputIndex_; }
 
 	int allocateBuffers(unsigned int count);
 	int queueBuffer(FrameBuffer *buffer);
@@ -181,6 +184,9 @@ private:
 	 * as the stream needs to maintain ownership of these buffers.
 	 */
 	std::vector<std::unique_ptr<FrameBuffer>> internalBuffers_;
+
+	/* For output streams, the ISP branch for this stream (otherwise -1). */
+	int ispOutputIndex_;
 };
 
 /*

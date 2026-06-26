@@ -1524,6 +1524,7 @@ int PiSPCameraData::platformConfigure(const RPi::RPiCameraConfiguration *rpiConf
 			beEnables |= PISP_BE_RGB_ENABLE_OUTPUT0;
 			ispIndex = 0;
 		}
+		stream->setIspIndex(ispIndex);
 
 		format = outStreams[i].format;
 		bool needs32BitConversion = adjustDeviceFormat(format);
@@ -2305,6 +2306,24 @@ void PiSPCameraData::tryRunPipeline()
 	/* Take the first request from the queue and action the IPA. */
 	Request *request = requestQueue_.front();
 	ASSERT(request->metadata().empty());
+
+	/* Pass the plane offsets of any output buffers to the Back End ISP. */
+	for (auto const &[stream, buffer] : request->buffers()) {
+		int ispIndex = static_cast<const RPi::Stream *>(stream)->getIspIndex();
+		if (ispIndex >= 0) {
+			/*
+			 * PiSP takes only 2 offsets; offset 3 (where required) is assumed
+			 * to be the same as offset 2.
+			 */
+			unsigned int offset = buffer->planes()[0].offset;
+			unsigned int offset2 = 0;
+			if (buffer->planes().size() > 1)
+				offset2 = buffer->planes()[1].offset;
+
+			pisp_be_output_format_extra extra{ 0, 0, { offset, offset2 } };
+			be_->SetOutputFormatExtra(ispIndex, extra);
+		}
+	}
 
 	/* See if a new ScalerCrop value needs to be applied. */
 	applyScalerCrop(request->controls());

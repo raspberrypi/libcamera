@@ -143,10 +143,17 @@ const char *Option::typeName() const
  */
 std::string Option::optionName() const
 {
-	if (name)
-		return "--" + std::string(name);
-	else
-		return "-" + std::string(1, opt);
+    std::string option;
+
+    if (name) {
+        option = "--";
+        option += name;
+    } else {
+        option = "-";
+        option += static_cast<char>(opt);
+    }
+
+    return option;
 }
 
 /* -----------------------------------------------------------------------------

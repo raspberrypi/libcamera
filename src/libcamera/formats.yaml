@@ -73,6 +73,12 @@ formats:
       fourcc: DRM_FORMAT_NV24
   - NV42:
       fourcc: DRM_FORMAT_NV42
+  - NV12MT_COL128:
+      fourcc: DRM_FORMAT_NV12
+      mod: DRM_FORMAT_MOD_BROADCOM_SAND128
+  - NV12MT_10_COL128:
+      fourcc: DRM_FORMAT_P030
+      mod: DRM_FORMAT_MOD_BROADCOM_SAND128
 
   - YUV420:
       fourcc: DRM_FORMAT_YUV420

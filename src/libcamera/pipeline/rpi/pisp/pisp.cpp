@@ -1447,11 +1447,16 @@ int PiSPCameraData::platformConfigure(const RPi::RPiCameraConfiguration *rpiConf
 
 	/*
 	 * If the sensor output is 16-bits, we must endian swap the buffer
-	 * contents to account for the HW missing this feature.
+	 * contents to account for the HW missing this feature. Never swap a
+	 * PISP compressed (COMP1) CFE output: the swap assumes 2 bytes/pixel
+	 * and scrambles the 8-byte compression blocks. Consumers decode COMP1
+	 * directly (and the BE decompresses it natively).
 	 */
 	cfe_[Cfe::Output0].clearFlags(StreamFlag::Needs16bitEndianSwap);
 	if (MediaBusFormatInfo::info(rpiConfig->sensorFormat_.code).bitsPerPixel == 16) {
-		cfe_[Cfe::Output0].setFlags(StreamFlag::Needs16bitEndianSwap);
+		if (BayerFormat::fromV4L2PixelFormat(cfeFormat.fourcc).packing !=
+		    BayerFormat::Packing::PISP1)
+			cfe_[Cfe::Output0].setFlags(StreamFlag::Needs16bitEndianSwap);
 		LOG(RPI, Warning)
 			<< "The sensor is configured for a 16-bit output, statistics"
 			<< "  will not be correct. You must use manual camera settings.";

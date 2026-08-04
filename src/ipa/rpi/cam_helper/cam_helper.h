@@ -56,7 +56,7 @@ namespace RPiController {
  * HideFramesModeSwitch(): Tell the pipeline handler not to return this
  *     many frames after a mode switch (other than start-up). Some sensors
  *     may produce innvalid frames after a mode switch; others may not.
- * MistrustFramesStartup(): At start-up a sensor may return frames for
+ * mistrustMetadataStartup(): At start-up a sensor may return frames for
  *    which we should not run any control algorithms (for example, metadata
  *    may be invalid).
  * MistrustFramesModeSwitch(): The number of frames, after a mode switch
@@ -96,7 +96,7 @@ public:
 	virtual double getModeSensitivity(const CameraMode &mode) const;
 	virtual unsigned int hideFramesStartup() const;
 	virtual unsigned int hideFramesModeSwitch() const;
-	virtual unsigned int mistrustFramesStartup() const;
+	virtual unsigned int mistrustMetadataStartup() const;
 	virtual unsigned int mistrustFramesModeSwitch() const;
 	virtual unsigned int getMinDebinFactor() const;
 

@@ -192,9 +192,9 @@ unsigned int CamHelper::hideFramesModeSwitch() const
 	return 0;
 }
 
-unsigned int CamHelper::mistrustFramesStartup() const
+unsigned int CamHelper::mistrustMetadataStartup() const
 {
-	/* Many sensors return a single bad frame on start-up. */
+	/* Many sensors return bad metadata on the first frame after start-up. */
 	return 1;
 }
 

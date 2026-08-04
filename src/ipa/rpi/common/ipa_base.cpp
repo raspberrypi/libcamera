@@ -359,12 +359,11 @@ void IpaBase::start(const ControlList &controls, StartResult *result)
 	frameCount_ = 0;
 	if (firstStart_) {
 		invalidCount_ = helper_->hideFramesStartup();
-		mistrustCount_ = helper_->mistrustFramesStartup();
-
+		mistrustCount_ = helper_->mistrustMetadataStartup();
 		/*
 		 * Query the AGC/AWB for how many frames they may take to
 		 * converge sufficiently. Where these numbers are non-zero
-		 * we must allow for the frames with bad statistics
+		 * we must allow for the frames with bad metadata
 		 * (mistrustCount_) that they won't see. But if zero (i.e.
 		 * no convergence necessary), no frames need to be dropped.
 		 */

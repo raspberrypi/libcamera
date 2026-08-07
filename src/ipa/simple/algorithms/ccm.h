@@ -7,13 +7,15 @@
 
 #pragma once
 
-#include <optional>
+#include <libcamera/controls.h>
 
-#include "libcamera/internal/matrix.h"
+#include "libcamera/internal/value_node.h"
 
-#include <libipa/interpolator.h>
+#include "libipa/ccm.h"
+#include "libipa/fixedpoint.h"
 
 #include "algorithm.h"
+#include "ipa_context.h"
 
 namespace libcamera {
 
@@ -22,10 +24,14 @@ namespace ipa::soft::algorithms {
 class Ccm : public Algorithm
 {
 public:
-	Ccm() = default;
-	~Ccm() = default;
-
 	int init(IPAContext &context, const ValueNode &tuningData) override;
+
+	int configure(IPAContext &context, const IPAConfigInfo &configInfo) override;
+
+	void queueRequest(IPAContext &context, const uint32_t frame,
+			  IPAFrameContext &frameContext,
+			  const ControlList &controls) override;
+
 	void prepare(IPAContext &context,
 		     const uint32_t frame,
 		     IPAFrameContext &frameContext,
@@ -36,9 +42,7 @@ public:
 		     ControlList &metadata) override;
 
 private:
-	unsigned int lastCt_;
-	Interpolator<Matrix<float, 3, 3>> ccm_;
-	std::optional<Matrix<float, 3, 3>> currentCcm_;
+	CcmAlgorithm<Q<4, 16>> ccmAlgo_;
 };
 
 } /* namespace ipa::soft::algorithms */

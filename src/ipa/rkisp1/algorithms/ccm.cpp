@@ -16,13 +16,11 @@
 
 #include <libcamera/ipa/core_ipa_interface.h>
 
-#include "libcamera/internal/value_node.h"
-
-#include "libipa/fixedpoint.h"
 #include "libipa/interpolator.h"
 
 /**
  * \file ccm.h
+ * \brief RkISP1 CCM algorithm implementation
  */
 
 namespace libcamera {
@@ -31,42 +29,17 @@ namespace ipa::rkisp1::algorithms {
 
 /**
  * \class Ccm
- * \brief A color correction matrix algorithm
+ * \brief RkISP1 color correction matrix algorithm
  */
 
 LOG_DEFINE_CATEGORY(RkISP1Ccm)
-
-constexpr Matrix<float, 3, 3> kIdentity3x3 = Matrix<float, 3, 3>::identity();
 
 /**
  * \copydoc libcamera::ipa::Algorithm::init
  */
 int Ccm::init([[maybe_unused]] IPAContext &context, const ValueNode &tuningData)
 {
-	auto &cmap = context.ctrlMap;
-	cmap[&controls::ColourCorrectionMatrix] = ControlInfo(
-		ControlValue(-8.0f),
-		ControlValue(7.993f),
-		ControlValue(kIdentity3x3.data()));
-
-	int ret = ccm_.readYaml(tuningData["ccms"], "ct", "ccm");
-	if (ret < 0) {
-		LOG(RkISP1Ccm, Warning)
-			<< "Failed to parse 'ccm' "
-			<< "parameter from tuning file; falling back to unit matrix";
-		ccm_.setData({ { 0, kIdentity3x3 } });
-	}
-
-	ret = offsets_.readYaml(tuningData["ccms"], "ct", "offsets");
-	if (ret < 0) {
-		LOG(RkISP1Ccm, Warning)
-			<< "Failed to parse 'offsets' "
-			<< "parameter from tuning file; falling back to zero offsets";
-
-		offsets_.setData({ { 0, Matrix<int16_t, 3, 1>({ 0, 0, 0 }) } });
-	}
-
-	return 0;
+	return ccmAlgo_.init(tuningData, context.ctrlMap);
 }
 
 /**
@@ -75,10 +48,8 @@ int Ccm::init([[maybe_unused]] IPAContext &context, const ValueNode &tuningData)
 int Ccm::configure(IPAContext &context,
 		   [[maybe_unused]] const IPACameraSensorInfo &configInfo)
 {
-	auto &as = context.activeState;
-	as.ccm.manual = kIdentity3x3;
-	as.ccm.automatic = ccm_.getInterpolated(as.awb.automatic.temperatureK);
-	return 0;
+	return ccmAlgo_.configure(context.activeState.ccm,
+				  context.activeState.awb.automatic.colourTemperature);
 }
 
 void Ccm::queueRequest(IPAContext &context,
@@ -90,38 +61,28 @@ void Ccm::queueRequest(IPAContext &context,
 	if (frameContext.awb.autoEnabled)
 		return;
 
-	auto &ccm = context.activeState.ccm;
-
-	const auto &colourTemperature = controls.get(controls::ColourTemperature);
-	const auto &ccmMatrix = controls.get(controls::ColourCorrectionMatrix);
-	if (ccmMatrix) {
-		ccm.manual = Matrix<float, 3, 3>(*ccmMatrix);
-		LOG(RkISP1Ccm, Debug)
-			<< "Setting manual CCM from CCM control to " << ccm.manual;
-	} else if (colourTemperature) {
-		ccm.manual = ccm_.getInterpolated(*colourTemperature);
-		LOG(RkISP1Ccm, Debug)
-			<< "Setting manual CCM from CT control to " << ccm.manual;
-	}
-
-	frameContext.ccm.ccm = ccm.manual;
+	ccmAlgo_.queueRequest(context.activeState.ccm, frameContext.ccm, controls);
 }
 
-void Ccm::setParameters(struct rkisp1_cif_isp_ctk_config &config,
-			const Matrix<float, 3, 3> &matrix,
-			const Matrix<int16_t, 3, 1> &offsets)
+void Ccm::setParameters(RkISP1Params *params, IPAFrameContext &context)
 {
+	const Matrix<float, 3, 3> &matrix = context.ccm.ccm;
+	const Matrix<int16_t, 3, 1> &offsets = context.ccm.offsets;
+
+	auto config = params->block<BlockType::Ctk>();
+	config.setEnabled(true);
+
 	/*
 	 * 4 bit integer and 7 bit fractional, ranging from -8 (0x400) to
 	 * +7.9921875 (0x3ff)
 	 */
 	for (unsigned int i = 0; i < 3; i++) {
 		for (unsigned int j = 0; j < 3; j++)
-			config.coeff[i][j] = Q<4, 7>(matrix[i][j]).quantized();
+			config->coeff[i][j] = Q<4, 7>(matrix[i][j]).quantized();
 	}
 
 	for (unsigned int i = 0; i < 3; i++)
-		config.ct_offset[i] = offsets[i][0] & 0xfff;
+		config->ct_offset[i] = offsets[i][0] & 0xfff;
 
 	LOG(RkISP1Ccm, Debug) << "Setting matrix " << matrix;
 	LOG(RkISP1Ccm, Debug) << "Setting offsets " << offsets;
@@ -133,29 +94,11 @@ void Ccm::setParameters(struct rkisp1_cif_isp_ctk_config &config,
 void Ccm::prepare(IPAContext &context, const uint32_t frame,
 		  IPAFrameContext &frameContext, RkISP1Params *params)
 {
-	if (!frameContext.awb.autoEnabled) {
-		auto config = params->block<BlockType::Ctk>();
-		config.setEnabled(true);
-		setParameters(*config, frameContext.ccm.ccm, Matrix<int16_t, 3, 1>());
-		return;
-	}
+	if (frameContext.awb.autoEnabled)
+		ccmAlgo_.prepare(context.activeState.ccm, frameContext.ccm,
+				 frame, frameContext.awb.colourTemperature);
 
-	uint32_t ct = frameContext.awb.temperatureK;
-	if (frame > 0 && ct == ct_) {
-		frameContext.ccm.ccm = context.activeState.ccm.automatic;
-		return;
-	}
-
-	ct_ = ct;
-	Matrix<float, 3, 3> ccm = ccm_.getInterpolated(ct);
-	Matrix<int16_t, 3, 1> offsets = offsets_.getInterpolated(ct);
-
-	context.activeState.ccm.automatic = ccm;
-	frameContext.ccm.ccm = ccm;
-
-	auto config = params->block<BlockType::Ctk>();
-	config.setEnabled(true);
-	setParameters(*config, ccm, offsets);
+	setParameters(params, frameContext);
 }
 
 /**
@@ -167,7 +110,7 @@ void Ccm::process([[maybe_unused]] IPAContext &context,
 		  [[maybe_unused]] const rkisp1_stat_buffer *stats,
 		  ControlList &metadata)
 {
-	metadata.set(controls::ColourCorrectionMatrix, frameContext.ccm.ccm.data());
+	ccmAlgo_.process(frameContext.ccm, metadata);
 }
 
 REGISTER_IPA_ALGORITHM(Ccm, "Ccm")

@@ -25,9 +25,12 @@
 #include "libcamera/internal/vector.h"
 
 #include "libipa/agc_mean_luminance.h"
+#include "libipa/awb.h"
 #include "libipa/camera_sensor_helper.h"
+#include "libipa/ccm.h"
 #include "libipa/fc_queue.h"
 #include "libipa/fixedpoint.h"
+#include "libipa/lsc.h"
 
 namespace libcamera {
 
@@ -48,15 +51,17 @@ struct IPAHwSettings {
 	bool compand;
 };
 
+struct RKISP1AwbSession {
+	struct rkisp1_cif_isp_window measureWindow;
+	bool enabled;
+};
+
 struct IPASessionConfiguration {
 	struct {
 		struct rkisp1_cif_isp_window measureWindow;
 	} agc;
 
-	struct {
-		struct rkisp1_cif_isp_window measureWindow;
-		bool enabled;
-	} awb;
+	struct RKISP1AwbSession awb;
 
 	struct {
 		bool supported;
@@ -100,24 +105,13 @@ struct IPAActiveState {
 		utils::Duration maxFrameDuration;
 	} agc;
 
-	struct {
-		struct AwbState {
-			RGB<double> gains;
-			unsigned int temperatureK;
-		};
+	ipa::awb::ActiveState awb;
 
-		AwbState manual;
-		AwbState automatic;
-
-		bool autoEnabled;
-	} awb;
+	ipa::ccm::ActiveState ccm;
 
 	struct {
-		Matrix<float, 3, 3> manual;
-		Matrix<float, 3, 3> automatic;
-	} ccm;
-
-	struct {
+		float requestedBrightness;
+		float actualBrightness;
 		BrightnessQ brightness;
 		ContrastQ contrast;
 		HueQ hue;
@@ -148,9 +142,7 @@ struct IPAActiveState {
 		double strength;
 	} wdr;
 
-	struct {
-		bool enabled;
-	} lsc;
+	ipa::lsc::ActiveState lsc;
 };
 
 struct IPAFrameContext : public FrameContext {
@@ -174,13 +166,10 @@ struct IPAFrameContext : public FrameContext {
 		bool autoGainModeChange;
 	} agc;
 
-	struct {
-		RGB<double> gains;
-		bool autoEnabled;
-		unsigned int temperatureK;
-	} awb;
+	ipa::awb::FrameContext awb;
 
 	struct {
+		float actualBrightness;
 		BrightnessQ brightness;
 		ContrastQ contrast;
 		HueQ hue;
@@ -215,9 +204,7 @@ struct IPAFrameContext : public FrameContext {
 		double gain;
 	} sensor;
 
-	struct {
-		Matrix<float, 3, 3> ccm;
-	} ccm;
+	ipa::ccm::FrameContext ccm;
 
 	struct {
 		double lux;
@@ -229,10 +216,7 @@ struct IPAFrameContext : public FrameContext {
 		double gain;
 	} wdr;
 
-	struct {
-		bool enabled;
-		bool update;
-	} lsc;
+	ipa::lsc::FrameContext lsc;
 };
 
 struct IPAContext {

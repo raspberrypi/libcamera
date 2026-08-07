@@ -58,6 +58,7 @@ public:
 	double getModeSensitivity(const CameraMode &mode) const override;
 	unsigned int hideFramesModeSwitch() const override;
 	unsigned int hideFramesStartup() const override;
+	unsigned int getMinDebinFactor() const override;
 
 private:
 	/*
@@ -235,6 +236,12 @@ unsigned int CamHelperImx708::hideFramesModeSwitch() const
 unsigned int CamHelperImx708::hideFramesStartup() const
 {
 	return hideFramesModeSwitch();
+}
+
+unsigned int CamHelperImx708::getMinDebinFactor() const
+{
+	/* Quad-Bayer sensor, so debinning required only at 4x4 binning. */
+	return 4;
 }
 
 void CamHelperImx708::populateMetadata(const MdParser::RegisterMap &registers,

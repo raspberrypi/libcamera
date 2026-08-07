@@ -815,7 +815,7 @@ void IPU3CameraData::queuePendingRequests()
 		 * otherwise.
 		 */
 		FrameBuffer *reqRawBuffer = request->findBuffer(&rawStream_);
-		FrameBuffer *rawBuffer = cio2_.queueBuffer(request, reqRawBuffer);
+		FrameBuffer *rawBuffer = cio2_.queueBuffer(reqRawBuffer);
 		/*
 		 * \todo If queueBuffer fails in queuing a buffer to the device,
 		 * report the request as error by cancelling the request and

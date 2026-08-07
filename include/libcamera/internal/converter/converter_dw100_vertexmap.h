@@ -9,6 +9,7 @@
 
 #include <assert.h>
 #include <cmath>
+#include <optional>
 #include <stdint.h>
 #include <vector>
 
@@ -28,6 +29,35 @@ public:
 	enum ScaleMode {
 		Fill = 0,
 		Crop = 1,
+	};
+
+	struct DewarpParams {
+		DewarpParams()
+			: cm(Matrix<double, 3, 3>::identity()),
+			  cmNew(Matrix<double, 3, 3>::identity()),
+			  coefficients({})
+		{
+		}
+
+		int setCoefficients(Span<const double> coeffs);
+
+		Matrix<double, 3, 3> cm;
+		Matrix<double, 3, 3> cmNew;
+
+		struct {
+			double k1;
+			double k2;
+			double p1;
+			double p2;
+			double k3;
+			double k4;
+			double k5;
+			double k6;
+			double s1;
+			double s2;
+			double s3;
+			double s4;
+		} coefficients;
 	};
 
 	void applyLimits();
@@ -60,8 +90,7 @@ public:
 	void setMode(const ScaleMode mode) { mode_ = mode; }
 	ScaleMode mode() const { return mode_; }
 
-	int setDewarpParams(const Matrix<double, 3, 3> &cm, const Span<const double> &coeffs);
-	bool dewarpParamsValid() { return dewarpParamsValid_; }
+	void setDewarpParams(const DewarpParams &params) { dewarpParams_ = params; }
 
 	void setLensDewarpEnable(bool enable) { lensDewarpEnable_ = enable; }
 	bool lensDewarpEnable() { return lensDewarpEnable_; }
@@ -85,10 +114,8 @@ private:
 	Point effectiveOffset_;
 	Rectangle effectiveScalerCrop_;
 
-	Matrix<double, 3, 3> dewarpM_ = Matrix<double, 3, 3>::identity();
-	std::array<double, 12> dewarpCoeffs_;
+	std::optional<DewarpParams> dewarpParams_;
 	bool lensDewarpEnable_ = true;
-	bool dewarpParamsValid_ = false;
 };
 
 } /* namespace libcamera */

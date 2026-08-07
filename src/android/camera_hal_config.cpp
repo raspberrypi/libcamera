@@ -76,12 +76,12 @@ int CameraHalConfig::Private::parseConfigFile(File &file,
 	if (!root->contains("cameras"))
 		return -EINVAL;
 
-	const ValueNode &yamlObjectCameras = (*root)["cameras"];
+	const ValueNode &camerasNode = (*root)["cameras"];
 
-	if (!yamlObjectCameras.isDictionary())
+	if (!camerasNode.isDictionary())
 		return -EINVAL;
 
-	for (const auto &[cameraId, configData] : yamlObjectCameras.asDict()) {
+	for (const auto &[cameraId, configData] : camerasNode.asDict()) {
 		if (parseCameraConfigData(cameraId, configData))
 			return -EINVAL;
 	}

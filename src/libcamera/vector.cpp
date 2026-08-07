@@ -225,6 +225,14 @@ LOG_DEFINE_CATEGORY(Vector)
  */
 
 /**
+ * \fn Vector::clamp(T low, T high) const
+ * \brief Clamp the vector element-wise between \a low and \a high
+ * \param[in] low The lower limit
+ * \param[in] high The upper limit
+ * \return A vector with each element clamped between \a low and \a high
+ */
+
+/**
  * \fn Vector::dot(const Vector<T, Rows> &other) const
  * \brief Compute the dot product
  * \param[in] other The other vector
@@ -351,14 +359,14 @@ LOG_DEFINE_CATEGORY(Vector)
  */
 
 #ifndef __DOXYGEN__
-bool vectorValidateYaml(const ValueNode &obj, unsigned int size)
+bool vectorValidateValueNode(const ValueNode &obj, unsigned int size)
 {
 	if (!obj.isList())
 		return false;
 
 	if (obj.size() != size) {
 		LOG(Vector, Error)
-			<< "Wrong number of values in YAML vector: expected "
+			<< "Wrong number of values in vector: expected "
 			<< size << ", got " << obj.size();
 		return false;
 	}

@@ -61,6 +61,7 @@ public:
 
 	std::tuple<unsigned int, unsigned int>
 	strideAndFrameSize(const PixelFormat &outputFormat, const Size &size);
+	uint32_t preferredInputStride(const PixelFormat &inputFormat, const Size &size);
 
 	int configure(const StreamConfiguration &inputCfg,
 		      const std::vector<std::reference_wrapper<const StreamConfiguration>> &outputCfgs,

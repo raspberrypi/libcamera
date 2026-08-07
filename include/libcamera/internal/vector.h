@@ -73,116 +73,123 @@ public:
 
 	constexpr Vector operator+(const Vector &other) const
 	{
-		return apply(*this, other, std::plus<>{});
+		return apply(*this, std::plus<>{}, other);
 	}
 
 	constexpr Vector operator+(T scalar) const
 	{
-		return apply(*this, scalar, std::plus<>{});
+		return apply(*this, std::plus<>{}, scalar);
 	}
 
 	constexpr Vector operator-(const Vector &other) const
 	{
-		return apply(*this, other, std::minus<>{});
+		return apply(*this, std::minus<>{}, other);
 	}
 
 	constexpr Vector operator-(T scalar) const
 	{
-		return apply(*this, scalar, std::minus<>{});
+		return apply(*this, std::minus<>{}, scalar);
 	}
 
 	constexpr Vector operator*(const Vector &other) const
 	{
-		return apply(*this, other, std::multiplies<>{});
+		return apply(*this, std::multiplies<>{}, other);
 	}
 
 	constexpr Vector operator*(T scalar) const
 	{
-		return apply(*this, scalar, std::multiplies<>{});
+		return apply(*this, std::multiplies<>{}, scalar);
 	}
 
 	constexpr Vector operator/(const Vector &other) const
 	{
-		return apply(*this, other, std::divides<>{});
+		return apply(*this, std::divides<>{}, other);
 	}
 
 	constexpr Vector operator/(T scalar) const
 	{
-		return apply(*this, scalar, std::divides<>{});
+		return apply(*this, std::divides<>{}, scalar);
 	}
 
 	constexpr Vector operator>>(unsigned int shift) const
 	{
 		static_assert(std::is_integral_v<T>,
 			      "Vector::operator>> requires an integer element type");
-		return apply(*this, shift, [](T a, unsigned int b) { return a >> b; });
+		return apply(*this, [](T a, unsigned int b) { return a >> b; }, shift);
 	}
 
 	Vector &operator+=(const Vector &other)
 	{
-		return apply(other, [](T a, T b) { return a + b; });
+		return apply(std::plus<>{}, other);
 	}
 
 	Vector &operator+=(T scalar)
 	{
-		return apply(scalar, [](T a, T b) { return a + b; });
+		return apply(std::plus<>{}, scalar);
 	}
 
 	Vector &operator-=(const Vector &other)
 	{
-		return apply(other, [](T a, T b) { return a - b; });
+		return apply(std::minus<>{}, other);
 	}
 
 	Vector &operator-=(T scalar)
 	{
-		return apply(scalar, [](T a, T b) { return a - b; });
+		return apply(std::minus<>{}, scalar);
 	}
 
 	Vector &operator*=(const Vector &other)
 	{
-		return apply(other, [](T a, T b) { return a * b; });
+		return apply(std::multiplies<>{}, other);
 	}
 
 	Vector &operator*=(T scalar)
 	{
-		return apply(scalar, [](T a, T b) { return a * b; });
+		return apply(std::multiplies<>{}, scalar);
 	}
 
 	Vector &operator/=(const Vector &other)
 	{
-		return apply(other, [](T a, T b) { return a / b; });
+		return apply(std::divides<>{}, other);
 	}
 
 	Vector &operator/=(T scalar)
 	{
-		return apply(scalar, [](T a, T b) { return a / b; });
+		return apply(std::divides<>{}, scalar);
 	}
 
 	Vector &operator>>=(unsigned int shift)
 	{
 		static_assert(std::is_integral_v<T>,
 			      "Vector::operator>>= requires an integer element type");
-		return apply(shift, [](T a, unsigned int b) { return a >> b; });
+		return apply([](T a, unsigned int b) { return a >> b; }, shift);
 	}
 
 	constexpr Vector min(const Vector &other) const
 	{
-		return apply(*this, other, [](T a, T b) { return std::min(a, b); });
+		return apply(*this, [](T a, T b) { return std::min(a, b); }, other);
 	}
 
 	constexpr Vector min(T scalar) const
 	{
-		return apply(*this, scalar, [](T a, T b) { return std::min(a, b); });
+		return apply(*this, [](T a, T b) { return std::min(a, b); }, scalar);
 	}
 
 	constexpr Vector max(const Vector &other) const
 	{
-		return apply(*this, other, [](T a, T b) { return std::max(a, b); });
+		return apply(*this, [](T a, T b) { return std::max(a, b); }, other);
 	}
 
 	constexpr Vector max(T scalar) const
 	{
-		return apply(*this, scalar, [](T a, T b) -> T { return std::max(a, b); });
+		return apply(*this, [](T a, T b) -> T { return std::max(a, b); }, scalar);
+	}
+
+	constexpr Vector clamp(T low, T high) const
+	{
+		return apply(*this,
+			     [](T v, T lo, T hi) -> T { return std::clamp(v, lo, hi); },
+			     low, high);
 	}
 
 	constexpr T dot(const Vector<T, Rows> &other) const
@@ -263,8 +270,8 @@ public:
 	}
 
 private:
-	template<class BinaryOp>
-	static constexpr Vector apply(const Vector &lhs, const Vector &rhs, BinaryOp op)
+	template<typename BinaryOp>
+	static constexpr Vector apply(const Vector &lhs, BinaryOp op, const Vector &rhs)
 	{
 		Vector result;
 		std::transform(lhs.data_.begin(), lhs.data_.end(),
@@ -274,19 +281,19 @@ private:
 		return result;
 	}
 
-	template<class U, class BinaryOp>
-	static constexpr Vector apply(const Vector &lhs, U rhs, BinaryOp op)
+	template<typename Op, typename... U>
+	static constexpr Vector apply(const Vector &vector, Op op, U... scalar)
 	{
 		Vector result;
-		std::transform(lhs.data_.begin(), lhs.data_.end(),
+		std::transform(vector.data_.begin(), vector.data_.end(),
 			       result.data_.begin(),
-			       [&op, rhs](T v) { return op(v, rhs); });
+			       [&op, scalar...](T v) { return op(v, scalar...); });
 
 		return result;
 	}
 
-	template<class BinaryOp>
-	Vector &apply(const Vector &other, BinaryOp op)
+	template<typename BinaryOp>
+	Vector &apply(BinaryOp op, const Vector &other)
 	{
 		auto itOther = other.data_.begin();
 		std::for_each(data_.begin(), data_.end(),
@@ -295,11 +302,11 @@ private:
 		return *this;
 	}
 
-	template<class U, class BinaryOp>
-	Vector &apply(U scalar, BinaryOp op)
+	template<typename Op, typename... U>
+	Vector &apply(Op op, U... scalar)
 	{
 		std::for_each(data_.begin(), data_.end(),
-			      [&op, scalar](T &v) { v = op(v, scalar); });
+			      [&op, scalar...](T &v) { v = op(v, scalar...); });
 
 		return *this;
 	}
@@ -343,10 +350,8 @@ bool operator!=(const Vector<T, Rows> &lhs, const Vector<T, Rows> &rhs)
 }
 
 #ifndef __DOXYGEN__
-bool vectorValidateYaml(const ValueNode &obj, unsigned int size);
-#endif /* __DOXYGEN__ */
+bool vectorValidateValueNode(const ValueNode &obj, unsigned int size);
 
-#ifndef __DOXYGEN__
 template<typename T, unsigned int Rows>
 std::ostream &operator<<(std::ostream &out, const Vector<T, Rows> &v)
 {
@@ -364,7 +369,7 @@ template<typename T, unsigned int Rows>
 struct ValueNode::Accessor<Vector<T, Rows>> {
 	std::optional<Vector<T, Rows>> get(const ValueNode &obj) const
 	{
-		if (!vectorValidateYaml(obj, Rows))
+		if (!vectorValidateValueNode(obj, Rows))
 			return std::nullopt;
 
 		Vector<T, Rows> vector;

@@ -52,7 +52,6 @@ struct RequestWrap {
 	GstBuffer *detachBuffer(GstPad *srcpad);
 
 	std::unique_ptr<Request> request_;
-	std::map<GstPad *, GstBuffer *> buffers_;
 
 	GstClockTime latency_;
 	GstClockTime pts_;
@@ -65,9 +64,15 @@ RequestWrap::RequestWrap(std::unique_ptr<Request> request)
 
 RequestWrap::~RequestWrap()
 {
-	for (std::pair<GstPad *const, GstBuffer *> &item : buffers_) {
-		if (item.second)
-			gst_buffer_unref(item.second);
+	if (!request_)
+		return;
+
+	for (const auto &[stream, fb] : request_->buffers()) {
+		auto *buffer = reinterpret_cast<GstBuffer *>(fb->cookie());
+		if (buffer)
+			gst_buffer_unref(buffer);
+
+		fb->setCookie(0);
 	}
 }
 
@@ -77,25 +82,21 @@ void RequestWrap::attachBuffer(GstPad *srcpad, GstBuffer *buffer)
 	Stream *stream = gst_libcamera_pad_get_stream(srcpad);
 
 	request_->addBuffer(stream, fb);
-
-	auto item = buffers_.find(srcpad);
-	if (item != buffers_.end()) {
-		gst_buffer_unref(item->second);
-		item->second = buffer;
-	} else {
-		buffers_[srcpad] = buffer;
-	}
+	fb->setCookie(reinterpret_cast<uint64_t>(buffer));
 }
 
 GstBuffer *RequestWrap::detachBuffer(GstPad *srcpad)
 {
-	GstBuffer *buffer = nullptr;
+	const Stream *stream = gst_libcamera_pad_get_stream(srcpad);
+	FrameBuffer *fb = request_->findBuffer(stream);
+	if (!fb)
+		return nullptr;
 
-	auto item = buffers_.find(srcpad);
-	if (item != buffers_.end()) {
-		buffer = item->second;
-		item->second = nullptr;
-	}
+	auto *buffer = reinterpret_cast<GstBuffer *>(fb->cookie());
+
+	fb->setCookie(0);
+
+	g_assert(!buffer || fb == gst_libcamera_buffer_get_frame_buffer(buffer));
 
 	return buffer;
 }

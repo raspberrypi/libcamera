@@ -258,7 +258,7 @@ unsigned int GlobalConfiguration::version() const
  * \brief Retrieve the libcamera global configuration
  *
  * This returns the whole configuration stored in the top-level section
- * `%configuration` of the YAML configuration file.
+ * `%configuration` of the configuration file.
  *
  * The requested part of the configuration can be accessed using \a ValueNode
  * methods.
@@ -274,7 +274,7 @@ const ValueNode &GlobalConfiguration::configuration() const
  * \fn std::optional<T> GlobalConfiguration::option(const std::initializer_list<std::string_view> &confPath) const
  * \brief Retrieve the value of configuration option \a confPath
  * \tparam T The type of the retrieved configuration value
- * \param[in] confPath Sequence of the YAML section names (excluding
+ * \param[in] confPath Sequence of the section names (excluding
  * `%configuration`) leading to the requested option
  * \return The value of the configuration item corresponding to \a confPath if
  * it exists in the configuration file, or no value otherwise
@@ -282,7 +282,7 @@ const ValueNode &GlobalConfiguration::configuration() const
 
 /**
  * \brief Retrieve the value of configuration option \a confPath
- * \param[in] confPath Sequence of the YAML section names (excluding
+ * \param[in] confPath Sequence of the section names (excluding
  * `%configuration`) leading to the requested list option, separated by dots
  * \return A vector of strings or no value if not found
  */

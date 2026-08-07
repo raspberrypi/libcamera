@@ -189,6 +189,14 @@ by correctness, as that's not very maintainable.
 
 The TODO items are listed in perceived order of ease.
 
+### Add GBM surface as a progressive fallback
+
+Some platforms (e.g. i.MX8MM) support EGL with GBM surfaces but lack
+`EGL_PLATFORM_SURFACELESS_MESA` support. The GPU ISP originally used a GBM
+surface before transitioning to MESA surfaceless. Adding GBM surface back as a
+fallback path would allow GPU-accelerated debayering on these platforms without
+requiring surfaceless support.
+
 ### Denoising
 
 WIP

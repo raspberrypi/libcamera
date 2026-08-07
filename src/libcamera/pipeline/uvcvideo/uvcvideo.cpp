@@ -439,7 +439,7 @@ int PipelineHandlerUVC::processControls(UVCCameraData *data, const ControlList &
 	int ret = data->video_->setControls(&controls);
 	if (ret) {
 		LOG(UVC, Error) << "Failed to set controls: " << ret;
-		return ret < 0 ? ret : -EINVAL;
+		return ret;
 	}
 
 	return ret;

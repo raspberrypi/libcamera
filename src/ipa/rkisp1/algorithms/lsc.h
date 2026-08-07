@@ -7,10 +7,14 @@
 
 #pragma once
 
-#include <map>
-#include <memory>
+#include <vector>
 
-#include "libipa/interpolator.h"
+#include <linux/rkisp1-config.h>
+
+#include "libcamera/internal/value_node.h"
+#include "libipa/fixedpoint.h"
+
+#include "libipa/lsc.h"
 
 #include "algorithm.h"
 
@@ -36,33 +40,15 @@ public:
 		     IPAFrameContext &frameContext,
 		     const rkisp1_stat_buffer *stats,
 		     ControlList &metadata) override;
-
-	struct Components {
-		std::vector<uint16_t> r;
-		std::vector<uint16_t> gr;
-		std::vector<uint16_t> gb;
-		std::vector<uint16_t> b;
-	};
-
-	class ShadingDescriptor
-	{
-	public:
-		virtual ~ShadingDescriptor() = default;
-		virtual Components sampleForCrop(const Rectangle &cropRectangle,
-						 Span<const double> xSizes,
-						 Span<const double> ySizes) = 0;
-	};
-
-	using ShadingDescriptorMap = std::map<unsigned int, std::unique_ptr<ShadingDescriptor>>;
-
 private:
 	void setParameters(rkisp1_cif_isp_lsc_config &config);
-	void copyTable(rkisp1_cif_isp_lsc_config &config, const Components &set0);
+	void copyTable(rkisp1_cif_isp_lsc_config &config,
+		       const lsc::Components<uint16_t> &set);
 
-	ShadingDescriptorMap shadingDescriptors_;
-	ipa::Interpolator<Components> sets_;
 	std::vector<double> xSize_;
 	std::vector<double> ySize_;
+	std::vector<double> xPos_;
+	std::vector<double> yPos_;
 	uint16_t xGrad_[RKISP1_CIF_ISP_LSC_SECTORS_TBL_SIZE];
 	uint16_t yGrad_[RKISP1_CIF_ISP_LSC_SECTORS_TBL_SIZE];
 	uint16_t xSizes_[RKISP1_CIF_ISP_LSC_SECTORS_TBL_SIZE];
@@ -70,6 +56,8 @@ private:
 
 	unsigned int lastAppliedCt_;
 	unsigned int lastAppliedQuantizedCt_;
+
+	LscAlgorithm<UQ<2, 10>> lscAlgo_;
 };
 
 } /* namespace ipa::rkisp1::algorithms */

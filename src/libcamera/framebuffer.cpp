@@ -236,12 +236,6 @@ FrameBuffer::Private::~Private()
  * during the processing of a queued capture request, and is valid from the
  * completion of the buffer as signaled by Camera::bufferComplete() until the
  * FrameBuffer is either reused in a new request or deleted.
- *
- * The creator of a FrameBuffer (application, IPA or pipeline handler) may
- * associate to it an integer cookie for any private purpose. The cookie may be
- * set when creating the FrameBuffer, and updated at any time with setCookie().
- * The cookie is transparent to the libcamera core and shall only be set by the
- * creator of the FrameBuffer. This mechanism supplements the Request cookie.
  */
 
 /**
@@ -399,12 +393,7 @@ const FrameMetadata &FrameBuffer::metadata() const
 
 /**
  * \brief Retrieve the cookie
- *
- * The cookie belongs to the creator of the FrameBuffer, which controls its
- * lifetime and value.
- *
  * \sa setCookie()
- *
  * \return The cookie
  */
 uint64_t FrameBuffer::cookie() const
@@ -416,10 +405,24 @@ uint64_t FrameBuffer::cookie() const
  * \brief Set the cookie
  * \param[in] cookie Cookie to set
  *
- * The cookie belongs to the creator of the FrameBuffer. Its value may be
- * modified at any time with this function. Applications and IPAs shall not
- * modify the cookie value of buffers they haven't created themselves. The
- * libcamera core never modifies the buffer cookie.
+ * The creator (and only the creator) of the FrameBuffer may store an arbitrary
+ * 64-bit integer value in the FrameBuffer, this value is called the cookie.
+ * It may be retrieved or set at any time, and is guaranteed not to be modified
+ * by the libcamera core. This mechanism is similar to the \ref Request cookie.
+ *
+ * An application using a \ref FrameBufferAllocator is considered to be the creator
+ * of the allocated FrameBuffer objects, and thus it may manage the cookie as it
+ * sees fit.
+ *
+ * \internal
+ * Similar rules apply to pipeline handlers and IPA modules, that is, they can
+ * only manage the cookies of FrameBuffer objects that they have created, with
+ * the exception that any FrameBuffer returned by
+ * \ref PipelineHandler::exportFrameBuffers() is considered to have been created
+ * by the application, and thus its cookie shall not be modified.
+ * \endinternal
+ *
+ * \sa cookie()
  */
 void FrameBuffer::setCookie(uint64_t cookie)
 {

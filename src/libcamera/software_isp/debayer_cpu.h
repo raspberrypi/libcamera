@@ -121,7 +121,6 @@ private:
 	void debayer12P_RGRG_BGR888(uint8_t *dst, const uint8_t *src[]);
 
 	static int getInputConfig(PixelFormat inputFormat, DebayerInputConfig &config);
-	static int getOutputConfig(PixelFormat outputFormat, DebayerOutputConfig &config);
 	int setupStandardBayerOrder(BayerFormat::Order order);
 	int setDebayerFunctions(PixelFormat inputFormat,
 				PixelFormat outputFormat,

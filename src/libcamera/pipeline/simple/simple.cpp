@@ -1542,6 +1542,11 @@ int SimplePipelineHandler::configure(Camera *camera, CameraConfiguration *c)
 	captureFormat.fourcc = videoFormat;
 	captureFormat.size = pipeConfig->captureSize;
 
+	uint32_t requested_bpl = 0;
+	if (data->swIsp_)
+		requested_bpl = data->swIsp_->preferredInputStride(videoFormat.toPixelFormat(), pipeConfig->captureSize);
+	captureFormat.planes[0].bpl = requested_bpl;
+
 	ret = video->setFormat(&captureFormat);
 	if (ret)
 		return ret;
@@ -1559,6 +1564,13 @@ int SimplePipelineHandler::configure(Camera *camera, CameraConfiguration *c)
 			<< pipeConfig->captureSize << "-" << videoFormat
 			<< " (got " << captureFormat << ")";
 		return -EINVAL;
+	}
+
+	if (requested_bpl && captureFormat.planes[0].bpl != requested_bpl) {
+		LOG(SimplePipeline, Info)
+			<< "Input buffer stride ignored by the driver. "
+			<< "Requested " << requested_bpl
+			<< ", got " << captureFormat.planes[0].bpl;
 	}
 
 	/* Configure the converter if needed. */

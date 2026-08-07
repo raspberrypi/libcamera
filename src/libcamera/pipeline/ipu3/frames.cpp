@@ -58,9 +58,6 @@ IPU3Frames::Info *IPU3Frames::create(Request *request)
 	FrameBuffer *paramBuffer = availableParamBuffers_.front();
 	FrameBuffer *statBuffer = availableStatBuffers_.front();
 
-	paramBuffer->_d()->setRequest(request);
-	statBuffer->_d()->setRequest(request);
-
 	availableParamBuffers_.pop();
 	availableStatBuffers_.pop();
 

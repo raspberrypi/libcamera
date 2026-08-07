@@ -80,7 +80,7 @@ Lux::Lux()
  * \brief Parse tuning data
  * \param[in] tuningData The ValueNode representing the tuning data
  *
- * This function parses yaml tuning data for the common Lux module. It requires
+ * This function parses tuning data for the common Lux module. It requires
  * reference exposure time, analogue gain, digital gain, and lux values.
  *
  * \code{.unparsed}

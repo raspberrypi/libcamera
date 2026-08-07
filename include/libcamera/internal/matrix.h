@@ -188,10 +188,8 @@ constexpr Matrix<T, Rows, Cols> operator+(const Matrix<T, Rows, Cols> &m1, const
 }
 
 #ifndef __DOXYGEN__
-bool matrixValidateYaml(const ValueNode &obj, unsigned int size);
-#endif /* __DOXYGEN__ */
+bool matrixValidateValueNode(const ValueNode &obj, unsigned int size);
 
-#ifndef __DOXYGEN__
 template<typename T, unsigned int Rows, unsigned int Cols>
 std::ostream &operator<<(std::ostream &out, const Matrix<T, Rows, Cols> &m)
 {
@@ -203,7 +201,7 @@ template<typename T, unsigned int Rows, unsigned int Cols>
 struct ValueNode::Accessor<Matrix<T, Rows, Cols>> {
 	std::optional<Matrix<T, Rows, Cols>> get(const ValueNode &obj) const
 	{
-		if (!matrixValidateYaml(obj, Rows * Cols))
+		if (!matrixValidateValueNode(obj, Rows * Cols))
 			return std::nullopt;
 
 		Matrix<T, Rows, Cols> matrix;

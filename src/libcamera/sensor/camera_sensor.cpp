@@ -379,21 +379,8 @@ int CameraSensor::setEmbeddedDataEnabled(bool enable)
  * ctrls entry. The control identifiers are defined by the V4L2 specification
  * (V4L2_CID_*).
  *
- * If any control in \a ctrls is not supported by the device, is disabled (i.e.
- * has the V4L2_CTRL_FLAG_DISABLED flag set), is read-only, or if any other
- * error occurs during validation of the requested controls, no control is
- * written and this function returns -EINVAL.
- *
- * If an error occurs while writing the controls, the index of the first
- * control that couldn't be written is returned. All controls below that index
- * are written and their values are updated in \a ctrls, while all other
- * controls are not written and their values are not changed.
- *
- * \sa V4L2Device::setControls()
- *
  * \return 0 on success or an error code otherwise
- * \retval -EINVAL One of the control is not supported or not accessible
- * \retval i The index of the control that failed
+ * \sa V4L2Device::setControls()
  */
 
 /**

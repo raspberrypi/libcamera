@@ -7,9 +7,6 @@ libcamera_internal_sources += files([
     'virtual.cpp',
 ])
 
-libjpeg = dependency('libjpeg', required : true)
-
 libcamera_deps += [libyuv_dep]
-libcamera_deps += [libjpeg]
 
 subdir('data')

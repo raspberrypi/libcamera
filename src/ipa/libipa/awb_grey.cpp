@@ -60,6 +60,7 @@ int AwbGrey::init(const ValueNode &tuningData)
  * \brief Calculate AWB data from the given statistics
  * \param[in] stats The statistics to use for the calculation
  * \param[in] lux The lux value of the scene
+ * \param[in] range The colour temperature search limits
  *
  * The colour temperature is estimated based on the colours::estimateCCT()
  * function. The gains are calculated purely based on the RGB means provided by
@@ -70,9 +71,11 @@ int AwbGrey::init(const ValueNode &tuningData)
  *
  * \return The AWB result
  */
-AwbResult AwbGrey::calculateAwb(const AwbStats &stats, [[maybe_unused]] unsigned int lux)
+AwbImplementation::Result
+AwbGrey::calculateAwb(const AwbStats &stats, [[maybe_unused]] unsigned int lux,
+		      [[maybe_unused]] std::array<double, 2> range)
 {
-	AwbResult result;
+	AwbImplementation::Result result;
 	auto means = stats.rgbMeans();
 	result.colourTemperature = estimateCCT(means);
 
@@ -93,15 +96,16 @@ AwbResult AwbGrey::calculateAwb(const AwbStats &stats, [[maybe_unused]] unsigned
  *
  * Compute the white balance gains from a \a colourTemperature. This function
  * does not take any statistics into account. It simply interpolates the colour
- * gains configured in the colour temperature curve.
+ * gains curve (if provided in the tuning file) on a new colour temperature.
  *
- * \return The colour gains if a colour temperature curve is available,
- * [1, 1, 1] otherwise.
+ * \return The RGB gain values adjusted to \a colourTemperature or std::nullopt if
+ * no gain curve is specified in the tuning data
  */
 std::optional<RGB<double>> AwbGrey::gainsFromColourTemperature(double colourTemperature)
 {
 	if (!colourGainCurve_) {
-		LOG(Awb, Error) << "No gains defined";
+		LOG(Awb, Info) << "No gains curve defined, "
+			       << "unable to interpolate gains to colour temperature";
 		return std::nullopt;
 	}
 

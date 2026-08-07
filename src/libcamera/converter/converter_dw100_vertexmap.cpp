@@ -228,6 +228,68 @@ int dw100VerticesForLength(const int length)
  */
 
 /**
+ * \struct Dw100VertexMap::DewarpParams
+ * \brief Structure combining all dewarp parameters
+ *
+ * \var Dw100VertexMap::DewarpParams::cm
+ * \brief The camera matrix
+ *
+ * \var Dw100VertexMap::DewarpParams::cmNew
+ * \brief The new camera matrix after dewarping
+ *
+ * \var Dw100VertexMap::DewarpParams::coefficients
+ * \brief Structure containing the lens dewarp coefficients
+
+ * See https://docs.opencv.org/4.12.0/d9/d0c/group__calib3d.html for further
+ * details on the model.
+ */
+
+/**
+ * \brief Fill the coefficients with a list of coefficients
+ * \param coeffs
+ *
+ * Fill the coefficients with the ones from the provided span. These data is
+ * used to fill the coefficients in the order k1, k2, p1, p2, k3, k4, k5, k6,
+ * s1, s2, s3, s4. The span must either contain 4, 5, 8 or 12 entries, the
+ * remaining coefficients are set to 0.
+ *
+ * \return 0 on success or -EINVAL if \a coeffs has the wrong size
+ */
+int Dw100VertexMap::DewarpParams::setCoefficients(Span<const double> coeffs)
+{
+	size_t s = coeffs.size();
+	if (!(s == 4 || s == 5 || s == 8 || s == 12))
+		return -EINVAL;
+
+	coefficients = {};
+
+	if (s >= 4) {
+		coefficients.k1 = coeffs[0];
+		coefficients.k2 = coeffs[1];
+		coefficients.p1 = coeffs[2];
+		coefficients.p2 = coeffs[3];
+	}
+
+	if (s >= 5)
+		coefficients.k3 = coeffs[4];
+
+	if (s >= 8) {
+		coefficients.k4 = coeffs[5];
+		coefficients.k5 = coeffs[6];
+		coefficients.k6 = coeffs[7];
+	}
+
+	if (s == 12) {
+		coefficients.s1 = coeffs[8];
+		coefficients.s2 = coeffs[9];
+		coefficients.s3 = coeffs[10];
+		coefficients.s4 = coeffs[11];
+	}
+
+	return 0;
+}
+
+/**
  * \brief Apply limits on scale and offset
  *
  * This function calculates \a effectiveScalerCrop_, \a effectiveScale_ and \a
@@ -549,7 +611,7 @@ std::vector<uint32_t> Dw100VertexMap::getVertexMap()
 
 			p = transformPoint(outputToSensor, p);
 
-			if (dewarpParamsValid_ && lensDewarpEnable_)
+			if (lensDewarpEnable_)
 				p = dewarpPoint(p);
 
 			p = transformPoint(sensorToInput, p);
@@ -565,42 +627,15 @@ std::vector<uint32_t> Dw100VertexMap::getVertexMap()
 }
 
 /**
+ * \fn Dw100VertexMap::setDewarpParams()
  * \brief Set the dewarp parameters
- * \param cm The camera matrix
- * \param coeffs The dewarp coefficients
+ * \param params The dewarp parameters
  *
  * Sets the dewarp parameters according to the commonly used dewarp model. See
  * https://docs.opencv.org/4.12.0/d9/d0c/group__calib3d.html for further details
  * on the model. The parameter \a coeffs must either hold 4,5,8 or 12 values.
  * They represent the parameters k1,k2,p1,p2[,k3[,k4,k5,k6[,s1,s2,s3,s4]]] in
  * the model.
- *
- * \return A negative number on error, 0 otherwise
- */
-int Dw100VertexMap::setDewarpParams(const Matrix<double, 3, 3> &cm,
-				    const Span<const double> &coeffs)
-{
-	dewarpM_ = cm;
-	dewarpCoeffs_.fill(0.0);
-
-	if (coeffs.size() != 4 && coeffs.size() != 5 &&
-	    coeffs.size() != 8 && coeffs.size() != 12) {
-		LOG(Converter, Error)
-			<< "Dewarp 'coefficients' must have 4, 5, 8 or 12 values";
-		dewarpParamsValid_ = false;
-		return -EINVAL;
-	}
-	std::copy(coeffs.begin(), coeffs.end(), dewarpCoeffs_.begin());
-
-	dewarpParamsValid_ = true;
-	return 0;
-}
-
-/**
- * \fn Dw100VertexMap::dewarpParamsValid()
- * \brief Returns if the dewarp parameters are valid
- *
- * \return True if the dewarp parameters are valid, false otherwise
  */
 
 /**
@@ -627,32 +662,29 @@ int Dw100VertexMap::setDewarpParams(const Matrix<double, 3, 3> &cm,
  */
 Vector2d Dw100VertexMap::dewarpPoint(const Vector2d &p)
 {
+	if (!dewarpParams_.has_value())
+		return p;
+
 	double x, y;
 	double xout, yout;
-	double k1 = dewarpCoeffs_[0];
-	double k2 = dewarpCoeffs_[1];
-	double p1 = dewarpCoeffs_[2];
-	double p2 = dewarpCoeffs_[3];
-	double k3 = dewarpCoeffs_[4];
-	double k4 = dewarpCoeffs_[5];
-	double k5 = dewarpCoeffs_[6];
-	double k6 = dewarpCoeffs_[7];
-	double s1 = dewarpCoeffs_[8];
-	double s2 = dewarpCoeffs_[9];
-	double s3 = dewarpCoeffs_[10];
-	double s4 = dewarpCoeffs_[11];
+	auto &cm = dewarpParams_->cm;
+	auto &cmNew = dewarpParams_->cmNew;
+	auto &c = dewarpParams_->coefficients;
 
-	y = (p.y() - dewarpM_[1][2]) / dewarpM_[1][1];
-	x = (p.x() - dewarpM_[0][2] - y * dewarpM_[0][1]) / dewarpM_[0][0];
+	y = (p.y() - cmNew[1][2]) / cmNew[1][1];
+	x = (p.x() - cmNew[0][2] - y * cmNew[0][1]) / cmNew[0][0];
 
 	double r2 = x * x + y * y;
-	double d = (1 + k1 * r2 + k2 * r2 * r2 + k3 * r2 * r2 * r2) /
-		   (1 + k4 * r2 + k5 * r2 * r2 + k6 * r2 * r2 * r2);
-	xout = x * d + 2 * p1 * x * y + p2 * (r2 + 2 * x * x) + s1 * r2 + s2 * r2 * r2;
-	yout = y * d + 2 * p2 * x * y + p1 * (r2 + 2 * y * y) + s3 * r2 + s4 * r2 * r2;
+	double r4 = r2 * r2;
+	double r6 = r2 * r2 * r2;
+	double d = (1 + c.k1 * r2 + c.k2 * r4 + c.k3 * r6) /
+		   (1 + c.k4 * r2 + c.k5 * r4 + c.k6 * r6);
 
-	return { { xout * dewarpM_[0][0] + yout * dewarpM_[0][1] + dewarpM_[0][2],
-		   yout * dewarpM_[1][1] + dewarpM_[1][2] } };
+	xout = x * d + 2 * c.p1 * x * y + c.p2 * (r2 + 2 * x * x) + c.s1 * r2 + c.s2 * r4;
+	yout = y * d + 2 * c.p2 * x * y + c.p1 * (r2 + 2 * y * y) + c.s3 * r2 + c.s4 * r4;
+
+	return { { xout * cm[0][0] + yout * cm[0][1] + cm[0][2],
+		   yout * cm[1][1] + cm[1][2] } };
 }
 
 } /* namespace libcamera */

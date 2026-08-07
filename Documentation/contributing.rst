@@ -58,17 +58,14 @@ In the foreseeable future, the following applies:
           Following semantic versioning as documented at https://semver.org/
 
 
-The source code is available from the project's `git tree`_.
+The source code is available from the project's `git tree`_, hosted by
+Freedesktop.
 
 .. code-block:: shell
 
-  $ git clone https://git.libcamera.org/libcamera/libcamera.git
+  $ git clone https://gitlab.freedesktop.org/camera/libcamera.git
 
-.. _git tree: https://git.libcamera.org/libcamera/libcamera.git/
-
-A development mirror is also hosted on `Freedesktop`_.
-
-.. _Freedesktop: https://gitlab.freedesktop.org/camera/libcamera
+.. _git tree: https://gitlab.freedesktop.org/camera/libcamera
 
 Freedesktop also provides our CI and `testing pipeline`_.
 

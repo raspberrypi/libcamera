@@ -8,18 +8,7 @@
 
 #include "ccm.h"
 
-#include <libcamera/base/log.h>
-#include <libcamera/base/utils.h>
-
-#include <libcamera/control_ids.h>
-
 #include "libcamera/internal/matrix.h"
-
-namespace {
-
-constexpr unsigned int kTemperatureThreshold = 100;
-
-}
 
 namespace libcamera {
 
@@ -27,35 +16,56 @@ namespace ipa::soft::algorithms {
 
 LOG_DEFINE_CATEGORY(IPASoftCcm)
 
-int Ccm::init([[maybe_unused]] IPAContext &context, const ValueNode &tuningData)
+/**
+ * \copydoc libcamera::ipa::Algorithm::init
+ */
+int Ccm::init(IPAContext &context, const ValueNode &tuningData)
 {
-	int ret = ccm_.readYaml(tuningData["ccms"], "ct", "ccm");
-	if (ret < 0) {
-		LOG(IPASoftCcm, Error)
-			<< "Failed to parse 'ccm' parameter from tuning file.";
-		return ret;
-	}
-
+	/* Informs the 'adjust' component that CCM is available to apply Saturation */
 	context.ccmEnabled = true;
 
-	return 0;
+	return ccmAlgo_.init(tuningData, context.ctrlMap);
 }
 
-void Ccm::prepare(IPAContext &context, [[maybe_unused]] const uint32_t frame,
+/**
+ * \copydoc libcamera::ipa::Algorithm::configure
+ */
+int Ccm::configure(IPAContext &context,
+		   [[maybe_unused]] const IPAConfigInfo &configInfo)
+{
+	return ccmAlgo_.configure(context.activeState.ccm,
+				  context.activeState.awb.automatic.colourTemperature);
+}
+
+/**
+ * \copydoc libcamera::ipa::Algorithm::queueRequest
+ */
+void Ccm::queueRequest(IPAContext &context,
+		       [[maybe_unused]] const uint32_t frame,
+		       IPAFrameContext &frameContext,
+		       const ControlList &controls)
+{
+	/* Nothing to do here, the ccm will be calculated in prepare() */
+	if (frameContext.awb.autoEnabled)
+		return;
+
+	ccmAlgo_.queueRequest(context.activeState.ccm, frameContext.ccm, controls);
+}
+
+void Ccm::prepare(IPAContext &context, const uint32_t frame,
 		  IPAFrameContext &frameContext, [[maybe_unused]] DebayerParams *params)
 {
-	const unsigned int ct = context.activeState.awb.temperatureK;
+	if (frameContext.awb.autoEnabled)
+		ccmAlgo_.prepare(context.activeState.ccm, frameContext.ccm,
+				 frame, frameContext.awb.colourTemperature);
 
-	/* Change CCM only on bigger temperature changes. */
-	if (!currentCcm_ ||
-	    utils::abs_diff(ct, lastCt_) >= kTemperatureThreshold) {
-		currentCcm_ = ccm_.getInterpolated(ct);
-		lastCt_ = ct;
-	}
-
+	/*
+	 * \todo: Split out combined matrix into individual parameters in
+	 * DebayerParams and perform any pre-multiplication combination in the
+	 * SoftISP component directly.
+	 */
 	context.activeState.combinedMatrix =
-		currentCcm_.value() * context.activeState.combinedMatrix;
-	frameContext.ccm = currentCcm_.value();
+		frameContext.ccm.ccm * context.activeState.combinedMatrix;
 }
 
 void Ccm::process([[maybe_unused]] IPAContext &context,
@@ -64,7 +74,7 @@ void Ccm::process([[maybe_unused]] IPAContext &context,
 		  [[maybe_unused]] const SwIspStats *stats,
 		  ControlList &metadata)
 {
-	metadata.set(controls::ColourCorrectionMatrix, frameContext.ccm.data());
+	ccmAlgo_.process(frameContext.ccm, metadata);
 }
 
 REGISTER_IPA_ALGORITHM(Ccm, "Ccm")

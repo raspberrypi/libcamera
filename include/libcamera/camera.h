@@ -18,6 +18,7 @@
 #include <libcamera/base/flags.h>
 #include <libcamera/base/object.h>
 #include <libcamera/base/signal.h>
+#include <libcamera/base/span.h>
 
 #include <libcamera/controls.h>
 #include <libcamera/geometry.h>

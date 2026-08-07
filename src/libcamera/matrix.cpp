@@ -310,11 +310,11 @@ template bool matrixInvert<double>(Span<const double> data, Span<double> dataOut
 				   Span<unsigned int> swapBuffer);
 
 /*
- * The YAML data shall be a list of numerical values. Its size shall be equal
+ * The value node shall be a list of numerical values. Its size shall be equal
  * to the product of the number of rows and columns of the matrix (Rows x
  * Cols). The values shall be stored in row-major order.
  */
-bool matrixValidateYaml(const ValueNode &obj, unsigned int size)
+bool matrixValidateValueNode(const ValueNode &obj, unsigned int size)
 {
 	if (!obj.isList())
 		return false;

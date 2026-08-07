@@ -142,8 +142,8 @@ int Agc::init(IPAContext &context, const ValueNode &tuningData)
 	if (ret)
 		return ret;
 
-	const ValueNode &yamlMeteringModes = tuningData["AeMeteringMode"];
-	ret = parseMeteringModes(context, yamlMeteringModes);
+	const ValueNode &meteringModes = tuningData["AeMeteringMode"];
+	ret = parseMeteringModes(context, meteringModes);
 	if (ret)
 		return ret;
 

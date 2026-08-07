@@ -1076,7 +1076,7 @@ device:
    ret = data->video_->setControls(&controls);
    if (ret) {
           LOG(VIVID, Error) << "Failed to set controls: " << ret;
-          return ret < 0 ? ret : -EINVAL;
+          return ret;
    }
 
 These controls configure VIVID to use a default test pattern, and enable all
@@ -1285,10 +1285,8 @@ before being set.
                         << " to " << ctrl.second.toString();
 
           int ret = data->video_->setControls(&controls);
-          if (ret) {
+          if (ret)
                  LOG(VIVID, Error) << "Failed to set controls: " << ret;
-                 return ret < 0 ? ret : -EINVAL;
-          }
 
           return ret;
    }

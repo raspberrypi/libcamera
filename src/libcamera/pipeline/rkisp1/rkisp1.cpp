@@ -1042,7 +1042,6 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 	data->properties_.set(properties::ScalerCropMaximum, sensorCrop);
 
 	std::map<unsigned int, IPAStream> streamConfig;
-	std::vector<std::reference_wrapper<const StreamConfiguration>> outputCfgs;
 
 	for (const StreamConfiguration &cfg : *config) {
 		if (cfg.stream() == &data->mainPathStream_) {
@@ -1053,15 +1052,13 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 			 */
 			StreamConfiguration ispCfg = cfg;
 			if (data->usesDewarper_) {
-				outputCfgs.push_back(const_cast<StreamConfiguration &>(cfg));
-
 				ispCfg.bufferCount = kRkISP1MinBufferCount;
 				ispCfg.size = format.size;
 				ispCfg.stride =
 					PixelFormatInfo::info(ispCfg.pixelFormat)
 						.stride(ispCfg.size.width, 0);
 
-				ret = dewarper_->configure(ispCfg, outputCfgs);
+				ret = dewarper_->configure(ispCfg, { cfg });
 				if (ret)
 					return ret;
 

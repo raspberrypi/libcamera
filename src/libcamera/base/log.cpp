@@ -869,11 +869,6 @@ LogMessage::~LogMessage()
 	msgStream_ << std::endl;
 
 	logger->write(*this);
-
-	if (severity_ == LogSeverity::LogFatal) {
-		logger->backtrace();
-		std::abort();
-	}
 }
 
 /**
@@ -921,6 +916,17 @@ LogMessage::~LogMessage()
  * \brief Retrieve the message text of the log message
  * \return The message text of the message, as a string
  */
+
+#ifndef __DOXYGEN__
+LogMessageAbortGuard<LogFatal>::~LogMessageAbortGuard()
+{
+	Logger *logger = Logger::instance();
+	if (logger)
+		logger->backtrace();
+
+	std::abort();
+}
+#endif
 
 /**
  * \class Loggable

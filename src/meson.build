@@ -46,6 +46,8 @@ if (pipelines.contains('virtual') or get_option('android').allowed()) and \
    not libyuv_dep.found()
     cmake = import('cmake')
 
+    libjpeg = dependency('libjpeg', required : true)
+
     libyuv_vars = cmake.subproject_options()
     libyuv_vars.add_cmake_defines({'CMAKE_POSITION_INDEPENDENT_CODE': 'ON'})
     libyuv_vars.set_override_option('cpp_std', 'c++17')
@@ -64,7 +66,7 @@ if (pipelines.contains('virtual') or get_option('android').allowed()) and \
     # Work around the issue by wrapping the libyuv static library into another
     # static library with 'pic' set to true.
     libyuv_static = static_library('libyuv-static',
-                                   dependencies : libyuv.dependency('yuv'),
+                                   dependencies : [libyuv.dependency('yuv'), libjpeg],
                                    pic : true,
                                    install : false)
     libyuv_include = libyuv.include_directories('yuv')

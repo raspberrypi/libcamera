@@ -206,10 +206,6 @@ class CameraContext:
         for buf_num in range(num_bufs):
             request = self.camera.create_request(self.idx)
 
-            if request is None:
-                print('Can not create request')
-                exit(-1)
-
             for stream in self.streams:
                 buffers = self.allocator.buffers(stream)
                 buffer = buffers[buf_num]

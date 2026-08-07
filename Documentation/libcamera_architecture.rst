@@ -112,18 +112,19 @@ Image Processing Algorithms
   and control hardware image processing based on the parameters supplied by
   upper layers, closing the control loop of the ISP.
 
-  IPAs are loaded as external plugins named IPA Modules. IPA Modules can be part
-  of the libcamera code base or provided externally by camera vendors as
-  open-source or closed-source components.
+  IPAs are loaded as external plugins named IPA Modules. IPA Modules can be
+  part of the libcamera code base or provided externally by camera vendors.
+  In-tree IPA modules are covered by the same license as the rest of libcamera,
+  external IPA modules can be open-source or closed-source.
 
-  Open source IPA Modules built with libcamera are run in the same process space
-  as libcamera. External IPA Modules are run in a separate sandboxed process. In
-  either case, they can only interact with libcamera through the API provided by
-  the Pipeline Handler. They have a restricted view of the system, with no direct
-  access to kernel camera devices, no access to networking APIs, and limited
-  access to file systems. All their accesses to image and metadata are mediated
-  by dmabuf instances explicitly passed by the Pipeline Handler to the IPA
-  Module.
+  IPA Modules built with libcamera are run in the same process space as the
+  library. External IPA Modules are run in a separate sandboxed process. In
+  either case, they can only interact with libcamera through the API provided
+  by the Pipeline Handler. They have a restricted view of the system, with no
+  direct access to kernel camera devices, no access to networking APIs, and
+  limited access to file systems. All their accesses to image and metadata are
+  mediated by dmabuf instances explicitly passed by the Pipeline Handler to the
+  IPA Module.
 
   IPA Modules are only required for platforms and devices with an ISP controlled
   by the host CPU. Camera sensors which have an integrated ISP are not
@@ -142,20 +143,20 @@ Helpers and Support Classes
   code base, in order to keep the source code clean and easy to read. This
   should be the case for instance for plugin management.
 
-Platform Support
-----------------
+Dependencies
+------------
 
-The library currently supports the following hardware platforms specifically
-with dedicated pipeline handlers:
+As a system component, libcamera tries to minimize its dependency on
+third-party libraries. New dependencies are evaluated on a case-by-case basis,
+to balance the value they bring with the impact on distributions. Dependencies
+for optional features must be conditioned by a meson feature option, as usage
+of dependencies based only on auto-detection hinders reproducible builds and
+dependency management for distributions. All dependencies must be compatible
+with the libcamera license.
 
-   - Arm Mali-C55
-   - Intel IPU3 (ipu3)
-   - NXP i.MX8MP (imx8-isi and rkisp1)
-   - RaspberryPi 3, 4 and zero (rpi/vc4)
-   - Rockchip RK3399 (rkisp1)
-
-Furthermore, generic platform support is provided for the following:
-
-   - USB video device class cameras (uvcvideo)
-   - iMX7, IPU6, Allwinner Sun6i (simple)
-   - Virtual media controller driver for test use cases (vimc)
+Dependencies may not be used to load closed-source components from pipeline
+handlers or in-tree IPA modules. This includes GPU shaders or neural network
+models. Usage of closed-source components is permitted in external IPA Modules
+only. Pipeline handlers and in-tree IPA Modules are allowed to use neural
+networks provided that both the model and its training data are available under
+an open-source license compatible with libcamera.

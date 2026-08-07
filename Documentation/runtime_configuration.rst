@@ -256,7 +256,7 @@ Log categories
 
 Every category represents a specific area of the libcamera codebase,
 the names can be located within the source code, for example:
-`src/libcamera/camera_manager.cpp <https://git.libcamera.org/libcamera/libcamera.git/tree/src/libcamera/camera_manager.cpp#n35>`__
+`src/libcamera/camera_manager.cpp <https://gitlab.freedesktop.org/camera/libcamera/-/blob/master/src/libcamera/camera_manager.cpp#L38>`__
 
 .. code:: cpp
 
@@ -287,7 +287,7 @@ usually contain tuning parameters for the algorithms, in JSON format.
 The ``LIBCAMERA_IPA_CONFIG_PATH`` variable can be used to specify custom
 storage locations to search for those configuration files.
 
-`Examples <https://git.libcamera.org/libcamera/libcamera.git/tree/src/ipa/rpi/vc4/data>`__
+`Examples <https://gitlab.freedesktop.org/camera/libcamera/-/blob/master/src/ipa/rpi/vc4/data>`__
 
 IPA module
 ~~~~~~~~~~

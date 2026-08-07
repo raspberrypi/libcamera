@@ -260,7 +260,7 @@ gst_libcamera_allocator_get_pool_size(GstLibcameraAllocator *self,
 	GLibLocker lock(GST_OBJECT(self));
 
 	auto *pool = reinterpret_cast<GQueue *>(g_hash_table_lookup(self->pools, stream));
-	g_return_val_if_fail(pool, false);
+	g_return_val_if_fail(pool, 0);
 
 	return pool->length;
 }

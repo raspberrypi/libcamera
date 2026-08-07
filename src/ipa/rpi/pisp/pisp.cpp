@@ -1078,12 +1078,14 @@ void IpaPiSP::setStatsAndDebin()
 	pisp_be_global_config beGlobal;
 	be_->GetGlobal(beGlobal);
 
-	if (mode_.binX > 1 || mode_.binY > 1) {
+	unsigned int minDebinFactor = helper_->getMinDebinFactor();
+	if (minDebinFactor &&
+	    (mode_.binX >= minDebinFactor || mode_.binY >= minDebinFactor)) {
 		pisp_be_debin_config debin;
 
 		be_->GetDebin(debin);
-		debin.h_enable = (mode_.binX > 1);
-		debin.v_enable = (mode_.binY > 1);
+		debin.h_enable = (mode_.binX >= minDebinFactor);
+		debin.v_enable = (mode_.binY >= minDebinFactor);
 		be_->SetDebin(debin);
 		beGlobal.bayer_enables |= PISP_BE_BAYER_ENABLE_DEBIN;
 	} else

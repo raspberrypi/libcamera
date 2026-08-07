@@ -176,7 +176,7 @@ public:
 	Size size;
 	std::optional<ColorSpace> colorSpace;
 
-	std::array<Plane, 3> planes;
+	std::array<Plane, VIDEO_MAX_PLANES> planes;
 	unsigned int planesCount = 0;
 
 	std::string toString() const;

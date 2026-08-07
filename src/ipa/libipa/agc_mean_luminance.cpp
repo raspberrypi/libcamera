@@ -218,9 +218,9 @@ int AgcMeanLuminance::parseConstraintModes(const ValueNode &tuningData)
 {
 	std::vector<ControlValue> availableConstraintModes;
 
-	const ValueNode &yamlConstraintModes = tuningData[controls::AeConstraintMode.name()];
-	if (yamlConstraintModes.isDictionary()) {
-		for (const auto &[modeName, modeDict] : yamlConstraintModes.asDict()) {
+	const ValueNode &constraintModes = tuningData[controls::AeConstraintMode.name()];
+	if (constraintModes.isDictionary()) {
+		for (const auto &[modeName, modeDict] : constraintModes.asDict()) {
 			if (AeConstraintModeNameValueMap.find(modeName) ==
 			    AeConstraintModeNameValueMap.end()) {
 				LOG(AgcMeanLuminance, Warning)
@@ -273,9 +273,9 @@ int AgcMeanLuminance::parseExposureModes(const ValueNode &tuningData)
 {
 	std::vector<ControlValue> availableExposureModes;
 
-	const ValueNode &yamlExposureModes = tuningData[controls::AeExposureMode.name()];
-	if (yamlExposureModes.isDictionary()) {
-		for (const auto &[modeName, modeValues] : yamlExposureModes.asDict()) {
+	const ValueNode &exposureModes = tuningData[controls::AeExposureMode.name()];
+	if (exposureModes.isDictionary()) {
+		for (const auto &[modeName, modeValues] : exposureModes.asDict()) {
 			if (AeExposureModeNameValueMap.find(modeName) ==
 			    AeExposureModeNameValueMap.end()) {
 				LOG(AgcMeanLuminance, Warning)

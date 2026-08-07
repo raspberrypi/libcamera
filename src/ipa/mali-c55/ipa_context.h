@@ -10,11 +10,16 @@
 #include <libcamera/base/utils.h>
 #include <libcamera/controls.h>
 
+#include <libcamera/ipa/core_ipa_interface.h>
+
 #include "libcamera/internal/bayer_format.h"
 
 #include <libipa/fc_queue.h>
 
+#include "libipa/awb.h"
+#include "libipa/ccm.h"
 #include "libipa/fixedpoint.h"
+#include "libipa/lsc.h"
 
 namespace libcamera {
 
@@ -54,10 +59,9 @@ struct IPAActiveState {
 		uint32_t temperatureK;
 	} agc;
 
-	struct {
-		UQ<4, 8> rGain;
-		UQ<4, 8> bGain;
-	} awb;
+	ipa::awb::ActiveState awb;
+	ipa::ccm::ActiveState ccm;
+	ipa::lsc::ActiveState lsc;
 };
 
 struct IPAFrameContext : public FrameContext {
@@ -67,10 +71,9 @@ struct IPAFrameContext : public FrameContext {
 		UQ<5, 8> ispGain;
 	} agc;
 
-	struct {
-		UQ<4, 8> rGain;
-		UQ<4, 8> bGain;
-	} awb;
+	ipa::awb::FrameContext awb;
+	ipa::ccm::FrameContext ccm;
+	ipa::lsc::FrameContext lsc;
 };
 
 struct IPAContext {
@@ -79,6 +82,7 @@ struct IPAContext {
 	{
 	}
 
+	IPACameraSensorInfo sensorInfo;
 	IPASessionConfiguration configuration;
 	IPAActiveState activeState;
 

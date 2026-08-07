@@ -101,6 +101,8 @@ std::string IPAMaliC55::logPrefix() const
 int IPAMaliC55::init(const IPASettings &settings, const IPAConfigInfo &ipaConfig,
 		     ControlInfoMap *ipaControls)
 {
+	context_.sensorInfo = ipaConfig.sensorInfo;
+
 	camHelper_ = CameraSensorHelperFactoryBase::create(settings.sensorModel);
 	if (!camHelper_) {
 		LOG(IPAMaliC55, Error)

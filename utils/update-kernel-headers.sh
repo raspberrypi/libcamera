@@ -49,6 +49,7 @@ headers="
 	drm/drm.h
 	drm/drm_fourcc.h
 	drm/drm_mode.h
+	linux/bits.h
 	linux/dma-buf.h
 	linux/dma-heap.h
 	linux/dw100.h

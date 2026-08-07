@@ -85,14 +85,14 @@ namespace ipa {
 
 /**
  * \fn Module::createAlgorithms()
- * \brief Create algorithms from YAML configuration data
+ * \brief Create algorithms from tuning data
  * \param[in] context The IPA context
  * \param[in] algorithms Algorithms configuration data as a parsed ValueNode
  *
- * This function iterates over the list of \a algorithms parsed from the YAML
- * configuration file, and instantiates and initializes the corresponding
- * algorithms. The configuration data is expected to be correct, any error
- * causes the function to fail and return immediately.
+ * This function iterates over the list of \a algorithms parsed from the tuning
+ * data, and instantiates and initializes the corresponding algorithms. The
+ * configuration data is expected to be correct, any error causes the function
+ * to fail and return immediately.
  *
  * Algorithms can optionally be disabled via the tuning file of the camera
  * module as shown here, with AGC being used as an example:

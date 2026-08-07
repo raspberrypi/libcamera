@@ -9,11 +9,16 @@
 
 #include <linux/rkisp1-config.h>
 
-#include "libcamera/internal/matrix.h"
+#include <libcamera/controls.h>
 
-#include "libipa/interpolator.h"
+#include "libcamera/internal/value_node.h"
+
+#include "libipa/ccm.h"
+#include "libipa/fixedpoint.h"
 
 #include "algorithm.h"
+#include "ipa_context.h"
+#include "params.h"
 
 namespace libcamera {
 
@@ -41,14 +46,9 @@ public:
 		     ControlList &metadata) override;
 
 private:
-	void parseYaml(const ValueNode &tuningData);
-	void setParameters(struct rkisp1_cif_isp_ctk_config &config,
-			   const Matrix<float, 3, 3> &matrix,
-			   const Matrix<int16_t, 3, 1> &offsets);
+	void setParameters(RkISP1Params *params, IPAFrameContext &context);
 
-	unsigned int ct_;
-	Interpolator<Matrix<float, 3, 3>> ccm_;
-	Interpolator<Matrix<int16_t, 3, 1>> offsets_;
+	CcmAlgorithm<Q<4, 7>> ccmAlgo_;
 };
 
 } /* namespace ipa::rkisp1::algorithms */

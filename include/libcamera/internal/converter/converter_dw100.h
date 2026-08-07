@@ -69,18 +69,13 @@ private:
 	int applyControls(const Stream *stream, const V4L2Request *request);
 	void reinitRequest(V4L2Request *request);
 
-	struct DewarpParms {
-		Matrix<double, 3, 3> cm;
-		std::vector<double> coeffs;
-	};
-
 	struct VertexMapInfo {
 		Dw100VertexMap map;
 		bool update;
 	};
 
 	std::map<const Stream *, VertexMapInfo> vertexMaps_;
-	std::optional<DewarpParms> dewarpParams_;
+	std::optional<Dw100VertexMap::DewarpParams> dewarpParams_;
 	unsigned int inputBufferCount_;
 	V4L2M2MConverter converter_;
 	Rectangle sensorCrop_;

@@ -928,7 +928,7 @@ std::ostream &operator<<(std::ostream &out, const Rectangle &r)
 
 #ifndef __DOXYGEN__
 /*
- * The YAML data shall be a list of two numerical values containing the x and y
+ * The value node shall be a list of two numerical values containing the x and y
  * coordinates, in that order.
  */
 template<>

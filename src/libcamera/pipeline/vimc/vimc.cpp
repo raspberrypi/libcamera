@@ -433,7 +433,7 @@ int PipelineHandlerVimc::processControls(VimcCameraData *data, Request *request)
 	int ret = data->sensor_->setControls(&controls);
 	if (ret) {
 		LOG(VIMC, Error) << "Failed to set controls: " << ret;
-		return ret < 0 ? ret : -EINVAL;
+		return ret;
 	}
 
 	return ret;

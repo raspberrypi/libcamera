@@ -68,6 +68,7 @@ protected:
 	std::deque<utils::Duration> frameLengths_;
 	utils::Duration lastTimeout_;
 	ControlList libcameraMetadata_;
+	bool lscMapsOutput_;
 	bool statsMetadataOutput_;
 
 	/* Remember the HDR status after a mode switch. */

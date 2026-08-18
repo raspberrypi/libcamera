@@ -1374,4 +1374,42 @@ controls:
         The nominal range is [-180, 180], where 0° leaves hues unchanged and the
         range wraps around continuously, with 180° == -180°.
 
+  - EnableLensShadingCorrectionMapOutput:
+      type: bool
+      direction: inout
+      description: |
+        Indicates if the lens shading correction maps should be set in frame-
+        metadata for each frame. Returns true if tables are successfully set.
+
+  - LensShadingCorrectionMaps:
+      type: float
+      direction: out
+      description: |
+        A map giving the lens shading correction factors. Dimesnions of the
+        returned table is [number of channels, sizeX, sizeY] (planar tables)
+      size: [n]
+
+  - LensShadingCorrectionMapSize:
+      type: uint32_t
+      direction: out
+      description: |
+        The number of channels/maps and the size of the lens shading correction
+        maps in pixels. E.g. [3, 32, 32]
+      size: [3]
+
+  - ToneCurve:
+      type: float
+      direction: out
+      description: |
+        A profile tone curve to apply on linear RGB - as it seems it has the sRGB
+        gamma curve baked in.
+      size: [n]
+
+  - NoiseProfile:
+      type: float
+      direction: out
+      description: |
+        The noise profile [Scale, Offset].
+      size: [2]
+
 ...

@@ -409,6 +409,9 @@ void Alsc::prepare(Metadata *imageMetadata)
 	status.r = prevSyncResults_[0].data();
 	status.g = prevSyncResults_[1].data();
 	status.b = prevSyncResults_[2].data();
+	status.cols = config_.tableSize.width;
+	status.rows = config_.tableSize.height;
+
 	imageMetadata->set("alsc.status", status);
 	/*
 	 * Put the results in the global metadata as well. This will be used by

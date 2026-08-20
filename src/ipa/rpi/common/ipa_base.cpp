@@ -12,21 +12,25 @@
 
 #include <libcamera/base/log.h>
 #include <libcamera/base/span.h>
+
 #include <libcamera/control_ids.h>
 #include <libcamera/property_ids.h>
 
 #include "controller/af_algorithm.h"
 #include "controller/af_status.h"
 #include "controller/agc_algorithm.h"
+#include "controller/alsc_status.h"
 #include "controller/awb_algorithm.h"
 #include "controller/awb_status.h"
 #include "controller/black_level_status.h"
 #include "controller/ccm_algorithm.h"
 #include "controller/ccm_status.h"
 #include "controller/contrast_algorithm.h"
+#include "controller/contrast_status.h"
 #include "controller/denoise_algorithm.h"
 #include "controller/hdr_algorithm.h"
 #include "controller/lux_status.h"
+#include "controller/noise_status.h"
 #include "controller/sharpen_algorithm.h"
 #include "controller/statistics.h"
 #include "controller/sync_algorithm.h"
@@ -82,6 +86,7 @@ const ControlInfoMap::Map ipaControls{
 		      static_cast<int64_t>(defaultMaxFrameDuration.get<std::micro>()),
 		      Span<const int64_t, 2>{ { static_cast<int64_t>(defaultMinFrameDuration.get<std::micro>()),
 						static_cast<int64_t>(defaultMinFrameDuration.get<std::micro>()) } }) },
+	{ &controls::EnableLensShadingCorrectionMapOutput, ControlInfo(false, true, false) },
 	{ &controls::draft::NoiseReductionMode, ControlInfo(controls::draft::NoiseReductionModeValues) },
 	{ &controls::rpi::StatsOutputEnable, ControlInfo(false, true, false) },
 	{ &controls::rpi::CnnEnableInputTensor, ControlInfo(false, true, false) },
@@ -129,7 +134,7 @@ LOG_DEFINE_CATEGORY(IPARPI)
 namespace ipa::RPi {
 
 IpaBase::IpaBase()
-	: controller_(), frameLengths_(FrameLengthsQueueSize, 0s), statsMetadataOutput_(false),
+	: controller_(), frameLengths_(FrameLengthsQueueSize, 0s), lscMapsOutput_(false), statsMetadataOutput_(false),
 	  stitchSwapBuffers_(false), frameCount_(0), mistrustCount_(0), lastRunTimestamp_(0),
 	  firstStart_(true), flickerState_({ 0, 0s }), cnnEnableInputTensor_(false), awbEnabled_(true)
 {
@@ -245,7 +250,6 @@ int32_t IpaBase::configure(const IPACameraSensorInfo &sensorInfo, const ConfigPa
 		agcStatus.exposureTime = defaultExposureTime;
 		agcStatus.analogueGain = defaultAnalogueGain;
 		applyAGC(&agcStatus, ctrls);
-
 	}
 
 	result->sensorControls = std::move(ctrls);
@@ -795,8 +799,8 @@ static const std::map<int32_t, std::string> HdrModeTable = {
 
 void IpaBase::applyControls(const ControlList &controls)
 {
-	using RPiController::AgcAlgorithm;
 	using RPiController::AfAlgorithm;
+	using RPiController::AgcAlgorithm;
 	using RPiController::ContrastAlgorithm;
 	using RPiController::DenoiseAlgorithm;
 	using RPiController::HdrAlgorithm;
@@ -1478,6 +1482,10 @@ void IpaBase::applyControls(const ControlList &controls)
 			break;
 		}
 
+		case controls::ENABLE_LENS_SHADING_CORRECTION_MAP_OUTPUT:
+			lscMapsOutput_ = ctrl.second.get<bool>();
+			break;
+
 		case controls::rpi::STATS_OUTPUT_ENABLE:
 			statsMetadataOutput_ = ctrl.second.get<bool>();
 			break;
@@ -1760,6 +1768,43 @@ void IpaBase::reportMetadata(unsigned int ipaContext)
 		libcameraMetadata_.set(controls::rpi::CnnKpiInfo,
 				       { static_cast<int32_t>(kpiInfo->dnnRuntime),
 					 static_cast<int32_t>(kpiInfo->dspRuntime) });
+	}
+
+	NoiseStatus *noiseStatus = rpiMetadata.getLocked<NoiseStatus>("noise.status");
+	if (noiseStatus) {
+		float noiseProfile[] = { static_cast<float>(noiseStatus->noiseSlope),
+					 static_cast<float>(noiseStatus->noiseConstant) };
+
+		libcameraMetadata_.set(controls::NoiseProfile, noiseProfile);
+	}
+
+	ContrastStatus *contrastStatus = rpiMetadata.getLocked<ContrastStatus>("contrast.status");
+	if (contrastStatus && contrastStatus->gammaCurve.size() > 0) {
+		std::vector<float> contrast;
+		contrast.reserve(contrastStatus->gammaCurve.size() * 2);
+
+		contrastStatus->gammaCurve.map([&](double x, double y) {
+			contrast.emplace_back(static_cast<float>(x));
+			contrast.emplace_back(static_cast<float>(y));
+		});
+		libcameraMetadata_.set(controls::ToneCurve, contrast);
+	}
+
+	if (lscMapsOutput_) {
+		AlscStatus *alscStatus = rpiMetadata.getLocked<AlscStatus>("alsc.status");
+		if (alscStatus) {
+			uint32_t elements = alscStatus->cols * alscStatus->rows;
+			std::vector<float> map(3 * elements);
+
+			std::copy(alscStatus->r.begin(), alscStatus->r.end(), map.begin() + 0 * elements);
+			std::copy(alscStatus->g.begin(), alscStatus->g.end(), map.begin() + 1 * elements);
+			std::copy(alscStatus->b.begin(), alscStatus->b.end(), map.begin() + 2 * elements);
+
+			uint32_t sizeTable[] = { 3, alscStatus->cols, alscStatus->rows };
+			libcameraMetadata_.set(controls::LensShadingCorrectionMaps, map);
+			libcameraMetadata_.set(controls::LensShadingCorrectionMapSize, sizeTable);
+			libcameraMetadata_.set(controls::EnableLensShadingCorrectionMapOutput, true);
+		}
 	}
 
 	metadataReady.emit(libcameraMetadata_);

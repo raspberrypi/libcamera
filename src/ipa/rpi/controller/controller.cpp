@@ -71,7 +71,7 @@ static const std::map<std::string, Controller::HardwareConfig> HardwareConfigMap
 			 * could happen using 4 lanes at 1.5Gbps at 10bpp with
 			 * frames wider than ~16,000 pixels.
 			 */
-			.minPixelProcessingTime = 1.0us / 380,
+			.minPixelProcessingTime = 1.0us / 580,
 			.dataBufferStrided = false,
 		}
 	},

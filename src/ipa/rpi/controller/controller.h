@@ -12,6 +12,7 @@
  * convenient manner.
  */
 
+#include <optional>
 #include <vector>
 #include <string>
 
@@ -106,6 +107,13 @@ protected:
 
 private:
 	std::string target_;
+	/*
+	 * Resolved on first use rather than read straight out of the static
+	 * table, because the PiSP pixel-rate bound depends on the RP1 clock the
+	 * board booted with. Mutable so the existing const accessor keeps its
+	 * signature; the IPA drives a Controller from a single thread.
+	 */
+	mutable std::optional<HardwareConfig> hardwareConfig_;
 };
 
 } /* namespace RPiController */

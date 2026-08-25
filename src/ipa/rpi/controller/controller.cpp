@@ -6,16 +6,11 @@
  */
 
 #include <assert.h>
-#include <dirent.h>
-#include <stdlib.h>
-#include <sys/stat.h>
-
-#include <optional>
-#include <string>
-#include <vector>
+#include <stdlib.h>	/* strtod */
 
 #include <libcamera/base/file.h>
 #include <libcamera/base/log.h>
+#include <libcamera/base/utils.h>	/* secure_getenv */
 
 #include "libcamera/internal/yaml_parser.h"
 
@@ -79,10 +74,10 @@ static const std::map<std::string, Controller::HardwareConfig> HardwareConfigMap
 			 * frames wider than ~16,000 pixels.
 			 *
 			 * This is the stock-clock value and only the default:
-			 * the bottleneck scales with RP1_CLK_SYS, which the
+			 * the bottleneck scales with the RP1 clock, which the
 			 * rp1-overclock overlay raises. getHardwareConfig()
-			 * replaces it with the rate that matches the clock the
-			 * board is actually running. See maxPixelRate() below.
+			 * replaces it with whatever the caller passed in via
+			 * LIBCAMERA_RPI_MAX_PIXEL_RATE. See maxPixelRate().
 			 */
 			.minPixelProcessingTime = 1.0us / 380,
 			.dataBufferStrided = false,
@@ -93,148 +88,56 @@ static const std::map<std::string, Controller::HardwareConfig> HardwareConfigMap
 namespace {
 
 /*
- * The PiSP CSI2-to-ISP-FE bottleneck scales with RP1_CLK_SYS. Will Whang's
- * rp1-overclock overlay raises that clock from 200 to 300MHz, and the pixel
- * rate the pipeline may advertise moves with it.
+ * The PiSP CSI2-to-ISP-FE bottleneck scales with the RP1 clock, which Will
+ * Whang's rp1-overclock overlay raises. The rate is supplied explicitly rather
+ * than probed, because probing was tried and does not work on this hardware:
  *
- * Only these two points have been measured on hardware, so only these two are
- * honoured; an unrecognised clock falls back to the stock rate rather than
- * interpolating. That asymmetry is deliberate. Under-stating the rate costs
- * frame rate and nothing else, because the IPA simply pads the line length
- * further. Over-stating it corrupts every mode wide enough for the bound to be
- * what limits the line time -- and does so silently, since the only warning on
- * this path (ipa_base.cpp, "THIS WILL CAUSE IMAGE CORRUPTION") fires when the
- * *sensor* cannot supply enough blanking to meet the bound, which a too-high
- * rate makes less likely to trigger, not more.
+ *   - /proc/device-tree has no rp1 node at all on a CM5 running 6.12.93, so
+ *     there is no assigned-clock-rates array to read. The walk always failed
+ *     and always fell back to the stock rate, silently discarding the
+ *     overclock the operator had enabled.
+ *   - The overlay asks for 300MHz and the clock driver delivers 333.33MHz
+ *     (measured: pll_sys and clk_sys both 333333333Hz). Any table keyed on the
+ *     requested 300MHz misses, so even a working read would have fallen back.
+ *
+ * cinepi-raw passes the rate down instead: one explicit value, set from the
+ * same settings switch that enables the overlay, so the two cannot disagree.
+ *
+ * The default remains the stock bound. Under-stating it costs frame rate and
+ * nothing else, because the IPA simply pads the line length further.
+ * Over-stating it corrupts every mode wide enough for this bound to be what
+ * limits the line time, and does so silently: the only warning on this path
+ * (ipa_base.cpp, "THIS WILL CAUSE IMAGE CORRUPTION") fires when the *sensor*
+ * cannot supply enough blanking to meet the bound, which a too-high rate makes
+ * less likely to trigger, not more.
  */
-constexpr unsigned int rp1ClkSysStock = 200000000;
-constexpr unsigned int rp1ClkSysOverclocked = 300000000;
 constexpr double pixelRateStock = 380.0;
-constexpr double pixelRateOverclocked = 580.0;
 
-/*
- * RP1_CLK_SYS is index 7 of the rp1_clocks assigned-clock-rates array. The
- * index is only trusted as far as the value it yields: anything that is not
- * one of the two rates above is discarded, so a future kernel that reorders
- * the array degrades to the stock default instead of misreading a neighbour.
- */
-constexpr size_t rp1ClkSysIndex = 7;
-
-constexpr const char *deviceTreeRoot = "/proc/device-tree";
-constexpr const char *clockRatesProperty = "assigned-clock-rates";
 constexpr const char *maxPixelRateEnv = "LIBCAMERA_RPI_MAX_PIXEL_RATE";
-
-/* Device tree properties are big endian regardless of the CPU. */
-std::optional<unsigned int> readBeU32(const std::string &filename, size_t index)
-{
-	File file(filename);
-	if (!file.open(File::OpenModeFlag::ReadOnly))
-		return {};
-
-	ssize_t size = file.size();
-	if (size <= 0 || static_cast<size_t>(size) < (index + 1) * sizeof(uint32_t))
-		return {};
-
-	std::vector<uint8_t> buffer(size);
-	if (file.read({ buffer.data(), buffer.size() }) != size)
-		return {};
-
-	const uint8_t *p = buffer.data() + index * sizeof(uint32_t);
-	return (static_cast<unsigned int>(p[0]) << 24) |
-	       (static_cast<unsigned int>(p[1]) << 16) |
-	       (static_cast<unsigned int>(p[2]) << 8) |
-	       static_cast<unsigned int>(p[3]);
-}
-
-/*
- * Walk the live device tree for the RP1 clock node's rate array. The node is
- * matched by having an ancestor whose name contains "rp1", rather than by an
- * absolute path, because the unit address moves between kernels. Applied
- * overlays are reflected here, which is the point: this reads what the board
- * booted with, not what it was built for.
- */
-std::optional<unsigned int> findRp1ClkSys(const std::string &dir, bool underRp1,
-					  unsigned int depth)
-{
-	if (depth > 8)
-		return {};
-
-	DIR *dp = opendir(dir.c_str());
-	if (!dp)
-		return {};
-
-	std::optional<unsigned int> result;
-	const struct dirent *ent;
-
-	while (!result && (ent = readdir(dp)) != nullptr) {
-		std::string name = ent->d_name;
-		if (name == "." || name == "..")
-			continue;
-
-		std::string path = dir + "/" + name;
-		bool rp1 = underRp1 || name.find("rp1") != std::string::npos;
-
-		struct stat st;
-		if (stat(path.c_str(), &st))
-			continue;
-
-		if (S_ISDIR(st.st_mode))
-			result = findRp1ClkSys(path, rp1, depth + 1);
-		else if (rp1 && name == clockRatesProperty)
-			result = readBeU32(path, rp1ClkSysIndex);
-	}
-
-	closedir(dp);
-
-	return result;
-}
 
 double maxPixelRate()
 {
 	const char *env = utils::secure_getenv(maxPixelRateEnv);
-	if (env && *env) {
-		char *end;
-		double rate = strtod(env, &end);
-		if (*end == '\0' && rate > 0.0) {
-			LOG(RPiController, Info)
-				<< maxPixelRateEnv << " set, using " << rate
-				<< "MPix/s";
-			return rate;
-		}
+	if (!env || !*env) {
+		LOG(RPiController, Info)
+			<< maxPixelRateEnv << " not set, assuming stock clocks ("
+			<< pixelRateStock << "MPix/s)";
+		return pixelRateStock;
+	}
 
+	char *end;
+	double rate = strtod(env, &end);
+	if (*end != '\0' || !(rate > 0.0)) {
 		LOG(RPiController, Warning)
-			<< "Ignoring malformed " << maxPixelRateEnv << " \""
-			<< env << "\"";
-	}
-
-	std::optional<unsigned int> clk = findRp1ClkSys(deviceTreeRoot, false, 0);
-	if (!clk) {
-		LOG(RPiController, Info)
-			<< "Could not read RP1_CLK_SYS from the device tree,"
-			<< " assuming stock clocks (" << pixelRateStock << "MPix/s)";
+			<< "Ignoring malformed " << maxPixelRateEnv << " \"" << env
+			<< "\", assuming stock clocks (" << pixelRateStock << "MPix/s)";
 		return pixelRateStock;
 	}
 
-	switch (*clk) {
-	case rp1ClkSysStock:
-		LOG(RPiController, Info)
-			<< "RP1_CLK_SYS at 200MHz (stock), limiting to "
-			<< pixelRateStock << "MPix/s";
-		return pixelRateStock;
+	LOG(RPiController, Info)
+		<< "Pixel rate limited to " << rate << "MPix/s (" << maxPixelRateEnv << ")";
 
-	case rp1ClkSysOverclocked:
-		LOG(RPiController, Info)
-			<< "RP1_CLK_SYS at 300MHz (rp1-overclock), allowing "
-			<< pixelRateOverclocked << "MPix/s";
-		return pixelRateOverclocked;
-
-	default:
-		LOG(RPiController, Warning)
-			<< "Unrecognised RP1_CLK_SYS rate " << *clk
-			<< "Hz, assuming stock clocks (" << pixelRateStock
-			<< "MPix/s)";
-		return pixelRateStock;
-	}
+	return rate;
 }
 
 } /* namespace */

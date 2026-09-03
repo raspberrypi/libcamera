@@ -20,6 +20,102 @@ open-source-friendly while still protecting vendor core IP. libcamera was born
 out of that collaboration and will offer modern camera support to Linux-based
 systems, including traditional Linux distributions, ChromeOS and Android.
 
+.. section-begin-cinemate-fork
+
+CineMate fork
+-------------
+
+This repository is `CineMate`_'s fork of Raspberry Pi's ``libcamera``, tracked at
+https://github.com/Tiramisioux/libcamera.git on the ``cinemate`` branch (this is
+also the branch and remote ``cinemate-install.sh`` pins by default via
+``LIBCAMERA_REPO_URL`` / ``LIBCAMERA_REPO_REF``). The stock upstream README below
+this section is otherwise unmodified; this section is CineMate-specific and is
+the first thing a CineMate contributor should read. See the `Getting Started`_
+build instructions below for the corrected clone command.
+
+.. _CineMate: https://github.com/Tiramisioux/cinemate
+
+Sensor support
+~~~~~~~~~~~~~~
+
+This fork adds two sensors that upstream ``libcamera`` does not carry at
+all — ``imx585`` (including the ``imx585_mono`` variant) and ``imx294`` —
+and carries materially reworked AE/AWB tuning for a third, ``imx283``,
+whose cam helper, base tuning data and sensor-properties entry already ship
+upstream (Raspberry Pi added ``imx283`` support in 2024-08). "Support" for
+``imx585``/``imx294`` means, per sensor:
+
+- a ``cam_helper_<sensor>.cpp`` pipeline-handler helper (``imx585``:
+  ``64570c7``; ``imx294``: ``9790766``) so libcamera's RPi pipeline handler
+  can drive the sensor's controls and metadata,
+- PiSP and/or VC4 tuning data (AE/AWB/lens-shading tables etc.) under
+  ``src/ipa/rpi/{pisp,vc4}/data/``,
+- a ``camera_sensor_properties.cpp`` entry (``839b26a``) registering the
+  sensor's pixel array size and properties so libcamera recognises it by
+  name at all,
+- meson build wiring (``da9d3c2``) so the new helpers and tuning data are
+  actually compiled and installed.
+
+All three sensors' tuning data was later reworked with materially better
+AE/AWB tables (``imx283``: ``80dd06f`` pisp / ``f080f4b`` vc4; ``imx585``:
+``9d0cdfe``).
+
+All of the above landed between 2024-08 and 2025-05, well before the
+2026-07-05 v3.3.2 release — this is foundational driver support, not a
+recent change.
+
+ClearHDR and pixel-rate correctness
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Three fixes here are new since v3.3.2 and are what current CineMate hardware
+depends on:
+
+- **16-bit endian-swap fix for ClearHDR** (``bcdd7e17b``, 2026-07-14). The
+  RPi PiSP pipeline decided whether to byte-swap 16-bit CFE buffers based
+  only on sensor bus bit depth. For ``imx585`` ClearHDR's 16-bit
+  ``SRGGB16`` mode with COMP1-compressed CFE output, that meant the swap
+  ran anyway, scrambling 8-byte compression blocks two bytes at a time.
+  **This corrupted captured ClearHDR data outright**; the fix gates the
+  swap on the CFE format not being PiSP1-packed. Tracked in
+  ``docs/clear-hdr.md`` and in ``cinepi-raw``'s README compatibility table
+  as "16-bit endian swap, gated off compressed formats."
+- **PiSP pixel-rate bound derived from the RP1 clock** (``0413c1351`` /
+  ``3c7b9abdb``, 2026-08-26). The PiSP IPA's pixel-rate ceiling
+  (380 MPix/s stock at 200 MHz RP1 clock, 580 MPix/s with the
+  ``rp1-overclock`` overlay's 300 MHz target) is now taken as an explicit
+  input via the ``LIBCAMERA_RPI_MAX_PIXEL_RATE`` environment variable,
+  falling back to the safe 380 MPix/s stock bound when unset. An earlier
+  attempt (``0413c1351``) tried probing the live device-tree clock instead,
+  but that failed on real hardware two ways — no ``rp1`` node under
+  ``/proc/device-tree`` on CM5 with kernel 6.12.93, and the overlay's
+  nominal 300 MHz request is actually delivered as 333.33 MHz — so the
+  follow-up commit (``3c7b9abdb``, current branch tip) replaced the probe
+  with the explicit env-var input instead. ``cinepi-raw`` sets this variable
+  from the same settings switch that enables the overclock overlay, and
+  exposes it as its own ``--max-pixel-rate <float>`` flag ("keep advertised
+  mode ceilings honest against the live RP1 clock") — the two are meant to
+  be read together, not as separate mechanisms.
+- **``minPixelProcessingTime`` tuned for RP1 overclock** (``614ce18c6``,
+  2026-08-21). First-pass hardcode of ``controller.cpp``'s
+  ``minPixelProcessingTime`` to 1.0 µs / 580 MPix/s to match
+  ``rp1-overclock``, superseded in behaviour by the pixel-rate-bound work
+  above but still the value in effect at that timing constant.
+
+Build fixes (gcc-12 / Raspberry Pi 4)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Two June 2026 commits keep the build green on Bookworm's gcc-12 at
+``-O3 -Werror``: ``146e00cb5`` restores upstream's one-shot
+``Option::optionName()`` string construction after a two-step version
+(``e8b9ff540``) tripped a gcc-12 ``-Wrestrict`` false positive on
+Raspberry Pi 4; ``ff24737b6`` additionally demotes ``-Wrestrict`` and
+related string-overflow warnings from error to warning in
+``src/apps/common/meson.build`` only, so core ``libcamera`` keeps strict
+``-Werror`` while the apps layer stays tolerant of future gcc false
+positives on other gcc versions.
+
+.. section-end-cinemate-fork
+
 .. section-begin-getting-started
 
 Getting Started
@@ -44,6 +140,20 @@ First, install the following ``libcamera`` dependencies:
   sudo apt install -y libglib2.0-dev libgstreamer-plugins-base1.0-dev
 
 Now we're ready to build ``libcamera`` itself.
+
+.. note::
+
+   **CineMate:** the commands below build stock upstream ``libcamera``. To
+   build the branch CineMate actually ships (pinned by
+   ``cinemate-install.sh``, required for imx585/imx283/imx294 sensor
+   support, the ClearHDR endian-swap fix and the RP1-clock pixel-rate bound
+   — see `CineMate fork`_ above), replace the ``git clone`` line below with:
+
+   .. code::
+
+     git clone https://github.com/Tiramisioux/libcamera.git
+     cd libcamera
+     git checkout cinemate
 
 Download a local copy of Raspberry Pi's fork of ``libcamera`` from GitHub, before building and installing freshly-build binary:
 

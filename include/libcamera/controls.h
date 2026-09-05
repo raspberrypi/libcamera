@@ -390,6 +390,7 @@ public:
 	using Map::size;
 	using Map::count;
 	using Map::find;
+	using Map::contains;
 
 	mapped_type &at(unsigned int key);
 	const mapped_type &at(unsigned int key) const;

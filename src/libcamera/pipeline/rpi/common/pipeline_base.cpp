@@ -793,6 +793,20 @@ int PipelineHandlerBase::queueRequestDevice(Camera *camera, Request *request)
 	return 0;
 }
 
+int PipelineHandlerBase::queueControlsDevice(Camera *camera, const ControlList &controls)
+{
+	CameraData *data = cameraData(camera);
+
+	/*
+	 * For now, just hold these controls in a queue. The front item will get popped
+	 * off and merged into the next request that we pull off our request queue and
+	 * start to process.
+	 */
+	data->controlsQueue_.push(controls);
+
+	return 0;
+}
+
 int PipelineHandlerBase::registerCamera(std::unique_ptr<RPi::CameraData> &cameraData,
 					std::shared_ptr<MediaDevice> frontend,
 					const std::string &frontendName,
@@ -1546,12 +1560,59 @@ void CameraData::handleControlLists(uint32_t delayContext, ControlList &paramCon
 {
 	/*
 	 * The delayContext is the sequence number after it's gone through the various
-	 * pipeline delays, so that's what gets reported as the "ControlListSequence"
-	 * in the metadata, being the sequence number of the request whose ControlList
-	 * has just been applied.
+	 * pipeline delays.
 	 */
 	Request *request = requestQueue_.front();
-	request->_d()->metadata().set(controls::rpi::ControlListSequence, delayContext);
+
+	/*
+	 * Create a merged list of controls from this request, and also from the
+	 * ControlList queue.
+	 */
+	paramControls = request->controls();
+	if (!controlsQueue_.empty()) {
+		paramControls.merge(std::move(controlsQueue_.front()),
+				    ControlList::MergePolicy::OverwriteExisting);
+		controlsQueue_.pop();
+		controlListId_++;
+		LOG(RPI, Debug) << "Popped control list " << controlListId_ << " from queue";
+	}
+
+	/*
+	 * Record which control list corresponds to this ipaCookie. Because setDelayedControls
+	 * now gets called by the IPA from the start of the following frame, we must record
+	 * the previous control list id.
+	 */
+	syncTable_.emplace(SyncTableEntry{ request->sequence(), controlListId_ });
+	LOG(RPI, Debug) << "Add sync table entry: sequence " << request->sequence()
+			<< " control list id " << controlListId_;
+
+	/*
+	 * We know we that we added an entry for every delayContext, so we can
+	 * find the one for this Bayer frame, and this links us to the correct
+	 * control list. Anything ahead of "our" entry in the queue is old, so
+	 * can be dropped.
+	 */
+	while (!syncTable_.empty() &&
+	       syncTable_.front().ipaCookie != delayContext) {
+		LOG(RPI, Debug) << "Pop sync entry: ipa cookie "
+				<< syncTable_.front().ipaCookie << " control id "
+				<< syncTable_.front().controlListId << " for job "
+				<< delayContext;
+		syncTable_.pop();
+	}
+
+	if (syncTable_.empty())
+		LOG(RPI, Warning) << "Unable to find ipa cookie for PFC";
+	else {
+		LOG(RPI, Debug) << "Using sync control id " << syncTable_.front().controlListId;
+		requestControlId_ = syncTable_.front().controlListId;
+	}
+
+	/*
+	 * We report the sequence number of the controls from the ControlList queue
+	 * as the "ControlListSequence" in the metadata.
+	 */
+	request->_d()->metadata().set(controls::rpi::ControlListSequence, requestControlId_);
 
 	/*
 	 * Controls that take effect immediately (typically ISP controls) have to be
@@ -1563,18 +1624,17 @@ void CameraData::handleControlLists(uint32_t delayContext, ControlList &paramCon
 	 * we can pass back the controls that really need to happen now, without
 	 * disturbing the controls that were submitted with the request.
 	 */
-	ASSERT(paramControls.empty());
-	immediateControls_.push({ request->sequence(), {} });
-	for (const auto &ctrl : request->controls()) {
+	ControlList controls = std::move(paramControls);
+	immediateControls_.push({ controlListId_, {} });
+	for (const auto &ctrl : controls) {
 		if (isControlDelayed(ctrl.first))
 			paramControls.set(ctrl.first, ctrl.second);
 		else
 			immediateControls_.back().controls.set(ctrl.first, ctrl.second);
 	}
-
 	/* "Immediate" controls that have become due are now merged back into this request. */
 	while (!immediateControls_.empty() &&
-	       immediateControls_.front().controlListId <= delayContext) {
+	       immediateControls_.front().controlListId <= requestControlId_) {
 		paramControls.merge(immediateControls_.front().controls,
 				    ControlList::MergePolicy::OverwriteExisting);
 		immediateControls_.pop();

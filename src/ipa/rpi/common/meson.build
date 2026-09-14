@@ -5,7 +5,7 @@ rpi_ipa_common_sources = files([
 ])
 
 rpi_ipa_common_includes = [
-    include_directories('..'),
+    include_directories('..','../..'),
 ]
 
 rpi_ipa_common_deps = [

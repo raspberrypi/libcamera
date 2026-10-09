@@ -13,10 +13,10 @@
 
 namespace libcamera {
 
-namespace ipa::soft {
+namespace ipa::softisp {
 
 using Algorithm = libcamera::ipa::Algorithm<Module>;
 
-} /* namespace ipa::soft */
+} /* namespace ipa::softisp */
 
 } /* namespace libcamera */

@@ -1,7 +1,9 @@
 # SPDX-License-Identifier: CC0-1.0
 
 libipa_headers = files([
+    'agc.h',
     'agc_mean_luminance.h',
+    'agc_msv.h',
     'algorithm.h',
     'awb_bayes.h',
     'awb_grey.h',
@@ -12,6 +14,7 @@ libipa_headers = files([
     'exposure_mode_helper.h',
     'fc_queue.h',
     'fixedpoint.h',
+    'gamma.h',
     'histogram.h',
     'interpolator.h',
     'lsc.h',
@@ -27,7 +30,9 @@ libipa_headers = files([
 ])
 
 libipa_sources = files([
+    'agc.cpp',
     'agc_mean_luminance.cpp',
+    'agc_msv.cpp',
     'algorithm.cpp',
     'awb_bayes.cpp',
     'awb_grey.cpp',
@@ -38,6 +43,7 @@ libipa_sources = files([
     'exposure_mode_helper.cpp',
     'fc_queue.cpp',
     'fixedpoint.cpp',
+    'gamma.cpp',
     'histogram.cpp',
     'interpolator.cpp',
     'lsc.cpp',

@@ -16,6 +16,7 @@
  */
 
 #include <algorithm>
+#include <span>
 
 #include <libcamera/base/file.h>
 #include <libcamera/base/log.h>
@@ -169,7 +170,7 @@ static bool checkTensorShape(TfLiteTensor *tensor, const int *expectedDims, cons
 
 static std::string buildDimString(const int *dims, const int dimsSize)
 {
-	return "[" + utils::join(Span(dims, dimsSize), ",") + "]";
+	return "[" + utils::join(std::span(dims, dimsSize), ",") + "]";
 }
 
 void AwbNN::loadModel()

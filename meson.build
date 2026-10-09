@@ -154,8 +154,8 @@ if cc.get_id() == 'clang'
 endif
 
 if cc.get_id() == 'gcc'
-    if cc.version().version_compare('<9')
-        error('gcc version is too old, libcamera requires 9.0 or newer')
+    if cc.version().version_compare('<10')
+        error('gcc version is too old, libcamera requires 10.0 or newer')
     endif
 
     # In C++20 mode, prior to gcc 11, object slicing in a return statement didn't

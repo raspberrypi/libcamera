@@ -33,7 +33,7 @@ MdParserSmia::MdParserSmia(std::initializer_list<uint32_t> registerList)
 		offsets_[r] = {};
 }
 
-MdParser::Status MdParserSmia::parse(libcamera::Span<const uint8_t> buffer,
+MdParser::Status MdParserSmia::parse(std::span<const uint8_t> buffer,
 				     RegisterMap &registers)
 {
 	if (reset_) {
@@ -72,7 +72,7 @@ MdParser::Status MdParserSmia::parse(libcamera::Span<const uint8_t> buffer,
 	return OK;
 }
 
-MdParserSmia::ParseStatus MdParserSmia::findRegs(libcamera::Span<const uint8_t> buffer)
+MdParserSmia::ParseStatus MdParserSmia::findRegs(std::span<const uint8_t> buffer)
 {
 	ASSERT(offsets_.size());
 

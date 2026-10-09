@@ -70,7 +70,7 @@ struct param_traits {
 class MaliC55Params : public V4L2Params<details::param_traits>
 {
 public:
-	MaliC55Params(Span<uint8_t> data)
+	MaliC55Params(std::span<uint8_t> data)
 		: V4L2Params(data, V4L2_ISP_PARAMS_VERSION_V1)
 	{
 	}

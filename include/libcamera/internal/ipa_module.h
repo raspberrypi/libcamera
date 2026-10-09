@@ -16,8 +16,6 @@
 #include <libcamera/ipa/ipa_interface.h>
 #include <libcamera/ipa/ipa_module_info.h>
 
-#include "libcamera/internal/pipeline_handler.h"
-
 namespace libcamera {
 
 class IPAModule : public Loggable
@@ -36,8 +34,8 @@ public:
 
 	IPAInterface *createInterface();
 
-	bool match(PipelineHandler *pipe,
-		   uint32_t minVersion, uint32_t maxVersion) const;
+	bool match(const char *name, uint32_t minVersion,
+		   uint32_t maxVersion) const;
 
 protected:
 	std::string logPrefix() const override;

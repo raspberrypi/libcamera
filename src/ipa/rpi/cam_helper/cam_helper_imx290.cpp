@@ -9,6 +9,8 @@
 
 #include "cam_helper.h"
 
+namespace {
+
 using namespace RPiController;
 
 class CamHelperImx290 : public CamHelper
@@ -56,12 +58,12 @@ unsigned int CamHelperImx290::hideFramesModeSwitch() const
 	return 1;
 }
 
-static CamHelper *create()
+CamHelper *create()
 {
 	return new CamHelperImx290();
 }
 
-static CamHelper *createImx662()
+CamHelper *createImx662()
 {
 	/*
 	 * The imx662 requires a frame integration diff of at least 4,
@@ -72,7 +74,9 @@ static CamHelper *createImx662()
 	return new CamHelperImx290(6);
 }
 
-static RegisterCamHelper reg("imx290", &create);
-static RegisterCamHelper reg327("imx327", &create);
-static RegisterCamHelper reg462("imx462", &create);
-static RegisterCamHelper reg662("imx662", &createImx662);
+RegisterCamHelper reg("imx290", &create);
+RegisterCamHelper reg327("imx327", &create);
+RegisterCamHelper reg462("imx462", &create);
+RegisterCamHelper reg662("imx662", &createImx662);
+
+} /* namespace */

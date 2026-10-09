@@ -41,7 +41,7 @@ namespace ipa {
  * \brief Create a cumulative histogram
  * \param[in] data A (non-cumulative) histogram
  */
-Histogram::Histogram(Span<const uint32_t> data)
+Histogram::Histogram(std::span<const uint32_t> data)
 {
 	cumulative_.resize(data.size() + 1);
 	cumulative_[0] = 0;
@@ -50,7 +50,7 @@ Histogram::Histogram(Span<const uint32_t> data)
 }
 
 /**
- * \fn Histogram::Histogram(Span<const uint32_t> data, Transform transform)
+ * \fn Histogram::Histogram(std::span<const uint32_t> data, Transform transform)
  * \brief Create a cumulative histogram
  * \param[in] data A (non-cumulative) histogram
  * \param[in] transform The transformation function to apply to every bin
@@ -72,6 +72,12 @@ Histogram::Histogram(Span<const uint32_t> data)
  * \fn Histogram::total()
  * \brief Retrieve the total number of values in the data set
  * \return Number of values
+ */
+
+/**
+ * \fn Histogram::operator[](size_t bin) const
+ * \brief Retrieve the value for \a bin
+ * \return The value in \a bin
  */
 
 /**

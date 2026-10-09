@@ -11,6 +11,7 @@
 #include <memory>
 #include <optional>
 #include <set>
+#include <span>
 #include <stdint.h>
 #include <string>
 
@@ -18,7 +19,6 @@
 #include <libcamera/base/flags.h>
 #include <libcamera/base/object.h>
 #include <libcamera/base/signal.h>
-#include <libcamera/base/span.h>
 
 #include <libcamera/controls.h>
 #include <libcamera/geometry.h>
@@ -136,12 +136,12 @@ public:
 	const std::set<Stream *> &streams() const;
 
 	std::unique_ptr<CameraConfiguration>
-	generateConfiguration(Span<const StreamRole> roles = {});
+	generateConfiguration(std::span<const StreamRole> roles = {});
 
 	std::unique_ptr<CameraConfiguration>
 	generateConfiguration(std::initializer_list<StreamRole> roles)
 	{
-		return generateConfiguration(Span(roles.begin(), roles.end()));
+		return generateConfiguration(std::span(roles.begin(), roles.end()));
 	}
 
 	int configure(CameraConfiguration *config);

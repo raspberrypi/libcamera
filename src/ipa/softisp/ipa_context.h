@@ -2,12 +2,13 @@
 /*
  * Copyright (C) 2024-2026 Red Hat, Inc.
  *
- * Simple pipeline IPA Context
+ * Software ISP IPA Context
  */
 
 #pragma once
 
 #include <array>
+#include <memory>
 #include <optional>
 #include <stdint.h>
 
@@ -16,7 +17,9 @@
 #include "libcamera/internal/matrix.h"
 #include "libcamera/internal/vector.h"
 
+#include <libipa/agc.h>
 #include <libipa/awb.h>
+#include <libipa/camera_sensor_helper.h>
 #include <libipa/ccm.h>
 #include <libipa/fc_queue.h>
 
@@ -24,14 +27,10 @@
 
 namespace libcamera {
 
-namespace ipa::soft {
+namespace ipa::softisp {
 
 struct IPASessionConfiguration {
-	struct {
-		int32_t exposureMin, exposureMax;
-		double againMin, againMax, again10, againMinStep;
-		utils::Duration lineDuration;
-	} agc;
+	ipa::agc::Session agc;
 	struct {
 		std::optional<uint8_t> level;
 	} black;
@@ -40,16 +39,11 @@ struct IPASessionConfiguration {
 struct IPAActiveState {
 	ipa::awb::ActiveState awb;
 	ipa::ccm::ActiveState ccm;
-
-	struct {
-		int32_t exposure;
-		double again;
-		bool valid;
-	} agc;
+	ipa::agc::ActiveState agc;
 
 	struct {
 		uint8_t level;
-		int32_t lastExposure;
+		uint32_t lastExposure;
 		double lastGain;
 	} blc;
 
@@ -66,9 +60,10 @@ struct IPAActiveState {
 struct IPAFrameContext : public FrameContext {
 	ipa::awb::FrameContext awb;
 	ipa::ccm::FrameContext ccm;
+	ipa::agc::FrameContext agc;
 
 	struct {
-		int32_t exposure;
+		uint32_t exposure;
 		double gain;
 	} sensor;
 
@@ -84,6 +79,8 @@ struct IPAContext {
 	}
 
 	IPACameraSensorInfo sensorInfo;
+	ControlInfoMap sensorControls;
+	std::unique_ptr<CameraSensorHelper> camHelper;
 	IPASessionConfiguration configuration;
 	IPAActiveState activeState;
 	FCQueue<IPAFrameContext> frameContexts;
@@ -91,6 +88,6 @@ struct IPAContext {
 	bool ccmEnabled = false;
 };
 
-} /* namespace ipa::soft */
+} /* namespace ipa::softisp */
 
 } /* namespace libcamera */

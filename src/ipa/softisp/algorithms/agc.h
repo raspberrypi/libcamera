@@ -2,41 +2,41 @@
 /*
  * Copyright (C) 2024, Red Hat Inc.
  *
- * Black level handling
+ * Exposure and gain
  */
 
 #pragma once
 
-#include <optional>
-#include <stdint.h>
+#include <libipa/agc.h>
 
 #include "algorithm.h"
 
 namespace libcamera {
 
-namespace ipa::soft::algorithms {
+namespace ipa::softisp::algorithms {
 
-class BlackLevel : public Algorithm
+class Agc : public Algorithm
 {
 public:
-	BlackLevel();
-	~BlackLevel() = default;
-
 	int init(IPAContext &context, const ValueNode &tuningData) override;
+
 	int configure(IPAContext &context, const IPAConfigInfo &configInfo) override;
-	void prepare(IPAContext &context,
-		     const uint32_t frame,
-		     IPAFrameContext &frameContext,
-		     DebayerParams *params) override;
+
+	void queueRequest(IPAContext &context, const uint32_t frame,
+			  IPAFrameContext &frameContext, const ControlList &controls) override;
+
+	void prepare(IPAContext &context, const uint32_t frame,
+		     IPAFrameContext &frameContext, DebayerParams *params) override;
+
 	void process(IPAContext &context, const uint32_t frame,
 		     IPAFrameContext &frameContext,
 		     const SwIspStats *stats,
 		     ControlList &metadata) override;
 
 private:
-	std::optional<uint8_t> definedLevel_;
+	AgcAlgorithm agc_;
 };
 
-} /* namespace ipa::soft::algorithms */
+} /* namespace ipa::softisp::algorithms */
 
 } /* namespace libcamera */

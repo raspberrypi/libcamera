@@ -139,8 +139,8 @@ Process::~Process()
  * or a negative error code otherwise
  */
 int Process::start(const std::string &path,
-		   Span<const std::string> args,
-		   Span<const int> fds)
+		   std::span<const std::string> args,
+		   std::span<const int> fds)
 {
 	if (pid_ > 0)
 		return -EBUSY;

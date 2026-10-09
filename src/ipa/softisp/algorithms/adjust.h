@@ -15,7 +15,7 @@
 
 namespace libcamera {
 
-namespace ipa::soft::algorithms {
+namespace ipa::softisp::algorithms {
 
 constexpr float kDefaultGamma = 2.2f;
 
@@ -45,6 +45,6 @@ private:
 	void applySaturation(Matrix<float, 3, 3> &ccm, float saturation);
 };
 
-} /* namespace ipa::soft::algorithms */
+} /* namespace ipa::softisp::algorithms */
 
 } /* namespace libcamera */

@@ -7,11 +7,10 @@
 
 #pragma once
 
-#include <tuple>
+#include <span>
 #include <utility>
 #include <vector>
 
-#include <libcamera/base/span.h>
 #include <libcamera/base/utils.h>
 
 #include "camera_sensor_helper.h"
@@ -23,15 +22,21 @@ namespace ipa {
 class ExposureModeHelper
 {
 public:
-	ExposureModeHelper(const Span<std::pair<utils::Duration, double>> stages);
+	ExposureModeHelper(std::span<std::pair<utils::Duration, double>> stages);
 	~ExposureModeHelper() = default;
 
 	void configure(utils::Duration lineLength, const CameraSensorHelper *sensorHelper);
 	void setLimits(utils::Duration minExposureTime, utils::Duration maxExposureTime,
 		       double minGain, double maxGain);
 
-	std::tuple<utils::Duration, double, double, double>
-	splitExposure(utils::Duration exposure) const;
+	struct Result {
+		utils::Duration exposureTime;
+		double analogueGain;
+		double quantizationGain;
+		double digitalGain;
+	};
+
+	[[nodiscard]] Result splitExposure(utils::Duration exposure) const;
 
 	utils::Duration minExposureTime() const { return minExposureTime_; }
 	utils::Duration maxExposureTime() const { return maxExposureTime_; }

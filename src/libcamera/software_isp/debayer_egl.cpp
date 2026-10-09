@@ -12,12 +12,12 @@
 #include <algorithm>
 #include <assert.h>
 #include <memory>
+#include <span>
 #include <stdlib.h>
 #include <string>
 #include <tuple>
 #include <vector>
 
-#include <libcamera/base/span.h>
 #include <libcamera/base/utils.h>
 
 #include <libcamera/formats.h>
@@ -91,7 +91,7 @@ int DebayerEGL::getInputConfig(PixelFormat inputFormat, DebayerInputConfig &conf
 		return 0;
 	}
 
-	LOG(Debayer, Info)
+	LOG(Debayer, Debug)
 		<< "Unsupported input format " << inputFormat;
 
 	return -EINVAL;
@@ -132,9 +132,9 @@ int DebayerEGL::getShaderVariableLocations(void)
 
 int DebayerEGL::initBayerShaders(PixelFormat inputFormat, PixelFormat outputFormat)
 {
+	std::span<const unsigned char> fragmentShaderData;
+	std::span<const unsigned char> vertexShaderData;
 	std::vector<std::string> shaderEnv;
-	Span<const unsigned char> fragmentShaderData;
-	Span<const unsigned char> vertexShaderData;
 	GLenum err;
 
 	/* Target gles 100 glsl requires "#version x" as first directive in shader */
@@ -261,7 +261,7 @@ int DebayerEGL::initBayerShaders(PixelFormat inputFormat, PixelFormat outputForm
 	egl_.dumpShaderSource(fragmentShaderId_);
 
 	/* Ensure we set the programId_ */
-	egl_.useProgram(programId_);
+	glUseProgram(programId_);
 	err = glGetError();
 	if (err != GL_NO_ERROR) {
 		LOG(Debayer, Error) << "Use program error " << err;
@@ -275,8 +275,11 @@ int DebayerEGL::configure(const StreamConfiguration &inputCfg,
 			  const std::vector<std::reference_wrapper<const StreamConfiguration>> &outputCfgs,
 			  [[maybe_unused]] bool ccmEnabled)
 {
-	if (getInputConfig(inputCfg.pixelFormat, inputConfig_) != 0)
+	if (getInputConfig(inputCfg.pixelFormat, inputConfig_) != 0) {
+		LOG(Debayer, Error)
+			<< "Unsupported input format " << inputCfg.pixelFormat;
 		return -EINVAL;
+	}
 
 	if (stats_->configure(inputCfg) != 0)
 		return -EINVAL;
@@ -461,7 +464,9 @@ void DebayerEGL::setShaderVariableValues(eGLImage &eglImageIn, const DebayerPara
 			    << " textureUniformStrideFactor_ " << Stride
 			    << " textureUniformProjMatrix_ " << textureUniformProjMatrix_;
 
-	glUniformMatrix3fv(ccmUniformDataIn_, 1, GL_TRUE, params.combinedMatrix.data().data());
+	/* Pre-transpose matrix for GLES 2.0. */
+	Matrix<float, 3, 3> ccm = params.combinedMatrix.transpose();
+	glUniformMatrix3fv(ccmUniformDataIn_, 1, GL_FALSE, ccm.data().data());
 	LOG(Debayer, Debug) << " ccmUniformDataIn_ " << ccmUniformDataIn_ << " data " << params.combinedMatrix;
 
 	/*
@@ -578,9 +583,6 @@ int DebayerEGL::debayerGPU(FrameBuffer *input, FrameBuffer *output, const Debaye
 	eGLImage *eglImageIn;
 	eGLImage *eglImageOut;
 
-	/* eGL context switch */
-	egl_.makeCurrent();
-
 	eglImageIn = getCachedInputFrameBuffer(input, inMapped, inDmaSyncer);
 	if (!eglImageIn)
 		return -ENOMEM;
@@ -608,6 +610,7 @@ int DebayerEGL::debayerGPU(FrameBuffer *input, FrameBuffer *output, const Debaye
 
 void DebayerEGL::process(uint32_t frame, FrameBuffer *input, FrameBuffer *output, const DebayerParams &params)
 {
+	egl_.assertThread();
 	bench_.startFrame();
 
 	/* Copy metadata from the input buffer */
@@ -682,6 +685,8 @@ void DebayerEGL::stop()
 
 	if (programId_)
 		glDeleteProgram(programId_);
+
+	egl_.resetEGLContext();
 }
 
 SizeRange DebayerEGL::sizes(PixelFormat inputFormat, const Size &inputSize)

@@ -7,9 +7,9 @@
 
 #include <iostream>
 #include <libgen.h>
+#include <span>
 
 #include <libcamera/base/file.h>
-#include <libcamera/base/span.h>
 
 #include "libcamera/internal/ipa_manager.h"
 #include "libcamera/internal/ipa_module.h"
@@ -24,7 +24,7 @@ bool isSignatureValid(IPAModule *ipa)
 	if (!file.open(File::OpenModeFlag::ReadOnly))
 		return false;
 
-	Span<uint8_t> data = file.map();
+	std::span<uint8_t> data = file.map();
 	if (data.empty())
 		return false;
 

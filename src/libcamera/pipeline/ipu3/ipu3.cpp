@@ -135,7 +135,7 @@ public:
 	PipelineHandlerIPU3(CameraManager *manager);
 
 	std::unique_ptr<CameraConfiguration> generateConfiguration(Camera *camera,
-								   Span<const StreamRole> roles) override;
+								   std::span<const StreamRole> roles) override;
 	int configure(Camera *camera, CameraConfiguration *config) override;
 
 	int exportFrameBuffers(Camera *camera, Stream *stream,
@@ -390,7 +390,7 @@ PipelineHandlerIPU3::PipelineHandlerIPU3(CameraManager *manager)
 }
 
 std::unique_ptr<CameraConfiguration>
-PipelineHandlerIPU3::generateConfiguration(Camera *camera, Span<const StreamRole> roles)
+PipelineHandlerIPU3::generateConfiguration(Camera *camera, std::span<const StreamRole> roles)
 {
 	IPU3CameraData *data = cameraData(camera);
 	std::unique_ptr<IPU3CameraConfiguration> config =
@@ -679,7 +679,7 @@ int PipelineHandlerIPU3::allocateBuffers(Camera *camera)
 
 	auto pushBuffers = [&](const std::vector<std::unique_ptr<FrameBuffer>> &buffers) {
 		for (const std::unique_ptr<FrameBuffer> &buffer : buffers) {
-			Span<const FrameBuffer::Plane> planes = buffer->planes();
+			std::span<const FrameBuffer::Plane> planes = buffer->planes();
 
 			buffer->setCookie(ipaBufferId++);
 			ipaBuffers_.emplace_back(buffer->cookie(),

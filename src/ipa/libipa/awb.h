@@ -122,7 +122,7 @@ public:
 
 		controls_[&controls::ColourGains] =
 			ControlInfo(gainMin_, gainMax_,
-				    Span<const float, 2>{ { 1.0f, 1.0f } });
+				    std::span<const float, 2>{ { 1.0f, 1.0f } });
 
 		controls.insert(controls_.begin(), controls_.end());
 

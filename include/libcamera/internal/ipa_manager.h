@@ -25,7 +25,6 @@ LOG_DECLARE_CATEGORY(IPAManager)
 class CameraManager;
 class GlobalConfiguration;
 class IPAModule;
-class PipelineHandler;
 
 class IPAManager
 {
@@ -34,10 +33,10 @@ public:
 	~IPAManager();
 
 	template<typename T>
-	std::unique_ptr<T> createIPA(PipelineHandler *pipe, uint32_t minVersion,
+	std::unique_ptr<T> createIPA(const char *name, uint32_t minVersion,
 				     uint32_t maxVersion)
 	{
-		IPAModule *m = module(pipe, minVersion, maxVersion);
+		IPAModule *m = module(name, minVersion, maxVersion);
 		if (!m)
 			return nullptr;
 
@@ -68,7 +67,7 @@ private:
 		      std::vector<std::string> &files);
 	unsigned int addDir(const char *libDir, unsigned int maxDepth = 0);
 
-	IPAModule *module(PipelineHandler *pipe, uint32_t minVersion,
+	IPAModule *module(const char *name, uint32_t minVersion,
 			  uint32_t maxVersion);
 
 	bool isSignatureValid(IPAModule *ipa) const;

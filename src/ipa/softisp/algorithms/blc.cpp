@@ -15,9 +15,9 @@
 
 namespace libcamera {
 
-namespace ipa::soft::algorithms {
+namespace ipa::softisp::algorithms {
 
-LOG_DEFINE_CATEGORY(IPASoftBL)
+LOG_DEFINE_CATEGORY(IPASoftIspBL)
 
 BlackLevel::BlackLevel()
 {
@@ -42,6 +42,18 @@ int BlackLevel::configure(IPAContext &context,
 {
 	if (definedLevel_.has_value())
 		context.configuration.black.level = definedLevel_;
+	else if (context.camHelper) {
+		if (auto bl = context.camHelper->blackLevel()) {
+			/*
+			 * The black level from CameraSensorHelper is a 16 bit value, software ISP
+			 * works with 8 bit pixel values, both regardless of the actual
+			 * sensor pixel width. Hence we obtain the pixel-based black value
+			 * by dividing the value from the helper by 256.
+			 */
+			context.configuration.black.level = *bl / 256;
+		}
+	}
+
 	context.activeState.blc.level =
 		context.configuration.black.level.value_or(16);
 	return 0;
@@ -90,7 +102,7 @@ void BlackLevel::process(IPAContext &context,
 	const unsigned int total =
 		std::accumulate(begin(histogram), end(histogram), 0);
 	if (total == 0) {
-		LOG(IPASoftBL, Debug) << "Not guessing black level, histogram is empty";
+		LOG(IPASoftIspBL, Debug) << "Not guessing black level, histogram is empty";
 		return;
 	}
 
@@ -107,7 +119,7 @@ void BlackLevel::process(IPAContext &context,
 			context.activeState.blc.level = i * histogramRatio;
 			context.activeState.blc.lastExposure = frameContext.sensor.exposure;
 			context.activeState.blc.lastGain = frameContext.sensor.gain;
-			LOG(IPASoftBL, Debug)
+			LOG(IPASoftIspBL, Debug)
 				<< "Auto-set black level: "
 				<< i << "/" << SwIspStats::kYHistogramSize
 				<< " (" << 100 * (seen - histogram[i]) / total << "% below, "
@@ -119,6 +131,6 @@ void BlackLevel::process(IPAContext &context,
 
 REGISTER_IPA_ALGORITHM(BlackLevel, "BlackLevel")
 
-} /* namespace ipa::soft::algorithms */
+} /* namespace ipa::softisp::algorithms */
 
 } /* namespace libcamera */

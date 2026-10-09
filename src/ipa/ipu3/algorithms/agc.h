@@ -13,7 +13,7 @@
 
 #include <libcamera/geometry.h>
 
-#include "libipa/agc_mean_luminance.h"
+#include "libipa/agc.h"
 #include "libipa/histogram.h"
 
 #include "algorithm.h"
@@ -24,7 +24,7 @@ struct IPACameraSensorInfo;
 
 namespace ipa::ipu3::algorithms {
 
-class Agc : public Algorithm, public AgcMeanLuminance
+class Agc : public Algorithm
 {
 public:
 	Agc();
@@ -32,28 +32,25 @@ public:
 
 	int init(IPAContext &context, const ValueNode &tuningData) override;
 	int configure(IPAContext &context, const IPAConfigInfo &configInfo) override;
+	void queueRequest(IPAContext &context, const uint32_t frame,
+			  IPAFrameContext &frameContext, const ControlList &controls) override;
+	void prepare(IPAContext &context, const uint32_t frame,
+		     IPAFrameContext &frameContext,
+		     ipu3_uapi_params *params)  override;
 	void process(IPAContext &context, const uint32_t frame,
 		     IPAFrameContext &frameContext,
 		     const ipu3_uapi_stats_3a *stats,
 		     ControlList &metadata) override;
 
 private:
-	double estimateLuminance(double gain) const override;
 	Histogram parseStatistics(const ipu3_uapi_stats_3a *stats,
 				  const ipu3_uapi_grid_config &grid);
 
-	utils::Duration minExposureTime_;
-	utils::Duration maxExposureTime_;
-
-	double minAnalogueGain_;
-	double maxAnalogueGain_;
-
 	uint32_t stride_;
-	double rGain_;
-	double gGain_;
-	double bGain_;
 	ipu3_uapi_grid_config bdsGrid_;
 	std::vector<std::tuple<uint8_t, uint8_t, uint8_t>> rgbTriples_;
+
+	AgcAlgorithm agc_;
 };
 
 } /* namespace ipa::ipu3::algorithms */

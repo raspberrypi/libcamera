@@ -76,11 +76,6 @@ namespace awb {
  */
 
 /**
- * AwbStat::~AwbStat
- * \brief Virtual class destructor
- */
-
-/**
  * \fn AwbStats::computeColourError()
  * \brief Compute an error value for when the given gains would be applied
  * \param[in] gains The gains to apply

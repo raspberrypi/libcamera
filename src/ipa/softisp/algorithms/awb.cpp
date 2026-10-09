@@ -16,21 +16,21 @@
 
 namespace libcamera {
 
-LOG_DEFINE_CATEGORY(IPASoftAwb)
+LOG_DEFINE_CATEGORY(IPASoftIspAwb)
 
-namespace ipa::soft::algorithms {
+namespace ipa::softisp::algorithms {
 
 /*
  * \todo Replace it with a proper Lux algorithm
  */
 static constexpr unsigned int kDefaultLux = 500;
 
-class SimpleAwbStats final : public AwbStats
+class SoftIspAwbStats final : public AwbStats
 {
 public:
-	SimpleAwbStats() = default;
+	SoftIspAwbStats() = default;
 
-	SimpleAwbStats(const RGB<double> &rgbMeans)
+	SoftIspAwbStats(const RGB<double> &rgbMeans)
 	{
 		rgbMeans_ = rgbMeans;
 
@@ -112,8 +112,8 @@ void Awb::prepare(IPAContext &context,
 	params->gains = frameContext.awb.gains;
 }
 
-SimpleAwbStats Awb::calculateRgbMeans(IPAContext &context,
-				      const SwIspStats *stats) const
+SoftIspAwbStats Awb::calculateRgbMeans(IPAContext &context,
+				       const SwIspStats *stats) const
 {
 	if (!stats->valid)
 		return {};
@@ -141,7 +141,7 @@ SimpleAwbStats Awb::calculateRgbMeans(IPAContext &context,
 				   static_cast<double>(sum.g()) / nPixels,
 				   static_cast<double>(sum.b()) / nPixels } };
 
-	return SimpleAwbStats(rgbMeans);
+	return SoftIspAwbStats(rgbMeans);
 }
 
 /**
@@ -151,7 +151,7 @@ void Awb::process(IPAContext &context, [[maybe_unused]] const uint32_t frame,
 		  IPAFrameContext &frameContext, const SwIspStats *stats,
 		  ControlList &metadata)
 {
-	SimpleAwbStats awbStats = calculateRgbMeans(context, stats);
+	SoftIspAwbStats awbStats = calculateRgbMeans(context, stats);
 
 	awbAlgo_.process(context.activeState.awb, frameContext.awb, awbStats,
 			 kDefaultLux, metadata);
@@ -159,6 +159,6 @@ void Awb::process(IPAContext &context, [[maybe_unused]] const uint32_t frame,
 
 REGISTER_IPA_ALGORITHM(Awb, "Awb")
 
-} /* namespace ipa::soft::algorithms */
+} /* namespace ipa::softisp::algorithms */
 
 } /* namespace libcamera */

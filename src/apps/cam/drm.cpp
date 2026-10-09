@@ -104,7 +104,7 @@ Property::Property(Device *dev, drmModePropertyRes *property)
 		enums_[property->enums[i].value] = property->enums[i].name;
 }
 
-Blob::Blob(Device *dev, const libcamera::Span<const uint8_t> &data)
+Blob::Blob(Device *dev, std::span<const uint8_t> data)
 	: Object(dev, 0, Object::TypeBlob)
 {
 	drmModeCreatePropertyBlob(dev->fd(), data.data(), data.size(), &id_);
@@ -123,8 +123,8 @@ Mode::Mode(const drmModeModeInfo &mode)
 
 std::unique_ptr<Blob> Mode::toBlob(Device *dev) const
 {
-	libcamera::Span<const uint8_t> data{ reinterpret_cast<const uint8_t *>(this),
-					     sizeof(*this) };
+	std::span data{ reinterpret_cast<const uint8_t *>(this),
+			sizeof(*this) };
 	return std::make_unique<Blob>(dev, data);
 }
 

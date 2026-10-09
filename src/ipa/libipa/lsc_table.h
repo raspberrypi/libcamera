@@ -9,7 +9,6 @@
 #include <vector>
 
 #include <libcamera/base/log.h>
-#include <libcamera/base/span.h>
 
 #include <libcamera/geometry.h>
 

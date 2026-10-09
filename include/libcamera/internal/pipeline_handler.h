@@ -47,7 +47,7 @@ public:
 	void release(Camera *camera);
 
 	virtual std::unique_ptr<CameraConfiguration> generateConfiguration(Camera *camera,
-									   Span<const StreamRole> roles) = 0;
+									   std::span<const StreamRole> roles) = 0;
 	virtual int configure(Camera *camera, CameraConfiguration *config) = 0;
 
 	virtual int exportFrameBuffers(Camera *camera, Stream *stream,
@@ -76,7 +76,14 @@ public:
 	std::unique_ptr<T> createIPA(uint32_t minVersion, uint32_t maxVersion)
 	{
 		IPAManager *ipaManager = manager_->_d()->ipaManager();
-		return ipaManager->createIPA<T>(this, minVersion, maxVersion);
+		return ipaManager->createIPA<T>(T::name(), minVersion, maxVersion);
+	}
+
+	template<typename T>
+	std::unique_ptr<T> createIPA(const char *ipaName, uint32_t minVersion, uint32_t maxVersion)
+	{
+		IPAManager *ipaManager = manager_->_d()->ipaManager();
+		return ipaManager->createIPA<T>(ipaName, minVersion, maxVersion);
 	}
 
 protected:

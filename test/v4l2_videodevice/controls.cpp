@@ -95,7 +95,7 @@ protected:
 		uint8_t u8Min = u8.min().get<uint8_t>();
 		uint8_t u8Max = u8.max().get<uint8_t>();
 
-		Span<const uint8_t> u8Span = ctrls.get(VIVID_CID_U8_4D_ARRAY).get<Span<const uint8_t>>();
+		std::span<const uint8_t> u8Span = ctrls.get(VIVID_CID_U8_4D_ARRAY).get<std::span<const uint8_t>>();
 		bool valid = std::all_of(u8Span.begin(), u8Span.end(),
 					 [&](uint8_t v) { return v >= u8Min && v <= u8Max; });
 		if (!valid) {
@@ -112,7 +112,7 @@ protected:
 
 		std::array<uint8_t, VIVID_CID_U8_ARRAY_SIZE> u8Values;
 		std::fill(u8Values.begin(), u8Values.end(), u8.min().get<uint8_t>());
-		ctrls.set(VIVID_CID_U8_4D_ARRAY, Span<const uint8_t>(u8Values));
+		ctrls.set(VIVID_CID_U8_4D_ARRAY, std::span<const uint8_t>(u8Values));
 
 		int ret = capture_->setControls(&ctrls);
 		if (ret) {

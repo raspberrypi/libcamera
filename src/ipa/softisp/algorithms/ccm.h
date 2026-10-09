@@ -19,7 +19,7 @@
 
 namespace libcamera {
 
-namespace ipa::soft::algorithms {
+namespace ipa::softisp::algorithms {
 
 class Ccm : public Algorithm
 {
@@ -45,6 +45,6 @@ private:
 	CcmAlgorithm<Q<4, 16>> ccmAlgo_;
 };
 
-} /* namespace ipa::soft::algorithms */
+} /* namespace ipa::softisp::algorithms */
 
 } /* namespace libcamera */

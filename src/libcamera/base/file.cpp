@@ -301,7 +301,7 @@ off_t File::seek(off_t pos)
  * \return The number of bytes read on success, or a negative error code
  * otherwise
  */
-ssize_t File::read(const Span<uint8_t> &data)
+ssize_t File::read(std::span<uint8_t> data)
 {
 	if (!isOpen())
 		return -EINVAL;
@@ -339,7 +339,7 @@ ssize_t File::read(const Span<uint8_t> &data)
  * \return The number of bytes written on success, or a negative error code
  * otherwise
  */
-ssize_t File::write(const Span<const uint8_t> &data)
+ssize_t File::write(std::span<const uint8_t> data)
 {
 	if (!isOpen())
 		return -EINVAL;
@@ -384,7 +384,7 @@ ssize_t File::write(const Span<const uint8_t> &data)
  *
  * \return The mapped memory on success, or an empty span otherwise
  */
-Span<uint8_t> File::map(off_t offset, ssize_t size, File::MapFlags flags)
+std::span<uint8_t> File::map(off_t offset, ssize_t size, File::MapFlags flags)
 {
 	if (!isOpen()) {
 		error_ = -EBADF;

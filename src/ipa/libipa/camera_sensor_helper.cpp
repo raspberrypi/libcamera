@@ -358,11 +358,13 @@ std::vector<CameraSensorHelperFactoryBase *> &CameraSensorHelperFactoryBase::fac
 
 #ifndef __DOXYGEN__
 
+namespace {
+
 /*
  * Helper function to compute the m parameter of the exponential gain model
  * when the gain code is expressed in dB.
  */
-static constexpr double expGainDb(double step)
+constexpr double expGainDb(double step)
 {
 	constexpr double log2_10 = 3.321928094887362;
 
@@ -465,9 +467,6 @@ public:
 
 		return m * (1 << coarse) / (1.0 - (fine / d1) / d2);
 	}
-
-private:
-	static constexpr double kStep_ = 16;
 };
 REGISTER_CAMERA_SENSOR_HELPER("ar0144", CameraSensorHelperAr0144)
 
@@ -737,6 +736,18 @@ public:
 };
 REGISTER_CAMERA_SENSOR_HELPER("ov08x40", CameraSensorHelperOv08x40)
 
+class CameraSensorHelperMira220 : public CameraSensorHelper
+{
+public:
+	CameraSensorHelperMira220()
+	{
+		blackLevel_ = 3600;
+		/* gain is fixed to 1x, this is just a place holder. */
+		gain_ = AnalogueGainLinear{ 0, 2048, -1, 2048 };
+	}
+};
+REGISTER_CAMERA_SENSOR_HELPER("mira220", CameraSensorHelperMira220)
+
 class CameraSensorHelperOv2685 : public CameraSensorHelper
 {
 public:
@@ -899,6 +910,8 @@ public:
 	}
 };
 REGISTER_CAMERA_SENSOR_HELPER("vd56g3", CameraSensorHelperVd56g3)
+
+} /* namespace */
 
 #endif /* __DOXYGEN__ */
 

@@ -399,6 +399,20 @@ const CameraSensorProperties *CameraSensorProperties::get(const std::string &sen
 				.hblankDelay = 2
 			},
 		} },
+		{ "mira220", {
+			.unitCellSize = { 2790, 2790 },
+			.testPatternModes = {
+				{ controls::draft::TestPatternModeOff, 0 },
+				{ controls::draft::TestPatternModeColorBars, 1 },
+			},
+			.sensorDelays = {
+				/* Gain and hblank are read-only. */
+				.exposureDelay = 1,
+				.gainDelay = 1,
+				.vblankDelay = 1,
+				.hblankDelay = 1
+			},
+		} },
 		{ "ov2685", {
 			.unitCellSize = { 1750, 1750 },
 			.testPatternModes = {

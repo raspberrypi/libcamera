@@ -14,6 +14,8 @@
 
 #include "libcamera/internal/bayer_format.h"
 
+#include <libipa/agc.h>
+#include <libipa/camera_sensor_helper.h>
 #include <libipa/fc_queue.h>
 
 #include "libipa/awb.h"
@@ -26,36 +28,16 @@ namespace libcamera {
 namespace ipa::mali_c55 {
 
 struct IPASessionConfiguration {
-	struct {
-		utils::Duration minShutterSpeed;
-		utils::Duration maxShutterSpeed;
-		uint32_t defaultExposure;
-		double minAnalogueGain;
-		double maxAnalogueGain;
-	} agc;
+	agc::Session agc;
 
 	struct {
 		BayerFormat::Order bayerOrder;
-		utils::Duration lineDuration;
 		uint32_t blackLevel;
 	} sensor;
 };
 
 struct IPAActiveState {
-	struct {
-		struct {
-			uint32_t exposure;
-			double sensorGain;
-			UQ<5, 8> ispGain;
-		} automatic;
-		struct {
-			uint32_t exposure;
-			double sensorGain;
-			UQ<5, 8> ispGain;
-		} manual;
-		bool autoEnabled;
-		uint32_t constraintMode;
-		uint32_t exposureMode;
+	struct Agc : agc::ActiveState {
 		uint32_t temperatureK;
 	} agc;
 
@@ -65,11 +47,12 @@ struct IPAActiveState {
 };
 
 struct IPAFrameContext : public FrameContext {
+	agc::FrameContext agc;
+
 	struct {
 		uint32_t exposure;
-		double sensorGain;
-		UQ<5, 8> ispGain;
-	} agc;
+		double gain;
+	} sensor;
 
 	ipa::awb::FrameContext awb;
 	ipa::ccm::FrameContext ccm;
@@ -87,6 +70,10 @@ struct IPAContext {
 	IPAActiveState activeState;
 
 	FCQueue<IPAFrameContext> frameContexts;
+
+	ControlInfoMap sensorControls;
+
+	std::unique_ptr<CameraSensorHelper> camHelper;
 
 	ControlInfoMap::Map ctrlMap;
 };

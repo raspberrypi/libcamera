@@ -17,12 +17,12 @@
 
 namespace libcamera {
 
-namespace ipa::soft::algorithms {
+namespace ipa::softisp::algorithms {
 
 constexpr float kDefaultContrast = 1.0f;
 constexpr float kDefaultSaturation = 1.0f;
 
-LOG_DEFINE_CATEGORY(IPASoftAdjust)
+LOG_DEFINE_CATEGORY(IPASoftIspAdjust)
 
 int Adjust::init(IPAContext &context, [[maybe_unused]] const ValueNode &tuningData)
 {
@@ -54,19 +54,19 @@ void Adjust::queueRequest(typename Module::Context &context,
 	const auto &gamma = controls.get(controls::Gamma);
 	if (gamma.has_value()) {
 		context.activeState.knobs.gamma = gamma.value();
-		LOG(IPASoftAdjust, Debug) << "Setting gamma to " << gamma.value();
+		LOG(IPASoftIspAdjust, Debug) << "Setting gamma to " << gamma.value();
 	}
 
 	const auto &contrast = controls.get(controls::Contrast);
 	if (contrast.has_value()) {
 		context.activeState.knobs.contrast = contrast;
-		LOG(IPASoftAdjust, Debug) << "Setting contrast to " << contrast.value();
+		LOG(IPASoftIspAdjust, Debug) << "Setting contrast to " << contrast.value();
 	}
 
 	const auto &saturation = controls.get(controls::Saturation);
 	if (saturation.has_value()) {
 		context.activeState.knobs.saturation = saturation;
-		LOG(IPASoftAdjust, Debug) << "Setting saturation to " << saturation.value();
+		LOG(IPASoftIspAdjust, Debug) << "Setting saturation to " << saturation.value();
 	}
 }
 
@@ -129,6 +129,6 @@ void Adjust::process([[maybe_unused]] IPAContext &context,
 
 REGISTER_IPA_ALGORITHM(Adjust, "Adjust")
 
-} /* namespace ipa::soft::algorithms */
+} /* namespace ipa::softisp::algorithms */
 
 } /* namespace libcamera */

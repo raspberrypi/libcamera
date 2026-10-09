@@ -10,10 +10,9 @@
 #include <assert.h>
 #include <cmath>
 #include <optional>
+#include <span>
 #include <stdint.h>
 #include <vector>
-
-#include <libcamera/base/span.h>
 
 #include <libcamera/geometry.h>
 #include <libcamera/transform.h>
@@ -39,7 +38,7 @@ public:
 		{
 		}
 
-		int setCoefficients(Span<const double> coeffs);
+		int setCoefficients(std::span<const double> coeffs);
 
 		Matrix<double, 3, 3> cm;
 		Matrix<double, 3, 3> cmNew;

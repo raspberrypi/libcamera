@@ -213,9 +213,9 @@ bool GstCameraControls::setProperty(guint propId, const GValue *value,
 		}
 
 {%- if ctrl.size == 0 %}
-		Span<const {{ ctrl.element_type }}> val(values.data(), size);
+		std::span<const {{ ctrl.element_type }}> val(values.data(), size);
 {%- else %}
-		Span<const {{ ctrl.element_type }}, {{ ctrl.size }}> val(values.data(), size);
+		std::span<const {{ ctrl.element_type }}, {{ ctrl.size }}> val(values.data(), size);
 {%- endif %}
 {%- else %}
 {%- if ctrl.is_rectangle %}

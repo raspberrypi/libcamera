@@ -8,6 +8,7 @@
  */
 #pragma once
 
+#include <span>
 #include <stdint.h>
 #include <string>
 #include <sys/mman.h>
@@ -16,7 +17,6 @@
 
 #include <libcamera/base/class.h>
 #include <libcamera/base/shared_fd.h>
-#include <libcamera/base/span.h>
 
 namespace libcamera {
 
@@ -37,7 +37,7 @@ public:
 		return fd_;
 	}
 
-	Span<uint8_t> mem() const
+	std::span<uint8_t> mem() const
 	{
 		return mem_;
 	}
@@ -52,7 +52,7 @@ private:
 
 	SharedFD fd_;
 
-	Span<uint8_t> mem_;
+	std::span<uint8_t> mem_;
 };
 
 template<class T, typename = std::enable_if_t<std::is_standard_layout<T>::value>>

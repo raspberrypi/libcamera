@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <span>
+
 #include <libcamera/controls.h>
 
 #include "libcamera/internal/value_node.h"
@@ -37,7 +39,7 @@ private:
 	void fineSearch(double &t, double &r, double &b, ipa::Pwl const &prior,
 			const AwbStats &stats) const;
 	double coarseSearch(const ipa::Pwl &prior, const AwbStats &stats,
-			    Span<double> range) const;
+			    std::span<double> range) const;
 	double interpolateQuadratic(ipa::Pwl::Point const &a,
 				    ipa::Pwl::Point const &b,
 				    ipa::Pwl::Point const &c) const;

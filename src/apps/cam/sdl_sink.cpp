@@ -230,13 +230,13 @@ void SDLSink::renderBuffer(FrameBuffer *buffer)
 {
 	Image *image = mappedBuffers_[buffer].get();
 
-	std::vector<Span<const uint8_t>> planes;
+	std::vector<std::span<const uint8_t>> planes;
 	unsigned int i = 0;
 
 	planes.reserve(buffer->metadata().planes().size());
 
 	for (const FrameMetadata::Plane &meta : buffer->metadata().planes()) {
-		Span<uint8_t> data = image->data(i);
+		std::span<uint8_t> data = image->data(i);
 		if (meta.bytesused > data.size())
 			std::cerr << "payload size " << meta.bytesused
 				  << " larger than plane size " << data.size()

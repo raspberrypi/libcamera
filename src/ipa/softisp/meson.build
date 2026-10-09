@@ -3,16 +3,16 @@
 subdir('algorithms')
 subdir('data')
 
-ipa_name = 'ipa_soft_simple'
+ipa_name = 'ipa_softisp'
 
-soft_simple_sources = files([
+softisp_sources = files([
     'ipa_context.cpp',
-    'soft_simple.cpp',
+    'softisp.cpp',
 ])
 
-soft_simple_sources += soft_simple_ipa_algorithms
+softisp_sources += softisp_ipa_algorithms
 
-mod = shared_module(ipa_name, soft_simple_sources,
+mod = shared_module(ipa_name, softisp_sources,
                     name_prefix : '',
                     include_directories : [ipa_includes],
                     dependencies : [libcamera_private, libipa_dep],

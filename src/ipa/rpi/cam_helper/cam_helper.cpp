@@ -58,7 +58,7 @@ CamHelper::~CamHelper()
 {
 }
 
-void CamHelper::prepare(Span<const uint8_t> buffer,
+void CamHelper::prepare(std::span<const uint8_t> buffer,
 			Metadata &metadata)
 {
 	parseEmbeddedData(buffer, metadata);
@@ -210,7 +210,7 @@ unsigned int CamHelper::getMinDebinFactor() const
 	return 2;
 }
 
-void CamHelper::parseEmbeddedData(Span<const uint8_t> buffer,
+void CamHelper::parseEmbeddedData(std::span<const uint8_t> buffer,
 				  Metadata &metadata)
 {
 	MdParser::RegisterMap registers;

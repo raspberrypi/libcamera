@@ -25,8 +25,8 @@
 #include <libcamera/geometry.h>
 #include <libcamera/pixel_format.h>
 
-#include <libcamera/ipa/soft_ipa_interface.h>
-#include <libcamera/ipa/soft_ipa_proxy.h>
+#include <libcamera/ipa/softisp_ipa_interface.h>
+#include <libcamera/ipa/softisp_ipa_proxy.h>
 
 #include "libcamera/internal/camera_sensor.h"
 #include "libcamera/internal/dma_buf_allocator.h"
@@ -65,7 +65,8 @@ public:
 
 	int configure(const StreamConfiguration &inputCfg,
 		      const std::vector<std::reference_wrapper<const StreamConfiguration>> &outputCfgs,
-		      const ipa::soft::IPAConfigInfo &configInfo);
+		      const ipa::softisp::IPAConfigInfo &configInfo,
+		      ControlInfoMap *ipaControls);
 
 	int exportBuffers(const Stream *stream, unsigned int count,
 			  std::vector<std::unique_ptr<FrameBuffer>> *buffers);
@@ -89,7 +90,7 @@ public:
 	Signal<const ControlList &> setSensorControls;
 
 private:
-	void saveIspParams();
+	void saveIspParams(uint32_t frame);
 	void setSensorCtrls(const ControlList &sensorControls);
 	void statsReady(uint32_t frame, uint32_t bufferId);
 	void inputReady(FrameBuffer *input);
@@ -101,7 +102,7 @@ private:
 	DmaBufAllocator dmaHeap_;
 	bool ccmEnabled_;
 
-	std::unique_ptr<ipa::soft::IPAProxySoft> ipa_;
+	std::unique_ptr<ipa::softisp::IPAProxySoftIsp> ipa_;
 	std::deque<FrameBuffer *> queuedInputBuffers_;
 	std::deque<FrameBuffer *> queuedOutputBuffers_;
 };

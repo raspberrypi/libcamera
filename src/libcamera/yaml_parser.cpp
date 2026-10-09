@@ -114,7 +114,7 @@ int YamlParserContext::yamlRead(void *data, unsigned char *buffer, size_t size,
 {
 	File *file = static_cast<File *>(data);
 
-	Span<unsigned char> buf{ buffer, size };
+	std::span<unsigned char> buf{ buffer, size };
 	ssize_t ret = file->read(buf);
 	if (ret < 0)
 		return 0;

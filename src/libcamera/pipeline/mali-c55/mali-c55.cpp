@@ -679,7 +679,7 @@ public:
 	PipelineHandlerMaliC55(CameraManager *manager);
 
 	std::unique_ptr<CameraConfiguration> generateConfiguration(Camera *camera,
-								   Span<const StreamRole> roles) override;
+								   std::span<const StreamRole> roles) override;
 	int configure(Camera *camera, CameraConfiguration *config) override;
 
 	int exportFrameBuffers(Camera *camera, Stream *stream,
@@ -792,7 +792,7 @@ PipelineHandlerMaliC55::PipelineHandlerMaliC55(CameraManager *manager)
 
 std::unique_ptr<CameraConfiguration>
 PipelineHandlerMaliC55::generateConfiguration(Camera *camera,
-					      Span<const StreamRole> roles)
+					      std::span<const StreamRole> roles)
 {
 	MaliC55CameraData *data = cameraData(camera);
 	std::unique_ptr<CameraConfiguration> config =
@@ -1248,7 +1248,7 @@ int PipelineHandlerMaliC55::allocateBuffers(Camera *camera)
 			       std::queue<FrameBuffer *> &queue,
 			       std::vector<IPABuffer> &ipaBuffers) {
 		for (const std::unique_ptr<FrameBuffer> &buffer : buffers) {
-			Span<const FrameBuffer::Plane> planes = buffer->planes();
+			std::span<const FrameBuffer::Plane> planes = buffer->planes();
 
 			buffer->setCookie(ipaBufferId++);
 			ipaBuffers.emplace_back(buffer->cookie(),

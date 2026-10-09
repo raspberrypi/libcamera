@@ -12,8 +12,6 @@
 #include <string>
 #include <vector>
 
-#include <libcamera/base/span.h>
-
 #include <libcamera/geometry.h>
 
 #include "libcamera/internal/value_node.h"

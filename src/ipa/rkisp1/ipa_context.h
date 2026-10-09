@@ -24,12 +24,13 @@
 #include "libcamera/internal/matrix.h"
 #include "libcamera/internal/vector.h"
 
-#include "libipa/agc_mean_luminance.h"
+#include "libipa/agc.h"
 #include "libipa/awb.h"
 #include "libipa/camera_sensor_helper.h"
 #include "libipa/ccm.h"
 #include "libipa/fc_queue.h"
 #include "libipa/fixedpoint.h"
+#include "libipa/gamma.h"
 #include "libipa/lsc.h"
 
 namespace libcamera {
@@ -57,7 +58,7 @@ struct RKISP1AwbSession {
 };
 
 struct IPASessionConfiguration {
-	struct {
+	struct Agc : agc::Session {
 		struct rkisp1_cif_isp_window measureWindow;
 	} agc;
 
@@ -68,13 +69,6 @@ struct IPASessionConfiguration {
 	} compress;
 
 	struct {
-		utils::Duration minExposureTime;
-		utils::Duration maxExposureTime;
-		double minAnalogueGain;
-		double maxAnalogueGain;
-
-		int32_t defVBlank;
-		utils::Duration lineDuration;
 		Size size;
 	} sensor;
 
@@ -83,26 +77,8 @@ struct IPASessionConfiguration {
 };
 
 struct IPAActiveState {
-	struct {
-		struct {
-			uint32_t exposure;
-			double gain;
-		} manual;
-		struct {
-			uint32_t exposure;
-			double gain;
-			double quantizationGain;
-			double yTarget;
-		} automatic;
-
-		bool autoExposureEnabled;
-		bool autoGainEnabled;
-		double exposureValue;
-		controls::AeConstraintModeEnum constraintMode;
-		controls::AeExposureModeEnum exposureMode;
+	struct Agc : agc::ActiveState {
 		controls::AeMeteringModeEnum meteringMode;
-		utils::Duration minFrameDuration;
-		utils::Duration maxFrameDuration;
 	} agc;
 
 	ipa::awb::ActiveState awb;
@@ -127,9 +103,7 @@ struct IPAActiveState {
 		uint8_t sharpness;
 	} filter;
 
-	struct {
-		double gamma;
-	} goc;
+	ipa::gamma::ActiveState gamma;
 
 	struct {
 		double lux;
@@ -146,24 +120,9 @@ struct IPAActiveState {
 };
 
 struct IPAFrameContext : public FrameContext {
-	struct {
-		uint32_t exposure;
-		double gain;
-		double exposureValue;
-		double quantizationGain;
-		uint32_t vblank;
-		double yTarget;
-		bool autoExposureEnabled;
-		bool autoGainEnabled;
-		controls::AeConstraintModeEnum constraintMode;
-		controls::AeExposureModeEnum exposureMode;
+	struct Agc : agc::FrameContext {
 		controls::AeMeteringModeEnum meteringMode;
-		utils::Duration minFrameDuration;
-		utils::Duration maxFrameDuration;
-		utils::Duration frameDuration;
 		bool updateMetering;
-		bool autoExposureModeChange;
-		bool autoGainModeChange;
 	} agc;
 
 	ipa::awb::FrameContext awb;
@@ -194,10 +153,7 @@ struct IPAFrameContext : public FrameContext {
 		bool update;
 	} filter;
 
-	struct {
-		double gamma;
-		bool update;
-	} goc;
+	ipa::gamma::FrameContext gamma;
 
 	struct {
 		uint32_t exposure;
@@ -233,6 +189,8 @@ struct IPAContext {
 	FCQueue<IPAFrameContext> frameContexts;
 
 	ControlInfoMap::Map ctrlMap;
+
+	ControlInfoMap sensorControls;
 
 	DebugMetadata debugMetadata;
 

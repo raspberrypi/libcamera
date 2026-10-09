@@ -87,7 +87,7 @@ public:
 	PipelineHandlerVimc(CameraManager *manager);
 
 	std::unique_ptr<CameraConfiguration> generateConfiguration(Camera *camera,
-								   Span<const StreamRole> roles) override;
+								   std::span<const StreamRole> roles) override;
 	int configure(Camera *camera, CameraConfiguration *config) override;
 
 	int exportFrameBuffers(Camera *camera, Stream *stream,
@@ -202,7 +202,7 @@ PipelineHandlerVimc::PipelineHandlerVimc(CameraManager *manager)
 
 std::unique_ptr<CameraConfiguration>
 PipelineHandlerVimc::generateConfiguration(Camera *camera,
-					   Span<const StreamRole> roles)
+					   std::span<const StreamRole> roles)
 {
 	VimcCameraData *data = cameraData(camera);
 	std::unique_ptr<CameraConfiguration> config =
@@ -362,7 +362,7 @@ int PipelineHandlerVimc::start(Camera *camera, [[maybe_unused]] const ControlLis
 	/* Map the mock IPA buffers to VIMC IPA to exercise IPC code paths. */
 	std::vector<IPABuffer> ipaBuffers;
 	for (auto [i, buffer] : utils::enumerate(data->mockIPABufs_)) {
-		Span<const FrameBuffer::Plane> planes = buffer->planes();
+		std::span<const FrameBuffer::Plane> planes = buffer->planes();
 
 		buffer->setCookie(i + 1);
 		ipaBuffers.emplace_back(buffer->cookie(),

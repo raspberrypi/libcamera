@@ -9,10 +9,10 @@
 #include <cmath>
 #include <functional>
 #include <numeric>
+#include <span>
 #include <vector>
 
 #include <libcamera/base/log.h>
-#include <libcamera/base/span.h>
 
 #include "../awb_status.h"
 #include "alsc.h"

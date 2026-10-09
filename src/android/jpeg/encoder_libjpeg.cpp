@@ -105,7 +105,7 @@ int EncoderLibJpeg::configure(const StreamConfiguration &cfg)
 	return 0;
 }
 
-void EncoderLibJpeg::compressRGB(const std::vector<Span<uint8_t>> &planes)
+void EncoderLibJpeg::compressRGB(const std::vector<std::span<uint8_t>> &planes)
 {
 	unsigned char *src = const_cast<unsigned char *>(planes[0].data());
 	/* \todo Stride information should come from buffer configuration. */
@@ -123,7 +123,7 @@ void EncoderLibJpeg::compressRGB(const std::vector<Span<uint8_t>> &planes)
  * Compress the incoming buffer from a supported NV format.
  * This naively unpacks the semi-planar NV12 to a YUV888 format for libjpeg.
  */
-void EncoderLibJpeg::compressNV(const std::vector<Span<uint8_t>> &planes)
+void EncoderLibJpeg::compressNV(const std::vector<std::span<uint8_t>> &planes)
 {
 	std::vector<uint8_t> tmprowbuf(compress_.image_width * 3);
 
@@ -181,7 +181,7 @@ void EncoderLibJpeg::compressNV(const std::vector<Span<uint8_t>> &planes)
 }
 
 int EncoderLibJpeg::encode(Camera3RequestDescriptor::StreamBuffer *buffer,
-			   libcamera::Span<const uint8_t> exifData,
+			   std::span<const uint8_t> exifData,
 			   unsigned int quality)
 {
 	MappedFrameBuffer frame(buffer->srcBuffer,
@@ -196,8 +196,8 @@ int EncoderLibJpeg::encode(Camera3RequestDescriptor::StreamBuffer *buffer,
 		      exifData, quality);
 }
 
-int EncoderLibJpeg::encode(const std::vector<Span<uint8_t>> &src,
-			   Span<uint8_t> dest, Span<const uint8_t> exifData,
+int EncoderLibJpeg::encode(const std::vector<std::span<uint8_t>> &src,
+			   std::span<uint8_t> dest, std::span<const uint8_t> exifData,
 			   unsigned int quality)
 {
 	unsigned char *destination = dest.data();

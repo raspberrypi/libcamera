@@ -13,7 +13,7 @@
  * \brief Context and state information shared between the algorithms
  */
 
-namespace libcamera::ipa::soft {
+namespace libcamera::ipa::softisp {
 
 /**
  * \struct IPASessionConfiguration
@@ -99,4 +99,4 @@ namespace libcamera::ipa::soft {
  * \brief Black level used for the gamma table computation
  */
 
-} /* namespace libcamera::ipa::soft */
+} /* namespace libcamera::ipa::softisp */

@@ -5,13 +5,13 @@
  * Raspberry Pi VC4/BCM2835 ISP IPA.
  */
 
+#include <span>
 #include <string.h>
 #include <sys/mman.h>
 
 #include <linux/bcm2835-isp.h>
 
 #include <libcamera/base/log.h>
-#include <libcamera/base/span.h>
 #include <libcamera/control_ids.h>
 #include <libcamera/ipa/ipa_module_info.h>
 
@@ -61,7 +61,7 @@ private:
 
 	void platformPrepareIsp(const PrepareParams &params, RPiController::Metadata &rpiMetadata) override;
 	void platformPrepareAgc([[maybe_unused]] RPiController::Metadata &rpiMetadata) override;
-	RPiController::StatisticsPtr platformProcessStats(Span<uint8_t> mem) override;
+	RPiController::StatisticsPtr platformProcessStats(std::span<uint8_t> mem) override;
 
 	void handleControls(const ControlList &controls) override;
 	bool validateIspControls();
@@ -211,7 +211,7 @@ void IpaVc4::platformPrepareAgc(RPiController::Metadata &rpiMetadata)
 	ctrls_ = ControlList(ispCtrls_);
 }
 
-RPiController::StatisticsPtr IpaVc4::platformProcessStats(Span<uint8_t> mem)
+RPiController::StatisticsPtr IpaVc4::platformProcessStats(std::span<uint8_t> mem)
 {
 	using namespace RPiController;
 
@@ -282,8 +282,8 @@ RPiController::StatisticsPtr IpaVc4::platformProcessStats(Span<uint8_t> mem)
 						  stats->focus_stats[i].contrast_val_num[1][0] });
 
 	if (statsMetadataOutput_) {
-		Span<const uint8_t> statsSpan(reinterpret_cast<const uint8_t *>(stats),
-					      sizeof(bcm2835_isp_stats));
+		std::span statsSpan(reinterpret_cast<const uint8_t *>(stats),
+				    sizeof(bcm2835_isp_stats));
 		libcameraMetadata_.set(controls::rpi::Bcm2835StatsOutput, statsSpan);
 	}
 
@@ -396,8 +396,8 @@ void IpaVc4::applyCCM(const struct CcmStatus *ccmStatus, ControlList &ctrls)
 	ccm.enabled = 1;
 	ccm.ccm.offsets[0] = ccm.ccm.offsets[1] = ccm.ccm.offsets[2] = 0;
 
-	ControlValue c(Span<const uint8_t>{ reinterpret_cast<uint8_t *>(&ccm),
-					    sizeof(ccm) });
+	ControlValue c(std::span<const uint8_t>{ reinterpret_cast<uint8_t *>(&ccm),
+						 sizeof(ccm) });
 	ctrls.set(V4L2_CID_USER_BCM2835_ISP_CC_MATRIX, c);
 }
 
@@ -410,8 +410,8 @@ void IpaVc4::applyBlackLevel(const struct BlackLevelStatus *blackLevelStatus, Co
 	blackLevel.black_level_g = blackLevelStatus->blackLevelG;
 	blackLevel.black_level_b = blackLevelStatus->blackLevelB;
 
-	ControlValue c(Span<const uint8_t>{ reinterpret_cast<uint8_t *>(&blackLevel),
-					    sizeof(blackLevel) });
+	ControlValue c(std::span<const uint8_t>{ reinterpret_cast<uint8_t *>(&blackLevel),
+						 sizeof(blackLevel) });
 	ctrls.set(V4L2_CID_USER_BCM2835_ISP_BLACK_LEVEL, c);
 }
 
@@ -432,8 +432,8 @@ void IpaVc4::applyGamma(const struct ContrastStatus *contrastStatus, ControlList
 	gamma.y[numGammaPoints - 1] = 65535;
 	gamma.enabled = 1;
 
-	ControlValue c(Span<const uint8_t>{ reinterpret_cast<uint8_t *>(&gamma),
-					    sizeof(gamma) });
+	ControlValue c(std::span<const uint8_t>{ reinterpret_cast<uint8_t *>(&gamma),
+						 sizeof(gamma) });
 	ctrls.set(V4L2_CID_USER_BCM2835_ISP_GAMMA, c);
 }
 
@@ -446,8 +446,8 @@ void IpaVc4::applyGEQ(const struct GeqStatus *geqStatus, ControlList &ctrls)
 	geq.slope.den = 1000;
 	geq.slope.num = 1000 * geqStatus->slope;
 
-	ControlValue c(Span<const uint8_t>{ reinterpret_cast<uint8_t *>(&geq),
-					    sizeof(geq) });
+	ControlValue c(std::span<const uint8_t>{ reinterpret_cast<uint8_t *>(&geq),
+						 sizeof(geq) });
 	ctrls.set(V4L2_CID_USER_BCM2835_ISP_GEQ, c);
 }
 
@@ -480,12 +480,12 @@ void IpaVc4::applyDenoise(const struct DenoiseStatus *denoiseStatus, ControlList
 		cdn.enabled = 0;
 	}
 
-	ControlValue c(Span<const uint8_t>{ reinterpret_cast<uint8_t *>(&denoise),
-					    sizeof(denoise) });
+	ControlValue c(std::span<const uint8_t>{ reinterpret_cast<uint8_t *>(&denoise),
+						 sizeof(denoise) });
 	ctrls.set(V4L2_CID_USER_BCM2835_ISP_DENOISE, c);
 
-	c = ControlValue(Span<const uint8_t>{ reinterpret_cast<uint8_t *>(&cdn),
-					      sizeof(cdn) });
+	c = ControlValue(std::span<const uint8_t>{ reinterpret_cast<uint8_t *>(&cdn),
+						   sizeof(cdn) });
 	ctrls.set(V4L2_CID_USER_BCM2835_ISP_CDN, c);
 }
 
@@ -501,8 +501,8 @@ void IpaVc4::applySharpen(const struct SharpenStatus *sharpenStatus, ControlList
 	sharpen.limit.num = 1000 * sharpenStatus->limit;
 	sharpen.limit.den = 1000;
 
-	ControlValue c(Span<const uint8_t>{ reinterpret_cast<uint8_t *>(&sharpen),
-					    sizeof(sharpen) });
+	ControlValue c(std::span<const uint8_t>{ reinterpret_cast<uint8_t *>(&sharpen),
+						 sizeof(sharpen) });
 	ctrls.set(V4L2_CID_USER_BCM2835_ISP_SHARPEN, c);
 }
 
@@ -513,8 +513,8 @@ void IpaVc4::applyDPC(const struct DpcStatus *dpcStatus, ControlList &ctrls)
 	dpc.enabled = 1;
 	dpc.strength = dpcStatus->strength;
 
-	ControlValue c(Span<const uint8_t>{ reinterpret_cast<uint8_t *>(&dpc),
-					    sizeof(dpc) });
+	ControlValue c(std::span<const uint8_t>{ reinterpret_cast<uint8_t *>(&dpc),
+						 sizeof(dpc) });
 	ctrls.set(V4L2_CID_USER_BCM2835_ISP_DPC, c);
 }
 
@@ -570,8 +570,8 @@ void IpaVc4::applyLS(const struct AlscStatus *lsStatus, ControlList &ctrls)
 		resampleTable(grid + 3 * w * h, lsStatus->b, w, h);
 	}
 
-	ControlValue c(Span<const uint8_t>{ reinterpret_cast<uint8_t *>(&ls),
-					    sizeof(ls) });
+	ControlValue c(std::span<const uint8_t>{ reinterpret_cast<uint8_t *>(&ls),
+						 sizeof(ls) });
 	ctrls.set(V4L2_CID_USER_BCM2835_ISP_LENS_SHADING, c);
 }
 
@@ -632,7 +632,6 @@ extern "C" {
 const struct IPAModuleInfo ipaModuleInfo = {
 	IPA_MODULE_API_VERSION,
 	1,
-	"rpi/vc4",
 	"rpi/vc4",
 };
 

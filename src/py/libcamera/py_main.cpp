@@ -376,11 +376,11 @@ PYBIND11_MODULE(_libcamera, m)
 		});
 
 	pyFrameBuffer
-		.def(py::init<std::vector<FrameBuffer::Plane>, unsigned int>(),
+		.def(py::init<std::vector<FrameBuffer::Plane>, uint64_t>(),
 		     py::arg("planes"), py::arg("cookie") = 0)
 		.def_property_readonly("metadata", &FrameBuffer::metadata, py::return_value_policy::reference_internal)
 		.def_property_readonly("planes", [](const FrameBuffer &self) {
-			/* Convert from Span<> to std::vector<> */
+			/* Convert from std::span<> to std::vector<> */
 			/* Note: this creates copies */
 			auto planes = self.planes();
 			std::vector<FrameBuffer::Plane> v(planes.begin(), planes.end());
@@ -506,7 +506,7 @@ PYBIND11_MODULE(_libcamera, m)
 		.def_readonly("sequence", &FrameMetadata::sequence)
 		.def_readonly("timestamp", &FrameMetadata::timestamp)
 		.def_property_readonly("planes", [](const FrameMetadata &self) {
-			/* Convert from Span<> to std::vector<> */
+			/* Convert from std::span<> to std::vector<> */
 			/* Note: this creates a copy */
 			auto planes = self.planes();
 			std::vector<FrameMetadata::Plane> v(planes.begin(), planes.end());

@@ -9,6 +9,8 @@
 
 #include "cam_helper.h"
 
+namespace {
+
 using namespace RPiController;
 
 class CamHelperOv5647 : public CamHelper
@@ -86,9 +88,11 @@ unsigned int CamHelperOv5647::mistrustMetadataModeSwitch() const
 	return 2;
 }
 
-static CamHelper *create()
+CamHelper *create()
 {
 	return new CamHelperOv5647();
 }
 
-static RegisterCamHelper reg("ov5647", &create);
+RegisterCamHelper reg("ov5647", &create);
+
+} /* namespace */

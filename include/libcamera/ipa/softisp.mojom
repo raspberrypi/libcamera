@@ -4,7 +4,7 @@
  * \todo Document the interface and remove the related EXCLUDE_PATTERNS entry.
  */
 
-module ipa.soft;
+module ipa.softisp;
 
 import "include/libcamera/ipa/core.mojom";
 
@@ -12,7 +12,7 @@ struct IPAConfigInfo {
 	libcamera.ControlInfoMap sensorControls;
 };
 
-interface IPASoftInterface {
+interface IPASoftIspInterface {
 	init(libcamera.IPASettings settings,
 	     libcamera.SharedFD fdStats,
 	     libcamera.SharedFD fdParams,
@@ -22,7 +22,7 @@ interface IPASoftInterface {
 	start() => (int32 ret);
 	stop();
 	configure(IPAConfigInfo configInfo)
-		=> (int32 ret);
+		=> (int32 ret, libcamera.ControlInfoMap ipaControls);
 
 	[async] queueRequest(uint32 frame, libcamera.ControlList sensorControls);
 	[async] computeParams(uint32 frame);
@@ -31,8 +31,8 @@ interface IPASoftInterface {
 			     libcamera.ControlList sensorControls);
 };
 
-interface IPASoftEventInterface {
+interface IPASoftIspEventInterface {
 	setSensorControls(libcamera.ControlList sensorControls);
-	setIspParams();
+	paramsComputed(uint32 frame);
 	metadataReady(uint32 frame, libcamera.ControlList metadata);
 };

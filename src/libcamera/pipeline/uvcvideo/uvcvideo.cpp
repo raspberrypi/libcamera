@@ -84,7 +84,7 @@ public:
 	PipelineHandlerUVC(CameraManager *manager);
 
 	std::unique_ptr<CameraConfiguration> generateConfiguration(Camera *camera,
-								   Span<const StreamRole> roles) override;
+								   std::span<const StreamRole> roles) override;
 	int configure(Camera *camera, CameraConfiguration *config) override;
 
 	int exportFrameBuffers(Camera *camera, Stream *stream,
@@ -235,7 +235,7 @@ PipelineHandlerUVC::PipelineHandlerUVC(CameraManager *manager)
 
 std::unique_ptr<CameraConfiguration>
 PipelineHandlerUVC::generateConfiguration(Camera *camera,
-					  Span<const StreamRole> roles)
+					  std::span<const StreamRole> roles)
 {
 	UVCCameraData *data = cameraData(camera);
 	std::unique_ptr<CameraConfiguration> config =
@@ -597,7 +597,7 @@ int UVCCameraData::init(std::shared_ptr<MediaDevice> media)
 
 	properties_.set(properties::Location, location);
 
-	properties_.set(properties::PixelArraySize, resolution);
+	properties_.set(properties::PixelArrayArea, Rectangle(resolution));
 	properties_.set(properties::PixelArrayActiveAreas, { Rectangle(resolution) });
 
 	/* Initialise the supported controls. */
@@ -830,7 +830,7 @@ void UVCCameraData::addControl(uint32_t cid, const ControlInfo &v4l2Info,
 			return;
 
 		info = ControlInfo{
-			Span<const ControlValue>{ values.data(), count },
+			std::span<const ControlValue>{ values.data(), count },
 			!lcDef ? values.front() : *lcDef,
 		};
 		break;

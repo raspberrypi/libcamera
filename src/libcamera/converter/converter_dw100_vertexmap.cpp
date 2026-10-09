@@ -10,12 +10,12 @@
 #include <algorithm>
 #include <assert.h>
 #include <cmath>
+#include <span>
 #include <stdint.h>
 #include <utility>
 #include <vector>
 
 #include <libcamera/base/log.h>
-#include <libcamera/base/span.h>
 
 #include <libcamera/geometry.h>
 #include <libcamera/transform.h>
@@ -255,7 +255,7 @@ int dw100VerticesForLength(const int length)
  *
  * \return 0 on success or -EINVAL if \a coeffs has the wrong size
  */
-int Dw100VertexMap::DewarpParams::setCoefficients(Span<const double> coeffs)
+int Dw100VertexMap::DewarpParams::setCoefficients(std::span<const double> coeffs)
 {
 	size_t s = coeffs.size();
 	if (!(s == 4 || s == 5 || s == 8 || s == 12))

@@ -14,15 +14,15 @@
 
 #include "libipa/awb.h"
 #include "libipa/fixedpoint.h"
-#include "simple/ipa_context.h"
+#include "softisp/ipa_context.h"
 
 #include "algorithm.h"
 
 namespace libcamera {
 
-namespace ipa::soft::algorithms {
+namespace ipa::softisp::algorithms {
 
-class SimpleAwbStats;
+class SoftIspAwbStats;
 
 class Awb : public Algorithm
 {
@@ -48,8 +48,8 @@ public:
 		     ControlList &metadata) override;
 
 private:
-	SimpleAwbStats calculateRgbMeans(IPAContext &context,
-					 const SwIspStats *stats) const;
+	SoftIspAwbStats calculateRgbMeans(IPAContext &context,
+					  const SwIspStats *stats) const;
 
 	/*
 	 * There actually is no Q register format for SoftISP, but allow the
@@ -59,6 +59,6 @@ private:
 	AwbAlgorithm<UQ<2, 8>> awbAlgo_;
 };
 
-} /* namespace ipa::soft::algorithms */
+} /* namespace ipa::softisp::algorithms */
 
 } /* namespace libcamera */

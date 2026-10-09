@@ -10,6 +10,8 @@
 
 #include "cam_helper.h"
 
+namespace {
+
 using namespace RPiController;
 
 class CamHelperImx678 : public CamHelper
@@ -48,9 +50,11 @@ double CamHelperImx678::gain(uint32_t gainCode) const
 	return std::pow(10, 0.015 * gainCode);
 }
 
-static CamHelper *create()
+CamHelper *create()
 {
 	return new CamHelperImx678();
 }
 
-static RegisterCamHelper reg("imx678", &create);
+RegisterCamHelper reg("imx678", &create);
+
+} /* namespace */

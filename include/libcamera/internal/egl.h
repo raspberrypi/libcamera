@@ -9,11 +9,12 @@
 
 #pragma once
 
+#include <span>
 #include <sys/types.h>
 #include <unistd.h>
 
 #include <libcamera/base/log.h>
-#include <libcamera/base/span.h>
+#include <libcamera/base/thread.h>
 #include <libcamera/base/utils.h>
 
 /*
@@ -103,6 +104,7 @@ public:
 	~eGL();
 
 	int initEGLContext();
+	void resetEGLContext();
 	static EGLDisplay probeDisplay();
 
 	int createInputDMABufTexture2D(eGLImage &eglImage, int fd);
@@ -115,36 +117,40 @@ public:
 	void activateBindTexture(eGLImage &eglImage);
 
 	void pushEnv(std::vector<std::string> &shaderEnv, const char *str);
-	void makeCurrent();
 
-	int compileVertexShader(GLuint &shaderId, Span<const unsigned char> shaderData,
-				Span<const std::string> shaderEnv);
-	int compileFragmentShader(GLuint &shaderId, Span<const unsigned char> shaderData,
-				  Span<const std::string> shaderEnv);
+	int compileVertexShader(GLuint &shaderId, std::span<const unsigned char> shaderData,
+				std::span<const std::string> shaderEnv);
+	int compileFragmentShader(GLuint &shaderId, std::span<const unsigned char> shaderData,
+				  std::span<const std::string> shaderEnv);
 	int linkProgram(GLuint &programId, GLuint fragmentshaderId, GLuint vertexshaderId);
 	void dumpShaderSource(GLuint shaderId);
-	void useProgram(GLuint programId);
-	void deleteProgram(GLuint programId);
 	void syncOutput();
 	void flushOutput();
+
+	void assertThread() const
+	{
+		ASSERT(tid_ == Thread::currentId());
+	}
 
 private:
 	LIBCAMERA_DISABLE_COPY_AND_MOVE(eGL)
 
-	pid_t tid_;
+	pid_t tid_ = -1;
 
 	EGLDisplay display_ = EGL_NO_DISPLAY;
 	EGLContext context_ = EGL_NO_CONTEXT;
-	EGLSurface surface_ = EGL_NO_SURFACE;
 
-	int compileShader(int shaderType, GLuint &shaderId, Span<const unsigned char> shaderData,
-			  Span<const std::string> shaderEnv);
+	int compileShader(int shaderType, GLuint &shaderId, std::span<const unsigned char> shaderData,
+			  std::span<const std::string> shaderEnv);
 
 	int createDMABufTexture2D(eGLImage &eglImage, int fd, bool output);
 
-	PFNGLEGLIMAGETARGETTEXTURE2DOESPROC glEGLImageTargetTexture2DOES;
-	PFNEGLCREATEIMAGEKHRPROC eglCreateImageKHR;
-	PFNEGLDESTROYIMAGEKHRPROC eglDestroyImageKHR;
-	PFNGLGETSTRINGPROC glGetString;
+	void makeCurrent();
+
+	struct VTable {
+		PFNGLEGLIMAGETARGETTEXTURE2DOESPROC glEGLImageTargetTexture2DOES;
+		PFNEGLCREATEIMAGEKHRPROC eglCreateImageKHR;
+		PFNEGLDESTROYIMAGEKHRPROC eglDestroyImageKHR;
+	} vtable_ = {};
 };
 } //namespace libcamera

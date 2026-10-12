@@ -11,6 +11,8 @@
 
 #include "cam_helper.h"
 
+namespace {
+
 using namespace RPiController;
 using libcamera::utils::Duration;
 using namespace std::literals::chrono_literals;
@@ -69,4 +71,6 @@ static CamHelper *create()
 	return new CamHelperImx296();
 }
 
-static RegisterCamHelper reg("imx296", &create);
+RegisterCamHelper reg("imx296", &create);
+
+} /* namespace */

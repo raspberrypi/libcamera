@@ -7,7 +7,7 @@
 
 #include "camera_request.h"
 
-#include <libcamera/base/span.h>
+#include <span>
 
 #include "camera_buffer.h"
 
@@ -114,7 +114,7 @@ Camera3RequestDescriptor::Camera3RequestDescriptor(
 	frameNumber_ = camera3Request->frame_number;
 
 	/* Copy the camera3 request stream information for later access. */
-	const Span<const camera3_stream_buffer_t> buffers{
+	const std::span<const camera3_stream_buffer_t> buffers{
 		camera3Request->output_buffers,
 		camera3Request->num_output_buffers
 	};

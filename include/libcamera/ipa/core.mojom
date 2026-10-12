@@ -153,21 +153,35 @@ module libcamera;
  */
 
 /**
- * \var IPACameraSensorInfo::activeAreaSize
- * \brief The size of the pixel array active area of the sensor
+ * \var IPACameraSensorInfo::pixelArrayArea
+ * \brief The area of the physical pixel array of the sensor in pixels
+ *
+ * The top left corner of this rectangle is always at (0,0).
+ */
+
+/**
+ * \var IPACameraSensorInfo::activeArea
+ * \brief The active pixel area of the sensor, relative to the physical pixel
+ * array
+ *
+ * The active area rectangle is expressed relative to the top-left corner of the
+ * physical pixel array. It describes the region of the pixel array which
+ * produces valid image data, excluding non-readable and optical black pixels.
+ *
+ * \note New IPA implementations should *not* use this property and instead rely
+ * on coordinates relative to the physical sensor array
  */
 
 /**
  * \var IPACameraSensorInfo::analogCrop
- * \brief The portion of the pixel array active area which is read-out and
- * processed
+ * \brief The portion of the pixel array which is read-out and processed
  *
- * The analog crop rectangle top-left corner is defined as the displacement
- * from the top-left corner of the pixel array active area. The rectangle
- * horizontal and vertical sizes define the portion of the pixel array which
- * is read-out and provided to the sensor's internal processing pipeline, before
- * any pixel sub-sampling method, such as pixel binning, skipping and averaging
- * take place.
+ * The analog crop rectangle top-left corner is defined as the displacement from
+ * the top-left corner of the physical pixel array. The rectangle horizontal and
+ * vertical sizes define the portion of the pixel array which is read-out and
+ * provided to the sensor's internal processing pipeline, before any pixel
+ * sub-sampling method, such as pixel binning, skipping and averaging take
+ * place.
  */
 
 /**
@@ -243,7 +257,8 @@ struct IPACameraSensorInfo {
 	uint32 bitsPerPixel;
 	uint32 cfaPattern;
 
-	Size activeAreaSize;
+	Rectangle pixelArrayArea;
+	Rectangle activeArea;
 	Rectangle analogCrop;
 	Size outputSize;
 

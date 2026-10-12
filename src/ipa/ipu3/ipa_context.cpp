@@ -46,11 +46,20 @@ namespace libcamera::ipa::ipu3 {
  * \var IPAContext::configuration
  * \brief The IPA session configuration, immutable during the session
  *
+ * \var IPAContext::sensorInfo
+ * \brief The IPA camera session details, immutable during the session
+ *
+ * \var IPAContext::sensorControls
+ * \brief The camera sensor controls, immutable during the session
+ *
  * \var IPAContext::frameContexts
  * \brief Ring buffer of the IPAFrameContext(s)
  *
  * \var IPAContext::activeState
  * \brief The current state of IPA algorithms
+ *
+ * \var IPAContext::camHelper
+ * \brief The camera sensor helper
  *
  * \var IPAContext::ctrlMap
  * \brief A ControlInfoMap::Map of controls populated by the algorithms
@@ -95,82 +104,31 @@ namespace libcamera::ipa::ipu3 {
 /**
  * \var IPASessionConfiguration::agc
  * \brief AGC parameters configuration of the IPA
- *
- * \var IPASessionConfiguration::agc.minExposureTime
- * \brief Minimum exposure time supported with the configured sensor
- *
- * \var IPASessionConfiguration::agc.maxExposureTime
- * \brief Maximum exposure time supported with the configured sensor
- *
- * \var IPASessionConfiguration::agc.minAnalogueGain
- * \brief Minimum analogue gain supported with the configured sensor
- *
- * \var IPASessionConfiguration::agc.maxAnalogueGain
- * \brief Maximum analogue gain supported with the configured sensor
- */
-
-/**
- * \var IPASessionConfiguration::sensor
- * \brief Sensor-specific configuration of the IPA
- *
- * \var IPASessionConfiguration::sensor.lineDuration
- * \brief Line duration in microseconds
- *
- * \var IPASessionConfiguration::sensor.defVBlank
- * \brief The default vblank value of the sensor
- *
- * \var IPASessionConfiguration::sensor.size
- * \brief Sensor output resolution
  */
 
 /**
  * \var IPAActiveState::agc
  * \brief Context for the Automatic Gain Control algorithm
- *
- * The exposure and gain determined are expected to be applied to the sensor
- * at the earliest opportunity.
- *
- * \var IPAActiveState::agc.exposure
- * \brief Exposure time expressed as a number of lines
- *
- * \var IPAActiveState::agc.gain
- * \brief Analogue gain multiplier
- *
- * The gain should be adapted to the sensor specific gain code before applying.
  */
 
 /**
  * \var IPAActiveState::awb
- * \brief Context for the Automatic White Balance algorithm
- *
- * \var IPAActiveState::awb.gains
- * \brief White balance gains
- *
- * \var IPAActiveState::awb.gains.red
- * \brief White balance gain for R channel
- *
- * \var IPAActiveState::awb.gains.green
- * \brief White balance gain for G channel
- *
- * \var IPAActiveState::awb.gains.blue
- * \brief White balance gain for B channel
- *
- * \var IPAActiveState::awb.temperatureK
- * \brief Estimated color temperature
+ * \brief Active auto-white balance parameters for the IPA
  */
 
 /**
- * \var IPAActiveState::toneMapping
- * \brief Context for ToneMapping and Gamma control
- *
- * \var IPAActiveState::toneMapping.gamma
- * \brief Gamma value for the LUT
- *
- * \var IPAActiveState::toneMapping.gammaCorrection
- * \brief Per-pixel tone mapping implemented as a LUT
- *
- * The LUT structure is defined by the IPU3 kernel interface. See
- * <linux/intel-ipu3.h> struct ipu3_uapi_gamma_corr_lut for further details.
+ * \var IPAActiveState::ccm
+ * \brief Active colour Correction Matrix parameters for the IPA
+ */
+
+/**
+ * \var IPAActiveState::gamma
+ * \brief Active gamma correction parameters for the IPA
+ */
+
+/**
+ * \var IPAActiveState::lsc
+ * \brief Active lens shading correction parameters for the IPA
  */
 
 /**
@@ -185,6 +143,29 @@ namespace libcamera::ipa::ipu3 {
  *
  * \var IPAFrameContext::sensor.gain
  * \brief Analogue gain multiplier
+ *
+ * \var IPAFrameContext::agc
+ * \brief Per-frame state for the AGC algorithm
+ */
+
+/**
+ * \var IPAFrameContext::awb
+ * \brief Per-frame auto-white balance parameters for the IPA
+ */
+
+/**
+ * \var IPAFrameContext::ccm
+ * \brief Per-frame colour Correction Matrix parameters for the IPA
+ */
+
+/**
+ * \var IPAFrameContext::gamma
+ * \brief Per-frame gamma correction parameters for the IPA
+ */
+
+/**
+ * \var IPAFrameContext::lsc
+ * \brief Per-frame lens shading correction parameters for the IPA
  */
 
 } /* namespace libcamera::ipa::ipu3 */

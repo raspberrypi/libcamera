@@ -9,6 +9,7 @@
 
 #include <memory>
 #include <optional>
+#include <span>
 
 #include <libcamera/libcamera.h>
 
@@ -20,7 +21,7 @@ public:
 	Capture(std::shared_ptr<libcamera::Camera> camera);
 	~Capture();
 
-	void configure(libcamera::Span<const libcamera::StreamRole> roles);
+	void configure(std::span<const libcamera::StreamRole> roles);
 	void run(unsigned int captureLimit, std::optional<unsigned int> queueLimit = {});
 
 private:

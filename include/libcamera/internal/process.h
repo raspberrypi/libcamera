@@ -7,11 +7,11 @@
 
 #pragma once
 
+#include <span>
 #include <string>
 
 #include <libcamera/base/class.h>
 #include <libcamera/base/signal.h>
-#include <libcamera/base/span.h>
 #include <libcamera/base/unique_fd.h>
 
 namespace libcamera {
@@ -31,8 +31,8 @@ public:
 	~Process();
 
 	int start(const std::string &path,
-		  Span<const std::string> args = {},
-		  Span<const int> fds = {});
+		  std::span<const std::string> args = {},
+		  std::span<const int> fds = {});
 
 	ExitStatus exitStatus() const { return exitStatus_; }
 	int exitCode() const { return exitCode_; }

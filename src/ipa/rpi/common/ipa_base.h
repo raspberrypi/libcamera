@@ -90,7 +90,7 @@ private:
 	virtual void platformPrepareIsp(const PrepareParams &params,
 					RPiController::Metadata &rpiMetadata) = 0;
 	virtual void platformPrepareAgc(RPiController::Metadata &rpiMetadata) = 0;
-	virtual RPiController::StatisticsPtr platformProcessStats(Span<uint8_t> mem) = 0;
+	virtual RPiController::StatisticsPtr platformProcessStats(std::span<uint8_t> mem) = 0;
 
 	void setMode(const IPACameraSensorInfo &sensorInfo);
 	void setCameraTimeoutValue();

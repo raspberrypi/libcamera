@@ -13,13 +13,16 @@
 
 #include <libcamera/geometry.h>
 
-#include "libcamera/internal/vector.h"
+#include "libipa/awb.h"
+#include "libipa/fixedpoint.h"
 
 #include "algorithm.h"
 
 namespace libcamera {
 
 namespace ipa::ipu3::algorithms {
+
+class Ipu3AwbStats;
 
 /* Region size for the statistics generation algorithm */
 static constexpr uint32_t kAwbStatsSizeX = 16;
@@ -38,9 +41,12 @@ class Awb : public Algorithm
 {
 public:
 	Awb();
-	~Awb();
 
+	int init(IPAContext &context, const ValueNode &tuningData) override;
 	int configure(IPAContext &context, const IPAConfigInfo &configInfo) override;
+	void queueRequest(IPAContext &context, const uint32_t frame,
+			  IPAFrameContext &frameContext,
+			  const ControlList &controls) override;
 	void prepare(IPAContext &context, const uint32_t frame,
 		     IPAFrameContext &frameContext,
 		     ipu3_uapi_params *params) override;
@@ -50,15 +56,7 @@ public:
 		     ControlList &metadata) override;
 
 private:
-	struct AwbStatus {
-		double temperatureK;
-		double redGain;
-		double greenGain;
-		double blueGain;
-	};
-
-private:
-	void calculateWBGains(const ipu3_uapi_stats_3a *stats);
+	Ipu3AwbStats calculateRgbMeans(const ipu3_uapi_stats_3a *stats);
 	void generateZones();
 	void generateAwbStats(const ipu3_uapi_stats_3a *stats);
 	void clearAwbStats();
@@ -68,7 +66,7 @@ private:
 
 	std::vector<RGB<double>> zones_;
 	Accumulator awbStats_[kAwbStatsSizeX * kAwbStatsSizeY];
-	AwbStatus asyncResults_;
+	AwbAlgorithm<UQ<3, 13>> awbAlgo_;
 
 	uint32_t stride_;
 	uint32_t cellsPerZoneX_;

@@ -29,7 +29,7 @@ public:
 
 	unsigned int numPlanes() const;
 
-	Span<uint8_t> plane(unsigned int plane);
+	std::span<uint8_t> plane(unsigned int plane);
 
 	unsigned int stride(unsigned int plane) const;
 	unsigned int offset(unsigned int plane) const;
@@ -99,7 +99,7 @@ unsigned int CameraBuffer::Private::numPlanes() const
 	return bufferManager_->GetNumPlanes(handle_);
 }
 
-Span<uint8_t> CameraBuffer::Private::plane(unsigned int plane)
+std::span<uint8_t> CameraBuffer::Private::plane(unsigned int plane)
 {
 	if (!mapped_)
 		map();

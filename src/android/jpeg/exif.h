@@ -8,13 +8,12 @@
 #pragma once
 
 #include <chrono>
+#include <span>
 #include <string>
 #include <time.h>
 #include <vector>
 
 #include <libexif/exif-data.h>
-
-#include <libcamera/base/span.h>
 
 #include <libcamera/geometry.h>
 
@@ -76,7 +75,7 @@ public:
 	void setFlash(Flash flash);
 	void setWhiteBalance(WhiteBalance wb);
 
-	libcamera::Span<const uint8_t> data() const { return { exifData_, size_ }; }
+	std::span<const uint8_t> data() const { return { exifData_, size_ }; }
 	[[nodiscard]] int generate();
 
 private:
@@ -92,7 +91,7 @@ private:
 		       StringEncoding encoding = NoEncoding);
 	void setRational(ExifIfd ifd, ExifTag tag, ExifRational item);
 	void setRational(ExifIfd ifd, ExifTag tag,
-			 libcamera::Span<const ExifRational> items);
+			 std::span<const ExifRational> items);
 
 	std::tuple<int, int, int> degreesToDMS(double decimalDegrees);
 	void setGPSDMS(ExifIfd ifd, ExifTag tag, int deg, int min, int sec);

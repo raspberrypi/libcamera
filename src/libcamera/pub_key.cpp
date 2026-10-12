@@ -35,7 +35,7 @@ namespace libcamera {
  * \brief Construct a PubKey from key data
  * \param[in] key Key data encoded in DER format
  */
-PubKey::PubKey([[maybe_unused]] Span<const uint8_t> key)
+PubKey::PubKey([[maybe_unused]] std::span<const uint8_t> key)
 	: valid_(false)
 {
 #if HAVE_CRYPTO
@@ -87,8 +87,8 @@ PubKey::~PubKey()
  *
  * \return True if the signature is valid, false otherwise
  */
-bool PubKey::verify([[maybe_unused]] Span<const uint8_t> data,
-		    [[maybe_unused]] Span<const uint8_t> sig) const
+bool PubKey::verify([[maybe_unused]] std::span<const uint8_t> data,
+		    [[maybe_unused]] std::span<const uint8_t> sig) const
 {
 	if (!valid_)
 		return false;

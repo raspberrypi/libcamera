@@ -37,12 +37,10 @@ protected:
 			cerr << "IPA module information mismatch: expected:" << endl
 			     << "moduleAPIVersion = "     << testInfo.moduleAPIVersion << endl
 			     << "pipelineVersion = "      << testInfo.pipelineVersion << endl
-			     << "pipelineName = "         << testInfo.pipelineName << endl
 			     << "name = "                 << testInfo.name
 			     << "got: " << endl
 			     << "moduleAPIVersion = "     << info.moduleAPIVersion << endl
 			     << "pipelineVersion = "      << info.pipelineVersion << endl
-			     << "pipelineName = "         << info.pipelineName << endl
 			     << "name = "                 << info.name << endl;
 		}
 
@@ -57,7 +55,6 @@ protected:
 		const struct IPAModuleInfo testInfo = {
 			IPA_MODULE_API_VERSION,
 			0,
-			"vimc",
 			"vimc",
 		};
 

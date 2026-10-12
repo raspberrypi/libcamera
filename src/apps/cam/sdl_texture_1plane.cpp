@@ -9,7 +9,7 @@
 
 #include <assert.h>
 
-void SDLTexture1Plane::update(libcamera::Span<const libcamera::Span<const uint8_t>> data)
+void SDLTexture1Plane::update(std::span<const std::span<const uint8_t>> data)
 {
 	assert(data.size() == 1);
 	assert(data[0].size_bytes() == std::size_t(rect_.h) * std::size_t(stride_));

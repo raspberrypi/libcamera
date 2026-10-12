@@ -21,7 +21,7 @@ public:
 
 	int configure(const libcamera::StreamConfiguration &cfg) override;
 	int encode(Camera3RequestDescriptor::StreamBuffer *buffer,
-		   libcamera::Span<const uint8_t> exifData,
+		   std::span<const uint8_t> exifData,
 		   unsigned int quality) override;
 
 private:

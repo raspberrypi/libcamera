@@ -51,7 +51,7 @@ struct Matrix3d {
 		m[6] = m6, m[7] = m7, m[8] = m8;
 	}
 
-	Matrix3d(const Span<const float> &span)
+	Matrix3d(std::span<const float> span)
 		: Matrix3d(span[0], span[1], span[2],
 			   span[3], span[4], span[5],
 			   span[6], span[7], span[8])
@@ -708,7 +708,7 @@ int DNGWriter::write(const char *filename, const Camera *camera,
 
 	const auto &blackLevels = metadata.get(controls::SensorBlackLevels);
 	if (blackLevels) {
-		Span<const int32_t, 4> levels = *blackLevels;
+		std::span<const int32_t, 4> levels = *blackLevels;
 
 		/*
 		 * The black levels control is specified in R, Gr, Gb, B order.

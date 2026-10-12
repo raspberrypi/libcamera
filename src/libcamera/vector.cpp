@@ -45,7 +45,7 @@ LOG_DEFINE_CATEGORY(Vector)
  */
 
 /**
- * \fn Vector::Vector(const Span<const T, Rows> data)
+ * \fn Vector::Vector(std::span<const T, Rows> data)
  * \brief Construct vector from supplied data
  * \param data Data from which to construct a vector
  *

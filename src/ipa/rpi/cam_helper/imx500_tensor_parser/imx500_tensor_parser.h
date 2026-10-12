@@ -6,12 +6,11 @@
  */
 
 #include <memory>
+#include <span>
 #include <stdint.h>
 #include <string>
 #include <unordered_map>
 #include <vector>
-
-#include <libcamera/base/span.h>
 
 namespace RPiController {
 
@@ -57,9 +56,9 @@ struct IMX500Tensors {
 };
 
 int imx500ParseOutputTensor(IMX500OutputTensorInfo &outputTensorInfo,
-			    libcamera::Span<const uint8_t> outputTensor);
+			    std::span<const uint8_t> outputTensor);
 int imx500ParseInputTensor(IMX500InputTensorInfo &inputTensorInfo,
-			   libcamera::Span<const uint8_t> inputTensor);
-std::unordered_map<TensorType, IMX500Tensors> imx500SplitTensors(libcamera::Span<const uint8_t> tensors);
+			   std::span<const uint8_t> inputTensor);
+std::unordered_map<TensorType, IMX500Tensors> imx500SplitTensors(std::span<const uint8_t> tensors);
 
 } /* namespace RPiController */

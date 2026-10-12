@@ -56,7 +56,7 @@ def find_debug_controls(dir):
     files = [p for p in dir.rglob('*') if p.suffix in extensions]
 
     # The following regex was tested on
-    # set<Span<type>>( controls::debug::something , static_cast<type>(var) )
+    # set<std::span<type>>( controls::debug::something , static_cast<type>(var) )
     # set<>( controls::debug::something , static_cast<type>(var) )
     # set( controls::debug::something , static_cast<type> (var) )
     exp = re.compile(r'set'  # set function
@@ -71,10 +71,10 @@ def find_debug_controls(dir):
                 if match:
                     m = FoundMatch(file=p, line=idx, type=match.group(1),
                                    name=match.group(2), whole_match=match.group(0))
-                    if m.type is not None and m.type.startswith('Span'):
+                    if m.type is not None and m.type.startswith('std::span'):
                         # Simple span type detection treating the last word
                         # inside <> as type.
-                        r = re.match(r'Span<(?:.*\s+)(.*)>', m.type)
+                        r = re.match(r'std::span<(?:.*\s+)(.*)>', m.type)
                         m.type = r.group(1)
                         m.size = '[n]'
                     matches.append(m)

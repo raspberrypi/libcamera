@@ -202,7 +202,7 @@ stub implementations for the overridden class members.
           PipelineHandlerVivid(CameraManager *manager);
 
           std::unique_ptr<CameraConfiguration>
-          generateConfiguration(Camera *camera, Span<const StreamRole> roles) override;
+          generateConfiguration(Camera *camera, std::span<const StreamRole> roles) override;
           int configure(Camera *camera, CameraConfiguration *config) override;
 
           int exportFrameBuffers(Camera *camera, Stream *stream,
@@ -223,7 +223,7 @@ stub implementations for the overridden class members.
 
    std::unique_ptr<CameraConfiguration>
    PipelineHandlerVivid::generateConfiguration(Camera *camera,
-                                               Span<const StreamRole> roles)
+                                               std::span<const StreamRole> roles)
    {
           return nullptr;
    }

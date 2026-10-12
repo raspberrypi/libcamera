@@ -9,6 +9,8 @@
 
 #include "cam_helper.h"
 
+namespace {
+
 using namespace RPiController;
 
 class CamHelperOv7251 : public CamHelper
@@ -46,9 +48,11 @@ double CamHelperOv7251::gain(uint32_t gainCode) const
 	return static_cast<double>(gainCode) / 16.0;
 }
 
-static CamHelper *create()
+CamHelper *create()
 {
 	return new CamHelperOv7251();
 }
 
-static RegisterCamHelper reg("ov7251", &create);
+RegisterCamHelper reg("ov7251", &create);
+
+} /* namespace */

@@ -69,7 +69,7 @@ namespace ipa {
  * The vector of stages may be empty. In that case, the helper will simply use
  * the runtime limits set through setLimits() instead.
  */
-ExposureModeHelper::ExposureModeHelper(const Span<std::pair<utils::Duration, double>> stages)
+ExposureModeHelper::ExposureModeHelper(std::span<std::pair<utils::Duration, double>> stages)
 	: lineDuration_(1us), minExposureTime_(0us), maxExposureTime_(0us),
 	  minGain_(0), maxGain_(0), sensorHelper_(nullptr)
 {
@@ -154,6 +154,23 @@ double ExposureModeHelper::clampGain(double gain, double *quantizationGain) cons
 }
 
 /**
+ * \struct ExposureModeHelper::Result
+ * \brief Result of splitExposure()
+ *
+ * \var ExposureModeHelper::Result::exposureTime
+ * \brief The applicable exposure time
+ *
+ * \var ExposureModeHelper::Result::analogueGain
+ * \brief The applicable analogue gain
+ *
+ * \var ExposureModeHelper::Result::quantizationGain
+ * \brief The applicable quantization gain
+ *
+ * \var ExposureModeHelper::Result::digitalGain
+ * \brief The applicable digital gain
+ */
+
+/**
  * \brief Split exposure into exposure time and gain
  * \param[in] exposure Exposure value
  *
@@ -190,7 +207,7 @@ double ExposureModeHelper::clampGain(double gain, double *quantizationGain) cons
  * \return Tuple of exposure time, analogue gain, quantization gain and digital
  * gain
  */
-std::tuple<utils::Duration, double, double, double>
+ExposureModeHelper::Result
 ExposureModeHelper::splitExposure(utils::Duration exposure) const
 {
 	ASSERT(maxExposureTime_);

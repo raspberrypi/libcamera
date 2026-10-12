@@ -355,7 +355,7 @@ ControlValue CaptureScript::parseRectangles()
 	if (rectangles.size() == 1)
 		controlValue.set(rectangles.at(0));
 	else
-		controlValue.set(Span<const Rectangle>(rectangles));
+		controlValue.set(std::span<const Rectangle>(rectangles));
 
 	return controlValue;
 }
@@ -537,7 +537,7 @@ ControlValue CaptureScript::parseArrayControl(const ControlId *id,
 			}
 		}
 
-		value = Span<bool>(values.get(), repr.size());
+		value = std::span<bool>(values.get(), repr.size());
 		break;
 	}
 	case ControlTypeByte: {
@@ -547,7 +547,7 @@ ControlValue CaptureScript::parseArrayControl(const ControlId *id,
 			values.push_back(val);
 		}
 
-		value = Span<const uint8_t>(values.data(), values.size());
+		value = std::span<const uint8_t>(values.data(), values.size());
 		break;
 	}
 	case ControlTypeInteger32: {
@@ -557,7 +557,7 @@ ControlValue CaptureScript::parseArrayControl(const ControlId *id,
 			values.push_back(val);
 		}
 
-		value = Span<const int32_t>(values.data(), values.size());
+		value = std::span<const int32_t>(values.data(), values.size());
 		break;
 	}
 	case ControlTypeInteger64: {
@@ -567,7 +567,7 @@ ControlValue CaptureScript::parseArrayControl(const ControlId *id,
 			values.push_back(val);
 		}
 
-		value = Span<const int64_t>(values.data(), values.size());
+		value = std::span<const int64_t>(values.data(), values.size());
 		break;
 	}
 	case ControlTypeFloat: {
@@ -575,7 +575,7 @@ ControlValue CaptureScript::parseArrayControl(const ControlId *id,
 		for (const std::string &s : repr)
 			values.push_back(strtof(s.c_str(), NULL));
 
-		value = Span<const float>(values.data(), values.size());
+		value = std::span<const float>(values.data(), values.size());
 		break;
 	}
 	default:

@@ -9,9 +9,8 @@
 #include <initializer_list>
 #include <map>
 #include <optional>
+#include <span>
 #include <stdint.h>
-
-#include <libcamera/base/span.h>
 
 /*
  * Camera metadata parser class. Usage as shown below.
@@ -101,7 +100,7 @@ public:
 		lineLengthBytes_ = numBytes;
 	}
 
-	virtual Status parse(libcamera::Span<const uint8_t> buffer,
+	virtual Status parse(std::span<const uint8_t> buffer,
 			     RegisterMap &registers) = 0;
 
 protected:
@@ -123,7 +122,7 @@ class MdParserSmia final : public MdParser
 public:
 	MdParserSmia(std::initializer_list<uint32_t> registerList);
 
-	MdParser::Status parse(libcamera::Span<const uint8_t> buffer,
+	MdParser::Status parse(std::span<const uint8_t> buffer,
 			       RegisterMap &registers) override;
 
 private:
@@ -147,7 +146,7 @@ private:
 		BadPadding   = -5
 	};
 
-	ParseStatus findRegs(libcamera::Span<const uint8_t> buffer);
+	ParseStatus findRegs(std::span<const uint8_t> buffer);
 
 	OffsetMap offsets_;
 };

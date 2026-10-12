@@ -7,12 +7,12 @@
 #pragma once
 
 #include <algorithm>
+#include <span>
 #include <sstream>
 #include <type_traits>
 #include <vector>
 
 #include <libcamera/base/log.h>
-#include <libcamera/base/span.h>
 
 #include "libcamera/internal/value_node.h"
 
@@ -22,8 +22,8 @@ LOG_DECLARE_CATEGORY(Matrix)
 
 #ifndef __DOXYGEN__
 template<typename T>
-bool matrixInvert(Span<const T> dataIn, Span<T> dataOut, unsigned int dim,
-		  Span<T> scratchBuffer, Span<unsigned int> swapBuffer);
+bool matrixInvert(std::span<const T> dataIn, std::span<T> dataOut, unsigned int dim,
+		  std::span<T> scratchBuffer, std::span<unsigned int> swapBuffer);
 #endif /* __DOXYGEN__ */
 
 template<typename T, unsigned int Rows, unsigned int Cols>
@@ -41,7 +41,7 @@ public:
 		std::copy(data.begin(), data.end(), data_.begin());
 	}
 
-	Matrix(const Span<const T, Rows * Cols> data)
+	Matrix(std::span<const T, Rows * Cols> data)
 	{
 		std::copy(data.begin(), data.end(), data_.begin());
 	}
@@ -74,16 +74,18 @@ public:
 		return out.str();
 	}
 
-	constexpr Span<const T, Rows * Cols> data() const { return data_; }
+	constexpr std::span<const T, Rows * Cols> data() const { return data_; }
 
-	constexpr Span<const T, Cols> operator[](size_t i) const
+	constexpr std::span<T, Rows * Cols> data() { return data_; }
+
+	constexpr std::span<const T, Cols> operator[](size_t i) const
 	{
-		return Span<const T, Cols>{ &data_.data()[i * Cols], Cols };
+		return std::span<const T, Cols>{ &data_.data()[i * Cols], Cols };
 	}
 
-	constexpr Span<T, Cols> operator[](size_t i)
+	constexpr std::span<T, Cols> operator[](size_t i)
 	{
-		return Span<T, Cols>{ &data_.data()[i * Cols], Cols };
+		return std::span<T, Cols>{ &data_.data()[i * Cols], Cols };
 	}
 
 #ifndef __DOXYGEN__
@@ -105,14 +107,31 @@ public:
 		Matrix<T, Rows, Cols> inverse;
 		std::array<T, Rows * Cols * 2> scratchBuffer;
 		std::array<unsigned int, Rows> swapBuffer;
-		bool res = matrixInvert(Span<const T>(data_),
-					Span<T>(inverse.data_),
+		bool res = matrixInvert(std::span<const T>(data_),
+					std::span<T>(inverse.data_),
 					Rows,
-					Span<T>(scratchBuffer),
-					Span<unsigned int>(swapBuffer));
+					std::span<T>(scratchBuffer),
+					std::span<unsigned int>(swapBuffer));
 		if (ok)
 			*ok = res;
 		return inverse;
+	}
+
+	template<typename U = T>
+	[[nodiscard]]
+	constexpr Matrix<U, Cols, Rows> transpose() const
+	{
+		static_assert(std::is_convertible_v<T, U>);
+
+		Matrix<U, Cols, Rows> transposed;
+		std::span<U, Rows * Cols> data = transposed.data();
+
+		for (unsigned int r = 0; r < Rows; ++r) {
+			for (unsigned int c = 0; c < Cols; ++c)
+				data[c * Rows + r] = data_[r * Cols + c];
+		}
+
+		return transposed;
 	}
 
 private:

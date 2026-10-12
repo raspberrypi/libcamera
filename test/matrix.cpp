@@ -46,6 +46,15 @@ protected:
 		ASSERT_EQ(m5[1][0], 0.0);
 		ASSERT_EQ(m5[1][1], 1.0);
 
+		Matrix<int, 2, 3> m6({ 1, 2, 3, 4, 5, 6 });
+		Matrix<unsigned int, 3, 2> m7 = m6.transpose<unsigned int>();
+		ASSERT_EQ(m7[0][0], 1);
+		ASSERT_EQ(m7[0][1], 4);
+		ASSERT_EQ(m7[1][0], 2);
+		ASSERT_EQ(m7[1][1], 5);
+		ASSERT_EQ(m7[2][0], 3);
+		ASSERT_EQ(m7[2][1], 6);
+
 		return TestPass;
 	}
 };

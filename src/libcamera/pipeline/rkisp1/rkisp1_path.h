@@ -9,11 +9,11 @@
 
 #include <map>
 #include <memory>
+#include <span>
 #include <set>
 #include <vector>
 
 #include <libcamera/base/signal.h>
-#include <libcamera/base/span.h>
 
 #include <libcamera/camera.h>
 #include <libcamera/geometry.h>
@@ -34,7 +34,7 @@ struct V4L2SubdeviceFormat;
 class RkISP1Path
 {
 public:
-	RkISP1Path(const char *name, const Span<const PixelFormat> &formats,
+	RkISP1Path(const char *name, std::span<const PixelFormat> formats,
 		   const Size &minResolution, const Size &maxResolution);
 
 	bool init(std::shared_ptr<MediaDevice> media);
@@ -72,7 +72,7 @@ private:
 	const char *name_;
 	bool running_;
 
-	const Span<const PixelFormat> formats_;
+	const std::span<const PixelFormat> formats_;
 	std::set<PixelFormat> streamFormats_;
 	Size minResolution_;
 	Size maxResolution_;

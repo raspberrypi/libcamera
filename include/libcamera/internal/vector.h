@@ -13,10 +13,10 @@
 #include <numeric>
 #include <optional>
 #include <ostream>
+#include <span>
 #include <type_traits>
 
 #include <libcamera/base/log.h>
-#include <libcamera/base/span.h>
 
 #include "libcamera/internal/matrix.h"
 #include "libcamera/internal/value_node.h"
@@ -46,7 +46,7 @@ public:
 		std::copy(data.begin(), data.end(), data_.begin());
 	}
 
-	constexpr Vector(const Span<const T, Rows> data)
+	constexpr Vector(std::span<const T, Rows> data)
 	{
 		std::copy(data.begin(), data.end(), data_.begin());
 	}

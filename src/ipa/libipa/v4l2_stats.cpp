@@ -54,7 +54,7 @@ LOG_DEFINE_CATEGORY(V4L2Stats)
  * After construction users of this class shall check the validity of the
  * constructed instance using operator bool().
  */
-V4L2StatsBase::V4L2StatsBase(Span<uint8_t> data, unsigned int version)
+V4L2StatsBase::V4L2StatsBase(std::span<uint8_t> data, unsigned int version)
 	: data_(data), valid_(false)
 {
 	const struct v4l2_isp_buffer *stats =
@@ -116,10 +116,10 @@ V4L2StatsBase::V4L2StatsBase(Span<uint8_t> data, unsigned int version)
  * Retrieve a span to the statistics block memory location by accessing the
  * cache built at class construction time.
  *
- * \return The memory location of the ISP statistics block, or an empty Span
+ * \return The memory location of the ISP statistics block, or an empty span
  * if \a blockType is not supported
  */
-Span<const uint8_t> V4L2StatsBase::block(unsigned int blockType, size_t blockSize) const
+std::span<const uint8_t> V4L2StatsBase::block(unsigned int blockType, size_t blockSize) const
 {
 	const auto it = cache_.find(blockType);
 	if (it == cache_.end()) {
@@ -201,7 +201,7 @@ Span<const uint8_t> V4L2StatsBase::block(unsigned int blockType, size_t blockSiz
  * class MyISPStats : public V4L2Stats<stats_traits>
  * {
  * public:
- * 	MyISPStats::MyISPStats(Span<uint8_t> data)
+ * 	MyISPStats::MyISPStats(std::span<uint8_t> data)
  * 		: V4L2Stats(data, V4L2_ISP_VERSION_V1)
  * 	{
  * 	}

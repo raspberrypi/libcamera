@@ -412,7 +412,7 @@ public:
 	SimplePipelineHandler(CameraManager *manager);
 
 	std::unique_ptr<CameraConfiguration> generateConfiguration(Camera *camera,
-								   Span<const StreamRole> roles) override;
+								   std::span<const StreamRole> roles) override;
 	int configure(Camera *camera, CameraConfiguration *config) override;
 
 	int exportFrameBuffers(Camera *camera, Stream *stream,
@@ -1407,7 +1407,7 @@ SimplePipelineHandler::SimplePipelineHandler(CameraManager *manager)
 }
 
 std::unique_ptr<CameraConfiguration>
-SimplePipelineHandler::generateConfiguration(Camera *camera, Span<const StreamRole> roles)
+SimplePipelineHandler::generateConfiguration(Camera *camera, std::span<const StreamRole> roles)
 {
 	SimpleCameraData *data = cameraData(camera);
 	std::unique_ptr<CameraConfiguration> config =
@@ -1603,9 +1603,9 @@ int SimplePipelineHandler::configure(Camera *camera, CameraConfiguration *c)
 	if (data->converter_) {
 		return data->converter_->configure(inputCfg, outputCfgs);
 	} else {
-		ipa::soft::IPAConfigInfo configInfo;
+		ipa::softisp::IPAConfigInfo configInfo;
 		configInfo.sensorControls = data->sensor_->controls();
-		return data->swIsp_->configure(inputCfg, outputCfgs, configInfo);
+		return data->swIsp_->configure(inputCfg, outputCfgs, configInfo, &data->controlInfo_);
 	}
 }
 
@@ -1880,16 +1880,6 @@ bool SimplePipelineHandler::matchDevice(std::shared_ptr<MediaDevice> media,
 		}
 	}
 
-	if (info.swIspEnabled) {
-		/*
-		 * When the software ISP is enabled, the simple pipeline handler
-		 * exposes the raw stream, giving a total of two streams. This
-		 * is mutually exclusive with the presence of a converter.
-		 */
-		ASSERT(!converter_);
-		numStreams = 2;
-	}
-
 	swIspEnabled_ = info.swIspEnabled;
 	const GlobalConfiguration &configuration = cameraManager()->_d()->configuration();
 	for (const ValueNode &entry :
@@ -1903,6 +1893,16 @@ bool SimplePipelineHandler::matchDevice(std::shared_ptr<MediaDevice> media,
 				<< info.driver << " to " << swIspEnabled_;
 			break;
 		}
+	}
+
+	if (swIspEnabled_) {
+		/*
+		 * When the software ISP is enabled, the simple pipeline handler
+		 * exposes the raw stream, giving a total of two streams. This
+		 * is mutually exclusive with the presence of a converter.
+		 */
+		ASSERT(!converter_);
+		numStreams = 2;
 	}
 
 	/* Locate the sensors. */

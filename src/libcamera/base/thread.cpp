@@ -433,7 +433,7 @@ bool Thread::wait(utils::duration duration)
  *
  * \return 0 if all indices are valid, -EINVAL otherwise
  */
-int Thread::setThreadAffinity(const Span<const unsigned int> &cpus)
+int Thread::setThreadAffinity(std::span<const unsigned int> cpus)
 {
 	const unsigned int numCpus = std::thread::hardware_concurrency();
 

@@ -73,6 +73,8 @@ In order to support rotating the image the sensor driver should support
 The controls must be writable from userspace. In case of a RAW Bayer sensors,
 drivers should correctly report if vertical/horizontal flips modify the Bayer
 pattern ordering by reporting the `V4L2_CTRL_FLAG_MODIFY_LAYOUT` control flag.
+If the flag is set for one of the two controls, it shall be set for the other
+one as well.
 
 The sensor driver should implement support for the V4L2 Selection API,
 specifically it should implement support for the

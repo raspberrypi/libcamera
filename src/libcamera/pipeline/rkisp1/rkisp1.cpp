@@ -187,7 +187,7 @@ public:
 	PipelineHandlerRkISP1(CameraManager *manager);
 
 	std::unique_ptr<CameraConfiguration> generateConfiguration(Camera *camera,
-								   Span<const StreamRole> roles) override;
+								   std::span<const StreamRole> roles) override;
 	int configure(Camera *camera, CameraConfiguration *config) override;
 
 	int exportFrameBuffers(Camera *camera, Stream *stream,
@@ -788,7 +788,7 @@ PipelineHandlerRkISP1::PipelineHandlerRkISP1(CameraManager *manager)
 
 std::unique_ptr<CameraConfiguration>
 PipelineHandlerRkISP1::generateConfiguration(Camera *camera,
-					     Span<const StreamRole> roles)
+					     std::span<const StreamRole> roles)
 {
 	RkISP1CameraData *data = cameraData(camera);
 
@@ -1176,7 +1176,7 @@ int PipelineHandlerRkISP1::allocateBuffers(Camera *camera)
 	auto pushBuffers = [&](const std::vector<std::unique_ptr<FrameBuffer>> &buffers,
 			       std::queue<FrameBuffer *> &queue) {
 		for (const std::unique_ptr<FrameBuffer> &buffer : buffers) {
-			Span<const FrameBuffer::Plane> planes = buffer->planes();
+			std::span<const FrameBuffer::Plane> planes = buffer->planes();
 
 			buffer->setCookie(ipaBufferId++);
 			data->ipaBuffers_.emplace_back(buffer->cookie(),

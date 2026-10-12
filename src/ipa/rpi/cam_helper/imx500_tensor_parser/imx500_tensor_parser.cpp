@@ -16,7 +16,6 @@
 #include <vector>
 
 #include <libcamera/base/log.h>
-#include <libcamera/base/span.h>
 
 #include "apParams.flatbuffers_generated.h"
 
@@ -631,7 +630,7 @@ int parseInputTensorBody(IMX500InputTensorInfo &inputTensorInfo, const uint8_t *
 } /* namespace */
 
 int RPiController::imx500ParseInputTensor(IMX500InputTensorInfo &inputTensorInfo,
-					  libcamera::Span<const uint8_t> inputTensor)
+					  std::span<const uint8_t> inputTensor)
 {
 	DnnHeader dnnHeader;
 	std::vector<uint8_t> apParams;
@@ -665,7 +664,7 @@ int RPiController::imx500ParseInputTensor(IMX500InputTensorInfo &inputTensorInfo
 }
 
 int RPiController::imx500ParseOutputTensor(IMX500OutputTensorInfo &outputTensorInfo,
-					   Span<const uint8_t> outputTensor)
+					   std::span<const uint8_t> outputTensor)
 {
 	DnnHeader dnnHeader;
 	std::vector<uint8_t> apParams;
@@ -705,7 +704,7 @@ int RPiController::imx500ParseOutputTensor(IMX500OutputTensorInfo &outputTensorI
 	return 0;
 }
 
-std::unordered_map<TensorType, IMX500Tensors> RPiController::imx500SplitTensors(Span<const uint8_t> tensors)
+std::unordered_map<TensorType, IMX500Tensors> RPiController::imx500SplitTensors(std::span<const uint8_t> tensors)
 {
 	const DnnHeader *outputHeader;
 	DnnHeader inputHeader;

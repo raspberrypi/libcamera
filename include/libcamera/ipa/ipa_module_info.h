@@ -16,7 +16,6 @@ namespace libcamera {
 struct IPAModuleInfo {
 	int moduleAPIVersion;
 	uint32_t pipelineVersion;
-	char pipelineName[256];
 	char name[256];
 } __attribute__((packed));
 

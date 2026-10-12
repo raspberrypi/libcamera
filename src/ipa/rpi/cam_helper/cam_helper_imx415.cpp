@@ -9,6 +9,8 @@
 
 #include "cam_helper.h"
 
+namespace {
+
 using namespace RPiController;
 
 class CamHelperImx415 : public CamHelper
@@ -56,9 +58,11 @@ unsigned int CamHelperImx415::hideFramesModeSwitch() const
 	return 1;
 }
 
-static CamHelper *create()
+CamHelper *create()
 {
 	return new CamHelperImx415();
 }
 
-static RegisterCamHelper reg("imx415", &create);
+RegisterCamHelper reg("imx415", &create);
+
+} /* namespace */

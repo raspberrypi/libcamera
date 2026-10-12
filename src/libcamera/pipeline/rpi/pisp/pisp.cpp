@@ -2263,7 +2263,7 @@ void PiSPCameraData::prepareCfe()
 
 	{
 		std::scoped_lock<FrontEnd> l(*fe_);
-		Span<uint8_t> configBuffer = config.mapped->planes()[0];
+		std::span<uint8_t> configBuffer = config.mapped->planes()[0];
 		fe_->Prepare(reinterpret_cast<pisp_fe_config *>(configBuffer.data()));
 	}
 
@@ -2298,7 +2298,7 @@ void PiSPCameraData::prepareBe(uint32_t bufferId, bool stitchSwapBuffers)
 	const RPi::BufferObject &config = isp_[Isp::Config].acquireBuffer();
 	ASSERT(config.mapped);
 
-	Span<uint8_t> configBufferSpan = config.mapped->planes()[0];
+	std::span<uint8_t> configBufferSpan = config.mapped->planes()[0];
 	pisp_be_tiles_config *configBuffer = reinterpret_cast<pisp_be_tiles_config *>(configBufferSpan.data());
 	be_->Prepare(configBuffer);
 

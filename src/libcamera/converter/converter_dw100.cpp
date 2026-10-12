@@ -501,7 +501,7 @@ int ConverterDW100Module::applyControls(const Stream *stream, const V4L2Request 
 		return 0;
 
 	std::vector<uint32_t> map = info.map.getVertexMap();
-	auto value = Span<const int32_t>(reinterpret_cast<const int32_t *>(&map[0]), map.size());
+	auto value = std::span(reinterpret_cast<const int32_t *>(&map[0]), map.size());
 
 	ControlList ctrls;
 	ctrls.set(V4L2_CID_DW100_DEWARPING_16x16_VERTEX_MAP, value);

@@ -117,9 +117,9 @@ class Control(object):
             return typ
 
         if self.__size:
-            return f"Span<const {typ}, {self.__size}>"
+            return f"std::span<const {typ}, {self.__size}>"
         else:
-            return f"Span<const {typ}>"
+            return f"std::span<const {typ}>"
 
     @property
     def direction(self):

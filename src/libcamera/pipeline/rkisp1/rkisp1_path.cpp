@@ -56,7 +56,7 @@ const std::map<PixelFormat, uint32_t> formatToMediaBus = {
 
 } /* namespace */
 
-RkISP1Path::RkISP1Path(const char *name, const Span<const PixelFormat> &formats,
+RkISP1Path::RkISP1Path(const char *name, std::span<const PixelFormat> formats,
 		       const Size &minResolution, const Size &maxResolution)
 	: name_(name), running_(false), formats_(formats),
 	  minResolution_(minResolution), maxResolution_(maxResolution),

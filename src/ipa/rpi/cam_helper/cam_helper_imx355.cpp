@@ -12,6 +12,8 @@
 
 #include "cam_helper.h"
 
+namespace {
+
 using namespace RPiController;
 
 class CamHelperImx355 : public CamHelper
@@ -61,9 +63,11 @@ bool CamHelperImx355::sensorEmbeddedDataPresent() const
 	return 0;
 }
 
-static CamHelper *create()
+CamHelper *create()
 {
 	return new CamHelperImx355();
 }
 
-static RegisterCamHelper reg("imx355", &create);
+RegisterCamHelper reg("imx355", &create);
+
+} /* namespace */

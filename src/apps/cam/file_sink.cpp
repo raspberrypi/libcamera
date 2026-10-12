@@ -158,7 +158,7 @@ void FileSink::writeBuffer(const Stream *stream, FrameBuffer *buffer,
 		 */
 		const unsigned int bytesused = buffer->metadata().planes()[i].bytesused;
 
-		Span<uint8_t> data = image->data(i);
+		std::span<uint8_t> data = image->data(i);
 		const unsigned int length = std::min<unsigned int>(bytesused, data.size());
 
 		if (bytesused > data.size())

@@ -178,7 +178,7 @@ void V4L2Device::close()
  * \return The control values in a ControlList on success, or an empty list on
  * error
  */
-ControlList V4L2Device::getControls(Span<const uint32_t> ids, const V4L2Request *request)
+ControlList V4L2Device::getControls(std::span<const uint32_t> ids, const V4L2Request *request)
 {
 	if (ids.empty())
 		return {};
@@ -210,7 +210,7 @@ ControlList V4L2Device::getControls(Span<const uint32_t> ids, const V4L2Request 
 		if (info.flags & V4L2_CTRL_FLAG_HAS_PAYLOAD) {
 			ControlType type;
 			ControlValue &value = ctrl.second;
-			Span<uint8_t> data;
+			std::span<uint8_t> data;
 
 			switch (info.type) {
 			case V4L2_CTRL_TYPE_U8:
@@ -330,7 +330,7 @@ int V4L2Device::setControls(ControlList *ctrls, const V4L2Request *request)
 		switch (iter->first->type()) {
 		case ControlTypeUnsigned16: {
 			if (value.isArray()) {
-				Span<uint8_t> data = value.data();
+				std::span<uint8_t> data = value.data();
 				v4l2Ctrl.p_u16 = reinterpret_cast<uint16_t *>(data.data());
 				v4l2Ctrl.size = data.size();
 			} else {
@@ -342,7 +342,7 @@ int V4L2Device::setControls(ControlList *ctrls, const V4L2Request *request)
 
 		case ControlTypeUnsigned32: {
 			if (value.isArray()) {
-				Span<uint8_t> data = value.data();
+				std::span<uint8_t> data = value.data();
 				v4l2Ctrl.p_u32 = reinterpret_cast<uint32_t *>(data.data());
 				v4l2Ctrl.size = data.size();
 			} else {
@@ -354,7 +354,7 @@ int V4L2Device::setControls(ControlList *ctrls, const V4L2Request *request)
 
 		case ControlTypeInteger32: {
 			if (value.isArray()) {
-				Span<uint8_t> data = value.data();
+				std::span<uint8_t> data = value.data();
 				v4l2Ctrl.p_u32 = reinterpret_cast<uint32_t *>(data.data());
 				v4l2Ctrl.size = data.size();
 			} else {
@@ -376,7 +376,7 @@ int V4L2Device::setControls(ControlList *ctrls, const V4L2Request *request)
 				return -EINVAL;
 			}
 
-			Span<uint8_t> data = value.data();
+			std::span<uint8_t> data = value.data();
 			v4l2Ctrl.p_u8 = data.data();
 			v4l2Ctrl.size = data.size();
 
@@ -805,7 +805,7 @@ void V4L2Device::updateControlInfo()
  * \param[in] v4l2Ctrls List of V4L2 extended controls as returned by the driver
  */
 void V4L2Device::updateControls(ControlList *ctrls,
-				Span<const v4l2_ext_control> v4l2Ctrls)
+				std::span<const v4l2_ext_control> v4l2Ctrls)
 {
 	for (const v4l2_ext_control &v4l2Ctrl : v4l2Ctrls) {
 		const unsigned int id = v4l2Ctrl.id;

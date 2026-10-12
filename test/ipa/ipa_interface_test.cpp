@@ -99,7 +99,7 @@ protected:
 		EventDispatcher *dispatcher = thread()->eventDispatcher();
 		Timer timer;
 
-		ipa_ = ipaManager_->createIPA<ipa::vimc::IPAProxyVimc>(pipe_.get(), 0, 0);
+		ipa_ = ipaManager_->createIPA<ipa::vimc::IPAProxyVimc>(pipe_->name(), 0, 0);
 		if (!ipa_) {
 			cerr << "Failed to create VIMC IPA interface" << endl;
 			return TestFail;

@@ -59,7 +59,7 @@ public:
 	void setRange(AfRange range) override;
 	void setSpeed(AfSpeed speed) override;
 	void setMetering(bool use_windows) override;
-	void setWindows(libcamera::Span<libcamera::Rectangle const> const &wins) override;
+	void setWindows(std::span<libcamera::Rectangle const> wins) override;
 	void setMode(AfMode mode) override;
 	AfMode getMode() const override;
 	double getDefaultLensPosition() const override;

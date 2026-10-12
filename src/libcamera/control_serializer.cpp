@@ -9,10 +9,10 @@
 
 #include <algorithm>
 #include <memory>
+#include <span>
 #include <vector>
 
 #include <libcamera/base/log.h>
-#include <libcamera/base/span.h>
 
 #include <libcamera/control_ids.h>
 #include <libcamera/controls.h>

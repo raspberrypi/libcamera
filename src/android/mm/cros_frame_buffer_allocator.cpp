@@ -29,7 +29,7 @@ class CrosFrameBufferData : public FrameBuffer::Private
 
 public:
 	CrosFrameBufferData(cros::ScopedBufferHandle scopedHandle,
-			    Span<const FrameBuffer::Plane> planes)
+			    std::span<const FrameBuffer::Plane> planes)
 		: FrameBuffer::Private(planes), scopedHandle_(std::move(scopedHandle))
 	{
 	}

@@ -190,7 +190,7 @@ void Exif::setRational(ExifIfd ifd, ExifTag tag, ExifRational item)
 	setRational(ifd, tag, { &item, 1 });
 }
 
-void Exif::setRational(ExifIfd ifd, ExifTag tag, Span<const ExifRational> items)
+void Exif::setRational(ExifIfd ifd, ExifTag tag, std::span<const ExifRational> items)
 {
 	ExifEntry *entry = createEntry(ifd, tag, EXIF_FORMAT_RATIONAL,
 				       items.size(),

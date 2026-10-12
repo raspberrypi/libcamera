@@ -74,7 +74,7 @@ void Lux::process(IPAContext &context,
 	if (!stats)
 		return;
 
-	utils::Duration exposureTime = context.configuration.sensor.lineDuration *
+	utils::Duration exposureTime = context.configuration.agc.lineDuration *
 				       frameContext.sensor.exposure;
 	double gain = frameContext.sensor.gain;
 

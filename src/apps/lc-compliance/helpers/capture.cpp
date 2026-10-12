@@ -23,7 +23,7 @@ Capture::~Capture()
 	stop();
 }
 
-void Capture::configure(libcamera::Span<const libcamera::StreamRole> roles)
+void Capture::configure(std::span<const libcamera::StreamRole> roles)
 {
 	assert(!roles.empty());
 

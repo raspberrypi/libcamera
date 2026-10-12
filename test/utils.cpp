@@ -8,11 +8,11 @@
 #include <iostream>
 #include <map>
 #include <optional>
+#include <span>
 #include <sstream>
 #include <string>
 #include <vector>
 
-#include <libcamera/base/span.h>
 #include <libcamera/base/utils.h>
 
 #include <libcamera/geometry.h>
@@ -99,7 +99,7 @@ protected:
 			return TestFail;
 		}
 
-		Span<const unsigned int> span{ integers };
+		std::span<const unsigned int> span{ integers };
 		i = 0;
 
 		for (auto [index, value] : utils::enumerate(span)) {

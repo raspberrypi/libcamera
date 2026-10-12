@@ -87,7 +87,7 @@ Image::Image() = default;
 
 Image::~Image()
 {
-	for (Span<uint8_t> &map : maps_)
+	for (std::span<uint8_t> &map : maps_)
 		munmap(map.data(), map.size());
 }
 
@@ -96,13 +96,13 @@ unsigned int Image::numPlanes() const
 	return planes_.size();
 }
 
-Span<uint8_t> Image::data(unsigned int plane)
+std::span<uint8_t> Image::data(unsigned int plane)
 {
 	assert(plane < planes_.size());
 	return planes_[plane];
 }
 
-Span<const uint8_t> Image::data(unsigned int plane) const
+std::span<const uint8_t> Image::data(unsigned int plane) const
 {
 	assert(plane < planes_.size());
 	return planes_[plane];

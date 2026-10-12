@@ -82,11 +82,11 @@ AwbGrey::calculateAwb(const AwbStats &stats, [[maybe_unused]] unsigned int lux,
 	/*
 	 * Estimate the red and blue gains to apply in a grey world. The green
 	 * gain is hardcoded to 1.0. Avoid divisions by zero by clamping the
-	 * divisor to a minimum value of 1.0.
+	 * divisor to a minimum value of 0.001.
 	 */
-	result.gains.r() = means.g() / std::max(means.r(), 1.0);
+	result.gains.r() = means.g() / std::max(means.r(), 0.001);
 	result.gains.g() = 1.0;
-	result.gains.b() = means.g() / std::max(means.b(), 1.0);
+	result.gains.b() = means.g() / std::max(means.b(), 0.001);
 	return result;
 }
 

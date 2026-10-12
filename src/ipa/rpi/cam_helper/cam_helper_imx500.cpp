@@ -16,7 +16,6 @@
 #include <string.h>
 
 #include <libcamera/base/log.h>
-#include <libcamera/base/span.h>
 
 #include <libcamera/control_ids.h>
 
@@ -55,7 +54,7 @@ public:
 	CamHelperImx500();
 	uint32_t gainCode(double gain) const override;
 	double gain(uint32_t gainCode) const override;
-	void prepare(libcamera::Span<const uint8_t> buffer, Metadata &metadata) override;
+	void prepare(std::span<const uint8_t> buffer, Metadata &metadata) override;
 	std::pair<uint32_t, uint32_t> getBlanking(Duration &exposure, Duration minFrameDuration,
 						  Duration maxFrameDuration) const override;
 	bool sensorEmbeddedDataPresent() const override;
@@ -71,7 +70,7 @@ private:
 	/* Largest long exposure scale factor given as a left shift on the frame length. */
 	static constexpr int longExposureShiftMax = 7;
 
-	void parseInferenceData(libcamera::Span<const uint8_t> buffer, Metadata &metadata);
+	void parseInferenceData(std::span<const uint8_t> buffer, Metadata &metadata);
 	void populateMetadata(const MdParser::RegisterMap &registers,
 			      Metadata &metadata) const override;
 
@@ -93,7 +92,7 @@ double CamHelperImx500::gain(uint32_t gainCode) const
 	return 1024.0 / (1024 - gainCode);
 }
 
-void CamHelperImx500::prepare(libcamera::Span<const uint8_t> buffer, Metadata &metadata)
+void CamHelperImx500::prepare(std::span<const uint8_t> buffer, Metadata &metadata)
 {
 	MdParser::RegisterMap registers;
 	DeviceStatus deviceStatus;
@@ -174,7 +173,7 @@ bool CamHelperImx500::sensorEmbeddedDataPresent() const
 	return true;
 }
 
-void CamHelperImx500::parseInferenceData(libcamera::Span<const uint8_t> buffer,
+void CamHelperImx500::parseInferenceData(std::span<const uint8_t> buffer,
 					 Metadata &metadata)
 {
 	/* Inference data comes after 2 lines of embedded data. */
@@ -194,7 +193,7 @@ void CamHelperImx500::parseInferenceData(libcamera::Span<const uint8_t> buffer,
 	unsigned int tensorBufferSize = buffer.size() - (StartLine * bytesPerLine);
 	std::unique_ptr<uint8_t[]> cache = std::make_unique<uint8_t[]>(tensorBufferSize);
 	memcpy(cache.get(), buffer.data() + StartLine * bytesPerLine, tensorBufferSize);
-	Span<const uint8_t> tensors(cache.get(), tensorBufferSize);
+	std::span<const uint8_t> tensors(cache.get(), tensorBufferSize);
 
 	std::unordered_map<TensorType, IMX500Tensors> offsets = RPiController::imx500SplitTensors(tensors);
 	auto itIn = offsets.find(TensorType::InputTensor);
@@ -204,12 +203,12 @@ void CamHelperImx500::parseInferenceData(libcamera::Span<const uint8_t> buffer,
 		const unsigned int inputTensorOffset = itIn->second.offset;
 		const unsigned int outputTensorOffset = itOut->second.offset;
 		const unsigned int inputTensorSize = outputTensorOffset - inputTensorOffset;
-		Span<const uint8_t> inputTensor;
+		std::span<const uint8_t> inputTensor;
 
 		if (itIn->second.valid) {
 			if (itOut->second.valid) {
 				/* Valid input and output tensor, get the span directly from the current cache. */
-				inputTensor = Span<const uint8_t>(cache.get() + inputTensorOffset,
+				inputTensor = std::span<const uint8_t>(cache.get() + inputTensorOffset,
 								  inputTensorSize);
 			} else {
 				/*
@@ -235,7 +234,7 @@ void CamHelperImx500::parseInferenceData(libcamera::Span<const uint8_t> buffer,
 			 * In such cases, use the previously saved input tensor
 			 * if possible.
 			 */
-			inputTensor = Span<const uint8_t>(savedInputTensor_.get(), inputTensorSize);
+			inputTensor = std::span<const uint8_t>(savedInputTensor_.get(), inputTensorSize);
 		}
 
 		if (inputTensor.size()) {
@@ -261,7 +260,7 @@ void CamHelperImx500::parseInferenceData(libcamera::Span<const uint8_t> buffer,
 
 	if (itOut != offsets.end() && itOut->second.valid) {
 		unsigned int outputTensorOffset = itOut->second.offset;
-		Span<const uint8_t> outputTensor(cache.get() + outputTensorOffset,
+		std::span<const uint8_t> outputTensor(cache.get() + outputTensorOffset,
 						 tensorBufferSize - outputTensorOffset);
 
 		IMX500OutputTensorInfo outputTensorInfo;

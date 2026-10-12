@@ -14,5 +14,5 @@ class SDLTexture1Plane final : public SDLTexture
 public:
 	using SDLTexture::SDLTexture;
 
-	void update(libcamera::Span<const libcamera::Span<const uint8_t>> data) override;
+	void update(std::span<const std::span<const uint8_t>> data) override;
 };

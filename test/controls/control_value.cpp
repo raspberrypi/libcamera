@@ -50,14 +50,14 @@ protected:
 		}
 
 		std::array<bool, 2> bools{ true, false };
-		value.set(Span<bool>(bools));
+		value.set(std::span<bool>(bools));
 		if (value.isNone() || !value.isArray() ||
 		    value.type() != ControlTypeBool) {
 			cerr << "Control type mismatch after setting to bool array" << endl;
 			return TestFail;
 		}
 
-		Span<const bool> boolsResult = value.get<Span<const bool>>();
+		std::span<const bool> boolsResult = value.get<std::span<const bool>>();
 		if (bools.size() != boolsResult.size() ||
 		    !std::equal(bools.begin(), bools.end(), boolsResult.begin())) {
 			cerr << "Control value mismatch after setting to bool" << endl;
@@ -90,14 +90,14 @@ protected:
 		}
 
 		std::array<uint8_t, 4> bytes{ 3, 14, 15, 9 };
-		value.set(Span<uint8_t>(bytes));
+		value.set(std::span<uint8_t>(bytes));
 		if (value.isNone() || !value.isArray() ||
 		    value.type() != ControlTypeByte) {
 			cerr << "Control type mismatch after setting to uint8_t array" << endl;
 			return TestFail;
 		}
 
-		Span<const uint8_t> int8sResult = value.get<Span<const uint8_t>>();
+		std::span<const uint8_t> int8sResult = value.get<std::span<const uint8_t>>();
 		if (bytes.size() != int8sResult.size() ||
 		    !std::equal(bytes.begin(), bytes.end(), int8sResult.begin())) {
 			cerr << "Control value mismatch after setting to uint8_t array" << endl;
@@ -130,14 +130,14 @@ protected:
 		}
 
 		std::array<uint16_t, 4> uint16s{ 3, 14, 15, 9 };
-		value.set(Span<uint16_t>(uint16s));
+		value.set(std::span<uint16_t>(uint16s));
 		if (value.isNone() || !value.isArray() ||
 		    value.type() != ControlTypeUnsigned16) {
 			cerr << "Control type mismatch after setting to uint16_t array" << endl;
 			return TestFail;
 		}
 
-		Span<const uint16_t> uint16sResult = value.get<Span<const uint16_t>>();
+		std::span<const uint16_t> uint16sResult = value.get<std::span<const uint16_t>>();
 		if (uint16s.size() != uint16sResult.size() ||
 		    !std::equal(uint16s.begin(), uint16s.end(), uint16sResult.begin())) {
 			cerr << "Control value mismatch after setting to uint16_t array" << endl;
@@ -170,14 +170,14 @@ protected:
 		}
 
 		std::array<uint32_t, 4> uint32s{ 3, 14, 15, 9 };
-		value.set(Span<uint32_t>(uint32s));
+		value.set(std::span<uint32_t>(uint32s));
 		if (value.isNone() || !value.isArray() ||
 		    value.type() != ControlTypeUnsigned32) {
 			cerr << "Control type mismatch after setting to uint32_t array" << endl;
 			return TestFail;
 		}
 
-		Span<const uint32_t> uint32sResult = value.get<Span<const uint32_t>>();
+		std::span<const uint32_t> uint32sResult = value.get<std::span<const uint32_t>>();
 		if (uint32s.size() != uint32sResult.size() ||
 		    !std::equal(uint32s.begin(), uint32s.end(), uint32sResult.begin())) {
 			cerr << "Control value mismatch after setting to uint32_t array" << endl;
@@ -210,14 +210,14 @@ protected:
 		}
 
 		std::array<int32_t, 4> int32s{ 3, 14, 15, 9 };
-		value.set(Span<int32_t>(int32s));
+		value.set(std::span<int32_t>(int32s));
 		if (value.isNone() || !value.isArray() ||
 		    value.type() != ControlTypeInteger32) {
 			cerr << "Control type mismatch after setting to int32_t array" << endl;
 			return TestFail;
 		}
 
-		Span<const int32_t> int32sResult = value.get<Span<const int32_t>>();
+		std::span<const int32_t> int32sResult = value.get<std::span<const int32_t>>();
 		if (int32s.size() != int32sResult.size() ||
 		    !std::equal(int32s.begin(), int32s.end(), int32sResult.begin())) {
 			cerr << "Control value mismatch after setting to int32_t array" << endl;
@@ -250,14 +250,14 @@ protected:
 		}
 
 		std::array<int64_t, 4> int64s{ 3, 14, 15, 9 };
-		value.set(Span<int64_t>(int64s));
+		value.set(std::span<int64_t>(int64s));
 		if (value.isNone() || !value.isArray() ||
 		    value.type() != ControlTypeInteger64) {
 			cerr << "Control type mismatch after setting to int64_t array" << endl;
 			return TestFail;
 		}
 
-		Span<const int64_t> int64sResult = value.get<Span<const int64_t>>();
+		std::span<const int64_t> int64sResult = value.get<std::span<const int64_t>>();
 		if (int64s.size() != int64sResult.size() ||
 		    !std::equal(int64s.begin(), int64s.end(), int64sResult.begin())) {
 			cerr << "Control value mismatch after setting to int64_t array" << endl;
@@ -290,14 +290,14 @@ protected:
 		}
 
 		std::array<float, 3> floats{ 3.141593, 2.718282, 299792458.0 };
-		value.set(Span<float>(floats));
+		value.set(std::span<float>(floats));
 		if (value.isNone() || !value.isArray() ||
 		    value.type() != ControlTypeFloat) {
 			cerr << "Control type mismatch after setting to float array" << endl;
 			return TestFail;
 		}
 
-		Span<const float> floatsResult = value.get<Span<const float>>();
+		std::span<const float> floatsResult = value.get<std::span<const float>>();
 		if (floats.size() != floatsResult.size() ||
 		    !std::equal(floats.begin(), floats.end(), floatsResult.begin())) {
 			cerr << "Control value mismatch after setting to float array" << endl;

@@ -7,12 +7,12 @@
 
 #pragma once
 
+#include <span>
 #include <stddef.h>
 #include <stdint.h>
 #include <type_traits>
 
 #include <libcamera/base/class.h>
-#include <libcamera/base/span.h>
 
 namespace libcamera {
 
@@ -39,7 +39,7 @@ public:
 	}
 
 	template<typename T>
-	int read(const Span<T> &data)
+	int read(std::span<T> data)
 	{
 		return read(reinterpret_cast<uint8_t *>(data.data()),
 			    data.size_bytes());
@@ -59,7 +59,7 @@ public:
 	}
 
 	template<typename T>
-	int write(const Span<T> &data)
+	int write(std::span<T> data)
 	{
 		return write(reinterpret_cast<const uint8_t *>(data.data()),
 			     data.size_bytes());

@@ -200,6 +200,7 @@ CameraSensor::~CameraSensor() = default;
  */
 
 /**
+ * \fn CameraSensor::imageStream()
  * \brief Retrieve the image source stream
  *
  * Sensors that produce multiple streams do not guarantee that the image stream
@@ -209,10 +210,6 @@ CameraSensor::~CameraSensor() = default;
  *
  * \return The image source stream
  */
-V4L2Subdevice::Stream CameraSensor::imageStream() const
-{
-	return { 0, 0 };
-}
 
 /**
  * \brief Retrieve the embedded data source stream

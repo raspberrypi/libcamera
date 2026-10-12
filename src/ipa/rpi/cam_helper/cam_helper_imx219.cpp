@@ -21,6 +21,8 @@
 #include "md_parser.h"
 #endif
 
+namespace {
+
 using namespace RPiController;
 
 /*
@@ -107,9 +109,11 @@ void CamHelperImx219::populateMetadata(const MdParser::RegisterMap &registers,
 	metadata.set("device.status", deviceStatus);
 }
 
-static CamHelper *create()
+CamHelper *create()
 {
 	return new CamHelperImx219();
 }
 
-static RegisterCamHelper reg("imx219", &create);
+RegisterCamHelper reg("imx219", &create);
+
+} /* namespace */

@@ -307,7 +307,7 @@ AwbBayes::calculateAwb(const AwbStats &stats, unsigned int lux,
 }
 
 double AwbBayes::coarseSearch(const ipa::Pwl &prior, const AwbStats &stats,
-			      Span<double> range) const
+			      std::span<double> range) const
 {
 	std::vector<Pwl::Point> points;
 	size_t bestPoint = 0;

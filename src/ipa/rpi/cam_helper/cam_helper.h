@@ -7,10 +7,10 @@
 #pragma once
 
 #include <memory>
+#include <span>
 #include <string>
 #include <utility>
 
-#include <libcamera/base/span.h>
 #include <libcamera/base/utils.h>
 
 #include "controller/camera_mode.h"
@@ -77,7 +77,7 @@ public:
 	virtual ~CamHelper();
 	void setCameraMode(const CameraMode &mode);
 	void setHwConfig(const Controller::HardwareConfig &hwConfig);
-	virtual void prepare(libcamera::Span<const uint8_t> buffer,
+	virtual void prepare(std::span<const uint8_t> buffer,
 			     Metadata &metadata);
 	virtual void process(StatisticsPtr &stats, Metadata &metadata);
 	virtual uint32_t exposureLines(const libcamera::utils::Duration exposure,
@@ -101,7 +101,7 @@ public:
 	virtual unsigned int getMinDebinFactor() const;
 
 protected:
-	void parseEmbeddedData(libcamera::Span<const uint8_t> buffer,
+	void parseEmbeddedData(std::span<const uint8_t> buffer,
 			       Metadata &metadata);
 	virtual void populateMetadata(const MdParser::RegisterMap &registers,
 				      Metadata &metadata) const;

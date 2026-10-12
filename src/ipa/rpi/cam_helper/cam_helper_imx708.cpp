@@ -17,15 +17,17 @@
 #include "cam_helper.h"
 #include "md_parser.h"
 
+namespace libcamera {
+LOG_DECLARE_CATEGORY(IPARPI)
+}
+
+namespace {
+
 using namespace RPiController;
 using namespace libcamera;
 using libcamera::utils::Duration;
 
 using namespace std::literals::chrono_literals;
-
-namespace libcamera {
-LOG_DECLARE_CATEGORY(IPARPI)
-}
 
 /*
  * We care about two gain registers and a pair of exposure registers. Their
@@ -50,7 +52,7 @@ public:
 	CamHelperImx708();
 	uint32_t gainCode(double gain) const override;
 	double gain(uint32_t gain_code) const override;
-	void prepare(libcamera::Span<const uint8_t> buffer, Metadata &metadata) override;
+	void prepare(std::span<const uint8_t> buffer, Metadata &metadata) override;
 	void process(StatisticsPtr &stats, Metadata &metadata) override;
 	std::pair<uint32_t, uint32_t> getBlanking(Duration &exposure, Duration minFrameDuration,
 						  Duration maxFrameDuration) const override;
@@ -104,7 +106,7 @@ double CamHelperImx708::gain(uint32_t gain_code) const
 	return 1024.0 / (1024 - gain_code);
 }
 
-void CamHelperImx708::prepare(libcamera::Span<const uint8_t> buffer, Metadata &metadata)
+void CamHelperImx708::prepare(std::span<const uint8_t> buffer, Metadata &metadata)
 {
 	MdParser::RegisterMap registers;
 	DeviceStatus deviceStatus;
@@ -367,12 +369,14 @@ void CamHelperImx708::putAGCStatistics(StatisticsPtr stats)
 	}
 }
 
-static CamHelper *create()
+CamHelper *create()
 {
 	return new CamHelperImx708();
 }
 
-static RegisterCamHelper reg("imx708", &create);
-static RegisterCamHelper regWide("imx708_wide", &create);
-static RegisterCamHelper regNoIr("imx708_noir", &create);
-static RegisterCamHelper regWideNoIr("imx708_wide_noir", &create);
+RegisterCamHelper reg("imx708", &create);
+RegisterCamHelper regWide("imx708_wide", &create);
+RegisterCamHelper regNoIr("imx708_noir", &create);
+RegisterCamHelper regWideNoIr("imx708_wide_noir", &create);
+
+} /* namespace */

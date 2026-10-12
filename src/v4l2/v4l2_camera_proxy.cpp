@@ -200,7 +200,7 @@ void V4L2CameraProxy::setFmtFromConfig(const StreamConfiguration &streamConfig)
 	const auto &it = controls.find(&controls::FrameDurationLimits);
 
 	if (it != controls.end()) {
-		Span<const int64_t, 2> duration = it->second.def().get<Span<const int64_t, 2>>();
+		std::span<const int64_t, 2> duration = it->second.def().get<std::span<const int64_t, 2>>();
 
 		v4l2TimePerFrame_.numerator = duration[0];
 		v4l2TimePerFrame_.denominator = 1000000;

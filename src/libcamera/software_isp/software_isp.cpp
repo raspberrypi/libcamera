@@ -75,9 +75,8 @@ LOG_DEFINE_CATEGORY(SoftwareIsp)
 /**
  * \brief Constructs SoftwareIsp object
  * \param[in] pipe The pipeline handler in use
- * \param[in] sensor Pointer to the CameraSensor instance owned by the pipeline
+ * \param[in] sensor Pointer to the CameraSensor instance owned by the pipeline handler
  * \param[out] ipaControls The IPA controls to update
- * handler
  */
 SoftwareIsp::SoftwareIsp(PipelineHandler *pipe, const CameraSensor *sensor,
 			 ControlInfoMap *ipaControls)
@@ -136,7 +135,7 @@ SoftwareIsp::SoftwareIsp(PipelineHandler *pipe, const CameraSensor *sensor,
 	debayer_->inputBufferReady.connect(this, &SoftwareIsp::inputReady);
 	debayer_->outputBufferReady.connect(this, &SoftwareIsp::outputReady);
 
-	ipa_ = pipe->createIPA<ipa::soft::IPAProxySoft>(0, 0);
+	ipa_ = pipe->createIPA<ipa::softisp::IPAProxySoftIsp>(0, 0);
 	if (!ipa_) {
 		LOG(SoftwareIsp, Error)
 			<< "Creating IPA for software ISP failed";
@@ -171,7 +170,7 @@ SoftwareIsp::SoftwareIsp(PipelineHandler *pipe, const CameraSensor *sensor,
 		return;
 	}
 
-	ipa_->setIspParams.connect(this, &SoftwareIsp::saveIspParams);
+	ipa_->paramsComputed.connect(this, &SoftwareIsp::saveIspParams);
 	ipa_->metadataReady.connect(this,
 				    [this](uint32_t frame, const ControlList &metadata) {
 					    metadataReady.emit(frame, metadata);
@@ -279,17 +278,18 @@ uint32_t SoftwareIsp::preferredInputStride(const PixelFormat &inputFormat, const
  * \brief Configure the SoftwareIsp object according to the passed in parameters
  * \param[in] inputCfg The input configuration
  * \param[in] outputCfgs The output configurations
- * \param[in] configInfo The IPA configuration data, received from the pipeline
- * handler
+ * \param[in] configInfo The IPA configuration data, received from the pipeline handler
+ * \param[out] ipaControls The IPA controls to update
  * \return 0 on success, a negative errno on failure
  */
 int SoftwareIsp::configure(const StreamConfiguration &inputCfg,
 			   const std::vector<std::reference_wrapper<const StreamConfiguration>> &outputCfgs,
-			   const ipa::soft::IPAConfigInfo &configInfo)
+			   const ipa::softisp::IPAConfigInfo &configInfo,
+			   ControlInfoMap *ipaControls)
 {
 	ASSERT(ipa_ && debayer_);
 
-	int ret = ipa_->configure(configInfo);
+	int ret = ipa_->configure(configInfo, ipaControls);
 	if (ret < 0)
 		return ret;
 
@@ -393,9 +393,14 @@ int SoftwareIsp::start()
  *
  * All pending buffers are returned back as canceled before this function
  * returns.
+ *
+ * This function will not take any action when the ISP is not already running.
  */
 void SoftwareIsp::stop()
 {
+	if (!ispWorkerThread_.isRunning())
+		return;
+
 	debayer_->invokeMethod(&Debayer::stop,
 			       ConnectionTypeBlocking);
 
@@ -432,7 +437,7 @@ void SoftwareIsp::process(uint32_t frame, FrameBuffer *input, FrameBuffer *outpu
 			       ConnectionTypeQueued, frame, input, output, debayerParams_);
 }
 
-void SoftwareIsp::saveIspParams()
+void SoftwareIsp::saveIspParams([[maybe_unused]] uint32_t frame)
 {
 	debayerParams_ = *sharedParams_;
 }

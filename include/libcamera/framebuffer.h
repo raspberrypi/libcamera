@@ -9,12 +9,12 @@
 
 #include <limits>
 #include <memory>
+#include <span>
 #include <stdint.h>
 #include <vector>
 
 #include <libcamera/base/class.h>
 #include <libcamera/base/shared_fd.h>
-#include <libcamera/base/span.h>
 
 namespace libcamera {
 
@@ -37,8 +37,8 @@ struct FrameMetadata {
 	unsigned int sequence;
 	uint64_t timestamp;
 
-	Span<Plane> planes() { return planes_; }
-	Span<const Plane> planes() const { return planes_; }
+	std::span<Plane> planes() { return planes_; }
+	std::span<const Plane> planes() const { return planes_; }
 
 private:
 	friend class FrameBuffer;
@@ -58,11 +58,11 @@ public:
 		unsigned int length;
 	};
 
-	FrameBuffer(Span<const Plane> planes, unsigned int cookie = 0);
+	FrameBuffer(std::span<const Plane> planes, uint64_t cookie = 0);
 	FrameBuffer(std::unique_ptr<Private> d);
 	virtual ~FrameBuffer() {}
 
-	Span<const Plane> planes() const;
+	std::span<const Plane> planes() const;
 	Request *request() const;
 	const FrameMetadata &metadata() const;
 

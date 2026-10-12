@@ -27,9 +27,9 @@
 #endif
 
 #include <cxxabi.h>
+#include <span>
 #include <sstream>
 
-#include <libcamera/base/span.h>
 #include <libcamera/base/utils.h>
 
 /**
@@ -291,7 +291,7 @@ std::string Backtrace::toString(unsigned int skipLevels) const
 		return std::string();
 
 	if (!backtraceText_.empty()) {
-		Span<const std::string> trace{ backtraceText_ };
+		std::span<const std::string> trace{ backtraceText_ };
 		return utils::join(trace.subspan(skipLevels), "");
 	}
 
@@ -301,7 +301,7 @@ std::string Backtrace::toString(unsigned int skipLevels) const
 	if (dwfl.isValid()) {
 		std::ostringstream msg;
 
-		Span<void *const> trace{ backtrace_ };
+		std::span<void *const> trace{ backtrace_ };
 		for (const void *ip : trace.subspan(skipLevels)) {
 			if (ip)
 				msg << dwfl.stackEntry(ip) << std::endl;
@@ -314,7 +314,7 @@ std::string Backtrace::toString(unsigned int skipLevels) const
 #endif
 
 #if HAVE_BACKTRACE
-	Span<void *const> trace{ backtrace_ };
+	std::span<void *const> trace{ backtrace_ };
 	trace = trace.subspan(skipLevels);
 
 	char **strings = backtrace_symbols(trace.data(), trace.size());

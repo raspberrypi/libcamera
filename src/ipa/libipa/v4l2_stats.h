@@ -8,11 +8,10 @@
 #pragma once
 
 #include <map>
+#include <span>
 #include <stdint.h>
 
 #include <linux/media/v4l2-isp.h>
-
-#include <libcamera/base/span.h>
 
 namespace libcamera {
 
@@ -21,17 +20,17 @@ namespace ipa {
 class V4L2StatsBase
 {
 public:
-	V4L2StatsBase(Span<uint8_t> data, unsigned int version);
+	V4L2StatsBase(std::span<uint8_t> data, unsigned int version);
 
-	Span<const uint8_t> block(unsigned int blockType, size_t blockSize) const;
+	std::span<const uint8_t> block(unsigned int blockType, size_t blockSize) const;
 	constexpr explicit operator bool()
 	{
 		return valid_;
 	}
 
 private:
-	std::map<uint16_t, Span<const uint8_t>> cache_;
-	Span<uint8_t> data_;
+	std::map<uint16_t, std::span<const uint8_t>> cache_;
+	std::span<uint8_t> data_;
 	bool valid_;
 };
 
@@ -41,7 +40,7 @@ class V4L2Stats : public V4L2StatsBase
 public:
 	static_assert(std::is_same_v<std::underlying_type_t<typename Traits::id_type>, uint16_t>);
 
-	V4L2Stats(Span<uint8_t> data, unsigned int version)
+	V4L2Stats(std::span<uint8_t> data, unsigned int version)
 		: V4L2StatsBase(data, version)
 	{
 	}

@@ -66,7 +66,7 @@ static ControlValue controlValueMaybeArray(const py::object &ob)
 {
 	if (py::isinstance<py::list>(ob) || py::isinstance<py::tuple>(ob)) {
 		std::vector<T> vec = ob.cast<std::vector<T>>();
-		return ControlValue(Span<const T>(vec));
+		return ControlValue(std::span<const T>(vec));
 	}
 
 	return ControlValue(ob.cast<T>());

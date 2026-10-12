@@ -109,7 +109,7 @@ int generateLut(const ipa::Pwl &pwl, uint32_t *lut, std::size_t lutSize,
 	return 0;
 }
 
-int generateDecompandLut(const ipa::Pwl &pwl, Span<uint16_t> lut)
+int generateDecompandLut(const ipa::Pwl &pwl, std::span<uint16_t> lut)
 {
 	if (pwl.empty())
 		return -EINVAL;
@@ -235,7 +235,7 @@ private:
 	void platformPrepareIsp(const PrepareParams &params,
 				RPiController::Metadata &rpiMetadata) override;
 	void platformPrepareAgc(RPiController::Metadata &rpiMetadata) override;
-	RPiController::StatisticsPtr platformProcessStats(Span<uint8_t> mem) override;
+	RPiController::StatisticsPtr platformProcessStats(std::span<uint8_t> mem) override;
 
 	void handleControls(const ControlList &controls) override;
 
@@ -503,7 +503,7 @@ void IpaPiSP::platformPrepareAgc(RPiController::Metadata &rpiMetadata)
 	be_->SetGlobal(global);
 }
 
-RPiController::StatisticsPtr IpaPiSP::platformProcessStats(Span<uint8_t> mem)
+RPiController::StatisticsPtr IpaPiSP::platformProcessStats(std::span<uint8_t> mem)
 {
 	using namespace RPiController;
 
@@ -537,8 +537,8 @@ RPiController::StatisticsPtr IpaPiSP::platformProcessStats(Span<uint8_t> mem)
 		statistics->focusRegions.set(i, { stats->cdaf.foms[i] >> 20, 0, 0 });
 
 	if (statsMetadataOutput_) {
-		Span<const uint8_t> statsSpan(reinterpret_cast<const uint8_t *>(stats),
-					      sizeof(pisp_statistics));
+		std::span statsSpan(reinterpret_cast<const uint8_t *>(stats),
+				    sizeof(pisp_statistics));
 		libcameraMetadata_.set(controls::rpi::PispStatsOutput, statsSpan);
 	}
 
@@ -1146,7 +1146,6 @@ extern "C" {
 const IPAModuleInfo ipaModuleInfo = {
 	IPA_MODULE_API_VERSION,
 	1,
-	"rpi/pisp",
 	"rpi/pisp",
 };
 

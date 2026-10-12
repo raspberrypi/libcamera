@@ -14,6 +14,7 @@
 
 #include <libcamera/framebuffer.h>
 
+#include "libcamera/internal/dma_buf_allocator.h"
 #include "libcamera/internal/mapped_framebuffer.h"
 
 #include "libyuv/convert.h"
@@ -127,7 +128,17 @@ int ImageFrameGenerator::generateFrame(const Size &size, const FrameBuffer *buff
 {
 	ASSERT(!scaledFrameDatas_.empty());
 
-	MappedFrameBuffer mappedFrameBuffer(buffer, MappedFrameBuffer::MapFlag::Write);
+	/*
+	 * \todo Assume all planes are contiguous and mapped at different
+	 * offsets on the same fd. This holds true as long as the implementation
+	 * of DmaBufAllocator only allocates contiguous planes. If this will
+	 * change or a different allocator will be used then we need to create
+	 * one dma syncer for each non-contiguous plane.
+	 */
+	DmaSyncer outDmaSyncer(buffer->planes()[0].fd,
+			       DmaSyncer::SyncType::Write);
+	MappedFrameBuffer mappedFrameBuffer(buffer,
+					    MappedFrameBuffer::MapFlag::Write);
 
 	const auto &planes = mappedFrameBuffer.planes();
 

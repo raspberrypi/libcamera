@@ -86,13 +86,13 @@ definition, and may be used as function parameter types or struct field types:
 
 - libcamera.ControlInfoMap
 - libcamera.ControlList
-- libcamera.FileDescriptor
 - libcamera.IPABuffer
 - libcamera.IPACameraSensorInfo
 - libcamera.IPASettings
 - libcamera.IPAStream
 - libcamera.Point
 - libcamera.Rectangle
+- libcamera.SharedFD
 - libcamera.Size
 - libcamera.SizeRange
 
@@ -124,14 +124,14 @@ The following is an example of a definition of a struct:
         struct ConfigInput {
                 uint32 op;
                 uint32 transform;
-                libcamera.FileDescriptor lsTableHandle;
+                libcamera.SharedFD lsTableHandle;
                 int32 lsTableHandleStatic = -1;
                 map<uint32, libcamera.IPAStream> streamConfig;
                 array<libcamera.IPABuffer> buffers;
         };
 
 This example has some special things about it. First of all, it uses the
-FileDescriptor data type. This type must be used to ensure that the file
+SharedFD data type. This type must be used to ensure that the file
 descriptor that it contains is translated properly across the IPC boundary
 (when the IPA is in an isolated process).
 
@@ -360,7 +360,7 @@ fills all fields with the default values, and a second constructor that takes
 a value for every field. The default value constructor will fill in the fields
 with the specified default value if it exists. In the above example, `gainDelay_`
 will be initialized to 1. If no default value is specified, then it will be
-filled in as zero (or -1 for a FileDescriptor type).
+filled in as zero (or -1 for a SharedFD type).
 
 All fields and constructors/destructors in these generated structs are public.
 

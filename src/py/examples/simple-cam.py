@@ -6,7 +6,7 @@
 # A simple libcamera capture example
 #
 # This is a python version of simple-cam from:
-# https://git.libcamera.org/libcamera/simple-cam.git
+# https://gitlab.freedesktop.org/camera/simple-cam.git
 #
 # \todo Move to simple-cam repository when the Python API has stabilized more
 

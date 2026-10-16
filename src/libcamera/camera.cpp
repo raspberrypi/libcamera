@@ -1119,7 +1119,7 @@ const std::set<Stream *> &Camera::streams() const
  * \return A CameraConfiguration if the requested roles can be satisfied, or a
  * null pointer otherwise.
  */
-std::unique_ptr<CameraConfiguration> Camera::generateConfiguration(Span<const StreamRole> roles)
+std::unique_ptr<CameraConfiguration> Camera::generateConfiguration(std::span<const StreamRole> roles)
 {
 	Private *const d = _d();
 

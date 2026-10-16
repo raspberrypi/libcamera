@@ -8,12 +8,12 @@
 #pragma once
 
 #include <memory>
+#include <span>
 #include <stdint.h>
 #include <vector>
 
 #include <libcamera/base/class.h>
 #include <libcamera/base/flags.h>
-#include <libcamera/base/span.h>
 
 #include <libcamera/framebuffer.h>
 
@@ -33,16 +33,16 @@ public:
 
 	unsigned int numPlanes() const;
 
-	libcamera::Span<uint8_t> data(unsigned int plane);
-	libcamera::Span<const uint8_t> data(unsigned int plane) const;
+	std::span<uint8_t> data(unsigned int plane);
+	std::span<const uint8_t> data(unsigned int plane) const;
 
 private:
 	LIBCAMERA_DISABLE_COPY(Image)
 
 	Image();
 
-	std::vector<libcamera::Span<uint8_t>> maps_;
-	std::vector<libcamera::Span<uint8_t>> planes_;
+	std::vector<std::span<uint8_t>> maps_;
+	std::vector<std::span<uint8_t>> planes_;
 };
 
 namespace libcamera {

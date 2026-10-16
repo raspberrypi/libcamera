@@ -7,10 +7,10 @@
 #pragma once
 
 #include <memory>
+#include <span>
 #include <string>
 #include <utility>
 
-#include <libcamera/base/span.h>
 #include <libcamera/base/utils.h>
 
 #include "controller/camera_mode.h"
@@ -56,12 +56,17 @@ namespace RPiController {
  * HideFramesModeSwitch(): Tell the pipeline handler not to return this
  *     many frames after a mode switch (other than start-up). Some sensors
  *     may produce innvalid frames after a mode switch; others may not.
- * MistrustFramesStartup(): At start-up a sensor may return frames for
- *    which we should not run any control algorithms (for example, metadata
- *    may be invalid).
- * MistrustFramesModeSwitch(): The number of frames, after a mode switch
- *    (other than start-up), for which control algorithms should not run
- *    (for example, metadata may be unreliable).
+ * mistrustMetadataStartup(): At start-up, a sensor may return this number of
+ *     frames with invalid metadata. This metadata cannot be relied upon by the
+ *     control algorithms.
+ * mistrustMetadataModeSwitch():  On a mode switch, a sensor may return this
+ *     number of frames with invalid metadata. This metadata cannot be relied
+ *     upon by the control algorithms.
+ * getMinDebinFactor(): the binning factor after which we should apply
+ *    "debinning", which corrects for the uneven spatial sampling of the
+ *    standard binning process. A return value of 2 means to enable
+ *    debinning for camera modes using 2x2, or larger, binning. A return
+ *    value of zero means never to enable debinning.
  */
 
 class CamHelper
@@ -72,7 +77,7 @@ public:
 	virtual ~CamHelper();
 	void setCameraMode(const CameraMode &mode);
 	void setHwConfig(const Controller::HardwareConfig &hwConfig);
-	virtual void prepare(libcamera::Span<const uint8_t> buffer,
+	virtual void prepare(std::span<const uint8_t> buffer,
 			     Metadata &metadata);
 	virtual void process(StatisticsPtr &stats, Metadata &metadata);
 	virtual uint32_t exposureLines(const libcamera::utils::Duration exposure,
@@ -91,11 +96,12 @@ public:
 	virtual double getModeSensitivity(const CameraMode &mode) const;
 	virtual unsigned int hideFramesStartup() const;
 	virtual unsigned int hideFramesModeSwitch() const;
-	virtual unsigned int mistrustFramesStartup() const;
-	virtual unsigned int mistrustFramesModeSwitch() const;
+	virtual unsigned int mistrustMetadataStartup() const;
+	virtual unsigned int mistrustMetadataModeSwitch() const;
+	virtual unsigned int getMinDebinFactor() const;
 
 protected:
-	void parseEmbeddedData(libcamera::Span<const uint8_t> buffer,
+	void parseEmbeddedData(std::span<const uint8_t> buffer,
 			       Metadata &metadata);
 	virtual void populateMetadata(const MdParser::RegisterMap &registers,
 				      Metadata &metadata) const;

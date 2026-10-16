@@ -46,6 +46,9 @@ public:
 		data_.clear();
 		lastInterpolatedKey_.reset();
 
+		if (yaml.isEmpty())
+			return -ENOENT;
+
 		if (!yaml.isList()) {
 			LOG(Interpolator, Error) << "yaml object must be a list";
 			return -EINVAL;

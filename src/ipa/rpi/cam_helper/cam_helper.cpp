@@ -58,7 +58,7 @@ CamHelper::~CamHelper()
 {
 }
 
-void CamHelper::prepare(Span<const uint8_t> buffer,
+void CamHelper::prepare(std::span<const uint8_t> buffer,
 			Metadata &metadata)
 {
 	parseEmbeddedData(buffer, metadata);
@@ -192,19 +192,25 @@ unsigned int CamHelper::hideFramesModeSwitch() const
 	return 0;
 }
 
-unsigned int CamHelper::mistrustFramesStartup() const
+unsigned int CamHelper::mistrustMetadataStartup() const
 {
-	/* Many sensors return a single bad frame on start-up. */
+	/* Many sensors return bad metadata on the first frame after start-up. */
 	return 1;
 }
 
-unsigned int CamHelper::mistrustFramesModeSwitch() const
+unsigned int CamHelper::mistrustMetadataModeSwitch() const
 {
 	/* Many sensors return valid metadata immediately. */
 	return 0;
 }
 
-void CamHelper::parseEmbeddedData(Span<const uint8_t> buffer,
+unsigned int CamHelper::getMinDebinFactor() const
+{
+	/* Most cameras require debinning from 2x2 binning upwards. */
+	return 2;
+}
+
+void CamHelper::parseEmbeddedData(std::span<const uint8_t> buffer,
 				  Metadata &metadata)
 {
 	MdParser::RegisterMap registers;

@@ -7,8 +7,7 @@
 #pragma once
 
 #include <optional>
-
-#include <libcamera/base/span.h>
+#include <span>
 
 #include "algorithm.h"
 
@@ -65,7 +64,7 @@ public:
 	virtual void setMetering([[maybe_unused]] bool use_windows)
 	{
 	}
-	virtual void setWindows([[maybe_unused]] libcamera::Span<libcamera::Rectangle const> const &wins)
+	virtual void setWindows([[maybe_unused]] std::span<libcamera::Rectangle const> wins)
 	{
 	}
 	virtual void setMode(AfMode mode) = 0;

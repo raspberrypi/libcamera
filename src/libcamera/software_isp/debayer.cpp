@@ -104,6 +104,14 @@ Debayer::~Debayer()
  */
 
 /**
+ * \fn uint32_t Debayer::preferredInputStride(const PixelFormat &inputFormat, const Size &size)
+ * Get the preferred input stride in bytes for the given input format and size
+ * \param[in] inputFormat The input format
+ * \param[in] size The input size (width and height in pixels)
+ * \return The preferred input stride in bytes or 0 if there is no preference
+ */
+
+/**
  * \fn void Debayer::process(uint32_t frame, FrameBuffer *input, FrameBuffer *output, DebayerParams params)
  * \brief Process the bayer data into the requested format
  * \param[in] frame The frame number
@@ -183,9 +191,6 @@ Debayer::~Debayer()
  *
  * Defines how the output of the debayer process is laid out in memory.
  * It includes per-pixel size, stride, and total frame size.
- *
- * \var Debayer::DebayerOutputConfig::bpp
- * Bytes used per pixel in the output format.
  *
  * \var Debayer::DebayerOutputConfig::stride
  * Line stride in bytes for the output frame.

@@ -50,7 +50,7 @@ public:
 		for (const auto &[i, algo] : utils::enumerate(list)) {
 			if (!algo.isDictionary()) {
 				LOG(IPAModuleAlgo, Error)
-					<< "Invalid YAML syntax for algorithm " << i;
+					<< "Invalid tuning data syntax for algorithm " << i;
 				algorithms_.clear();
 				return -EINVAL;
 			}

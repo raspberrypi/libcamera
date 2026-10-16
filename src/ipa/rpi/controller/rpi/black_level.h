@@ -6,6 +6,8 @@
  */
 #pragma once
 
+#include <libipa/pwl.h>
+
 #include "../black_level_algorithm.h"
 #include "../black_level_status.h"
 
@@ -27,6 +29,11 @@ private:
 	double blackLevelR_;
 	double blackLevelG_;
 	double blackLevelB_;
+
+	/* Black levels can vary with analogue gain instead of being constant. */
+	libcamera::ipa::Pwl blackLevelFuncR_;
+	libcamera::ipa::Pwl blackLevelFuncG_;
+	libcamera::ipa::Pwl blackLevelFuncB_;
 };
 
 } /* namespace RPiController */

@@ -429,7 +429,7 @@ std::string Pwl::toString() const
 
 #ifndef __DOXYGEN__
 /*
- * The YAML data shall be a list of numerical values with an even number of
+ * The value node shall be a list of numerical values with an even number of
  * elements. They are parsed in pairs into x and y points in the piecewise
  * linear function, and added in order. x must be monotonically increasing.
  */

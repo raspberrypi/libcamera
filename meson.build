@@ -2,7 +2,7 @@
 
 project('libcamera', 'c', 'cpp',
     meson_version : '>= 1.0.1',
-    version : '0.7.1',
+    version : '0.7.2',
     default_options : [
         'werror=true',
         'warning_level=2',
@@ -154,8 +154,8 @@ if cc.get_id() == 'clang'
 endif
 
 if cc.get_id() == 'gcc'
-    if cc.version().version_compare('<9')
-        error('gcc version is too old, libcamera requires 9.0 or newer')
+    if cc.version().version_compare('<10')
+        error('gcc version is too old, libcamera requires 10.0 or newer')
     endif
 
     # In C++20 mode, prior to gcc 11, object slicing in a return statement didn't
@@ -224,7 +224,7 @@ pipelines_support = {
     'simple':       ['any'],
     'uvcvideo':     ['any'],
     'vimc':         ['test'],
-    'virtual':      ['test'],
+    'virtual':      ['any'],
 }
 
 if wanted_pipelines.contains('all')

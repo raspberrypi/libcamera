@@ -56,7 +56,7 @@ class CameraCaptureContext:
         self.mfbs = {}
 
         for i in range(num_bufs):
-            # Use the buffer index as the "cookie"
+            # Use the camera index as the "cookie"
             req = cam.create_request(idx)
 
             buffer = allocator.buffers(stream)[i]

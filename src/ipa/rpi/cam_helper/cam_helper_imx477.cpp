@@ -17,13 +17,15 @@
 #include "cam_helper.h"
 #include "md_parser.h"
 
-using namespace RPiController;
-using namespace libcamera;
-using libcamera::utils::Duration;
-
 namespace libcamera {
 LOG_DECLARE_CATEGORY(IPARPI)
 }
+
+namespace {
+
+using namespace RPiController;
+using namespace libcamera;
+using libcamera::utils::Duration;
 
 /*
  * We care about two gain registers and a pair of exposure registers. Their
@@ -48,10 +50,11 @@ public:
 	CamHelperImx477();
 	uint32_t gainCode(double gain) const override;
 	double gain(uint32_t gainCode) const override;
-	void prepare(libcamera::Span<const uint8_t> buffer, Metadata &metadata) override;
+	void prepare(std::span<const uint8_t> buffer, Metadata &metadata) override;
 	std::pair<uint32_t, uint32_t> getBlanking(Duration &exposure, Duration minFrameDuration,
 						  Duration maxFrameDuration) const override;
 	bool sensorEmbeddedDataPresent() const override;
+	unsigned int mistrustMetadataStartup() const override;
 
 private:
 	/*
@@ -83,7 +86,7 @@ double CamHelperImx477::gain(uint32_t gainCode) const
 	return 1024.0 / (1024 - gainCode);
 }
 
-void CamHelperImx477::prepare(libcamera::Span<const uint8_t> buffer, Metadata &metadata)
+void CamHelperImx477::prepare(std::span<const uint8_t> buffer, Metadata &metadata)
 {
 	MdParser::RegisterMap registers;
 	DeviceStatus deviceStatus;
@@ -162,6 +165,11 @@ bool CamHelperImx477::sensorEmbeddedDataPresent() const
 	return true;
 }
 
+unsigned int CamHelperImx477::mistrustMetadataStartup() const
+{
+	return 0;
+}
+
 void CamHelperImx477::populateMetadata(const MdParser::RegisterMap &registers,
 				       Metadata &metadata) const
 {
@@ -178,9 +186,11 @@ void CamHelperImx477::populateMetadata(const MdParser::RegisterMap &registers,
 	metadata.set("device.status", deviceStatus);
 }
 
-static CamHelper *create()
+CamHelper *create()
 {
 	return new CamHelperImx477();
 }
 
-static RegisterCamHelper reg("imx477", &create);
+RegisterCamHelper reg("imx477", &create);
+
+} /* namespace */

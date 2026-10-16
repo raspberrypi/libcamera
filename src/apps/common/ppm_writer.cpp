@@ -19,7 +19,7 @@ using namespace libcamera;
 
 int PPMWriter::write(const char *filename,
 		     const StreamConfiguration &config,
-		     const Span<uint8_t> &data)
+		     std::span<uint8_t> data)
 {
 	struct FormatTransformation {
 		unsigned int rPos;

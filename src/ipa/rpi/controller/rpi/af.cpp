@@ -856,7 +856,7 @@ void Af::setMetering(bool mode)
 	}
 }
 
-void Af::setWindows(libcamera::Span<libcamera::Rectangle const> const &wins)
+void Af::setWindows(std::span<libcamera::Rectangle const> wins)
 {
 	windows_.clear();
 	for (auto &w : wins) {

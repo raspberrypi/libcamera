@@ -61,6 +61,35 @@ document:
   Code Style for indentation, braces, spacing, etc
 * Headers are guarded by the use of '#pragma once'
 
+
+Headers
+-------
+
+Every source file shall ensure that all types and symbols it uses are declared,
+either by including corresponding headers, or providing forward declarations.
+Forward declarations should be used as much as possible in header files to
+reduce compilation time.
+
+Relying on types and symbols being provided by indirect includes increases the
+risk of compilation breakages, due either to code changes altering which
+headers get indirectly include, or to indirect inclusions not being identical
+across all configurations. The latter category is particularly difficult to
+guard against through CI and can affect end users.
+
+For these reasons, relying on indirect includes to provide type declarations is
+prohibited, except when the nature of an included headers guarantees that it
+provides such declarations:
+
+* Code that declares a class inheriting from a base class can assume the header
+  for the base class provides declarations for all types used as arguments of
+  virtual functions.
+* Code that implements member functions of a class can assume the header for
+  the class provides declarations for all types used as arguments to the class'
+  member functions.
+
+In those cases, header files may skip forward declarations and source files may
+skip inclusion of headers.
+
 Order of Includes
 ~~~~~~~~~~~~~~~~~
 

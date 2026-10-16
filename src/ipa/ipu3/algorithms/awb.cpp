@@ -13,8 +13,6 @@
 
 #include <libcamera/control_ids.h>
 
-#include "libipa/colours.h"
-
 /**
  * \file awb.h
  */
@@ -26,11 +24,77 @@ namespace ipa::ipu3::algorithms {
 LOG_DEFINE_CATEGORY(IPU3Awb)
 
 /*
- * When zones are used for the grey world algorithm, they are only considered if
- * their average green value is at least 16/255 (after black level subtraction)
- * to exclude zones that are too dark and don't provide relevant colour
- * information (on the opposite side of the spectrum, saturated regions are
- * excluded by the ImgU statistics engine).
+ * \todo IPU3 doesn't support the Lux algorithm.
+ */
+static constexpr unsigned int kDefaultLux = 500;
+
+/**
+ * \brief The IPU3 specific implementation of AwbStats
+ */
+class Ipu3AwbStats final : public AwbStats
+{
+public:
+	Ipu3AwbStats() = default;
+
+	/**
+	 * \brief Constructs an Ipu3AwbStats object with the given RGB means
+	 *
+	 * \param rgbMeans A vector of doubles representing the RGB mean values
+	 */
+	Ipu3AwbStats(const RGB<double> &rgbMeans)
+		: rgbMeans_(rgbMeans)
+	{
+		rg_ = rgbMeans_.r() / rgbMeans_.g();
+		bg_ = rgbMeans_.b() / rgbMeans_.g();
+	}
+
+	double computeColourError(const RGB<double> &gains) const override;
+	bool valid() const override;
+	RGB<double> rgbMeans() const override;
+
+private:
+	RGB<double> rgbMeans_;
+	double rg_;
+	double bg_;
+};
+
+double Ipu3AwbStats::computeColourError(const RGB<double> &gains) const
+{
+	/*
+	 * Compute the sum of the squared colour error (non-greyness) as
+	 * it appears in the log likelihood equation.
+	 */
+	double deltaR = gains.r() * rg_ - 1.0;
+	double deltaB = gains.b() * bg_ - 1.0;
+	double delta2 = deltaR * deltaR + deltaB * deltaB;
+
+	return delta2;
+}
+
+bool Ipu3AwbStats::valid() const
+{
+	/*
+	 * This validity assessment is designed to allow libipa to decide
+	 * whether there's enough information in the statistics for a frame to
+	 * be useful. The IPU3 implementation already drops any statistics zone
+	 * with an average value below a threshold though so we don't need to do
+	 * it in libipa. Report all stats as valid.
+	 */
+
+	return true;
+}
+
+RGB<double> Ipu3AwbStats::rgbMeans() const
+{
+	return rgbMeans_;
+}
+
+/*
+ * Zones are only considered if their average green value is at least
+ * kMinGreenLevelInZone/255 (after black level subtraction) to exclude zones
+ * that are too dark and don't provide relevant colour information (on the
+ * opposite side of the spectrum, saturated regions are excluded by the ImgU
+ * statistics engine).
  */
 static constexpr uint32_t kMinGreenLevelInZone = 16;
 
@@ -74,26 +138,6 @@ static constexpr uint32_t kMinCellsPerZoneRatio = 255 * 90 / 100;
  * \brief Sum of the average blue values of each unsaturated cell in the zone
  */
 
-/**
- * \struct Awb::AwbStatus
- * \brief AWB parameters calculated
- *
- * The AwbStatus structure is intended to store the AWB
- * parameters calculated by the algorithm
- *
- * \var AwbStatus::temperatureK
- * \brief Color temperature calculated
- *
- * \var AwbStatus::redGain
- * \brief Gain calculated for the red channel
- *
- * \var AwbStatus::greenGain
- * \brief Gain calculated for the green channel
- *
- * \var AwbStatus::blueGain
- * \brief Gain calculated for the blue channel
- */
-
 /* Default settings for Bayer noise reduction replicated from the Kernel */
 static const struct ipu3_uapi_bnr_static_config imguCssBnrDefaults = {
 	.wb_gains = { 16, 16, 16, 16 },
@@ -112,20 +156,9 @@ static const struct ipu3_uapi_bnr_static_config imguCssBnrDefaults = {
 	.opt_center_sqr = { 419904, 133956 },
 };
 
-/* Default color correction matrix defined as an identity matrix */
-static const struct ipu3_uapi_ccm_mat_config imguCssCcmDefault = {
-	8191, 0, 0, 0,
-	0, 8191, 0, 0,
-	0, 0, 8191, 0
-};
-
 /**
  * \class Awb
- * \brief A Grey world white balance correction algorithm
- *
- * The Grey World algorithm assumes that the scene, in average, is neutral grey.
- * Reference: Lam, Edmund & Fung, George. (2008). Automatic White Balancing in
- * Digital Photography. 10.1201/9781420054538.ch10.
+ * \brief The IPU3 white balance correction algorithm implementation
  *
  * The IPU3 generates statistics from the Bayer Down Scaler output into a grid
  * defined in the ipu3_uapi_awb_config_s structure.
@@ -175,27 +208,25 @@ static const struct ipu3_uapi_ccm_mat_config imguCssCcmDefault = {
  * cells are ignored. The grid configuration is computed by
  * IPAIPU3::calculateBdsGrid().
  *
- * Before calculating the gains, the algorithm aggregates the cell averages for
- * each zone in generateAwbStats(). Cells that have a too high ratio of
- * saturated pixels are ignored, and only zones that contain enough
- * non-saturated cells are then used by the algorithm.
- *
- * The Grey World algorithm will then estimate the red and blue gains to apply, and
- * store the results in the metadata. The green gain is always set to 1.
+ * Before running the AWB algorithm, we aggregate the cell averages for each
+ * zone in generateAwbStats(). Cells that have a too high ratio of saturated
+ * pixels are ignored, and only zones that contain enough non-saturated cells
+ * are then used by the algorithm.
  */
 
 Awb::Awb()
 	: Algorithm()
 {
-	asyncResults_.blueGain = 1.0;
-	asyncResults_.greenGain = 1.0;
-	asyncResults_.redGain = 1.0;
-	asyncResults_.temperatureK = 4500;
-
 	zones_.reserve(kAwbStatsSizeX * kAwbStatsSizeY);
 }
 
-Awb::~Awb() = default;
+/**
+ * \copydoc libcamera::ipa::Algorithm::init
+ */
+int Awb::init(IPAContext &context, const ValueNode &tuningData)
+{
+	return awbAlgo_.init(tuningData, context.ctrlMap);
+}
 
 /**
  * \copydoc libcamera::ipa::Algorithm::configure
@@ -206,18 +237,31 @@ int Awb::configure(IPAContext &context,
 	const ipu3_uapi_grid_config &grid = context.configuration.grid.bdsGrid;
 	stride_ = context.configuration.grid.stride;
 
+	awbAlgo_.configure(context.activeState.awb);
+
 	cellsPerZoneX_ = std::round(grid.width / static_cast<double>(kAwbStatsSizeX));
 	cellsPerZoneY_ = std::round(grid.height / static_cast<double>(kAwbStatsSizeY));
 
 	/*
 	 * Configure the minimum proportion of cells counted within a zone
-	 * for it to be relevant for the grey world algorithm.
+	 * for it to be used.
 	 * \todo This proportion could be configured.
 	 */
 	cellsPerZoneThreshold_ = cellsPerZoneX_ * cellsPerZoneY_ * kMaxCellSaturationRatio;
 	LOG(IPU3Awb, Debug) << "Threshold for AWB is set to " << cellsPerZoneThreshold_;
 
 	return 0;
+}
+
+/**
+ * \copydoc libcamera::ipa::Algorithm::queueRequest
+ */
+void Awb::queueRequest(IPAContext &context, const uint32_t frame,
+		       IPAFrameContext &frameContext,
+		       const ControlList &controls)
+{
+	awbAlgo_.queueRequest(context.activeState.awb, frame, frameContext.awb,
+			      controls);
 }
 
 constexpr uint16_t Awb::threshold(float value)
@@ -246,11 +290,12 @@ constexpr uint16_t Awb::gainValue(double gain)
 /**
  * \copydoc libcamera::ipa::Algorithm::prepare
  */
-void Awb::prepare(IPAContext &context,
-		  [[maybe_unused]] const uint32_t frame,
-		  [[maybe_unused]] IPAFrameContext &frameContext,
-		  ipu3_uapi_params *params)
+void Awb::prepare(IPAContext &context, [[maybe_unused]] const uint32_t frame,
+		  IPAFrameContext &frameContext,
+		  [[maybe_unused]] ipu3_uapi_params *params)
 {
+	awbAlgo_.prepare(context.activeState.awb, frameContext.awb);
+
 	/*
 	 * Green saturation thresholds are reduced because we are using the
 	 * green channel only in the exposure computation.
@@ -288,19 +333,14 @@ void Awb::prepare(IPAContext &context,
 	params->acc_param.bnr.opt_center_sqr.y_sqr_reset = params->acc_param.bnr.opt_center.y_reset
 							* params->acc_param.bnr.opt_center.y_reset;
 
-	params->acc_param.bnr.wb_gains.gr = gainValue(context.activeState.awb.gains.green);
-	params->acc_param.bnr.wb_gains.r  = gainValue(context.activeState.awb.gains.red);
-	params->acc_param.bnr.wb_gains.b  = gainValue(context.activeState.awb.gains.blue);
-	params->acc_param.bnr.wb_gains.gb = gainValue(context.activeState.awb.gains.green);
 
-	LOG(IPU3Awb, Debug) << "Color temperature estimated: " << asyncResults_.temperatureK;
-
-	/* The CCM matrix may change when color temperature will be used */
-	params->acc_param.ccm = imguCssCcmDefault;
+	params->acc_param.bnr.wb_gains.gr = gainValue(frameContext.awb.gains.g());
+	params->acc_param.bnr.wb_gains.r = gainValue(frameContext.awb.gains.r());
+	params->acc_param.bnr.wb_gains.b = gainValue(frameContext.awb.gains.b());
+	params->acc_param.bnr.wb_gains.gb = gainValue(frameContext.awb.gains.g());
 
 	params->use.acc_awb = 1;
 	params->use.acc_bnr = 1;
-	params->use.acc_ccm = 1;
 }
 
 /* Generate an RGB vector with the average values for each zone */
@@ -378,9 +418,17 @@ void Awb::clearAwbStats()
 	}
 }
 
-void Awb::awbGreyWorld()
+Ipu3AwbStats Awb::calculateRgbMeans(const ipu3_uapi_stats_3a *stats)
 {
-	LOG(IPU3Awb, Debug) << "Grey world AWB";
+	ASSERT(stats->stats_3a_status.awb_en);
+
+	clearAwbStats();
+	generateAwbStats(stats);
+	generateZones();
+
+	if (zones_.size() <= 10)
+		return {};
+
 	/*
 	 * Make a separate list of the derivatives for each of red and blue, so
 	 * that we can sort them to exclude the extreme gains. We could
@@ -411,66 +459,21 @@ void Awb::awbGreyWorld()
 	double redGain = sumRed.g() / (sumRed.r() + 1),
 	       blueGain = sumBlue.g() / (sumBlue.b() + 1);
 
-	/* Color temperature is not relevant in Grey world but still useful to estimate it :-) */
-	asyncResults_.temperatureK = estimateCCT({{ sumRed.r(), sumRed.g(), sumBlue.b() }});
-
-	/*
-	 * Gain values are unsigned integer value ranging [0, 8) with 13 bit
-	 * fractional part.
-	 */
-	redGain = std::clamp(redGain, 0.0, 65535.0 / 8192);
-	blueGain = std::clamp(blueGain, 0.0, 65535.0 / 8192);
-
-	asyncResults_.redGain = redGain;
-	/* Hardcode the green gain to 1.0. */
-	asyncResults_.greenGain = 1.0;
-	asyncResults_.blueGain = blueGain;
-}
-
-void Awb::calculateWBGains(const ipu3_uapi_stats_3a *stats)
-{
-	ASSERT(stats->stats_3a_status.awb_en);
-
-	clearAwbStats();
-	generateAwbStats(stats);
-	generateZones();
-
-	LOG(IPU3Awb, Debug) << "Valid zones: " << zones_.size();
-
-	if (zones_.size() > 10) {
-		awbGreyWorld();
-		LOG(IPU3Awb, Debug) << "Gain found for red: " << asyncResults_.redGain
-				    << " and for blue: " << asyncResults_.blueGain;
-	}
+	return Ipu3AwbStats({ { 1.0 / redGain, 1.0, 1.0 / blueGain } });
 }
 
 /**
  * \copydoc libcamera::ipa::Algorithm::process
  */
 void Awb::process(IPAContext &context, [[maybe_unused]] const uint32_t frame,
-		  [[maybe_unused]] IPAFrameContext &frameContext,
-		  const ipu3_uapi_stats_3a *stats,
-		  [[maybe_unused]] ControlList &metadata)
+		  IPAFrameContext &frameContext,
+		  [[maybe_unused]] const ipu3_uapi_stats_3a *stats,
+		  ControlList &metadata)
 {
-	calculateWBGains(stats);
+	Ipu3AwbStats awbStats = calculateRgbMeans(stats);
 
-	/*
-	 * Gains are only recalculated if enough zones were detected.
-	 * The results are cached, so if no results were calculated, we set the
-	 * cached values from asyncResults_ here.
-	 */
-	context.activeState.awb.gains.blue = asyncResults_.blueGain;
-	context.activeState.awb.gains.green = asyncResults_.greenGain;
-	context.activeState.awb.gains.red = asyncResults_.redGain;
-	context.activeState.awb.temperatureK = asyncResults_.temperatureK;
-
-	metadata.set(controls::AwbEnable, true);
-	metadata.set(controls::ColourGains, {
-			static_cast<float>(context.activeState.awb.gains.red),
-			static_cast<float>(context.activeState.awb.gains.blue)
-		});
-	metadata.set(controls::ColourTemperature,
-		     context.activeState.awb.temperatureK);
+	awbAlgo_.process(context.activeState.awb, frameContext.awb, awbStats,
+			 kDefaultLux, metadata);
 }
 
 REGISTER_IPA_ALGORITHM(Awb, "Awb")

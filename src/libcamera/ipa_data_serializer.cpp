@@ -29,7 +29,7 @@ LOG_DEFINE_CATEGORY(IPADataSerializer)
  * Static template class that provides functions for serializing and
  * deserializing IPA data.
  *
- * \todo Switch to Span instead of byte and fd vector
+ * \todo Switch to std::span instead of byte and fd vector
  *
  * \todo Harden the vector and map deserializer
  *

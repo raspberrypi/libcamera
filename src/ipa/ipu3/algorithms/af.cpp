@@ -354,7 +354,7 @@ void Af::afIgnoreFrameReset()
  *
  * \return The variance of the values in the data set \a y_item selected by \a isY1
  */
-double Af::afEstimateVariance(Span<const y_table_item_t> y_items, bool isY1)
+double Af::afEstimateVariance(std::span<const y_table_item_t> y_items, bool isY1)
 {
 	uint32_t total = 0;
 	double mean;
@@ -430,8 +430,8 @@ void Af::process(IPAContext &context, [[maybe_unused]] const uint32_t frame,
 
 	ASSERT(afRawBufferLen < IPU3_UAPI_AF_Y_TABLE_MAX_SIZE);
 
-	Span<const y_table_item_t> y_items(reinterpret_cast<const y_table_item_t *>(&stats->af_raw_buffer.y_table),
-					   afRawBufferLen);
+	std::span y_items(reinterpret_cast<const y_table_item_t *>(&stats->af_raw_buffer.y_table),
+			  afRawBufferLen);
 
 	/*
 	 * Calculate the mean and the variance of AF statistics for a given grid.

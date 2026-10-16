@@ -11,12 +11,12 @@
 #include <list>
 #include <map>
 #include <memory>
+#include <span>
 #include <stdint.h>
 #include <string>
 #include <vector>
 
 #include <libcamera/base/signal.h>
-#include <libcamera/base/span.h>
 
 #include <libdrm/drm.h>
 #include <xf86drm.h>
@@ -129,7 +129,7 @@ private:
 class Blob : public Object
 {
 public:
-	Blob(Device *dev, const libcamera::Span<const uint8_t> &data);
+	Blob(Device *dev, std::span<const uint8_t> data);
 	~Blob();
 
 	bool isValid() const { return id() != 0; }

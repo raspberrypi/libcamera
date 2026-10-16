@@ -74,7 +74,7 @@ int DefectPixelClusterCorrection::init([[maybe_unused]] IPAContext &context,
 		const ValueNode &set = setsObject[i];
 		uint16_t value;
 
-		/* Enable set if described in YAML tuning file. */
+		/* Enable set if described in tuning data. */
 		config_.set_use |= 1 << i;
 
 		/* PG Method */

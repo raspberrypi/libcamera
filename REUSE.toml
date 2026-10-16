@@ -1,7 +1,7 @@
 version = 1
 SPDX-PackageName = "libcamera"
 SPDX-PackageSupplier = "Laurent Pinchart <laurent.pinchart@ideasonboard.com>"
-SPDX-PackageDownloadLocation = "https://git.libcamera.org/libcamera/libcamera.git/"
+SPDX-PackageDownloadLocation = "https://gitlab.freedesktop.org/camera/libcamera"
 
 [[annotations]]
 path = [

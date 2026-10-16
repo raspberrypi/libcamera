@@ -89,7 +89,7 @@ void PostProcessorJpeg::generateThumbnail(const FrameBuffer &source,
 		 * Thumbnailer::createThumbnailer above and remove the manual
 		 * planes split from here.
 		 */
-		std::vector<Span<uint8_t>> thumbnailPlanes;
+		std::vector<std::span<uint8_t>> thumbnailPlanes;
 		const PixelFormatInfo &formatNV12 = PixelFormatInfo::info(formats::NV12);
 		size_t yPlaneSize = formatNV12.planeSize(targetSize, 0);
 		size_t uvPlaneSize = formatNV12.planeSize(targetSize, 1);

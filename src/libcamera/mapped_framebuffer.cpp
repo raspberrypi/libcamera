@@ -43,7 +43,7 @@ LOG_DECLARE_CATEGORY(Buffer)
  * \typedef MappedBuffer::Plane
  * \brief A mapped region of memory accessible to the CPU
  *
- * The MappedBuffer::Plane uses the Span interface to describe the mapped memory
+ * The MappedBuffer::Plane uses std::span to describe the mapped memory
  * region.
  */
 
@@ -117,7 +117,7 @@ MappedBuffer::~MappedBuffer()
  * \brief Retrieve the mapped planes
  *
  * This function retrieves the successfully mapped planes stored as a vector
- * of Span<uint8_t> to provide access to the mapped memory.
+ * of std::span<uint8_t> to provide access to the mapped memory.
  *
  * \return A vector of the mapped planes
  */

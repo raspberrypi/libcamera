@@ -24,6 +24,7 @@
 
 #include "libcamera/internal/bayer_format.h"
 #include "libcamera/internal/camera_manager.h"
+#include "libcamera/internal/formats.h"
 #include "libcamera/internal/framebuffer.h"
 #include "libcamera/internal/global_configuration.h"
 #include "libcamera/internal/mapped_framebuffer.h"
@@ -469,26 +470,8 @@ int DebayerCpu::getInputConfig(PixelFormat inputFormat, DebayerInputConfig &conf
 		return 0;
 	}
 
-	LOG(Debayer, Info)
-		<< "Unsupported input format " << inputFormat.toString();
-	return -EINVAL;
-}
-
-int DebayerCpu::getOutputConfig(PixelFormat outputFormat, DebayerOutputConfig &config)
-{
-	if (outputFormat == formats::RGB888 || outputFormat == formats::BGR888) {
-		config.bpp = 24;
-		return 0;
-	}
-
-	if (outputFormat == formats::XRGB8888 || outputFormat == formats::ARGB8888 ||
-	    outputFormat == formats::XBGR8888 || outputFormat == formats::ABGR8888) {
-		config.bpp = 32;
-		return 0;
-	}
-
-	LOG(Debayer, Info)
-		<< "Unsupported output format " << outputFormat.toString();
+	LOG(Debayer, Debug)
+		<< "Unsupported input format " << inputFormat;
 	return -EINVAL;
 }
 
@@ -643,8 +626,11 @@ int DebayerCpu::configure(const StreamConfiguration &inputCfg,
 			  const std::vector<std::reference_wrapper<const StreamConfiguration>> &outputCfgs,
 			  bool ccmEnabled)
 {
-	if (getInputConfig(inputCfg.pixelFormat, inputConfig_) != 0)
+	if (getInputConfig(inputCfg.pixelFormat, inputConfig_) != 0) {
+		LOG(Debayer, Error)
+			<< "Unsupported input format " << inputCfg.pixelFormat;
 		return -EINVAL;
+	}
 
 	if (stats_->configure(inputCfg, threads_.size()) != 0)
 		return -EINVAL;
@@ -776,15 +762,9 @@ std::vector<PixelFormat> DebayerCpu::formats(PixelFormat inputFormat)
 std::tuple<unsigned int, unsigned int>
 DebayerCpu::strideAndFrameSize(const PixelFormat &outputFormat, const Size &size)
 {
-	DebayerCpu::DebayerOutputConfig config;
-
-	if (getOutputConfig(outputFormat, config) != 0)
-		return std::make_tuple(0, 0);
-
 	/* round up to multiple of 8 for 64 bits alignment */
-	unsigned int stride = (size.width * config.bpp / 8 + 7) & ~7;
-
-	return std::make_tuple(stride, stride * size.height);
+	const PixelFormatInfo &info = PixelFormatInfo::info(outputFormat);
+	return std::make_tuple(info.stride(size.width, 0, 8), info.frameSize(size, 8));
 }
 
 void DebayerCpuThread::setupInputMemcpy(const uint8_t *linePointers[])
@@ -979,32 +959,20 @@ void DebayerCpuThread::process4(uint32_t frame, const uint8_t *src, uint8_t *dst
 
 void DebayerCpu::updateGammaTable(const DebayerParams &params)
 {
-	const RGB<float> blackLevel = params.blackLevel;
-	/* Take let's say the green channel black level */
-	const unsigned int blackIndex = blackLevel[1] * gammaTable_.size();
 	const float gamma = params.gamma;
 	const float contrastExp = params.contrastExp;
 
-	const float divisor = gammaTable_.size() - blackIndex - 1.0;
-	for (unsigned int i = blackIndex; i < gammaTable_.size(); i++) {
-		float normalized = (i - blackIndex) / divisor;
+	const float divisor = gammaTable_.size() - 1.0;
+	for (auto [i, value] : utils::enumerate(gammaTable_)) {
+		float normalized = i / divisor;
 		/* Convert 0..2 to 0..infinity; avoid actual inifinity at tan(pi/2) */
 		/* Apply simple S-curve */
 		if (normalized < 0.5)
 			normalized = 0.5 * std::pow(normalized / 0.5, contrastExp);
 		else
 			normalized = 1.0 - 0.5 * std::pow((1.0 - normalized) / 0.5, contrastExp);
-		gammaTable_[i] = UINT8_MAX *
-				 std::pow(normalized, gamma);
+		value = UINT8_MAX * std::pow(normalized, gamma);
 	}
-	/*
-	 * Due to CCM operations, the table lookup may reach indices below the black
-	 * level. Let's set the table values below black level to the minimum
-	 * non-black value to prevent problems when the minimum value is
-	 * significantly non-zero (for example, when the image should be all grey).
-	 */
-	std::fill(gammaTable_.begin(), gammaTable_.begin() + blackIndex,
-		  gammaTable_[blackIndex]);
 }
 
 void DebayerCpu::updateLookupTables(const DebayerParams &params)
@@ -1016,14 +984,20 @@ void DebayerCpu::updateLookupTables(const DebayerParams &params)
 	if (gammaUpdateNeeded)
 		updateGammaTable(params);
 
+	/* Processing order: black level -> gains -> gamma */
 	auto matrixChanged = [](const Matrix<float, 3, 3> &m1, const Matrix<float, 3, 3> &m2) -> bool {
 		return !std::equal(m1.data().begin(), m1.data().end(), m2.data().begin());
 	};
 	const unsigned int gammaTableSize = gammaTable_.size();
-	const double div = static_cast<double>(kRGBLookupSize) / gammaTableSize;
+
+	const RGB<double> blackIndex = params.blackLevel * kRGBLookupSize;
+	const RGB<double> gains = params.gains;
+	const RGB<double> div = (RGB<double>(kRGBLookupSize) - blackIndex).max(1.0);
+
 	if (ccmEnabled_) {
 		if (gammaUpdateNeeded ||
-		    matrixChanged(params.combinedMatrix, params_.combinedMatrix)) {
+		    matrixChanged(params.combinedMatrix, params_.combinedMatrix) ||
+		    params.gains != params_.gains) {
 			auto &red = swapRedBlueGains_ ? blueCcm_ : redCcm_;
 			auto &green = greenCcm_;
 			auto &blue = swapRedBlueGains_ ? redCcm_ : blueCcm_;
@@ -1031,30 +1005,32 @@ void DebayerCpu::updateLookupTables(const DebayerParams &params)
 			const unsigned int greenIndex = 1;
 			const unsigned int blueIndex = swapRedBlueGains_ ? 0 : 2;
 			for (unsigned int i = 0; i < kRGBLookupSize; i++) {
-				red[i].r = std::round(i * params.combinedMatrix[redIndex][0]);
-				red[i].g = std::round(i * params.combinedMatrix[greenIndex][0]);
-				red[i].b = std::round(i * params.combinedMatrix[blueIndex][0]);
-				green[i].r = std::round(i * params.combinedMatrix[redIndex][1]);
-				green[i].g = std::round(i * params.combinedMatrix[greenIndex][1]);
-				green[i].b = std::round(i * params.combinedMatrix[blueIndex][1]);
-				blue[i].r = std::round(i * params.combinedMatrix[redIndex][2]);
-				blue[i].g = std::round(i * params.combinedMatrix[greenIndex][2]);
-				blue[i].b = std::round(i * params.combinedMatrix[blueIndex][2]);
-				gammaLut_[i] = gammaTable_[i / div];
+				const RGB<double> rgb = (gains * (RGB<double>(i) - blackIndex) * kRGBLookupSize / div)
+							       .clamp(0.0, kRGBLookupSize - 1);
+				red[i].r = std::round(rgb.r() * params.combinedMatrix[redIndex][0]);
+				red[i].g = std::round(rgb.r() * params.combinedMatrix[greenIndex][0]);
+				red[i].b = std::round(rgb.r() * params.combinedMatrix[blueIndex][0]);
+				green[i].r = std::round(rgb.g() * params.combinedMatrix[redIndex][1]);
+				green[i].g = std::round(rgb.g() * params.combinedMatrix[greenIndex][1]);
+				green[i].b = std::round(rgb.g() * params.combinedMatrix[blueIndex][1]);
+				blue[i].r = std::round(rgb.b() * params.combinedMatrix[redIndex][2]);
+				blue[i].g = std::round(rgb.b() * params.combinedMatrix[greenIndex][2]);
+				blue[i].b = std::round(rgb.b() * params.combinedMatrix[blueIndex][2]);
+				gammaLut_[i] = gammaTable_[i * gammaTableSize / kRGBLookupSize];
 			}
 		}
 	} else {
 		if (gammaUpdateNeeded || params.gains != params_.gains) {
-			auto &gains = params.gains;
 			auto &red = swapRedBlueGains_ ? blue_ : red_;
 			auto &green = green_;
 			auto &blue = swapRedBlueGains_ ? red_ : blue_;
 			for (unsigned int i = 0; i < kRGBLookupSize; i++) {
-				/* Apply gamma after gain! */
-				const RGB<float> lutGains = (gains * i / div).min(gammaTableSize - 1);
-				red[i] = gammaTable_[static_cast<unsigned int>(lutGains.r())];
-				green[i] = gammaTable_[static_cast<unsigned int>(lutGains.g())];
-				blue[i] = gammaTable_[static_cast<unsigned int>(lutGains.b())];
+				const RGB<double> lutGains =
+					(gains * (RGB<double>(i) - blackIndex) * gammaTableSize / div)
+						.clamp(0.0, gammaTableSize - 1);
+				red[i] = gammaTable_[lutGains.r()];
+				green[i] = gammaTable_[lutGains.g()];
+				blue[i] = gammaTable_[lutGains.b()];
 			}
 		}
 	}

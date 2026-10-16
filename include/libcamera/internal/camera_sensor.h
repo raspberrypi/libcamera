@@ -8,13 +8,13 @@
 #pragma once
 
 #include <memory>
+#include <span>
 #include <stdint.h>
 #include <string>
 #include <variant>
 #include <vector>
 
 #include <libcamera/base/class.h>
-#include <libcamera/base/span.h>
 
 #include <libcamera/control_ids.h>
 #include <libcamera/controls.h>
@@ -54,7 +54,7 @@ public:
 	virtual Size resolution() const = 0;
 
 	virtual V4L2SubdeviceFormat
-	getFormat(Span<const unsigned int> mbusCodes,
+	getFormat(std::span<const unsigned int> mbusCodes,
 		  const Size &size, const Size maxSize = Size()) const = 0;
 	virtual int setFormat(V4L2SubdeviceFormat *format,
 			      Transform transform = Transform::Identity) = 0;
@@ -64,7 +64,7 @@ public:
 				       Transform transform = Transform::Identity,
 				       V4L2SubdeviceFormat *sensorFormat = nullptr) = 0;
 
-	virtual V4L2Subdevice::Stream imageStream() const;
+	virtual V4L2Subdevice::Stream imageStream() const = 0;
 	virtual std::optional<V4L2Subdevice::Stream> embeddedDataStream() const;
 	virtual V4L2SubdeviceFormat embeddedDataFormat() const;
 	virtual int setEmbeddedDataEnabled(bool enable);
@@ -76,7 +76,7 @@ public:
 	virtual Orientation mountingOrientation() const = 0;
 
 	virtual const ControlInfoMap &controls() const = 0;
-	virtual ControlList getControls(Span<const uint32_t> ids) = 0;
+	virtual ControlList getControls(std::span<const uint32_t> ids) = 0;
 	virtual int setControls(ControlList *ctrls) = 0;
 
 	virtual const std::vector<controls::draft::TestPatternModeEnum> &

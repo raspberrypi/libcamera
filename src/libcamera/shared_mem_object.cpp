@@ -32,7 +32,7 @@ namespace libcamera {
  * backed by an anonymous file, using the memfd API.
  *
  * The allocated memory is exposed by the mem() function. If memory allocation
- * fails, the function returns an empty Span. This can be also checked using the
+ * fails, the function returns an empty span. This can be also checked using the
  * bool() operator.
  *
  * The file descriptor for the backing file is exposed as a SharedFD by the fd()
@@ -122,9 +122,9 @@ SharedMem &SharedMem::operator=(SharedMem &&rhs)
  */
 
 /**
- * \fn Span<uint8_t> SharedMem::mem() const
+ * \fn std::span<uint8_t> SharedMem::mem() const
  * \brief Retrieve the underlying shared memory
- * \return The memory buffer, or an empty Span if allocation failed
+ * \return The memory buffer, or an empty span if allocation failed
  */
 
 /**

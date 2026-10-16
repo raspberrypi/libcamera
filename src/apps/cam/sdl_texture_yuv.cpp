@@ -18,7 +18,7 @@ SDLTextureNV::SDLTextureNV(const SDL_Rect &rect, uint32_t pixelFormat, unsigned 
 	assert(pixelFormat == SDL_PIXELFORMAT_NV12 || pixelFormat == SDL_PIXELFORMAT_NV21);
 }
 
-void SDLTextureNV::update(libcamera::Span<const libcamera::Span<const uint8_t>> data)
+void SDLTextureNV::update(std::span<const std::span<const uint8_t>> data)
 {
 	assert(data.size() == 2);
 	assert(data[0].size_bytes() == std::size_t(rect_.h) * std::size_t(stride_));

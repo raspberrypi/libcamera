@@ -43,7 +43,7 @@ SDLTextureMJPG::SDLTextureMJPG(const SDL_Rect &rect)
 {
 }
 
-int SDLTextureMJPG::decompress(Span<const uint8_t> data)
+int SDLTextureMJPG::decompress(std::span<const uint8_t> data)
 {
 	struct jpeg_decompress_struct cinfo;
 
@@ -76,7 +76,7 @@ int SDLTextureMJPG::decompress(Span<const uint8_t> data)
 	return 0;
 }
 
-void SDLTextureMJPG::update(libcamera::Span<const libcamera::Span<const uint8_t>> data)
+void SDLTextureMJPG::update(std::span<const std::span<const uint8_t>> data)
 {
 	decompress(data[0]);
 	SDL_UpdateTexture(ptr_, nullptr, rgb_.get(), stride_);

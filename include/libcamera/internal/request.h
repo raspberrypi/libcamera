@@ -34,7 +34,7 @@ public:
 	~Private();
 
 	Camera *camera() const { return camera_; }
-	bool hasPendingBuffers() const;
+	bool hasPendingBuffers() const { return !pending_.empty(); }
 
 	ControlList &metadata() { return metadata_; }
 

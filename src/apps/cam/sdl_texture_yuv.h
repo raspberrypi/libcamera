@@ -14,6 +14,6 @@ class SDLTextureNV : public SDLTexture
 {
 public:
 	SDLTextureNV(const SDL_Rect &rect, uint32_t pixelFormat, unsigned int stride);
-	void update(libcamera::Span<const libcamera::Span<const uint8_t>> data) override;
+	void update(std::span<const std::span<const uint8_t>> data) override;
 };
 #endif

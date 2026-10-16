@@ -21,6 +21,8 @@
 #include "md_parser.h"
 #endif
 
+namespace {
+
 using namespace RPiController;
 
 /*
@@ -44,7 +46,7 @@ public:
 	CamHelperImx219();
 	uint32_t gainCode(double gain) const override;
 	double gain(uint32_t gainCode) const override;
-	unsigned int mistrustFramesModeSwitch() const override;
+	unsigned int mistrustMetadataModeSwitch() const override;
 	bool sensorEmbeddedDataPresent() const override;
 
 private:
@@ -77,7 +79,7 @@ double CamHelperImx219::gain(uint32_t gainCode) const
 	return 256.0 / (256 - gainCode);
 }
 
-unsigned int CamHelperImx219::mistrustFramesModeSwitch() const
+unsigned int CamHelperImx219::mistrustMetadataModeSwitch() const
 {
 	/*
 	 * For reasons unknown, we do occasionally get a bogus metadata frame
@@ -107,9 +109,11 @@ void CamHelperImx219::populateMetadata(const MdParser::RegisterMap &registers,
 	metadata.set("device.status", deviceStatus);
 }
 
-static CamHelper *create()
+CamHelper *create()
 {
 	return new CamHelperImx219();
 }
 
-static RegisterCamHelper reg("imx219", &create);
+RegisterCamHelper reg("imx219", &create);
+
+} /* namespace */

@@ -75,9 +75,8 @@ LOG_DEFINE_CATEGORY(SoftwareIsp)
 /**
  * \brief Constructs SoftwareIsp object
  * \param[in] pipe The pipeline handler in use
- * \param[in] sensor Pointer to the CameraSensor instance owned by the pipeline
+ * \param[in] sensor Pointer to the CameraSensor instance owned by the pipeline handler
  * \param[out] ipaControls The IPA controls to update
- * handler
  */
 SoftwareIsp::SoftwareIsp(PipelineHandler *pipe, const CameraSensor *sensor,
 			 ControlInfoMap *ipaControls)
@@ -119,8 +118,15 @@ SoftwareIsp::SoftwareIsp(PipelineHandler *pipe, const CameraSensor *sensor,
 		}
 	}
 
-	if (!softISPMode || softISPMode == "gpu")
-		debayer_ = std::make_unique<DebayerEGL>(std::move(stats), cm);
+	if (!softISPMode || softISPMode == "gpu") {
+		auto display = eGL::probeDisplay();
+		if (display != EGL_NO_DISPLAY) {
+			debayer_ = std::make_unique<DebayerEGL>(std::move(stats), cm, display);
+		} else {
+			LOG(SoftwareIsp, Info)
+				<< "EGL not available, falling back to CPU debayer";
+		}
+	}
 
 #endif
 	if (!debayer_)
@@ -129,7 +135,7 @@ SoftwareIsp::SoftwareIsp(PipelineHandler *pipe, const CameraSensor *sensor,
 	debayer_->inputBufferReady.connect(this, &SoftwareIsp::inputReady);
 	debayer_->outputBufferReady.connect(this, &SoftwareIsp::outputReady);
 
-	ipa_ = pipe->createIPA<ipa::soft::IPAProxySoft>(0, 0);
+	ipa_ = pipe->createIPA<ipa::softisp::IPAProxySoftIsp>(0, 0);
 	if (!ipa_) {
 		LOG(SoftwareIsp, Error)
 			<< "Creating IPA for software ISP failed";
@@ -164,7 +170,7 @@ SoftwareIsp::SoftwareIsp(PipelineHandler *pipe, const CameraSensor *sensor,
 		return;
 	}
 
-	ipa_->setIspParams.connect(this, &SoftwareIsp::saveIspParams);
+	ipa_->paramsComputed.connect(this, &SoftwareIsp::saveIspParams);
 	ipa_->metadataReady.connect(this,
 				    [this](uint32_t frame, const ControlList &metadata) {
 					    metadataReady.emit(frame, metadata);
@@ -256,20 +262,34 @@ SoftwareIsp::strideAndFrameSize(const PixelFormat &outputFormat, const Size &siz
 }
 
 /**
+ * Get the preferred input stride in bytes for the given input format and size
+ * \param[in] inputFormat The input format
+ * \param[in] size The input size (width and height in pixels)
+ * \return The preferred input stride in bytes or 0 if there is no preference
+ */
+uint32_t SoftwareIsp::preferredInputStride(const PixelFormat &inputFormat, const Size &size)
+{
+	ASSERT(debayer_);
+
+	return debayer_->preferredInputStride(inputFormat, size);
+}
+
+/**
  * \brief Configure the SoftwareIsp object according to the passed in parameters
  * \param[in] inputCfg The input configuration
  * \param[in] outputCfgs The output configurations
- * \param[in] configInfo The IPA configuration data, received from the pipeline
- * handler
+ * \param[in] configInfo The IPA configuration data, received from the pipeline handler
+ * \param[out] ipaControls The IPA controls to update
  * \return 0 on success, a negative errno on failure
  */
 int SoftwareIsp::configure(const StreamConfiguration &inputCfg,
 			   const std::vector<std::reference_wrapper<const StreamConfiguration>> &outputCfgs,
-			   const ipa::soft::IPAConfigInfo &configInfo)
+			   const ipa::softisp::IPAConfigInfo &configInfo,
+			   ControlInfoMap *ipaControls)
 {
 	ASSERT(ipa_ && debayer_);
 
-	int ret = ipa_->configure(configInfo);
+	int ret = ipa_->configure(configInfo, ipaControls);
 	if (ret < 0)
 		return ret;
 
@@ -373,9 +393,14 @@ int SoftwareIsp::start()
  *
  * All pending buffers are returned back as canceled before this function
  * returns.
+ *
+ * This function will not take any action when the ISP is not already running.
  */
 void SoftwareIsp::stop()
 {
+	if (!ispWorkerThread_.isRunning())
+		return;
+
 	debayer_->invokeMethod(&Debayer::stop,
 			       ConnectionTypeBlocking);
 
@@ -387,15 +412,13 @@ void SoftwareIsp::stop()
 	ipa_->stop();
 
 	for (auto buffer : queuedOutputBuffers_) {
-		FrameMetadata &metadata = buffer->_d()->metadata();
-		metadata.status = FrameMetadata::FrameCancelled;
+		buffer->_d()->cancel();
 		outputBufferReady.emit(buffer);
 	}
 	queuedOutputBuffers_.clear();
 
 	for (auto buffer : queuedInputBuffers_) {
-		FrameMetadata &metadata = buffer->_d()->metadata();
-		metadata.status = FrameMetadata::FrameCancelled;
+		buffer->_d()->cancel();
 		inputBufferReady.emit(buffer);
 	}
 	queuedInputBuffers_.clear();
@@ -414,7 +437,7 @@ void SoftwareIsp::process(uint32_t frame, FrameBuffer *input, FrameBuffer *outpu
 			       ConnectionTypeQueued, frame, input, output, debayerParams_);
 }
 
-void SoftwareIsp::saveIspParams()
+void SoftwareIsp::saveIspParams([[maybe_unused]] uint32_t frame)
 {
 	debayerParams_ = *sharedParams_;
 }

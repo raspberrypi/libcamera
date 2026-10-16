@@ -475,7 +475,7 @@ instance. An example of how to write image data to disk is available in the
 `FileSink class`_ which is a part of the ``cam`` utility application in the
 libcamera repository.
 
-.. _FileSink class: https://git.libcamera.org/libcamera/libcamera.git/tree/src/apps/cam/file_sink.cpp
+.. _FileSink class: https://gitlab.freedesktop.org/camera/libcamera/-/blob/master/src/apps/cam/file_sink.cpp
 
 With the handling of this request completed, it is possible to re-use the
 request and the associated buffers and re-queue it to the camera
@@ -562,7 +562,7 @@ install the ``pkg-config`` tool to correctly identify the libcamera.so object
 install location in the system.
 
 .. _Meson build system: https://mesonbuild.com/
-.. _git repository: https://git.libcamera.org/libcamera/libcamera.git/
+.. _git repository: https://gitlab.freedesktop.org/camera/libcamera
 
 Dependencies
 ~~~~~~~~~~~~

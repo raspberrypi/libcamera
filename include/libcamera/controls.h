@@ -10,15 +10,16 @@
 #include <assert.h>
 #include <map>
 #include <optional>
+#include <span>
 #include <stdint.h>
 #include <string>
 #include <string_view>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include <libcamera/base/class.h>
 #include <libcamera/base/flags.h>
-#include <libcamera/base/span.h>
 
 #include <libcamera/geometry.h>
 
@@ -26,7 +27,7 @@ namespace libcamera {
 
 class ControlValidator;
 
-enum ControlType {
+enum ControlType : uint8_t {
 	ControlTypeNone,
 	ControlTypeBool,
 	ControlTypeByte,
@@ -42,6 +43,14 @@ enum ControlType {
 };
 
 namespace details {
+
+template<typename>
+struct is_span : public std::false_type {
+};
+
+template<typename T, std::size_t Extent>
+struct is_span<std::span<T, Extent>> : public std::true_type {
+};
 
 template<typename T, typename = void>
 struct control_type {
@@ -120,7 +129,7 @@ struct control_type<Point> {
 };
 
 template<typename T, std::size_t N>
-struct control_type<Span<T, N>, std::enable_if_t<control_type<std::remove_cv_t<T>>::size == 0>> : public control_type<std::remove_cv_t<T>> {
+struct control_type<std::span<T, N>, std::enable_if_t<control_type<std::remove_cv_t<T>>::size == 0>> : public control_type<std::remove_cv_t<T>> {
 	static constexpr std::size_t size = N;
 };
 
@@ -165,12 +174,34 @@ public:
 	ControlValue(const ControlValue &other);
 	ControlValue &operator=(const ControlValue &other);
 
+	ControlValue(ControlValue &&other) noexcept
+		: type_(std::exchange(other.type_, ControlTypeNone)),
+		  isArray_(std::exchange(other.isArray_, false)),
+		  numElements_(std::exchange(other.numElements_, 0)),
+		  storage_(std::exchange(other.storage_, {}))
+	{
+	}
+
+	ControlValue &operator=(ControlValue &&other) noexcept
+	{
+		if (this != &other) {
+			release();
+
+			type_ = std::exchange(other.type_, ControlTypeNone);
+			isArray_ = std::exchange(other.isArray_, false);
+			numElements_ = std::exchange(other.numElements_, 0);
+			storage_ = std::exchange(other.storage_, {});
+		}
+
+		return *this;
+	}
+
 	ControlType type() const { return type_; }
 	bool isNone() const { return type_ == ControlTypeNone; }
 	bool isArray() const { return isArray_; }
 	std::size_t numElements() const { return numElements_; }
-	Span<const uint8_t> data() const;
-	Span<uint8_t> data();
+	std::span<const uint8_t> data() const;
+	std::span<uint8_t> data();
 
 	std::string toString() const;
 
@@ -233,14 +264,27 @@ public:
 	void reserve(ControlType type, bool isArray = false,
 		     std::size_t numElements = 1);
 
+	void swap(ControlValue &other) noexcept
+	{
+		std::swap(type_, other.type_);
+		std::swap(isArray_, other.isArray_);
+		std::swap(numElements_, other.numElements_);
+		std::swap(storage_, other.storage_);
+	}
+
+	friend void swap(ControlValue &a, ControlValue &b) noexcept
+	{
+		a.swap(b);
+	}
+
 private:
-	ControlType type_ : 8;
+	ControlType type_;
 	bool isArray_;
-	std::size_t numElements_ : 32;
+	uint32_t numElements_;
 	union {
-		uint64_t value_;
-		void *storage_;
-	};
+		uint64_t internal;
+		void *external;
+	} storage_;
 
 	void release();
 	void set(ControlType type, bool isArray, const void *data,
@@ -332,7 +376,7 @@ public:
 	explicit ControlInfo(const ControlValue &min = {},
 			     const ControlValue &max = {},
 			     const ControlValue &def = {});
-	explicit ControlInfo(Span<const ControlValue> values,
+	explicit ControlInfo(std::span<const ControlValue> values,
 			     const ControlValue &def = {});
 
 	const ControlValue &min() const { return min_; }
@@ -458,17 +502,18 @@ public:
 	}
 
 	template<typename T, typename V, size_t Size>
-	void set(const Control<Span<T, Size>> &ctrl, const std::initializer_list<V> &value)
+	void set(const Control<std::span<T, Size>> &ctrl, const std::initializer_list<V> &value)
 	{
 		ControlValue *val = find(ctrl.id());
 		if (!val)
 			return;
 
-		val->set(Span<const typename std::remove_cv_t<V>, Size>{ value.begin(), value.size() });
+		val->set(std::span<const typename std::remove_cv_t<V>, Size>{ value.begin(), value.size() });
 	}
 
 	const ControlValue &get(unsigned int id) const;
 	void set(unsigned int id, const ControlValue &value);
+	void set(unsigned int id, ControlValue &&value);
 
 	const ControlInfoMap *infoMap() const { return infoMap_; }
 	const ControlIdMap *idMap() const { return idmap_; }

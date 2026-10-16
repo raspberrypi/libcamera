@@ -86,24 +86,6 @@ namespace libcamera::ipa::rkisp1 {
  * \var IPASessionConfiguration::sensor
  * \brief Sensor-specific configuration of the IPA
  *
- * \var IPASessionConfiguration::sensor.minExposureTime
- * \brief Minimum exposure time supported with the sensor
- *
- * \var IPASessionConfiguration::sensor.maxExposureTime
- * \brief Maximum exposure time supported with the sensor
- *
- * \var IPASessionConfiguration::sensor.minAnalogueGain
- * \brief Minimum analogue gain supported with the sensor
- *
- * \var IPASessionConfiguration::sensor.maxAnalogueGain
- * \brief Maximum analogue gain supported with the sensor
- *
- * \var IPASessionConfiguration::sensor.defVBlank
- * \brief The default vblank value of the sensor
- *
- * \var IPASessionConfiguration::sensor.lineDuration
- * \brief Line duration in microseconds
- *
  * \var IPASessionConfiguration::sensor.size
  * \brief Sensor output resolution
  */
@@ -150,49 +132,8 @@ namespace libcamera::ipa::rkisp1 {
  * \var IPAActiveState::agc
  * \brief State for the Automatic Gain Control algorithm
  *
- * The \a automatic variables track the latest values computed by algorithm
- * based on the latest processed statistics. All other variables track the
- * consolidated controls requested in queued requests.
- *
- * \struct IPAActiveState::agc.manual
- * \brief Manual exposure time and analog gain (set through requests)
- *
- * \var IPAActiveState::agc.manual.exposure
- * \brief Manual exposure time expressed as a number of lines as set by the
- * ExposureTime control
- *
- * \var IPAActiveState::agc.manual.gain
- * \brief Manual analogue gain as set by the AnalogueGain control
- *
- * \struct IPAActiveState::agc.automatic
- * \brief Automatic exposure time and analog gain (computed by the algorithm)
- *
- * \var IPAActiveState::agc.automatic.exposure
- * \brief Automatic exposure time expressed as a number of lines
- *
- * \var IPAActiveState::agc.automatic.gain
- * \brief Automatic analogue gain multiplier
- *
- * \var IPAActiveState::agc.autoExposureEnabled
- * \brief Manual/automatic AGC state (exposure) as set by the ExposureTimeMode control
- *
- * \var IPAActiveState::agc.autoGainEnabled
- * \brief Manual/automatic AGC state (gain) as set by the AnalogueGainMode control
- *
- * \var IPAActiveState::agc.constraintMode
- * \brief Constraint mode as set by the AeConstraintMode control
- *
- * \var IPAActiveState::agc.exposureMode
- * \brief Exposure mode as set by the AeExposureMode control
- *
  * \var IPAActiveState::agc.meteringMode
  * \brief Metering mode as set by the AeMeteringMode control
- *
- * \var IPAActiveState::agc.minFrameDuration
- * \brief Minimum frame duration as set by the FrameDurationLimits control
- *
- * \var IPAActiveState::agc.maxFrameDuration
- * \brief Maximum frame duration as set by the FrameDurationLimits control
  */
 
 /**
@@ -232,9 +173,15 @@ namespace libcamera::ipa::rkisp1 {
 /**
  * \var IPAActiveState::cproc
  * \brief State for the Color Processing algorithm
+  *
+ * \var IPAActiveState::cproc.requestedBrightness
+ * \brief Brightness level requested by the user
+  *
+ * \var IPAActiveState::cproc.actualBrightness
+ * \brief Brightness level after contrast compensation
  *
- * \struct IPAActiveState::cproc.brightness
- * \brief Brightness level
+ * \var IPAActiveState::cproc.brightness
+ * \brief Hardware brightness level
  *
  * \var IPAActiveState::cproc.contrast
  * \brief Contrast level
@@ -311,53 +258,11 @@ namespace libcamera::ipa::rkisp1 {
  * the vertical blanking period is determined to maintain a consistent frame
  * rate matched to the FrameDurationLimits as set by the user.
  *
- * \var IPAFrameContext::agc.exposure
- * \brief Exposure time expressed as a number of lines computed by the algorithm
- *
- * \var IPAFrameContext::agc.gain
- * \brief Analogue gain multiplier computed by the algorithm
- *
- * The gain should be adapted to the sensor specific gain code before applying.
- *
- * \var IPAFrameContext::agc.vblank
- * \brief Vertical blanking parameter computed by the algorithm
- *
- * \var IPAFrameContext::agc.autoExposureEnabled
- * \brief Manual/automatic AGC state (exposure) as set by the ExposureTimeMode control
- *
- * \var IPAFrameContext::agc.autoGainEnabled
- * \brief Manual/automatic AGC state (gain) as set by the AnalogueGainMode control
- *
- * \var IPAFrameContext::agc.constraintMode
- * \brief Constraint mode as set by the AeConstraintMode control
- *
- * \var IPAFrameContext::agc.exposureMode
- * \brief Exposure mode as set by the AeExposureMode control
- *
  * \var IPAFrameContext::agc.meteringMode
  * \brief Metering mode as set by the AeMeteringMode control
  *
- * \var IPAFrameContext::agc.minFrameDuration
- * \brief Minimum frame duration as set by the FrameDurationLimits control
- *
- * \var IPAFrameContext::agc.maxFrameDuration
- * \brief Maximum frame duration as set by the FrameDurationLimits control
- *
- * \var IPAFrameContext::agc.frameDuration
- * \brief The actual FrameDuration used by the algorithm for the frame
- *
  * \var IPAFrameContext::agc.updateMetering
  * \brief Indicate if new ISP AGC metering parameters need to be applied
- *
- * \var IPAFrameContext::agc.autoExposureModeChange
- * \brief Indicate if autoExposureEnabled has changed from true in the previous
- * frame to false in the current frame, and no manual exposure value has been
- * supplied in the current frame.
- *
- * \var IPAFrameContext::agc.autoGainModeChange
- * \brief Indicate if autoGainEnabled has changed from true in the previous
- * frame to false in the current frame, and no manual gain value has been
- * supplied in the current frame.
  */
 
 /**
@@ -400,8 +305,11 @@ namespace libcamera::ipa::rkisp1 {
  * \var IPAFrameContext::cproc
  * \brief Color Processing parameters for this frame
  *
- * \struct IPAFrameContext::cproc.brightness
- * \brief Brightness level
+ * \var IPAFrameContext::cproc.actualBrightness
+ * \brief Brightness level after contrast compensation
+ *
+ * \var IPAFrameContext::cproc.brightness
+ * \brief Hardware brightness level
  *
  * \var IPAFrameContext::cproc.contrast
  * \brief Contrast level
@@ -482,6 +390,9 @@ namespace libcamera::ipa::rkisp1 {
  *
  * \var IPAContext::frameContexts
  * \brief Ring buffer of per-frame contexts
+ *
+ * \var IPAContext::sensorControls
+ * \brief V4L2 controls of the sensor
  */
 
 } /* namespace libcamera::ipa::rkisp1 */

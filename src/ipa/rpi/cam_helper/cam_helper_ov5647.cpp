@@ -9,6 +9,8 @@
 
 #include "cam_helper.h"
 
+namespace {
+
 using namespace RPiController;
 
 class CamHelperOv5647 : public CamHelper
@@ -19,8 +21,8 @@ public:
 	double gain(uint32_t gainCode) const override;
 	unsigned int hideFramesStartup() const override;
 	unsigned int hideFramesModeSwitch() const override;
-	unsigned int mistrustFramesStartup() const override;
-	unsigned int mistrustFramesModeSwitch() const override;
+	unsigned int mistrustMetadataStartup() const override;
+	unsigned int mistrustMetadataModeSwitch() const override;
 
 private:
 	/*
@@ -68,7 +70,7 @@ unsigned int CamHelperOv5647::hideFramesModeSwitch() const
 	return 2;
 }
 
-unsigned int CamHelperOv5647::mistrustFramesStartup() const
+unsigned int CamHelperOv5647::mistrustMetadataStartup() const
 {
 	/*
 	 * First couple of frames are under-exposed and are no good for control
@@ -77,7 +79,7 @@ unsigned int CamHelperOv5647::mistrustFramesStartup() const
 	return 2;
 }
 
-unsigned int CamHelperOv5647::mistrustFramesModeSwitch() const
+unsigned int CamHelperOv5647::mistrustMetadataModeSwitch() const
 {
 	/*
 	 * First couple of frames are under-exposed even after a simple
@@ -86,9 +88,11 @@ unsigned int CamHelperOv5647::mistrustFramesModeSwitch() const
 	return 2;
 }
 
-static CamHelper *create()
+CamHelper *create()
 {
 	return new CamHelperOv5647();
 }
 
-static RegisterCamHelper reg("ov5647", &create);
+RegisterCamHelper reg("ov5647", &create);
+
+} /* namespace */

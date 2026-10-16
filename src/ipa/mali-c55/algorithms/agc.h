@@ -11,7 +11,7 @@
 
 #include "libcamera/internal/bayer_format.h"
 
-#include "libipa/agc_mean_luminance.h"
+#include "libipa/agc.h"
 #include "libipa/histogram.h"
 
 #include "algorithm.h"
@@ -43,7 +43,7 @@ private:
 	unsigned int bIndex_;
 };
 
-class Agc : public Algorithm, public AgcMeanLuminance
+class Agc : public Algorithm
 {
 public:
 	Agc();
@@ -64,14 +64,11 @@ public:
 		     ControlList &metadata) override;
 
 private:
-	double estimateLuminance(const double gain) const override;
-	void fillGainParamBlock(IPAContext &context,
-				IPAFrameContext &frameContext,
-				MaliC55Params *params);
 	void fillParamsBuffer(MaliC55Params *params, enum MaliC55Blocks type);
 	void fillWeightsArrayBuffer(MaliC55Params *params, enum MaliC55Blocks type);
 
 	AgcStatistics statistics_;
+	AgcAlgorithm agc_;
 };
 
 } /* namespace ipa::mali_c55::algorithms */

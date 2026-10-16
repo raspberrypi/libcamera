@@ -78,7 +78,7 @@ public:
 	~PipelineHandlerVirtual();
 
 	std::unique_ptr<CameraConfiguration> generateConfiguration(Camera *camera,
-								   Span<const StreamRole> roles) override;
+								   std::span<const StreamRole> roles) override;
 	int configure(Camera *camera, CameraConfiguration *config) override;
 
 	int exportFrameBuffers(Camera *camera, Stream *stream,
@@ -141,7 +141,7 @@ void VirtualCameraData::processRequest(Request *request)
 				fmd.sequence = streamConfig.seq++;
 				fmd.timestamp = currentTimestamp();
 
-				Span<const FrameBuffer::Plane> planes = buffer->planes();
+				std::span<const FrameBuffer::Plane> planes = buffer->planes();
 				for (const auto [i, p] : utils::enumerate(planes))
 					fmd.planes()[i].bytesused = p.length;
 
@@ -208,8 +208,8 @@ CameraConfiguration::Status VirtualCameraConfiguration::validate()
 			adjusted = true;
 		}
 
-		if (cfg.colorSpace != ColorSpace::Rec709) {
-			cfg.colorSpace = ColorSpace::Rec709;
+		if (cfg.colorSpace != ColorSpace::Smpte170m) {
+			cfg.colorSpace = ColorSpace::Smpte170m;
 			status = Adjusted;
 			adjusted = true;
 		}
@@ -252,7 +252,7 @@ PipelineHandlerVirtual::~PipelineHandlerVirtual()
 
 std::unique_ptr<CameraConfiguration>
 PipelineHandlerVirtual::generateConfiguration(Camera *camera,
-					      Span<const StreamRole> roles)
+					      std::span<const StreamRole> roles)
 {
 	VirtualCameraData *data = cameraData(camera);
 	auto config = std::make_unique<VirtualCameraConfiguration>(data);
@@ -283,7 +283,7 @@ PipelineHandlerVirtual::generateConfiguration(Camera *camera,
 		cfg.pixelFormat = pixelFormat;
 		cfg.size = data->config_.maxResolutionSize;
 		cfg.bufferCount = VirtualCameraConfiguration::kBufferCount;
-		cfg.colorSpace = ColorSpace::Rec709;
+		cfg.colorSpace = ColorSpace::Smpte170m;
 
 		config->addConfiguration(cfg);
 	}

@@ -13,10 +13,8 @@
 #include <libcamera/base/utils.h>
 
 #include <libcamera/control_ids.h>
-#include <libcamera/property_ids.h>
 
 #include "libipa/colours.h"
-#include "libipa/fixedpoint.h"
 
 namespace libcamera {
 
@@ -32,14 +30,6 @@ LOG_DEFINE_CATEGORY(MaliC55Agc)
  * ever changes then this constant will need updating.
  */
 static constexpr unsigned int kNumHistogramBins = 256;
-
-/*
- * The Mali-C55 ISP has a digital gain block which allows setting gain in Q5.8
- * format, a range of 0.0 to (very nearly) 32.0. We clamp from 1.0 to the actual
- * max value which is 8191 * 2^-8.
- */
-static constexpr float kMinDigitalGain = 1.0;
-static constexpr float kMaxDigitalGain = UQ<5, 8>::TraitsType::max;
 
 uint32_t AgcStatistics::decodeBinValue(uint16_t binVal)
 {
@@ -120,29 +110,23 @@ void AgcStatistics::parseStatistics(const mali_c55_stats_buffer *stats)
 						  static_cast<double>(b[i]) } });
 	}
 
-	rHist = Histogram(Span<uint32_t>(r, kNumHistogramBins));
-	gHist = Histogram(Span<uint32_t>(g, kNumHistogramBins));
-	bHist = Histogram(Span<uint32_t>(b, kNumHistogramBins));
-	yHist = Histogram(Span<uint32_t>(y, kNumHistogramBins));
+	rHist = Histogram(std::span<uint32_t>(r, kNumHistogramBins));
+	gHist = Histogram(std::span<uint32_t>(g, kNumHistogramBins));
+	bHist = Histogram(std::span<uint32_t>(b, kNumHistogramBins));
+	yHist = Histogram(std::span<uint32_t>(y, kNumHistogramBins));
 }
 
 Agc::Agc()
-	: AgcMeanLuminance()
 {
 }
 
 int Agc::init(IPAContext &context, const ValueNode &tuningData)
 {
-	int ret = parseTuningData(tuningData);
-	if (ret)
-		return ret;
-
-	context.ctrlMap[&controls::AeEnable] = ControlInfo(false, true);
-	context.ctrlMap[&controls::DigitalGain] = ControlInfo(
-		kMinDigitalGain, kMaxDigitalGain, kMinDigitalGain);
-	context.ctrlMap.merge(controls());
-
-	return 0;
+	return agc_.init(tuningData, context.camHelper.get(), {
+		.sensorInfo = context.sensorInfo,
+		.sensorControls = context.sensorControls,
+		.ctrlMap = context.ctrlMap,
+	});
 }
 
 int Agc::configure(IPAContext &context,
@@ -152,107 +136,22 @@ int Agc::configure(IPAContext &context,
 	if (ret)
 		return ret;
 
-	/*
-	 * Defaults; we use whatever the sensor's default exposure is and the
-	 * minimum analogue gain. AEGC is _active_ by default.
-	 */
-	context.activeState.agc.autoEnabled = true;
-	context.activeState.agc.automatic.sensorGain = context.configuration.agc.minAnalogueGain;
-	context.activeState.agc.automatic.exposure = context.configuration.agc.defaultExposure;
-	context.activeState.agc.automatic.ispGain = kMinDigitalGain;
-	context.activeState.agc.manual.sensorGain = context.configuration.agc.minAnalogueGain;
-	context.activeState.agc.manual.exposure = context.configuration.agc.defaultExposure;
-	context.activeState.agc.manual.ispGain = kMinDigitalGain;
-	context.activeState.agc.constraintMode = constraintModes().begin()->first;
-	context.activeState.agc.exposureMode = exposureModeHelpers().begin()->first;
-
-	/* \todo Run this again when FrameDurationLimits is passed in */
-	setLimits(context.configuration.agc.minShutterSpeed,
-		  context.configuration.agc.maxShutterSpeed,
-		  context.configuration.agc.minAnalogueGain,
-		  context.configuration.agc.maxAnalogueGain,
-		  {});
-
-	resetFrameCount();
+	ret = agc_.configure(context.configuration.agc, context.activeState.agc, {
+		.sensorInfo = context.sensorInfo,
+		.sensorControls = context.sensorControls,
+		.ctrlMap = context.ctrlMap,
+	});
+	if (ret)
+		return ret;
 
 	return 0;
 }
 
-void Agc::queueRequest(IPAContext &context, const uint32_t frame,
-		       [[maybe_unused]] IPAFrameContext &frameContext,
+void Agc::queueRequest(IPAContext &context, [[maybe_unused]] const uint32_t frame,
+		       IPAFrameContext &frameContext,
 		       const ControlList &controls)
 {
-	auto &agc = context.activeState.agc;
-
-	const auto &constraintMode = controls.get(controls::AeConstraintMode);
-	agc.constraintMode = constraintMode.value_or(agc.constraintMode);
-
-	const auto &exposureMode = controls.get(controls::AeExposureMode);
-	agc.exposureMode = exposureMode.value_or(agc.exposureMode);
-
-	const auto &agcEnable = controls.get(controls::AeEnable);
-	if (agcEnable && *agcEnable != agc.autoEnabled) {
-		agc.autoEnabled = *agcEnable;
-
-		LOG(MaliC55Agc, Info)
-			<< (agc.autoEnabled ? "Enabling" : "Disabling")
-			<< " AGC";
-	}
-
-	/*
-	 * If the automatic exposure and gain is enabled we have no further work
-	 * to do here...
-	 */
-	if (agc.autoEnabled)
-		return;
-
-	/*
-	 * ...otherwise we need to look for exposure and gain controls and use
-	 * those to set the activeState.
-	 */
-	const auto &exposure = controls.get(controls::ExposureTime);
-	if (exposure) {
-		agc.manual.exposure = *exposure * 1.0us / context.configuration.sensor.lineDuration;
-
-		LOG(MaliC55Agc, Debug)
-			<< "Exposure set to " << agc.manual.exposure
-			<< " on request sequence " << frame;
-	}
-
-	const auto &analogueGain = controls.get(controls::AnalogueGain);
-	if (analogueGain) {
-		agc.manual.sensorGain = *analogueGain;
-
-		LOG(MaliC55Agc, Debug)
-			<< "Analogue gain set to " << agc.manual.sensorGain
-			<< " on request sequence " << frame;
-	}
-
-	const auto &digitalGain = controls.get(controls::DigitalGain);
-	if (digitalGain) {
-		agc.manual.ispGain = *digitalGain;
-
-		LOG(MaliC55Agc, Debug)
-			<< "Digital gain set to " << agc.manual.ispGain
-			<< " on request sequence " << frame;
-	}
-}
-
-void Agc::fillGainParamBlock(IPAContext &context, IPAFrameContext &frameContext,
-			     MaliC55Params *params)
-{
-	IPAActiveState &activeState = context.activeState;
-	UQ<5, 8> gain;
-
-	if (activeState.agc.autoEnabled)
-		gain = activeState.agc.automatic.ispGain;
-	else
-		gain = activeState.agc.manual.ispGain;
-
-	auto block = params->block<MaliC55Blocks::Dgain>();
-	block->gain = gain.quantized();
-
-	frameContext.agc.ispGain = gain;
+	agc_.queueRequest(context.configuration.agc, context.activeState.agc, frameContext.agc, controls);
 }
 
 void Agc::fillParamsBuffer(MaliC55Params *params, enum MaliC55Blocks type)
@@ -298,7 +197,7 @@ void Agc::fillWeightsArrayBuffer(MaliC55Params *params, const enum MaliC55Blocks
 	 * histograms containing a true pixel count, which we can then use to
 	 * approximate colour channel averages for the image.
 	 */
-	Span<uint8_t> weights{
+	std::span<uint8_t> weights{
 		block->zone_weights,
 		MALI_C55_MAX_ZONES
 	};
@@ -308,7 +207,7 @@ void Agc::fillWeightsArrayBuffer(MaliC55Params *params, const enum MaliC55Blocks
 void Agc::prepare(IPAContext &context, const uint32_t frame,
 		  IPAFrameContext &frameContext, MaliC55Params *params)
 {
-	fillGainParamBlock(context, frameContext, params);
+	agc_.prepare(context.activeState.agc, frameContext.agc);
 
 	if (frame > 0)
 		return;
@@ -320,25 +219,38 @@ void Agc::prepare(IPAContext &context, const uint32_t frame,
 	fillWeightsArrayBuffer(params, MaliC55Blocks::AexpIhistWeights);
 }
 
-double Agc::estimateLuminance(const double gain) const
-{
-	double rAvg = statistics_.rHist.interQuantileMean(0, 1) * gain;
-	double gAvg = statistics_.gHist.interQuantileMean(0, 1) * gain;
-	double bAvg = statistics_.bHist.interQuantileMean(0, 1) * gain;
-	double yAvg = rec601LuminanceFromRGB({ { rAvg, gAvg, bAvg } });
+namespace {
 
-	return yAvg / kNumHistogramBins;
-}
+class AgcTraits final : public AgcMeanLuminance::Traits
+{
+public:
+	AgcTraits(const AgcStatistics &statistics)
+		: statistics_(statistics)
+	{
+	}
+
+	double estimateLuminance(double gain) const override
+	{
+		double rAvg = statistics_.rHist.interQuantileMean(0, 1) * gain;
+		double gAvg = statistics_.gHist.interQuantileMean(0, 1) * gain;
+		double bAvg = statistics_.bHist.interQuantileMean(0, 1) * gain;
+		double yAvg = rec601LuminanceFromRGB({ { rAvg, gAvg, bAvg } });
+
+		return yAvg / kNumHistogramBins;
+	}
+
+private:
+	const AgcStatistics &statistics_;
+};
+
+} /* namespace */
 
 void Agc::process(IPAContext &context,
 		  [[maybe_unused]] const uint32_t frame,
 		  IPAFrameContext &frameContext,
 		  const mali_c55_stats_buffer *stats,
-		  [[maybe_unused]] ControlList &metadata)
+		  ControlList &metadata)
 {
-	IPASessionConfiguration &configuration = context.configuration;
-	IPAActiveState &activeState = context.activeState;
-
 	if (!stats) {
 		LOG(MaliC55Agc, Error) << "No statistics buffer passed to Agc";
 		return;
@@ -349,39 +261,13 @@ void Agc::process(IPAContext &context,
 							       statistics_.gHist.interQuantileMean(0, 1),
 							       statistics_.bHist.interQuantileMean(0, 1) } });
 
-	/*
-	 * The Agc algorithm needs to know the effective exposure value that was
-	 * applied to the sensor when the statistics were collected.
-	 */
-	uint32_t exposure = frameContext.agc.exposure;
-	double analogueGain = frameContext.agc.sensorGain;
-	double digitalGain = frameContext.agc.ispGain.value();
-	double totalGain = analogueGain * digitalGain;
-	utils::Duration currentShutter = exposure * configuration.sensor.lineDuration;
-	utils::Duration effectiveExposureValue = currentShutter * totalGain;
+	agc_.process(context.configuration.agc, context.activeState.agc, frameContext.agc, {{
+		.traits = AgcTraits(statistics_),
+		.yHist = statistics_.yHist,
+		.exposure = frameContext.sensor.exposure,
+		.gain = frameContext.sensor.gain,
+	}}, metadata);
 
-	utils::Duration shutterTime;
-	double aGain, qGain, dGain;
-	std::tie(shutterTime, aGain, qGain, dGain) =
-		calculateNewEv(activeState.agc.constraintMode,
-			       activeState.agc.exposureMode, statistics_.yHist,
-			       effectiveExposureValue);
-
-	UQ<5, 8> dGainQ = std::clamp(static_cast<float>(dGain),
-				     kMinDigitalGain,
-				     kMaxDigitalGain);
-
-	LOG(MaliC55Agc, Debug)
-		<< "Divided up shutter, analogue gain and digital gain are "
-		<< shutterTime << ", " << aGain << " and " << dGainQ;
-
-	activeState.agc.automatic.exposure = shutterTime / configuration.sensor.lineDuration;
-	activeState.agc.automatic.sensorGain = aGain;
-	activeState.agc.automatic.ispGain = dGainQ;
-
-	metadata.set(controls::ExposureTime, currentShutter.get<std::micro>());
-	metadata.set(controls::AnalogueGain, frameContext.agc.sensorGain);
-	metadata.set(controls::DigitalGain, frameContext.agc.ispGain.value());
 	metadata.set(controls::ColourTemperature, context.activeState.agc.temperatureK);
 }
 

@@ -74,7 +74,7 @@ public:
 	std::vector<Size> sizes(unsigned int mbusCode) const override;
 	Size resolution() const override;
 
-	V4L2SubdeviceFormat getFormat(Span<const unsigned int> mbusCodes,
+	V4L2SubdeviceFormat getFormat(std::span<const unsigned int> mbusCodes,
 				      const Size &size,
 				      const Size maxSize) const override;
 	int setFormat(V4L2SubdeviceFormat *format,
@@ -97,7 +97,7 @@ public:
 	Orientation mountingOrientation() const override { return mountingOrientation_; }
 
 	const ControlInfoMap &controls() const override;
-	ControlList getControls(Span<const uint32_t> ids) override;
+	ControlList getControls(std::span<const uint32_t> ids) override;
 	int setControls(ControlList *ctrls) override;
 
 	const std::vector<controls::draft::TestPatternModeEnum> &
@@ -141,10 +141,12 @@ private:
 	std::vector<controls::draft::TestPatternModeEnum> testPatternModes_;
 	controls::draft::TestPatternModeEnum testPatternMode_;
 
-	Size pixelArraySize_;
+	Rectangle pixelArrayArea_;
+	Rectangle readableArea_;
 	Rectangle activeArea_;
 	BayerFormat::Order cfaPattern_;
-	bool supportFlips_;
+	bool supportHFlips_;
+	bool supportVFlips_;
 	bool flipsAlterBayerOrder_;
 	Orientation mountingOrientation_;
 
@@ -162,8 +164,9 @@ private:
  */
 
 CameraSensorRaw::CameraSensorRaw(const MediaEntity *entity)
-	: entity_(entity), staticProps_(nullptr), supportFlips_(false),
-	  flipsAlterBayerOrder_(false), properties_(properties::properties)
+	: entity_(entity), staticProps_(nullptr), supportHFlips_(false),
+	  supportVFlips_(false), flipsAlterBayerOrder_(false),
+	  properties_(properties::properties)
 {
 }
 
@@ -429,7 +432,17 @@ std::optional<int> CameraSensorRaw::init()
 		return { ret };
 	}
 
-	pixelArraySize_ = rect.size();
+	/*
+	 * \todo Implement querying the physical sensor size based on pad 1,
+	 * stream 0. See
+	 * https://lore.kernel.org/linux-media/20260409201501.975242-23-sakari.ailus@linux.intel.com/
+	 */
+	LOG(CameraSensor, Warning) << "PixelArrayArea might be incorrect";
+	pixelArrayArea_ = Rectangle(0, 0,
+				    rect.x + rect.width,
+				    rect.y + rect.height);
+
+	readableArea_ = rect;
 
 	ret = subdev_->getSelection(streams_.image.sink, V4L2_SEL_TGT_CROP_DEFAULT,
 				    &activeArea_);
@@ -479,25 +492,30 @@ std::optional<int> CameraSensorRaw::init()
 		return { ret };
 	}
 
-	/*
-	 * Verify if sensor supports horizontal/vertical flips
-	 *
-	 * \todo Handle horizontal and vertical flips independently.
-	 */
-	const struct v4l2_query_ext_ctrl *hflipInfo = subdev_->controlInfo(V4L2_CID_HFLIP);
-	const struct v4l2_query_ext_ctrl *vflipInfo = subdev_->controlInfo(V4L2_CID_VFLIP);
-	if (hflipInfo && !(hflipInfo->flags & V4L2_CTRL_FLAG_READ_ONLY) &&
-	    vflipInfo && !(vflipInfo->flags & V4L2_CTRL_FLAG_READ_ONLY)) {
-		supportFlips_ = true;
+	/* Verify if sensor supports horizontal/vertical flips. */
+	auto queryFlip = [&](uint32_t id, const char *name) -> std::pair<bool, bool> {
+		const struct v4l2_query_ext_ctrl *flipInfo = subdev_->controlInfo(id);
+		if (!flipInfo || flipInfo->flags & V4L2_CTRL_FLAG_READ_ONLY) {
+			LOG(CameraSensor, Debug)
+				<< "Camera sensor does not support " << name << " flip";
+			return { false, false };
+		}
 
-		if (hflipInfo->flags & V4L2_CTRL_FLAG_MODIFY_LAYOUT ||
-		    vflipInfo->flags & V4L2_CTRL_FLAG_MODIFY_LAYOUT)
-			flipsAlterBayerOrder_ = true;
+		return { true, flipInfo->flags & V4L2_CTRL_FLAG_MODIFY_LAYOUT };
+	};
+
+	auto hflip = queryFlip(V4L2_CID_HFLIP, "horizontal");
+	auto vflip = queryFlip(V4L2_CID_VFLIP, "vertical");
+
+	if (hflip.first && vflip.first && (hflip.second != vflip.second)) {
+		LOG(CameraSensor, Error)
+			<< "Flips with differing alter bayer order properties"
+			<< " are unsupported. Disabling flipping.";
+	} else {
+		supportHFlips_ = hflip.first;
+		supportVFlips_ = vflip.first;
+		flipsAlterBayerOrder_ = hflip.second || vflip.second;
 	}
-
-	if (!supportFlips_)
-		LOG(CameraSensor, Debug)
-			<< "Camera sensor does not support horizontal/vertical flip";
 
 	/*
 	 * 5. Discover ancillary devices.
@@ -627,7 +645,8 @@ int CameraSensorRaw::initProperties()
 		mountingOrientation_ = Orientation::Rotate0;
 	}
 
-	properties_.set(properties::PixelArraySize, pixelArraySize_);
+	properties_.set(properties::PixelArrayArea, pixelArrayArea_);
+	properties_.set(properties::PixelArrayReadableArea, readableArea_);
 	properties_.set(properties::PixelArrayActiveAreas, { activeArea_ });
 
 	/* Color filter array pattern. */
@@ -760,7 +779,7 @@ Size CameraSensorRaw::resolution() const
 }
 
 V4L2SubdeviceFormat
-CameraSensorRaw::getFormat(Span<const unsigned int> mbusCodes,
+CameraSensorRaw::getFormat(std::span<const unsigned int> mbusCodes,
 			   const Size &size, Size maxSize) const
 {
 	unsigned int desiredArea = size.width * size.height;
@@ -819,14 +838,16 @@ CameraSensorRaw::getFormat(Span<const unsigned int> mbusCodes,
 int CameraSensorRaw::setFormat(V4L2SubdeviceFormat *format, Transform transform)
 {
 	/* Configure flips if the sensor supports that. */
-	if (supportFlips_) {
-		ControlList flipCtrls(subdev_->controls());
-
+	ControlList flipCtrls(subdev_->controls());
+	if (supportHFlips_)
 		flipCtrls.set(V4L2_CID_HFLIP,
 			      static_cast<int32_t>(!!(transform & Transform::HFlip)));
+
+	if (supportVFlips_)
 		flipCtrls.set(V4L2_CID_VFLIP,
 			      static_cast<int32_t>(!!(transform & Transform::VFlip)));
 
+	if (!flipCtrls.empty()) {
 		int ret = subdev_->setControls(&flipCtrls);
 		if (ret)
 			return ret;
@@ -986,28 +1007,18 @@ int CameraSensorRaw::setEmbeddedDataEnabled(bool enable)
 int CameraSensorRaw::sensorInfo(IPACameraSensorInfo *info) const
 {
 	info->model = model();
+	info->pixelArrayArea = pixelArrayArea_;
 
 	/*
-	 * The active area size is a static property, while the crop
-	 * rectangle needs to be re-read as it depends on the sensor
-	 * configuration.
+	 * The active area is a static property, while the crop rectangle needs
+	 * to be re-read as it depends on the sensor configuration.
 	 */
-	info->activeAreaSize = { activeArea_.width, activeArea_.height };
+	info->activeArea = activeArea_;
 
 	int ret = subdev_->getSelection(streams_.image.sink, V4L2_SEL_TGT_CROP,
 					&info->analogCrop);
 	if (ret)
 		return ret;
-
-	/*
-	 * IPACameraSensorInfo::analogCrop::x and IPACameraSensorInfo::analogCrop::y
-	 * are defined relatively to the active pixel area, while V4L2's
-	 * TGT_CROP target is defined in respect to the full pixel array.
-	 *
-	 * Compensate it by subtracting the active area offset.
-	 */
-	info->analogCrop.x -= activeArea_.x;
-	info->analogCrop.y -= activeArea_.y;
 
 	/* The bit depth and image size depend on the currently applied format. */
 	V4L2SubdeviceFormat format{};
@@ -1054,23 +1065,25 @@ int CameraSensorRaw::sensorInfo(IPACameraSensorInfo *info) const
 Transform CameraSensorRaw::computeTransform(Orientation *orientation) const
 {
 	/*
-	 * If we cannot do any flips we cannot change the native camera mounting
-	 * orientation.
-	 */
-	if (!supportFlips_) {
-		*orientation = mountingOrientation_;
-		return Transform::Identity;
-	}
-
-	/*
-	 * Now compute the required transform to obtain 'orientation' starting
-	 * from the mounting rotation.
+	 * Compute the required transform to obtain 'orientation' starting from
+	 * the mounting rotation.
 	 *
 	 * As a note:
 	 * 	orientation / mountingOrientation_ = transform
 	 * 	mountingOrientation_ * transform = orientation
 	 */
 	Transform transform = *orientation / mountingOrientation_;
+
+	/* If we cannot do the required flips, fall back to identity. */
+	if (!supportHFlips_ && !!(transform & Transform::HFlip)) {
+		*orientation = mountingOrientation_;
+		return Transform::Identity;
+	}
+
+	if (!supportVFlips_ && !!(transform & Transform::VFlip)) {
+		*orientation = mountingOrientation_;
+		return Transform::Identity;
+	}
 
 	/*
 	 * If transform contains any Transpose we cannot do it, so adjust
@@ -1102,7 +1115,7 @@ const ControlInfoMap &CameraSensorRaw::controls() const
 	return subdev_->controls();
 }
 
-ControlList CameraSensorRaw::getControls(Span<const uint32_t> ids)
+ControlList CameraSensorRaw::getControls(std::span<const uint32_t> ids)
 {
 	return subdev_->getControls(ids);
 }
@@ -1159,6 +1172,6 @@ std::string CameraSensorRaw::logPrefix() const
 	return "'" + entity_->name() + "'";
 }
 
-REGISTER_CAMERA_SENSOR(CameraSensorRaw, 0)
+REGISTER_CAMERA_SENSOR(CameraSensorRaw, -200)
 
 } /* namespace libcamera */

@@ -10,11 +10,11 @@
 
 #include <charconv>
 #include <errno.h>
+#include <span>
 #include <string>
 #include <vector>
 
 #include <libcamera/base/log.h>
-#include <libcamera/base/span.h>
 #include <libcamera/base/utils.h>
 
 /**
@@ -608,7 +608,7 @@ ValueNode *ValueNode::add(std::initializer_list<std::string_view> path,
 			node = node->add(std::string{ name },
 					 obj ? std::move(obj) : std::move(child));
 			if (!node) {
-				Span<const std::string_view> pathName{ std::data(path), i + 1 };
+				std::span<const std::string_view> pathName{ std::data(path), i + 1 };
 				LOG(ValueNode, Error)
 					<< "Failed to populate '"
 					<< utils::join(pathName, "/") << "'";

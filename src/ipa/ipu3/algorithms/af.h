@@ -46,7 +46,7 @@ private:
 	void afReset(IPAContext &context);
 	bool afNeedIgnoreFrame();
 	void afIgnoreFrameReset();
-	double afEstimateVariance(Span<const y_table_item_t> y_items, bool isY1);
+	double afEstimateVariance(std::span<const y_table_item_t> y_items, bool isY1);
 
 	bool afIsOutOfFocus(IPAContext &context);
 

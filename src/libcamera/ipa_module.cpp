@@ -14,6 +14,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <link.h>
+#include <span>
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -21,10 +22,7 @@
 
 #include <libcamera/base/file.h>
 #include <libcamera/base/log.h>
-#include <libcamera/base/span.h>
 #include <libcamera/base/utils.h>
-
-#include "libcamera/internal/pipeline_handler.h"
 
 /**
  * \file ipa_module.h
@@ -43,7 +41,7 @@ LOG_DEFINE_CATEGORY(IPAModule)
 namespace {
 
 template<typename T>
-typename std::remove_extent_t<T> *elfPointer(Span<const uint8_t> elf,
+typename std::remove_extent_t<T> *elfPointer(std::span<const uint8_t> elf,
 					     off_t offset, size_t objSize)
 {
 	size_t size = offset + objSize;
@@ -55,13 +53,13 @@ typename std::remove_extent_t<T> *elfPointer(Span<const uint8_t> elf,
 }
 
 template<typename T>
-typename std::remove_extent_t<T> *elfPointer(Span<const uint8_t> elf,
+typename std::remove_extent_t<T> *elfPointer(std::span<const uint8_t> elf,
 					     off_t offset)
 {
 	return elfPointer<T>(elf, offset, sizeof(T));
 }
 
-int elfVerifyIdent(Span<const uint8_t> elf)
+int elfVerifyIdent(std::span<const uint8_t> elf)
 {
 	const char *e_ident = elfPointer<const char[EI_NIDENT]>(elf, 0);
 	if (!e_ident)
@@ -87,7 +85,7 @@ int elfVerifyIdent(Span<const uint8_t> elf)
 	return 0;
 }
 
-const ElfW(Shdr) *elfSection(Span<const uint8_t> elf, const ElfW(Ehdr) *eHdr,
+const ElfW(Shdr) *elfSection(std::span<const uint8_t> elf, const ElfW(Ehdr) *eHdr,
 			     ElfW(Half) idx)
 {
 	if (idx >= eHdr->e_shnum)
@@ -106,7 +104,7 @@ const ElfW(Shdr) *elfSection(Span<const uint8_t> elf, const ElfW(Ehdr) *eHdr,
  * \return The memory region storing the symbol on success, or an empty span
  * otherwise
  */
-Span<const uint8_t> elfLoadSymbol(Span<const uint8_t> elf, const char *symbol)
+std::span<const uint8_t> elfLoadSymbol(std::span<const uint8_t> elf, const char *symbol)
 {
 	const ElfW(Ehdr) *eHdr = elfPointer<const ElfW(Ehdr)>(elf, 0);
 	if (!eHdr)
@@ -215,18 +213,15 @@ Span<const uint8_t> elfLoadSymbol(Span<const uint8_t> elf, const char *symbol)
  * \var IPAModuleInfo::pipelineVersion
  * \brief The pipeline handler version that the IPA module is for
  *
- * \var IPAModuleInfo::pipelineName
- * \brief The name of the pipeline handler that the IPA module is for
- *
- * This name is used to match a pipeline handler with the module.
- *
  * \var IPAModuleInfo::name
  * \brief The name of the IPA module
  *
- * The name may be used to build file system paths to IPA-specific resources.
- * It shall only contain printable characters, and may not contain '*', '?' or
- * '\'. For IPA modules included in libcamera, it shall match the directory of
- * the IPA module in the source tree.
+ * This name is used to match the IPA module.
+ *
+ * The name may also be used to build file system paths to IPA-specific
+ * resources. It shall only contain printable characters, and may not contain
+ * '*', '?' or '\'. For IPA modules included in libcamera, it shall match the
+ * directory of the IPA module in the source tree.
  *
  * \todo Allow user to choose to isolate open source IPAs
  */
@@ -279,14 +274,14 @@ int IPAModule::loadIPAModuleInfo()
 		return file.error();
 	}
 
-	Span<const uint8_t> data = file.map();
+	std::span<const uint8_t> data = file.map();
 	int ret = elfVerifyIdent(data);
 	if (ret) {
 		LOG(IPAModule, Error) << "IPA module is not an ELF file";
 		return ret;
 	}
 
-	Span<const uint8_t> info = elfLoadSymbol(data, "ipaModuleInfo");
+	std::span<const uint8_t> info = elfLoadSymbol(data, "ipaModuleInfo");
 	if (info.size() < sizeof(info_)) {
 		LOG(IPAModule, Error) << "IPA module has no valid info";
 		return -EINVAL;
@@ -462,22 +457,22 @@ IPAInterface *IPAModule::createInterface()
 }
 
 /**
- * \brief Verify if the IPA module matches a given pipeline handler
- * \param[in] pipe Pipeline handler to match with
+ * \brief Verify if the IPA module matches a given name
+ * \param[in] name The IPA module name
  * \param[in] minVersion Minimum acceptable version of IPA module
  * \param[in] maxVersion Maximum acceptable version of IPA module
  *
- * This function checks if this IPA module matches the \a pipe pipeline handler,
+ * This function checks if this IPA module matches the requested \a name
  * and the input version range.
  *
- * \return True if the pipeline handler matches the IPA module, or false otherwise
+ * \return True if the IPA module matches, or false otherwise
  */
-bool IPAModule::match(PipelineHandler *pipe,
-		      uint32_t minVersion, uint32_t maxVersion) const
+bool IPAModule::match(const char *name, uint32_t minVersion,
+		      uint32_t maxVersion) const
 {
 	return info_.pipelineVersion >= minVersion &&
 	       info_.pipelineVersion <= maxVersion &&
-	       !strcmp(info_.pipelineName, pipe->name());
+	       !strcmp(info_.name, name);
 }
 
 std::string IPAModule::logPrefix() const

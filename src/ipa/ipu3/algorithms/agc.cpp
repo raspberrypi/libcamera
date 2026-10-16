@@ -8,7 +8,7 @@
 #include "agc.h"
 
 #include <algorithm>
-#include <chrono>
+#include <span>
 
 #include <libcamera/base/log.h>
 #include <libcamera/base/utils.h>
@@ -48,17 +48,10 @@ namespace ipa::ipu3::algorithms {
 
 LOG_DEFINE_CATEGORY(IPU3Agc)
 
-/* Minimum limit for analogue gain value */
-static constexpr double kMinAnalogueGain = 1.0;
-
-/* \todo Honour the FrameDurationLimits control instead of hardcoding a limit */
-static constexpr utils::Duration kMaxExposureTime = 60ms;
-
 /* Histogram constants */
 static constexpr uint32_t knumHistogramBins = 256;
 
 Agc::Agc()
-	: minExposureTime_(0s), maxExposureTime_(0s)
 {
 }
 
@@ -74,15 +67,11 @@ Agc::Agc()
  */
 int Agc::init(IPAContext &context, const ValueNode &tuningData)
 {
-	int ret;
-
-	ret = parseTuningData(tuningData);
-	if (ret)
-		return ret;
-
-	context.ctrlMap.merge(controls());
-
-	return 0;
+	return agc_.init(tuningData, context.camHelper.get(), {
+		.sensorInfo = context.sensorInfo,
+		.sensorControls = context.sensorControls,
+		.ctrlMap = context.ctrlMap,
+	});
 }
 
 /**
@@ -95,32 +84,34 @@ int Agc::init(IPAContext &context, const ValueNode &tuningData)
 int Agc::configure(IPAContext &context,
 		   [[maybe_unused]] const IPAConfigInfo &configInfo)
 {
-	const IPASessionConfiguration &configuration = context.configuration;
-	IPAActiveState &activeState = context.activeState;
+	stride_ =  context.configuration.grid.stride;
+	bdsGrid_ = context.configuration.grid.bdsGrid;
 
-	stride_ = configuration.grid.stride;
-	bdsGrid_ = configuration.grid.bdsGrid;
+	return agc_.configure(context.configuration.agc, context.activeState.agc, {
+		.sensorInfo = context.sensorInfo,
+		.sensorControls = context.sensorControls,
+		.ctrlMap = context.ctrlMap,
+	});
+}
 
-	minExposureTime_ = configuration.agc.minExposureTime;
-	maxExposureTime_ = std::min(configuration.agc.maxExposureTime,
-				    kMaxExposureTime);
+/**
+ * \copydoc libcamera::ipa::Algorithm::queueRequest
+ */
+void Agc::queueRequest(IPAContext &context, [[maybe_unused]] const uint32_t frame,
+		       IPAFrameContext &frameContext, const ControlList &controls)
+{
+	agc_.queueRequest(context.configuration.agc, context.activeState.agc,
+			  frameContext.agc, controls);
+}
 
-	minAnalogueGain_ = std::max(configuration.agc.minAnalogueGain, kMinAnalogueGain);
-	maxAnalogueGain_ = configuration.agc.maxAnalogueGain;
-
-	/* Configure the default exposure and gain. */
-	activeState.agc.gain = minAnalogueGain_;
-	activeState.agc.exposure = 10ms / configuration.sensor.lineDuration;
-
-	context.activeState.agc.constraintMode = constraintModes().begin()->first;
-	context.activeState.agc.exposureMode = exposureModeHelpers().begin()->first;
-
-	/* \todo Run this again when FrameDurationLimits is passed in */
-	setLimits(minExposureTime_, maxExposureTime_, minAnalogueGain_,
-		  maxAnalogueGain_, {});
-	resetFrameCount();
-
-	return 0;
+/**
+ * \copydoc libcamera::ipa::Algorithm::prepare
+ */
+void Agc::prepare(IPAContext &context, [[maybe_unused]] const uint32_t frame,
+		  IPAFrameContext &frameContext,
+		  [[maybe_unused]] ipu3_uapi_params *params)
+{
+	agc_.prepare(context.activeState.agc, frameContext.agc);
 }
 
 Histogram Agc::parseStatistics(const ipu3_uapi_stats_3a *stats,
@@ -153,43 +144,62 @@ Histogram Agc::parseStatistics(const ipu3_uapi_stats_3a *stats,
 		}
 	}
 
-	return Histogram(Span<uint32_t>(hist));
+	return Histogram(std::span<uint32_t>(hist));
 }
 
-/**
- * \brief Estimate the relative luminance of the frame with a given gain
- * \param[in] gain The gain to apply in estimating luminance
- *
- * The estimation is based on the AWB statistics for the current frame. Red,
- * green and blue averages for all cells are first multiplied by the gain, and
- * then saturated to approximate the sensor behaviour at high brightness
- * values. The approximation is quite rough, as it doesn't take into account
- * non-linearities when approaching saturation.
- *
- * The relative luminance (Y) is computed from the linear RGB components using
- * the Rec. 601 formula. The values are normalized to the [0.0, 1.0] range,
- * where 1.0 corresponds to a theoretical perfect reflector of 100% reference
- * white.
- *
- * More detailed information can be found in:
- * https://en.wikipedia.org/wiki/Relative_luminance
- *
- * \return The relative luminance of the frame
- */
-double Agc::estimateLuminance(double gain) const
-{
-	RGB<double> sum{ 0.0 };
+namespace {
 
-	for (unsigned int i = 0; i < rgbTriples_.size(); i++) {
-		sum.r() += std::min(std::get<0>(rgbTriples_[i]) * gain, 255.0);
-		sum.g() += std::min(std::get<1>(rgbTriples_[i]) * gain, 255.0);
-		sum.b() += std::min(std::get<2>(rgbTriples_[i]) * gain, 255.0);
+class AgcTraits final : public AgcMeanLuminance::Traits
+{
+public:
+	AgcTraits(std::span<const std::tuple<uint8_t, uint8_t, uint8_t>> rgbTriples,
+		  RGB<double> gains, const ipu3_uapi_grid_config &bdsGrid)
+		: rgbTriples_(rgbTriples), gains_(gains), bdsGrid_(bdsGrid)
+	{
 	}
 
-	RGB<double> gains{{ rGain_, gGain_, bGain_ }};
-	double ySum = rec601LuminanceFromRGB(sum * gains);
-	return ySum / (bdsGrid_.height * bdsGrid_.width) / 255;
-}
+	/**
+	 * \brief Estimate the relative luminance of the frame with a given gain
+	 * \param[in] gain The gain to apply in estimating luminance
+	 *
+	 * The estimation is based on the AWB statistics for the current frame. Red,
+	 * green and blue averages for all cells are first multiplied by the gain, and
+	 * then saturated to approximate the sensor behaviour at high brightness
+	 * values. The approximation is quite rough, as it doesn't take into account
+	 * non-linearities when approaching saturation.
+	 *
+	 * The relative luminance (Y) is computed from the linear RGB components using
+	 * the Rec. 601 formula. The values are normalized to the [0.0, 1.0] range,
+	 * where 1.0 corresponds to a theoretical perfect reflector of 100% reference
+	 * white.
+	 *
+	 * More detailed information can be found in:
+	 * https://en.wikipedia.org/wiki/Relative_luminance
+	 *
+	 * \return The relative luminance of the frame
+	 */
+
+	double estimateLuminance(double gain) const override
+	{
+		RGB<double> sum{ 0.0 };
+
+		for (unsigned int i = 0; i < rgbTriples_.size(); i++) {
+			sum.r() += std::min(std::get<0>(rgbTriples_[i]) * gain, 255.0);
+			sum.g() += std::min(std::get<1>(rgbTriples_[i]) * gain, 255.0);
+			sum.b() += std::min(std::get<2>(rgbTriples_[i]) * gain, 255.0);
+		}
+
+		double ySum = rec601LuminanceFromRGB(sum * gains_);
+		return ySum / (bdsGrid_.height * bdsGrid_.width) / 255;
+	}
+
+private:
+	std::span<const std::tuple<uint8_t, uint8_t, uint8_t>> rgbTriples_;
+	RGB<double> gains_;
+	const ipu3_uapi_grid_config &bdsGrid_;
+};
+
+} /* namespace */
 
 /**
  * \brief Process IPU3 statistics, and run AGC operations
@@ -208,44 +218,19 @@ void Agc::process(IPAContext &context, [[maybe_unused]] const uint32_t frame,
 		  ControlList &metadata)
 {
 	Histogram hist = parseStatistics(stats, context.configuration.grid.bdsGrid);
-	rGain_ = context.activeState.awb.gains.red;
-	gGain_ = context.activeState.awb.gains.blue;
-	bGain_ = context.activeState.awb.gains.green;
+	ipa::awb::Context awbContext;
 
-	/*
-	 * The Agc algorithm needs to know the effective exposure value that was
-	 * applied to the sensor when the statistics were collected.
-	 */
-	utils::Duration exposureTime = context.configuration.sensor.lineDuration
-				     * frameContext.sensor.exposure;
-	double analogueGain = frameContext.sensor.gain;
-	utils::Duration effectiveExposureValue = exposureTime * analogueGain;
+	if (context.activeState.awb.autoEnabled)
+		awbContext = context.activeState.awb.automatic;
+	else
+		awbContext = context.activeState.awb.manual;
 
-	utils::Duration newExposureTime;
-	double aGain, qGain, dGain;
-	std::tie(newExposureTime, aGain, qGain, dGain) =
-		calculateNewEv(context.activeState.agc.constraintMode,
-			       context.activeState.agc.exposureMode, hist,
-			       effectiveExposureValue);
-
-	LOG(IPU3Agc, Debug)
-		<< "Divided up exposure time, analogue gain and digital gain are "
-		<< newExposureTime << ", " << aGain << " and " << dGain;
-
-	IPAActiveState &activeState = context.activeState;
-	/* Update the estimated exposure time and gain. */
-	activeState.agc.exposure = newExposureTime / context.configuration.sensor.lineDuration;
-	activeState.agc.gain = aGain;
-
-	metadata.set(controls::AnalogueGain, frameContext.sensor.gain);
-	metadata.set(controls::ExposureTime, exposureTime.get<std::micro>());
-
-	/* \todo Use VBlank value calculated from each frame exposure. */
-	uint32_t vTotal = context.configuration.sensor.size.height
-			+ context.configuration.sensor.defVBlank;
-	utils::Duration frameDuration = context.configuration.sensor.lineDuration
-				      * vTotal;
-	metadata.set(controls::FrameDuration, frameDuration.get<std::micro>());
+	agc_.process(context.configuration.agc, context.activeState.agc, frameContext.agc, {{
+		.traits = AgcTraits{rgbTriples_, awbContext.gains, bdsGrid_},
+		.yHist = hist,
+		.exposure = frameContext.sensor.exposure,
+		.gain = frameContext.sensor.gain,
+	}}, metadata);
 }
 
 REGISTER_IPA_ALGORITHM(Agc, "Agc")

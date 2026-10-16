@@ -23,16 +23,16 @@ public:
 
 	int configure(const libcamera::StreamConfiguration &cfg) override;
 	int encode(Camera3RequestDescriptor::StreamBuffer *buffer,
-		   libcamera::Span<const uint8_t> exifData,
+		   std::span<const uint8_t> exifData,
 		   unsigned int quality) override;
-	int encode(const std::vector<libcamera::Span<uint8_t>> &planes,
-		   libcamera::Span<uint8_t> destination,
-		   libcamera::Span<const uint8_t> exifData,
+	int encode(const std::vector<std::span<uint8_t>> &planes,
+		   std::span<uint8_t> destination,
+		   std::span<const uint8_t> exifData,
 		   unsigned int quality);
 
 private:
-	void compressRGB(const std::vector<libcamera::Span<uint8_t>> &planes);
-	void compressNV(const std::vector<libcamera::Span<uint8_t>> &planes);
+	void compressRGB(const std::vector<std::span<uint8_t>> &planes);
+	void compressNV(const std::vector<std::span<uint8_t>> &planes);
 
 	struct jpeg_compress_struct compress_;
 	struct jpeg_error_mgr jerr_;

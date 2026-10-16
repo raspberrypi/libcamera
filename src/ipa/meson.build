@@ -24,6 +24,16 @@ subdir('libipa')
 
 ipa_sign = files('ipa-sign.sh')
 
+supported_ipas = {
+    'ipu3':       'ipu3',
+    'mali-c55':   'mali-c55',
+    'rkisp1':     'rkisp1',
+    'rpi/pisp':   'rpi/pisp',
+    'rpi/vc4':    'rpi/vc4',
+    'simple':     'softisp',
+    'vimc':       'vimc'
+}
+
 ipa_modules = get_option('ipas')
 
 # Tests require the vimc IPA, similar to vimc pipline-handler for their
@@ -39,24 +49,34 @@ ipa_names = []
 
 subdirs = []
 foreach pipeline : pipelines
-    # The current implementation expects the IPA module name to match the
-    # pipeline name.
-    # \todo Make the IPA naming scheme more flexible.
-    if not ipa_modules.contains(pipeline)
+    # Make sure an IPA exists for the pipeline
+    if not supported_ipas.has_key(pipeline)
         continue
     endif
-    enabled_ipa_names += pipeline
+
+    ipa = supported_ipas.get(pipeline)
+
+    # Only build IPAs specified with '-Dipas'
+    if not ipa_modules.contains(ipa)
+        continue
+    endif
+
+    # If enabled already do not add it twice
+    if enabled_ipa_names.contains(ipa)
+        continue
+    endif
+    enabled_ipa_names += ipa
 
     # Allow multi-level directory structuring for the IPAs if needed.
-    pipeline = pipeline.split('/')[0]
-    if pipeline in subdirs
+    ipa = ipa.split('/')[0]
+    if ipa in subdirs
         continue
     endif
 
-    subdirs += pipeline
-    subdir(pipeline)
+    subdirs += ipa
+    subdir(ipa)
 
-    # Don't reuse the pipeline variable below, the subdirectory may have
+    # Don't reuse the ipa variable below, the subdirectory may have
     # overwritten it.
 endforeach
 

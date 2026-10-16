@@ -24,6 +24,7 @@ uniform sampler2D       tex_y;
 varying vec4            center;
 varying vec4            yCoord;
 varying vec4            xCoord;
+uniform vec3            awb;
 uniform mat3            ccm;
 uniform vec3            blacklevel;
 uniform float           gamma;
@@ -128,51 +129,17 @@ void main(void) {
             vec3(PATTERN.w, C, PATTERN.z) :
             vec3(PATTERN.yx, C));
 
-    rgb = rgb - blacklevel;
-
     /*
-     *   CCM is a 3x3 in the format
-     *
-     *   +--------------+----------------+---------------+
-     *   | RedRedGain   | RedGreenGain   | RedBlueGain   |
-     *   +--------------+----------------+---------------+
-     *   | GreenRedGain | GreenGreenGain | GreenBlueGain |
-     *   +--------------+----------------+---------------+
-     *   | BlueRedGain  |  BlueGreenGain | BlueBlueGain  |
-     *   +--------------+----------------+---------------+
-     *
-     *   Rout = RedRedGain * Rin + RedGreenGain * Gin + RedBlueGain * Bin
-     *   Gout = GreenRedGain * Rin + GreenGreenGain * Gin + GreenBlueGain * Bin
-     *   Bout = BlueRedGain * Rin + BlueGreenGain * Gin + BlueBlueGain * Bin
-     *
-     *   We upload to the GPU without transposition glUniformMatrix3f(.., .., GL_FALSE, ccm);
-     *
-     *   CPU
-     *   float ccm [] = {
-     *             RedRedGain,   RedGreenGain,   RedBlueGain,
-     *             GreenRedGain, GreenGreenGain, GreenBlueGain,
-     *             BlueRedGain,  BlueGreenGain,  BlueBlueGain,
-     *   };
-     *
-     *   GPU
-     *   ccm = {
-     *             RedRedGain,   GreenRedGain,   BlueRedGain,
-     *             RedGreenGain, GreenGreenGain, BlueGreenGain,
-     *             RedBlueGain,  GreenBlueGain,  BlueBlueGain,
-     *   }
-     *
-     *   However the indexing for the mat data-type is column major hence
-     *   ccm[0][0] = RedRedGain, ccm[0][1] = RedGreenGain, ccm[0][2] = RedBlueGain
-     *
+     * \todo: Black level normalising, AWB and digital gain could be
+     * reworked into a single multiplication.
      */
-    float rin, gin, bin;
-    rin = rgb.r;
-    gin = rgb.g;
-    bin = rgb.b;
+    rgb = (rgb - blacklevel) / (1.0 - blacklevel);
 
-    rgb.r = (rin * ccm[0][0]) + (gin * ccm[0][1]) + (bin * ccm[0][2]);
-    rgb.g = (rin * ccm[1][0]) + (gin * ccm[1][1]) + (bin * ccm[1][2]);
-    rgb.b = (rin * ccm[2][0]) + (gin * ccm[2][1]) + (bin * ccm[2][2]);
+    /* Apply AWB gains, and saturate each channel at sensor range */
+    rgb = clamp(rgb * awb, vec3(0.0), vec3(1.0));
+
+    /* Colour Correction Matrix */
+    rgb = ccm * rgb;
 
     /*
      * Contrast

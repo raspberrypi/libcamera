@@ -7,12 +7,12 @@
 
 #pragma once
 
+#include <span>
 #include <stdint.h>
 #include <vector>
 
 #include <libcamera/base/class.h>
 #include <libcamera/base/flags.h>
-#include <libcamera/base/span.h>
 
 #include <libcamera/framebuffer.h>
 
@@ -21,7 +21,7 @@ namespace libcamera {
 class MappedBuffer
 {
 public:
-	using Plane = Span<uint8_t>;
+	using Plane = std::span<uint8_t>;
 
 	~MappedBuffer();
 

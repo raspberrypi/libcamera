@@ -48,11 +48,11 @@ LOG_DEFINE_CATEGORY(Matrix)
  */
 
 /**
- * \fn Matrix::Matrix(const Span<const T, Rows * Cols> data)
+ * \fn Matrix::Matrix(std::span<const T, Rows * Cols> data)
  * \brief Construct a matrix from supplied data
  * \param[in] data Data from which to construct a matrix
  *
- * \a data is a one-dimensional Span and will be turned into a matrix in
+ * \a data is a one-dimensional span and will be turned into a matrix in
  * row-major order. The size of \a data must be equal to the product of the
  * number of rows and columns of the matrix (Rows x Cols).
  */
@@ -69,7 +69,7 @@ LOG_DEFINE_CATEGORY(Matrix)
  */
 
 /**
- * \fn Matrix::data()
+ * \fn Matrix::data() const
  * \brief Access the matrix data as a linear array
  *
  * Access the contents of the matrix as a one-dimensional linear array of
@@ -80,17 +80,22 @@ LOG_DEFINE_CATEGORY(Matrix)
  */
 
 /**
- * \fn Span<const T, Cols> Matrix::operator[](size_t i) const
+ * \fn Matrix::data()
+ * \copydoc Matrix::data() const
+ */
+
+/**
+ * \fn std::span<const T, Cols> Matrix::operator[](size_t i) const
  * \brief Index to a row in the matrix
  * \param[in] i Index of row to retrieve
  *
- * This operator[] returns a Span, which can then be indexed into again with
+ * This operator[] returns a span, which can then be indexed into again with
  * another operator[], allowing a convenient m[i][j] to access elements of the
- * matrix. Note that the lifetime of the Span returned by this first-level
+ * matrix. Note that the lifetime of the span returned by this first-level
  * operator[] is bound to that of the Matrix itself, so it is not recommended
- * to save the Span that is the result of this operator[].
+ * to save the span that is the result of this operator[].
  *
- * \return Row \a i from the matrix, as a Span
+ * \return Row \a i from the matrix, as a span
  */
 
 /**
@@ -105,6 +110,19 @@ LOG_DEFINE_CATEGORY(Matrix)
  * an identity matrix.
  *
  * \return The inverse of the matrix
+ */
+
+/**
+ * \fn Matrix::transpose() const
+ * \brief Compute the transpose of the matrix
+ * \tparam U Type of the numerical values in the tranposed matrix
+ *
+ * This function computes the transpose of the matrix. The optional template
+ * parameter \a U specifies the type of the numerical values in the result. It
+ * defaults to \a T, and can be specified manually to convert to a different
+ * data type while transposing.
+ *
+ * \return The transpose of the matrix
  */
 
 /**
@@ -164,8 +182,8 @@ LOG_DEFINE_CATEGORY(Matrix)
 
 #ifndef __DOXYGEN__
 template<typename T>
-bool matrixInvert(Span<const T> dataIn, Span<T> dataOut, unsigned int dim,
-		  Span<T> scratchBuffer, Span<unsigned int> swapBuffer)
+bool matrixInvert(std::span<const T> dataIn, std::span<T> dataOut, unsigned int dim,
+		  std::span<T> scratchBuffer, std::span<unsigned int> swapBuffer)
 {
 	/*
 	 * Convenience class to access matrix data, providing a row-major (i,j)
@@ -175,7 +193,7 @@ bool matrixInvert(Span<const T> dataIn, Span<T> dataOut, unsigned int dim,
 	class MatrixAccessor
 	{
 	public:
-		MatrixAccessor(Span<T> data, Span<unsigned int> swapBuffer, unsigned int rows, unsigned int cols)
+		MatrixAccessor(std::span<T> data, std::span<unsigned int> swapBuffer, unsigned int rows, unsigned int cols)
 			: data_(data), swap_(swapBuffer), rows_(rows), cols_(cols)
 		{
 			ASSERT(swap_.size() == rows);
@@ -200,8 +218,8 @@ bool matrixInvert(Span<const T> dataIn, Span<T> dataOut, unsigned int dim,
 			return swap_[row] * cols_ + col;
 		}
 
-		Span<T> data_;
-		Span<unsigned int> swap_;
+		std::span<T> data_;
+		std::span<unsigned int> swap_;
 		unsigned int rows_;
 		unsigned int cols_;
 	};
@@ -302,19 +320,19 @@ bool matrixInvert(Span<const T> dataIn, Span<T> dataOut, unsigned int dim,
 	return true;
 }
 
-template bool matrixInvert<float>(Span<const float> dataIn, Span<float> dataOut,
-				  unsigned int dim, Span<float> scratchBuffer,
-				  Span<unsigned int> swapBuffer);
-template bool matrixInvert<double>(Span<const double> data, Span<double> dataOut,
-				   unsigned int dim, Span<double> scratchBuffer,
-				   Span<unsigned int> swapBuffer);
+template bool matrixInvert<float>(std::span<const float> dataIn, std::span<float> dataOut,
+				  unsigned int dim, std::span<float> scratchBuffer,
+				  std::span<unsigned int> swapBuffer);
+template bool matrixInvert<double>(std::span<const double> data, std::span<double> dataOut,
+				   unsigned int dim, std::span<double> scratchBuffer,
+				   std::span<unsigned int> swapBuffer);
 
 /*
- * The YAML data shall be a list of numerical values. Its size shall be equal
+ * The value node shall be a list of numerical values. Its size shall be equal
  * to the product of the number of rows and columns of the matrix (Rows x
  * Cols). The values shall be stored in row-major order.
  */
-bool matrixValidateYaml(const ValueNode &obj, unsigned int size)
+bool matrixValidateValueNode(const ValueNode &obj, unsigned int size)
 {
 	if (!obj.isList())
 		return false;

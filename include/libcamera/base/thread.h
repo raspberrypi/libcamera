@@ -8,6 +8,7 @@
 #pragma once
 
 #include <memory>
+#include <span>
 #include <string>
 #include <sys/types.h>
 #include <thread>
@@ -17,7 +18,6 @@
 #include <libcamera/base/class.h>
 #include <libcamera/base/message.h>
 #include <libcamera/base/signal.h>
-#include <libcamera/base/span.h>
 #include <libcamera/base/utils.h>
 
 namespace libcamera {
@@ -38,7 +38,7 @@ public:
 	void exit(int code = 0);
 	bool wait(utils::duration duration = utils::duration::max());
 
-	int setThreadAffinity(const Span<const unsigned int> &cpus);
+	int setThreadAffinity(std::span<const unsigned int> cpus);
 
 	bool isRunning();
 

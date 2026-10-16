@@ -7,10 +7,11 @@
 
 #pragma once
 
+#include <span>
+
 #include <hardware/camera3.h>
 
 #include <libcamera/base/class.h>
-#include <libcamera/base/span.h>
 #include <libcamera/geometry.h>
 #include <libcamera/pixel_format.h>
 
@@ -28,8 +29,8 @@ public:
 
 	unsigned int numPlanes() const;
 
-	libcamera::Span<const uint8_t> plane(unsigned int plane) const;
-	libcamera::Span<uint8_t> plane(unsigned int plane);
+	std::span<const uint8_t> plane(unsigned int plane) const;
+	std::span<uint8_t> plane(unsigned int plane);
 
 	unsigned int stride(unsigned int plane) const;
 	unsigned int offset(unsigned int plane) const;
@@ -58,11 +59,11 @@ unsigned int CameraBuffer::numPlanes() const				\
 {									\
 	return _d()->numPlanes();					\
 }									\
-Span<const uint8_t> CameraBuffer::plane(unsigned int plane) const	\
+std::span<const uint8_t> CameraBuffer::plane(unsigned int plane) const	\
 {									\
 	return const_cast<Private *>(_d())->plane(plane);		\
 }									\
-Span<uint8_t> CameraBuffer::plane(unsigned int plane)			\
+std::span<uint8_t> CameraBuffer::plane(unsigned int plane)		\
 {									\
 	return _d()->plane(plane);					\
 }									\

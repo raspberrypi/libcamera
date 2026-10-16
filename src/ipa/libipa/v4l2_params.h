@@ -8,13 +8,13 @@
 #pragma once
 
 #include <map>
+#include <span>
 #include <stdint.h>
 #include <string.h>
 
 #include <linux/media/v4l2-isp.h>
 
 #include <libcamera/base/log.h>
-#include <libcamera/base/span.h>
 #include <libcamera/base/utils.h>
 
 namespace libcamera {
@@ -27,7 +27,7 @@ template<typename T>
 class V4L2ParamsBlock
 {
 public:
-	V4L2ParamsBlock(const Span<uint8_t> data)
+	V4L2ParamsBlock(std::span<uint8_t> data)
 		: data_(data)
 	{
 	}
@@ -66,25 +66,25 @@ public:
 	}
 
 protected:
-	Span<uint8_t> data_;
+	std::span<uint8_t> data_;
 };
 
 class V4L2ParamsBase
 {
 protected:
-	V4L2ParamsBase(Span<uint8_t> data, unsigned int version);
+	V4L2ParamsBase(std::span<uint8_t> data, unsigned int version);
 
 public:
 	size_t bytesused() const { return used_; }
 
 protected:
-	Span<uint8_t> block(uint16_t type, unsigned int blockType,
-			    size_t blockSize);
+	std::span<uint8_t> block(uint16_t type, unsigned int blockType,
+				 size_t blockSize);
 
-	Span<uint8_t> data_;
+	std::span<uint8_t> data_;
 	size_t used_;
 
-	std::map<uint16_t, Span<uint8_t>> blocks_;
+	std::map<uint16_t, std::span<uint8_t>> blocks_;
 };
 
 template<typename Traits>
@@ -93,7 +93,7 @@ class V4L2Params : public V4L2ParamsBase
 public:
 	static_assert(std::is_same_v<std::underlying_type_t<typename Traits::id_type>, uint16_t>);
 
-	V4L2Params(Span<uint8_t> data, unsigned int version)
+	V4L2Params(std::span<uint8_t> data, unsigned int version)
 		: V4L2ParamsBase(data, version)
 	{
 	}

@@ -836,10 +836,33 @@ void PipelineHandler::disconnect()
  */
 
 /**
- * \fn PipelineHandler::createIPA()
- * \brief Create an IPA proxy that matches this pipeline handler
+ * \fn PipelineHandler::createIPA(const char *ipaName, uint32_t minVersion, uint32_t maxVersion)
+ * \brief Create an IPA proxy that matches the requested name and version
+ * \param[in] ipaName The IPA module name
  * \param[in] minVersion Minimum acceptable version of IPA module
  * \param[in] maxVersion Maximum acceptable version of IPA module
+ *
+ * Create an IPA module using \a ipaName as the matching identifier. This
+ * overload allows pipeline handlers to create an IPA module by specifying its
+ * name instead of relying on the fact that the IPA module matches the IPA
+ * proxy's type name.
+ *
+ * \deprecated This method is deprecated and *MUST* not be used in new code.
+ *
+ * \return A newly created IPA proxy, or nullptr if no matching IPA module is
+ * found or if the IPA proxy fails to initialize
+ */
+
+/**
+ * \fn PipelineHandler::createIPA(uint32_t minVersion, uint32_t maxVersion)
+ * \brief Create an IPA proxy that matches the pipeline handler name and the
+ * requested version
+ * \param[in] minVersion Minimum acceptable version of IPA module
+ * \param[in] maxVersion Maximum acceptable version of IPA module
+ *
+ * Create an IPA module using the IPA proxy's type name as the matching
+ * identifier. This overload allows pipeline handler to create an IPA module
+ * whose name matches the pipeline handler one.
  *
  * \return A newly created IPA proxy, or nullptr if no matching IPA module is
  * found or if the IPA proxy fails to initialize

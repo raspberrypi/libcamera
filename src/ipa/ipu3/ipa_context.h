@@ -15,7 +15,15 @@
 #include <libcamera/controls.h>
 #include <libcamera/geometry.h>
 
+#include <libcamera/ipa/core_ipa_interface.h>
+
+#include <libipa/agc.h>
+#include <libipa/awb.h>
+#include <libipa/camera_sensor_helper.h>
+#include <libipa/ccm.h>
 #include <libipa/fc_queue.h>
+#include <libipa/gamma.h>
+#include <libipa/lsc.h>
 
 namespace libcamera {
 
@@ -32,18 +40,7 @@ struct IPASessionConfiguration {
 		ipu3_uapi_grid_config afGrid;
 	} af;
 
-	struct {
-		utils::Duration minExposureTime;
-		utils::Duration maxExposureTime;
-		double minAnalogueGain;
-		double maxAnalogueGain;
-	} agc;
-
-	struct {
-		int32_t defVBlank;
-		utils::Duration lineDuration;
-		Size size;
-	} sensor;
+	agc::Session agc;
 };
 
 struct IPAActiveState {
@@ -53,27 +50,11 @@ struct IPAActiveState {
 		bool stable;
 	} af;
 
-	struct {
-		uint32_t exposure;
-		double gain;
-		uint32_t constraintMode;
-		uint32_t exposureMode;
-	} agc;
-
-	struct {
-		struct {
-			double red;
-			double green;
-			double blue;
-		} gains;
-
-		double temperatureK;
-	} awb;
-
-	struct {
-		double gamma;
-		struct ipu3_uapi_gamma_corr_lut gammaCorrection;
-	} toneMapping;
+	agc::ActiveState agc;
+	ipa::awb::ActiveState awb;
+	ipa::ccm::ActiveState ccm;
+	ipa::gamma::ActiveState gamma;
+	ipa::lsc::ActiveState lsc;
 };
 
 struct IPAFrameContext : public FrameContext {
@@ -81,6 +62,12 @@ struct IPAFrameContext : public FrameContext {
 		uint32_t exposure;
 		double gain;
 	} sensor;
+
+	agc::FrameContext agc;
+	ipa::awb::FrameContext awb;
+	ipa::ccm::FrameContext ccm;
+	ipa::gamma::FrameContext gamma;
+	ipa::lsc::FrameContext lsc;
 };
 
 struct IPAContext {
@@ -90,9 +77,13 @@ struct IPAContext {
 	}
 
 	IPASessionConfiguration configuration;
+	IPACameraSensorInfo sensorInfo;
+	ControlInfoMap sensorControls;
 	IPAActiveState activeState;
 
 	FCQueue<IPAFrameContext> frameContexts;
+
+	std::unique_ptr<CameraSensorHelper> camHelper;
 
 	ControlInfoMap::Map ctrlMap;
 };

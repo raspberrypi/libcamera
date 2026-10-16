@@ -131,7 +131,7 @@ namespace ipa {
  * \param[in] data Reference to the v4l2-buffer memory mapped area
  * \param[in] version The ISP parameters version the implementation supports
  */
-V4L2ParamsBase::V4L2ParamsBase(Span<uint8_t> data, unsigned int version)
+V4L2ParamsBase::V4L2ParamsBase(std::span<uint8_t> data, unsigned int version)
 	: data_(data)
 {
 	struct v4l2_isp_params_buffer *params =
@@ -167,8 +167,8 @@ V4L2ParamsBase::V4L2ParamsBase(Span<uint8_t> data, unsigned int version)
  * retrieve the memory area that will be used to construct a V4L2ParamsBlock<T>
  * before returning it to the caller.
  */
-Span<uint8_t> V4L2ParamsBase::block(uint16_t type, unsigned int blockType,
-				    size_t blockSize)
+std::span<uint8_t> V4L2ParamsBase::block(uint16_t type, unsigned int blockType,
+					 size_t blockSize)
 {
 	/*
 	 * Look up the block in the cache first. If an algorithm
@@ -182,7 +182,7 @@ Span<uint8_t> V4L2ParamsBase::block(uint16_t type, unsigned int blockType,
 	/*
 	 * Make sure we don't run out of space. Assert as otherwise
 	 * we get a segfault as soon as someone tries to access the
-	 * empty Span<> returned from here.
+	 * empty span returned from here.
 	 */
 	if (blockSize > data_.size() - used_) {
 		LOG(Fatal)
@@ -191,7 +191,7 @@ Span<uint8_t> V4L2ParamsBase::block(uint16_t type, unsigned int blockType,
 	}
 
 	/* Allocate a new block, clear its memory, and initialize its header. */
-	Span<uint8_t> block = data_.subspan(used_, blockSize);
+	std::span<uint8_t> block = data_.subspan(used_, blockSize);
 	memset(block.data(), 0, block.size());
 
 	struct v4l2_isp_params_block_header *header =
@@ -279,7 +279,7 @@ Span<uint8_t> V4L2ParamsBase::block(uint16_t type, unsigned int blockType,
  * class MyISPParams : public V4L2Params<params_traits>
  * {
  * public:
- * 	MyISPParams::MyISPParams(Span<uint8_t> data)
+ * 	MyISPParams::MyISPParams(std::span<uint8_t> data)
  * 		: V4L2Params(data, kVersion)
  * 	{
  * 	}

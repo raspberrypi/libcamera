@@ -73,7 +73,7 @@ public:
 	std::vector<Size> sizes(unsigned int mbusCode) const override;
 	Size resolution() const override;
 
-	V4L2SubdeviceFormat getFormat(Span<const unsigned int> mbusCodes,
+	V4L2SubdeviceFormat getFormat(std::span<const unsigned int> mbusCodes,
 				      const Size &size,
 				      const Size maxSize) const override;
 	int setFormat(V4L2SubdeviceFormat *format,
@@ -84,6 +84,7 @@ public:
 			       Transform transform = Transform::Identity,
 			       V4L2SubdeviceFormat *sensorFormat = nullptr) override;
 
+	V4L2Subdevice::Stream imageStream() const override;
 	const ControlList &properties() const override { return properties_; }
 	int sensorInfo(IPACameraSensorInfo *info) const override;
 	Transform computeTransform(Orientation *orientation) const override;
@@ -91,7 +92,7 @@ public:
 	Orientation mountingOrientation() const override { return mountingOrientation_; }
 
 	const ControlInfoMap &controls() const override;
-	ControlList getControls(Span<const uint32_t> ids) override;
+	ControlList getControls(std::span<const uint32_t> ids) override;
 	int setControls(ControlList *ctrls) override;
 
 	const std::vector<controls::draft::TestPatternModeEnum> &
@@ -130,10 +131,12 @@ private:
 	std::vector<controls::draft::TestPatternModeEnum> testPatternModes_;
 	controls::draft::TestPatternModeEnum testPatternMode_;
 
-	Size pixelArraySize_;
+	Rectangle pixelArrayArea_;
+	Rectangle readableArea_;
 	Rectangle activeArea_;
 	const BayerFormat *bayerFormat_;
-	bool supportFlips_;
+	bool supportHFlips_;
+	bool supportVFlips_;
 	bool flipsAlterBayerOrder_;
 	Orientation mountingOrientation_;
 
@@ -153,7 +156,7 @@ private:
 
 CameraSensorLegacy::CameraSensorLegacy(const MediaEntity *entity)
 	: entity_(entity), pad_(UINT_MAX), staticProps_(nullptr),
-	  bayerFormat_(nullptr), supportFlips_(false),
+	  bayerFormat_(nullptr), supportHFlips_(false), supportVFlips_(false),
 	  flipsAlterBayerOrder_(false), properties_(properties::properties)
 {
 }
@@ -359,25 +362,30 @@ int CameraSensorLegacy::validateSensorDriver()
 		}
 	}
 
-	/*
-	 * Verify if sensor supports horizontal/vertical flips
-	 *
-	 * \todo Handle horizontal and vertical flips independently.
-	 */
-	const struct v4l2_query_ext_ctrl *hflipInfo = subdev_->controlInfo(V4L2_CID_HFLIP);
-	const struct v4l2_query_ext_ctrl *vflipInfo = subdev_->controlInfo(V4L2_CID_VFLIP);
-	if (hflipInfo && !(hflipInfo->flags & V4L2_CTRL_FLAG_READ_ONLY) &&
-	    vflipInfo && !(vflipInfo->flags & V4L2_CTRL_FLAG_READ_ONLY)) {
-		supportFlips_ = true;
+	/* Verify if sensor supports horizontal/vertical flips. */
+	auto queryFlip = [&](uint32_t id, const char *name) -> std::pair<bool, bool> {
+		const struct v4l2_query_ext_ctrl *flipInfo = subdev_->controlInfo(id);
+		if (!flipInfo || flipInfo->flags & V4L2_CTRL_FLAG_READ_ONLY) {
+			LOG(CameraSensor, Debug)
+				<< "Camera sensor does not support " << name << " flip";
+			return { false, false };
+		}
 
-		if (hflipInfo->flags & V4L2_CTRL_FLAG_MODIFY_LAYOUT ||
-		    vflipInfo->flags & V4L2_CTRL_FLAG_MODIFY_LAYOUT)
-			flipsAlterBayerOrder_ = true;
+		return { true, flipInfo->flags & V4L2_CTRL_FLAG_MODIFY_LAYOUT };
+	};
+
+	auto hflip = queryFlip(V4L2_CID_HFLIP, "horizontal");
+	auto vflip = queryFlip(V4L2_CID_VFLIP, "vertical");
+
+	if (hflip.first && vflip.first && (hflip.second != vflip.second)) {
+		LOG(CameraSensor, Error)
+			<< "Flips with differing alter bayer order properties"
+			<< " are unsupported. Disabling flipping.";
+	} else {
+		supportHFlips_ = hflip.first;
+		supportVFlips_ = vflip.first;
+		flipsAlterBayerOrder_ = hflip.second || vflip.second;
 	}
-
-	if (!supportFlips_)
-		LOG(CameraSensor, Debug)
-			<< "Camera sensor does not support horizontal/vertical flip";
 
 	/*
 	 * Make sure the required selection targets are supported.
@@ -389,33 +397,40 @@ int CameraSensorLegacy::validateSensorDriver()
 	 * \todo Make support for selection targets mandatory as soon as all
 	 * test platforms have been updated.
 	 */
-	Rectangle rect;
-	int ret = subdev_->getSelection(pad_, V4L2_SEL_TGT_CROP_BOUNDS, &rect);
+	int ret = subdev_->getSelection(pad_, V4L2_SEL_TGT_NATIVE_SIZE, &pixelArrayArea_);
 	if (ret) {
 		/*
 		 * Default the pixel array size to the largest size supported
 		 * by the sensor. The sizes_ vector is sorted in ascending
 		 * order, the largest size is thus the last element.
 		 */
-		pixelArraySize_ = sizes_.back();
+		pixelArrayArea_ = Rectangle(sizes_.back());
 
 		LOG(CameraSensor, Warning)
-			<< "The PixelArraySize property has been defaulted to "
-			<< pixelArraySize_;
+			<< "The PixelArrayArea property has been defaulted to "
+			<< pixelArrayArea_;
 		err = -EINVAL;
-	} else {
-		pixelArraySize_ = rect.size();
+	}
+
+	ret = subdev_->getSelection(pad_, V4L2_SEL_TGT_CROP_BOUNDS, &readableArea_);
+	if (ret) {
+		readableArea_ = pixelArrayArea_;
+		LOG(CameraSensor, Warning)
+			<< "The PixelArrayReadableArea property has been defaulted to "
+			<< readableArea_;
+		err = -EINVAL;
 	}
 
 	ret = subdev_->getSelection(pad_, V4L2_SEL_TGT_CROP_DEFAULT, &activeArea_);
 	if (ret) {
-		activeArea_ = Rectangle(pixelArraySize_);
+		activeArea_ = readableArea_;
 		LOG(CameraSensor, Warning)
 			<< "The PixelArrayActiveAreas property has been defaulted to "
 			<< activeArea_;
 		err = -EINVAL;
 	}
 
+	Rectangle rect;
 	ret = subdev_->getSelection(pad_, V4L2_SEL_TGT_CROP, &rect);
 	if (ret) {
 		LOG(CameraSensor, Warning)
@@ -469,8 +484,9 @@ int CameraSensorLegacy::validateSensorDriver()
 void CameraSensorLegacy::initVimcDefaultProperties()
 {
 	/* Use the largest supported size. */
-	pixelArraySize_ = sizes_.back();
-	activeArea_ = Rectangle(pixelArraySize_);
+	pixelArrayArea_ = Rectangle(sizes_.back());
+	readableArea_ = pixelArrayArea_;
+	activeArea_ = pixelArrayArea_;
 }
 
 void CameraSensorLegacy::initStaticProperties()
@@ -620,7 +636,8 @@ int CameraSensorLegacy::initProperties()
 		mountingOrientation_ = Orientation::Rotate0;
 	}
 
-	properties_.set(properties::PixelArraySize, pixelArraySize_);
+	properties_.set(properties::PixelArrayArea, pixelArrayArea_);
+	properties_.set(properties::PixelArrayReadableArea, readableArea_);
 	properties_.set(properties::PixelArrayActiveAreas, { activeArea_ });
 
 	/* Color filter array pattern, register only for RAW sensors. */
@@ -700,7 +717,7 @@ Size CameraSensorLegacy::resolution() const
 }
 
 V4L2SubdeviceFormat
-CameraSensorLegacy::getFormat(Span<const unsigned int> mbusCodes,
+CameraSensorLegacy::getFormat(std::span<const unsigned int> mbusCodes,
 			      const Size &size, Size maxSize) const
 {
 	unsigned int desiredArea = size.width * size.height;
@@ -759,14 +776,16 @@ CameraSensorLegacy::getFormat(Span<const unsigned int> mbusCodes,
 int CameraSensorLegacy::setFormat(V4L2SubdeviceFormat *format, Transform transform)
 {
 	/* Configure flips if the sensor supports that. */
-	if (supportFlips_) {
-		ControlList flipCtrls(subdev_->controls());
-
+	ControlList flipCtrls(subdev_->controls());
+	if (supportHFlips_)
 		flipCtrls.set(V4L2_CID_HFLIP,
 			      static_cast<int32_t>(!!(transform & Transform::HFlip)));
+
+	if (supportVFlips_)
 		flipCtrls.set(V4L2_CID_VFLIP,
 			      static_cast<int32_t>(!!(transform & Transform::VFlip)));
 
+	if (!flipCtrls.empty()) {
 		int ret = subdev_->setControls(&flipCtrls);
 		if (ret)
 			return ret;
@@ -856,22 +875,27 @@ int CameraSensorLegacy::applyConfiguration(const SensorConfiguration &config,
 	return 0;
 }
 
+V4L2Subdevice::Stream CameraSensorLegacy::imageStream() const
+{
+	return { pad_, 0 };
+}
+
 int CameraSensorLegacy::sensorInfo(IPACameraSensorInfo *info) const
 {
 	if (!bayerFormat_)
 		return -EINVAL;
 
 	info->model = model();
+	info->pixelArrayArea = pixelArrayArea_;
 
 	/*
-	 * The active area size is a static property, while the crop
-	 * rectangle needs to be re-read as it depends on the sensor
-	 * configuration.
+	 * The active area is a static property, while the crop rectangle needs
+	 * to be re-read as it depends on the sensor configuration.
 	 */
-	info->activeAreaSize = { activeArea_.width, activeArea_.height };
+	info->activeArea = activeArea_;
 
 	/*
-	 * \todo Support for retreiving the crop rectangle is scheduled to
+	 * \todo Support for retrieving the crop rectangle is scheduled to
 	 * become mandatory. For the time being use the default value if it has
 	 * been initialized at sensor driver validation time.
 	 */
@@ -881,16 +905,6 @@ int CameraSensorLegacy::sensorInfo(IPACameraSensorInfo *info) const
 		LOG(CameraSensor, Warning)
 			<< "The analogue crop rectangle has been defaulted to the active area size";
 	}
-
-	/*
-	 * IPACameraSensorInfo::analogCrop::x and IPACameraSensorInfo::analogCrop::y
-	 * are defined relatively to the active pixel area, while V4L2's
-	 * TGT_CROP target is defined in respect to the full pixel array.
-	 *
-	 * Compensate it by subtracting the active area offset.
-	 */
-	info->analogCrop.x -= activeArea_.x;
-	info->analogCrop.y -= activeArea_.y;
 
 	/* The bit depth and image size depend on the currently applied format. */
 	V4L2SubdeviceFormat format{};
@@ -937,23 +951,25 @@ int CameraSensorLegacy::sensorInfo(IPACameraSensorInfo *info) const
 Transform CameraSensorLegacy::computeTransform(Orientation *orientation) const
 {
 	/*
-	 * If we cannot do any flips we cannot change the native camera mounting
-	 * orientation.
-	 */
-	if (!supportFlips_) {
-		*orientation = mountingOrientation_;
-		return Transform::Identity;
-	}
-
-	/*
-	 * Now compute the required transform to obtain 'orientation' starting
-	 * from the mounting rotation.
+	 * Compute the required transform to obtain 'orientation' starting from
+	 * the mounting rotation.
 	 *
 	 * As a note:
 	 * 	orientation / mountingOrientation_ = transform
 	 * 	mountingOrientation_ * transform = orientation
 	 */
 	Transform transform = *orientation / mountingOrientation_;
+
+	/* If we cannot do the required flips, fall back to identity. */
+	if (!supportHFlips_ && !!(transform & Transform::HFlip)) {
+		*orientation = mountingOrientation_;
+		return Transform::Identity;
+	}
+
+	if (!supportVFlips_ && !!(transform & Transform::VFlip)) {
+		*orientation = mountingOrientation_;
+		return Transform::Identity;
+	}
 
 	/*
 	 * If transform contains any Transpose we cannot do it, so adjust
@@ -988,7 +1004,7 @@ const ControlInfoMap &CameraSensorLegacy::controls() const
 	return subdev_->controls();
 }
 
-ControlList CameraSensorLegacy::getControls(Span<const uint32_t> ids)
+ControlList CameraSensorLegacy::getControls(std::span<const uint32_t> ids)
 {
 	return subdev_->getControls(ids);
 }

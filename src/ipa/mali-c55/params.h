@@ -29,6 +29,7 @@ enum class MaliC55Blocks : uint16_t {
 	AwbConfig,
 	MeshShadingConfig,
 	MeshShadingSel,
+	Ccm,
 };
 
 namespace details {
@@ -55,6 +56,7 @@ MALI_C55_DEFINE_BLOCK_TYPE(AwbGains,		awb_gains,		BLOCK_AWB_GAINS);
 MALI_C55_DEFINE_BLOCK_TYPE(AwbConfig,		awb_config,		BLOCK_AWB_CONFIG);
 MALI_C55_DEFINE_BLOCK_TYPE(MeshShadingConfig,	mesh_shading_config,	MESH_SHADING_CONFIG);
 MALI_C55_DEFINE_BLOCK_TYPE(MeshShadingSel,	mesh_shading_selection,	MESH_SHADING_SELECTION);
+MALI_C55_DEFINE_BLOCK_TYPE(Ccm,			ccm,			BLOCK_CCM);
 
 struct param_traits {
 	using id_type = MaliC55Blocks;
@@ -68,7 +70,7 @@ struct param_traits {
 class MaliC55Params : public V4L2Params<details::param_traits>
 {
 public:
-	MaliC55Params(Span<uint8_t> data)
+	MaliC55Params(std::span<uint8_t> data)
 		: V4L2Params(data, V4L2_ISP_PARAMS_VERSION_V1)
 	{
 	}

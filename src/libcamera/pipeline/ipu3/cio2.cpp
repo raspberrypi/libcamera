@@ -378,7 +378,7 @@ int CIO2Device::stop()
 	return ret;
 }
 
-FrameBuffer *CIO2Device::queueBuffer(Request *request, FrameBuffer *rawBuffer)
+FrameBuffer *CIO2Device::queueBuffer(FrameBuffer *rawBuffer)
 {
 	FrameBuffer *buffer = rawBuffer;
 
@@ -391,7 +391,6 @@ FrameBuffer *CIO2Device::queueBuffer(Request *request, FrameBuffer *rawBuffer)
 
 		buffer = availableBuffers_.front();
 		availableBuffers_.pop();
-		buffer->_d()->setRequest(request);
 	}
 
 	int ret = output_->queueBuffer(buffer);

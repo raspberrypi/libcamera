@@ -7,9 +7,8 @@
 
 #pragma once
 
+#include <span>
 #include <stdint.h>
-
-#include <libcamera/base/span.h>
 
 #if HAVE_CRYPTO
 struct evp_pkey_st;
@@ -22,11 +21,11 @@ namespace libcamera {
 class PubKey
 {
 public:
-	PubKey(Span<const uint8_t> key);
+	PubKey(std::span<const uint8_t> key);
 	~PubKey();
 
 	bool isValid() const { return valid_; }
-	bool verify(Span<const uint8_t> data, Span<const uint8_t> sig) const;
+	bool verify(std::span<const uint8_t> data, std::span<const uint8_t> sig) const;
 
 private:
 	bool valid_;

@@ -6,11 +6,11 @@
  */
 
 #include <algorithm>
-#include <array>
 #include <cmath>
 #include <limits>
 #include <map>
 #include <memory>
+#include <span>
 #include <stdint.h>
 #include <utility>
 #include <vector>
@@ -20,7 +20,6 @@
 
 #include <libcamera/base/file.h>
 #include <libcamera/base/log.h>
-#include <libcamera/base/span.h>
 #include <libcamera/base/utils.h>
 
 #include <libcamera/control_ids.h>
@@ -36,6 +35,7 @@
 #include "libcamera/internal/mapped_framebuffer.h"
 #include "libcamera/internal/yaml_parser.h"
 
+#include "libipa/agc.h"
 #include "libipa/camera_sensor_helper.h"
 
 #include "ipa_context.h"
@@ -165,23 +165,14 @@ protected:
 	std::string logPrefix() const override;
 
 private:
-	void updateControls(const IPACameraSensorInfo &sensorInfo,
-			    const ControlInfoMap &sensorControls,
-			    ControlInfoMap *ipaControls);
-	void updateSessionConfiguration(const ControlInfoMap &sensorControls);
+	void updateControls(ControlInfoMap *ipaControls);
 
 	void setControls(unsigned int frame);
 	void calculateBdsGrid(const Size &bdsOutputSize);
 
 	std::map<unsigned int, MappedFrameBuffer> buffers_;
 
-	ControlInfoMap sensorCtrls_;
 	ControlInfoMap lensCtrls_;
-
-	IPACameraSensorInfo sensorInfo_;
-
-	/* Interface to the Camera Helper */
-	std::unique_ptr<CameraSensorHelper> camHelper_;
 
 	/* Local parameter storage */
 	struct IPAContext context_;
@@ -198,36 +189,6 @@ std::string IPAIPU3::logPrefix() const
 }
 
 /**
- * \brief Compute IPASessionConfiguration using the sensor information and the
- * sensor V4L2 controls
- */
-void IPAIPU3::updateSessionConfiguration(const ControlInfoMap &sensorControls)
-{
-	const ControlInfo vBlank = sensorControls.find(V4L2_CID_VBLANK)->second;
-	context_.configuration.sensor.defVBlank = vBlank.def().get<int32_t>();
-
-	const ControlInfo &v4l2Exposure = sensorControls.find(V4L2_CID_EXPOSURE)->second;
-	int32_t minExposure = v4l2Exposure.min().get<int32_t>();
-	int32_t maxExposure = v4l2Exposure.max().get<int32_t>();
-
-	const ControlInfo &v4l2Gain = sensorControls.find(V4L2_CID_ANALOGUE_GAIN)->second;
-	int32_t minGain = v4l2Gain.min().get<int32_t>();
-	int32_t maxGain = v4l2Gain.max().get<int32_t>();
-
-	/*
-	 * When the AGC computes the new exposure values for a frame, it needs
-	 * to know the limits for exposure time and analogue gain.
-	 * As it depends on the sensor, update it with the controls.
-	 *
-	 * \todo take VBLANK into account for maximum exposure time
-	 */
-	context_.configuration.agc.minExposureTime = minExposure * context_.configuration.sensor.lineDuration;
-	context_.configuration.agc.maxExposureTime = maxExposure * context_.configuration.sensor.lineDuration;
-	context_.configuration.agc.minAnalogueGain = camHelper_->gain(minGain);
-	context_.configuration.agc.maxAnalogueGain = camHelper_->gain(maxGain);
-}
-
-/**
  * \brief Compute camera controls using the sensor information and the sensor
  * V4L2 controls
  *
@@ -239,54 +200,12 @@ void IPAIPU3::updateSessionConfiguration(const ControlInfoMap &sensorControls)
  * - controls::ExposureTime
  * - controls::FrameDurationLimits
  */
-void IPAIPU3::updateControls(const IPACameraSensorInfo &sensorInfo,
-			     const ControlInfoMap &sensorControls,
-			     ControlInfoMap *ipaControls)
+void IPAIPU3::updateControls(ControlInfoMap *ipaControls)
 {
-	ControlInfoMap::Map controls{};
-	double lineDuration = context_.configuration.sensor.lineDuration.get<std::micro>();
+	ControlInfoMap::Map ctrlMap;
 
-	/*
-	 * Compute exposure time limits by using line length and pixel rate
-	 * converted to microseconds. Use the V4L2_CID_EXPOSURE control to get
-	 * exposure min, max and default and convert it from lines to
-	 * microseconds.
-	 */
-	const ControlInfo &v4l2Exposure = sensorControls.find(V4L2_CID_EXPOSURE)->second;
-	int32_t minExposure = v4l2Exposure.min().get<int32_t>() * lineDuration;
-	int32_t maxExposure = v4l2Exposure.max().get<int32_t>() * lineDuration;
-	int32_t defExposure = v4l2Exposure.def().get<int32_t>() * lineDuration;
-	controls[&controls::ExposureTime] = ControlInfo(minExposure, maxExposure,
-							defExposure);
-
-	/*
-	 * Compute the frame duration limits.
-	 *
-	 * The frame length is computed assuming a fixed line length combined
-	 * with the vertical frame sizes.
-	 */
-	const ControlInfo &v4l2HBlank = sensorControls.find(V4L2_CID_HBLANK)->second;
-	uint32_t hblank = v4l2HBlank.def().get<int32_t>();
-	uint32_t lineLength = sensorInfo.outputSize.width + hblank;
-
-	const ControlInfo &v4l2VBlank = sensorControls.find(V4L2_CID_VBLANK)->second;
-	std::array<uint32_t, 3> frameHeights{
-		v4l2VBlank.min().get<int32_t>() + sensorInfo.outputSize.height,
-		v4l2VBlank.max().get<int32_t>() + sensorInfo.outputSize.height,
-		v4l2VBlank.def().get<int32_t>() + sensorInfo.outputSize.height,
-	};
-
-	std::array<int64_t, 3> frameDurations;
-	for (unsigned int i = 0; i < frameHeights.size(); ++i) {
-		uint64_t frameSize = lineLength * frameHeights[i];
-		frameDurations[i] = frameSize / (sensorInfo.pixelRate / 1000000U);
-	}
-	controls[&controls::FrameDurationLimits] = ControlInfo(frameDurations[0],
-							       frameDurations[1],
-							       Span<const int64_t, 2>{ { frameDurations[2], frameDurations[2] } });
-
-	controls.insert(context_.ctrlMap.begin(), context_.ctrlMap.end());
-	*ipaControls = ControlInfoMap(std::move(controls), controls::controls);
+	ctrlMap.insert(context_.ctrlMap.begin(), context_.ctrlMap.end());
+	*ipaControls = ControlInfoMap(std::move(ctrlMap), controls::controls);
 }
 
 /**
@@ -301,18 +220,19 @@ int IPAIPU3::init(const IPASettings &settings,
 		  const ControlInfoMap &sensorControls,
 		  ControlInfoMap *ipaControls)
 {
-	camHelper_ = CameraSensorHelperFactoryBase::create(settings.sensorModel);
-	if (camHelper_ == nullptr) {
+	context_.camHelper = CameraSensorHelperFactoryBase::create(settings.sensorModel);
+	if (!context_.camHelper) {
 		LOG(IPAIPU3, Error)
 			<< "Failed to create camera sensor helper for "
 			<< settings.sensorModel;
 		return -ENODEV;
 	}
 
+	context_.sensorInfo = sensorInfo;
+	context_.sensorControls = sensorControls;
+
 	/* Clean context */
 	context_.configuration = {};
-	context_.configuration.sensor.lineDuration =
-		sensorInfo.minLineLength * 1.0s / sensorInfo.pixelRate;
 
 	/* Load the tuning data file. */
 	File file(settings.configurationFile);
@@ -346,7 +266,7 @@ int IPAIPU3::init(const IPASettings &settings,
 		return ret;
 
 	/* Initialize controls. */
-	updateControls(sensorInfo, sensorControls, ipaControls);
+	updateControls(ipaControls);
 
 	return 0;
 }
@@ -465,7 +385,8 @@ int IPAIPU3::configure(const IPAConfigInfo &configInfo,
 		return -ENODATA;
 	}
 
-	sensorInfo_ = configInfo.sensorInfo;
+	context_.sensorInfo = configInfo.sensorInfo;
+	context_.sensorControls = configInfo.sensorControls;
 
 	lensCtrls_ = configInfo.lensControls;
 
@@ -474,30 +395,15 @@ int IPAIPU3::configure(const IPAConfigInfo &configInfo,
 	context_.configuration = {};
 	context_.frameContexts.clear();
 
-	/* Initialise the sensor configuration. */
-	context_.configuration.sensor.lineDuration =
-		sensorInfo_.minLineLength * 1.0s / sensorInfo_.pixelRate;
-	context_.configuration.sensor.size = sensorInfo_.outputSize;
-
-	/*
-	 * Compute the sensor V4L2 controls to be used by the algorithms and
-	 * to be set on the sensor.
-	 */
-	sensorCtrls_ = configInfo.sensorControls;
-
 	calculateBdsGrid(configInfo.bdsOutputSize);
-
-	/* Update the camera controls using the new sensor settings. */
-	updateControls(sensorInfo_, sensorCtrls_, ipaControls);
-
-	/* Update the IPASessionConfiguration using the sensor settings. */
-	updateSessionConfiguration(sensorCtrls_);
 
 	for (const auto &algo : algorithms()) {
 		int ret = algo->configure(context_, configInfo);
 		if (ret)
 			return ret;
 	}
+
+	updateControls(ipaControls);
 
 	return 0;
 }
@@ -546,7 +452,7 @@ void IPAIPU3::computeParams(const uint32_t frame, const uint32_t bufferId)
 		return;
 	}
 
-	Span<uint8_t> mem = it->second.planes()[0];
+	std::span<uint8_t> mem = it->second.planes()[0];
 	ipu3_uapi_params *params =
 		reinterpret_cast<ipu3_uapi_params *>(mem.data());
 
@@ -590,14 +496,14 @@ void IPAIPU3::processStats(const uint32_t frame,
 		return;
 	}
 
-	Span<uint8_t> mem = it->second.planes()[0];
+	std::span<uint8_t> mem = it->second.planes()[0];
 	const ipu3_uapi_stats_3a *stats =
 		reinterpret_cast<ipu3_uapi_stats_3a *>(mem.data());
 
 	IPAFrameContext &frameContext = context_.frameContexts.get(frame);
 
-	frameContext.sensor.exposure = sensorControls.get(V4L2_CID_EXPOSURE).get<int32_t>();
-	frameContext.sensor.gain = camHelper_->gain(sensorControls.get(V4L2_CID_ANALOGUE_GAIN).get<int32_t>());
+	std::tie(frameContext.sensor.exposure, frameContext.sensor.gain) =
+		agc::extractControls(sensorControls, context_.camHelper.get());
 
 	ControlList metadata(controls::controls);
 
@@ -642,12 +548,11 @@ void IPAIPU3::queueRequest(const uint32_t frame, const ControlList &controls)
  */
 void IPAIPU3::setControls(unsigned int frame)
 {
-	int32_t exposure = context_.activeState.agc.exposure;
-	int32_t gain = camHelper_->gainCode(context_.activeState.agc.gain);
+	IPAFrameContext &frameContext = context_.frameContexts.get(frame);
 
-	ControlList ctrls(sensorCtrls_);
-	ctrls.set(V4L2_CID_EXPOSURE, exposure);
-	ctrls.set(V4L2_CID_ANALOGUE_GAIN, gain);
+	ControlList ctrls(context_.sensorControls);
+	agc::prepareControls(ctrls, context_.camHelper.get(),
+			     frameContext.agc.exposure, frameContext.agc.gain);
 
 	ControlList lensCtrls(lensCtrls_);
 	lensCtrls.set(V4L2_CID_FOCUS_ABSOLUTE,
@@ -671,7 +576,6 @@ extern "C" {
 const struct IPAModuleInfo ipaModuleInfo = {
 	IPA_MODULE_API_VERSION,
 	1,
-	"ipu3",
 	"ipu3",
 };
 

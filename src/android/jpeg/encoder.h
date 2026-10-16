@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <libcamera/base/span.h>
+#include <span>
 
 #include <libcamera/framebuffer.h>
 #include <libcamera/stream.h>
@@ -21,6 +21,6 @@ public:
 
 	virtual int configure(const libcamera::StreamConfiguration &cfg) = 0;
 	virtual int encode(Camera3RequestDescriptor::StreamBuffer *buffer,
-			   libcamera::Span<const uint8_t> exifData,
+			   std::span<const uint8_t> exifData,
 			   unsigned int quality) = 0;
 };

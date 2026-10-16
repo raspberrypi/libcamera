@@ -10,6 +10,8 @@
 
 #include "cam_helper.h"
 
+namespace {
+
 using namespace RPiController;
 
 class CamHelperOv64a40 : public CamHelper
@@ -54,9 +56,11 @@ double CamHelperOv64a40::getModeSensitivity(const CameraMode &mode) const
 	}
 }
 
-static CamHelper *create()
+CamHelper *create()
 {
 	return new CamHelperOv64a40();
 }
 
-static RegisterCamHelper reg("ov64a40", &create);
+RegisterCamHelper reg("ov64a40", &create);
+
+} /* namespace */

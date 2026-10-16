@@ -8,6 +8,7 @@
 #pragma once
 
 #include <map>
+#include <span>
 #include <stdint.h>
 #include <string>
 #include <sys/types.h>
@@ -16,7 +17,6 @@
 
 #include <libcamera/base/class.h>
 #include <libcamera/base/flags.h>
-#include <libcamera/base/span.h>
 #include <libcamera/base/unique_fd.h>
 
 namespace libcamera {
@@ -59,11 +59,11 @@ public:
 	off_t pos() const;
 	off_t seek(off_t pos);
 
-	ssize_t read(const Span<uint8_t> &data);
-	ssize_t write(const Span<const uint8_t> &data);
+	ssize_t read(std::span<uint8_t> data);
+	ssize_t write(std::span<const uint8_t> data);
 
-	Span<uint8_t> map(off_t offset = 0, ssize_t size = -1,
-			  MapFlags flags = MapFlag::NoOption);
+	std::span<uint8_t> map(off_t offset = 0, ssize_t size = -1,
+			       MapFlags flags = MapFlag::NoOption);
 	bool unmap(uint8_t *addr);
 
 	static bool exists(const std::string &name);

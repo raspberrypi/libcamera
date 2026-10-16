@@ -31,9 +31,7 @@ LOG_DECLARE_CATEGORY(RPiAgc)
 
 int AgcMeteringMode::read(const libcamera::ValueNode &params)
 {
-	const ValueNode &yamlWeights = params["weights"];
-
-	for (const auto &p : yamlWeights.asList()) {
+	for (const auto &p : params["weights"].asList()) {
 		auto value = p.get<double>();
 		if (!value)
 			return -EINVAL;

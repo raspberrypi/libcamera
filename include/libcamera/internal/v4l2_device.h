@@ -10,6 +10,7 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <span>
 #include <stdint.h>
 #include <vector>
 
@@ -17,7 +18,6 @@
 
 #include <libcamera/base/log.h>
 #include <libcamera/base/signal.h>
-#include <libcamera/base/span.h>
 #include <libcamera/base/unique_fd.h>
 
 #include <libcamera/color_space.h>
@@ -38,7 +38,7 @@ public:
 
 	const ControlInfoMap &controls() const { return controls_; }
 
-	ControlList getControls(Span<const uint32_t> ids, const V4L2Request *request = nullptr);
+	ControlList getControls(std::span<const uint32_t> ids, const V4L2Request *request = nullptr);
 	int setControls(ControlList *ctrls, const V4L2Request *request = nullptr);
 
 	const struct v4l2_query_ext_ctrl *controlInfo(uint32_t id) const;
@@ -78,7 +78,7 @@ private:
 
 	void listControls();
 	void updateControls(ControlList *ctrls,
-			    Span<const v4l2_ext_control> v4l2Ctrls);
+			    std::span<const v4l2_ext_control> v4l2Ctrls);
 
 	void eventAvailable();
 

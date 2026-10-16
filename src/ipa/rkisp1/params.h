@@ -95,7 +95,7 @@ class RkISP1Params : public V4L2Params<details::params_traits>
 public:
 	static constexpr unsigned int kVersion = RKISP1_EXT_PARAM_BUFFER_V1;
 
-	RkISP1Params(uint32_t format, Span<uint8_t> data)
+	RkISP1Params(uint32_t format, std::span<uint8_t> data)
 		: V4L2Params(data, kVersion), format_(format)
 	{
 		if (format_ == V4L2_META_FMT_RK_ISP1_PARAMS) {
@@ -116,7 +116,7 @@ public:
 	void setBlockEnabled(BlockType type, bool enabled);
 
 private:
-	Span<uint8_t> block(BlockType type);
+	std::span<uint8_t> block(BlockType type);
 
 	uint32_t format_;
 };
@@ -126,7 +126,7 @@ class RkISP1ParamsBlock final : public V4L2ParamsBlock<T>
 {
 public:
 	RkISP1ParamsBlock(RkISP1Params *params, BlockType type,
-			  const Span<uint8_t> data)
+			  std::span<uint8_t> data)
 		: V4L2ParamsBlock<T>(data)
 	{
 		params_ = params;
@@ -184,7 +184,7 @@ public:
 private:
 	RkISP1Params *params_;
 	BlockType type_;
-	Span<uint8_t> cifData_;
+	std::span<uint8_t> cifData_;
 };
 
 } /* namespace ipa::rkisp1 */

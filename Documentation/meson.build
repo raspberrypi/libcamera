@@ -168,6 +168,7 @@ if sphinx.found()
         'lens_driver_requirements.rst',
         'libcamera_architecture.rst',
         'mali-c55.dot',
+        'platform_support.rst',
         'public-api/index.rst',
         'python-bindings.rst',
         'runtime_configuration.rst',

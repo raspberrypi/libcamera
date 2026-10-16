@@ -40,6 +40,8 @@ class {{proxy_name}}Isolated;
 class {{proxy_name}} : public IPAProxy, public {{interface_name}}, public Object
 {
 public:
+	static constexpr const char *name() { return "{{module_name}}"; }
+
 	using Threaded = {{proxy_name}}Threaded;
 	using Isolated = {{proxy_name}}Isolated;
 

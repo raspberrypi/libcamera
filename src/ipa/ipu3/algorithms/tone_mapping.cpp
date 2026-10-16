@@ -8,6 +8,7 @@
 #include "tone_mapping.h"
 
 #include <cmath>
+#include <span>
 #include <string.h>
 
 /**
@@ -27,8 +28,15 @@ namespace ipa::ipu3::algorithms {
  */
 
 ToneMapping::ToneMapping()
-	: gamma_(1.0)
 {
+}
+
+/**
+ * \copydoc libcamera::ipa::Algorithm::init
+ */
+int ToneMapping::init(IPAContext &context, const ValueNode &tuningData)
+{
+	return gammaAlgo_.init(context.ctrlMap, tuningData);
 }
 
 /**
@@ -41,10 +49,19 @@ ToneMapping::ToneMapping()
 int ToneMapping::configure(IPAContext &context,
 			   [[maybe_unused]] const IPAConfigInfo &configInfo)
 {
-	/* Initialise tone mapping gamma value. */
-	context.activeState.toneMapping.gamma = 0.0;
-
+	gammaAlgo_.configure(context.activeState.gamma);
 	return 0;
+}
+
+/**
+ * \copydoc libcamera::ipa::Algorithm::queueRequest
+ */
+void ToneMapping::queueRequest(IPAContext &context, const uint32_t frame,
+			       IPAFrameContext &frameContext,
+			       const ControlList &controls)
+{
+	gammaAlgo_.queueRequest(context.activeState.gamma, frame,
+				frameContext.gamma, controls);
 }
 
 /**
@@ -59,14 +76,21 @@ int ToneMapping::configure(IPAContext &context,
  */
 void ToneMapping::prepare([[maybe_unused]] IPAContext &context,
 			  [[maybe_unused]] const uint32_t frame,
-			  [[maybe_unused]] IPAFrameContext &frameContext,
+			  IPAFrameContext &frameContext,
 			  ipu3_uapi_params *params)
 {
-	/* Copy the calculated LUT into the parameters buffer. */
-	memcpy(params->acc_param.gamma.gc_lut.lut,
-	       context.activeState.toneMapping.gammaCorrection.lut,
-	       IPU3_UAPI_GAMMA_CORR_LUT_ENTRIES *
-	       sizeof(params->acc_param.gamma.gc_lut.lut[0]));
+	if (!frameContext.gamma.update)
+		return;
+
+	/*
+	 * Unfortunately necessary given the IPU3's gamma uAPI struct has the
+	 * __packed attribute.
+	 */
+	uint16_t *lutData = reinterpret_cast<uint16_t *>(
+		__builtin_assume_aligned(params->acc_param.gamma.gc_lut.lut, 16));
+	std::span<uint16_t, kNumLutNodes> lut{ lutData, kNumLutNodes };
+
+	gammaAlgo_.prepare(frameContext.gamma, lut);
 
 	/* Enable the custom gamma table. */
 	params->use.acc_gamma = 1;
@@ -84,33 +108,13 @@ void ToneMapping::prepare([[maybe_unused]] IPAContext &context,
  * The tone mapping look up table is generated as an inverse power curve from
  * our gamma setting.
  */
-void ToneMapping::process(IPAContext &context, [[maybe_unused]] const uint32_t frame,
-			  [[maybe_unused]] IPAFrameContext &frameContext,
+void ToneMapping::process([[maybe_unused]] IPAContext &context,
+			  [[maybe_unused]] const uint32_t frame,
+			  IPAFrameContext &frameContext,
 			  [[maybe_unused]] const ipu3_uapi_stats_3a *stats,
 			  [[maybe_unused]] ControlList &metadata)
 {
-	/*
-	 * Hardcode gamma to 1.1 as a default for now.
-	 *
-	 * \todo Expose gamma control setting through the libcamera control API
-	 */
-	gamma_ = 1.1;
-
-	if (context.activeState.toneMapping.gamma == gamma_)
-		return;
-
-	struct ipu3_uapi_gamma_corr_lut &lut =
-		context.activeState.toneMapping.gammaCorrection;
-
-	for (uint32_t i = 0; i < std::size(lut.lut); i++) {
-		double j = static_cast<double>(i) / (std::size(lut.lut) - 1);
-		double gamma = std::pow(j, 1.0 / gamma_);
-
-		/* The output value is expressed on 13 bits. */
-		lut.lut[i] = gamma * 8191;
-	}
-
-	context.activeState.toneMapping.gamma = gamma_;
+	gammaAlgo_.process(frameContext.gamma, metadata);
 }
 
 REGISTER_IPA_ALGORITHM(ToneMapping, "ToneMapping")

@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <libcamera/base/span.h>
+#include <span>
 
 #include <libcamera/stream.h>
 
@@ -16,5 +16,5 @@ class PPMWriter
 public:
 	static int write(const char *filename,
 			 const libcamera::StreamConfiguration &config,
-			 const libcamera::Span<uint8_t> &data);
+			 std::span<uint8_t> data);
 };

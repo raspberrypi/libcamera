@@ -7,6 +7,7 @@
 #include "sync.h"
 
 #include <chrono>
+#include <cmath>
 #include <ctype.h>
 #include <fcntl.h>
 #include <strings.h>
@@ -256,7 +257,7 @@ void Sync::process([[maybe_unused]] StatisticsPtr &stats, Metadata *imageMetadat
 			uint64_t clientFrameTimestamp = wallClockFrameTimestamp;
 			int64_t clientServerDelta = clientFrameTimestamp - serverFrameTimestamp;
 			/* "A few frames ago" may have better matched the server's frame. Calculate when it was. */
-			int framePeriodErrors = (clientServerDelta + frameDurationEstimated_ / 2) / frameDurationEstimated_;
+			int framePeriodErrors = std::lround(clientServerDelta / frameDurationEstimated_);
 			int64_t clientFrameTimestampNearest = clientFrameTimestamp - framePeriodErrors * frameDurationEstimated_;
 			/* We must shorten a single client frame by this amount if it exceeds the minimum: */
 			int32_t correction = clientFrameTimestampNearest - serverFrameTimestamp;

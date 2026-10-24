@@ -997,7 +997,7 @@ void Vc4CameraData::tryRunPipeline()
 	params.buffers.embedded = 0;
 	/* params.requestControls is set by handleControlLists. */
 
-	/* This sorts out synchronisation with ControlLists in earlier requests. */
+	/* This sorts out synchronisation with the ControlList queue. */
 	handleControlLists(bayerFrame.delayContext, params.requestControls);
 
 	/* Set our state to say the pipeline is active. */

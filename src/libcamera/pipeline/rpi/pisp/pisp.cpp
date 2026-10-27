@@ -140,8 +140,14 @@ pisp_image_format_config toPiSPImageFormat(V4L2DeviceFormat &format)
 		BayerFormat bayer = BayerFormat::fromPixelFormat(pix);
 		switch (bayer.packing) {
 		case BayerFormat::Packing::None:
+			/*
+			 * Unpacked samples with fewer than 16 bits are aligned
+			 * to the LSB: the Frontend output shifts them right,
+			 * the Backend input shifts them back left.
+			 */
 			image.format = PISP_IMAGE_FORMAT_BPS_16 +
-				       PISP_IMAGE_FORMAT_UNCOMPRESSED;
+				       PISP_IMAGE_FORMAT_UNCOMPRESSED +
+				       (16 - bayer.bitDepth) * PISP_IMAGE_FORMAT_SHIFT_1;
 			break;
 		case BayerFormat::Packing::PISP1:
 			image.format = PISP_IMAGE_FORMAT_COMPRESSION_MODE_1;
@@ -1210,11 +1216,26 @@ PiSPCameraData::platformValidate(RPi::RPiCameraConfiguration *rpiConfig) const
 
 		StreamConfiguration *rawStream = rawStreams[0].cfg;
 		BayerFormat bayer = BayerFormat::fromPixelFormat(rawStream->pixelFormat);
+		const V4L2VideoDevice *cfe = cfe_[Cfe::Output0].dev();
+		unsigned int sensorBits =
+			MediaBusFormatInfo::info(rpiConfig->sensorFormat_.code).bitsPerPixel;
+
 		/*
-		 * We cannot output CSI2 packed or non 16-bit output from the frontend,
-		 * so signal the output as unpacked 16-bits in these cases.
+		 * Unpacked 10 to 14-bit samples at the sensor bit depth are
+		 * aligned to the LSB of 16-bit words, which the Frontend output
+		 * produces with a right shift, if the CFE offers the format.
 		 */
-		if (bayer.packing == BayerFormat::Packing::CSI2 || bayer.bitDepth != 16) {
+		bool lsbAligned = bayer.packing == BayerFormat::Packing::None &&
+				  bayer.bitDepth == sensorBits &&
+				  sensorBits > 8 && sensorBits < 16 &&
+				  cfe->toV4L2PixelFormat(bayer.toPixelFormat()).isValid();
+
+		/*
+		 * We cannot output CSI2 packed or other non 16-bit output from the
+		 * frontend, so signal the output as unpacked 16-bits in these cases.
+		 */
+		if (!lsbAligned &&
+		    (bayer.packing == BayerFormat::Packing::CSI2 || bayer.bitDepth != 16)) {
 			bayer.packing = (bayer.packing == BayerFormat::Packing::CSI2) ?
 				BayerFormat::Packing::PISP1 : BayerFormat::Packing::None;
 			bayer.bitDepth = 16;

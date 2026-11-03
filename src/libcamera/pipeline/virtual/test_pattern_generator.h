@@ -24,7 +24,7 @@ enum class TestPattern : char {
 class TestPatternGenerator : public FrameGenerator
 {
 public:
-	int generateFrame(const Size &size, const FrameBuffer *buffer) override;
+	int generateFrame(const StreamConfiguration &cfg, const FrameBuffer *buffer) override;
 
 protected:
 	/* Buffer of test pattern template */

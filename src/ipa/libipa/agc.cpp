@@ -488,8 +488,8 @@ int AgcAlgorithm::configure(agc::Session &session, agc::ActiveState &state,
 	std::visit(utils::overloaded{
 		[&](AgcMSV &) {
 			/* No constraint/exposure mode support. */
-			state.constraintMode = controls::AeConstraintModeEnum::ConstraintNormal;
-			state.exposureMode = controls::AeExposureModeEnum::ExposureNormal;
+			state.constraintMode = controls::AeConstraintModeEnum::AeConstraintModeNormal;
+			state.exposureMode = controls::AeExposureModeEnum::AeExposureModeNormal;
 
 			state.automatic.yTarget = 0; /* Not supported. */
 

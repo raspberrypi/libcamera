@@ -234,7 +234,7 @@ int AwbAlgorithmBase::init(const ValueNode &tuningData)
 			    kDefaultColourTemperature);
 	controls_[&controls::AwbEnable] = ControlInfo(false, true);
 
-	return parseModeConfigs(tuningData, controls::AwbAuto);
+	return parseModeConfigs(tuningData, controls::AwbModeAuto);
 }
 
 /**
@@ -416,10 +416,10 @@ void AwbAlgorithmBase::process(awb::ActiveState &state,
  * algorithms:
  *   - Awb:
  *     AwbMode:
- *       AwbAuto:
+ *       Auto:
  *         lo: 2500
  *         hi: 8000
- *       AwbIncandescent:
+ *       Incandescent:
  *         lo: 2500
  *         hi: 3000
  *       ...
@@ -451,9 +451,38 @@ int AwbAlgorithmBase::parseModeConfigs(const ValueNode &tuningData,
 		return -EINVAL;
 	}
 
+	static constexpr std::tuple<std::string_view, std::string_view, controls::AwbModeEnum> compat[] = {
+		{ "AwbAuto", "Auto", controls::AwbModeAuto },
+		{ "AwbIncandescent", "Incandescent", controls::AwbModeIncandescent },
+		{ "AwbTungsten", "Tungsten", controls::AwbModeTungsten },
+		{ "AwbFluorescent", "Fluorescent", controls::AwbModeFluorescent },
+		{ "AwbIndoor", "Indoor", controls::AwbModeIndoor },
+		{ "AwbDaylight", "Daylight", controls::AwbModeDaylight },
+		{ "AwbCloudy", "Cloudy", controls::AwbModeCloudy },
+		{ "AwbCustom", "Custom", controls::AwbModeCustom },
+	};
+
 	for (const auto &[modeName, modeDict] : modes.asDict()) {
-		if (controls::AwbModeNameValueMap.find(modeName) ==
-		    controls::AwbModeNameValueMap.end()) {
+		std::optional<controls::AwbModeEnum> modeValue;
+
+		auto it = controls::AwbModeNameValueMap.find(modeName);
+		if (it == controls::AwbModeNameValueMap.end()) {
+			for (const auto &[oldName, newName, v] : compat) {
+				if (modeName != oldName)
+					continue;
+
+				modeValue = v;
+
+				LOG(Awb, Warning)
+					<< "AWB mode '" << oldName << " has been renamed to '"
+					<< newName << "', please fix the tuning file";
+				break;
+			}
+		} else {
+			modeValue = static_cast<controls::AwbModeEnum>(it->second);
+		}
+
+		if (!modeValue) {
 			LOG(Awb, Warning)
 				<< "Skipping unknown AWB mode '"
 				<< modeName << "'";
@@ -466,10 +495,7 @@ int AwbAlgorithmBase::parseModeConfigs(const ValueNode &tuningData,
 			return -EINVAL;
 		}
 
-		const auto &modeValue = static_cast<controls::AwbModeEnum>(
-			controls::AwbModeNameValueMap.at(modeName));
-
-		ModeConfig &config = modes_[modeValue];
+		ModeConfig &config = modes_[*modeValue];
 
 		auto hi = modeDict["hi"].get<double>();
 		if (!hi) {
@@ -487,7 +513,7 @@ int AwbAlgorithmBase::parseModeConfigs(const ValueNode &tuningData,
 		}
 		config.ctLo = *lo;
 
-		availableModes.push_back(modeValue);
+		availableModes.push_back(*modeValue);
 	}
 
 	if (modes_.empty()) {
@@ -504,7 +530,7 @@ int AwbAlgorithmBase::parseModeConfigs(const ValueNode &tuningData,
 	}
 
 	controls_[&controls::AwbMode] = ControlInfo(availableModes, def);
-	currentMode_ = &modes_[controls::AwbAuto];
+	currentMode_ = &modes_[controls::AwbModeAuto];
 
 	return 0;
 }

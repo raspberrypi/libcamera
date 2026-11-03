@@ -407,11 +407,18 @@ ImgUDevice::PipeConfig ImgUDevice::calculatePipeConfig(Pipe *pipe)
 	float bdsSF = static_cast<float>(in.width) / gdc.width;
 	float sf = findScaleFactor(bdsSF, bdsScalingFactors, true);
 
-	/* Populate the configurations vector by scaling width and height. */
+	/*
+	 * Populate the configurations vector by scaling width and height.
+	 *
+	 * calculateBDSHeight() crops up to kIFMaxCropHeight lines from the IF
+	 * height, so don't go below that, or its minimum IF height wraps.
+	 */
 	unsigned int ifWidth = utils::alignUp(in.width, ImgUDevice::kIFAlignWidth);
 	unsigned int ifHeight = utils::alignUp(in.height, ImgUDevice::kIFAlignHeight);
-	unsigned int minIfWidth = in.width - ImgUDevice::kIFMaxCropWidth;
-	unsigned int minIfHeight = in.height - ImgUDevice::kIFMaxCropHeight;
+	unsigned int minIfWidth = std::max(in.width - ImgUDevice::kIFMaxCropWidth,
+					   ImgUDevice::kIFMaxCropWidth);
+	unsigned int minIfHeight = std::max(in.height - ImgUDevice::kIFMaxCropHeight,
+					    ImgUDevice::kIFMaxCropHeight);
 	while (ifWidth >= minIfWidth) {
 		while (ifHeight >= minIfHeight) {
 			Size iif{ ifWidth, ifHeight };
@@ -425,8 +432,6 @@ ImgUDevice::PipeConfig ImgUDevice::calculatePipeConfig(Pipe *pipe)
 	/* Repeat search by scaling width first. */
 	ifWidth = utils::alignUp(in.width, ImgUDevice::kIFAlignWidth);
 	ifHeight = utils::alignUp(in.height, ImgUDevice::kIFAlignHeight);
-	minIfWidth = in.width - ImgUDevice::kIFMaxCropWidth;
-	minIfHeight = in.height - ImgUDevice::kIFMaxCropHeight;
 	while (ifHeight >= minIfHeight) {
 		/*
 		 * \todo This procedure is probably broken:

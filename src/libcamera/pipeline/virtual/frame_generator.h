@@ -9,6 +9,7 @@
 
 #include <libcamera/framebuffer.h>
 #include <libcamera/geometry.h>
+#include <libcamera/stream.h>
 
 namespace libcamera {
 
@@ -19,7 +20,7 @@ public:
 
 	virtual void configure(const Size &size) = 0;
 
-	virtual int generateFrame(const Size &size,
+	virtual int generateFrame(const StreamConfiguration &cfg,
 				  const FrameBuffer *buffer) = 0;
 
 protected:

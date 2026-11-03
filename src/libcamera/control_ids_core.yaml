@@ -40,7 +40,7 @@ controls:
 
         When both the exposure time and analogue gain values are configured to
         be in Manual mode, the AEGC algorithm is quiescent and does not actively
-        compute any value and the AeState control will report AeStateIdle.
+        compute any value and the AeState control will report AeState.Idle.
 
         When at least the exposure time or analogue gain are configured to be
         computed by the AEGC algorithm, the AeState control will report if the
@@ -51,7 +51,7 @@ controls:
         \sa ExposureTimeMode
 
       enum:
-        - name: AeStateIdle
+        - name: Idle
           value: 0
           description: |
             The AEGC algorithm is inactive.
@@ -59,7 +59,7 @@ controls:
             This state is returned when both AnalogueGainMode and
             ExposureTimeMode are set to Manual and the algorithm is not
             actively computing any value.
-        - name: AeStateSearching
+        - name: Searching
           value: 1
           description: |
             The AEGC algorithm is actively computing new values, for either the
@@ -71,8 +71,8 @@ controls:
 
             The AEGC algorithm converges once stable values are computed for
             all of the controls set to be computed in Auto mode. Once the
-            algorithm converges the state is moved to AeStateConverged.
-        - name: AeStateConverged
+            algorithm converges the state is moved to AeState.Converged.
+        - name: Converged
           value: 2
           description: |
             The AEGC algorithm has converged.
@@ -83,7 +83,7 @@ controls:
 
             If the measurements move too far away from the convergence point
             then the AEGC algorithm might start adjusting again, in which case
-            the state is moved to AeStateSearching.
+            the state is moved to AeState.Searching.
 
   # AeMeteringMode needs further attention:
   # - Auto-generate max enum value.
@@ -98,16 +98,16 @@ controls:
         determine the scene brightness. Metering modes may be platform specific
         and not all metering modes may be supported.
       enum:
-        - name: MeteringCentreWeighted
+        - name: CentreWeighted
           value: 0
           description: Centre-weighted metering mode.
-        - name: MeteringSpot
+        - name: Spot
           value: 1
           description: Spot metering mode.
-        - name: MeteringMatrix
+        - name: Matrix
           value: 2
           description: Matrix metering mode.
-        - name: MeteringCustom
+        - name: Custom
           value: 3
           description: Custom metering mode.
 
@@ -124,7 +124,7 @@ controls:
         adjusted to reach the desired target exposure. Constraint modes may be
         platform specific, and not all constraint modes may be supported.
       enum:
-        - name: ConstraintNormal
+        - name: Normal
           value: 0
           description: |
             Default constraint mode.
@@ -133,7 +133,7 @@ controls:
             image so as to reach a reasonable average level. However, highlights
             in the image may appear over-exposed and lowlights may appear
             under-exposed.
-        - name: ConstraintHighlight
+        - name: Highlight
           value: 1
           description: |
             Highlight constraint mode.
@@ -141,7 +141,7 @@ controls:
             This mode adjusts the exposure levels in order to try and avoid
             over-exposing the brightest parts (highlights) of an image.
             Other non-highlight parts of the image may appear under-exposed.
-        - name: ConstraintShadows
+        - name: Shadows
           value: 2
           description: |
             Shadows constraint mode.
@@ -149,7 +149,7 @@ controls:
             This mode adjusts the exposure levels in order to try and avoid
             under-exposing the dark parts (shadows) of an image. Other normally
             exposed parts of the image may appear over-exposed.
-        - name: ConstraintCustom
+        - name: Custom
           value: 3
           description: |
             Custom constraint mode.
@@ -174,16 +174,16 @@ controls:
         \sa ExposureTimeMode
 
       enum:
-        - name: ExposureNormal
+        - name: Normal
           value: 0
           description: Default exposure mode.
-        - name: ExposureShort
+        - name: Short
           value: 1
           description: Exposure mode allowing only short exposure times.
-        - name: ExposureLong
+        - name: Long
           value: 2
           description: Exposure mode allowing long exposure times.
-        - name: ExposureCustom
+        - name: Custom
           value: 3
           description: Custom exposure mode.
 
@@ -242,7 +242,7 @@ controls:
         or Auto is not supported by the camera), the camera should use a
         best-effort default value.
 
-        If ExposureTimeModeManual is supported, the ExposureTime control must
+        If ExposureTimeMode.Manual is supported, the ExposureTime control must
         also be supported.
 
         Cameras that support manual control of the sensor shall support manual
@@ -256,7 +256,7 @@ controls:
 
         \par Flickerless exposure mode transitions
 
-        Applications that wish to transition from ExposureTimeModeAuto to direct
+        Applications that wish to transition from ExposureTimeMode.Auto to direct
         control of the exposure time without causing extra flicker can do so by
         selecting an ExposureTime value as close as possible to the last value
         computed by the auto exposure algorithm in order to avoid any visible
@@ -270,7 +270,7 @@ controls:
         immediately specify an ExposureTime value in the same request where
         ExposureTimeMode is set to Manual. They should instead wait for the
         first Request where ExposureTimeMode is reported as
-        ExposureTimeModeManual in the Request metadata, and use the reported
+        ExposureTimeMode.Manual in the Request metadata, and use the reported
         ExposureTime to populate the control value in the next Request to be
         queued to the Camera.
 
@@ -279,12 +279,12 @@ controls:
         auto exposure use the last value provided by the application as starting
         point.
 
-        1. Start with ExposureTimeMode set to Auto
+        1. Start with ExposureTimeMode set to ExposureTimeMode.Auto
 
-        2. Set ExposureTimeMode to Manual
+        2. Set ExposureTimeMode to ExposureTimeMode.Manual
 
         3. Wait for the first completed request that has ExposureTimeMode
-        set to Manual
+        set to ExposureTimeMode.Manual
 
         4. Copy the value reported in ExposureTime into a new request, and
         submit it
@@ -293,7 +293,7 @@ controls:
 
         \sa ExposureTime
       enum:
-        - name: ExposureTimeModeAuto
+        - name: Auto
           value: 0
           description: |
             The exposure time will be calculated automatically and set by the
@@ -302,18 +302,20 @@ controls:
             If ExposureTime is set while this mode is active, it will be
             ignored, and its value will not be retained.
 
-            When transitioning from Manual to Auto mode, the AEGC should start
-            its adjustments based on the last set manual ExposureTime value.
-        - name: ExposureTimeModeManual
+            When transitioning from ExposureTimeMode.Manual to ExposureTimeMode.Auto,
+            the AEGC should start its adjustments based on the last set manual
+            ExposureTime value.
+        - name: Manual
           value: 1
           description: |
             The exposure time will not be updated by the AE algorithm.
 
-            When transitioning from Auto to Manual mode, the last computed
-            exposure value is used until a new value is specified through the
-            ExposureTime control. If an ExposureTime value is specified in the
-            same request where the ExposureTimeMode is changed from Auto to
-            Manual, the provided ExposureTime is applied immediately.
+            When transitioning from ExposureTimeMode.Auto to ExposureTimeMode.Manual,
+            the last computed exposure value is used until a new value is specified
+            through the ExposureTime control. If an ExposureTime value is specified
+            in the same request where the ExposureTimeMode is changed from
+            ExposureTimeMode.Auto to ExposureTimeMode.Manual, the provided
+            ExposureTime is applied immediately.
 
   - AnalogueGain:
       type: float
@@ -354,7 +356,7 @@ controls:
         or Auto is not supported by the camera), the camera should use a
         best-effort default value.
 
-        If AnalogueGainModeManual is supported, the AnalogueGain control must
+        If AnalogueGainMode.Manual is supported, the AnalogueGain control must
         also be supported.
 
         For cameras where we have control over the ISP, both ExposureTimeMode
@@ -374,7 +376,7 @@ controls:
         \sa ExposureTimeMode
         \sa AnalogueGain
       enum:
-        - name: AnalogueGainModeAuto
+        - name: Auto
           value: 0
           description: |
             The analogue gain will be calculated automatically and set by the
@@ -383,18 +385,20 @@ controls:
             If AnalogueGain is set while this mode is active, it will be
             ignored, and it will also not be retained.
 
-            When transitioning from Manual to Auto mode, the AEGC should start
-            its adjustments based on the last set manual AnalogueGain value.
-        - name: AnalogueGainModeManual
+            When transitioning from AnalogueGainMode.Manual to AnalogueGainMode.Auto,
+            the AEGC should start its adjustments based on the last set manual
+            AnalogueGain value.
+        - name: Manual
           value: 1
           description: |
             The analogue gain will not be updated by the AEGC algorithm.
 
-            When transitioning from Auto to Manual mode, the last computed
-            gain value is used until a new value is specified through the
-            AnalogueGain control. If an AnalogueGain value is specified in the
-            same request where the AnalogueGainMode is changed from Auto to
-            Manual, the provided AnalogueGain is applied immediately.
+            When transitioning from AnalogueGainMode.Auto to AnalogueGainMode.Manual,
+            the last computed gain value is used until a new value is specified
+            through the AnalogueGain control. If an AnalogueGain value is specified
+            in the same request where the AnalogueGainMode is changed from
+            AnalogueGainMode.Auto to AnalogueGainMode.Manual, the provided
+            AnalogueGain is applied immediately.
 
   - AeFlickerMode:
       type: int32_t
@@ -412,15 +416,15 @@ controls:
 
         Implementations may not support all of the flicker modes listed below.
 
-        By default the system will start in FlickerAuto mode if this is
-        supported, otherwise the flicker mode will be set to FlickerOff.
+        By default the system will start in AeFlickerMode.Auto mode if this is
+        supported, otherwise the flicker mode will be set to AeFlickerMode.Off.
 
       enum:
-        - name: FlickerOff
+        - name: "Off"
           value: 0
           description: |
             No flicker avoidance is performed.
-        - name: FlickerManual
+        - name: Manual
           value: 1
           description: |
             Manual flicker avoidance.
@@ -428,7 +432,7 @@ controls:
             Suppress flicker effects caused by lighting running with a period
             specified by the AeFlickerPeriod control.
             \sa AeFlickerPeriod
-        - name: FlickerAuto
+        - name: Auto
           value: 2
           description: |
             Automatic flicker period detection and avoidance.
@@ -446,16 +450,16 @@ controls:
         Manual flicker period in microseconds.
 
         This value sets the current flicker period to avoid. It is used when
-        AeFlickerMode is set to FlickerManual.
+        AeFlickerMode is set to AeFlickerMode.Manual.
 
         To cancel 50Hz mains flicker, this should be set to 10000 (corresponding
         to 100Hz), or 8333 (120Hz) for 60Hz mains.
 
-        Setting the mode to FlickerManual when no AeFlickerPeriod has ever been
+        Setting the mode to AeFlickerMode.Manual when no AeFlickerPeriod has ever been
         set means that no flicker cancellation occurs (until the value of this
         control is updated).
 
-        Switching to modes other than FlickerManual has no effect on the
+        Switching to modes other than AeFlickerMode.Manual has no effect on the
         value of the AeFlickerPeriod control.
 
         \sa AeFlickerMode
@@ -469,10 +473,10 @@ controls:
         The value reported here indicates the currently detected flicker
         period, or zero if no flicker at all is detected.
 
-        When AeFlickerMode is set to FlickerAuto, there may be a period during
-        which the value reported here remains zero. Once a non-zero value is
-        reported, then this is the flicker period that has been detected and is
-        now being cancelled.
+        When AeFlickerMode is set to AeFlickerMode.Auto, there may be a period
+        during which the value reported here remains zero. Once a non-zero value
+        is reported, then this is the flicker period that has been detected and
+        is now being cancelled.
 
         In the case of 50Hz mains flicker, the value would be 10000
         (corresponding to 100Hz), or 8333 (120Hz) for 60Hz mains flicker.
@@ -541,28 +545,28 @@ controls:
         The modes supported are platform specific, and not all modes may be
         supported.
       enum:
-        - name: AwbAuto
+        - name: Auto
           value: 0
           description: Search over the whole colour temperature range.
-        - name: AwbIncandescent
+        - name: Incandescent
           value: 1
           description: Incandescent AWB lamp mode.
-        - name: AwbTungsten
+        - name: Tungsten
           value: 2
           description: Tungsten AWB lamp mode.
-        - name: AwbFluorescent
+        - name: Fluorescent
           value: 3
           description: Fluorescent AWB lamp mode.
-        - name: AwbIndoor
+        - name: Indoor
           value: 4
           description: Indoor AWB lighting mode.
-        - name: AwbDaylight
+        - name: Daylight
           value: 5
           description: Daylight AWB lighting mode.
-        - name: AwbCloudy
+        - name: Cloudy
           value: 6
           description: Cloudy AWB lighting mode.
-        - name: AwbCustom
+        - name: Custom
           value: 7
           description: Custom AWB mode.
 
@@ -799,7 +803,7 @@ controls:
         An implementation may choose not to implement all the modes.
 
       enum:
-        - name: AfModeManual
+        - name: Manual
           value: 0
           description: |
             The AF algorithm is in manual mode.
@@ -807,15 +811,15 @@ controls:
             In this mode it will never perform any action nor move the lens of
             its own accord, but an application can specify the desired lens
             position using the LensPosition control. The AfState will always
-            report AfStateIdle.
+            report AfState.Idle.
 
-            If the camera is started in AfModeManual, it will move the focus
+            If the camera is started in AfMode.Manual, it will move the focus
             lens to the position specified by the LensPosition control.
 
             This mode is the recommended default value for the AfMode control.
             External cameras (as reported by the Location property set to
-            CameraLocationExternal) may use a different default value.
-        - name: AfModeAuto
+            Location.External) may use a different default value.
+        - name: Auto
           value: 1
           description: |
             The AF algorithm is in auto mode.
@@ -825,18 +829,18 @@ controls:
             used to initiate a focus scan, the results of which will be
             reported by AfState.
 
-            If the autofocus algorithm is moved from AfModeAuto to another mode
+            If the autofocus algorithm is moved from AfMode.Auto to another mode
             while a scan is in progress, the scan is cancelled immediately,
             without waiting for the scan to finish.
 
-            When first entering this mode the AfState will report AfStateIdle.
-            When a trigger control is sent, AfState will report AfStateScanning
-            for a period before spontaneously changing to AfStateFocused or
-            AfStateFailed, depending on the outcome of the scan. It will remain
+            When first entering this mode the AfState will report AfState.Idle.
+            When a trigger control is sent, AfState will report AfState.Scanning
+            for a period before spontaneously changing to AfState.Focused or
+            AfState.Failed, depending on the outcome of the scan. It will remain
             in this state until another scan is initiated by the AfTrigger
             control. If a scan is cancelled (without changing to another mode),
-            AfState will return to AfStateIdle.
-        - name: AfModeContinuous
+            AfState will return to AfState.Idle.
+        - name: Continuous
           value: 2
           description: |
             The AF algorithm is in continuous mode.
@@ -851,9 +855,9 @@ controls:
             scanning by using the AfPause control. This allows video or still
             images to be captured whilst guaranteeing that the focus is fixed.
 
-            When set to AfModeContinuous, the system will immediately initiate a
-            scan so AfState will report AfStateScanning, and will settle on one
-            of AfStateFocused or AfStateFailed, depending on the scan result.
+            When set to AfMode.Continuous, the system will immediately initiate a
+            scan so AfState will report AfState.Scanning, and will settle on one
+            of AfState.Focused or AfState.Failed, depending on the scan result.
 
   - AfRange:
       type: int32_t
@@ -863,7 +867,7 @@ controls:
 
         An implementation may choose not to implement all the options here.
       enum:
-        - name: AfRangeNormal
+        - name: Normal
           value: 0
           description: |
             A wide range of focus distances is scanned.
@@ -871,16 +875,16 @@ controls:
             Scanned distances cover all the way from infinity down to close
             distances, though depending on the implementation, possibly not
             including the very closest macro positions.
-        - name: AfRangeMacro
+        - name: Macro
           value: 1
           description: |
             Only close distances are scanned.
-        - name: AfRangeFull
+        - name: Full
           value: 2
           description: |
             The full range of focus distances is scanned.
 
-            This range is similar to AfRangeNormal but includes the very
+            This range is similar to AfRange.Normal but includes the very
             closest macro positions.
 
   - AfSpeed:
@@ -895,10 +899,10 @@ controls:
         capture) it may be helpful to move the lens as quickly as is reasonably
         possible.
       enum:
-        - name: AfSpeedNormal
+        - name: Normal
           value: 0
           description: Move the lens at its usual speed.
-        - name: AfSpeedFast
+        - name: Fast
           value: 1
           description: Move the lens more quickly.
 
@@ -908,11 +912,11 @@ controls:
       description: |
         The parts of the image used by the AF algorithm to measure focus.
       enum:
-        - name: AfMeteringAuto
+        - name: Auto
           value: 0
           description: |
             Let the AF algorithm decide for itself where it will measure focus.
-        - name: AfMeteringWindows
+        - name: Windows
           value: 1
           description: |
             Use the rectangles defined by the AfWindows control to measure focus.
@@ -924,7 +928,7 @@ controls:
       direction: inout
       description: |
         The focus windows used by the AF algorithm when AfMetering is set to
-        AfMeteringWindows.
+        AfMetering.Windows.
 
         The units used are pixels within the rectangle returned by the
         ScalerCropMaximum property.
@@ -955,19 +959,19 @@ controls:
       description: |
         Start an autofocus scan.
 
-        This control starts an autofocus scan when AfMode is set to AfModeAuto,
-        and is ignored if AfMode is set to AfModeManual or AfModeContinuous. It
+        This control starts an autofocus scan when AfMode is set to AfMode.Auto,
+        and is ignored if AfMode is set to AfMode.Manual or AfMode.Continuous. It
         can also be used to terminate a scan early.
 
       enum:
-        - name: AfTriggerStart
+        - name: Start
           value: 0
           description: |
             Start an AF scan.
 
-            Setting the control to AfTriggerStart is ignored if a scan is in
+            Setting the control to AfTrigger.Start is ignored if a scan is in
             progress.
-        - name: AfTriggerCancel
+        - name: Cancel
           value: 1
           description: |
             Cancel an AF scan.
@@ -982,43 +986,43 @@ controls:
         Pause lens movements when in continuous autofocus mode.
 
         This control has no effect except when in continuous autofocus mode
-        (AfModeContinuous). It can be used to pause any lens movements while
+        (AfMode.Continuous). It can be used to pause any lens movements while
         (for example) images are captured. The algorithm remains inactive
         until it is instructed to resume.
 
       enum:
-        - name: AfPauseImmediate
+        - name: Immediate
           value: 0
           description: |
             Pause the continuous autofocus algorithm immediately.
 
             The autofocus algorithm is paused whether or not any kind of scan
             is underway. AfPauseState will subsequently report
-            AfPauseStatePaused. AfState may report any of AfStateScanning,
-            AfStateFocused or AfStateFailed, depending on the algorithm's state
+            AfPauseState.Paused. AfState may report any of AfState.Scanning,
+            AfState.Focused or AfState.Failed, depending on the algorithm's state
             when it received this control.
-        - name: AfPauseDeferred
+        - name: Deferred
           value: 1
           description: |
             Pause the continuous autofocus algorithm at the end of the scan.
 
-            This is similar to AfPauseImmediate, and if the AfState is
-            currently reporting AfStateFocused or AfStateFailed it will remain
-            in that state and AfPauseState will report AfPauseStatePaused.
+            This is similar to AfPause.Immediate, and if the AfState is
+            currently reporting AfState.Focused or AfState.Failed it will remain
+            in that state and AfPauseState will report AfPauseState.Paused.
 
-            However, if the algorithm is scanning (AfStateScanning),
-            AfPauseState will report AfPauseStatePausing until the scan is
-            finished, at which point AfState will report one of AfStateFocused
-            or AfStateFailed, and AfPauseState will change to
-            AfPauseStatePaused.
+            However, if the algorithm is scanning (AfState.Scanning),
+            AfPauseState will report AfPauseState.Pausing until the scan is
+            finished, at which point AfState will report one of AfState.Focused
+            or AfState.Failed, and AfPauseState will change to
+            AfPauseState.Paused.
 
-        - name: AfPauseResume
+        - name: Resume
           value: 2
           description: |
             Resume continuous autofocus operation.
 
             The algorithm starts again from exactly where it left off, and
-            AfPauseState will report AfPauseStateRunning.
+            AfPauseState will report AfPauseState.Running.
 
   - LensPosition:
       type: float
@@ -1030,7 +1034,7 @@ controls:
         also reports back the position of the lens for each frame.
 
         The LensPosition control is ignored unless the AfMode is set to
-        AfModeManual, though the value is reported back unconditionally in all
+        AfMode.Manual, though the value is reported back unconditionally in all
         modes.
 
         This value, which is generally a non-integer, is the reciprocal of the
@@ -1067,50 +1071,50 @@ controls:
         though we note the following state transitions that occur when the
         AfMode is changed.
 
-        If the AfMode is set to AfModeManual, then the AfState will always
-        report AfStateIdle (even if the lens is subsequently moved). Changing
-        to the AfModeManual state does not initiate any lens movement.
+        If the AfMode is set to AfMode.Manual, then the AfState will always
+        report AfState.Idle (even if the lens is subsequently moved). Changing
+        to the AfMode.Manual state does not initiate any lens movement.
 
-        If the AfMode is set to AfModeAuto then the AfState will report
-        AfStateIdle. However, if AfModeAuto and AfTriggerStart are sent
-        together then AfState will omit AfStateIdle and move straight to
-        AfStateScanning (and start a scan).
+        If the AfMode is set to AfMode.Auto then the AfState will report
+        AfState.Idle. However, if AfMode.Auto and AfTrigger.Start are sent
+        together then AfState will omit AfState.Idle and move straight to
+        AfState.Scanning (and start a scan).
 
-        If the AfMode is set to AfModeContinuous then the AfState will
-        initially report AfStateScanning.
+        If the AfMode is set to AfMode.Continuous then the AfState will
+        initially report AfState.Scanning.
 
       enum:
-        - name: AfStateIdle
+        - name: Idle
           value: 0
           description: |
-            The AF algorithm is in manual mode (AfModeManual) or in auto mode
-            (AfModeAuto) and a scan has not yet been triggered, or an
+            The AF algorithm is in manual mode (AfMode.Manual) or in auto mode
+            (AfMode.Auto) and a scan has not yet been triggered, or an
             in-progress scan was cancelled.
-        - name: AfStateScanning
+        - name: Scanning
           value: 1
           description: |
-            The AF algorithm is in auto mode (AfModeAuto), and a scan has been
+            The AF algorithm is in auto mode (AfMode.Auto), and a scan has been
             started using the AfTrigger control.
 
-            The scan can be cancelled by sending AfTriggerCancel at which point
-            the algorithm will either move back to AfStateIdle or, if the scan
+            The scan can be cancelled by sending AfTrigger.Cancel at which point
+            the algorithm will either move back to AfState.Idle or, if the scan
             actually completes before the cancel request is processed, to one
-            of AfStateFocused or AfStateFailed.
+            of AfState.Focused or AfState.Failed.
 
             Alternatively the AF algorithm could be in continuous mode
-            (AfModeContinuous) at which point it may enter this state
+            (AfMode.Continuous) at which point it may enter this state
             spontaneously whenever it determines that a rescan is needed.
-        - name: AfStateFocused
+        - name: Focused
           value: 2
           description: |
-            The AF algorithm is in auto (AfModeAuto) or continuous
-            (AfModeContinuous) mode and a scan has completed with the result
+            The AF algorithm is in auto (AfMode.Auto) or continuous
+            (AfMode.Continuous) mode and a scan has completed with the result
             that the algorithm believes the image is now in focus.
-        - name: AfStateFailed
+        - name: Failed
           value: 3
           description: |
-            The AF algorithm is in auto (AfModeAuto) or continuous
-            (AfModeContinuous) mode and a scan has completed with the result
+            The AF algorithm is in auto (AfMode.Auto) or continuous
+            (AfMode.Continuous) mode and a scan has completed with the result
             that the algorithm did not find a good focus position.
 
   - AfPauseState:
@@ -1119,35 +1123,35 @@ controls:
       description: |
         Report whether the autofocus is currently running, paused or pausing.
 
-        This control is only applicable in continuous (AfModeContinuous) mode,
+        This control is only applicable in continuous (AfMode.Continuous) mode,
         and reports whether the algorithm is currently running, paused or
         pausing (that is, will pause as soon as any in-progress scan
         completes).
 
-        Any change to AfMode will cause AfPauseStateRunning to be reported.
+        Any change to AfMode will cause AfPauseState.Running to be reported.
 
       enum:
-        - name: AfPauseStateRunning
+        - name: Running
           value: 0
           description: |
             Continuous AF is running and the algorithm may restart a scan
             spontaneously.
-        - name: AfPauseStatePausing
+        - name: Pausing
           value: 1
           description: |
-            Continuous AF has been sent an AfPauseDeferred control, and will
+            Continuous AF has been sent an AfPause.Deferred control, and will
             pause as soon as any in-progress scan completes.
 
             When the scan completes, the AfPauseState control will report
-            AfPauseStatePaused. No new scans will be start spontaneously until
-            the AfPauseResume control is sent.
-        - name: AfPauseStatePaused
+            AfPauseState.Paused. No new scans will be start spontaneously until
+            the AfPause.Resume control is sent.
+        - name: Paused
           value: 2
           description: |
             Continuous AF is paused.
 
             No further state changes or lens movements will occur until the
-            AfPauseResume control is sent.
+            AfPause.Resume control is sent.
 
   - HdrMode:
       type: int32_t
@@ -1168,13 +1172,13 @@ controls:
         \sa HdrChannel
 
       enum:
-        - name: HdrModeOff
+        - name: "Off"
           value: 0
           description: |
             HDR is disabled.
 
             Metadata for this frame will not include the HdrChannel control.
-        - name: HdrModeMultiExposureUnmerged
+        - name: MultiExposureUnmerged
           value: 1
           description: |
             Multiple exposures will be generated in an alternating fashion.
@@ -1182,11 +1186,11 @@ controls:
             The multiple exposures will not be merged together and will be
             returned to the application as they are. Each image will be tagged
             with the correct HDR channel, indicating what kind of exposure it
-            is. The tag should be the same as in the HdrModeMultiExposure case.
+            is. The tag should be the same as in the HdrMode.MultiExposure case.
 
             The expectation is that an application using this mode would merge
             the frames to create HDR images for itself if it requires them.
-        - name: HdrModeMultiExposure
+        - name: MultiExposure
           value: 2
           description: |
             Multiple exposures will be generated and merged to create HDR
@@ -1199,7 +1203,7 @@ controls:
             alternately as the short and long channel. Systems that use three
             channels for HDR will cycle through the short, medium and long
             channel before repeating.
-        - name: HdrModeSingleExposure
+        - name: SingleExposure
           value: 3
           description: |
             Multiple frames all at a single exposure will be used to create HDR
@@ -1207,7 +1211,7 @@ controls:
 
             These images should be reported as all corresponding to the HDR
             short channel.
-        - name: HdrModeNight
+        - name: Night
           value: 4
           description: |
             Multiple frames will be combined to produce "night mode" images.
@@ -1233,20 +1237,20 @@ controls:
         \sa HdrMode
 
       enum:
-        - name: HdrChannelNone
+        - name: None
           value: 0
           description: |
             This image does not correspond to any of the captures used to create
             an HDR image.
-        - name: HdrChannelShort
+        - name: Short
           value: 1
           description: |
             This is a short exposure image.
-        - name: HdrChannelMedium
+        - name: Medium
           value: 2
           description: |
             This is a medium exposure image.
-        - name: HdrChannelLong
+        - name: Long
           value: 3
           description: |
             This is a long exposure image.
@@ -1294,17 +1298,17 @@ controls:
         The algorithm then compensates for the loss of brightness by applying a
         global tone mapping curve to the image.
       enum:
-        - name: WdrOff
+        - name: "Off"
           value: 0
           description: Wdr is disabled.
-        - name: WdrLinear
+        - name: Linear
           value: 1
           description:
             Apply a linear global tone mapping curve.
 
             A curve with two linear sections is applied. This produces good
             results at the expense of a slightly artificial look.
-        - name: WdrPower
+        - name: Power
           value: 2
           description: |
             Apply a power global tone mapping curve.
@@ -1312,7 +1316,7 @@ controls:
             This curve has high gain values on the dark areas of an image and
             high compression values on the bright area. It therefore tends to
             produce noticeable noise artifacts.
-        - name: WdrExponential
+        - name: Exponential
           value: 3
           description: |
             Apply an exponential global tone mapping curve.
@@ -1320,7 +1324,7 @@ controls:
             This curve has lower gain values in dark areas compared to the power
             curve but produces a more natural look compared to the linear curve.
             It is therefore the best choice for most scenes.
-        - name: WdrHistogramEqualization
+        - name: HistogramEqualization
           value: 4
           description: |
             Apply histogram equalization.

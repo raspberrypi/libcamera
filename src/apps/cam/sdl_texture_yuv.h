@@ -17,3 +17,10 @@ public:
 	void update(std::span<const std::span<const uint8_t>> data) override;
 };
 #endif
+
+class SDLTextureYUV : public SDLTexture
+{
+public:
+	SDLTextureYUV(const SDL_Rect &rect, uint32_t pixelFormat, unsigned int stride);
+	void update(std::span<const std::span<const uint8_t>> data) override;
+};

@@ -37,7 +37,8 @@ public:
 
 	int configure(const StreamConfiguration &inputCfg,
 		      const std::vector<std::reference_wrapper<const StreamConfiguration>> &outputCfgs,
-		      bool ccmEnabled) override;
+		      bool ccmEnabled,
+		      bool lscEnabled) override;
 	Size patternSize(PixelFormat inputFormat) override;
 	std::vector<PixelFormat> formats(PixelFormat input) override;
 	std::tuple<unsigned int, unsigned int>

@@ -11,17 +11,17 @@ controls:
       description: |
         Camera mounting location
       enum:
-        - name: CameraLocationFront
+        - name: Front
           value: 0
           description: |
             The camera is mounted on the front side of the device, facing the
             user
-        - name: CameraLocationBack
+        - name: Back
           value: 1
           description: |
             The camera is mounted on the back side of the device, facing away
             from the user
-        - name: CameraLocationExternal
+        - name: External
           value: 2
           description: |
             The camera is attached to the device in a way that allows it to

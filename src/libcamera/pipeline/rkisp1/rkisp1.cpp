@@ -128,6 +128,7 @@ public:
 
 	bool canUseDewarper_;
 	bool usesDewarper_;
+	std::optional<Dw100VertexMap::DewarpParams> dewarpParams_;
 
 private:
 	void paramsComputed(unsigned int frame, unsigned int bytesused);
@@ -462,7 +463,7 @@ int RkISP1CameraData::loadTuningFile(const std::string &path)
 		if (!params)
 			continue;
 
-		ret = pipe()->dewarper_->init(params);
+		ret = pipe()->dewarper_->loadDewarpParams(params, dewarpParams_);
 		if (ret)
 			return ret;
 
@@ -1058,7 +1059,7 @@ int PipelineHandlerRkISP1::configure(Camera *camera, CameraConfiguration *c)
 					PixelFormatInfo::info(ispCfg.pixelFormat)
 						.stride(ispCfg.size.width, 0);
 
-				ret = dewarper_->configure(ispCfg, { cfg });
+				ret = dewarper_->configure(ispCfg, { cfg }, data->dewarpParams_);
 				if (ret)
 					return ret;
 

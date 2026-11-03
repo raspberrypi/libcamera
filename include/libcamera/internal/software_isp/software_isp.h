@@ -101,6 +101,7 @@ private:
 	DebayerParams debayerParams_;
 	DmaBufAllocator dmaHeap_;
 	bool ccmEnabled_;
+	bool lscEnabled_;
 
 	std::unique_ptr<ipa::softisp::IPAProxySoftIsp> ipa_;
 	std::deque<FrameBuffer *> queuedInputBuffers_;

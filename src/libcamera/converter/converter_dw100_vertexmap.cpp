@@ -578,7 +578,27 @@ std::vector<uint32_t> Dw100VertexMap::getVertexMap()
 		<< " scaleX: " << effectiveScaleX_
 		<< " scaleY: " << effectiveScaleX_
 		<< " rotation: " << rotation_
-		<< " offset: " << effectiveOffset_;
+		<< " offset: " << effectiveOffset_
+		<< " lensDewarpEnable: " << lensDewarpEnable_;
+
+	if (dewarpParams_.has_value())
+		LOG(Converter, Debug)
+			<< "Lens dewarp parameters cm: " << dewarpParams_->cm
+			<< " coeffs: [" << dewarpParams_->coefficients.k1
+			<< ", " << dewarpParams_->coefficients.k2
+			<< ", " << dewarpParams_->coefficients.p1
+			<< ", " << dewarpParams_->coefficients.p2
+			<< ", " << dewarpParams_->coefficients.k3
+			<< ", " << dewarpParams_->coefficients.k4
+			<< ", " << dewarpParams_->coefficients.k5
+			<< ", " << dewarpParams_->coefficients.k6
+			<< ", " << dewarpParams_->coefficients.s1
+			<< ", " << dewarpParams_->coefficients.s2
+			<< ", " << dewarpParams_->coefficients.s3
+			<< ", " << dewarpParams_->coefficients.s4
+			<< "]";
+	else
+		LOG(Converter, Debug) << "Lens dewarp parameters: None";
 
 	Matrix3x3 outputToSensor = Matrix3x3::identity();
 	/* Move to center of output */

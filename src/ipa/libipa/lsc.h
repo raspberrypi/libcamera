@@ -8,6 +8,7 @@
 #pragma once
 
 #include <memory>
+#include <span>
 #include <vector>
 
 #include <libcamera/controls.h>
@@ -85,8 +86,8 @@ public:
 	LscAlgorithm() = default;
 
 	int configure(lsc::ActiveState &state, const Rectangle &analogCrop,
-		      const std::vector<double> &xPos,
-		      const std::vector<double> &yPos)
+		      std::span<const double> xPos,
+		      std::span<const double> yPos)
 	{
 		LscImplementation::ComponentsMap data =
 			impl_->sampleForCrop(analogCrop, xPos, yPos);
@@ -118,7 +119,7 @@ public:
 		return 0;
 	}
 
-	const Components interpolateComponents(unsigned int ct)
+	const Components &interpolateComponents(unsigned int ct)
 	{
 		return sets_.getInterpolated(ct);
 	}

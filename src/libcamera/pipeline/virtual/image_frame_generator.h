@@ -31,13 +31,13 @@ private:
 	static constexpr unsigned int frameRepeat = 4;
 
 	struct ImageFrameData {
-		std::unique_ptr<uint8_t[]> Y;
-		std::unique_ptr<uint8_t[]> UV;
+		std::unique_ptr<uint8_t[]> y;
+		std::unique_ptr<uint8_t[]> uv;
 		Size size;
 	};
 
 	void configure(const Size &size) override;
-	int generateFrame(const Size &size, const FrameBuffer *buffer) override;
+	int generateFrame(const StreamConfiguration &cfg, const FrameBuffer *buffer) override;
 
 	std::vector<ImageFrameData> imageFrameDatas_;
 	std::vector<ImageFrameData> scaledFrameDatas_;

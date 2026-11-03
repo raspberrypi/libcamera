@@ -39,7 +39,7 @@ namespace {{vendor}} {
  * \brief Supported {{ctrl.name}} values
 {%- for enum in ctrl.enum_values %}
  *
- * \var {{enum.name}}
+ * \var {{enum.prefixed_name}}
  * \brief {{enum.description|format_description}}
 {%- endfor %}
  */
@@ -81,12 +81,12 @@ namespace {{vendor}} {
 {% if ctrl.is_enum -%}
 extern const std::array<const ControlValue, {{ctrl.enum_values_count}}> {{ctrl.name}}Values = {
 {%- for enum in ctrl.enum_values %}
-	static_cast<{{ctrl.type}}>({{enum.name}}),
+	static_cast<{{ctrl.type}}>({{enum.prefixed_name}}),
 {%- endfor %}
 };
 extern const std::map<std::string, {{ctrl.type}}> {{ctrl.name}}NameValueMap = {
 {%- for enum in ctrl.enum_values %}
-	{ "{{enum.name}}", {{enum.name}} },
+	{ "{{enum.name}}", {{enum.prefixed_name}} },
 {%- endfor %}
 };
 extern const Control<{{ctrl.type}}> {{ctrl.name}}({{ctrl.name|snake_case|upper}}, "{{ctrl.name}}", "{{vendor}}", {{ctrl.direction}}, {{ctrl.name}}NameValueMap);

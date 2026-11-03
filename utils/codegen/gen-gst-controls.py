@@ -29,18 +29,6 @@ exposed_controls = [
 ]
 
 
-def find_common_prefix(strings):
-    prefix = strings[0]
-
-    for string in strings[1:]:
-        while string[:len(prefix)] != prefix and prefix:
-            prefix = prefix[:len(prefix) - 1]
-        if not prefix:
-            break
-
-    return prefix
-
-
 def format_description(description):
     # Substitute doxygen keywords \sa (see also) and \todo
     description = re.sub(r'\\sa((?: \w+)+)',
@@ -94,11 +82,6 @@ def extend_control(ctrl):
     ctrl.is_array = ctrl.size is not None
 
     if ctrl.is_enum:
-        # Remove common prefix from enum variant names
-        prefix = find_common_prefix([enum.name for enum in ctrl.enum_values])
-        for enum in ctrl.enum_values:
-            enum.gst_name = kebab_case(enum.name.removeprefix(prefix))
-
         ctrl.gtype = 'enum'
         ctrl.default = '0'
     elif ctrl.element_type == 'bool':

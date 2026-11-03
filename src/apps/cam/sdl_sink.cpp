@@ -116,6 +116,8 @@ int SDLSink::configure(const libcamera::CameraConfiguration &config)
 	else if (cfg.pixelFormat == libcamera::formats::NV21)
 		texture_ = std::make_unique<SDLTextureNV>(rect_, SDL_PIXELFORMAT_NV21, cfg.stride);
 #endif
+	else if (cfg.pixelFormat == libcamera::formats::YUV420)
+		texture_ = std::make_unique<SDLTextureYUV>(rect_, SDL_PIXELFORMAT_IYUV, cfg.stride);
 	else {
 		std::cerr << "Unsupported pixel format " << cfg.pixelFormat << std::endl;
 		return -EINVAL;

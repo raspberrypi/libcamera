@@ -68,9 +68,9 @@ const ControlInfoMap::Map ipaControls{
 	{ &controls::AeExposureMode, ControlInfo(controls::AeExposureModeValues) },
 	{ &controls::ExposureValue, ControlInfo(-8.0f, 8.0f, 0.0f) },
 	{ &controls::AeFlickerMode,
-	  ControlInfo({ { ControlValue(controls::FlickerOff),
-			  ControlValue(controls::FlickerManual) } },
-		      ControlValue(controls::FlickerOff)) },
+	  ControlInfo({ { ControlValue(controls::AeFlickerModeOff),
+			  ControlValue(controls::AeFlickerModeManual) } },
+		      ControlValue(controls::AeFlickerModeOff)) },
 	{ &controls::AeFlickerPeriod, ControlInfo(100, 1000000) },
 	{ &controls::Brightness, ControlInfo(-1.0f, 1.0f, 0.0f) },
 	{ &controls::Contrast, ControlInfo(0.0f, 32.0f, 1.0f) },
@@ -180,7 +180,7 @@ int32_t IpaBase::init(const IPASettings &settings, const InitParams &params, Ini
 	if (platformCtrlsIt != platformControls.end())
 		ctrlMap.merge(ControlInfoMap::Map(platformCtrlsIt->second));
 
-	monoSensor_ = params.sensorInfo.cfaPattern == properties::draft::ColorFilterArrangementEnum::MONO;
+	monoSensor_ = params.sensorInfo.cfaPattern == properties::draft::ColorFilterArrangementMONO;
 	if (!monoSensor_)
 		ctrlMap.merge(ControlInfoMap::Map(ipaColourControls));
 
@@ -748,35 +748,35 @@ bool IpaBase::validateLensControls()
  * must be kept up-to-date by hand.
  */
 static const std::map<int32_t, std::string> MeteringModeTable = {
-	{ controls::MeteringCentreWeighted, "centre-weighted" },
-	{ controls::MeteringSpot, "spot" },
-	{ controls::MeteringMatrix, "matrix" },
-	{ controls::MeteringCustom, "custom" },
+	{ controls::AeMeteringModeCentreWeighted, "centre-weighted" },
+	{ controls::AeMeteringModeSpot, "spot" },
+	{ controls::AeMeteringModeMatrix, "matrix" },
+	{ controls::AeMeteringModeCustom, "custom" },
 };
 
 static const std::map<int32_t, std::string> ConstraintModeTable = {
-	{ controls::ConstraintNormal, "normal" },
-	{ controls::ConstraintHighlight, "highlight" },
-	{ controls::ConstraintShadows, "shadows" },
-	{ controls::ConstraintCustom, "custom" },
+	{ controls::AeConstraintModeNormal, "normal" },
+	{ controls::AeConstraintModeHighlight, "highlight" },
+	{ controls::AeConstraintModeShadows, "shadows" },
+	{ controls::AeConstraintModeCustom, "custom" },
 };
 
 static const std::map<int32_t, std::string> ExposureModeTable = {
-	{ controls::ExposureNormal, "normal" },
-	{ controls::ExposureShort, "short" },
-	{ controls::ExposureLong, "long" },
-	{ controls::ExposureCustom, "custom" },
+	{ controls::AeExposureModeNormal, "normal" },
+	{ controls::AeExposureModeShort, "short" },
+	{ controls::AeExposureModeLong, "long" },
+	{ controls::AeExposureModeCustom, "custom" },
 };
 
 static const std::map<int32_t, std::string> AwbModeTable = {
-	{ controls::AwbAuto, "auto" },
-	{ controls::AwbIncandescent, "incandescent" },
-	{ controls::AwbTungsten, "tungsten" },
-	{ controls::AwbFluorescent, "fluorescent" },
-	{ controls::AwbIndoor, "indoor" },
-	{ controls::AwbDaylight, "daylight" },
-	{ controls::AwbCloudy, "cloudy" },
-	{ controls::AwbCustom, "custom" },
+	{ controls::AwbModeAuto, "auto" },
+	{ controls::AwbModeIncandescent, "incandescent" },
+	{ controls::AwbModeTungsten, "tungsten" },
+	{ controls::AwbModeFluorescent, "fluorescent" },
+	{ controls::AwbModeIndoor, "indoor" },
+	{ controls::AwbModeDaylight, "daylight" },
+	{ controls::AwbModeCloudy, "cloudy" },
+	{ controls::AwbModeCustom, "custom" },
 };
 
 static const std::map<int32_t, RPiController::AfAlgorithm::AfMode> AfModeTable = {
@@ -1124,12 +1124,12 @@ void IpaBase::applyControls(const ControlList &controls)
 			bool modeValid = true;
 
 			switch (mode) {
-			case controls::FlickerOff:
+			case controls::AeFlickerModeOff:
 				agc->setFlickerPeriod(0us);
 
 				break;
 
-			case controls::FlickerManual:
+			case controls::AeFlickerModeManual:
 				agc->setFlickerPeriod(flickerState_.manualPeriod);
 
 				break;
@@ -1163,7 +1163,7 @@ void IpaBase::applyControls(const ControlList &controls)
 			 * We note that it makes no difference if the mode gets set to "manual"
 			 * first, and the period updated after, or vice versa.
 			 */
-			if (flickerState_.mode == controls::FlickerManual)
+			if (flickerState_.mode == controls::AeFlickerModeManual)
 				agc->setFlickerPeriod(flickerState_.manualPeriod);
 
 			break;

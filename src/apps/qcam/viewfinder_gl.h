@@ -109,6 +109,9 @@ private:
 	/* Black Level compensation */
 	GLint blackLevelUniformDataIn_;
 
+	/* AWB */
+	GLint awbUniformDataIn_;
+
 	/* Gamma */
 	GLint gammaUniformDataIn_;
 

@@ -6,4 +6,6 @@ algorithms:
   - Agc:
   - Awb:
   - BlackLevelCorrection:
+  - Ccm:
+  - GammaOutCorrection:
 ...

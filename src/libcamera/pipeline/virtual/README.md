@@ -39,7 +39,7 @@ Each camera block is a dictionary, containing the following keys:
     - The path to a directory ends with "/". The name of the images in the
       directory are "{n}.jpg" with {n} is the sequence of images starting with 0.
 - `location` (`string`, default="front"): The location of the camera. Support
-  "CameraLocationFront", "CameraLocationBack", and "CameraLocationExternal".
+  "Front", "Back", and "External".
 - `model` (`string`, default="Unknown"): The model name of the camera.
 
 Check `data/virtual.yaml` as the sample config file.

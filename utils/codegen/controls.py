@@ -22,6 +22,11 @@ class ControlEnum(object):
         return self.__data.get('name')
 
     @property
+    def prefixed_name(self):
+        """The prefixed enum name"""
+        return self.__data.get('prefixed_name')
+
+    @property
     def value(self):
         """The enum value"""
         return self.__data.get('value')
@@ -37,7 +42,19 @@ class Control(object):
 
         enum_values = data.get('enum')
         if enum_values is not None:
-            self.__enum_values = [ControlEnum(enum) for enum in enum_values]
+            for enum in enum_values:
+                ename = enum['name']
+                if type(ename) is not str:
+                    raise ValueError(f'Enumerator `{self.__name}.{ename}` has a non-string name.')
+                if not ename[0].isupper():
+                    raise ValueError(f'Enumerator `{self.__name}.{ename}` must start with an uppercase letter.')
+                if ename.lower().startswith(name.lower()):
+                    raise ValueError(f'Enumerator `{self.__name}.{ename}` must not be prefixed with the control name.')
+
+            self.__enum_values = [ControlEnum({
+                **enum,
+                'prefixed_name': name + enum['name'],
+            }) for enum in enum_values]
 
         size = self.__data.get('size')
         if size is not None:

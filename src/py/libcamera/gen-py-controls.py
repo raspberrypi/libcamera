@@ -11,18 +11,6 @@ import yaml
 from controls import Control
 
 
-def find_common_prefix(strings):
-    prefix = strings[0]
-
-    for string in strings[1:]:
-        while string[:len(prefix)] != prefix and prefix:
-            prefix = prefix[:len(prefix) - 1]
-        if not prefix:
-            break
-
-    return prefix
-
-
 def extend_control(ctrl, mode):
     if ctrl.vendor != 'libcamera':
         ctrl.klass = ctrl.vendor
@@ -30,22 +18,6 @@ def extend_control(ctrl, mode):
     else:
         ctrl.klass = mode
         ctrl.namespace = ''
-
-    if not ctrl.is_enum:
-        return ctrl
-
-    if mode == 'controls':
-        # Adjustments for controls
-        if ctrl.name == 'LensShadingMapMode':
-            prefix = 'LensShadingMapMode'
-        else:
-            prefix = find_common_prefix([e.name for e in ctrl.enum_values])
-    else:
-        # Adjustments for properties
-        prefix = find_common_prefix([e.name for e in ctrl.enum_values])
-
-    for enum in ctrl.enum_values:
-        enum.py_name = enum.name[len(prefix):]
 
     return ctrl
 

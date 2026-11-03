@@ -89,6 +89,7 @@ public:
 	void frameStarted(uint32_t sequence);
 
 	void clearIncompleteRequests();
+	void clearImmediateControls();
 	void handleStreamBuffer(FrameBuffer *buffer, Stream *stream);
 	void handleState();
 

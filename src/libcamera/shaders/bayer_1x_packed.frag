@@ -71,6 +71,10 @@ uniform vec3 blacklevel;
 uniform float gamma;
 uniform float contrastExp;
 
+#if defined(APPLY_LSC)
+uniform sampler2D lsc_tex;
+#endif
+
 float apply_contrast(float value)
 {
 	// Apply simple S-curve
@@ -231,6 +235,14 @@ void main(void)
 	 * reworked into a single multiplication.
 	 */
 	rgb = (rgb - blacklevel) / (1.0 - blacklevel);
+
+#if defined(APPLY_LSC)
+        /* Multiple by 4.0 for UQ<2, 6> -> float conversion:
+         * texture2D(...) = original_float * 2^6 (quantization) * 1/2^8 (texture byte to float)
+         * => original_float = texture2D(...) / 2^6 * 2^8 = texture2D(...) * 2^2
+         */
+        rgb = rgb * (texture2D(lsc_tex, textureOut).rgb * 4.0);
+#endif
 
 	/* Apply AWB gains, and saturate each channel at sensor range */
 	rgb = clamp(rgb * awb, vec3(0.0), vec3(1.0));

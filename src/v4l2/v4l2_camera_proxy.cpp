@@ -215,7 +215,7 @@ void V4L2CameraProxy::setFmtFromConfig(const StreamConfiguration &streamConfig)
 		LOG(V4L2Compat, Warning)
 			<< "Camera does not support FrameDurationLimits";
 
-		v4l2TimePerFrame_.numerator = 333333;
+		v4l2TimePerFrame_.numerator = 33333;
 		v4l2TimePerFrame_.denominator = 1000000;
 	}
 }
@@ -255,7 +255,6 @@ void V4L2CameraProxy::updateBuffers()
 							[](unsigned int total, const auto &plane) {
 								return total + plane.bytesused;
 							});
-			buf.field = V4L2_FIELD_NONE;
 			buf.timestamp.tv_sec = fmd.timestamp / 1000000000;
 			buf.timestamp.tv_usec = (fmd.timestamp / 1000) % 1000000;
 			buf.sequence = fmd.sequence;
@@ -263,7 +262,7 @@ void V4L2CameraProxy::updateBuffers()
 			buf.flags |= V4L2_BUF_FLAG_DONE;
 			break;
 		case FrameMetadata::FrameError:
-			buf.flags |= V4L2_BUF_FLAG_ERROR;
+			buf.flags |= V4L2_BUF_FLAG_DONE | V4L2_BUF_FLAG_ERROR;
 			break;
 		default:
 			break;
@@ -557,12 +556,13 @@ int V4L2CameraProxy::vidioc_reqbufs(V4L2CameraFile *file, struct v4l2_requestbuf
 	buffers_.resize(arg->count);
 	for (unsigned int i = 0; i < arg->count; i++) {
 		struct v4l2_buffer buf = {};
+		buf.index = i;
 		buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
-		buf.length = v4l2PixFormat_.sizeimage;
+		buf.flags = V4L2_BUF_FLAG_TIMESTAMP_MONOTONIC;
+		buf.field = V4L2_FIELD_NONE;
 		buf.memory = V4L2_MEMORY_MMAP;
 		buf.m.offset = i * v4l2PixFormat_.sizeimage;
-		buf.index = i;
-		buf.flags = V4L2_BUF_FLAG_TIMESTAMP_MONOTONIC;
+		buf.length = v4l2PixFormat_.sizeimage;
 
 		buffers_[i] = buf;
 	}
@@ -649,6 +649,7 @@ int V4L2CameraProxy::vidioc_qbuf(V4L2CameraFile *file, struct v4l2_buffer *arg)
 	if (ret < 0)
 		return ret;
 
+	buffers_[arg->index].flags &= ~V4L2_BUF_FLAG_PREPARED;
 	buffers_[arg->index].flags |= V4L2_BUF_FLAG_QUEUED;
 
 	arg->flags = buffers_[arg->index].flags;
@@ -693,9 +694,15 @@ int V4L2CameraProxy::vidioc_dqbuf(V4L2CameraFile *file, struct v4l2_buffer *arg,
 
 	struct v4l2_buffer &buf = buffers_[currentBuf_];
 
-	buf.flags &= ~(V4L2_BUF_FLAG_QUEUED | V4L2_BUF_FLAG_DONE | V4L2_BUF_FLAG_PREPARED);
+	buf.flags &= ~(V4L2_BUF_FLAG_QUEUED | V4L2_BUF_FLAG_DONE);
 	buf.length = sizeimage_;
 	*arg = buf;
+
+	/*
+	 * Clear the internal error flag to ensure that subsequent QUERYBUF
+	 * calls will not return it, as implemented in videobuf2.
+	 */
+	buf.flags &= ~V4L2_BUF_FLAG_ERROR;
 
 	currentBuf_ = (currentBuf_ + 1) % bufferCount_;
 
@@ -776,7 +783,8 @@ int V4L2CameraProxy::vidioc_streamoff(V4L2CameraFile *file, int *arg)
 	int ret = vcam_->streamOff();
 
 	for (struct v4l2_buffer &buf : buffers_)
-		buf.flags &= ~(V4L2_BUF_FLAG_QUEUED | V4L2_BUF_FLAG_DONE);
+		buf.flags &= ~(V4L2_BUF_FLAG_QUEUED | V4L2_BUF_FLAG_DONE |
+			       V4L2_BUF_FLAG_ERROR | V4L2_BUF_FLAG_PREPARED);
 
 	return ret;
 }
@@ -923,6 +931,9 @@ int V4L2CameraProxy::ioctl(V4L2CameraFile *file, unsigned long longRequest, void
 		break;
 	case VIDIOC_QUERYBUF:
 		ret = vidioc_querybuf(file, static_cast<struct v4l2_buffer *>(arg));
+		break;
+	case VIDIOC_PREPARE_BUF:
+		ret = vidioc_prepare_buf(file, static_cast<struct v4l2_buffer *>(arg));
 		break;
 	case VIDIOC_QBUF:
 		ret = vidioc_qbuf(file, static_cast<struct v4l2_buffer *>(arg));

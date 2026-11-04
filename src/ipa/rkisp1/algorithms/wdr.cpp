@@ -151,7 +151,7 @@ int WideDynamicRange::init([[maybe_unused]] IPAContext &context,
 	}
 
 	context.ctrlMap[&controls::WdrMode] =
-		ControlInfo(controls::WdrModeValues, controls::WdrOff);
+		ControlInfo(controls::WdrModeValues, controls::WdrModeOff);
 	context.ctrlMap[&controls::WdrStrength] =
 		ControlInfo(0.0f, 2.0f, 1.0f);
 	context.ctrlMap[&controls::WdrMaxBrightPixels] =
@@ -168,7 +168,7 @@ int WideDynamicRange::init([[maybe_unused]] IPAContext &context,
 int WideDynamicRange::configure(IPAContext &context,
 				[[maybe_unused]] const IPACameraSensorInfo &configInfo)
 {
-	context.activeState.wdr.mode = controls::WdrOff;
+	context.activeState.wdr.mode = controls::WdrModeOff;
 	context.activeState.wdr.gain = 1.0;
 	context.activeState.wdr.strength = 1.0;
 	auto &constraint = context.activeState.wdr.constraint;
@@ -404,21 +404,21 @@ void WideDynamicRange::prepare(IPAContext &context,
 	auto mode = frameContext.wdr.mode;
 
 	auto config = params->block<BlockType::Wdr>();
-	config.setEnabled(mode != controls::WdrOff);
+	config.setEnabled(mode != controls::WdrModeOff);
 
 	/* Calculate how much EV we need to compensate with the WDR curve. */
 	double gain = context.activeState.wdr.gain;
 	frameContext.wdr.gain = gain;
 
-	if (mode == controls::WdrOff) {
+	if (mode == controls::WdrModeOff) {
 		applyCompensationLinear(1.0, 0.0);
-	} else if (mode == controls::WdrLinear) {
+	} else if (mode == controls::WdrModeLinear) {
 		applyCompensationLinear(gain, frameContext.wdr.strength);
-	} else if (mode == controls::WdrPower) {
+	} else if (mode == controls::WdrModePower) {
 		applyCompensationPower(gain, frameContext.wdr.strength);
-	} else if (mode == controls::WdrExponential) {
+	} else if (mode == controls::WdrModeExponential) {
 		applyCompensationExponential(gain, frameContext.wdr.strength);
-	} else if (mode == controls::WdrHistogramEqualization) {
+	} else if (mode == controls::WdrModeHistogramEqualization) {
 		applyHistogramEqualization(frameContext.wdr.strength);
 	}
 

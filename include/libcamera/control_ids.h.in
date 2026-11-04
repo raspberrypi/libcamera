@@ -43,7 +43,7 @@ enum {
 {% if ctrl.is_enum -%}
 enum {{ctrl.name}}Enum {
 {%- for enum in ctrl.enum_values %}
-	{{enum.name}} = {{enum.value}},
+	{{enum.prefixed_name}} = {{enum.value}},
 {%- endfor %}
 };
 extern const std::array<const ControlValue, {{ctrl.enum_values_count}}> {{ctrl.name}}Values;

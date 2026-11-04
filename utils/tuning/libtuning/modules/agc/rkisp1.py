@@ -41,9 +41,9 @@ class AGCRkISP1(AGC):
         matrix = [1 for i in range(0, 25)]
 
         return {
-            'MeteringCentreWeighted': centre_weighted,
-            'MeteringSpot': spot,
-            'MeteringMatrix': matrix
+            'CentreWeighted': centre_weighted,
+            'Spot': spot,
+            'Matrix': matrix
         }
 
     def _generate_exposure_modes(self) -> dict:
@@ -52,7 +52,7 @@ class AGCRkISP1(AGC):
         short = {'exposureTime': [100, 5000, 10000, 20000, 120000],
                  'gain': [2.0, 4.0, 6.0, 6.0, 6.0]}
 
-        return {'ExposureNormal': normal, 'ExposureShort': short}
+        return {'Normal': normal, 'Short': short}
 
     def _generate_constraint_modes(self) -> dict:
         normal = {'lower': {'qLo': 0.98, 'qHi': 1.0, 'yTarget': 0.5}}
@@ -61,7 +61,7 @@ class AGCRkISP1(AGC):
             'upper': {'qLo': 0.98, 'qHi': 1.0, 'yTarget': 0.8}
         }
 
-        return {'ConstraintNormal': normal, 'ConstraintHighlight': highlight}
+        return {'Normal': normal, 'Highlight': highlight}
 
     def _generate_y_target(self) -> list:
         return 0.5

@@ -18,13 +18,22 @@ class DRMFourCC(object):
     format_regex = re.compile(r"#define (DRM_FORMAT_[A-Z0-9_]+)[ \t]+fourcc_code\(('.', '.', '.', '.')\)")
     mod_vendor_regex = re.compile(r"#define DRM_FORMAT_MOD_VENDOR_([A-Z0-9_]+)[ \t]+([0-9a-fA-Fx]+)")
     mod_regex = re.compile(r"#define ([A-Za-z0-9_]+)[ \t]+fourcc_mod_code\(([A-Z0-9_]+), ([0-9a-fA-Fx]+)\)")
+    # Broadcom SAND modifiers are defined indirectly via a _COL_HEIGHT(v) helper
+    # that wraps fourcc_mod_broadcom_code(<code>, v) (which injects the BROADCOM
+    # vendor). Match that helper, strip _COL_HEIGHT to recover the convenience
+    # macro name, and use <code> as the value - valid as the convenience macro is
+    # the height-0 case, which contributes nothing to it.
+    mod_brcm_regex = re.compile(r"#define (DRM_FORMAT_MOD_BROADCOM_SAND[0-9]+)_COL_HEIGHT\(v\)"
+                                r"[ \t]+fourcc_mod_broadcom_code\(([0-9]+), v\)")
 
     def __init__(self, file):
         self.formats = {}
         self.vendors = {}
         self.mods = {}
 
-        for line in file:
+        # Collapse line continuations so multi-line macros match on one line.
+        lines = re.sub(r'\\[ \t]*\n', ' ', file.read()).splitlines()
+        for line in lines:
             match = DRMFourCC.format_regex.match(line)
             if match:
                 format, fourcc = match.groups()
@@ -41,6 +50,12 @@ class DRMFourCC(object):
             if match:
                 mod, vendor, value = match.groups()
                 self.mods[mod] = (vendor, int(value, 0))
+                continue
+
+            match = DRMFourCC.mod_brcm_regex.match(line)
+            if match:
+                mod, code = match.groups()
+                self.mods[mod] = ('BROADCOM', int(code))
                 continue
 
     def fourcc(self, name):

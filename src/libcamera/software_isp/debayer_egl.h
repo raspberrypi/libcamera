@@ -45,7 +45,8 @@ public:
 
 	int configure(const StreamConfiguration &inputCfg,
 		      const std::vector<std::reference_wrapper<const StreamConfiguration>> &outputCfgs,
-		      bool ccmEnabled) override;
+		      bool ccmEnabled,
+		      bool lscEnabled) override;
 
 	Size patternSize(PixelFormat inputFormat) override;
 
@@ -82,6 +83,11 @@ private:
 	unsigned int inputBufferCount_;
 	unsigned int outputBufferCount_;
 
+	/* LSC lookup table */
+	bool lscEnabled_;
+	std::optional<eGLImage> eglImageLscLookup_;
+	std::optional<uint64_t> lscLutVersion_;
+
 	/* Shader parameters */
 	float firstRed_x_;
 	float firstRed_y_;
@@ -97,6 +103,9 @@ private:
 
 	/* Per-frame AWB gains */
 	GLint awbUniformDataIn_;
+
+	/* Lens shading correction */
+	GLint textureUniformLsc_;
 
 	/* Represent per-frame CCM as a uniform vector of floats 3 x 3 */
 	GLint ccmUniformDataIn_;

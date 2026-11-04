@@ -2,7 +2,7 @@
 /*
  * Copyright (C) 2026, Will Whang
  *
- * cam_helper_imx678.cpp - camera information for Sony IMX678 sensor
+ * cam_helper_starvis2.cpp - camera information for Sony Starvis 2 family of sensors
  */
 
 #include <algorithm>
@@ -14,10 +14,10 @@ namespace {
 
 using namespace RPiController;
 
-class CamHelperImx678 : public CamHelper
+class CamHelperStarvis2 : public CamHelper
 {
 public:
-	CamHelperImx678();
+	CamHelperStarvis2();
 	uint32_t gainCode(double gain) const override;
 	double gain(uint32_t gainCode) const override;
 
@@ -29,32 +29,30 @@ private:
 	static constexpr int frameIntegrationDiff = 4;
 };
 
-/*
- * IMX678 driver currently doesn't expose a metadata stream, so we have to use
- * the "unicam parser" which works by counting frames.
- */
-
-CamHelperImx678::CamHelperImx678()
+CamHelperStarvis2::CamHelperStarvis2()
 	: CamHelper({}, frameIntegrationDiff)
 {
 }
 
-uint32_t CamHelperImx678::gainCode(double gain) const
+uint32_t CamHelperStarvis2::gainCode(double gain) const
 {
 	int code = 66.6667 * log10(gain);
 	return std::max(0, std::min(code, 0xf0));
 }
 
-double CamHelperImx678::gain(uint32_t gainCode) const
+double CamHelperStarvis2::gain(uint32_t gainCode) const
 {
 	return std::pow(10, 0.015 * gainCode);
 }
 
 CamHelper *create()
 {
-	return new CamHelperImx678();
+	return new CamHelperStarvis2();
 }
 
-RegisterCamHelper reg("imx678", &create);
+RegisterCamHelper reg662("imx662", &create);
+RegisterCamHelper reg675("imx675", &create);
+RegisterCamHelper reg678("imx678", &create);
+RegisterCamHelper reg832("imx832", &create);
 
 } /* namespace */

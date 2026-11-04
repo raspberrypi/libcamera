@@ -39,7 +39,7 @@ void init_py_{{mode}}_generated(py::module& m)
 
         py::enum_<libcamera::{{mode}}::{{ctrl.namespace}}{{ctrl.name}}Enum>({{ctrl.klass}}, "{{ctrl.name}}Enum")
 {%- for enum in ctrl.enum_values %}
-                .value("{{enum.py_name}}", libcamera::{{mode}}::{{ctrl.namespace}}{{enum.name}})
+                .value("{{enum.name}}", libcamera::{{mode}}::{{ctrl.namespace}}{{enum.prefixed_name}})
 {%- endfor %}
         ;
 {%- endif %}

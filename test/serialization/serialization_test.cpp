@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <iterator>
 #include <map>
 
 #include <libcamera/camera.h>

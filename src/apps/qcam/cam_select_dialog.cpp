@@ -98,13 +98,13 @@ void CameraSelectorDialog::updateCameraInfo(QString cameraId)
 	const auto &location = properties.get(libcamera::properties::Location);
 	if (location) {
 		switch (*location) {
-		case libcamera::properties::CameraLocationFront:
+		case libcamera::properties::LocationFront:
 			cameraLocation_->setText("Internal front camera");
 			break;
-		case libcamera::properties::CameraLocationBack:
+		case libcamera::properties::LocationBack:
 			cameraLocation_->setText("Internal back camera");
 			break;
-		case libcamera::properties::CameraLocationExternal:
+		case libcamera::properties::LocationExternal:
 			cameraLocation_->setText("External camera");
 			break;
 		default:

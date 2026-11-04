@@ -47,6 +47,13 @@ LOG_DEFINE_CATEGORY(Virtual)
 
 namespace {
 
+constexpr PixelFormat outputFormats[] = {
+	formats::NV12,
+	formats::YUV420,
+	formats::ABGR8888,
+	formats::XBGR8888,
+};
+
 uint64_t currentTimestamp()
 {
 	const auto now = std::chrono::steady_clock::now();
@@ -128,8 +135,14 @@ VirtualCameraData::VirtualCameraData(PipelineHandler *pipe,
 	moveToThread(this);
 }
 
-void VirtualCameraData::processRequest(Request *request)
+void VirtualCameraData::processRequest(Request *request,
+				       uint64_t targetTimestamp)
 {
+	const auto targetTime = std::chrono::steady_clock::time_point{
+		std::chrono::nanoseconds(targetTimestamp)
+	};
+	std::this_thread::sleep_until(targetTime);
+
 	for (const auto &[stream, buffer] : request->buffers()) {
 		bool found = false;
 		/* map buffer and fill test patterns */
@@ -139,7 +152,7 @@ void VirtualCameraData::processRequest(Request *request)
 
 				fmd.status = FrameMetadata::Status::FrameSuccess;
 				fmd.sequence = streamConfig.seq++;
-				fmd.timestamp = currentTimestamp();
+				fmd.timestamp = targetTimestamp;
 
 				std::span<const FrameBuffer::Plane> planes = buffer->planes();
 				for (const auto [i, p] : utils::enumerate(planes))
@@ -148,7 +161,7 @@ void VirtualCameraData::processRequest(Request *request)
 				found = true;
 
 				if (streamConfig.frameGenerator->generateFrame(
-					    stream->configuration().size, buffer))
+					    stream->configuration(), buffer))
 					fmd.status = FrameMetadata::Status::FrameError;
 
 				bufferCompleted.emit(buffer);
@@ -157,6 +170,22 @@ void VirtualCameraData::processRequest(Request *request)
 		}
 		ASSERT(found);
 	}
+}
+
+void VirtualCameraData::processControls(const ControlList &ctrls)
+{
+	auto fdl = ctrls.get(controls::FrameDurationLimits);
+	if (!fdl)
+		return;
+
+	/*
+	 * Target the highest frame rate allowed by the client,
+	 * clamped to the values allowed by the config.
+	 */
+	targetFrameDuration_ = std::clamp(
+		fdl->front(),
+		config_.frameDurationLimits[0],
+		config_.frameDurationLimits[1]);
 }
 
 VirtualCameraConfiguration::VirtualCameraConfiguration(VirtualCameraData *data)
@@ -202,17 +231,36 @@ CameraConfiguration::Status VirtualCameraConfiguration::validate()
 			adjusted = true;
 		}
 
-		if (cfg.pixelFormat != formats::NV12) {
-			cfg.pixelFormat = formats::NV12;
+		if (std::find(std::begin(outputFormats),
+			      std::end(outputFormats),
+			      cfg.pixelFormat) == std::end(outputFormats)) {
+			cfg.pixelFormat = outputFormats[0];
 			status = Adjusted;
 			adjusted = true;
 		}
 
-		if (cfg.colorSpace != ColorSpace::Smpte170m) {
-			cfg.colorSpace = ColorSpace::Smpte170m;
+		const PixelFormatInfo &info = PixelFormatInfo::info(cfg.pixelFormat);
+		std::optional<ColorSpace> colorSpace;
+
+		switch (info.colourEncoding) {
+		case PixelFormatInfo::ColourEncodingRGB:
+			colorSpace = ColorSpace::Srgb;
+			break;
+
+		case PixelFormatInfo::ColourEncodingYUV:
+			colorSpace = ColorSpace::Smpte170m;
+			break;
+
+		default:
+			ASSERT(false);
+		}
+
+		if (cfg.colorSpace && cfg.colorSpace != colorSpace) {
 			status = Adjusted;
 			adjusted = true;
 		}
+
+		cfg.colorSpace = colorSpace;
 
 		if (validateColorSpaces() == Adjusted) {
 			status = Adjusted;
@@ -223,7 +271,6 @@ CameraConfiguration::Status VirtualCameraConfiguration::validate()
 			LOG(Virtual, Info)
 				<< "Stream configuration adjusted to " << cfg.toString();
 
-		const PixelFormatInfo &info = PixelFormatInfo::info(cfg.pixelFormat);
 		cfg.stride = info.stride(cfg.size.width, 0, 1);
 		cfg.frameSize = info.frameSize(cfg.size, 1);
 
@@ -275,12 +322,12 @@ PipelineHandlerVirtual::generateConfiguration(Camera *camera,
 		}
 
 		std::map<PixelFormat, std::vector<SizeRange>> streamFormats;
-		PixelFormat pixelFormat = formats::NV12;
-		streamFormats[pixelFormat] = { { data->config_.minResolutionSize,
-						 data->config_.maxResolutionSize } };
+		for (auto pixelFormat : outputFormats)
+			streamFormats[pixelFormat] = { { data->config_.minResolutionSize,
+							 data->config_.maxResolutionSize } };
 		StreamFormats formats(streamFormats);
 		StreamConfiguration cfg(formats);
-		cfg.pixelFormat = pixelFormat;
+		cfg.pixelFormat = outputFormats[0];
 		cfg.size = data->config_.maxResolutionSize;
 		cfg.bufferCount = VirtualCameraConfiguration::kBufferCount;
 		cfg.colorSpace = ColorSpace::Smpte170m;
@@ -323,10 +370,18 @@ int PipelineHandlerVirtual::exportFrameBuffers([[maybe_unused]] Camera *camera,
 	return dmaBufAllocator_.exportBuffers(config.bufferCount, planeSizes, buffers);
 }
 
-int PipelineHandlerVirtual::start([[maybe_unused]] Camera *camera,
-				  [[maybe_unused]] const ControlList *controls)
+int PipelineHandlerVirtual::start(Camera *camera, const ControlList *controls)
 {
 	VirtualCameraData *data = cameraData(camera);
+
+	/* By default target the highest frame rate allowed by the config. */
+	data->targetFrameDuration_ = data->config_.frameDurationLimits[0];
+	ASSERT(data->targetFrameDuration_ > 0);
+
+	if (controls)
+		data->processControls(*controls);
+
+	data->targetTimestamp_ = 0;
 
 	for (auto &s : data->streamConfigs_)
 		s.seq = 0;
@@ -354,15 +409,28 @@ void PipelineHandlerVirtual::stopDevice(Camera *camera)
 		cancelRequest(data->queuedRequests_.front());
 }
 
-int PipelineHandlerVirtual::queueRequestDevice([[maybe_unused]] Camera *camera,
-					       Request *request)
+int PipelineHandlerVirtual::queueRequestDevice(Camera *camera, Request *request)
 {
 	VirtualCameraData *data = cameraData(camera);
-	const auto timestamp = currentTimestamp();
 
-	request->_d()->metadata().set(controls::SensorTimestamp, timestamp);
+	data->processControls(request->controls());
+
+	/*
+	 * TODO: Skip frames if we can't keep up with the maximum frame
+	 * duration.
+	 */
+	data->targetTimestamp_ = std::max(
+		currentTimestamp(),
+		data->targetTimestamp_ + data->targetFrameDuration_ * 1000);
+
+	request->_d()->metadata().set(controls::SensorTimestamp,
+				      data->targetTimestamp_);
+	request->_d()->metadata().set(controls::FrameDuration,
+				      data->targetFrameDuration_);
+
 	data->invokeMethod(&VirtualCameraData::processRequest,
-			   ConnectionTypeQueued, request);
+			   ConnectionTypeQueued, request,
+			   data->targetTimestamp_);
 
 	return 0;
 }

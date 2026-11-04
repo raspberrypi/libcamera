@@ -332,15 +332,15 @@ std::string CamApp::cameraName(const Camera *camera)
 	const auto &location = props.get(properties::Location);
 	if (location) {
 		switch (*location) {
-		case properties::CameraLocationFront:
+		case properties::LocationFront:
 			addModel = false;
 			name = "Internal front camera ";
 			break;
-		case properties::CameraLocationBack:
+		case properties::LocationBack:
 			addModel = false;
 			name = "Internal back camera ";
 			break;
-		case properties::CameraLocationExternal:
+		case properties::LocationExternal:
 			name = "External camera ";
 			break;
 		}

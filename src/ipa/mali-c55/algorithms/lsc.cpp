@@ -91,7 +91,7 @@ int Lsc::configure(IPAContext &context, const IPACameraSensorInfo &configInfo)
 		/* Only 32x32 tables of coefficients are accepted. */
 		ASSERT(rTable.size() == kGridSize &&
 		       gTable.size() == kGridSize &&
-		       bTable.size() != kGridSize);
+		       bTable.size() == kGridSize);
 
 		if (colourTemperatures_.size() >= kMaxColourTemperatures) {
 			LOG(MaliC55Lsc, Error)

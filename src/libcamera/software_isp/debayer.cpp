@@ -44,6 +44,47 @@ namespace libcamera {
  */
 
 /**
+ * \var DebayerParams::kLscGridSize
+ * \brief Number of lens shading grid areas in one direction
+ */
+
+/**
+ * \var DebayerParams::kLscValuesPerCell
+ * \brief Number of pixel values per each of the lens shading grid areas
+ */
+
+/**
+ * \var DebayerParams::kLscBytesPerCell
+ * \brief Number of bytes per each of the lens shading grid areas
+ */
+
+/**
+ * \typedef DebayerParams::LscLookupTable
+ * \brief Lookup table for lens shading correction
+ *
+ * It's an array of values to be later used as a texture.
+ * The values are in row - column - RGB order.
+ */
+
+/**
+ * \var DebayerParams::lscLut
+ * \brief Lens shading lookup table
+ */
+
+/**
+ * \var DebayerParams::identityLscLut
+ * \brief Lens shading lookup table of identity mapping
+ *
+ * This table can be used to initialise the lens shading lookup table or to
+ * not apply any real lens shading correction.
+ */
+
+/**
+ * \var DebayerParams::lscLutVersion
+ * \brief Incremented on each \a lscLut change
+ */
+
+/**
  * \class Debayer
  * \brief Base debayering class
  *
@@ -71,6 +112,7 @@ Debayer::~Debayer()
  * \param[in] inputCfg The input configuration
  * \param[in] outputCfgs The output configurations
  * \param[in] ccmEnabled Whether a color correction matrix is applied
+ * \param[in] lscEnabled Whether lens shading correction grid is provided
  *
  * \return 0 on success, a negative errno on failure
  */

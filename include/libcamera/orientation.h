@@ -8,6 +8,7 @@
 #pragma once
 
 #include <iostream>
+#include <optional>
 
 namespace libcamera {
 
@@ -23,7 +24,7 @@ enum class Orientation {
 	Rotate90,
 };
 
-Orientation orientationFromRotation(int angle, bool *success = nullptr);
+std::optional<Orientation> orientationFromRotation(int angle);
 
 std::ostream &operator<<(std::ostream &out, const Orientation &orientation);
 

@@ -163,7 +163,7 @@ Converter::~Converter()
  * \fn Converter::configure()
  * \brief Configure a set of output stream conversion from an input stream
  * \param[in] inputCfg Input stream configuration
- * \param[out] outputCfgs A list of output stream configurations
+ * \param[in] outputCfgs A list of output stream configurations
  * \return 0 on success or a negative error code otherwise
  */
 

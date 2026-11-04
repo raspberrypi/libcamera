@@ -115,7 +115,9 @@ class AwbAlgorithm : public AwbAlgorithmBase
 public:
 	int init(const ValueNode &tuningData, ControlInfoMap::Map &controls)
 	{
-		AwbAlgorithmBase::init(tuningData);
+		int ret = AwbAlgorithmBase::init(tuningData);
+		if (ret)
+			return ret;
 
 		gainMin_ = std::max(Q::TraitsType::min, 1.0f);
 		gainMax_ = Q::TraitsType::max;

@@ -30,8 +30,8 @@ public:
 
 	LscImplementation::ComponentsMap
 	sampleForCrop([[maybe_unused]] const Rectangle &cropRectangle,
-		      [[maybe_unused]] std::vector<double> xPos,
-		      [[maybe_unused]] std::vector<double> yPos) override
+		      [[maybe_unused]] std::span<const double> xPos,
+		      [[maybe_unused]] std::span<const double> yPos) override
 	{
 		LOG(LscTable, Warning)
 			<< "Tabular LSC data doesn't support resampling";

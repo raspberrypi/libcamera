@@ -23,19 +23,18 @@ void init_py_transform(py::module &m)
 
 	pyTransform
 		.def(py::init([](int rotation, bool hflip, bool vflip, bool transpose) {
-			bool ok;
-
-			Transform t = transformFromRotation(rotation, &ok);
-			if (!ok)
+			std::optional<Transform> t = transformFromRotation(rotation);
+			if (!t)
 				throw std::invalid_argument("Invalid rotation");
 
 			if (hflip)
-				t ^= Transform::HFlip;
+				*t ^= Transform::HFlip;
 			if (vflip)
-				t ^= Transform::VFlip;
+				*t ^= Transform::VFlip;
 			if (transpose)
-				t ^= Transform::Transpose;
-			return t;
+				*t ^= Transform::Transpose;
+
+			return *t;
 		}), py::arg("rotation") = 0, py::arg("hflip") = false,
 		    py::arg("vflip") = false, py::arg("transpose") = false)
 		.def(py::init([](Transform &other) { return other; }))

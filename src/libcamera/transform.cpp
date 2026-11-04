@@ -268,21 +268,20 @@ Transform operator-(Transform t)
 /**
  * \brief Return the transform representing a rotation of the given angle
  * clockwise
- * \param[in] angle The angle of rotation in a clockwise sense. Negative values
- * can be used to represent anticlockwise rotations
- * \param[out] success Set to `true` if the angle is a multiple of 90 degrees,
- * otherwise `false`
- * \return The transform corresponding to the rotation if \a success was set to
- * `true`, otherwise the `Identity` transform
+ * \param[in] angle The angle of rotation in a clockwise sense
+ *
+ * The \a angle must be a multiple of 90 degrees. Negative values represent
+ * anticlockwise rotations. If the angle is invalid, the function returns
+ * std::nullopt.
+ *
+ * \return The transform corresponding to the rotation, or nullopt if the
+ * angle is invalid
  */
-Transform transformFromRotation(int angle, bool *success)
+std::optional<Transform> transformFromRotation(int angle)
 {
 	angle = angle % 360;
 	if (angle < 0)
 		angle += 360;
-
-	if (success != nullptr)
-		*success = true;
 
 	switch (angle) {
 	case 0:
@@ -295,10 +294,7 @@ Transform transformFromRotation(int angle, bool *success)
 		return Transform::Rot270;
 	}
 
-	if (success != nullptr)
-		*success = false;
-
-	return Transform::Identity;
+	return {};
 }
 
 namespace {

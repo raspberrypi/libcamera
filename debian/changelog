@@ -1,3 +1,106 @@
+libcamera (0.8.0+rpt20261104-1) trixie; urgency=medium
+
+  [ Stefan Klug ]
+  * libcamera: converter: dw100_vertexmap: Add debug logging of dewarp
+    parameters
+  * libcamera: pipeline: rkisp1: Fix dewarping with multiple cameras
+  * libcamera: converter: Small fix in parameter documentation
+
+  [ Denys Fedoryshchenko ]
+  * libcamera: Add missing direct includes
+
+  [ Jacopo Mondi ]
+  * ipa: mali-c55: Fix LSC tables size check
+  * ipa: rkisp1: Add Mira220 tuning file
+
+  [ Barnabás Pőcze ]
+  * apps: cam: sdl_texture: Support YUV420
+  * libcamera: {orientation,transform}FromRotation(): Return
+    `std::optional`
+  * ipa: {mali-c55,rkisp1}: Expand uncalibrated tuning files
+  * test: Work around x87 floating point comparison issues
+  * libcamera: controls: Remove common enum prefix
+  * libcamera: pipeline: simple: Rework software-isp/converter selection
+  * ipa: libipa: lsc: interpolateComponents(): Avoid copy
+  * ipa: libipa: lsc: configure(): Take positions in a span
+  * ipa: rkisp1: Fix mira220 tuning file
+  * ipa: libipa: awb: Do not ignore initialization errors
+  * ipa: libipa: Support old enum names
+
+  [ Danius Kalvaitis ]
+  * pipeline: rpi: Clear immediate controls queue on stop
+
+  [ Robert Mader ]
+  * virtual: Fill alpha channels
+  * virtual: Use stride helper for final buffer copy
+  * virtual: Support more common pixel formats
+  * libcamera: pipeline: virtual: Implement frame rate handling
+
+  [ Naushir Patuck ]
+  * utils: codegen: gen-formats: Resolve Broadcom SAND modifiers
+  * include: linux: videodev2: Add NV12MT_COL128 8/10-bit pixel formats
+  * libcamera: formats: Add NV12MT_COL128 8/10-bit pixel formats
+  * ipa: rpi: Rename cam_helper_imx678 to cam_helper_starvis2
+  * ipa: rpi: Add IMX675 and IMX832 helpers
+  * ipa: rpi: Move IMX662 camera helper into cam_helper_starvis2
+  * Bump SONAME to libcamera0.8
+
+  [ Prasanth R ]
+  * v4l2: v4l2_camera_proxy: Fix default frame interval
+  * v4l2: v4l2_camera_proxy: Dispatch VIDIOC_PREPARE_BUF
+
+  [ Joel Winarske ]
+  * libcamera: egl: Don't redefine EGL_NO_X11
+
+  [ Ray Strode ]
+  * gstreamer: Map 10-bit monochrome frames
+
+  [ Xander Pronk ]
+  * libcamera: software_isp: egl: Add filter parameter to
+    createTexture2D()
+  * libcamera: software_isp: Add LSC data to DebayerParams
+  * ipa: simple: Add LSC algorithm
+  * libcamera: shaders: Add LSC support
+  * libcamera: software_isp: debayer_egl: Add LSC support
+
+  [ Milan Zamazal ]
+  * libcamera: software_isp: Pass LSC availability to debayering
+
+  [ Faizel K B ]
+  * libcamera: egl: Fix DRM format for GL_RG dmabuf import
+
+  [ Alexi Birlinger ]
+  * libcamera: pipeline: simple: Reject multiple processed streams with
+    software ISP
+
+  [ Benjamin Mugnier ]
+  * ipa: rpi: Change vd56g3 tuning files
+
+  [ Petr Karnakov ]
+  * libcamera: pipeline: ipu3: Fix unsigned wrap in IF height search
+
+  [ Laurent Pinchart ]
+  * v4l2: v4l2_camera_proxy: Clear PREPARED flag when queuing buffer
+  * v4l2: v4l2_camera_proxy: Set buffer field unconditionally
+  * v4l2: v4l2_camera_proxy: Clear ERROR flag when dequeuing or stopping
+    streaming
+  * v4l2: v4l2_camera_proxy: Set DONE flag on error buffers
+  * libcamera: software_isp: Exclude saturated pixels from AWB statistics
+
+  [ Kieran Bingham ]
+  * pipeline: simple: Report ScalerCropMaximum camera property
+  * pipeline: simple: Report the ScalerCrop
+  * libcamera: camera_manager: Non-fatal duplicate id detection
+  * test: pipeline: Add a duplicate camera construction test
+  * libcamera v0.8.0
+
+  [ Hans de Goede ]
+  * libcamera: pipeline: simple: Prefer CSI2 packed bayer formats over
+    unpacket formats
+  * qcam: viewfinder_gl: Set awb GL uniform for debayer shaders
+
+ -- Naushir Patuck <naush@raspberrypi.com>  Wed, 04 Nov 2026 13:34:52 +0000
+
 libcamera (0.7.2+rpt20261009-1) trixie; urgency=medium
 
   * New upstream version 0.7.2+rpt20261009

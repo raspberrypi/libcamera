@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <optional>
+
 namespace libcamera {
 
 enum class Orientation;
@@ -68,7 +70,7 @@ constexpr Transform operator~(Transform t)
 	return static_cast<Transform>(~static_cast<int>(t) & 7);
 }
 
-Transform transformFromRotation(int angle, bool *success = nullptr);
+std::optional<Transform> transformFromRotation(int angle);
 
 Transform operator/(const Orientation &o1, const Orientation &o2);
 Orientation operator*(const Orientation &o, const Transform &t);

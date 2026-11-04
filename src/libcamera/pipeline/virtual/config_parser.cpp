@@ -54,10 +54,16 @@ ConfigParser::parseConfigFile(File &file, PipelineHandler *pipe)
 
 		data->config_.id = cameraId;
 		ControlInfoMap::Map controls;
+
 		/* \todo Check which resolution's frame rate to be reported */
-		controls[&controls::FrameDurationLimits] =
-			ControlInfo(1000000 / data->config_.resolutions[0].frameRates[1],
-				    1000000 / data->config_.resolutions[0].frameRates[0]);
+		data->config_.frameDurationLimits = {
+			1000000 / data->config_.resolutions[0].frameRates[1],
+			1000000 / data->config_.resolutions[0].frameRates[0],
+		};
+		controls[&controls::FrameDurationLimits] = ControlInfo{
+			data->config_.frameDurationLimits[0],
+			data->config_.frameDurationLimits[1],
+		};
 
 		std::vector<ControlValue> supportedFaceDetectModes{
 			static_cast<int32_t>(controls::draft::FaceDetectModeOff),
@@ -233,8 +239,8 @@ int ConfigParser::parseFrameGenerator(const ValueNode &cameraConfigData, Virtual
 
 int ConfigParser::parseLocation(const ValueNode &cameraConfigData, VirtualCameraData *data)
 {
-	/* Default value is properties::CameraLocationFront */
-	int32_t location = properties::CameraLocationFront;
+	/* Default value is properties::LocationFront */
+	int32_t location = properties::LocationFront;
 
 	if (auto l = cameraConfigData["location"].get<std::string>()) {
 		auto it = properties::LocationNameValueMap.find(*l);

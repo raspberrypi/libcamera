@@ -184,7 +184,7 @@ int eGL::createDMABufTexture2D(eGLImage &eglImage, int fd, bool output)
 		drm_format = DRM_FORMAT_R8;
 		break;
 	case GL_RG:
-		drm_format = DRM_FORMAT_RG88;
+		drm_format = DRM_FORMAT_GR88;
 		break;
 	case GL_RGBA:
 		drm_format = DRM_FORMAT_ARGB8888;
@@ -279,13 +279,14 @@ int eGL::createOutputDMABufTexture2D(eGLImage &eglImage, int fd)
  * \brief Create a 2D texture from a memory buffer
  * \param[in,out] eglImage EGL image to associate with the texture
  * \param[in] data Pointer to pixel data, or nullptr for uninitialised texture
+ * \param[in] filter GL texture filter setting
  *
  * Creates a 2D texture from a CPU-accessible memory buffer. The texture
- * is configured with nearest filtering and clamp-to-edge wrapping. This
+ * is configured the specified filtering and clamp-to-edge wrapping. This
  * is useful for uploading static data like lookup tables or uniform color
  * matrices to the GPU.
  */
-void eGL::createTexture2D(eGLImage &eglImage, void *data)
+void eGL::createTexture2D(eGLImage &eglImage, const void *data, GLint filter)
 {
 	assertThread();
 
@@ -295,8 +296,8 @@ void eGL::createTexture2D(eGLImage &eglImage, void *data)
 	glTexImage2D(GL_TEXTURE_2D, 0, eglImage.format_, eglImage.width_, eglImage.height_, 0, eglImage.format_, GL_UNSIGNED_BYTE, data);
 
 	// Nearest filtering
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
 
 	// Wrap to edge to avoid edge artifacts
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -338,7 +339,7 @@ EGLDisplay eGL::probeDisplay()
  *
  * Updates a 2D texture in VRAM.
  */
-void eGL::updateTexture2D(eGLImage &eglImage, void *data)
+void eGL::updateTexture2D(eGLImage &eglImage, const void *data)
 {
 	assertThread();
 
@@ -357,7 +358,7 @@ void eGL::updateTexture2D(eGLImage &eglImage, void *data)
  */
 void eGL::createOutputTexture2D(eGLImage &eglImage)
 {
-	createTexture2D(eglImage, NULL);
+	createTexture2D(eglImage, NULL, GL_NEAREST);
 	attachTextureToFBO(eglImage);
 }
 

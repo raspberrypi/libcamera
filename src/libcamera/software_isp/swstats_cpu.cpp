@@ -167,6 +167,14 @@ SwStatsCpu::SwStatsCpu(const CameraManager &cm)
 			<< "Failed to create shared memory for statistics";
 }
 
+/*
+ * Hardcode the AWB stats saturation threshold to 95% of the maximum value.
+ *
+ * \todo Investigate if this should be made dynamic, based on sensor
+ * (non-)linearity and noise level.
+ */
+static constexpr unsigned int kSaturationThreshold = 0.95 * 256;
+
 static constexpr unsigned int kRedYMul = 77; /* 0.299 * 256 */
 static constexpr unsigned int kGreenYMul = 150; /* 0.587 * 256 */
 static constexpr unsigned int kBlueYMul = 29; /* 0.114 * 256 */
@@ -177,22 +185,29 @@ static constexpr unsigned int kBlueYMul = 29; /* 0.114 * 256 */
                                           \
 	uint64_t sumR = 0;                \
 	uint64_t sumG = 0;                \
-	uint64_t sumB = 0;
+	uint64_t sumB = 0;                \
+	uint64_t nSamples = 0;
 
-#define SWSTATS_ACCUMULATE_LINE_STATS(div) \
-	sumR += r;                         \
-	sumG += g;                         \
-	sumB += b;                         \
-                                           \
-	yVal = r * kRedYMul;               \
-	yVal += g * kGreenYMul;            \
-	yVal += b * kBlueYMul;             \
+#define SWSTATS_ACCUMULATE_LINE_STATS(div)      \
+	if (r < kSaturationThreshold * (div) && \
+	    g < kSaturationThreshold * (div) && \
+	    b < kSaturationThreshold * (div)) { \
+		sumR += r;                      \
+		sumG += g;                      \
+		sumB += b;                      \
+		nSamples++;                     \
+	}                                       \
+                                                \
+	yVal = r * kRedYMul;                    \
+	yVal += g * kGreenYMul;                 \
+	yVal += b * kBlueYMul;                  \
 	stats.yHistogram[yVal * SwIspStats::kYHistogramSize / (256 * 256 * (div))]++;
 
 #define SWSTATS_FINISH_LINE_STATS() \
 	stats.sum_.r() += sumR;     \
 	stats.sum_.g() += sumG;     \
-	stats.sum_.b() += sumB;
+	stats.sum_.b() += sumB;     \
+	stats.numPixels_ += nSamples;
 
 void SwStatsCpu::statsBGGR8Line0(const uint8_t *src[], SwIspStats &stats)
 {
@@ -391,6 +406,7 @@ void SwStatsCpu::startFrame(uint32_t frame)
 
 	for (auto &s : stats_) {
 		s.sum_ = RGB<uint64_t>({ 0, 0, 0 });
+		s.numPixels_ = 0;
 		s.yHistogram.fill(0);
 	}
 }
@@ -408,9 +424,11 @@ void SwStatsCpu::finishFrame(uint32_t frame, uint32_t bufferId)
 
 	if (valid) {
 		sharedStats_->sum_ = RGB<uint64_t>({ 0, 0, 0 });
+		sharedStats_->numPixels_ = 0;
 		sharedStats_->yHistogram.fill(0);
 		for (const auto &s : stats_) {
 			sharedStats_->sum_ += s.sum_;
+			sharedStats_->numPixels_ += s.numPixels_;
 			for (unsigned int j = 0; j < SwIspStats::kYHistogramSize; j++)
 				sharedStats_->yHistogram[j] += s.yHistogram[j];
 		}

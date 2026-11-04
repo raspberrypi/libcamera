@@ -46,7 +46,7 @@ protected:
 		ASSERT_EQ(hist.quantile(0.75), 1.5);
 
 		/* Test quantile smaller than the smallest histogram step. */
-		ASSERT_EQ(hist.quantile(0.001), 0.002);
+		ASSERT_EQ(hist.quantile(0.125), 0.25);
 
 		ASSERT_EQ(hist.interQuantileMean(0.0, 1.0), 1.0);
 		ASSERT_EQ(hist.interQuantileMean(0.0, 0.5), 0.5);
@@ -56,8 +56,8 @@ protected:
 		ASSERT_EQ(hist.interQuantileMean(0.25, 0.75), 1.0);
 
 		/* Test small ranges at the borders of the histogram. */
-		ASSERT_EQ(hist.interQuantileMean(0.0, 0.1), 0.1);
-		ASSERT_EQ(hist.interQuantileMean(0.9, 1.0), 1.9);
+		ASSERT_EQ(hist.interQuantileMean(0.0, 0.125), 0.125);
+		ASSERT_EQ(hist.interQuantileMean(0.875, 1.0), 1.875);
 
 		return TestPass;
 	}

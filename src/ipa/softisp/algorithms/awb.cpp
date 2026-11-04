@@ -7,7 +7,6 @@
 
 #include "awb.h"
 
-#include <numeric>
 #include <stdint.h>
 
 #include <libcamera/base/log.h>
@@ -118,16 +117,23 @@ SoftIspAwbStats Awb::calculateRgbMeans(IPAContext &context,
 	if (!stats->valid)
 		return {};
 
-	const SwIspStats::Histogram &histogram = stats->yHistogram;
 	const uint8_t blackLevel = context.activeState.blc.level;
+
+	const uint64_t nPixels = stats->numPixels_;
+
+	/*
+	 * In the unlikely case where all pixels are saturated, return invalid
+	 * statistics. This shouldn't happen in normal conditions but can be
+	 * triggered by severe over-exposure.
+	 */
+	if (!nPixels)
+		return {};
 
 	/*
 	 * Black level must be subtracted to get the correct AWB ratios, they
 	 * would be off if they were computed from the whole brightness range
 	 * rather than from the sensor range.
 	 */
-	const uint64_t nPixels = std::accumulate(
-		histogram.begin(), histogram.end(), uint64_t(0));
 	const uint64_t offset = blackLevel * nPixels;
 	const uint64_t minValid = 1;
 

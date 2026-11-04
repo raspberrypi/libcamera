@@ -477,6 +477,7 @@ bool ViewFinderGL::createFragmentShader()
 	blackLevelUniformDataIn_ = shaderProgram_.uniformLocation("blacklevel");
 	gammaUniformDataIn_ = shaderProgram_.uniformLocation("gamma");
 	contrastExpUniformDataIn_ = shaderProgram_.uniformLocation("contrastExp");
+	awbUniformDataIn_ = shaderProgram_.uniformLocation("awb");
 
 	/* Create the textures. */
 	for (std::unique_ptr<QOpenGLTexture> &texture : textures_) {
@@ -555,6 +556,9 @@ void ViewFinderGL::doRender()
 
 	/* Black Level */
 	QVector3D qBlackLevelVec(0.0f, 0.0f, 0.0f);
+
+	/* AWB */
+	QVector3D qAwbVec(1.0f, 1.0f, 1.0f);
 
 	switch (format_) {
 	case libcamera::formats::NV12:
@@ -808,6 +812,9 @@ void ViewFinderGL::doRender()
 
 		/* Black Level */
 		shaderProgram_.setUniformValue(blackLevelUniformDataIn_, qBlackLevelVec);
+
+		/* AWB */
+		shaderProgram_.setUniformValue(awbUniformDataIn_, qAwbVec);
 
 		/* Gamma */
 		shaderProgram_.setUniformValue(gammaUniformDataIn_, 1.0f);

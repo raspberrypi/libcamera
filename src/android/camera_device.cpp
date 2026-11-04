@@ -310,13 +310,13 @@ int CameraDevice::initialize(const CameraConfigData *cameraConfigData)
 	const auto &location = properties.get(properties::Location);
 	if (location) {
 		switch (*location) {
-		case properties::CameraLocationFront:
+		case properties::LocationFront:
 			facing_ = CAMERA_FACING_FRONT;
 			break;
-		case properties::CameraLocationBack:
+		case properties::LocationBack:
 			facing_ = CAMERA_FACING_BACK;
 			break;
-		case properties::CameraLocationExternal:
+		case properties::LocationExternal:
 			/*
 			 * If the camera is reported as external, but the
 			 * CameraHalManager has overriden it, use what is

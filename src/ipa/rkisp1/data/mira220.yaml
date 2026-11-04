@@ -1,0 +1,115 @@
+# SPDX-License-Identifier: CC0-1.0
+%YAML 1.1
+---
+version: 1
+algorithms:
+  - Agc:
+      AeMeteringMode:
+        CentreWeighted: [ 0, 0, 0, 0, 0, 0, 6, 8, 6, 0, 0, 8, 16, 8, 0, 0, 6, 8, 6, 0, 0, 0, 0, 0, 0 ]
+        Spot: [ 0, 0, 0, 0, 0, 0, 2, 4, 2, 0, 0, 4, 16, 4, 0, 0, 2, 4, 2, 0, 0, 0, 0, 0, 0 ]
+        Matrix: [ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 ]
+      AeExposureMode:
+        Normal:
+          exposureTime: [ 100, 10000, 30000, 60000, 120000 ]
+          gain: [ 2.0, 4.0, 6.0, 6.0, 6.0 ]
+        Short:
+          exposureTime: [ 100, 5000, 10000, 20000, 120000 ]
+          gain: [ 2.0, 4.0, 6.0, 6.0, 6.0 ]
+      AeConstraintMode:
+        Normal:
+          lower:
+            qLo: 0.98
+            qHi: 1.0
+            yTarget: 0.5
+        Highlight:
+          lower:
+            qLo: 0.98
+            qHi: 1.0
+            yTarget: 0.5
+          upper:
+            qLo: 0.98
+            qHi: 1.0
+            yTarget: 0.8
+      relativeLuminanceTarget: 0.2
+  - Lux:
+      referenceY: 0.1767075076869632
+      referenceExposureTime: 29980
+      referenceAnalogueGain: 1.0
+      referenceDigitalGain: 1.0
+      referenceLux: 455
+  - Awb:
+      algorithm: "bayes"
+      AwbMode:
+        Auto:
+          lo: 2500
+          hi: 8000
+        Incandescent:
+          lo: 2500
+          hi: 3000
+        Tungsten:
+          lo: 3000
+          hi: 3500
+        Fluorescent:
+          lo: 4000
+          hi: 4700
+        Indoor:
+          lo: 3000
+          hi: 5000
+        Daylight:
+          lo: 5500
+          hi: 6500
+        Cloudy:
+          lo: 6500
+          hi: 8000
+      priors:
+        - lux: 0
+          ct: [ 2000, 13000 ]
+          probability: [ 1.0, 1.0 ]
+      colourGains:
+        - ct: 2737
+          gains: [ 1.1119759813188035, 2.413127413127413 ]
+        - ct: 3545
+          gains: [ 1.3848497438027976, 2.2665457842248413 ]
+        - ct: 3883
+          gains: [ 1.463057790782736, 2.14638334406525 ]
+        - ct: 6782
+          gains: [ 1.720282126268708, 1.6477179106936892 ]
+      transversePos: 0.03954
+      transverseNeg: 0.04359
+  - BlackLevelCorrection:
+  - Ccm:
+      ccms:
+        - ct: 2737
+          ccm: [
+                 1.83938, -0.15853, -0.68086, -0.95879, 2.53528, -0.57649, -0.01374, -0.78874,
+                 1.80248,
+               ]
+        - ct: 2860
+          ccm: [
+                 1.77497, -0.04646, -0.72851, -0.80997, 2.22894, -0.41896, -0.08192, -0.93897,
+                 2.02089,
+               ]
+        - ct: 3545
+          ccm: [
+                 1.66406, -0.08799, -0.57608, -0.72267, 2.19058, -0.46792, -0.05626, -0.55169,
+                 1.60796,
+               ]
+        - ct: 3883
+          ccm: [
+                 2.01933, -0.34543, -0.67389, -0.72946, 2.23102, -0.50156, -0.06673, -0.54689,
+                 1.61363,
+               ]
+        - ct: 6782
+          ccm: [
+                 1.60459, -0.10641, -0.49819, -0.64814, 2.34993, -0.70179, -0.09841, -0.43321,
+                 1.53162,
+               ]
+  - ColorProcessing:
+  - Filter:
+  - GammaOutCorrection:
+      gamma: 2.2
+  - WideDynamicRange:
+      ExposureConstraint:
+        MaxBrightPixels: 0.02
+        yTarget: 0.95
+  - Compress:

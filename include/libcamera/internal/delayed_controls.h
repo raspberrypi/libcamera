@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <array>
 #include <stdint.h>
 #include <unordered_map>
 

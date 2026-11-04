@@ -53,6 +53,8 @@ public:
 
 		Size maxResolutionSize;
 		Size minResolutionSize;
+
+		std::array<int64_t, 2> frameDurationLimits = {};
 	};
 
 	VirtualCameraData(PipelineHandler *pipe,
@@ -60,12 +62,16 @@ public:
 
 	~VirtualCameraData() = default;
 
-	void processRequest(Request *request);
+	void processRequest(Request *request, uint64_t targetTimestamp);
+	void processControls(const ControlList &ctrls);
 
 	Configuration config_;
 
 	std::vector<StreamConfig> streamConfigs_;
 	Signal<FrameBuffer *> bufferCompleted;
+
+	int64_t targetFrameDuration_;
+	uint64_t targetTimestamp_;
 };
 
 } /* namespace libcamera */

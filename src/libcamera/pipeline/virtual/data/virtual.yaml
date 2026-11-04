@@ -14,7 +14,7 @@
     - 70
     - 80
   test_pattern: "lines"
-  location: "CameraLocationFront"
+  location: "Front"
   model: "Virtual Video Device"
 "Virtual1":
   supported_formats:
@@ -23,14 +23,14 @@
     frame_rates:
     - 60
   test_pattern: "bars"
-  location: "CameraLocationBack"
+  location: "Back"
   model: "Virtual Video Device1"
 "Virtual2":
   supported_formats:
   - width: 400
     height: 300
   test_pattern: "lines"
-  location: "CameraLocationFront"
+  location: "Front"
   model: "Virtual Video Device2"
 "Virtual3":
   test_pattern: "bars"

@@ -18,13 +18,13 @@ controls:
         Whether the camera device will trigger a precapture metering sequence
         when it processes this request.
       enum:
-        - name: AePrecaptureTriggerIdle
+        - name: Idle
           value: 0
           description: The trigger is idle.
-        - name: AePrecaptureTriggerStart
+        - name: Start
           value: 1
           description: The pre-capture AE metering is started by the camera.
-        - name: AePrecaptureTriggerCancel
+        - name: Cancel
           value: 2
           description: |
             The camera will cancel any active or completed metering sequence.
@@ -39,22 +39,22 @@ controls:
 
         Mode of operation for the noise reduction algorithm.
       enum:
-        - name: NoiseReductionModeOff
+        - name: "Off"
           value: 0
           description: No noise reduction is applied
-        - name: NoiseReductionModeFast
+        - name: Fast
           value: 1
           description: |
             Noise reduction is applied without reducing the frame rate.
-        - name: NoiseReductionModeHighQuality
+        - name: HighQuality
           value: 2
           description: |
             High quality noise reduction at the expense of frame rate.
-        - name: NoiseReductionModeMinimal
+        - name: Minimal
           value: 3
           description: |
             Minimal noise reduction is applied without reducing the frame rate.
-        - name: NoiseReductionModeZSL
+        - name: ZSL
           value: 4
           description: |
             Noise reduction is applied at different levels to different streams.
@@ -68,13 +68,13 @@ controls:
 
         Mode of operation for the chromatic aberration correction algorithm.
       enum:
-        - name: ColorCorrectionAberrationOff
+        - name: "Off"
           value: 0
           description: No aberration correction is applied.
-        - name: ColorCorrectionAberrationFast
+        - name: Fast
           value: 1
           description: Aberration correction will not slow down the frame rate.
-        - name: ColorCorrectionAberrationHighQuality
+        - name: HighQuality
           value: 2
           description: |
             High quality aberration correction which might reduce the frame
@@ -89,16 +89,16 @@ controls:
 
         Current state of the AWB algorithm.
       enum:
-        - name: AwbStateInactive
+        - name: Inactive
           value: 0
           description: The AWB algorithm is inactive.
-        - name: AwbStateSearching
+        - name: Searching
           value: 1
           description: The AWB algorithm has not converged yet.
-        - name: AwbConverged
+        - name: Converged
           value: 2
           description: The AWB algorithm has converged.
-        - name: AwbLocked
+        - name: Locked
           value: 3
           description: The AWB algorithm is locked.
 
@@ -117,10 +117,10 @@ controls:
        Control to report if the lens shading map is available. Currently
        identical to ANDROID_STATISTICS_LENS_SHADING_MAP_MODE.
       enum:
-        - name: LensShadingMapModeOff
+        - name: "Off"
           value: 0
           description: No lens shading map mode is available.
-        - name: LensShadingMapModeOn
+        - name: "On"
           value: 1
           description: The lens shading map mode is available.
 
@@ -156,18 +156,18 @@ controls:
         Control to select the test pattern mode. Currently identical to
         ANDROID_SENSOR_TEST_PATTERN_MODE.
       enum:
-        - name: TestPatternModeOff
+        - name: "Off"
           value: 0
           description: |
             No test pattern mode is used. The camera device returns frames from
             the image sensor.
-        - name: TestPatternModeSolidColor
+        - name: SolidColor
           value: 1
           description: |
             Each pixel in [R, G_even, G_odd, B] is replaced by its respective
             color channel provided in test pattern data.
             \todo Add control for test pattern data.
-        - name: TestPatternModeColorBars
+        - name: ColorBars
           value: 2
           description: |
             All pixel data is replaced with an 8-bar color pattern. The vertical
@@ -177,10 +177,10 @@ controls:
             should be rounded down to the nearest integer and the pattern can
             repeat on the right side. Each bar's height must always take up the
             full sensor pixel array height.
-        - name: TestPatternModeColorBarsFadeToGray
+        - name: ColorBarsFadeToGray
           value: 3
           description: |
-            The test pattern is similar to TestPatternModeColorBars,
+            The test pattern is similar to TestPatternMode.ColorBars,
             except that each bar should start at its specified color at the top
             and fade to gray at the bottom. Furthermore each bar is further
             subdevided into a left and right half. The left half should have a
@@ -191,7 +191,7 @@ controls:
             from the most significant bits of the smooth gradient. The height of
             each bar should always be a multiple of 128. When this is not the
             case, the pattern should repeat at the bottom of the image.
-        - name: TestPatternModePn9
+        - name: Pn9
           value: 4
           description: |
             All pixel data is replaced by a pseudo-random sequence generated
@@ -199,7 +199,7 @@ controls:
             a linear feedback shift register). The generator should be reset at
             the beginning of each frame, and thus each subsequent raw frame with
             this test pattern should be exactly the same as the last.
-        - name: TestPatternModeCustom1
+        - name: Custom1
           value: 256
           description: |
             The first custom test pattern. All custom patterns that are
@@ -221,19 +221,19 @@ controls:
         \sa FaceDetectFaceIds
 
       enum:
-        - name: FaceDetectModeOff
+        - name: "Off"
           value: 0
           description: |
             Pipeline doesn't perform face detection and doesn't report any
             control related to face detection.
-        - name: FaceDetectModeSimple
+        - name: Simple
           value: 1
           description: |
             Pipeline performs face detection and reports the
             FaceDetectFaceRectangles and FaceDetectFaceScores controls for each
             detected face. FaceDetectFaceLandmarks and FaceDetectFaceIds are
             optional.
-        - name: FaceDetectModeFull
+        - name: Full
           value: 2
           description: |
             Pipeline performs face detection and reports all the controls

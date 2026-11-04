@@ -21,7 +21,9 @@
  * Workaround for build issues on Mesa <= 22.2, see
  * https://github.com/KhronosGroup/EGL-Registry/pull/130
  */
+#ifndef EGL_NO_X11
 #define EGL_NO_X11
+#endif
 
 #define EGL_EGLEXT_PROTOTYPES
 #include <EGL/egl.h>
@@ -109,8 +111,8 @@ public:
 
 	int createInputDMABufTexture2D(eGLImage &eglImage, int fd);
 	int createOutputDMABufTexture2D(eGLImage &eglImage, int fd);
-	void createTexture2D(eGLImage &eglImage, void *data);
-	void updateTexture2D(eGLImage &eglImage, void *data);
+	void createTexture2D(eGLImage &eglImage, const void *data, GLint filter);
+	void updateTexture2D(eGLImage &eglImage, const void *data);
 	void createOutputTexture2D(eGLImage &eglImage);
 
 	int attachTextureToFBO(eGLImage &eglImage);

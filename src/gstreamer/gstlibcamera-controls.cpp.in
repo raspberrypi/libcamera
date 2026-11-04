@@ -23,9 +23,9 @@ using namespace libcamera;
 static const GEnumValue {{ ctrl.name|snake_case }}_types[] = {
 {%- for enum in ctrl.enum_values %}
 	{
-		controls::{{ ctrl.namespace }}{{ enum.name }},
+		controls::{{ ctrl.namespace }}{{ enum.prefixed_name }},
 		{{ enum.description|format_description|indent_str('\t\t') }},
-		"{{ enum.gst_name }}"
+		"{{ enum.name|kebab_case }}"
 	},
 {%- endfor %}
 	{0, nullptr, nullptr}

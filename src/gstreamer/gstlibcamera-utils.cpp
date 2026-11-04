@@ -46,6 +46,9 @@ static const struct {
 
 	/* Monochrome */
 	{ GST_VIDEO_FORMAT_GRAY8, formats::R8 },
+#if GST_CHECK_VERSION(1, 26, 0)
+	{ GST_VIDEO_FORMAT_GRAY10_LE16, formats::R10 },
+#endif
 	{ GST_VIDEO_FORMAT_GRAY16_LE, formats::R16 },
 
 	/* RGB16 */

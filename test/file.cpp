@@ -5,6 +5,7 @@
  * File I/O operations tests
  */
 
+#include <array>
 #include <fstream>
 #include <iostream>
 #include <stdlib.h>

@@ -600,7 +600,7 @@ controls:
 
   - ColourTemperature:
       type: int32_t
-      direction: out
+      direction: inout
       description: |
         ColourTemperature of the frame, in kelvin.
 

@@ -834,12 +834,8 @@ private:
 
 	std::queue<CfeJob> cfeJobQueue_;
 
-	bool cfeJobComplete() const
+	bool cfeJobComplete(const CfeJob &job) const
 	{
-		if (cfeJobQueue_.empty())
-			return false;
-
-		const CfeJob &job = cfeJobQueue_.back();
 		return job.buffers.count(&cfe_[Cfe::Output0]) &&
 		       job.buffers.count(&cfe_[Cfe::Stats]) &&
 		       (!sensorMetadata_ ||
@@ -1719,7 +1715,7 @@ void PiSPCameraData::cfeBufferDequeue(FrameBuffer *buffer)
 	}
 
 	/* If the last CFE job has completed, we need a new job entry in the queue. */
-	if (cfeJobQueue_.empty() || cfeJobComplete())
+	if (cfeJobQueue_.empty() || cfeJobComplete(cfeJobQueue_.back()))
 		cfeJobQueue_.push({});
 
 	CfeJob &job = cfeJobQueue_.back();
@@ -2326,8 +2322,16 @@ void PiSPCameraData::prepareBe(uint32_t bufferId, bool stitchSwapBuffers)
 
 void PiSPCameraData::tryRunPipeline()
 {
-	/* If any of our request or buffer queues are empty, we cannot proceed. */
-	if (state_ != State::Idle || requestQueue_.empty() || !cfeJobComplete())
+	/*
+	 * If any of our request or buffer queues are empty, we cannot proceed.
+	 *
+	 * The job that gets run is the oldest one in the queue, so that is the
+	 * one to test. The newest job may be incomplete (for example, holding
+	 * only a config buffer that was dequeued after the image and stats
+	 * buffers of its frame) while older jobs are ready to run.
+	 */
+	if (state_ != State::Idle || requestQueue_.empty() ||
+	    cfeJobQueue_.empty() || !cfeJobComplete(cfeJobQueue_.front()))
 		return;
 
 	CfeJob &job = cfeJobQueue_.front();

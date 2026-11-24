@@ -118,11 +118,14 @@ private:
 	 */
 	uint64_t frameCount_;
 
-	/* How many frames we should avoid running control algos on. */
+	/* How many frames we should avoid parsing metadata. */
 	unsigned int mistrustCount_;
 
 	/* Number of frames that need to be marked as dropped on startup. */
 	unsigned int invalidCount_;
+
+	/* Number of frames that algos need for startup convergence. */
+	unsigned int convergenceCount_;
 
 	/* Frame timestamp for the last run of the controller. */
 	uint64_t lastRunTimestamp_;

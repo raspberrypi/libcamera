@@ -130,8 +130,9 @@ namespace ipa::RPi {
 
 IpaBase::IpaBase()
 	: controller_(), frameLengths_(FrameLengthsQueueSize, 0s), statsMetadataOutput_(false),
-	  stitchSwapBuffers_(false), frameCount_(0), mistrustCount_(0), lastRunTimestamp_(0),
-	  firstStart_(true), flickerState_({ 0, 0s }), cnnEnableInputTensor_(false), awbEnabled_(true)
+	  stitchSwapBuffers_(false), frameCount_(0), mistrustCount_(0), convergenceCount_(0),
+	  lastRunTimestamp_(0), firstStart_(true), flickerState_({ 0, 0s }),
+	  cnnEnableInputTensor_(false), awbEnabled_(true)
 {
 }
 
@@ -382,7 +383,7 @@ void IpaBase::start(const ControlList &controls, StartResult *result)
 	result->startupFrameCount = std::max({ agcConvergenceFrames, awbConvergenceFrames });
 	result->invalidFrameCount = invalidCount_;
 
-	invalidCount_ = std::max({ invalidCount_, agcConvergenceFrames, awbConvergenceFrames });
+	convergenceCount_ = std::max({ agcConvergenceFrames, awbConvergenceFrames });
 
 	LOG(IPARPI, Debug) << "Startup frames: " << result->startupFrameCount
 			   << " Invalid frames: " << result->invalidFrameCount;
@@ -482,7 +483,7 @@ void IpaBase::prepareIsp(const PrepareParams &params)
 	/* Allow a 10% margin on the comparison below. */
 	Duration delta = (frameTimestamp - lastRunTimestamp_) * 1.0ns;
 	if (!delayedRequestControls && params.requestControls.empty() &&
-	    lastRunTimestamp_ && frameCount_ > invalidCount_ &&
+	    lastRunTimestamp_ && frameCount_ > (convergenceCount_ + invalidCount_) &&
 	    delta < controllerMinFrameDuration_ * 0.9 && !hdrChange) {
 		/*
 		 * Ensure we merge the previous frame's metadata with the current
@@ -493,6 +494,12 @@ void IpaBase::prepareIsp(const PrepareParams &params)
 		RPiController::Metadata &lastMetadata =
 			rpiMetadata_[(ipaContext ? ipaContext : rpiMetadata_.size()) - 1];
 		rpiMetadata.mergeCopy(lastMetadata);
+		processPending_ = false;
+	} else if (frameCount_ < invalidCount_) {
+		/*
+		 * Frames would have invalid statistics, so we cannot run any
+		 * algorithms just yet.
+		 */
 		processPending_ = false;
 	} else {
 		processPending_ = true;
